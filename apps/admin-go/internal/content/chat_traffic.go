@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 func (s *service) chatTrafficRoutes(r *gin.Engine) {
@@ -38,8 +39,27 @@ func trafficUserID(c *gin.Context) (string, bool) {
 	return id.String(), true
 }
 
+func trafficOrder(c *gin.Context) (clause.OrderByColumn, bool) {
+	columns := map[string]string{
+		"monthBytes":     "month_bytes",
+		"totalBytes":     "total_bytes",
+		"monthUsedBytes": "month_used_bytes",
+	}
+	column, valid := columns[c.DefaultQuery("sortBy", "monthBytes")]
+	direction := c.DefaultQuery("sortOrder", "desc")
+	if !valid || (direction != "asc" && direction != "desc") {
+		platform.Fail(c, http.StatusBadRequest, "请选择有效的排序方式。")
+		return clause.OrderByColumn{}, false
+	}
+	return clause.OrderByColumn{Column: clause.Column{Name: column}, Desc: direction == "desc"}, true
+}
+
 func (s *service) chatTrafficUsers(c *gin.Context) {
 	month, valid := trafficMonth(c)
+	if !valid {
+		return
+	}
+	order, valid := trafficOrder(c)
 	if !valid {
 		return
 	}
@@ -50,6 +70,11 @@ func (s *service) chatTrafficUsers(c *gin.Context) {
 	if p > 1000000 {
 		p = 1000000
 	}
+	summary, err := chattraffic.ReadUserSummary(s.deps.DB, month)
+	if err != nil {
+		platform.Respond(c, nil, err)
+		return
+	}
 	query := searchQuery(c, chattraffic.UserQuery(s.deps.DB, month), []string{"u.email"})
 	var total int64
 	if err := query.Session(&gorm.Session{}).Count(&total).Error; err != nil {
@@ -57,12 +82,12 @@ func (s *service) chatTrafficUsers(c *gin.Context) {
 		return
 	}
 	items := []chattraffic.UserTraffic{}
-	err := query.Order("month_bytes DESC, u.id ASC").Offset((p - 1) * size).Limit(size).Scan(&items).Error
+	err = query.Order(order).Order("u.id ASC").Offset((p - 1) * size).Limit(size).Scan(&items).Error
 	reset := chattraffic.MonthStart(time.Now()).AddDate(0, 1, 0)
 	for index := range items {
 		items[index].ResetAt = reset
 	}
-	platform.Respond(c, gin.H{"items": items, "total": total, "page": p, "pageSize": size}, err)
+	platform.Respond(c, gin.H{"items": items, "total": total, "page": p, "pageSize": size, "summary": summary}, err)
 }
 
 func (s *service) chatTrafficUser(c *gin.Context) {

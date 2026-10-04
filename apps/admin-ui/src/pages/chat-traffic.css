@@ -60,3 +60,27 @@
   --dashboard-muted: #64748b;
 }
 .dark .chat-traffic-detail { --dashboard-muted: #8fa0b5; }
+.chat-traffic-user-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.chat-traffic-metric-title {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+  color: var(--ant-color-text-secondary, #64748b);
+}
+
+.dark .chat-traffic-metric-title { color: #8fa0b5; }
+
+@media (max-width: 1100px) {
+  .chat-traffic-user-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .chat-traffic-user-summary { gap: 12px; }
+}

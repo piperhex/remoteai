@@ -1,3 +1,5 @@
+import type { PageResult } from "./types";
+
 export interface ChatTrafficOverview {
   totalBytes: number;
   daily: Array<{
@@ -19,3 +21,14 @@ export interface UserChatTraffic {
 }
 
 export interface UserChatTrafficDetail extends ChatTrafficOverview { user: UserChatTraffic }
+
+export interface UserChatTrafficSummary {
+  monthBytes: number;
+  totalBytes: number;
+  monthActiveUsers: number;
+  totalActiveUsers: number;
+}
+
+export interface UserChatTrafficList extends PageResult<UserChatTraffic> {
+  summary: UserChatTrafficSummary;
+}
