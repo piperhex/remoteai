@@ -1,4 +1,6 @@
 .dialog {
+  cursor: default; -webkit-user-select: none; user-select: none;
+  input, textarea, [contenteditable="true"] { -webkit-user-select: text; user-select: text; }
   :global(.ant-modal-content) {
     display: flex; flex-direction: column; height: min(860px, calc(100dvh - 48px)); overflow: hidden;
   }
