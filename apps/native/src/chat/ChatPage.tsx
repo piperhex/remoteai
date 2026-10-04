@@ -161,8 +161,6 @@ function ConnectedChat({ session, device, devices, active: pageActive, chooseDev
     {!!state.error && <Text accessibilityRole="alert" style={styles.error}>{state.error}</Text>}
     {state.desktopOnly && <Text style={[styles.subtitle, { maxWidth: 400, paddingHorizontal: 16 }]}>
       {t("桌面已就绪。打开远程桌面，登录电脑后即可继续聊天。")}</Text>}
-    {!ready && !!device && <Text style={[styles.subtitle, { maxWidth: 400, paddingHorizontal: 16 }]}>
-      {t("离线浏览，仅显示已缓存的内容；连接后更新。")}</Text>}
     {!!state.cacheError && <Text style={[styles.subtitle, { maxWidth: 400 }]}>{state.cacheError}</Text>}
     <ChatImageContext.Provider value={{ threadId: state.selected?.id ?? null, ready, offline: true,
       load: controller.imagePreview }}>

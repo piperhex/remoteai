@@ -203,8 +203,6 @@ export const mobile4: Readonly<Record<string, string>> = {
     "Disable user",
   "离开此页面后，下载仍会继续。":
     "Downloads continue after you leave this page.",
-  "离线浏览，仅显示已缓存的内容；连接后更新。":
-    "Offline: showing cached content. Connect to update.",
   "移除{value1} {value2}":
     "Remove {value1} {value2}",
   "移除照片 {value1}":

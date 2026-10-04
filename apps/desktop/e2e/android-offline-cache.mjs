@@ -64,7 +64,7 @@ try {
   await adb('shell', 'am', 'start', '-n', `${app}/.MainActivity`);
   await waitFor(async () => (await adb('logcat', '-d', '-s', 'ReactNativeJS')).includes('Running "main"'),
     'offline release app starts', 60_000);
-  await waitText('离线浏览');
+  await waitText('连接后发消息');
   await openThread('手机新聊天');
   await waitText('second conversation');
   await screenshot('offline-second-conversation');
