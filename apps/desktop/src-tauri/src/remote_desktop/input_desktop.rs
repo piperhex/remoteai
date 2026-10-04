@@ -19,13 +19,21 @@ impl InputDesktop {
         if !WORKER.load(Ordering::Relaxed) {
             return Ok(None);
         }
+        Self::bind().map(Some)
+    }
+
+    fn bind() -> Result<Self> {
         // SAFETY: the new desktop is owned by this scope; the previous desktop is borrowed from this thread.
         unsafe {
             let previous = GetThreadDesktop(GetCurrentThreadId());
             let current = OpenInputDesktop(
                 0,
                 0,
-                DESKTOP_READOBJECTS | DESKTOP_WRITEOBJECTS | DESKTOP_CREATEWINDOW,
+                // SendInput also requires JOURNALPLAYBACK, even though no journal hook is installed.
+                DESKTOP_READOBJECTS
+                    | DESKTOP_WRITEOBJECTS
+                    | DESKTOP_CREATEWINDOW
+                    | DESKTOP_JOURNALPLAYBACK,
             );
             if current.is_null() {
                 return Err(DesktopError::Platform);
@@ -36,10 +44,11 @@ impl InputDesktop {
                 }
                 return Err(DesktopError::Platform);
             }
-            Ok(Some(Self { previous, current }))
+            Ok(Self { previous, current })
         }
     }
 }
+
 impl Drop for InputDesktop {
     fn drop(&mut self) {
         // SAFETY: the scope never crosses a thread or await boundary; restore before closing our owned handle.
@@ -53,3 +62,7 @@ impl Drop for InputDesktop {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "input_desktop_tests.rs"]
+mod tests;

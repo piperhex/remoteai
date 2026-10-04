@@ -74,6 +74,23 @@ go -C apps/admin-go test -tags integration ./internal/devices -run TestServiceCr
 该验证覆盖普通已登录 GUI 会话，不替代以下无人值守场景的验证。
 尚需补充重启后登录、连接中锁屏/解锁、UAC 画面、屏幕热插拔、长时间运行及跨账号权限的完整设备矩阵。
 
+2026-10-05 在 Windows 11 Hyper-V 虚拟机复现并修复无人值守的鼠标、键盘输入被拒绝：
+绑定输入桌面的句柄必须包含 `DESKTOP_JOURNALPLAYBACK`。原有权限允许 `SetThreadDesktop` 成功，
+但 `SendInput` 仍返回 0 和错误码 5；补上这一项权限后，普通桌面和 SYSTEM 所在的物理控制台
+`Winlogon` 桌面均接受输入，无需申请桌面完全控制权限。视频采集句柄不执行输入，保持原权限。
+新增回归直接使用生产代码绑定桌面，分别发送零位移鼠标事件和 F24 松键，并验证线程桌面恢复；
+原代码失败、修复后通过，编译后的 Rust 回归程序也在虚拟机的 SYSTEM 控制台会话通过。
+该验证不输入或提交登录凭据，不替代完整登录、锁屏/解锁和 UAC 交互验收。
+
+```powershell
+cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests `
+  bound_desktop_accepts_mouse_and_keyboard_input_and_restores_thread -- --ignored --nocapture
+```
+
+此测试默认跳过，需显式在可交互的 Windows 桌面运行；验证登录界面时须由 SYSTEM 在活动物理
+控制台会话运行，普通管理员或 Hyper-V 增强会话不等同于该环境。更新桌面应用后，仍需在设置中
+选择“更新或重新启用”，将修复同步到已安装的无人值守服务副本。
+
 目前只支持活动物理控制台会话，不提供多用户 RDP 会话选择。尚未实现安全注意序列
 Ctrl+Alt+Delete；强制要求该序列的登录策略不能据此承诺可远程登录。BitLocker 开机前解锁、
 UEFI、断电/关机状态不在 Windows 服务能力内。不会开启自动登录或降低 UAC。
