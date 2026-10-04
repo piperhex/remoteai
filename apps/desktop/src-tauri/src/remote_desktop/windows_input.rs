@@ -1,5 +1,6 @@
 use super::{keyboard::KeyboardKey, Button, DesktopError, DesktopInput, Key, Result};
 use std::{collections::BTreeSet, mem::size_of};
+use windows_sys::Win32::System::Shutdown::LockWorkStation;
 use windows_sys::Win32::UI::{Input::KeyboardAndMouse::*, WindowsAndMessaging::*};
 
 fn mouse(flags: u32, data: u32) -> INPUT {
@@ -43,6 +44,7 @@ fn send(inputs: &[INPUT]) -> Result<()> {
 #[derive(Default)]
 pub(super) struct InputState {
     held: BTreeSet<KeyboardKey>,
+    suppressed: BTreeSet<KeyboardKey>,
 }
 impl InputState {
     pub(super) fn release(&mut self) -> Result<()> {
@@ -54,6 +56,7 @@ impl InputState {
         inputs.extend(self.held.iter().map(|code| physical_key(*code, false)));
         send(&inputs)?;
         self.held.clear();
+        self.suppressed.clear();
         Ok(())
     }
     pub(super) fn apply(
@@ -62,15 +65,72 @@ impl InputState {
         display: &super::monitors::Monitor,
     ) -> Result<()> {
         if let DesktopInput::Keyboard { code, down } = input {
-            send(&[physical_key(code, down)])?;
-            if down {
-                self.held.insert(code);
-            } else {
-                self.held.remove(&code);
+            return self.apply_keyboard(code, down, keyboard_action);
+        }
+        input_event(input, display)
+    }
+
+    fn apply_keyboard(
+        &mut self,
+        code: KeyboardKey,
+        down: bool,
+        mut execute: impl FnMut(KeyboardAction<'_>) -> Result<()>,
+    ) -> Result<()> {
+        if self.suppressed.contains(&code) {
+            if !down {
+                self.suppressed.remove(&code);
             }
             return Ok(());
         }
-        input_event(input, display)
+        if down && code.code == VK_L && self.only_windows_keys_held() {
+            // Win+L cannot be implemented by SendInput. Release before switching desktops,
+            // then consume this chord's repeats/key-ups so they cannot reach the sign-in screen.
+            execute(KeyboardAction::Release(&self.held))?;
+            self.suppressed.extend(std::mem::take(&mut self.held));
+            self.suppressed.insert(code);
+            return execute(KeyboardAction::Lock);
+        }
+        execute(KeyboardAction::Key { code, down })?;
+        if down {
+            self.held.insert(code);
+        } else {
+            self.held.remove(&code);
+        }
+        Ok(())
+    }
+
+    fn only_windows_keys_held(&self) -> bool {
+        !self.held.is_empty()
+            && self
+                .held
+                .iter()
+                .all(|key| matches!(key.code, VK_LWIN | VK_RWIN))
+    }
+}
+
+enum KeyboardAction<'a> {
+    Key { code: KeyboardKey, down: bool },
+    Release(&'a BTreeSet<KeyboardKey>),
+    Lock,
+}
+
+fn keyboard_action(action: KeyboardAction<'_>) -> Result<()> {
+    match action {
+        KeyboardAction::Key { code, down } => send(&[physical_key(code, down)]),
+        KeyboardAction::Release(keys) => send(
+            &keys
+                .iter()
+                .map(|code| physical_key(*code, false))
+                .collect::<Vec<_>>(),
+        ),
+        KeyboardAction::Lock => {
+            // SAFETY: this parameterless API runs on the authorized session's input worker,
+            // which is attached to the interactive desktop by with_session.
+            if unsafe { LockWorkStation() } == 0 {
+                return Err(DesktopError::Platform);
+            }
+            Ok(())
+        }
     }
 }
 
@@ -169,3 +229,7 @@ pub(super) fn clipboard_shortcut(code: u16) -> Result<()> {
         key(VK_CONTROL, KEYEVENTF_KEYUP),
     ])
 }
+
+#[cfg(test)]
+#[path = "windows_input_tests.rs"]
+mod tests;

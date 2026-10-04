@@ -112,6 +112,30 @@ test('requests landscape on entry and never rotates when input opens, switches o
   await expect(page.locator('html')).toHaveAttribute('data-unlocked', 'true');
 });
 
+test('sends Win+L from both the lock shortcut and computer keyboard combination', async ({ page }) => {
+  await openDesktop(page);
+  const chord = [
+    { kind: 'keyboard', code: 'MetaLeft', down: true }, { kind: 'keyboard', code: 'KeyL', down: true },
+    { kind: 'keyboard', code: 'KeyL', down: false }, { kind: 'keyboard', code: 'MetaLeft', down: false },
+  ];
+  await page.getByRole('tab', { name: '快捷键', exact: true }).click();
+  await page.getByRole('button', { name: 'Win+L 锁定屏幕', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.desktopTest.inputs)).toEqual(chord);
+  await page.getByRole('tab', { name: '电脑键盘', exact: true }).click();
+  await page.getByRole('checkbox', { name: '组合键模式' }).check();
+  const windowsKey = page.getByRole('button', { name: 'Win', exact: true });
+  await windowsKey.click();
+  await expect(windowsKey).toHaveAttribute('aria-pressed', 'true');
+  expect(await page.evaluate(() => window.desktopTest.inputs.length)).toBe(chord.length);
+  await page.getByRole('button', { name: 'L', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.desktopTest.inputs)).toEqual([...chord, ...chord]);
+  await expect(windowsKey).toHaveAttribute('aria-pressed', 'false');
+  await page.getByRole('button', { name: 'L', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.desktopTest.inputs.slice(-2))).toEqual([
+    { kind: 'keyboard', code: 'KeyL', down: true }, { kind: 'keyboard', code: 'KeyL', down: false },
+  ]);
+});
+
 test('explains unavailable keys on old hosts while keeping text input usable', async ({ page }) => {
   await openDesktop(page, 'legacy');
   await page.getByRole('tab', { name: '快捷键', exact: true }).click();
