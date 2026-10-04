@@ -19,7 +19,7 @@ module.exports = function withChatTextSelection(config) {
     const target = path.join(result.modRequest.platformProjectRoot, 'app/src/main/java/com/codexswitch/selection');
     await fs.mkdir(target, { recursive: true });
     const files = ['ChatTextSelectionPackage.kt', 'ChatTextSelectionModule.kt', 'ChatSelectionMenu.kt',
-      'ChatSelectionController.kt', 'ChatTextViewManager.kt'];
+      'ChatSelectionController.kt', 'ChatSelectionTouch.kt', 'ChatTextViewManager.kt'];
     for (const name of files) {
       await fs.copyFile(path.join(__dirname, 'chatTextSelection', name), path.join(target, name));
     }

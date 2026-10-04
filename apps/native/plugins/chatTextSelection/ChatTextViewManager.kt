@@ -4,6 +4,7 @@ import android.graphics.Rect
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.View
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.views.text.ReactTextView
@@ -15,6 +16,15 @@ class ChatTextViewManager : ReactTextViewManager() {
 }
 
 private class ChatTextView(context: ThemedReactContext) : ReactTextView(context) {
+  private val selectionTouch = ChatSelectionTouch(this) { super.onTouchEvent(it) }
+
+  override fun onTouchEvent(event: MotionEvent): Boolean = selectionTouch.onTouchEvent(event)
+
+  override fun onDetachedFromWindow() {
+    selectionTouch.cancel()
+    super.onDetachedFromWindow()
+  }
+
   override fun startActionMode(callback: ActionMode.Callback, type: Int): ActionMode? {
     val selection = customSelectionActionModeCallback as? ChatSelectionMenu
     if (selection == null || type != ActionMode.TYPE_FLOATING) return super.startActionMode(callback, type)

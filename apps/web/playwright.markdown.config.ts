@@ -2,8 +2,10 @@ import { defineConfig } from '@playwright/test';
 import chatConfig from './playwright.chat.config';
 
 export default defineConfig({
-  ...chatConfig, testMatch: '**/chat-markdown.pw.ts',
+  ...chatConfig, testMatch: ['**/chat-markdown.pw.ts', '**/text-selection.pw.ts'],
   use: { ...chatConfig.use, channel: undefined },
+  // These display fixtures provide their own messages and do not need the remote-chat backend.
+  webServer: Array.isArray(chatConfig.webServer) ? chatConfig.webServer.slice(1) : chatConfig.webServer,
   outputDir: '../../.codex-tmp/markdown-playwright',
   reporter: [['list']],
   projects: [

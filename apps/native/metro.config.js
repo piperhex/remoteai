@@ -10,6 +10,7 @@ applyDrawerTapPatch();
 applyListRenderRangePatch();
 require('./scripts/patch-tcp-punch.cjs').applyTcpPunchPatch();
 require('./scripts/build-desktop-ime.cjs');
+require('./scripts/build-text-selection.cjs');
 
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '../..');

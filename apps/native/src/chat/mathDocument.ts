@@ -1,4 +1,5 @@
 import { css } from '../../assets/math-css.json';
+import { script as textSelectionScript } from '../../assets/text-selection.json';
 
 export const MIN_MATH_HEIGHT = 32;
 const MAX_MATH_HEIGHT = 10000;
@@ -20,6 +21,7 @@ a{color:#0b8065;}code{background:#f4f6f5;}
 </style></head><body><div id="content">${markup}</div><script>
 (()=>{
 const content=document.getElementById('content');
+${textSelectionScript}
 let previous=0;
 function measure(){
   const height=Math.ceil(content.getBoundingClientRect().height);

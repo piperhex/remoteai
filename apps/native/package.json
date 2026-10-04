@@ -13,7 +13,7 @@
     "prebuild:android": "node ./scripts/expo.cjs prebuild --platform android --clean --no-install",
     "build:apk": "node ./scripts/build-apk.cjs",
     "prebuild:ios": "node ./scripts/expo.cjs prebuild --platform ios --clean --no-install",
-    "check": "node ./scripts/build-terminal-document.cjs --check && node ./scripts/build-math-css.cjs --check && node ./scripts/build-desktop-ime.cjs --check && tsc --noEmit",
+    "check": "node ./scripts/build-terminal-document.cjs --check && node ./scripts/build-math-css.cjs --check && node ./scripts/build-desktop-ime.cjs --check && node ./scripts/build-text-selection.cjs --check && tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {

@@ -1,0 +1,10 @@
+// Exercise the production renderer without touching the installed app or its data.
+gradle.afterProject { project ->
+    if (project.path == ':app') {
+        project.android.defaultConfig.applicationId = 'com.codexswitch.mobile.selectiontest'
+        project.extensions.getByName('react').entryFile = new File(project.rootDir, '../e2e/TextSelectionFixture.tsx')
+        project.android.applicationVariants.all { variant ->
+            variant.outputs.all { outputFileName = 'text-selection-fixture.apk' }
+        }
+    }
+}

@@ -1,11 +1,12 @@
 import { t, useLanguage } from '../i18n';
-import { Children, isValidElement, type ReactNode } from 'react';
+import { Children, isValidElement, useEffect, useRef, type ReactNode } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { mathOptions, normalizeMathDelimiters } from '../../../../shared/chat/mathMarkdown';
+import { installTouchTextSelection } from '../../../../shared/chat/touchTextSelection';
 import 'katex/dist/katex.min.css';
 import './math.css';
 import { parseFileReference } from '../../../../shared/chat/fileReference';
@@ -43,7 +44,9 @@ export function ChatMarkdown({ text, process = false, desktop = false }: {
   text: string; process?: boolean; desktop?: boolean;
 }) {
   useLanguage();
-  return <div className={`chat-markdown${process ? ' chat-process-prose' : ''}`}>
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => root.current ? installTouchTextSelection(root.current) : undefined, []);
+  return <div ref={root} className={`chat-markdown${process ? ' chat-process-prose' : ''}`}>
     <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]} rehypePlugins={[[rehypeKatex, mathOptions]]}
       components={desktop ? desktopComponents : components}
       urlTransform={(url, key) => {

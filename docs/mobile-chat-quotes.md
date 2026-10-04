@@ -5,6 +5,9 @@
 
 长按聊天文字可以复制、全选或引用，保留 Android 的选区手柄。“全选”作用于当前文字块；
 整条回复或完整工具输出可以通过末尾的复制图标复制。系统可能另外提供搜索、翻译等操作。
+Android 文字需持续按住至少 500 毫秒才进入选择；系统设置了更长的长按时间时遵循系统设置。
+快速连点和短暂停留不选字，滑动、增加手指或中断触摸会取消等待；选中后的手柄拖动继续使用系统交互。
+Web 和原生公式内容同步限制触摸选择，Web 的鼠标拖选、双击选词和键盘选择保持可用。
 工具栏贴近所选文字，点击聊天空白处会取消选择并关闭工具栏。靠近左侧边缘也可以长按选择，
 侧滑仍可打开聊天列表，竖向滚动和从页面中部横滑不会打开列表。
 
@@ -31,3 +34,11 @@ Android 的 Editor 不转发自定义选择回调的 `onGetContentRect`，因此
 包装原生 ActionMode 回调，仅调整聊天选区的顶部锚点，保留系统选区边界、手柄和生命周期。
 抽屉依赖补丁同时移除了关闭状态下的零距离拖动阈值：Android 将该阈值与方向阈值按“或”处理，
 零距离会截走静止长按的松手事件，导致文字高亮却没有菜单。
+
+长按防误触回归使用独立的 `com.codexswitch.mobile.selectiontest` 应用，不改动主应用的数据。
+Android prebuild 后，以 `apps/native/e2e/text-selection.init.gradle` 构建 Release 测试包，
+再运行 `node apps/native/e2e/text-selection-test.mjs`（需 `ANDROID_HOME`、`JAVA_HOME`，
+`ANDROID_SERIAL` 默认为 `emulator-5580`）。检查快速连点、短按、长按、全选、复制、引用、
+内嵌链接、公式选择与滚动，结果写入 `.codex-tmp/text-selection/`。
+Web 回归位于 `apps/web/e2e/text-selection.pw.ts`，纳入聊天及 Markdown 的 Playwright 配置，
+覆盖 Chromium 手机视口、WebKit 手机视口和桌面布局。
