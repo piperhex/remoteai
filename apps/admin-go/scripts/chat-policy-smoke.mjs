@@ -27,11 +27,19 @@ function connect(path = '/device-chat') {
   return socket;
 }
 
-async function chat(role, accessToken) {
+function assertCapabilities(message, expected) {
+  assert.equal(message.binaryRelay, expected.binaryRelay, 'policy must retain negotiated binary relay support');
+  assert.equal(message.fileBulkV1, expected.fileBulkV1, 'policy must retain negotiated bulk download support');
+  assert.equal(message.connectionDiagnostics, 1);
+}
+
+async function chat(role, accessToken, capabilities = { binaryRelay: true, fileBulkV1: true }) {
   const socket = connect();
   await socket.send({ type: 'authenticate', role, accessToken, deviceId,
-    transportVersion: 2, ...(role === 'mobile' ? { publicKey: 'ab'.repeat(32) } : {}) });
-  return { socket, policy: (await socket.next('chat-policy')).body.policy };
+    transportVersion: 2, ...capabilities, ...(role === 'mobile' ? { publicKey: 'ab'.repeat(32) } : {}) });
+  const { body } = await socket.next('chat-policy');
+  assertCapabilities(body, capabilities);
+  return { socket, policy: body.policy, capabilities };
 }
 
 const token = await login('admin');
@@ -50,10 +58,19 @@ try {
   await desktop.socket.next('registered');
   const mobile = await chat('mobile', token);
   await mobile.socket.next('paired');
+  const binaryOnly = await chat('mobile', token, { binaryRelay: true, fileBulkV1: false });
+  await binaryOnly.socket.next('paired');
+  const legacy = await chat('mobile', token, { binaryRelay: false, fileBulkV1: false });
+  await legacy.socket.next('paired');
+  const peers = [desktop, mobile, binaryOnly, legacy];
   assert.deepEqual(desktop.policy, initial.body);
   assert.deepEqual(mobile.policy, initial.body);
   // Start immediately after the periodic refresh, so a missing save-triggered push cannot pass by coincidence.
-  await desktop.socket.next('chat-policy');
+  await Promise.all(peers.map(async ({ socket, capabilities }) => {
+    const { body } = await socket.next('chat-policy');
+    assert.deepEqual(body.policy, initial.body);
+    assertCapabilities(body, capabilities);
+  }));
   const unauthenticated = connect();
   await unauthenticated.open;
   for (const seconds of [1_000_000, Number.MAX_SAFE_INTEGER]) {
@@ -62,10 +79,11 @@ try {
     const response = await request(base, 'PATCH', endpoint, { token, body: policy });
     assert.equal(response.status, 200);
     assert.deepEqual(response.body, policy);
-    await Promise.all([desktop, mobile].map(async ({ socket }) => {
+    await Promise.all(peers.map(async ({ socket, capabilities }) => {
       const frame = await socket.wait(message => message.type === 'chat-policy'
         && message.policy.p2pNegotiationTimeoutSeconds === seconds, 1500);
       assert.deepEqual(frame.body.policy, policy);
+      assertCapabilities(frame.body, capabilities);
     }));
     assert.ok(performance.now() - started < 1500, 'settings must push immediately, before the five-second poll');
     assert.deepEqual((await request(base, 'GET', endpoint, { token })).body, policy);
@@ -75,25 +93,27 @@ try {
     const current = (await request(base, 'GET', endpoint, { token })).body;
     const policy = { ...current, fileDownloadWindowSize: windowSize };
     assert.equal((await request(base, 'PATCH', endpoint, { token, body: policy })).status, 200);
-    await Promise.all([desktop, mobile].map(async ({ socket }) => {
+    await Promise.all(peers.map(async ({ socket, capabilities }) => {
       const frame = await socket.wait(message => message.type === 'chat-policy'
         && message.policy.fileDownloadWindowSize === windowSize
         && message.policy.p2pNegotiationTimeoutSeconds === policy.p2pNegotiationTimeoutSeconds, 1500);
       assert.deepEqual(frame.body.policy, policy);
+      assertCapabilities(frame.body, capabilities);
     }));
     assert.deepEqual((await request(base, 'GET', endpoint, { token })).body, policy);
   }
   for (const fileBulkEnabled of [1, 0, 1]) {
     const current = (await request(base, 'GET', endpoint, { token })).body;
     const policy = { ...current, fileBulkEnabled };
-    for (const { socket } of [desktop, mobile]) {
+    for (const { socket } of peers) {
       socket.frames = socket.frames.filter(({ body }) => body.type !== 'chat-policy');
     }
     assert.equal((await request(base, 'PATCH', endpoint, { token, body: policy })).status, 200);
-    await Promise.all([desktop, mobile].map(async ({ socket }) => {
+    await Promise.all(peers.map(async ({ socket, capabilities }) => {
       const frame = await socket.wait(message => message.type === 'chat-policy'
         && message.policy.fileBulkEnabled === fileBulkEnabled, 1500);
       assert.deepEqual(frame.body.policy, policy);
+      assertCapabilities(frame.body, capabilities);
     }));
     assert.deepEqual((await request(base, 'GET', endpoint, { token })).body, policy);
   }
@@ -120,7 +140,8 @@ try {
   }
   assert.deepEqual((await request(base, 'GET', endpoint, { token })).body, latest);
   console.log('PASS P2P and relay settings: uncapped values, immediate WS push to both peers, '
-    + 'download window and bulk switch updates, reconnect, permissions and validation');
+    + 'negotiated capabilities across periodic refresh and bulk switch updates, '
+    + 'download window, reconnect, permissions and validation');
 } finally {
   assert.equal((await request(base, 'PATCH', endpoint, { token, body: initial.body })).status, 200);
   for (const socket of sockets) socket.close();

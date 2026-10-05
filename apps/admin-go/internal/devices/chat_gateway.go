@@ -172,8 +172,7 @@ func (g *ChatGateway) receive(client *peer, state *chatConnection, message platf
 		client.close(4001, "Session expired")
 	})
 	g.mu.Unlock()
-	client.send(platform.JSON{"type": "chat-policy", "policy": policy,
-		"binaryRelay": client.binaryRelay.Load(), "fileBulkV1": client.binaryBulk.Load(), "connectionDiagnostics": 1}, nil)
+	sendChatPolicy(client, policy)
 	g.sessions.setLimit(policy["chatSessionLimit"].(float64))
 	return g.sessions.join(client, identity, message, g.ice)
 }
@@ -305,9 +304,15 @@ func (g *ChatGateway) refreshPolicy() {
 	g.policy = policy
 	for client, state := range g.connections {
 		if state.identity != nil && state.identity.expires.After(time.Now()) {
-			client.send(platform.JSON{"type": "chat-policy", "policy": policy, "connectionDiagnostics": 1}, nil)
+			sendChatPolicy(client, policy)
 		}
 	}
+}
+
+func sendChatPolicy(client *peer, policy map[string]interface{}) {
+	// Refreshes must preserve negotiated capabilities, independently of the live download policy switch.
+	client.send(platform.JSON{"type": "chat-policy", "policy": policy,
+		"binaryRelay": client.binaryRelay.Load(), "fileBulkV1": client.binaryBulk.Load(), "connectionDiagnostics": 1}, nil)
 }
 
 type Runtime struct {
