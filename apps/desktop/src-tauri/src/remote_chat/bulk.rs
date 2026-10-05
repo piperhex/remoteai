@@ -1,22 +1,84 @@
 //! Raw binary IPC is restricted to an existing authenticated chat session and socket generation.
 use super::protocol::{ChatError, Command};
+use std::sync::{Arc, LazyLock};
 use tauri::{
     ipc::{InvokeBody, Request},
     AppHandle, Webview,
 };
-use tokio::sync::oneshot;
+use tokio::sync::{oneshot, OwnedSemaphorePermit, Semaphore};
 
 const HEADER_BYTES: usize = 5;
 const MAX_RECORD_BYTES: usize = 16 * 1024;
 const RECORD_HEADER_BYTES: usize = 72;
 const TAG_BYTES: usize = 16;
+const MAX_BATCH_RECORDS: usize = 16;
+const IPC_QUEUE_BYTES: usize = 4 * 1024 * 1024;
+static IPC_BUDGET: LazyLock<Arc<Semaphore>> =
+    LazyLock::new(|| Arc::new(Semaphore::new(IPC_QUEUE_BYTES)));
+const MAX_BATCH_BYTES: usize =
+    HEADER_BYTES + MAX_BATCH_RECORDS * (4 + HEADER_BYTES + 128 + MAX_RECORD_BYTES);
+
+#[cfg(test)]
+#[path = "bulk_tests.rs"]
+mod tests;
 
 pub(super) struct BulkSend {
     pub client_id: String,
     pub generation: u64,
     pub session_id: String,
-    pub bytes: Vec<u8>,
+    pub frames: Vec<Vec<u8>>,
     pub completed: oneshot::Sender<Result<(), ChatError>>,
+    pub _memory: OwnedSemaphorePermit,
+}
+
+pub(super) fn reserve_bytes(length: usize) -> Result<OwnedSemaphorePermit, ChatError> {
+    if length == 0 || length > MAX_BATCH_BYTES {
+        return Err(ChatError::InvalidFrame);
+    }
+    // Account for both the raw request and decoded frames. The command owns this reservation
+    // even when its awaiting IPC future is cancelled before the runtime drains the queue.
+    IPC_BUDGET
+        .clone()
+        .try_acquire_many_owned((length * 2) as u32)
+        .map_err(|_| ChatError::Transport)
+}
+
+/// Validate the entire IPC batch before any frame can enter the authenticated socket queue.
+pub(super) fn parse_frames(bytes: &[u8]) -> Result<(String, Vec<Vec<u8>>), ChatError> {
+    if bytes.starts_with(b"CSF1") {
+        return Ok((session_id(bytes)?, vec![bytes.to_vec()]));
+    }
+    if bytes.len() < HEADER_BYTES || bytes.len() > MAX_BATCH_BYTES || &bytes[..4] != b"CSFB" {
+        return Err(ChatError::InvalidFrame);
+    }
+    let count = usize::from(bytes[4]);
+    if count == 0 || count > MAX_BATCH_RECORDS {
+        return Err(ChatError::InvalidFrame);
+    }
+    let mut remaining = &bytes[HEADER_BYTES..];
+    let mut frames = Vec::with_capacity(count);
+    let mut owner = None;
+    for _ in 0..count {
+        let length = remaining.get(..4).ok_or(ChatError::InvalidFrame)?;
+        let length =
+            u32::from_be_bytes(length.try_into().map_err(|_| ChatError::InvalidFrame)?) as usize;
+        remaining = &remaining[4..];
+        let frame = remaining.get(..length).ok_or(ChatError::InvalidFrame)?;
+        let session = session_id(frame)?;
+        if owner.as_ref().is_some_and(|owner| owner != &session) {
+            return Err(ChatError::InvalidFrame);
+        }
+        owner = Some(session);
+        frames.push(frame);
+        remaining = &remaining[length..];
+    }
+    if !remaining.is_empty() {
+        return Err(ChatError::InvalidFrame);
+    }
+    Ok((
+        owner.ok_or(ChatError::InvalidFrame)?,
+        frames.into_iter().map(<[u8]>::to_vec).collect(),
+    ))
 }
 
 pub(super) fn session_id(bytes: &[u8]) -> Result<String, ChatError> {
@@ -65,7 +127,8 @@ pub(crate) async fn remote_chat_bulk_send(
     let InvokeBody::Raw(bytes) = request.body() else {
         return Err(invalid());
     };
-    let session_id = session_id(bytes).map_err(|_| invalid())?;
+    let memory = reserve_bytes(bytes.len()).map_err(|_| invalid())?;
+    let (session_id, frames) = parse_frames(bytes).map_err(|_| invalid())?;
     let client_id = request
         .headers()
         .get("x-file-bulk-client")
@@ -84,8 +147,9 @@ pub(crate) async fn remote_chat_bulk_send(
         client_id,
         generation,
         session_id,
-        bytes: bytes.clone(),
+        frames,
         completed,
+        _memory: memory,
     };
     super::submit(app, window, Command::Bulk(command)).await?;
     result.await.map_err(|_| invalid())?.map_err(|_| invalid())

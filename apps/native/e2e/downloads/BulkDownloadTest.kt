@@ -114,6 +114,17 @@ class BulkDownloadTest : InstrumentationTestCase() {
     tasks.forEach { blocks.verifyComplete(it) {}; assertTrue(bytes.contentEquals(storage.part(it).readBytes())) }
   }
 
+  fun testSustained32MiBDownloadVerifiesEveryBlockAndTheWholeFile() {
+    val bytes = content(32 * BULK_BLOCK_BYTES + 17)
+    val task = open(bytes); bulk.fill()
+    var index = 0
+    while (index < requests.size) send(requests[index++], bytes)
+    assertEquals(1, completed); assertEquals(0, failed)
+    assertEquals(bytes.size.toLong(), task.received)
+    blocks.verifyComplete(task) {}
+    assertTrue(sha256(bytes).contentEquals(sha256(storage.part(task).readBytes())))
+  }
+
   fun testHashMismatchRetriesTwiceAndNeverCommitsBadBytes() {
     val bytes = content(31); val task = open(bytes); bulk.fill()
     repeat(3) { send(requests.last(), bytes, true) }

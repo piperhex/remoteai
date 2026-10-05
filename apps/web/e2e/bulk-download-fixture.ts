@@ -87,5 +87,11 @@ export function fixtureBulkClient(fixture: Fixture) {
     },
     cipher: context => transfers.get(context.transferId)!.receiver,
   };
-  return { client, path: (path: BulkPath) => { current = path; transport.setMode(path); } };
+  return { client, path: (path: BulkPath) => { current = path; transport.setMode(path); },
+    directAttempt: () => {
+      let closed = () => {};
+      const channel = { readyState: 'connecting', bufferedAmount: 0, send() {}, close: () => closed(),
+        onMessage() {}, onLow: () => () => {}, onClose: (callback: () => void) => { closed = callback; } };
+      transport.attach(channel); channel.close();
+    } };
 }

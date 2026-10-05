@@ -60,7 +60,7 @@ fn coordinator_updates_upload_limits_and_owner_changes_reset_them() {
     );
 }
 
-fn connected_identity() -> Runtime {
+pub(super) fn connected_identity() -> Runtime {
     let mut runtime = Runtime::default();
     runtime.command(Command::Attach {
         client_id: "view".into(),

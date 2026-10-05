@@ -205,16 +205,47 @@ test('bulk limits hash retries and refuses a corrupted ready file at export', as
   expect(exported).toBe(false);
 });
 
-test('bulk pauses on a path switch and resumes missing verified blocks through relay', async ({ page }) => {
+test('bulk automatically resumes missing verified blocks through relay after a path switch', async ({ page }) => {
   await open(page);
   await page.evaluate(() => { window.downloadFixture.bulk = true; window.downloadFixture.size = 4 * 1024 * 1024; });
   await enqueue(page);
   await expect.poll(() => card(page).getByRole('progressbar').getAttribute('value')).not.toBe('0');
   await page.getByRole('button', { name: '切换连接方式' }).click();
-  await expect(card(page)).toContainText('已暂停');
-  await card(page).getByRole('button', { name: '继续下载' }).click();
+  await expect(card(page)).toContainText('正在重试');
   await expect(card(page)).toContainText('文件已就绪');
   expect(await save(page)).toEqual(Buffer.alloc(4 * 1024 * 1024, 'A'));
+});
+
+test('a manual pause during recovery remains paused until the user resumes', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => { window.downloadFixture.bulk = true; window.downloadFixture.size = 4 * 1024 * 1024; });
+  await enqueue(page);
+  await expect.poll(() => card(page).getByRole('progressbar').getAttribute('value')).not.toBe('0');
+  await page.getByRole('button', { name: '切换连接方式' }).click();
+  await expect(card(page)).toContainText('正在重试');
+  await card(page).getByRole('button', { name: '暂停', exact: true }).click();
+  await expect(card(page)).toContainText('已暂停');
+  const requests = await page.evaluate(() => window.downloadFixture.offsets.length);
+  await page.waitForTimeout(1500);
+  await expect(card(page)).toContainText('已暂停');
+  expect(await page.evaluate(() => window.downloadFixture.offsets.length)).toBe(requests);
+  await card(page).getByRole('button', { name: '继续下载' }).click();
+  await expect(card(page)).toContainText('文件已就绪');
+});
+
+test('a 32 MiB relay download survives background direct attempts and verifies the saved hash', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => {
+    window.downloadFixture.bulk = true; window.downloadFixture.size = 32 * 1024 * 1024;
+    window.downloadFixture.delay = 20; window.downloadFixture.downloadLimit(300);
+  });
+  await page.getByRole('button', { name: '切换连接方式' }).click();
+  await enqueue(page);
+  await expect.poll(() => card(page).getByRole('progressbar').getAttribute('value')).not.toBe('0');
+  await page.evaluate(() => { for (let index = 0; index < 5; index++) window.downloadFixture.directAttempt(); });
+  await expect(card(page)).toContainText('文件已就绪', { timeout: 30_000 });
+  expect(createHash('sha256').update(await save(page)).digest('hex'))
+    .toBe(createHash('sha256').update(Buffer.alloc(32 * 1024 * 1024, 'A')).digest('hex'));
 });
 
 test('bulk aborts a failed final save and makes missing stored data downloadable again', async ({ page }) => {

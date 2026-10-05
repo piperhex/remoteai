@@ -104,6 +104,24 @@ adb -s emulator-5580 shell am instrument -w `
 Web 下载回归使用 `apps/web/playwright.chat.config.ts` 下的 `downloads.pw.ts`，覆盖手机和桌面布局。
 Admin 配置持久化和实时推送使用 Go 的 `scripts/chat-policy-smoke.mjs` 验证。
 
+### 持续传输与连接切换回归
+
+后台 direct 通道的创建、替换和关闭只影响被选中的 direct 路径，不能取消正在工作的 relay 下载。
+真正切换路径仍终止旧 epoch，Android 和 Web 在连接可用时按 1、2、4 秒重试，重新协商并校验断点。
+没有新增已验证进度时最多重试三次；手动暂停、断开连接、重启应用、完整性错误和保存失败不自动续传。
+
+桌面每次最多通过一个 raw IPC 提交 16 个 record，Rust 校验整个批次的长度与会话后发送独立 CSF1 帧。
+线上单帧仍最多 16 KiB；IPC 原始数据与解包副本共享 4 MiB 预算，取消等待不会提前释放队列预算。
+发送完一个有界批次后让出执行机会，避免逐帧 IPC 确认和零延时定时器叠加 socket 空闲读取等待。
+
+`bulkThroughput.test.ts` 覆盖 32 MiB 加密传输、顺序、哈希、批次上限和控制回调调度。
+Android 原生测试和 Web 手机/桌面回归覆盖 32 MiB 文件校验、路径切换恢复及恢复期间手动暂停。
+可单独运行真实本地 WebSocket 对照，比较逐帧确认与批量确认；它不作为公网性能承诺：
+
+```powershell
+cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib sustained_bulk_socket_throughput -- --ignored --nocapture
+```
+
 ## 观测与灰度门槛
 
 `downloadMetrics.ts` 提供最近 32 次本地传输/导出阶段统计及 512 个 RPC 耗时样本的 P50/P95/P99；

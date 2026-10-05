@@ -1,6 +1,7 @@
 import { DownloadPolicyError } from '../../../../shared/remote-chat/policy';
 import { DownloadCancelled } from '../../../../shared/remote-chat/fileDownload';
 import { BulkError } from '../../../../shared/remote-chat/bulkLimits';
+import { DownloadRetry } from '../../../../shared/remote-chat/downloadRetry';
 import { saveDownload } from './saveDownload';
 import type { AuthSession } from '../types';
 import { deleteDownload, listDownloads, storeDownload } from './storage';
@@ -19,6 +20,9 @@ export class WebDownloadManager {
   private initialization?: Promise<void>;
   private failure = '';
   private flights = new Map<string, { controller: AbortController; done: Promise<void> }>();
+  private readonly retries = new DownloadRetry();
+  private readonly retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly paused = new Set<string>();
   snapshot = () => this.tasks;
   connection = () => this.current;
   error = () => this.failure;
@@ -41,7 +45,10 @@ export class WebDownloadManager {
   bind(connection: DownloadConnection) {
     this.current = connection;
     for (const task of this.tasks) {
-      if (!this.connected(task)) this.flights.get(task.id)?.controller.abort();
+      if (!this.connected(task)) {
+        this.flights.get(task.id)?.controller.abort();
+        if (this.retryTimers.has(task.id)) void this.pause(task.id).catch(() => this.storageFailed());
+      }
     }
     this.emit();
     this.schedule();
@@ -50,6 +57,7 @@ export class WebDownloadManager {
     if (this.current?.files !== client) return;
     this.current = undefined;
     this.flights.forEach(flight => flight.controller.abort());
+    for (const id of this.retryTimers.keys()) void this.pause(id).catch(() => this.storageFailed());
     this.emit();
   }
   private connected(task: DownloadTask) {
@@ -75,8 +83,10 @@ export class WebDownloadManager {
     return task.id;
   }
   async pause(id: string) {
+    this.paused.add(id);
+    this.clearRetry(id);
     const flight = this.flights.get(id);
-    if (flight) { flight.controller.abort(); await flight.done; return; }
+    if (flight) { flight.controller.abort(); await flight.done; }
     const task = this.tasks.find(task => task.id === id);
     if (task && task.status === 'queued') {
       const paused: DownloadTask = { ...task, status: 'paused' };
@@ -88,6 +98,8 @@ export class WebDownloadManager {
   async resume(id: string) {
     const task = this.tasks.find(task => task.id === id);
     if (!task || this.flights.has(id) || ['completed', 'ready', 'saving'].includes(task.status)) return;
+    this.clearRetry(id);
+    this.paused.delete(id);
     await this.persist({ ...task, status: 'queued', message: '' });
     this.schedule();
   }
@@ -95,6 +107,7 @@ export class WebDownloadManager {
     await this.pause(id);
     await deleteDownload(id);
     this.tasks = this.tasks.filter(task => task.id !== id);
+    this.paused.delete(id);
     this.emit();
   }
   async save(id: string) {
@@ -120,9 +133,11 @@ export class WebDownloadManager {
     this.update(task);
   }
   private schedule() {
+    if (this.failure) return;
     for (const task of this.tasks) {
       if (this.flights.size >= MAX_ACTIVE_DOWNLOADS) return;
-      if (task.status !== 'queued' || this.flights.has(task.id) || !this.connected(task) || !this.current) continue;
+      if (task.status !== 'queued' || this.flights.has(task.id) || this.retryTimers.has(task.id) || this.paused.has(task.id)
+        || !this.connected(task) || !this.current) continue;
       const controller = new AbortController();
       const client = this.current.client;
       const done = Promise.resolve().then(() => this.run(task, client, controller.signal)).finally(() => {
@@ -135,19 +150,33 @@ export class WebDownloadManager {
     try {
       await this.persist({ ...task, status: 'downloading' });
       await transferDownload({ task, client, signal, update: value => { task = value; this.update(value); } });
+      this.clearRetry(task.id);
       await this.persist({ ...task, status: 'ready', bytesPerSecond: undefined });
     } catch (error) {
       const paused = signal.aborted || (error instanceof BulkError
         && ['PATH_UNAVAILABLE', 'EPOCH_EXPIRED'].includes(error.code));
-      task = { ...task, status: paused ? 'paused' : 'failed', bytesPerSecond: undefined,
-        message: signal.aborted ? '' : error instanceof DownloadPolicyError || error instanceof BulkError ? error.message
+      const retrying = paused && !signal.aborted && !this.paused.has(task.id)
+        && this.connected(task) && this.deferRetry(task);
+      task = { ...task, status: retrying ? 'queued' : paused ? 'paused' : 'failed', bytesPerSecond: undefined,
+        message: retrying ? '连接暂时中断，正在重试…' : signal.aborted ? ''
+          : error instanceof DownloadPolicyError || error instanceof BulkError ? error.message
           : '下载未完成，请检查连接和存储空间后重试。' };
       this.update(task);
       await storeDownload(task).catch(() => {
-        this.failure = '无法保存下载进度，请检查浏览器存储空间。'; this.emit();
+        this.clearRetry(task.id); this.update({ ...task, status: 'failed' }); this.storageFailed();
       });
     }
   }
+  private deferRetry(task: DownloadTask) {
+    const delay = this.retries.next(task.id, task.received);
+    if (delay === undefined) return false;
+    this.retryTimers.set(task.id, setTimeout(() => { this.retryTimers.delete(task.id); this.schedule(); }, delay));
+    return true;
+  }
+  private clearRetry(id: string) {
+    clearTimeout(this.retryTimers.get(id)); this.retryTimers.delete(id); this.retries.clear(id);
+  }
+  private storageFailed() { this.failure = '无法保存下载进度，请检查浏览器存储空间。'; this.emit(); }
 }
 
 export const downloadManager = new WebDownloadManager();

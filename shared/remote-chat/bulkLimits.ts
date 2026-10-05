@@ -4,6 +4,7 @@ export const BULK_LIMITS = {
   peerRequestBytes: 2 * 1024 * 1024, maxPeerRequestBytes: 8 * 1024 * 1024,
   globalRequestBytes: 16 * 1024 * 1024, applicationBytes: 32 * 1024 * 1024,
   transportHighBytes: 256 * 1024, transportLowBytes: 64 * 1024,
+  sendBatchRecords: 16,
   activeFiles: 2, hashesPerPage: 256, maxBlocks: 65_536,
   commitBytes: 4 * 1024 * 1024, commitMs: 250, progressMs: 250,
   stallMs: 30_000, prepareMs: 15 * 60_000, hashRetries: 2,

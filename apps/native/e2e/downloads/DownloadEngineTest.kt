@@ -187,15 +187,41 @@ class DownloadEngineTest : InstrumentationTestCase() {
     assertTrue(requests().isEmpty())
   }
 
-  fun testUnavailableBulkPathPausesAndSourceChangeRemainsAnExplicitFailure() {
+  private fun awaitOpens(count: Int) {
+    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+    while (requests("open").size < count && System.nanoTime() < deadline) Thread.sleep(10)
+    assertEquals(count, requests("open").size)
+  }
+
+  fun testUnavailableBulkPathRetriesWithABudgetAndSourceChangeRemainsAnExplicitFailure() {
     taskId = run { engine.enqueue(source) } as String
-    val first = requests("open").last().getString("requestId")
-    run { engine.accept(first, JSONObject().put("code", "PATH_UNAVAILABLE").toString(), true) }
+    repeat(4) { attempt ->
+      val request = requests("open").last().getString("requestId")
+      run { engine.accept(request, JSONObject().put("code", "PATH_UNAVAILABLE").toString(), true) }
+      if (attempt < 3) {
+        assertEquals("queued", snapshot().getString("status"))
+        run { tick += 5000 }; awaitOpens(attempt + 2)
+      }
+    }
     assertEquals("paused", snapshot().getString("status"))
     run { engine.resume(taskId) }
     val second = requests("open").last().getString("requestId")
     run { engine.accept(second, JSONObject().put("code", "SOURCE_CHANGED").toString(), true) }
     assertEquals("failed", snapshot().getString("status"))
     assertEquals("源文件已更新，请重新下载。", snapshot().getString("message"))
+  }
+
+  fun testManualPauseAndDisconnectCancelPendingRecovery() {
+    taskId = run { engine.enqueue(source) } as String
+    val request = requests("open").last().getString("requestId")
+    run { engine.accept(request, JSONObject().put("code", "EPOCH_EXPIRED").toString(), true) }
+    assertEquals("queued", snapshot().getString("status"))
+    run { engine.pause(taskId); tick += 5000; engine.connection("download-test", "pc", 5) }
+    assertEquals("paused", snapshot().getString("status")); assertEquals(1, requests("open").size)
+    run { engine.resume(taskId) }
+    val next = requests("open").last().getString("requestId")
+    run { engine.accept(next, JSONObject().put("code", "PATH_UNAVAILABLE").toString(), true) }
+    run { engine.connection("download-test", "pc", 0); tick += 5000; engine.connection("download-test", "pc", 5) }
+    assertEquals("paused", snapshot().getString("status")); assertEquals(2, requests("open").size)
   }
 }

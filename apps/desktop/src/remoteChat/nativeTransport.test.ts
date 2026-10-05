@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { NativeChatTransport, type HostTransportEvent } from './nativeTransport';
+import { BulkCipher } from '../../../../shared/remote-chat/bulkCipher';
+import { encodeBulkIpc } from './bulkIpc';
 
 interface Batch { sequence: number; events: HostTransportEvent[] }
 const state = vi.hoisted(() => ({ invoke: vi.fn(), channels: [] as { onmessage: (batch: Batch) => void }[] }));
@@ -99,4 +101,23 @@ it('still reconnects when a chat frame fails to cross IPC', async () => {
   });
   expect(transport.ready).toBe(false);
   expect(transport.bufferedAmount).toBe(0);
+});
+
+it('submits one bounded binary batch with its generation and retains backpressure until native acknowledgement', async () => {
+  const transport = host(); await settle();
+  state.channels[0].onmessage({ sequence: 1, events: [{ type: 'ready', generation: 9 }] });
+  const cipher = new BulkCipher(new Uint8Array(32).fill(5), { transferId: crypto.randomUUID(), epoch: crypto.randomUUID(),
+    manifestId: 'f'.repeat(64), desktopKey: 'host', clientKey: 'viewer', sessionId: 'phone', desktop: true });
+  const records = [0, 1].map(offset => cipher.encrypt({ requestId: crypto.randomUUID(), block: 0, offset }, Uint8Array.of(7)));
+  let reject = (_error: Error) => {};
+  state.invoke.mockImplementationOnce(() => new Promise<void>((_resolve, failed) => { reject = failed; }));
+  const pending = transport.sendBulk('phone', records);
+  const rejection = expect(pending).rejects.toThrow('socket gone');
+  expect(transport.bufferedAmount).toBe(encodeBulkIpc('phone', records).length);
+  expect(state.invoke).toHaveBeenLastCalledWith('remote_chat_bulk_send', encodeBulkIpc('phone', records), {
+    headers: { 'x-file-bulk-client': expect.any(String), 'x-file-bulk-generation': '9' },
+  });
+  reject(new Error('socket gone')); await rejection;
+  expect(transport.bufferedAmount).toBe(0);
+  expect(() => encodeBulkIpc('phone', Array.from({ length: 17 }, () => records[0]))).toThrow();
 });

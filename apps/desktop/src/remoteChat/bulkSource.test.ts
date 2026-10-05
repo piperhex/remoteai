@@ -96,3 +96,21 @@ it('deduplicates OPEN but rejects a cancelled epoch instead of resetting its non
   expect((await test.control(test.open)).error).toBe('REPLAY');
   expect((await test.control({ ...test.open, epoch: crypto.randomUUID() })).error).toBeUndefined();
 });
+
+it('interleaves bounded batches from two files and releases their shared memory reservations', async () => {
+  const first = fixture(), second = fixture();
+  for (const test of [first, second]) {
+    expect((await test.control(test.open)).error).toBeUndefined();
+    expect((await test.control({ action: 'request', transferId: test.transferId, epoch: test.epoch,
+      manifestId: test.manifest.manifestId, requestId: crypto.randomUUID(), requestNumber: 1,
+      block: 0, granted: test.bytes.length })).error).toBeUndefined();
+  }
+  await vi.waitFor(() => {
+    expect(first.records.length).toBeGreaterThan(0); expect(second.records.length).toBeGreaterThan(0);
+  });
+  for (const test of [first, second]) {
+    await vi.waitFor(() => expect(test.records.reduce((sum, bytes) => sum + bytes.length, 0)).toBe(test.bytes.length));
+    test.source.close();
+  }
+  await vi.waitFor(() => expect(bulkScheduler.usage.memoryBytes).toBe(0));
+});

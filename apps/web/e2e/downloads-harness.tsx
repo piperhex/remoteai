@@ -15,7 +15,8 @@ import { fixtureBulkClient } from './bulk-download-fixture';
 Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true });
 
 const fixture = { size: 4 * 1024 * 1024, revision: 'first', corrupt: false, offsets: [] as number[], closes: 0,
-  bulk: false, recordBytes: 0, wireBytes: 0, cipherFailure: false,
+  bulk: false, recordBytes: 0, wireBytes: 0, cipherFailure: false, directAttempt: () => {},
+  downloadLimit: (value: number) => setChatPolicy({ ...DEFAULT_CHAT_POLICY, fileDownloadMaxMb: value }),
   delay: 400, active: 0, peak: 0, windowSize: (value: number) =>
     setChatPolicy({ ...DEFAULT_CHAT_POLICY, fileDownloadWindowSize: value }) };
 declare global { interface Window { downloadFixture: typeof fixture } }
@@ -23,6 +24,7 @@ window.downloadFixture = fixture;
 const FILE_ID = '11111111-1111-4111-8111-111111111111';
 const EMPTY_ID = '22222222-2222-4222-8222-222222222222';
 const bulk = fixtureBulkClient(fixture);
+fixture.directAttempt = bulk.directAttempt;
 const client: DownloadClient = {
   bulk: bulk.client,
   open: async ({ path }) => ({ id: path.endsWith('empty.txt') ? EMPTY_ID : FILE_ID,

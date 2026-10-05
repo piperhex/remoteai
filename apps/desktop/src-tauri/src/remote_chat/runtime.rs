@@ -23,6 +23,9 @@ use super::{
 type Socket = WebSocket<MaybeTlsStream<TcpStream>>;
 type Dial = sync_mpsc::Receiver<Result<Socket, ChatError>>;
 #[cfg(test)]
+#[path = "bulk_runtime_tests.rs"]
+mod bulk_tests;
+#[cfg(test)]
 #[path = "runtime_tests.rs"]
 mod tests;
 const POLL_INTERVAL: Duration = Duration::from_millis(20);
@@ -415,11 +418,19 @@ impl Runtime {
             && request.generation == self.generation
             && self.sessions.contains(&request.session_id)
             && self.binary_bulk;
-        let result = if valid {
-            self.write(Message::Binary(request.bytes.into()))
+        let result = if valid && !request.completed.is_closed() {
+            request.frames.into_iter().try_for_each(|frame| {
+                if request.completed.is_closed() {
+                    return Err(ChatError::InvalidFrame);
+                }
+                self.write(Message::Binary(frame.into()))
+            })
         } else {
             Err(ChatError::InvalidFrame)
         };
+        if matches!(result, Err(ChatError::Transport)) {
+            self.disconnect();
+        }
         // A cancelled frontend no longer needs its write result; the transport outcome is already known.
         if request.completed.send(result).is_err() {
             eprintln!("Download sender stopped before its socket write completed");

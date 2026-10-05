@@ -175,7 +175,8 @@ export class ChatHost {
     const link = new ChatLink({
       binaryBulk: true,
       bulkRelay: { available: () => this.bulkRelayAvailable && this.transport.ready,
-        send: bytes => this.transport.sendBulk(sessionId, bytes) },
+        send: bytes => this.transport.sendBulk(sessionId, [bytes]),
+        sendBatch: records => this.transport.sendBulk(sessionId, records) },
       sessionId, desktop: true, secret: keys.secret, publicKey: String(message.publicKey),
       transportVersion: Number(message.transportVersion), reconnectRelay: () => this.transport.reconnect(),
       diagnosticsEnabled: () => this.diagnosticsEnabled,

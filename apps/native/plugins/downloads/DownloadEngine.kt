@@ -30,6 +30,7 @@ internal class DownloadEngine(
   private val saving = mutableMapOf<String, AtomicBoolean>()
   private val deleting = mutableSetOf<String>()
   private var shuttingDown = false
+  private val retries = DownloadRetries()
   private val bulkStorage = BulkDownloadStorage(storage)
   private val bulk = BulkDownloads(bulkStorage, BulkCallbacks(
     execute = { worker.execute(it) }, request = { emit("downloadRequest", it.toString()) },
@@ -38,6 +39,7 @@ internal class DownloadEngine(
   ))
   private val stallTimer = worker.scheduleWithFixedDelay({
     bulk.stalled()
+    if (retries.releaseReady(clock())) pump()
     if (uncheckpointedBytes > 0 && clock() - lastCheckpoint >= CHECKPOINT_INTERVAL_MS) checkpoint()
   }, 1, 1, TimeUnit.SECONDS)
   private fun jobs(): LinkedHashMap<String, DownloadTask> = tasks ?: storage.load().also { tasks = it }
@@ -46,8 +48,7 @@ internal class DownloadEngine(
   fun failBulk(id: String, epoch: String, code: String) { bulk.failed(id, epoch, code); changed() }
   fun invalidateBulk(owner: String, deviceId: String) {
     jobs().values.filter { key(it.source) == owner + "\n" + deviceId && bulk.contains(it.id) }
-      .forEach { release(it); it.status = "paused" }
-    changed(); pump()
+      .forEach { failTask(it, "PATH_UNAVAILABLE") }
   }
 
   fun submit(action: () -> Any?, resolve: (Any?) -> Unit, reject: (Exception) -> Unit) {
@@ -87,12 +88,13 @@ internal class DownloadEngine(
     if (window == 0) jobs().values.filter {
       key(it.source) == key && it.status in listOf("queued", "preparing", "downloading")
     }
-      .forEach { release(it); it.status = "paused" }
+      .forEach { retries.clear(it.id); release(it); it.status = "paused" }
     jobs().values.filter { key(it.source) == key && it.status == "downloading" }.forEach { fill(it) }
     changed(); pump()
   }
 
   fun pause(id: String) {
+    retries.clear(id)
     val task = requireNotNull(jobs()[id])
     if (task.status == "completed") return
     saving[id]?.set(true)
@@ -103,6 +105,7 @@ internal class DownloadEngine(
   fun resume(id: String) {
     val task = requireNotNull(jobs()[id])
     if (task.status in listOf("completed", "queued", "preparing", "downloading", "verifying", "saving")) return
+    retries.clear(id)
     if (task.data.optBoolean("readyToSave") && storage.part(task).length() == task.size) {
       if (saving.containsKey(id)) { task.status = "queued"; changed(); return }
       complete(task); return
@@ -113,6 +116,7 @@ internal class DownloadEngine(
   }
 
   fun delete(id: String) {
+    retries.clear(id)
     val task = jobs()[id] ?: return
     if (saving.containsKey(id)) {
       deleting.add(id); pause(id); return
@@ -126,7 +130,7 @@ internal class DownloadEngine(
     if (shuttingDown) return
     val active = jobs().values.count { it.status in listOf("preparing", "downloading", "verifying", "saving") }
     jobs().values.filter { it.status == "queued" && windows.containsKey(key(it.source)) }
-      .filter { !saving.containsKey(it.id) }
+      .filter { !saving.containsKey(it.id) && !retries.waiting(it.id) }
       .take(MAX_ACTIVE - active).forEach {
         if (it.data.optBoolean("readyToSave") && storage.part(it).length() == it.size) complete(it)
         else { it.status = "preparing"; request(it, "open") }
@@ -182,6 +186,10 @@ internal class DownloadEngine(
     release(task); task.fail()
     if (code != null) task.data.put("message", bulkFailureMessage(code))
     if (code in listOf("PATH_UNAVAILABLE", "EPOCH_EXPIRED", "CANCELLED")) task.status = "paused"
+    if (code in listOf("PATH_UNAVAILABLE", "EPOCH_EXPIRED")
+      && windows.containsKey(key(task.source)) && retries.defer(task, clock())) {
+      task.status = "queued"; task.data.put("message", "连接暂时中断，正在重试…")
+    }
     changed(); pump()
   }
 
@@ -247,6 +255,7 @@ internal class DownloadEngine(
   }
 
   private fun complete(task: DownloadTask) {
+    retries.clear(task.id)
     release(task)
     task.status = "verifying"; task.data.put("savedBytes", 0)
     changed(); pump()

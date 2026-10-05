@@ -159,20 +159,32 @@ export class BulkSource {
         maxBytes: fileDownloadByteLimit(this.link.connectionMode),
       } })));
       bulkAssert(bytes.length === length, 'SOURCE_CHANGED');
-      for (let offset = 0; offset < bytes.length; offset += transfer.payloadBytes) {
+      const batchBytes = transfer.payloadBytes * BULK_LIMITS.sendBatchRecords;
+      for (let offset = 0; offset < bytes.length; offset += batchBytes) {
         bulkAssert(!signal.aborted, 'CANCELLED');
-        const fragment = bytes.subarray(offset, offset + transfer.payloadBytes);
-        transfer.credit.consume(fragment.length);
-        transfer.reserved -= fragment.length;
-        const record = transfer.cipher.encrypt({ requestId: request.requestId, block: request.block, offset }, fragment);
+        const end = Math.min(offset + batchBytes, bytes.length);
+        const records = this.encryptBatch(transfer, request, { bytes, offset, end });
         // A receiver may request a retry as soon as the last authenticated fragment arrives.
-        if (offset + fragment.length === bytes.length) transfer.active.delete(request.block);
-        await transfer.metrics.measure('transportWaitMs', () => this.link.bulk!.send(record, transfer.open.path, signal));
-        transfer.metrics.add('usefulBytes', fragment.length); transfer.metrics.add('wireBytes', record.length);
-        // Yield between records to let the other file and RPC callbacks run; no capacity polling.
+        if (end === bytes.length) transfer.active.delete(request.block);
+        await transfer.metrics.measure('transportWaitMs', () =>
+          this.link.bulk!.sendBatch(records, transfer.open.path, signal));
+        transfer.metrics.add('usefulBytes', end - offset);
+        transfer.metrics.add('wireBytes', records.reduce((sum, record) => sum + record.length, 0));
+        // Yield once per bounded batch so RPC and the other file run without a timer per 16 KiB.
         await new Promise<void>(resolve => setTimeout(resolve, 0));
       }
     } finally { release(); }
+  }
+
+  private encryptBatch(transfer: Transfer, request: BulkRequest,
+    range: { bytes: Uint8Array; offset: number; end: number }) {
+    const records: Uint8Array[] = [];
+    for (let offset = range.offset; offset < range.end; offset += transfer.payloadBytes) {
+      const fragment = range.bytes.subarray(offset, Math.min(offset + transfer.payloadBytes, range.end));
+      transfer.credit.consume(fragment.length); transfer.reserved -= fragment.length;
+      records.push(transfer.cipher.encrypt({ requestId: request.requestId, block: request.block, offset }, fragment));
+    }
+    return records;
   }
 
   private cancel(id: string, epoch: string) {

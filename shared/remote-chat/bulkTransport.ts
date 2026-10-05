@@ -18,6 +18,7 @@ interface Receiver {
 export interface BulkRelay {
   available: () => boolean;
   send: (bytes: Uint8Array) => Promise<void>;
+  sendBatch?: (records: readonly Uint8Array[]) => Promise<void>;
 }
 
 /** Bulk never enters LinkDelivery. A path change invalidates listeners instead of replaying old records. */
@@ -27,6 +28,7 @@ export class BulkTransport {
   private readonly receivers = new Map<string, Receiver>();
   private readonly invalidated = new Set<() => void>();
   private outgoing = Promise.resolve();
+  private generation = 0;
   constructor(private readonly relay?: BulkRelay) {}
 
   get recordBytes() {
@@ -40,9 +42,18 @@ export class BulkTransport {
     return undefined;
   }
   attach(channel: BinaryChannel) {
-    this.invalidate(); this.channel?.close(); this.channel = channel;
+    if (this.channel === channel) return;
+    const previous = this.channel;
+    this.channel = channel;
+    // Background direct negotiation must not cancel an active relay transfer.
+    if (this.mode === 'direct') this.invalidate();
+    previous?.close();
     channel.onMessage(bytes => { if (this.channel === channel) this.receive(bytes, 'direct'); });
-    channel.onClose(() => { if (this.channel === channel) this.invalidate(); });
+    channel.onClose(() => {
+      if (this.channel !== channel) return;
+      this.channel = undefined;
+      if (this.mode === 'direct') this.invalidate();
+    });
   }
   setMode(mode: ConnectionMode) {
     if (this.mode !== mode) this.invalidate();
@@ -76,7 +87,24 @@ export class BulkTransport {
   }
 
   send(bytes: Uint8Array, path: BulkPath, signal: AbortSignal) {
-    const sent = this.outgoing.then(() => this.sendRecord(bytes, path, signal));
+    return this.sendBatch([bytes], path, signal);
+  }
+  sendBatch(records: readonly Uint8Array[], path: BulkPath, signal: AbortSignal) {
+    const generation = this.generation;
+    const sent = this.outgoing.then(async () => {
+      bulkAssert(!signal.aborted, 'CANCELLED');
+      bulkAssert(generation === this.generation && this.path === path, 'PATH_UNAVAILABLE');
+      bulkAssert(records.length > 0 && records.length <= BULK_LIMITS.sendBatchRecords, 'RESOURCE_LIMIT');
+      for (const record of records) {
+        bulkAssert(record.length <= this.recordBytes, 'INVALID_RECORD');
+        decodeBulkRecord(record);
+      }
+      if (path === 'relay' && this.relay?.sendBatch) { await this.relay.sendBatch(records); return; }
+      for (const record of records) {
+        bulkAssert(generation === this.generation, 'PATH_UNAVAILABLE');
+        await this.sendRecord(record, path, signal);
+      }
+    });
     // A failed epoch must not poison a newly negotiated transfer on the same connection.
     this.outgoing = sent.catch(() => undefined);
     return sent;
@@ -109,6 +137,7 @@ export class BulkTransport {
     });
   }
   invalidate() {
+    this.generation += 1;
     for (const receiver of this.receivers.values()) receiver.failed(new BulkError('PATH_UNAVAILABLE'));
     this.receivers.clear();
     for (const callback of [...this.invalidated]) callback();
