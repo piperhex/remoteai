@@ -1,7 +1,7 @@
 const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
   window.__CODEX_SWITCH_REFRESH_SPEED_SELECTOR__ = () => {
     const stateKey = "__CODEX_SWITCH_SPEED_SELECTOR__";
-    const overlayVersion = 17;
+    const overlayVersion = 18;
     const usageRefreshMs = 5000;
     const usageRequestTimeoutMs = 15000;
     const initialTier = __CODEX_SWITCH_SERVICE_TIER__;
@@ -31,7 +31,7 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
     }
     removeSelectors();
     const state = {
-      installed: true, version: overlayVersion, tier: initialTier, fastModeAllowed,
+      installed: true, version: overlayVersion, tier: initialTier, fastModeAllowed, language: "zh",
       observer: null, timer: null,
       usageTimer: null, initialUsageTimer: null, usagePending: false, usageRequestedAt: 0,
       onUsageVisible: null,
@@ -44,6 +44,27 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
       },
     };
     window[stateKey] = state;
+    const copy = {
+      zh: {
+        today: "今日", fast: "快速模式", group: "今日用量与快速模式",
+        tokens: "今日 Token 用量", cost: "今日预估成本",
+        quota: "当前账号主用量余额", totalQuota: "并发账号主用量余额合计",
+        apiCost: "当前 API 今日预估成本", totalApiCost: "聚合 API 今日总预估成本",
+      },
+      en: {
+        today: "Today", fast: "Fast mode", group: "Today's usage and fast mode",
+        tokens: "Tokens used today", cost: "Estimated cost today",
+        quota: "Current account quota remaining", totalQuota: "Total quota remaining across concurrent accounts",
+        apiCost: "Current API estimated cost today", totalApiCost: "Combined API estimated cost today",
+      },
+      ru: {
+        today: "Сегодня", fast: "Быстрый режим", group: "Расход за сегодня и быстрый режим",
+        tokens: "Токены за сегодня", cost: "Стоимость за сегодня",
+        quota: "Остаток лимита аккаунта", totalQuota: "Общий остаток лимитов параллельных аккаунтов",
+        apiCost: "Стоимость текущего API за сегодня", totalApiCost: "Общая стоимость API за сегодня",
+      },
+    };
+    const text = key => copy[state.language][key];
     const formatTokens = value => {
       if (value >= 1000000) {
         return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value / 1000000)}M`;
@@ -65,9 +86,7 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
           displayText: value,
           amount: state.usage.primaryRemainingPercent,
           kind: "quota",
-          label: state.usage.primaryRemainingAggregated
-            ? "并发账号主用量余额合计"
-            : "当前账号主用量余额",
+          label: text(state.usage.primaryRemainingAggregated ? "totalQuota" : "quota"),
         };
       }
       const estimate = state.usage.providerEstimatedCost;
@@ -78,7 +97,7 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
         displayText: `API ${value}`,
         amount: estimate.amountUsd,
         kind: "cost",
-        label: estimate.aggregated ? "聚合 API 今日总预估成本" : "当前 API 今日预估成本",
+        label: text(estimate.aggregated ? "totalApiCost" : "apiCost"),
       };
     };
     const usesDarkPalette = element => {
@@ -131,29 +150,38 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
       balanceValue.textContent = balance?.displayText ?? "";
       usage.querySelector("[data-today-tokens]").textContent = tokens;
       usage.querySelector("[data-today-cost]").textContent = cost;
-      const balanceTitle = balance ? `\n${balance.label}：${balance.value}` : "";
-      usage.title = `今日 Token 用量：${tokens}\n今日预估成本：${cost}${balanceTitle}`;
-      const balanceAria = balance ? `，${balance.label} ${balance.value}` : "";
+      const colon = state.language === "zh" ? "：" : ": ";
+      const comma = state.language === "zh" ? "，" : ", ";
+      const balanceTitle = balance ? `\n${balance.label}${colon}${balance.value}` : "";
+      usage.title = `${text("tokens")}${colon}${tokens}\n${text("cost")}${colon}${cost}${balanceTitle}`;
+      const balanceAria = balance ? `${comma}${balance.label} ${balance.value}` : "";
       usage.setAttribute(
         "aria-label",
-        `今日 Token 用量 ${tokens}，今日预估成本 ${cost}${balanceAria}`,
+        `${text("tokens")} ${tokens}${comma}${text("cost")} ${cost}${balanceAria}`,
       );
     };
     const syncAll = () => {
       for (const selector of document.querySelectorAll("[data-codex-switch-speed-selector]")) {
+        selector.setAttribute("aria-label", text("group"));
+        selector.querySelector("[data-today-label]").textContent = text("today");
+        selector.querySelector("[data-speed-label]").textContent = text("fast");
         syncUsage(selector);
         syncSwitch(selector);
         const visible = state.fastModeAllowed || state.usage.enabled;
         selector.hidden = !visible;
         selector.style.setProperty("display", visible ? "inline-flex" : "none", "important");
         const toggle = selector.querySelector("[data-speed-switch]");
-        if (toggle) toggle.disabled = !state.fastModeAllowed || Boolean(state.pendingTier);
+        if (toggle) {
+          toggle.setAttribute("aria-label", text("fast"));
+          toggle.disabled = !state.fastModeAllowed || Boolean(state.pendingTier);
+        }
       }
     };
     state.syncAll = syncAll;
     state.completeUsageRequest = () => { state.usagePending = false; state.usageRequestedAt = 0; };
     state.updateUsage = summary => {
       state.completeUsageRequest();
+      if (["zh", "en", "ru"].includes(summary?.language)) state.language = summary.language;
       const totalTokens = Number(summary?.totalTokens);
       const estimatedCostUsd = Number(summary?.estimatedCostUsd);
       const primaryRemainingPercent = summary?.primaryRemainingPercent;
@@ -222,7 +250,8 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
       usage.style.cssText = "display:inline-flex;align-items:center;gap:3px;margin-right:2px;"
         + "font-size:12px;line-height:18px;font-variant-numeric:tabular-nums;"
         + "transform:translateY(1px);";
-      today.textContent = "今日";
+      today.dataset.todayLabel = "true";
+      today.textContent = text("today");
       today.style.color = "var(--text-tertiary)";
       tokens.dataset.todayTokens = "true";
       tokens.style.fontWeight = "650";
@@ -250,7 +279,7 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
       container.dataset.codexSwitchSpeedSelector = "true";
       container.className = "no-drag cursor-interaction select-none";
       container.setAttribute("role", "group");
-      container.setAttribute("aria-label", "今日用量与快速模式");
+      container.setAttribute("aria-label", text("group"));
       container.style.cssText = "display:inline-flex;align-items:center;flex:0 0 auto;width:auto;"
         + "white-space:nowrap;margin-right:4px;padding:3px 8px;border-radius:9999px;"
         + "background:var(--background-primary-ghost);font-size:14px;line-height:18px;"
@@ -260,11 +289,12 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
       controls.dataset.speedControls = "true";
       controls.style.cssText = "display:inline-flex;align-items:center;gap:6px;";
       label.className = "text-tertiary text-sm leading-[18px]";
-      label.textContent = "快速模式";
+      label.dataset.speedLabel = "true";
+      label.textContent = text("fast");
       toggle.type = "button";
       toggle.dataset.speedSwitch = "true";
       toggle.setAttribute("role", "switch");
-      toggle.setAttribute("aria-label", "快速模式");
+      toggle.setAttribute("aria-label", text("fast"));
       toggle.style.cssText = "display:block;flex:0 0 auto;width:28px;height:16px;padding:2px;"
         + "appearance:none;border:0;border-radius:9999px;cursor:pointer;"
         + "background:rgb(142,142,147);transition:background 120ms ease;";

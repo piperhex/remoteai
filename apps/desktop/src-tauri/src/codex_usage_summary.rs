@@ -22,6 +22,8 @@ struct CostContext<'a> {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CodexUsageSummary {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    language: Option<String>,
     enabled: bool,
     total_tokens: u64,
     estimated_cost_usd: f64,
@@ -37,6 +39,7 @@ pub(crate) fn load() -> Result<CodexUsageSummary, String> {
     let settings = crate::storage::read_app_settings(&app)?;
     if !settings.codex_usage_summary_enabled {
         return Ok(CodexUsageSummary {
+            language: settings.language,
             enabled: false,
             total_tokens: 0,
             estimated_cost_usd: 0.0,
@@ -47,7 +50,9 @@ pub(crate) fn load() -> Result<CodexUsageSummary, String> {
     }
     let paths = crate::storage::resolve_paths(&app)?;
     let state = crate::storage::read_state(&paths);
-    load_for_selection(&app, &paths, &state)
+    let mut summary = load_for_selection(&app, &paths, &state)?;
+    summary.language = settings.language;
+    Ok(summary)
 }
 
 /// Shares the desktop summary's accounting with the GUI without depending on the official app's overlay setting.
@@ -139,6 +144,7 @@ fn summarize(
     costs: &CostContext<'_>,
 ) -> CodexUsageSummary {
     CodexUsageSummary {
+        language: None,
         enabled: true,
         total_tokens: entries
             .iter()
@@ -341,5 +347,20 @@ mod tests {
         assert_eq!(value["providerEstimatedCost"]["amountUsd"], 2.5);
         assert_eq!(value["providerEstimatedCost"]["aggregated"], true);
         assert!(value.get("providerWalletBalance").is_none());
+    }
+
+    #[test]
+    fn serializes_overlay_language_without_changing_gui_summary_shape() {
+        let mut summary = summarize_defaults(&[], None, None);
+        assert!(serde_json::to_value(&summary)
+            .unwrap()
+            .get("language")
+            .is_none());
+        summary.language = Some("ru".to_string());
+        summary.enabled = false;
+        let value = serde_json::to_value(summary).unwrap();
+        assert_eq!(value["language"], "ru");
+        assert_eq!(value["enabled"], false);
+        assert_eq!(value["totalTokens"], 0);
     }
 }

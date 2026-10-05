@@ -192,6 +192,7 @@ fn save_app_language<R: Runtime>(app: &AppHandle<R>, language: String) -> Result
         "Could not save language settings".to_string()
     })?;
     crate::system_tray::refresh_menu(app);
+    crate::codex_runtime::refresh_usage_summary();
     Ok(())
 }
 
