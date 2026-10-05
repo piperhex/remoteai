@@ -49,8 +49,9 @@ it.each([
   expect(after.panel.y + MOUSE_PANEL_SIZE.height).toBeLessThanOrEqual(fitted.stage.height - 8);
   expect(after.panel.x - after.cursor.x).toBe(24); expect(after.panel.y).toBe(after.cursor.y);
   const returned = test.move({ x: -delta.x, y: -delta.y });
-  expect(returned.video.x).toBeCloseTo(before.video.x); expect(returned.video.y).toBeCloseTo(before.video.y);
-  expect(returned.panel.x).toBeCloseTo(before.panel.x); expect(returned.panel.y).toBeCloseTo(before.panel.y);
+  expect(returned.panel.x - after.panel.x).toBeCloseTo(-delta.x);
+  expect(returned.panel.y - after.panel.y).toBeCloseTo(-delta.y);
+  expect(returned.video[axis] - after.video[axis]).toBeCloseTo(delta[axis]);
 });
 
 it('applies assistance only after crossing an edge, independent of gesture event size', () => {

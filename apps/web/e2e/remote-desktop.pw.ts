@@ -230,7 +230,9 @@ test('keeps the complete bottom panel usable while opening and closing the black
     expect(openedPanel.y).toBeCloseTo(edgePanel.y, 0);
     await swipeDown(-distance / 2);
     await expect.poll(async () => (await page.locator('video').boundingBox())!.y - openedY)
-      .toBeCloseTo(distance, 0);
+      .toBeCloseTo(distance / 2, 0);
+    expect(openedPanel.y - (await page.locator('.rd-mouse-layer').boundingBox())!.y)
+      .toBeCloseTo(distance / 2, 0);
     await expectAnchoredMouse(page);
     await swipeDown(video.height);
     expect(video.y - (await page.locator('video').boundingBox())!.y).toBeCloseTo(margin, 0);
@@ -246,7 +248,7 @@ test('keeps the complete bottom panel usable while opening and closing the black
     expect(target).toMatchObject({ kind: 'move', y: 1 });
     const cappedY = (await page.locator('video').boundingBox())!.y;
     await page.mouse.move(stage.x + 10, stage.y + stage.height - 10); await page.mouse.down();
-    await page.mouse.move(stage.x + 10, stage.y + stage.height - 10 - margin / 2 - 20, { steps: 10 });
+    await page.mouse.move(stage.x + 10, stage.y + stage.height - 10 - margin - 20, { steps: 10 });
     await page.mouse.up();
     expect((await page.locator('video').boundingBox())!.y).toBeGreaterThan(cappedY);
     expect((await page.locator('video').boundingBox())!.y).toBeCloseTo(video.y, 0);
@@ -286,7 +288,7 @@ test('keeps the complete right panel usable while panning only after reaching th
     await page.screenshot({ path: info.outputPath('mouse-right-edge.png') });
     await swipe(-8);
     const returned = (await page.locator('.rd-mouse-layer').boundingBox())!;
-    expect(returned.x).toBeCloseTo(moved.x, 0);
+    expect(moved.x - returned.x).toBeCloseTo(8, 0);
     expect((await page.locator('video').boundingBox())!.x - panned.x).toBeCloseTo(8, 0);
     await expectAnchoredMouse(page);
     await swipe(video.width);

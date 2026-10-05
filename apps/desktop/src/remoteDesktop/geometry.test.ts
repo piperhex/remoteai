@@ -108,7 +108,8 @@ it('restores the bottom canvas with the attached panel and stops at the fitted p
   const bottom = 450 - 8 - MOUSE_PANEL_SIZE.height;
   const down = panDesktopViewport(fitted, { x: 0.5, y: (bottom + 20) / 449 }, MOUSE_PANEL_SIZE);
   const up = panDesktopViewport(fitted, { x: 0.5, y: (bottom + 10) / 449 }, MOUSE_PANEL_SIZE, down);
-  expect(up.offset.y - down.offset.y).toBeCloseTo(10);
+  expect(up.offset.y - down.offset.y).toBeCloseTo(5);
+  expect(cursorPosition(up.point, up.viewport).y - cursorPosition(down.point, down.viewport).y).toBeCloseTo(-5);
   expect(panDesktopViewport(fitted, up.point, MOUSE_PANEL_SIZE, up).offset).toEqual(up.offset);
   expect(panDesktopViewport(fitted, up.point, MOUSE_ICON_SIZE, up).offset).toEqual(up.offset);
   const restored = panDesktopViewport(fitted, { x: 0.5, y: 0.5 }, MOUSE_PANEL_SIZE, up);
@@ -119,7 +120,7 @@ it('restores the bottom canvas with the attached panel and stops at the fitted p
 it('restores from the bottom cap without changing the target or drifting on repeated renders', () => {
   const fitted = desktopViewport({ width: 800, height: 450 }, { width: 1600, height: 900 });
   let previous = panDesktopViewport(fitted, { x: 0.5, y: 1 }, MOUSE_PANEL_SIZE);
-  for (const y of [0.98, 0.9, 0.8, 0.7, 0.6]) {
+  for (const y of [0.98, 0.9, 0.8, 0.7, 0.6, 0.3]) {
     const point = { x: 0.5, y };
     const current = panDesktopViewport(fitted, point, MOUSE_PANEL_SIZE, previous);
     expect(current.offset.y).toBeGreaterThanOrEqual(previous.offset.y);
@@ -138,6 +139,7 @@ it('does not jump back to the bottom cap when reversing downward again', () => {
   const full = panDesktopViewport(fitted, { x: 0.5, y: 1 }, MOUSE_PANEL_SIZE);
   const up = panDesktopViewport(fitted, { x: 0.5, y: 0.9 }, MOUSE_PANEL_SIZE, full);
   const down = panDesktopViewport(fitted, { x: 0.5, y: 0.9 + 1 / 449 }, MOUSE_PANEL_SIZE, up);
-  expect(up.offset.y - down.offset.y).toBeCloseTo(1);
+  expect(down.offset).toEqual(up.offset);
+  expect(cursorPosition(down.point, down.viewport).y - cursorPosition(up.point, up.viewport).y).toBeCloseTo(1);
   expect(panDesktopViewport(fitted, down.point, MOUSE_PANEL_SIZE, down).offset).toEqual(down.offset);
 });

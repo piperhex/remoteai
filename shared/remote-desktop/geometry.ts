@@ -1,6 +1,6 @@
 export interface Point { x: number; y: number }
 export interface Size { width: number; height: number }
-export interface DesktopViewport { stage: Size; content: Size & Point; edgePan?: Point }
+export interface DesktopViewport { stage: Size; content: Size & Point; edgePan?: Point & { offset: Point } }
 export interface DesktopPanState { offset: Point; point: Point; edge?: Point }
 export const MOUSE_SIZE = { width: 120, height: 136 };
 export const MOUSE_PANEL_SIZE = MOUSE_SIZE;
@@ -9,6 +9,7 @@ export const CURSOR_SIZE = { width: 18, height: 24 };
 const PANEL_GAP = CURSOR_SIZE.width + 6;
 const EDGE_GAP = 8;
 const EDGE_PAN_GAIN = { x: 1, y: 2 };
+const RETURN_POINTER_GAIN = 2;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 /** Fit the complete desktop inside the available stage, preserving its aspect ratio. */
@@ -34,9 +35,14 @@ export function mousePanelPosition(cursor: Point): Point {
   return { x: cursor.x + PANEL_GAP, y: cursor.y };
 }
 
-function panAxis(cursor: number, edge: number, previous = 0) {
-  // Move the video enough to keep the cursor and its entire attached panel inside the viewer.
-  return clamp(Math.max(0, previous), EDGE_GAP - cursor, edge - cursor);
+function panAxis(cursor: number, edge: number, previous?: { cursor: number; offset: number }) {
+  let offset = previous?.offset ?? 0;
+  const travel = cursor - (previous?.cursor ?? cursor);
+  // Returning motion moves the panel and closes the margin together, without a stationary dead zone.
+  if (offset * travel > 0) {
+    offset -= Math.sign(travel) * Math.min(Math.abs(offset), Math.abs(travel) / RETURN_POINTER_GAIN);
+  }
+  return clamp(offset, EDGE_GAP - cursor, edge - cursor);
 }
 
 /** Preserve idle collapse positioning, but reserve the extra space when a small icon expands. */
@@ -58,17 +64,22 @@ export function panDesktopViewport(viewport: DesktopViewport, point: Point, pane
   }, previous);
   const cursor = cursorPosition(point, viewport);
   const boundary = cursorPosition(edge, viewport);
-  const x = panAxis(cursor.x, boundary.x, previous?.offset.x);
-  const y = panAxis(cursor.y, boundary.y, previous?.offset.y);
-  return { point, edge, offset: { x, y }, viewport: { ...viewport, edgePan: edge,
+  const before = previous && { cursor: cursorPosition(previous.point, viewport), offset: previous.offset };
+  const x = panAxis(cursor.x, boundary.x, before && { cursor: before.cursor.x, offset: before.offset.x });
+  const y = panAxis(cursor.y, boundary.y, before && { cursor: before.cursor.y, offset: before.offset.y });
+  return { point, edge, offset: { x, y }, viewport: { ...viewport, edgePan: { ...edge, offset: { x, y } },
     content: { ...content, x: content.x + x, y: content.y + y } } };
 }
 
-function edgeDelta(position: number, delta: number, boundary: number, gain: number) {
-  // Work in gesture distance so a single event crossing an edge matches many smaller events.
-  const start = position <= boundary ? position : boundary + (position - boundary) / gain;
-  const end = start + delta;
-  return (end <= boundary ? end : boundary + (end - boundary) * gain) - position;
+function edgeDelta({ position, delta, boundary, offset, gain }: {
+  position: number; delta: number; boundary: number; offset: number; gain: number;
+}) {
+  const returning = offset * delta > 0
+    ? Math.sign(delta) * Math.min(Math.abs(delta), Math.abs(offset)) : 0;
+  const remaining = delta - returning;
+  const visible = position + offset + returning;
+  const beyondEdge = Math.max(0, remaining - Math.max(0, boundary - visible));
+  return returning * RETURN_POINTER_GAIN + remaining + beyondEdge * (gain - 1);
 }
 
 /** Preserve normal speed until the controls reach an edge, then use the canvas opening speed. */
@@ -77,7 +88,9 @@ export function relativeDesktopDelta(point: Point, delta: Point, viewport: Deskt
   const width = Math.max(1, viewport.content.width - 1);
   const height = Math.max(1, viewport.content.height - 1);
   return {
-    x: edgeDelta(point.x * width, delta.x, viewport.edgePan.x * width, EDGE_PAN_GAIN.x),
-    y: edgeDelta(point.y * height, delta.y, viewport.edgePan.y * height, EDGE_PAN_GAIN.y),
+    x: edgeDelta({ position: point.x * width, delta: delta.x, boundary: viewport.edgePan.x * width,
+      offset: viewport.edgePan.offset.x, gain: EDGE_PAN_GAIN.x }),
+    y: edgeDelta({ position: point.y * height, delta: delta.y, boundary: viewport.edgePan.y * height,
+      offset: viewport.edgePan.offset.y, gain: EDGE_PAN_GAIN.y }),
   };
 }

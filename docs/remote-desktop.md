@@ -167,7 +167,10 @@ At the screen boundary, the complete panel stays visible with an 8 px inset whil
 The bottom black margin opens at twice the swipe speed; the right margin opens at swipe speed.
 The panel can extend outside the video into the black margin, but cannot leave the fitted viewer.
 Panning the shared video rectangle preserves the cursor-to-panel offset and the actual remote click target.
-Reversing the gesture closes the corresponding margin smoothly. Idle collapse preserves the translation,
+Reversing the gesture moves the panel immediately at 1:1 finger distance while closing the corresponding margin
+at the same speed. Changing direction again keeps 1:1 movement until the panel reaches the screen edge.
+Local panning advances on every input event, independently of React rendering or network flushing;
+pointer-only moves leave the video and surrounding viewer UI unchanged. Idle collapse preserves the translation,
 and expanding an edge-panned icon makes room for the full panel. The translation resets on rotation
 or a switch to direct touch. Cursor placement and video rendering share the translated rectangle. The native cursor image
 has explicit layout dimensions so its 3x bitmap cannot enlarge it. Motion and direct touches use the displayed video rectangle,

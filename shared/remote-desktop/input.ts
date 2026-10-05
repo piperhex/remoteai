@@ -1,5 +1,6 @@
 import type { DesktopInput } from './protocol';
 import { relativeDesktopDelta, type DesktopViewport } from './geometry';
+import { MouseViewport } from './mouseViewport';
 
 export const MAX_BUFFERED_INPUT = 256 * 1024;
 const MOVE_INTERVAL = 16;
@@ -10,10 +11,14 @@ export class DesktopPointer {
   private readonly listeners = new Set<() => void>();
   getSnapshot = () => this.position;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
+  readonly viewport = new MouseViewport(this.getSnapshot, () => this.listeners.forEach(listener => listener()));
   private update(x: number, y: number) {
     if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
-    this.position = { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
-    this.listeners.forEach(listener => listener());
+    const next = { x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(1, y)) };
+    if (next.x !== this.position.x || next.y !== this.position.y) {
+      this.position = next; this.viewport.update(next);
+      this.listeners.forEach(listener => listener());
+    }
     this.pending = true;
     return true;
   }
@@ -27,6 +32,7 @@ export class DesktopPointer {
     this.timer ??= setTimeout(() => this.flush(), MOVE_INTERVAL);
   }
   moveInViewport(dx: number, dy: number, viewport: DesktopViewport) {
+    viewport = this.viewport.resolve(viewport);
     const delta = relativeDesktopDelta(this.position, { x: dx, y: dy }, viewport);
     this.move(delta.x, delta.y, viewport.content.width - 1, viewport.content.height - 1);
   }
@@ -55,6 +61,7 @@ export class DesktopPointer {
   release() { this.button('left', false); this.button('right', false); this.button('middle', false); }
   dispose() {
     clearTimeout(this.timer); this.timer = undefined; this.pending = false; this.held.clear();
+    this.viewport.clear();
     this.listeners.forEach(listener => listener());
   }
 }

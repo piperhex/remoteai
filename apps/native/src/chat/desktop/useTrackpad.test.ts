@@ -1,7 +1,7 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { PanResponder, type GestureResponderEvent, type PanResponderGestureState } from 'react-native';
 import { DesktopPointer } from '../../../../../shared/remote-desktop/input';
-import { desktopViewport } from '../../../../../shared/remote-desktop/geometry';
+import { cursorPosition, desktopViewport, MOUSE_PANEL_SIZE } from '../../../../../shared/remote-desktop/geometry';
 import { useTrackpad } from './useTrackpad';
 
 vi.mock('react', () => ({ useEffect: vi.fn(), useMemo: (factory: () => unknown) => factory(),
@@ -49,6 +49,26 @@ it('moves immediately at display scale and does not click after an out-and-back 
   handlers.onPanResponderRelease!(event(100, 650), gesture());
   expect(send.mock.calls.every(call => call[0].kind === 'move')).toBe(true);
   expect(panel.hold).toHaveBeenLastCalledWith('stage', false); pointer.dispose();
+});
+
+it('matches native finger distance immediately when dragging the panel back from the bottom-right edge', () => {
+  const send = vi.fn(); const pointer = new DesktopPointer(send);
+  const panel = { expanded: true, expand: vi.fn(), activity: vi.fn(), hold: vi.fn() };
+  const base = desktopViewport({ width: 800, height: 450 }, { width: 1600, height: 900 });
+  pointer.viewport.configure({ base, panel: MOUSE_PANEL_SIZE, manual: false }); pointer.absolute(1, 1);
+  const viewport = pointer.viewport.getSnapshot()!;
+  const before = cursorPosition(pointer.getSnapshot(), viewport);
+  useTrackpad({ pointer, viewport, panel, id: 'pad' });
+  const handlers = vi.mocked(PanResponder.create).mock.calls.at(-1)![0];
+  handlers.onPanResponderGrant!(event(40, 30), gesture());
+  for (const [dx, dy] of [[-1, -1], [-12, -9], [-8, -5]]) {
+    handlers.onPanResponderMove!(event(40 + dx, 30 + dy), gesture(dx, dy));
+    const after = cursorPosition(pointer.getSnapshot(), pointer.viewport.getSnapshot()!);
+    expect(after.x - before.x).toBeCloseTo(dx); expect(after.y - before.y).toBeCloseTo(dy);
+  }
+  send.mockClear(); handlers.onPanResponderRelease!(event(32, 25), gesture(-8, -5));
+  expect(send.mock.calls.every(call => call[0].kind === 'move')).toBe(true);
+  pointer.dispose();
 });
 
 it('expands a collapsed mouse on a tap with small finger jitter without clicking the remote desktop', () => {
