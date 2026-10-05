@@ -11,7 +11,7 @@ const bootstrapDatabase = 'admin_go_bootstrap';
 const containerName = 'codex-admin-bootstrap-test';
 const projectName = 'codex-admin-parity';
 const goOnlyTables = ['token_cost_preset_settings', 'user_login_locks', 'chat_relay_user_limits',
-  'chat_relay_user_months', 'chat_relay_user_hours', 'chat_relay_budgets',
+  'chat_relay_user_months', 'chat_relay_user_hours', 'chat_relay_budgets', 'chat_relay_bulk_leases',
   'chat_push_subscriptions', 'chat_push_deliveries', 'desktop_service_credentials'];
 
 function docker(...args) {

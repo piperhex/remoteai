@@ -83,6 +83,20 @@ try {
     }));
     assert.deepEqual((await request(base, 'GET', endpoint, { token })).body, policy);
   }
+  for (const fileBulkEnabled of [1, 0, 1]) {
+    const current = (await request(base, 'GET', endpoint, { token })).body;
+    const policy = { ...current, fileBulkEnabled };
+    for (const { socket } of [desktop, mobile]) {
+      socket.frames = socket.frames.filter(({ body }) => body.type !== 'chat-policy');
+    }
+    assert.equal((await request(base, 'PATCH', endpoint, { token, body: policy })).status, 200);
+    await Promise.all([desktop, mobile].map(async ({ socket }) => {
+      const frame = await socket.wait(message => message.type === 'chat-policy'
+        && message.policy.fileBulkEnabled === fileBulkEnabled, 1500);
+      assert.deepEqual(frame.body.policy, policy);
+    }));
+    assert.deepEqual((await request(base, 'GET', endpoint, { token })).body, policy);
+  }
   const latest = (await request(base, 'GET', endpoint, { token })).body;
   const reconnected = await chat('mobile', token);
   assert.deepEqual(reconnected.policy, latest);
@@ -99,9 +113,14 @@ try {
       token, body: { ...latest, fileDownloadWindowSize: value },
     })).status, 400);
   }
+  for (const value of [-1, 2, 1.5, null, '1']) {
+    assert.equal((await request(base, 'PATCH', endpoint, {
+      token, body: { ...latest, fileBulkEnabled: value },
+    })).status, 400);
+  }
   assert.deepEqual((await request(base, 'GET', endpoint, { token })).body, latest);
   console.log('PASS P2P and relay settings: uncapped values, immediate WS push to both peers, '
-    + 'download window updates, reconnect, permissions and validation');
+    + 'download window and bulk switch updates, reconnect, permissions and validation');
 } finally {
   assert.equal((await request(base, 'PATCH', endpoint, { token, body: initial.body })).status, 200);
   for (const socket of sockets) socket.close();

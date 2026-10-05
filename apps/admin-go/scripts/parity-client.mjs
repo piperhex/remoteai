@@ -21,7 +21,7 @@ const goOnlyPermissions = new Set([
 const goOnlyChatFields = new Set([
   'chatSessionLimit',
   'p2pNegotiationTimeoutSeconds', 'p2pRetryIntervalSeconds', 'p2pDisconnectGraceSeconds',
-  'relayHeartbeatTimeoutSeconds', 'fileDownloadWindowSize',
+  'relayHeartbeatTimeoutSeconds', 'fileDownloadWindowSize', 'fileBulkEnabled',
 ]);
 const goOnlyDeviceFields = new Set(['guiAccountId', 'guiProviderId']);
 
@@ -80,9 +80,15 @@ function normalized(value, context, key = '') {
   if (value && typeof value === 'object') {
     // Frozen clients do not advertise binary support; their negotiated hop must remain JSON.
     const legacyPolicy = value.type === 'chat-policy' && 'binaryRelay' in value;
-    if (legacyPolicy) assert.equal(value.binaryRelay, false, 'unadvertised binary relay must stay disabled');
+    if (legacyPolicy) {
+      assert.equal(value.binaryRelay, false, 'unadvertised binary relay must stay disabled');
+      assert.equal(value.fileBulkV1, false, 'unadvertised bulk relay must stay disabled');
+    }
+    if ('threadPageSize' in value && 'fileBulkEnabled' in value) {
+      assert.equal(value.fileBulkEnabled, 0, 'legacy settings must keep bulk downloads disabled');
+    }
     const fields = Object.keys(value).filter((field) => !(goOnlyChatFields.has(field) && 'threadPageSize' in value)
-      && !(legacyPolicy && field === 'binaryRelay') && legacyDeviceField(value, field));
+      && !(legacyPolicy && ['binaryRelay', 'fileBulkV1'].includes(field)) && legacyDeviceField(value, field));
     return Object.fromEntries(fields.sort().map((field) => [field, normalized(value[field], context, field)]));
   }
   return value;
