@@ -39,13 +39,14 @@ it('keeps normal pointer and panel speed away from the right and bottom edges', 
 it.each([
   { axis: 'x' as const, position: { x: right, y: 200 }, delta: { x: 10, y: 0 }, speed: 1 },
   { axis: 'y' as const, position: { x: 300, y: bottom }, delta: { x: 0, y: 10 }, speed: 2 },
-])('moves the attached panel forward at the exposed margin speed on $axis', ({ axis, position, delta, speed }) => {
+])('keeps the entire panel visible while opening the margin on $axis', ({ axis, position, delta, speed }) => {
   const test = setup(position);
   const before = test.snapshot();
   const after = test.move(delta);
-  const travel = after.panel[axis] - before.panel[axis];
-  expect(travel).toBeCloseTo(delta[axis] * speed);
-  expect(travel).toBeCloseTo(before.video[axis] - after.video[axis]);
+  expect(after.panel[axis]).toBeCloseTo(before.panel[axis]);
+  expect(before.video[axis] - after.video[axis]).toBeCloseTo(delta[axis] * speed);
+  expect(after.panel.x + MOUSE_PANEL_SIZE.width).toBeLessThanOrEqual(fitted.stage.width - 8);
+  expect(after.panel.y + MOUSE_PANEL_SIZE.height).toBeLessThanOrEqual(fitted.stage.height - 8);
   expect(after.panel.x - after.cursor.x).toBe(24); expect(after.panel.y).toBe(after.cursor.y);
   const returned = test.move({ x: -delta.x, y: -delta.y });
   expect(returned.video.x).toBeCloseTo(before.video.x); expect(returned.video.y).toBeCloseTo(before.video.y);
@@ -58,32 +59,50 @@ it('applies assistance only after crossing an edge, independent of gesture event
   const before = single.snapshot();
   const after = single.move({ x: 10, y: 10 });
   for (let step = 0; step < 10; step++) small.move({ x: 1, y: 1 });
-  expect(after.panel.x - before.panel.x).toBeCloseTo(10);
-  expect(after.panel.y - before.panel.y).toBeCloseTo(15);
+  expect(after.panel.x - before.panel.x).toBeCloseTo(5);
+  expect(after.panel.y - before.panel.y).toBeCloseTo(5);
   expect(before.video.x - after.video.x).toBeCloseTo(5);
   expect(before.video.y - after.video.y).toBeCloseTo(10);
   expect(small.snapshot().panel.x).toBeCloseTo(after.panel.x);
   expect(small.snapshot().panel.y).toBeCloseTo(after.panel.y);
 });
 
-it('handles both edges together without changing the click target or clamping the panel separately', () => {
+it('keeps the bottom-right panel visible without changing the click target or detaching the cursor', () => {
   const test = setup({ x: right, y: bottom });
   const before = test.snapshot();
   const after = test.move({ x: 10, y: 10 });
-  expect(after.panel.x - before.panel.x).toBeCloseTo(10);
-  expect(after.panel.y - before.panel.y).toBeCloseTo(20);
+  expect(after.panel.x).toBeCloseTo(before.panel.x);
+  expect(after.panel.y).toBeCloseTo(before.panel.y);
   test.pointer.click();
   const mapped = desktopPoint(after.cursor, test.current().viewport)!;
   expect(mapped.x).toBeCloseTo(test.pointer.getSnapshot().x);
   expect(mapped.y).toBeCloseTo(test.pointer.getSnapshot().y);
   expect(test.send.mock.calls.at(-3)![0]).toEqual({ kind: 'move', ...test.pointer.getSnapshot() });
   const capped = test.move({ x: 1000, y: 1000 });
-  expect(capped.panel.x + MOUSE_PANEL_SIZE.width).toBeGreaterThan(fitted.stage.width);
-  expect(capped.panel.y + MOUSE_PANEL_SIZE.height).toBeGreaterThan(fitted.stage.height);
+  expect(capped.panel.x + MOUSE_PANEL_SIZE.width).toBe(fitted.stage.width - 8);
+  expect(capped.panel.y + MOUSE_PANEL_SIZE.height).toBe(fitted.stage.height - 8);
+  expect(capped.panel.x + MOUSE_PANEL_SIZE.width).toBeGreaterThan(capped.video.x + capped.video.width);
+  expect(capped.panel.y + MOUSE_PANEL_SIZE.height).toBeGreaterThan(capped.video.y + capped.video.height);
+  expect(test.pointer.getSnapshot()).toEqual({ x: 1, y: 1 });
   expect(capped.panel.x - capped.cursor.x).toBe(24); expect(capped.panel.y).toBe(capped.cursor.y);
   expect(test.move({ x: 20, y: 20 })).toEqual(capped);
   const idle = panDesktopViewport(fitted, test.pointer.getSnapshot(), MOUSE_ICON_SIZE, test.current());
   expect(idle.viewport.content).toEqual(capped.video);
+  const returned = test.move({ x: -1000, y: -1000 });
+  expect(test.pointer.getSnapshot()).toEqual({ x: 0, y: 0 });
+  expect(returned.cursor).toEqual({ x: 8, y: 8 });
+});
+
+it('expands an edge-panned idle icon with enough room for the complete panel', () => {
+  const point = { x: 1, y: 1 };
+  const icon = panDesktopViewport(fitted, point, MOUSE_ICON_SIZE);
+  const expanded = panDesktopViewport(fitted, point, MOUSE_PANEL_SIZE, icon);
+  const cursor = cursorPosition(point, expanded.viewport);
+  const panel = mousePanelPosition(cursor);
+  expect(panel.x + MOUSE_PANEL_SIZE.width).toBeLessThanOrEqual(fitted.stage.width - 8);
+  expect(panel.y + MOUSE_PANEL_SIZE.height).toBeLessThanOrEqual(fitted.stage.height - 8);
+  expect(desktopPoint(cursor, expanded.viewport)).toEqual(point);
+  expect(panDesktopViewport(fitted, point, MOUSE_ICON_SIZE, expanded).offset).toEqual(expanded.offset);
 });
 
 it('does not apply edge acceleration to a manually zoomed or direct-touch viewport', () => {

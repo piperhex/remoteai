@@ -4,7 +4,8 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { Image } from 'react-native';
 import { DesktopMouse } from './MousePad';
 import { DesktopPointer } from '../../../../../shared/remote-desktop/input';
-import { desktopViewport } from '../../../../../shared/remote-desktop/geometry';
+import { desktopViewport, MOUSE_PANEL_SIZE, panDesktopViewport }
+  from '../../../../../shared/remote-desktop/geometry';
 import { useTrackpad } from './useTrackpad';
 import { DesktopScrollPad } from './DesktopScrollPad';
 
@@ -79,13 +80,14 @@ it('renders the native local pointer and small controls over black letterboxing,
   pointer.dispose();
 });
 
-it('keeps the native cursor and panel offset together at the screen edges', () => {
+it('keeps the entire native panel visible with its cursor attached at the screen edges', () => {
   const pointer = new DesktopPointer(vi.fn());
   const panel = { expanded: true, expand: vi.fn(), activity: vi.fn(), hold: vi.fn() };
   for (const stage of [{ width: 390, height: 750 }, { width: 774, height: 390 }]) {
-    const viewport = desktopViewport(stage, { width: 1600, height: 900 });
-    for (const point of [{ x: 0, y: 0 }, { x: 0.7, y: 0.8 }, { x: 1, y: 1 }]) {
+    const fitted = desktopViewport(stage, { width: 1600, height: 900 });
+    for (const point of [{ x: 0, y: 0 }, { x: 0.7, y: 0.8 }, { x: 0.5, y: 1 }, { x: 1, y: 1 }]) {
       pointer.absolute(point.x, point.y);
+      const { viewport } = panDesktopViewport(fitted, point, MOUSE_PANEL_SIZE);
       const elements = nodes(DesktopMouse({ pointer, viewport, panel, visible: true,
         wheel: vi.fn(), horizontal: true }));
       const cursor = Object.assign({}, ...elements.find(node => node.props.pointerEvents === 'none')!.props.style!);
@@ -93,6 +95,8 @@ it('keeps the native cursor and panel offset together at the screen edges', () =
       expect(controls.left! - cursor.left!).toBeCloseTo(24);
       expect(controls.top).toBe(cursor.top);
       expect(cursor.width).toBe(18); expect(cursor.height).toBe(24);
+      expect(controls.left! + controls.width!).toBeLessThanOrEqual(stage.width - 8);
+      expect(controls.top! + controls.height!).toBeLessThanOrEqual(stage.height - 8);
     }
   }
   pointer.dispose();

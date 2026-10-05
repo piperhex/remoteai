@@ -9,7 +9,6 @@ export const CURSOR_SIZE = { width: 18, height: 24 };
 const PANEL_GAP = CURSOR_SIZE.width + 6;
 const EDGE_GAP = 8;
 const EDGE_PAN_GAIN = { x: 1, y: 2 };
-const EDGE_MOTION_SHARE = 0.5;
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 /** Fit the complete desktop inside the available stage, preserving its aspect ratio. */
@@ -36,22 +35,21 @@ export function mousePanelPosition(cursor: Point): Point {
 }
 
 function panAxis(cursor: number, edge: number, previous = 0) {
-  const remaining = edge - cursor;
-  const limit = remaining < 0 ? remaining * EDGE_MOTION_SHARE : remaining;
-  return clamp(Math.max(0, previous), EDGE_GAP - cursor, limit);
+  // Move the video enough to keep the cursor and its entire attached panel inside the viewer.
+  return clamp(Math.max(0, previous), EDGE_GAP - cursor, edge - cursor);
 }
 
-/** Retain an active edge through idle collapse/expansion until the pointer moves back inside it. */
+/** Preserve idle collapse positioning, but reserve the extra space when a small icon expands. */
 function panEdges(natural: Point, previous?: DesktopPanState): Point {
   const retained = previous?.edge;
   if (!previous || !retained) return natural;
   return {
-    x: previous.offset.x < 0 || previous.point.x > natural.x ? retained.x : natural.x,
-    y: previous.offset.y < 0 || previous.point.y > natural.y ? retained.y : natural.y,
+    x: previous.offset.x < 0 || previous.point.x > natural.x ? Math.min(retained.x, natural.x) : natural.x,
+    y: previous.offset.y < 0 || previous.point.y > natural.y ? Math.min(retained.y, natural.y) : natural.y,
   };
 }
 
-/** Split edge motion equally between revealing black canvas and advancing the cursor/panel. */
+/** Reveal black canvas at the viewer edges without clipping the panel or detaching its cursor. */
 export function panDesktopViewport(viewport: DesktopViewport, point: Point, panel: Size, previous?: DesktopPanState) {
   const { stage, content } = viewport;
   const edge = panEdges({
@@ -73,13 +71,13 @@ function edgeDelta(position: number, delta: number, boundary: number, gain: numb
   return (end <= boundary ? end : boundary + (end - boundary) * gain) - position;
 }
 
-/** Preserve normal speed until the controls reach an edge; match their speed to the exposed margin after it. */
+/** Preserve normal speed until the controls reach an edge, then use the canvas opening speed. */
 export function relativeDesktopDelta(point: Point, delta: Point, viewport: DesktopViewport): Point {
   if (!viewport.edgePan) return delta;
   const width = Math.max(1, viewport.content.width - 1);
   const height = Math.max(1, viewport.content.height - 1);
   return {
-    x: edgeDelta(point.x * width, delta.x, viewport.edgePan.x * width, EDGE_PAN_GAIN.x / EDGE_MOTION_SHARE),
-    y: edgeDelta(point.y * height, delta.y, viewport.edgePan.y * height, EDGE_PAN_GAIN.y / EDGE_MOTION_SHARE),
+    x: edgeDelta(point.x * width, delta.x, viewport.edgePan.x * width, EDGE_PAN_GAIN.x),
+    y: edgeDelta(point.y * height, delta.y, viewport.edgePan.y * height, EDGE_PAN_GAIN.y),
   };
 }

@@ -161,13 +161,14 @@ connected and explains which update is needed instead of sending unsupported key
 
 The touch viewer draws its own pointer immediately; all Windows capture paths exclude the host cursor.
 The compact floating mouse follows that pointer and can extend into letterbox space around the video.
-The 18 × 24 pointer stays at the upper-left of the 120 × 136 mouse panel, even outside the video or viewer.
+The 18 × 24 pointer stays at the upper-left of the 120 × 136 mouse panel, including over black letterboxing.
 Movement stays at normal speed until the panel reaches the right or bottom viewer edge.
-At the bottom, the panel continues downward at twice the swipe speed, matching the new black margin's height.
-At the right, it continues rightward at swipe speed, matching the new black margin's width.
-The video pans in the opposite direction; neither axis clamps the panel or separates it from the pointer.
+At the screen boundary, the complete panel stays visible with an 8 px inset while the desktop continues to pan.
+The bottom black margin opens at twice the swipe speed; the right margin opens at swipe speed.
+The panel can extend outside the video into the black margin, but cannot leave the fitted viewer.
+Panning the shared video rectangle preserves the cursor-to-panel offset and the actual remote click target.
 Reversing the gesture closes the corresponding margin smoothly. Idle collapse preserves the translation,
-which resets on rotation
+and expanding an edge-panned icon makes room for the full panel. The translation resets on rotation
 or a switch to direct touch. Cursor placement and video rendering share the translated rectangle. The native cursor image
 has explicit layout dimensions so its 3x bitmap cannot enlarge it. Motion and direct touches use the displayed video rectangle,
 including the current zoom and translation.

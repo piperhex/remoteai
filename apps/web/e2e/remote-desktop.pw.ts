@@ -11,6 +11,11 @@ async function expectAnchoredMouse(page: Page) {
   const panel = (await page.locator('.rd-mouse-layer').boundingBox())!;
   expect(cursor.width).toBe(18); expect(cursor.height).toBe(24);
   expect(panel.x - cursor.x).toBeCloseTo(24); expect(panel.y).toBeCloseTo(cursor.y);
+  const stage = (await page.locator('.rd-stage').boundingBox())!;
+  expect(panel.x).toBeGreaterThanOrEqual(stage.x);
+  expect(panel.y).toBeGreaterThanOrEqual(stage.y);
+  expect(panel.x + panel.width).toBeLessThanOrEqual(stage.x + stage.width);
+  expect(panel.y + panel.height).toBeLessThanOrEqual(stage.y + stage.height);
 }
 
 
@@ -138,7 +143,7 @@ test('follows the local pointer, collapses when idle and maps direct touches thr
   await expectAnchoredMouse(page);
   const dragged = (await page.locator('.rd-cursor').boundingBox())!;
   const draggedVideo = (await page.locator('video').boundingBox())!;
-  expect(dragged.x - moved.x).toBeCloseTo(15, 0);
+  expect(dragged.x - moved.x).toBeCloseTo(15 + draggedVideo.x - movedVideo.x, 0);
   expect(dragged.y - moved.y).toBeCloseTo(10 + draggedVideo.y - movedVideo.y, 0);
   await page.mouse.move(stage.x + 15, stage.y + 20); await page.mouse.down();
   await page.mouse.move(stage.x + 15, stage.y + stage.height - 10); await page.mouse.up();
@@ -196,7 +201,7 @@ test('follows the local pointer, collapses when idle and maps direct touches thr
   await page.getByRole('button', { name: '关闭', exact: true }).click();
 });
 
-test('opens the bottom canvas faster and restores it as soon as the swipe reverses', async ({ page }) => {
+test('keeps the complete bottom panel usable while opening and closing the black margin', async ({ page }, info) => {
   await page.goto('e2e/remote-desktop-harness.html');
   await page.getByRole('button', { name: '打开工具' }).click();
   await page.getByRole('button', { name: '远程桌面', exact: true }).click();
@@ -222,19 +227,26 @@ test('opens the bottom canvas faster and restores it as soon as the swipe revers
     await expectAnchoredMouse(page);
     const openedY = (await page.locator('video').boundingBox())!.y;
     const openedPanel = (await page.locator('.rd-mouse-layer').boundingBox())!;
-    expect(openedPanel.y - edgePanel.y).toBeCloseTo(video.y - openedY, 0);
-    expect(openedPanel.y).toBeGreaterThan(edgePanel.y);
+    expect(openedPanel.y).toBeCloseTo(edgePanel.y, 0);
     await swipeDown(-distance / 2);
     await expect.poll(async () => (await page.locator('video').boundingBox())!.y - openedY)
       .toBeCloseTo(distance, 0);
     await expectAnchoredMouse(page);
     await swipeDown(video.height);
-    expect(video.y - (await page.locator('video').boundingBox())!.y).toBeCloseTo(margin / 2, 0);
-    const overflow = (await page.locator('.rd-mouse-layer').boundingBox())!;
-    expect(overflow.y + overflow.height).toBeGreaterThan(stage.y + stage.height);
+    expect(video.y - (await page.locator('video').boundingBox())!.y).toBeCloseTo(margin, 0);
+    const panel = (await page.locator('.rd-mouse-layer').boundingBox())!;
+    expect(panel.y + panel.height).toBeCloseTo(stage.y + stage.height - 8, 0);
+    await expectAnchoredMouse(page);
+    await page.screenshot({ path: info.outputPath('mouse-bottom-edge.png') });
+    await page.evaluate(() => { window.desktopTest.inputs.length = 0; });
+    await page.locator('.rd-pad').click();
+    await expect.poll(() => page.evaluate(() => window.desktopTest.inputs.at(-1)))
+      .toEqual({ kind: 'button', button: 'left', down: false });
+    const target = await page.evaluate(() => window.desktopTest.inputs.find(input => input.kind === 'move'));
+    expect(target).toMatchObject({ kind: 'move', y: 1 });
     const cappedY = (await page.locator('video').boundingBox())!.y;
     await page.mouse.move(stage.x + 10, stage.y + stage.height - 10); await page.mouse.down();
-    await page.mouse.move(stage.x + 10, stage.y + stage.height - 10 - margin / 4 - 20, { steps: 10 });
+    await page.mouse.move(stage.x + 10, stage.y + stage.height - 10 - margin / 2 - 20, { steps: 10 });
     await page.mouse.up();
     expect((await page.locator('video').boundingBox())!.y).toBeGreaterThan(cappedY);
     expect((await page.locator('video').boundingBox())!.y).toBeCloseTo(video.y, 0);
@@ -246,7 +258,7 @@ test('opens the bottom canvas faster and restores it as soon as the swipe revers
   await page.getByRole('button', { name: '关闭', exact: true }).click();
 });
 
-test('moves the attached panel right at the exposed margin speed only after reaching the right edge',
+test('keeps the complete right panel usable while panning only after reaching the right edge',
   async ({ page }, info) => {
     await page.goto('e2e/remote-desktop-harness.html');
     await page.getByRole('button', { name: '打开工具' }).click();
@@ -268,17 +280,25 @@ test('moves the attached panel right at the exposed margin speed only after reac
     await swipe(16);
     const moved = (await page.locator('.rd-mouse-layer').boundingBox())!;
     const panned = (await page.locator('video').boundingBox())!;
-    expect(moved.x - edge.x).toBeCloseTo(16, 0);
-    expect(moved.x - edge.x).toBeCloseTo(video.x - panned.x, 0);
+    expect(moved.x).toBeCloseTo(edge.x, 0);
+    expect(video.x - panned.x).toBeCloseTo(16, 0);
     await expectAnchoredMouse(page);
     await page.screenshot({ path: info.outputPath('mouse-right-edge.png') });
     await swipe(-8);
     const returned = (await page.locator('.rd-mouse-layer').boundingBox())!;
-    expect(moved.x - returned.x).toBeCloseTo(8, 0);
+    expect(returned.x).toBeCloseTo(moved.x, 0);
+    expect((await page.locator('video').boundingBox())!.x - panned.x).toBeCloseTo(8, 0);
     await expectAnchoredMouse(page);
     await swipe(video.width);
-    const overflow = (await page.locator('.rd-mouse-layer').boundingBox())!;
-    expect(overflow.x + overflow.width).toBeGreaterThan(stage.x + stage.width);
+    const panel = (await page.locator('.rd-mouse-layer').boundingBox())!;
+    expect(panel.x + panel.width).toBeCloseTo(stage.x + stage.width - 8, 0);
     await expectAnchoredMouse(page);
+    await page.evaluate(() => { window.desktopTest.inputs.length = 0; });
+    await page.getByRole('button', { name: '鼠标右键', exact: true }).click();
+    await expect.poll(() => page.evaluate(() => window.desktopTest.inputs.at(-1)))
+      .toEqual({ kind: 'button', button: 'right', down: false });
+    const target = await page.evaluate(() => window.desktopTest.inputs.find(input => input.kind === 'move'));
+    expect(target).toMatchObject({ kind: 'move', x: 1 });
+    await page.screenshot({ path: info.outputPath('mouse-right-limit.png') });
     await page.getByRole('button', { name: '关闭', exact: true }).click();
   });
