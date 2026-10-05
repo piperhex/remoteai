@@ -56,6 +56,8 @@ mod text_preview;
 mod title_generation;
 mod title_read;
 mod title_worker;
+#[cfg(windows)]
+mod unattended_setup;
 pub(crate) mod undo;
 pub(crate) mod upload_policy;
 pub(crate) mod usage;

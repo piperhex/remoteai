@@ -150,6 +150,9 @@ export function reduceEvent(state: GuiState, event: GuiEvent): GuiState {
   if (event.method === "computerUse/setup") {
     return { ...state, computerUseSetup: event.params.computerUseSetup };
   }
+  if (event.method === "unattended/setup") {
+    return { ...state, unattendedSetup: event.params.unattendedSetup };
+  }
   state = trackProcessingApproval(state, event);
   if (event.params.threadId && ["thread/goal/updated", "thread/goal/cleared"].includes(event.method)) {
     return { ...state, goals: { ...state.goals, [event.params.threadId]: event.params.goal ?? null } };

@@ -10,8 +10,10 @@ mod framing;
 mod installer;
 pub(crate) mod platform;
 mod process;
+mod setup;
 mod supervisor;
 pub(crate) use commands::*;
+pub(crate) use setup::setup_gui;
 
 pub(crate) const NAME: &str = "CodexSwitchRemoteDesktop";
 #[derive(Debug, thiserror::Error)]

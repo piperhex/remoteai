@@ -178,7 +178,7 @@ pub(super) fn install(prepared: &Path) -> Result<()> {
     super::assets::verify(&root)?;
     register(&root)?;
     if let Some(previous) = previous.filter(|previous| previous.credential != config.credential) {
-        if super::commands::revoke(&previous).is_err() {
+        if super::setup::revoke(&previous).is_err() {
             eprintln!("previous desktop service credential revocation pending");
         }
     }
@@ -263,7 +263,7 @@ pub(super) fn uninstall() -> Result<()> {
     }
     stop()?;
     let revocation_pending =
-        configuration::read().is_ok_and(|config| super::commands::revoke(&config).is_err());
+        configuration::read().is_ok_and(|config| super::setup::revoke(&config).is_err());
     let manager = manager(false)?;
     match manager.open_service(NAME, ServiceAccess::DELETE) {
         Ok(service) => service.delete().map_err(|_| ServiceError::Unavailable)?,

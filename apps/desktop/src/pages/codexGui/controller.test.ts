@@ -23,6 +23,23 @@ beforeEach(() => {
 });
 
 describe("Codex GUI controller", () => {
+  it("permits chatting while unattended setup waits and after it fails", async () => {
+    const controller = new GuiController();
+    await controller.connect();
+    receive({ method: "computerUse/setup", params: { computerUseSetup: "ready" } });
+    receive({ method: "unattended/setup", params: { unattendedSetup: "installing" } });
+    const original = vi.mocked(guiApi.request).getMockImplementation()!;
+    vi.mocked(guiApi.request).mockImplementation(async (request) => request.operation === "send"
+      ? { turn: { id: "reply", status: "completed", items: [] } } : original(request));
+    expect(await controller.send("continue during setup", [])).toBe(true);
+    receive({ method: "unattended/setup", params: { unattendedSetup: "failed" } });
+    expect(controller.getSnapshot()).toMatchObject({ connection: "ready", computerUseSetup: "ready",
+      unattendedSetup: "failed", error: "", approvals: [] });
+    expect(await controller.send("continue after cancellation", [])).toBe(true);
+    expect(guiApi.connect).toHaveBeenCalledTimes(1);
+    controller.dispose();
+  });
+
   it("keeps setup single-flight and permits chatting after assistant installation fails", async () => {
     const controller = new GuiController();
     let finish!: (events: GuiEvent[]) => void;

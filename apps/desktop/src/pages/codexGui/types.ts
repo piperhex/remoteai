@@ -113,7 +113,8 @@ export interface EventParams {
   serverName?: string;
   _meta?: { tool_params?: Record<string, unknown> };
   userMessageIndex?: number;
-  computerUseSetup?: ComputerUseSetup;
+  computerUseSetup?: AutomaticSetupStatus;
+  unattendedSetup?: AutomaticSetupStatus;
   goal?: ThreadGoal;
   threadId?: string;
   thread?: Thread;
@@ -143,7 +144,7 @@ export interface EventParams {
   error?: import("./requestError").RequestError;
   willRetry?: boolean;
 }
-export type ComputerUseSetup = "installing" | "ready" | "failed";
+export type AutomaticSetupStatus = "installing" | "ready" | "failed";
 export interface GuiEvent { method: string; params: EventParams; id?: string | number | null }
 export interface Conversation {
   processing?: ProcessingState;
@@ -162,7 +163,8 @@ export interface GuiState {
   modelSettingsLoading?: boolean;
   modelCatalogLoading?: boolean;
   modelCatalogError?: string;
-  computerUseSetup?: ComputerUseSetup;
+  computerUseSetup?: AutomaticSetupStatus;
+  unattendedSetup?: AutomaticSetupStatus;
   workspaceBusy?: boolean;
   pendingRequest?: PendingRequest;
   goals?: Record<string, ThreadGoal | null>;

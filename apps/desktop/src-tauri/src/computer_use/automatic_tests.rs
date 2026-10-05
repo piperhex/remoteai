@@ -26,15 +26,26 @@ impl Drop for Fixture {
 fn first_connection_installs_once_per_home() {
     let fixture = Fixture::new();
     let calls = Cell::new(0);
+    let starts = Cell::new(0);
+    let starting = || starts.set(starts.get() + 1);
     let install = || {
         calls.set(calls.get() + 1);
+        assert_eq!(starts.get(), calls.get());
         Ok(())
     };
-    setup_with(&fixture.0, &fixture.home(), install).unwrap();
-    setup_with(&fixture.0, &fixture.home(), install).unwrap();
+    setup_with(&fixture.0, &fixture.home(), starting, install).unwrap();
+    setup_with(&fixture.0, &fixture.home(), starting, install).unwrap();
     assert_eq!(calls.get(), 1);
-    setup_with(&fixture.0, &fixture.0.join("another-home"), install).unwrap();
+    assert_eq!(starts.get(), 1);
+    setup_with(
+        &fixture.0,
+        &fixture.0.join("another-home"),
+        starting,
+        install,
+    )
+    .unwrap();
     assert_eq!(calls.get(), 2);
+    assert_eq!(starts.get(), 2);
 }
 
 #[test]
@@ -51,7 +62,13 @@ fn existing_enabled_and_disabled_installations_are_preserved() {
             },
         )
         .unwrap();
-        setup_with(&fixture.0, &home, || panic!("must preserve installation")).unwrap();
+        setup_with(
+            &fixture.0,
+            &home,
+            || panic!("must not start related setup"),
+            || panic!("must preserve installation"),
+        )
+        .unwrap();
         let record = state::read(&fixture.0, &state::home_id(&home))
             .unwrap()
             .unwrap();
@@ -67,22 +84,37 @@ fn manual_removal_before_first_gui_connection_prevents_auto_install() {
     assert!(state::read(&fixture.0, &state::home_id(&fixture.home()))
         .unwrap()
         .is_none());
-    setup_with(&fixture.0, &fixture.home(), || {
-        panic!("must preserve removal")
-    })
+    setup_with(
+        &fixture.0,
+        &fixture.home(),
+        || panic!("must not start related setup"),
+        || panic!("must preserve removal"),
+    )
     .unwrap();
 }
 
 #[test]
-fn failed_setup_does_not_retry_on_every_reconnect() {
+fn related_setup_starts_even_if_download_fails_and_neither_retries_on_reconnect() {
     let fixture = Fixture::new();
+    let started = Cell::new(false);
     assert!(matches!(
-        setup_with(&fixture.0, &fixture.home(), || Err(ComputerError::Download)),
+        setup_with(
+            &fixture.0,
+            &fixture.home(),
+            || started.set(true),
+            || {
+                assert!(started.get());
+                Err(ComputerError::Download)
+            },
+        ),
         Err(ComputerError::Download)
     ));
-    setup_with(&fixture.0, &fixture.home(), || {
-        panic!("manual repair required")
-    })
+    setup_with(
+        &fixture.0,
+        &fixture.home(),
+        || panic!("must not restart related setup"),
+        || panic!("manual repair required"),
+    )
     .unwrap();
 }
 
@@ -93,6 +125,12 @@ fn unreadable_record_does_not_overwrite_existing_setup() {
     let path = state::path(&fixture.0, &state::home_id(&home)).unwrap();
     fs::create_dir_all(path.parent().unwrap()).unwrap();
     fs::write(&path, "invalid").unwrap();
-    assert!(setup_with(&fixture.0, &home, || panic!("must preserve record")).is_err());
+    assert!(setup_with(
+        &fixture.0,
+        &home,
+        || panic!("must not start related setup"),
+        || panic!("must preserve record"),
+    )
+    .is_err());
     assert_eq!(fs::read_to_string(path).unwrap(), "invalid");
 }

@@ -10,14 +10,16 @@ pub(crate) fn setup_gui(home: &Path, installing: impl FnOnce()) -> Result<()> {
     }
     let _guard = CHANGES.lock().map_err(|_| ComputerError::Storage)?;
     let root = super::root()?;
-    setup_with(&root, home, || {
-        installing();
-        install::install(&root, home)
-    })?;
+    setup_with(&root, home, installing, || install::install(&root, home))?;
     install::refresh_installed(&root, home)
 }
 
-fn setup_with(root: &Path, home: &Path, install: impl FnOnce() -> Result<()>) -> Result<()> {
+fn setup_with(
+    root: &Path,
+    home: &Path,
+    installing: impl FnOnce(),
+    install: impl FnOnce() -> Result<()>,
+) -> Result<()> {
     let marker = root.join(SETUP_DIRECTORY).join(state::home_id(home));
     if marker.try_exists().map_err(|_| ComputerError::Storage)? {
         return Ok(());
@@ -29,6 +31,7 @@ fn setup_with(root: &Path, home: &Path, install: impl FnOnce() -> Result<()>) ->
     if previously_installed {
         return Ok(());
     }
+    installing();
     install()
 }
 

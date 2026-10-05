@@ -6,7 +6,7 @@ use tauri::AppHandle;
 
 #[derive(Clone, Copy, Serialize)]
 #[serde(rename_all = "camelCase")]
-enum SetupStatus {
+pub(super) enum SetupStatus {
     Installing,
     Ready,
     Failed,
@@ -27,7 +27,11 @@ fn publish(app: &AppHandle, status: SetupStatus) {
 pub(super) async fn prepare(app: AppHandle, home: PathBuf) {
     let worker_app = app.clone();
     let result = tauri::async_runtime::spawn_blocking(move || {
-        crate::computer_use::setup_gui(&home, || publish(&worker_app, SetupStatus::Installing))
+        crate::computer_use::setup_gui(&home, || {
+            publish(&worker_app, SetupStatus::Installing);
+            #[cfg(windows)]
+            super::unattended_setup::start(worker_app.clone());
+        })
     })
     .await;
     match result {
