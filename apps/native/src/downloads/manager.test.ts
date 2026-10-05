@@ -17,8 +17,8 @@ vi.mock('react-native-blob-util', () => ({ default: { android: { actionViewInten
 
 function connection(): DownloadConnection {
   const files = { open: vi.fn(), read: vi.fn(), close: vi.fn() };
-  return { owner: 'owner', deviceId: 'pc', deviceName: 'PC', ready: true, mode: 'direct', threadId: 'thread',
-    cwd: 'F:/project', files, client: { ...files, browse: vi.fn() } };
+  return { owner: 'owner', deviceId: 'pc', deviceName: 'PC', ready: true, mode: 'direct', windowSize: 5,
+    threadId: 'thread', cwd: 'F:/project', files, client: { ...files, browse: vi.fn() } };
 }
 beforeEach(() => {
   vi.resetModules(); vi.resetAllMocks(); mocks.events.clear();
@@ -42,7 +42,7 @@ it('continues forwarding native task requests after the last download view unsub
   await vi.waitFor(() => expect(mocks.bridge.accept).toHaveBeenCalled());
   expect(current.client.read).toHaveBeenCalledWith({ threadId: 'task', id: 'handle', offset: 262144, length: 1 });
   expect(mocks.bridge.pause).not.toHaveBeenCalled();
-  expect(mocks.bridge.connection).not.toHaveBeenCalledWith('owner', 'pc', false);
+  expect(mocks.bridge.connection).not.toHaveBeenCalledWith('owner', 'pc', 0);
 });
 
 it('does not resubmit connection or disk work for unrelated chat updates', async () => {
@@ -67,8 +67,19 @@ it('pauses disconnected tasks and never forwards their reads to a newly selected
   mocks.events.get('downloadRequest')!(JSON.stringify({ requestId: 'late', taskId: 'task', operation: 'read',
     source: { owner: 'owner', deviceId: 'pc' }, remoteId: 'handle', offset: 0, length: 1 }));
   await vi.waitFor(() => expect(mocks.bridge.accept).toHaveBeenCalledWith('late', null, true));
-  expect(mocks.bridge.connection).toHaveBeenCalledWith('owner', 'pc', false);
+  expect(mocks.bridge.connection).toHaveBeenCalledWith('owner', 'pc', 0);
   expect(second.client.read).not.toHaveBeenCalled();
+});
+
+it('updates the native window when an administrator changes the count during a download', async () => {
+  const { downloadManager } = await import('./manager');
+  const current = connection();
+  downloadManager.bind(current); await downloadManager.initialize();
+  expect(mocks.bridge.connection).toHaveBeenLastCalledWith('owner', 'pc', 5);
+  downloadManager.bind({ ...current, windowSize: 2 });
+  await vi.waitFor(() => expect(mocks.bridge.connection).toHaveBeenLastCalledWith('owner', 'pc', 2));
+  downloadManager.bind({ ...current, ready: false });
+  await vi.waitFor(() => expect(mocks.bridge.connection).toHaveBeenLastCalledWith('owner', 'pc', 0));
 });
 
 it('restores saved tasks and releases failed initialization listeners before retrying', async () => {

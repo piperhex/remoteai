@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import type { ChatController } from '../chat/controller';
 import type { AuthSession } from '../types';
 import { downloadManager, downloadOwner } from './manager';
+import { getChatPolicy, subscribeChatPolicy } from '../../../../shared/remote-chat/policy';
 
 export function useDownloadConnection(options: {
   session: AuthSession; deviceId: string; deviceName: string; controller: ChatController;
@@ -13,12 +14,13 @@ export function useDownloadConnection(options: {
     const update = () => {
       const state = controller.snapshot();
       downloadManager.bind({ owner: downloadOwner(session), deviceId, deviceName,
-        ready: state.ready, mode: state.mode,
+        ready: state.ready, mode: state.mode, windowSize: getChatPolicy().fileDownloadWindowSize,
         threadId: state.selected?.id, cwd: state.selected?.cwd ?? state.draftProject?.cwd,
         client: controller.downloads, files: controller.files });
     };
     update();
     const unsubscribe = controller.subscribe(update);
-    return () => { unsubscribe(); downloadManager.unbind(controller.files); };
+    const unsubscribePolicy = subscribeChatPolicy(update);
+    return () => { unsubscribe(); unsubscribePolicy(); downloadManager.unbind(controller.files); };
   }, [session, deviceId, deviceName, controller]);
 }

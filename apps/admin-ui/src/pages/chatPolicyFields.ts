@@ -75,4 +75,11 @@ export const POLICY_SECTIONS: PolicySection[] = [
     { key: 'fileDownloadMaxMb', label: ['文件下载上限', 'File download limit'],
       hint: ['允许下载的最大文件大小', 'Maximum file size for download'], unit: ['MB', 'MB'] },
   ] },
+  { key: 'downloads', title: ['文件下载', 'File downloads'],
+    hint: ['保存后应用到正在进行的下载。', 'Changes apply to downloads in progress after saving.'], fields: [
+    { key: 'fileDownloadWindowSize', label: ['同时传输分块数', 'Concurrent download chunks'],
+      hint: ['每个文件默认同时传输 5 块，可设为 1–12 块。网络较慢时可适当调小。',
+        'Transfer 5 chunks per file by default. Choose 1–12; a lower value may help on slow connections.'],
+      unit: ['块', 'chunks'] },
+  ] },
 ];

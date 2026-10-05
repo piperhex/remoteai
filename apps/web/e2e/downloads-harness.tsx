@@ -6,11 +6,14 @@ import { ChatFilePreview } from '../src/chat/ChatFilePreview';
 import type { DownloadClient } from '../../../shared/remote-chat/downloads';
 import type { FileClient } from '../../../shared/remote-chat/fileDownload';
 import type { ConnectionMode } from '../../../shared/remote-chat/protocol';
+import { DEFAULT_CHAT_POLICY, setChatConnectionMode, setChatPolicy } from '../../../shared/remote-chat/policy';
 import '../src/styles.css';
 import '../src/chat/chat.css';
 import '../src/chat/messages.css';
 
-const fixture = { size: 4 * 1024 * 1024, revision: 'first', corrupt: false, offsets: [] as number[], closes: 0 };
+const fixture = { size: 4 * 1024 * 1024, revision: 'first', corrupt: false, offsets: [] as number[], closes: 0,
+  delay: 400, active: 0, peak: 0, windowSize: (value: number) =>
+    setChatPolicy({ ...DEFAULT_CHAT_POLICY, fileDownloadWindowSize: value }) };
 declare global { interface Window { downloadFixture: typeof fixture } }
 window.downloadFixture = fixture;
 const FILE_ID = '11111111-1111-4111-8111-111111111111';
@@ -21,7 +24,9 @@ const client: DownloadClient = {
     mimeType: 'application/octet-stream', revision: fixture.revision }),
   read: async ({ offset, length }) => {
     fixture.offsets.push(offset);
-    await new Promise(resolve => setTimeout(resolve, 150));
+    fixture.peak = Math.max(fixture.peak, ++fixture.active);
+    await new Promise(resolve => setTimeout(resolve, fixture.delay));
+    fixture.active--;
     return { offset: fixture.corrupt ? offset + 1 : offset,
       data: btoa((fixture.revision === 'first' ? 'A' : 'B').repeat(length)) };
   },
@@ -49,6 +54,7 @@ function Harness() {
   const [owner, setOwner] = useState('owner');
   useEffect(() => {
     void downloadManager.initialize();
+    setChatConnectionMode(ready ? mode : 'offline');
     downloadManager.bind({ owner, ready, mode: ready ? mode : 'offline', deviceId: 'computer', deviceName: '测试电脑',
       threadId: 'thread', cwd: 'C:/project', client, files });
   }, [owner, ready, mode]);

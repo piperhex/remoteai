@@ -14,6 +14,7 @@ import java.util.UUID
 
 /** Only the download executor accesses storage. Persisted IDs never act as arbitrary filesystem paths. */
 internal class DownloadStorage(private val context: Context) {
+  private val dirty = mutableSetOf<String>()
   private val folder get() = File(context.filesDir, "managed-downloads").apply { mkdirs() }
   private val index get() = AtomicFile(File(folder, "tasks.json"))
 
@@ -39,6 +40,12 @@ internal class DownloadStorage(private val context: Context) {
   }
 
   fun save(tasks: Collection<DownloadTask>) {
+    // The index must never acknowledge bytes that have not reached durable storage.
+    // Batch fsync with checkpoints, instead of paying for two syncs per 256 KiB reply.
+    tasks.filter { it.id in dirty }.forEach { task ->
+      RandomAccessFile(part(task), "rw").use { it.fd.sync() }
+      dirty.remove(task.id)
+    }
     val json = JSONArray().apply { tasks.forEach { put(it.data) } }.toString()
     val output = index.startWrite()
     try { output.write(json.toByteArray(Charsets.UTF_8)); index.finishWrite(output) }
@@ -47,14 +54,16 @@ internal class DownloadStorage(private val context: Context) {
 
   fun prepare(task: DownloadTask) {
     RandomAccessFile(part(task), "rw").use { it.setLength(task.received) }
+    dirty.add(task.id)
   }
 
   fun append(task: DownloadTask, bytes: ByteArray) {
     RandomAccessFile(part(task), "rw").use {
       require(it.length() == task.received)
-      it.seek(task.received); it.write(bytes); it.fd.sync()
+      it.seek(task.received); it.write(bytes)
     }
     task.received += bytes.size
+    dirty.add(task.id)
   }
 
   fun publish(task: DownloadTask, checkpoint: () -> Unit) {
@@ -107,6 +116,10 @@ internal class DownloadStorage(private val context: Context) {
     task.data.remove("uri")
   }
 
-  fun removePart(task: DownloadTask) { val file = part(task); check(!file.exists() || file.delete()) }
+  fun removePart(task: DownloadTask) {
+    val file = part(task)
+    check(!file.exists() || file.delete())
+    dirty.remove(task.id)
+  }
   fun delete(task: DownloadTask) { removePublished(task); removePart(task) }
 }

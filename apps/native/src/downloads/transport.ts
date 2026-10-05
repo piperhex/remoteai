@@ -1,7 +1,7 @@
 import type { DownloadClient } from '../../../../shared/remote-chat/downloads';
 import type { DownloadNative, DownloadRequest } from './types';
 
-/** No file decoding or buffers on JS: forward one bounded encrypted RPC at a time per native task. */
+/** Native tasks own the bounded read window; JS only forwards encrypted RPCs without decoding file bytes. */
 export async function forwardDownloadRequest(options: {
   request: DownloadRequest; client?: DownloadClient; native: DownloadNative;
 }) {

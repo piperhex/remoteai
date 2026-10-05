@@ -41,7 +41,8 @@ it('saves empty files without issuing an invalid range read', async () => {
   expect(task.destination.finish).toHaveBeenCalledOnce();
 });
 
-it('waits for disk writes before requesting another chunk', async () => {
+it('waits for disk writes before requesting another chunk when configured for a single in-flight block', async () => {
+  setChatPolicy({ ...DEFAULT_CHAT_POLICY, fileDownloadWindowSize: 1 });
   const task = fixture();
   let release: () => void = () => undefined;
   task.destination.write.mockImplementationOnce(() => new Promise<void>((resolve) => { release = resolve; }));

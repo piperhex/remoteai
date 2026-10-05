@@ -50,13 +50,15 @@ export const downloadManager = {
     const previous = connection;
     const sameSource = previous?.files === value.files && previous.owner === value.owner;
     if (sameSource && previous.ready === value.ready && previous.mode === value.mode
+      && previous.windowSize === value.windowSize
       && previous.threadId === value.threadId
       && previous.cwd === value.cwd && previous.deviceName === value.deviceName) return;
     connection = value; emit();
-    if (sameSource && previous.ready === value.ready) return;
+    if (sameSource && previous.ready === value.ready && previous.windowSize === value.windowSize) return;
     void this.initialize().then(() => {
-      if (connection?.files === value.files && connection.ready === value.ready) {
-        return native?.connection(value.owner, value.deviceId, value.ready);
+      if (connection?.files === value.files && connection.ready === value.ready
+        && connection.windowSize === value.windowSize) {
+        return native?.connection(value.owner, value.deviceId, value.ready ? value.windowSize : 0);
       }
     })
       .catch(() => { error = t("暂时无法连接下载管理。"); emit(); });
@@ -66,7 +68,7 @@ export const downloadManager = {
     const previous = connection;
     // Pause before discarding the source. A new device must never receive an old device's read requests.
     connection = undefined; emit();
-    void native?.connection(previous.owner, previous.deviceId, false)
+    void native?.connection(previous.owner, previous.deviceId, 0)
       .catch(() => console.warn('Could not checkpoint disconnected downloads.'));
   },
   async enqueue(source: DownloadSource) {

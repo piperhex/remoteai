@@ -57,6 +57,19 @@ test('keeps preview downloads running between pages and isolates accounts', asyn
   await expect(card(page)).toContainText('已完成');
 });
 
+test('uses five concurrent blocks by default and applies administrator changes while downloading', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => { window.downloadFixture.size = 16 * 1024 * 1024; });
+  await enqueue(page);
+  await expect.poll(() => page.evaluate(() => window.downloadFixture.peak)).toBe(5);
+  await page.evaluate(() => window.downloadFixture.windowSize(2));
+  await expect.poll(() => page.evaluate(() => window.downloadFixture.active)).toBe(2);
+  await page.evaluate(() => window.downloadFixture.windowSize(8));
+  await expect.poll(() => page.evaluate(() => window.downloadFixture.peak)).toBe(8);
+  await card(page).getByRole('button', { name: '暂停', exact: true }).click();
+  await expect(card(page)).toContainText('已暂停');
+});
+
 test('pauses on disconnect and removes an active task without restoring a late response', async ({ page }) => {
   await open(page);
   await enqueue(page);

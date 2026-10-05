@@ -7,6 +7,14 @@ import java.util.concurrent.ScheduledFuture
 internal const val CHUNK_BYTES = 256 * 1024
 internal const val MAX_ACTIVE = 2
 internal const val REQUEST_TIMEOUT_MS = 60_000L
+internal const val MAX_READ_AHEAD = 12
+internal const val CHECKPOINT_INTERVAL_MS = 1_000L
+internal const val CHECKPOINT_BYTES = 4 * 1024 * 1024
+internal const val PROGRESS_INTERVAL_MS = 500L
+
+internal class DownloadRead(val operation: String, val offset: Long, val length: Int) {
+  var timeout: ScheduledFuture<*>? = null
+}
 
 internal class DownloadTask(val data: JSONObject) {
   val id: String get() = data.getString("id")
@@ -19,11 +27,11 @@ internal class DownloadTask(val data: JSONObject) {
     set(value) { data.put("received", value) }
   val size: Long get() = data.optLong("size")
   var remoteId = ""
-  var pending = ""
-  var operation = ""
+  val pending = linkedMapOf<String, DownloadRead>()
+  val buffered = mutableMapOf<Long, ByteArray>()
+  var nextOffset = 0L
   var lastProgress = 0L
   var sampledBytes = 0L
-  var timeout: ScheduledFuture<*>? = null
 
   fun fail() {
     status = "failed"

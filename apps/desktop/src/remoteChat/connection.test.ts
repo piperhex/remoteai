@@ -39,6 +39,7 @@ it('applies coordinator settings without treating them as a session frame', asyn
   await vi.advanceTimersByTimeAsync(0);
   expect(getChatPolicy()).toEqual(policy);
   const updated = { ...policy, filePreviewMaxMb: 200, fileDownloadMaxMb: 2000,
+    fileDownloadWindowSize: 9,
     p2pNegotiationTimeoutSeconds: 120, p2pRetryIntervalSeconds: 20, p2pDisconnectGraceSeconds: 30 };
   Socket.instances[0].onmessage?.({ data: JSON.stringify({ type: 'chat-policy', policy: updated }) });
   await vi.advanceTimersByTimeAsync(0);

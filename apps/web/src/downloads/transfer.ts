@@ -1,7 +1,6 @@
-import { DownloadCancelled, FILE_CHUNK_BYTES, validateChunk, validateFileInfo }
+import { DownloadCancelled, transferFileChunks, validateFileInfo }
   from '../../../../shared/remote-chat/fileDownload';
 import type { DownloadClient } from '../../../../shared/remote-chat/downloads';
-import { checkDownloadSize } from '../../../../shared/remote-chat/policy';
 import { resetDownload, storeChunk } from './storage';
 import type { DownloadTask } from './types';
 
@@ -25,19 +24,14 @@ export async function transferDownload({ task, client, signal, update }: Options
     update(task);
     const startedAt = performance.now();
     const startingOffset = task.received;
-    while (task.received < task.size) {
-      checkCancelled(signal);
-      checkDownloadSize(task.size);
-      const offset = task.received;
-      const length = Math.min(FILE_CHUNK_BYTES, task.size - offset);
-      const chunk = await client.read({ threadId: task.id, id: info.id, offset, length });
-      checkCancelled(signal);
-      validateChunk(chunk, offset, length);
-      task = { ...task, received: offset + length,
-        bytesPerSecond: (offset + length - startingOffset) * 1000 / Math.max(1, performance.now() - startedAt) };
-      await storeChunk(task, offset, chunk.data);
-      update(task);
-    }
+    await transferFileChunks({ client, threadId: task.id, info, signal, offset: task.received,
+      write: async (chunk, received) => {
+        const next = { ...task, received,
+          bytesPerSecond: (received - startingOffset) * 1000 / Math.max(1, performance.now() - startedAt) };
+        await storeChunk(next, chunk.offset, chunk.data);
+        task = next;
+        update(task);
+      } });
     checkCancelled(signal);
   } finally {
     if (typeof info?.id === 'string') await client.close(task.id, info.id)

@@ -71,6 +71,18 @@ try {
     assert.deepEqual((await request(base, 'GET', endpoint, { token })).body, policy);
   }
   assert.equal(unauthenticated.frames.length, 0, 'policy must not be pushed before authentication');
+  for (const windowSize of [1, 5, 12]) {
+    const current = (await request(base, 'GET', endpoint, { token })).body;
+    const policy = { ...current, fileDownloadWindowSize: windowSize };
+    assert.equal((await request(base, 'PATCH', endpoint, { token, body: policy })).status, 200);
+    await Promise.all([desktop, mobile].map(async ({ socket }) => {
+      const frame = await socket.wait(message => message.type === 'chat-policy'
+        && message.policy.fileDownloadWindowSize === windowSize
+        && message.policy.p2pNegotiationTimeoutSeconds === policy.p2pNegotiationTimeoutSeconds, 1500);
+      assert.deepEqual(frame.body.policy, policy);
+    }));
+    assert.deepEqual((await request(base, 'GET', endpoint, { token })).body, policy);
+  }
   const latest = (await request(base, 'GET', endpoint, { token })).body;
   const reconnected = await chat('mobile', token);
   assert.deepEqual(reconnected.policy, latest);
@@ -82,9 +94,14 @@ try {
       })).status, 400);
     }
   }
+  for (const value of [0, -1, 13, 1.5, null, '5']) {
+    assert.equal((await request(base, 'PATCH', endpoint, {
+      token, body: { ...latest, fileDownloadWindowSize: value },
+    })).status, 400);
+  }
   assert.deepEqual((await request(base, 'GET', endpoint, { token })).body, latest);
   console.log('PASS P2P and relay settings: uncapped values, immediate WS push to both peers, '
-    + 'reconnect, permissions and validation');
+    + 'download window updates, reconnect, permissions and validation');
 } finally {
   assert.equal((await request(base, 'PATCH', endpoint, { token, body: initial.body })).status, 200);
   for (const socket of sockets) socket.close();

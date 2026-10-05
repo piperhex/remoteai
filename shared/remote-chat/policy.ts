@@ -8,6 +8,11 @@ export const KIB = 1024;
 export const MIB = KIB * KIB;
 let current = { ...DEFAULT_CHAT_POLICY };
 let clientMode: ConnectionMode = 'offline';
+const policyListeners = new Set<() => void>();
+export function subscribeChatPolicy(listener: () => void) {
+  policyListeners.add(listener);
+  return () => { policyListeners.delete(listener); };
+}
 export function setChatConnectionMode(mode: ConnectionMode) { clientMode = mode; }
 export function isDirectChat(mode: ConnectionMode = clientMode) { return mode === 'direct'; }
 export function getChatPolicy(mode: ConnectionMode = clientMode) {
@@ -19,7 +24,10 @@ export function getChatPolicy(mode: ConnectionMode = clientMode) {
     fileDownloadMaxMb: Number.MAX_SAFE_INTEGER };
 }
 /** Only configuration received from the authenticated coordinator may update these limits. */
-export function setChatPolicy(value: unknown) { current = parseChatPolicy(value); }
+export function setChatPolicy(value: unknown) {
+  current = parseChatPolicy(value);
+  policyListeners.forEach(listener => listener());
+}
 export function base64Bytes(data: string) {
   const encoded = data.slice(data.indexOf(',') + 1);
   return Math.floor(encoded.length * 3 / 4) - (encoded.endsWith('==') ? 2 : Number(encoded.endsWith('=')));

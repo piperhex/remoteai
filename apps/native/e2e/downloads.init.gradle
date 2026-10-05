@@ -1,0 +1,10 @@
+// Isolate instrumentation from the installed app and use Android's built-in test runner.
+gradle.afterProject { project ->
+    if (project.path == ':app') {
+        project.android.defaultConfig.applicationId = 'com.codexswitch.mobile.downloadtest'
+        project.android.defaultConfig.testInstrumentationRunner = 'com.codexswitch.downloads.DownloadTestRunner'
+        project.android.sourceSets.androidTest.java.srcDir(new File(project.rootDir, '../e2e/downloads'))
+        project.android.useLibrary('android.test.runner')
+        project.android.useLibrary('android.test.base')
+    }
+}

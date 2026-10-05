@@ -27,6 +27,7 @@ export interface DownloadConnection {
   deviceName: string;
   ready: boolean;
   mode: ConnectionMode;
+  windowSize: number;
   threadId?: string;
   cwd?: string;
   client: DownloadClient;
@@ -47,6 +48,6 @@ export interface DownloadNative {
   pause: (id: string) => Promise<void>;
   resume: (id: string) => Promise<void>;
   delete: (id: string) => Promise<void>;
-  connection: (owner: string, deviceId: string, ready: boolean) => Promise<void>;
+  connection: (owner: string, deviceId: string, windowSize: number) => Promise<void>;
   accept: (id: string, result: string | null, failed: boolean) => Promise<boolean>;
 }

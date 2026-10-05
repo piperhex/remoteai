@@ -21,7 +21,7 @@ const goOnlyPermissions = new Set([
 const goOnlyChatFields = new Set([
   'chatSessionLimit',
   'p2pNegotiationTimeoutSeconds', 'p2pRetryIntervalSeconds', 'p2pDisconnectGraceSeconds',
-  'relayHeartbeatTimeoutSeconds',
+  'relayHeartbeatTimeoutSeconds', 'fileDownloadWindowSize',
 ]);
 const goOnlyDeviceFields = new Set(['guiAccountId', 'guiProviderId']);
 

@@ -25,6 +25,8 @@ export const CHAT_POLICY_FIELDS = {
   imagePreviewMaxMb: { min: 1, max: undefined, default: 20 },
   videoPreviewMaxMb: { min: 1, max: undefined, default: 100 },
   fileDownloadMaxMb: { min: 1, max: undefined, default: 20 },
+  // Two active downloads leave eight of the 32 RPC slots available for chat and other actions.
+  fileDownloadWindowSize: { min: 1, max: 12, default: 5 },
 } as const;
 
 export type NumericChatPolicy = { [K in keyof typeof CHAT_POLICY_FIELDS]: number };
@@ -44,7 +46,7 @@ export function parseChatPolicy(value: unknown): ChatPolicy {
     // Older saved policies and coordinators do not include these later additions.
     const optional = field.default === -1 || key === 'videoPreviewMaxMb'
       || key === 'fileUploadMaxMb' || key === 'fileUploadTotalMaxMb' || key === 'chatSessionLimit'
-      || key === 'relayHeartbeatTimeoutSeconds' || key in P2P_POLICY_FIELDS;
+      || key === 'relayHeartbeatTimeoutSeconds' || key === 'fileDownloadWindowSize' || key in P2P_POLICY_FIELDS;
     const number = optional && record[key] === undefined ? field.default : record[key];
     if (typeof number !== 'number' || !Number.isSafeInteger(number) || number < field.min
       || (field.default === -1 && number === 0) || (field.max !== undefined && number > field.max)) {

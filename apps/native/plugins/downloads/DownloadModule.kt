@@ -26,8 +26,8 @@ class DownloadModule(private val context: ReactApplicationContext) : ReactContex
   @ReactMethod fun pause(id: String, promise: Promise) = run(promise) { engine.pause(id); null }
   @ReactMethod fun resume(id: String, promise: Promise) = run(promise) { engine.resume(id); null }
   @ReactMethod fun delete(id: String, promise: Promise) = run(promise) { engine.delete(id); null }
-  @ReactMethod fun connection(owner: String, deviceId: String, ready: Boolean, promise: Promise) =
-    run(promise) { engine.connection(owner, deviceId, ready); null }
+  @ReactMethod fun connection(owner: String, deviceId: String, window: Int, promise: Promise) =
+    run(promise) { engine.connection(owner, deviceId, window); null }
   @ReactMethod fun accept(requestId: String, result: String?, failed: Boolean, promise: Promise) =
     run(promise) { engine.accept(requestId, result, failed) }
 
