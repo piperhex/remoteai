@@ -48,7 +48,7 @@ export function useTrackpad({ pointer, viewport, direct, click = true, panel, id
       if (direct) {
         const target = previous.accepted && point(event, true);
         if (target) pointer.absolute(target.x, target.y);
-      } else pointer.move(dx, dy, viewport.content.width - 1, viewport.content.height - 1);
+      } else pointer.moveInViewport(dx, dy, viewport);
       gesture.current = { ...previous, x: event.clientX, y: event.clientY,
         distance: previous.distance + Math.abs(dx) + Math.abs(dy) };
     },

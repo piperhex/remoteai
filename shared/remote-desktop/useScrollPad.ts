@@ -6,16 +6,16 @@ import { SCROLL_PAD_SIZE, ScrollPadController, scrollPadLayout, type DesktopWhee
 
 interface Options {
   pointer: DesktopPointer; viewport: DesktopViewport; panel: MousePanelActivity;
-  wheel: DesktopWheel; horizontal: boolean; enabled: boolean; panelPosition?: Point;
+  wheel: DesktopWheel; horizontal: boolean; enabled: boolean;
 }
 export interface ScrollPadProps {
   layout: ReturnType<typeof scrollPadLayout>; position: Point; horizontal: boolean; cancel: () => void;
 }
-export function useScrollPad({ wheel, horizontal, panel, pointer, viewport, enabled, panelPosition }: Options) {
+export function useScrollPad({ wheel, horizontal, panel, pointer, viewport, enabled }: Options) {
   const callbacks = useRef({ wheel, panel }); callbacks.current = { wheel, panel };
   const [active, setActive] = useState(false);
   const [position, setPosition] = useState<Point>({ x: 0, y: 0 });
-  const layout = scrollPadLayout(viewport, pointer.getSnapshot(), panelPosition);
+  const layout = scrollPadLayout(viewport, pointer.getSnapshot());
   const controller = useMemo(() => new ScrollPadController({ horizontal, change: setPosition,
     wheel: (delta, axis) => callbacks.current.wheel(delta, axis),
     close: () => { setActive(false); callbacks.current.panel.hold('scroll', false); } }), [horizontal]);

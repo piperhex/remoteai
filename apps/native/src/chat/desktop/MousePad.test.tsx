@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { Image } from 'react-native';
 import { DesktopMouse } from './MousePad';
 import { DesktopPointer } from '../../../../../shared/remote-desktop/input';
-import { desktopViewport, MOUSE_PANEL_SIZE, panDesktopViewport } from '../../../../../shared/remote-desktop/geometry';
+import { desktopViewport } from '../../../../../shared/remote-desktop/geometry';
 import { useTrackpad } from './useTrackpad';
 import { DesktopScrollPad } from './DesktopScrollPad';
 
@@ -98,41 +98,17 @@ it('keeps the native cursor and panel offset together at the screen edges', () =
   pointer.dispose();
 });
 
-it('keeps native controls visible after a pinch moves the pointer offscreen', () => {
+it('keeps native controls attached after a pinch moves the pointer offscreen', () => {
   const pointer = new DesktopPointer(vi.fn()); pointer.absolute(1, 1);
   const panel = { expanded: true, expand: vi.fn(), activity: vi.fn(), hold: vi.fn() };
   const viewport = { stage: { width: 800, height: 450 },
     content: { x: -500, y: -300, width: 2400, height: 1350 } };
-  const elements = nodes(DesktopMouse({ pointer, viewport, panel, visible: true, zoomed: true,
+  const elements = nodes(DesktopMouse({ pointer, viewport, panel, visible: true,
     wheel: vi.fn(), horizontal: true }));
   const cursor = Object.assign({}, ...elements.find(node => node.props.pointerEvents === 'none')!.props.style!);
   const controls = Object.assign({}, ...elements.find(node => node.props.pointerEvents === 'box-none')!.props.style!);
   expect(cursor.left).toBeGreaterThan(800); expect(cursor.top).toBeGreaterThan(450);
-  expect(controls).toMatchObject({ left: 672, top: 306, width: 120, height: 136 });
-  pointer.dispose();
-});
-
-it('moves native controls at the bottom video edge speed while the cursor follows the remote target', () => {
-  const pointer = new DesktopPointer(vi.fn());
-  const fitted = desktopViewport({ width: 800, height: 450 }, { width: 1600, height: 900 });
-  const panel = { expanded: true, expand: vi.fn(), activity: vi.fn(), hold: vi.fn() };
-  const render = (pan: ReturnType<typeof panDesktopViewport>) => {
-    pointer.absolute(pan.point.x, pan.point.y);
-    const elements = nodes(DesktopMouse({ pointer, viewport: pan.viewport, panelPosition: pan.panelPosition,
-      panel, visible: true, wheel: vi.fn(), horizontal: true }));
-    const style = (events: string) => Object.assign({},
-      ...elements.find(node => node.props.pointerEvents === events)!.props.style!);
-    return { cursor: style('none'), controls: style('box-none') };
-  };
-  const edge = panDesktopViewport(fitted, { x: 0.5, y: 306 / 449 }, MOUSE_PANEL_SIZE);
-  const before = render(edge);
-  const down = panDesktopViewport(fitted, { x: 0.5, y: 326 / 449 }, MOUSE_PANEL_SIZE, edge);
-  const after = render(down);
-  expect(after.controls.top! - before.controls.top!).toBe(-40);
-  expect(after.controls.top! - before.controls.top!).toBeCloseTo(down.viewport.content.y - edge.viewport.content.y);
-  expect(after.cursor.top! - before.cursor.top!).toBe(-20);
-  const up = panDesktopViewport(fitted, { x: 0.5, y: 316 / 449 }, MOUSE_PANEL_SIZE, down);
-  expect(render(up).controls.top! - after.controls.top!).toBeCloseTo(20);
+  expect(controls).toMatchObject({ left: cursor.left! + 24, top: cursor.top, width: 120, height: 136 });
   pointer.dispose();
 });
 

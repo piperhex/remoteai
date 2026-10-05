@@ -1,4 +1,4 @@
-import { cursorPosition, mousePanelPosition, MOUSE_PANEL_SIZE, type DesktopViewport, type Point } from './geometry';
+import { cursorPosition, mousePanelPosition, type DesktopViewport, type Point } from './geometry';
 
 export const SCROLL_PAD_SIZE = 180;
 export const SCROLL_PAD_TRAVEL = 60;
@@ -11,8 +11,8 @@ export interface ScrollPadOptions {
   wheel: DesktopWheel; change: (point: Point) => void; close: () => void; horizontal: boolean;
 }
 
-export function scrollPadLayout(viewport: DesktopViewport, point: Point, panelPosition?: Point) {
-  const panel = panelPosition ?? mousePanelPosition(cursorPosition(point, viewport), viewport.stage, MOUSE_PANEL_SIZE);
+export function scrollPadLayout(viewport: DesktopViewport, point: Point) {
+  const panel = mousePanelPosition(cursorPosition(point, viewport));
   const size = Math.max(1, Math.min(SCROLL_PAD_SIZE, viewport.stage.width - EDGE_GAP * 2,
     viewport.stage.height - EDGE_GAP * 2));
   return { size,

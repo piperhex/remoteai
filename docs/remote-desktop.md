@@ -161,15 +161,13 @@ connected and explains which update is needed instead of sending unsupported key
 
 The touch viewer draws its own pointer immediately; all Windows capture paths exclude the host cursor.
 The compact floating mouse follows that pointer and can extend into letterbox space around the video.
-The 18 × 24 pointer normally stays at the upper-left of the 120 × 136 mouse panel.
-The whole desktop pans when the controls reach the viewer edges, revealing black canvas.
-At the bottom, the canvas opens at twice the swipe speed because the touchpad leaves less room for the finger.
-During this assistance, the panel follows the video edge at the same speed, including on reverse swipes;
-the pointer continues to mark the actual remote click target.
-Once the margin closes, the panel follows the pointer again.
-This assistance stops at the margin needed to fit the panel at the desktop's bottom edge.
-Idle collapse preserves both the translation and panel position. Upward motion closes the margin immediately;
-the translation resets on rotation
+The 18 × 24 pointer stays at the upper-left of the 120 × 136 mouse panel, even outside the video or viewer.
+Movement stays at normal speed until the panel reaches the right or bottom viewer edge.
+At the bottom, the panel continues downward at twice the swipe speed, matching the new black margin's height.
+At the right, it continues rightward at swipe speed, matching the new black margin's width.
+The video pans in the opposite direction; neither axis clamps the panel or separates it from the pointer.
+Reversing the gesture closes the corresponding margin smoothly. Idle collapse preserves the translation,
+which resets on rotation
 or a switch to direct touch. Cursor placement and video rendering share the translated rectangle. The native cursor image
 has explicit layout dimensions so its 3x bitmap cannot enlarge it. Motion and direct touches use the displayed video rectangle,
 including the current zoom and translation.
@@ -193,7 +191,8 @@ padding while retaining side insets for cutouts. The Web viewer removes its vert
 Outside the mouse panel, pinch with two fingers to zoom from the fitted size up to 4×, and move both fingers to pan.
 The pinch follows its center without moving the remote mouse. After one finger lifts, the remaining finger is ignored
 until the gesture ends. While magnified, only two-finger gestures move the picture; mouse input and panel collapse
-cannot recenter it. Mouse controls stay within the stage even if the pointer is outside the magnified view.
+cannot recenter it. Mouse controls keep their cursor offset even outside the magnified view;
+two-finger panning can bring them back into view.
 Shrinking to the fitted size restores mouse edge assistance. Rotation and closing reset zoom.
 The native video surface retains its fitted layout size and applies translation/scale together as a transform,
 so Android does not resize the underlying surface on each pinch event or show a late jump after release.

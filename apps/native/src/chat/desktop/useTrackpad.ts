@@ -37,7 +37,7 @@ export function useTrackpad(options: TrackpadOptions) {
       if (direct) {
         const target = before.accepted && desktopPoint({ x: before.x + gesture.dx, y: before.y + gesture.dy }, viewport, true);
         if (target) pointer.absolute(target.x, target.y);
-      } else pointer.move(dx, dy, viewport.content.width - 1, viewport.content.height - 1);
+      } else pointer.moveInViewport(dx, dy, viewport);
       previous.current = { ...before, dx: gesture.dx, dy: gesture.dy,
         distance: before.distance + Math.abs(dx) + Math.abs(dy) };
     },

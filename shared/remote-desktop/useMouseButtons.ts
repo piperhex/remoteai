@@ -36,7 +36,7 @@ export function useMouseButtons(pointer: DesktopPointer) {
     if (press.current.distance >= TRACKPAD_TAP_DISTANCE) {
       clearTimeout(timer.current); locked.current = false; setDragging(true);
     }
-    pointer.move(dx, dy, viewport.content.width - 1, viewport.content.height - 1);
+    pointer.moveInViewport(dx, dy, viewport);
   };
   const up = (button: 'left' | 'right') => {
     if (button === 'left') { clearTimeout(timer.current); press.current.active = false; }

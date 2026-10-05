@@ -1,4 +1,5 @@
 import type { DesktopInput } from './protocol';
+import { relativeDesktopDelta, type DesktopViewport } from './geometry';
 
 export const MAX_BUFFERED_INPUT = 256 * 1024;
 const MOVE_INTERVAL = 16;
@@ -24,6 +25,10 @@ export class DesktopPointer {
   move(dx: number, dy: number, width: number, height: number) {
     if (!this.update(this.position.x + dx / Math.max(width, 1), this.position.y + dy / Math.max(height, 1))) return;
     this.timer ??= setTimeout(() => this.flush(), MOVE_INTERVAL);
+  }
+  moveInViewport(dx: number, dy: number, viewport: DesktopViewport) {
+    const delta = relativeDesktopDelta(this.position, { x: dx, y: dy }, viewport);
+    this.move(delta.x, delta.y, viewport.content.width - 1, viewport.content.height - 1);
   }
   absolute(x: number, y: number, immediate = true) {
     if (!this.update(x, y)) return;

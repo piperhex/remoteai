@@ -38,7 +38,7 @@ vi.mock('../../../../../shared/remote-desktop/useDesktopSession', () => ({ useDe
 } }));
 vi.mock('../../../../../shared/remote-desktop/useMousePanel', () => ({ useMousePanel: () => ({ expanded: true }) }));
 vi.mock('../../../../../shared/remote-desktop/useMouseViewport', () => ({
-  useMouseViewport: (_pointer: unknown, viewport: unknown) => ({ viewport }),
+  useMouseViewport: (_pointer: unknown, viewport: unknown) => viewport,
 }));
 vi.mock('../../../../../shared/remote-desktop/useDesktopZoom', () => ({
   useDesktopZoom: (viewport: unknown) => ({ viewport }),

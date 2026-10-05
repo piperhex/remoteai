@@ -106,9 +106,9 @@ test('pinches and pans outside the mouse panel without sending mouse input, then
     await page.waitForTimeout(1200); // Include an asynchronous connection-stats update.
     expect((await page.locator('video').boundingBox())!).toEqual(panned);
     const panel = (await page.locator('.rd-mouse-layer').boundingBox())!;
-    expect(panel.x).toBeGreaterThanOrEqual(stage.x);
-    expect(panel.x + panel.width).toBeLessThanOrEqual(stage.x + stage.width);
-    expect(panel.y + panel.height).toBeLessThanOrEqual(stage.y + stage.height);
+    const cursor = (await page.locator('.rd-cursor').boundingBox())!;
+    expect(panel.x - cursor.x).toBeCloseTo(24);
+    expect(panel.y).toBeCloseTo(cursor.y);
     await touch('touchStart', pair(0.1, 0.5));
     expect((await page.locator('video').boundingBox())!).toEqual(panned);
     await touch('touchMove', pair(0.29, 0.31));

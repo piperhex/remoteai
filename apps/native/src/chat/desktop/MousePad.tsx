@@ -3,7 +3,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import type { DesktopPointer } from '../../../../../shared/remote-desktop/input';
-import { cursorPosition, mousePanelPosition, MOUSE_PANEL_SIZE, MOUSE_ICON_SIZE, type DesktopViewport, type Point }
+import { cursorPosition, mousePanelPosition, MOUSE_PANEL_SIZE, MOUSE_ICON_SIZE, type DesktopViewport }
   from '../../../../../shared/remote-desktop/geometry';
 import type { MousePanelActivity } from '../../../../../shared/remote-desktop/useMousePanel';
 import { useMouseButtons } from '../../../../../shared/remote-desktop/useMouseButtons';
@@ -17,16 +17,16 @@ import { desktopStyles as s } from './styles';
 
 interface Props {
   pointer: DesktopPointer; viewport: DesktopViewport; panel: MousePanelActivity;
-  wheel: DesktopWheel; horizontal: boolean; panelPosition?: Point;
+  wheel: DesktopWheel; horizontal: boolean;
 }
 type MousePadProps = Omit<Props, 'wheel' | 'horizontal'> & { scroll: ScrollPadGesture };
-export function DesktopMouse({ visible, zoomed = false, ...props }: Props & { visible: boolean; zoomed?: boolean }) {
+export function DesktopMouse({ visible, ...props }: Props & { visible: boolean }) {
   useLanguage();
   const position = useSyncExternalStore(props.pointer.subscribe, props.pointer.getSnapshot);
   const scroll = useScrollPad({ ...props, enabled: visible && props.panel.expanded });
   const cursor = cursorPosition(position, props.viewport);
   const panelSize = props.panel.expanded ? MOUSE_PANEL_SIZE : MOUSE_ICON_SIZE;
-  const panel = props.panelPosition ?? mousePanelPosition(cursor, zoomed ? props.viewport.stage : undefined, panelSize);
+  const panel = mousePanelPosition(cursor);
   return <>
     {props.panel.expanded && <View pointerEvents="none" accessible={false}
       style={[s.cursor, { left: cursor.x, top: cursor.y }]}>

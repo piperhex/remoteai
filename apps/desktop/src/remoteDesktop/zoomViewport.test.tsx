@@ -15,7 +15,7 @@ const landscape = desktopViewport({ width: 800, height: 450 }, { width: 1600, he
 const portrait = desktopViewport({ width: 400, height: 800 }, { width: 1600, height: 900 });
 function Harness({ base = landscape, active = true }) {
   zoom = useDesktopZoom(base, active);
-  ({ viewport } = useMouseViewport(pointer, zoom.viewport, MOUSE_PANEL_SIZE, zoom.modified));
+  viewport = useMouseViewport(pointer, zoom.viewport, MOUSE_PANEL_SIZE, zoom.modified);
   return null;
 }
 beforeEach(() => {
@@ -52,16 +52,16 @@ it('restores mouse edge assistance after shrinking to the fitted size', () => {
   act(() => zoom.gestures.start([{ x: 100, y: 150 }, { x: 400, y: 150 }], viewport));
   act(() => zoom.gestures.move([{ x: 240, y: 150 }, { x: 260, y: 150 }]));
   act(() => zoom.gestures.end());
-  expect(viewport).toEqual(landscape);
+  expect(viewport).toMatchObject(landscape);
   act(() => pointer.absolute(1, 1));
   expect(viewport.content.x).toBeLessThan(0); expect(viewport.content.y).toBeLessThan(0);
 });
 
 it('resets zoom on rotation and closing, including a rotation back to the old dimensions', () => {
   enlarge();
-  act(() => root.render(<Harness base={portrait} />)); expect(viewport).toEqual(portrait);
-  act(() => root.render(<Harness />)); expect(viewport).toEqual(landscape);
+  act(() => root.render(<Harness base={portrait} />)); expect(viewport).toMatchObject(portrait);
+  act(() => root.render(<Harness />)); expect(viewport).toMatchObject(landscape);
   enlarge();
   act(() => root.render(<Harness active={false} />));
-  act(() => root.render(<Harness />)); expect(viewport).toEqual(landscape);
+  act(() => root.render(<Harness />)); expect(viewport).toMatchObject(landscape);
 });
