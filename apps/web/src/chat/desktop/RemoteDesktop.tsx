@@ -58,7 +58,7 @@ export function RemoteDesktop({ client, active, close, localClipboard }: {
   const measured = useVideoViewport(stage, video, active);
   const fitted = useInputViewport(measured, keyboard);
   const zoom = useDesktopZoom(fitted, active && !!session.stream);
-  const viewport = useMouseViewport(session.pointer, zoom.viewport,
+  const { viewport, panelPosition } = useMouseViewport(session.pointer, zoom.viewport,
     panelVisible ? (panel.expanded ? MOUSE_PANEL_SIZE : MOUSE_ICON_SIZE) : undefined, zoom.modified);
   const trackpad = useTrackpad({ pointer: session.pointer, viewport, direct, panel, id: 'stage', zoom: zoom.gestures });
   const wheel = (delta: number, horizontal = false) => {
@@ -94,7 +94,7 @@ export function RemoteDesktop({ client, active, close, localClipboard }: {
       {session.stats && statsVisible && !keyboard
         && <DesktopStats stats={session.stats} close={() => setStatsVisible(false)} />}
       {session.stream && !hardware && <DesktopMouse pointer={session.pointer} viewport={viewport} panel={panel}
-        visible={panelVisible} zoomed={zoom.modified} wheel={wheel}
+        visible={panelVisible} zoomed={zoom.modified} panelPosition={panelPosition} wheel={wheel}
         horizontal={!!session.capabilities.horizontalScroll} />}
       {session.status && <div className="rd-status" role="status"><span>{t(session.status)}</span>
         <button onClick={session.retry}>{t('重新连接')}</button></div>}

@@ -1,7 +1,7 @@
 export interface Point { x: number; y: number }
 export interface Size { width: number; height: number }
 export interface DesktopViewport { stage: Size; content: Size & Point }
-export interface DesktopPanState { offset: Point; point: Point }
+export interface DesktopPanState { offset: Point; point: Point; panelAnchorY?: number }
 export const MOUSE_SIZE = { width: 120, height: 136 };
 export const MOUSE_PANEL_SIZE = MOUSE_SIZE;
 export const MOUSE_ICON_SIZE = { width: 40, height: 40 };
@@ -44,7 +44,9 @@ export function panDesktopViewport(viewport: DesktopViewport, point: Point, pane
   const cursor = cursorPosition(point, viewport);
   const x = clamp(offset.x, EDGE_GAP - cursor.x,
     viewport.stage.width - EDGE_GAP - cursor.x - PANEL_GAP - panel.width);
-  const bottom = viewport.stage.height - EDGE_GAP - Math.max(CURSOR_SIZE.height, panel.height);
+  const panelBottom = viewport.stage.height - EDGE_GAP - Math.max(CURSOR_SIZE.height, panel.height);
+  // A collapsed icon must finish the same pan before adopting its smaller edge inset.
+  const bottom = Math.min(panelBottom, previous?.panelAnchorY ?? panelBottom);
   const bottomLimit = bottom - cursor.y;
   const endLimit = bottom - cursorPosition({ x: point.x, y: 1 }, viewport).y;
   // The pad leaves little room to swipe downward at the bottom. Reveal its black margin faster,
@@ -59,6 +61,11 @@ export function panDesktopViewport(viewport: DesktopViewport, point: Point, pane
   const restoredY = offset.y < 0
     ? Math.min(0, offset.y + Math.max(0, -deltaY) * BOTTOM_EDGE_PAN_GAIN) : offset.y;
   const y = clamp(restoredY, EDGE_GAP - cursor.y, Math.min(bottomLimit, downwardLimit));
-  return { point, offset: { x, y }, viewport: { ...viewport,
+  // Once bottom assistance starts, anchor the controls to the video so both move at the same speed.
+  // Retain the anchor on idle collapse; the cursor still tracks the actual remote click target.
+  const panelAnchorY = y < 0 ? Math.min(previous?.panelAnchorY ?? bottom, bottom) : undefined;
+  const panelPosition = mousePanelPosition({ x: cursor.x + x,
+    y: Math.min(cursor.y, panelAnchorY ?? cursor.y) + y }, viewport.stage, panel);
+  return { point, offset: { x, y }, panelAnchorY, panelPosition, viewport: { ...viewport,
     content: { ...viewport.content, x: viewport.content.x + x, y: viewport.content.y + y } } };
 }

@@ -143,11 +143,13 @@ test('follows the local pointer, collapses when idle and maps direct touches thr
   await page.mouse.move(stage.x + 15, stage.y + 20); await page.mouse.down();
   await page.mouse.move(stage.x + 15, stage.y + stage.height - 10); await page.mouse.up();
   const edgePanel = (await page.locator('.rd-mouse').boundingBox())!;
-  await expectAnchoredMouse(page);
+  const edgeCursor = (await page.locator('.rd-cursor').boundingBox())!;
+  expect(edgePanel.x - edgeCursor.x).toBeCloseTo(24);
+  expect(edgePanel.y).toBeLessThanOrEqual(edgeCursor.y);
   const videoHeight = Math.min(stage.height, stage.width * 9 / 16);
   expect(edgePanel.y + edgePanel.height).toBeLessThanOrEqual(stage.y + stage.height - 7);
   const edgeVideo = (await page.locator('video').boundingBox())!;
-  expect(edgePanel.y + edgePanel.height).toBeGreaterThan(edgeVideo.y + edgeVideo.height);
+  expect(edgePanel.y).toBeGreaterThanOrEqual(stage.y + 8);
   if (stage.height - videoHeight < 20) expect(edgeVideo.y).toBeLessThan(beforeVideo.y);
   await page.screenshot({ path: info.outputPath('mouse-follows-at-edge.png') });
   const icon = page.getByRole('button', { name: '展开鼠标面板' });
@@ -159,7 +161,7 @@ test('follows the local pointer, collapses when idle and maps direct touches thr
   await expect(page.locator('.rd-mouse')).toHaveCount(0);
   await page.screenshot({ path: info.outputPath('mouse-idle-icon.png') });
   await icon.click(); await expect(page.locator('.rd-mouse')).toBeVisible();
-  await expectAnchoredMouse(page);
+  expect((await page.locator('.rd-mouse').boundingBox())!).toEqual(edgePanel);
   const left = (await page.getByRole('button', { name: '鼠标左键', exact: true }).boundingBox())!;
   await page.mouse.move(left.x + left.width / 2, left.y + left.height / 2); await page.mouse.down();
   await expect(page.getByText('拖拽中', { exact: true })).toBeVisible(); await page.mouse.up();
@@ -209,22 +211,27 @@ test('opens the bottom canvas faster and restores it as soon as the swipe revers
   const bottom = stage.y + stage.height - 8 - 136;
   const margin = video.y + video.height - 1 - bottom;
   const swipeDown = async (distance: number) => {
-    await page.mouse.move(stage.x + 10, stage.y + 10); await page.mouse.down();
-    await page.mouse.move(stage.x + 10, stage.y + 10 + distance, { steps: 5 }); await page.mouse.up();
+    const pad = (await page.locator('.rd-pad').boundingBox())!;
+    await page.mouse.move(pad.x + 20, pad.y + 20); await page.mouse.down();
+    await page.mouse.move(pad.x + 20, pad.y + 20 + distance, { steps: 5 }); await page.mouse.up();
   };
   if (margin > 0) {
     await swipeDown(bottom - cursor.y);
     expect((await page.locator('video').boundingBox())!.y).toBeCloseTo(video.y, 0);
     const distance = Math.min(16, margin / 4);
+    const edgePanel = (await page.locator('.rd-mouse-layer').boundingBox())!;
     await swipeDown(distance);
     await expect.poll(async () => video.y - (await page.locator('video').boundingBox())!.y)
       .toBeCloseTo(distance * 2, 0);
-    await expectAnchoredMouse(page);
     const openedY = (await page.locator('video').boundingBox())!.y;
+    const openedPanel = (await page.locator('.rd-mouse-layer').boundingBox())!;
+    expect(openedPanel.y - edgePanel.y).toBeCloseTo(openedY - video.y, 0);
     await swipeDown(-distance / 2);
     await expect.poll(async () => (await page.locator('video').boundingBox())!.y - openedY)
       .toBeCloseTo(distance, 0);
-    await expectAnchoredMouse(page);
+    const restoredY = (await page.locator('video').boundingBox())!.y;
+    const restoredPanel = (await page.locator('.rd-mouse-layer').boundingBox())!;
+    expect(restoredPanel.y - openedPanel.y).toBeCloseTo(restoredY - openedY, 0);
     await swipeDown(video.height);
     expect(video.y - (await page.locator('video').boundingBox())!.y).toBeCloseTo(margin, 0);
     const cappedY = (await page.locator('video').boundingBox())!.y;

@@ -55,3 +55,12 @@ it('fits the complete cross inside portrait, landscape and tiny stages even when
     }
   }
 });
+
+it('opens the scroll cross over the panel when bottom panning separates it from the cursor', () => {
+  const viewport = { stage: { width: 800, height: 450 },
+    content: { x: 0, y: -40, width: 800, height: 450 } };
+  const panel = { x: 420, y: 240 };
+  const layout = scrollPadLayout(viewport, { x: 0.5, y: 0.9 }, panel);
+  expect(layout.x + layout.size / 2).toBe(panel.x + 60);
+  expect(layout.y + layout.size / 2).toBe(panel.y + 32);
+});

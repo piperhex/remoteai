@@ -47,7 +47,7 @@ export function RemoteDesktop({ client, active, close }: {
   const [size, setSize] = useState({ width: 400, height: 600 });
   const fitted = useInputViewport(desktopViewport(size, source), keyboard);
   const zoom = useDesktopZoom(fitted, active && !!session.stream);
-  const viewport = useMouseViewport(session.pointer, zoom.viewport,
+  const { viewport, panelPosition } = useMouseViewport(session.pointer, zoom.viewport,
     panelVisible ? (panel.expanded ? MOUSE_PANEL_SIZE : MOUSE_ICON_SIZE) : undefined, zoom.modified);
   const trackpad = useTrackpad({ pointer: session.pointer, viewport, direct, panel, id: 'stage', zoom: zoom.gestures });
   const wheel = (delta: number, horizontal = false) => {
@@ -105,7 +105,7 @@ export function RemoteDesktop({ client, active, close }: {
             {session.stats && statsVisible && !keyboard
               && <DesktopStats stats={session.stats} close={() => setStatsVisible(false)} />}
             {session.stream && <DesktopMouse pointer={session.pointer} viewport={viewport} panel={panel}
-              visible={panelVisible} zoomed={zoom.modified} wheel={wheel}
+              visible={panelVisible} zoomed={zoom.modified} panelPosition={panelPosition} wheel={wheel}
               horizontal={!!session.capabilities.horizontalScroll} />}
             {!!(session.status || orientation.error) && <View pointerEvents="box-none" style={s.messageLayer}>
               <View style={s.message}>

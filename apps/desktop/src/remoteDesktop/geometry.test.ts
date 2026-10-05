@@ -48,9 +48,10 @@ it('pans only when controls reach an edge, keeping both the hotspot and the pane
     for (const point of [{ x: 0.5, y: 0.5 }, { x: 1, y: 1 }, { x: 1, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 1 }]) {
       const result = panDesktopViewport(fitted, point, MOUSE_PANEL_SIZE, previous);
       const cursor = cursorPosition(point, result.viewport);
-      const panel = mousePanelPosition(cursor);
+      const panel = result.panelPosition;
       expect(cursor.x).toBeGreaterThanOrEqual(8); expect(cursor.y).toBeGreaterThanOrEqual(8);
       expect(panel.x + MOUSE_PANEL_SIZE.width).toBeLessThanOrEqual(stage.width - 8);
+      expect(panel.y).toBeGreaterThanOrEqual(8);
       expect(panel.y + MOUSE_PANEL_SIZE.height).toBeLessThanOrEqual(stage.height - 8);
       expect(result.viewport.content.width).toBe(fitted.content.width);
       expect(result.viewport.content.height).toBe(fitted.content.height);
@@ -144,4 +145,52 @@ it('does not jump back to the bottom cap when reversing downward again', () => {
   const down = panDesktopViewport(fitted, { x: 0.5, y: 0.9 + 1 / 449 }, MOUSE_PANEL_SIZE, up);
   expect(up.offset.y - down.offset.y).toBeCloseTo(2);
   expect(panDesktopViewport(fitted, down.point, MOUSE_PANEL_SIZE, down).offset).toEqual(down.offset);
+});
+
+it('moves the panel with the bottom video edge throughout downward and reverse swipes', () => {
+  const fitted = desktopViewport({ width: 800, height: 500 }, { width: 1600, height: 900 });
+  const bottom = fitted.stage.height - 8 - MOUSE_PANEL_SIZE.height;
+  const point = { x: 0.5, y: (bottom - fitted.content.y) / (fitted.content.height - 1) };
+  const edge = panDesktopViewport(fitted, point, MOUSE_PANEL_SIZE);
+  let previous = edge;
+  for (const distance of [10, 20, 30, 20, 25, 10, 0]) {
+    const target = { ...point, y: point.y + distance / (fitted.content.height - 1) };
+    const current = panDesktopViewport(fitted, target, MOUSE_PANEL_SIZE, previous);
+    const videoTravel = current.viewport.content.y - previous.viewport.content.y;
+    expect(current.panelPosition.y - previous.panelPosition.y).toBeCloseTo(videoTravel);
+    expect(current.panelPosition.x - cursorPosition(target, current.viewport).x).toBe(24);
+    expect(desktopPoint(cursorPosition(target, current.viewport), current.viewport)!.y).toBeCloseTo(target.y);
+    const idle = panDesktopViewport(fitted, target, MOUSE_PANEL_SIZE, current);
+    expect(idle.panelPosition).toEqual(current.panelPosition);
+    previous = current;
+  }
+  expect(previous.viewport).toEqual(fitted);
+  expect(previous.panelPosition).toEqual(edge.panelPosition);
+});
+
+it('holds the panel with the capped margin and does not jump on idle collapse or expansion', () => {
+  const fitted = desktopViewport({ width: 800, height: 450 }, { width: 1600, height: 900 });
+  const capped = panDesktopViewport(fitted, { x: 0.5, y: 0.9 }, MOUSE_PANEL_SIZE);
+  const end = panDesktopViewport(fitted, { x: 0.5, y: 1 }, MOUSE_PANEL_SIZE, capped);
+  expect(end.viewport).toEqual(capped.viewport);
+  expect(end.panelPosition).toEqual(capped.panelPosition);
+  const collapsed = panDesktopViewport(fitted, end.point, MOUSE_ICON_SIZE, end);
+  expect(collapsed.panelPosition).toEqual(end.panelPosition);
+  const expanded = panDesktopViewport(fitted, end.point, MOUSE_PANEL_SIZE, collapsed);
+  expect(expanded.panelPosition).toEqual(end.panelPosition);
+  expect(expanded.viewport).toEqual(end.viewport);
+});
+
+it('restores a collapsed panel with the video until it smoothly rejoins the cursor', () => {
+  const fitted = desktopViewport({ width: 800, height: 450 }, { width: 1600, height: 900 });
+  const full = panDesktopViewport(fitted, { x: 0.5, y: 1 }, MOUSE_PANEL_SIZE);
+  let previous = panDesktopViewport(fitted, full.point, MOUSE_ICON_SIZE, full);
+  for (const y of [420, 400, 360, 320, 306]) {
+    const current = panDesktopViewport(fitted, { x: 0.5, y: y / 449 }, MOUSE_ICON_SIZE, previous);
+    expect(current.panelPosition.y - previous.panelPosition.y)
+      .toBeCloseTo(current.viewport.content.y - previous.viewport.content.y);
+    previous = current;
+  }
+  expect(previous.viewport).toEqual(fitted);
+  expect(previous.panelPosition.y).toBe(cursorPosition(previous.point, fitted).y);
 });

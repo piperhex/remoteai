@@ -15,7 +15,7 @@ const landscape = desktopViewport({ width: 800, height: 450 }, { width: 1600, he
 const portrait = desktopViewport({ width: 400, height: 800 }, { width: 1600, height: 900 });
 function Harness({ base = landscape, active = true }) {
   zoom = useDesktopZoom(base, active);
-  viewport = useMouseViewport(pointer, zoom.viewport, MOUSE_PANEL_SIZE, zoom.modified);
+  ({ viewport } = useMouseViewport(pointer, zoom.viewport, MOUSE_PANEL_SIZE, zoom.modified));
   return null;
 }
 beforeEach(() => {

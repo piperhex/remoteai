@@ -2,7 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { ChevronDown, ChevronUp, GripHorizontal, Mouse } from 'lucide-react';
 import type { DesktopPointer } from '../../../../../shared/remote-desktop/input';
 import { cursorPosition, mousePanelPosition, MOUSE_PANEL_SIZE, MOUSE_ICON_SIZE, MOUSE_SIZE, CURSOR_SIZE,
-  type DesktopViewport }
+  type DesktopViewport, type Point }
   from '../../../../../shared/remote-desktop/geometry';
 import type { MousePanelActivity } from '../../../../../shared/remote-desktop/useMousePanel';
 import cursorImage from '../../../../../shared/remote-desktop/cursor.svg';
@@ -16,7 +16,7 @@ import { DesktopScrollPad } from './DesktopScrollPad';
 
 interface Props {
   pointer: DesktopPointer; viewport: DesktopViewport; panel: MousePanelActivity;
-  wheel: DesktopWheel; horizontal: boolean;
+  wheel: DesktopWheel; horizontal: boolean; panelPosition?: Point;
 }
 type MousePadProps = Omit<Props, 'wheel' | 'horizontal'> & { scroll: ScrollPadGesture };
 export function DesktopMouse({ visible, zoomed = false, ...props }: Props & { visible: boolean; zoomed?: boolean }) {
@@ -24,7 +24,7 @@ export function DesktopMouse({ visible, zoomed = false, ...props }: Props & { vi
   const scroll = useScrollPad({ ...props, enabled: visible && props.panel.expanded });
   const cursor = cursorPosition(position, props.viewport);
   const panelSize = props.panel.expanded ? MOUSE_PANEL_SIZE : MOUSE_ICON_SIZE;
-  const panel = mousePanelPosition(cursor, zoomed ? props.viewport.stage : undefined, panelSize);
+  const panel = props.panelPosition ?? mousePanelPosition(cursor, zoomed ? props.viewport.stage : undefined, panelSize);
   return <>
     {props.panel.expanded && <img className="rd-cursor" src={cursorImage} alt="" aria-hidden="true" draggable={false}
       style={{ ...CURSOR_SIZE, left: cursor.x, top: cursor.y }} />}

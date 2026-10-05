@@ -161,11 +161,15 @@ connected and explains which update is needed instead of sending unsupported key
 
 The touch viewer draws its own pointer immediately; all Windows capture paths exclude the host cursor.
 The compact floating mouse follows that pointer and can extend into letterbox space around the video.
-The 18 × 24 pointer stays at the upper-left of the 120 × 136 mouse panel. Controls keep a fixed offset
-while the whole desktop pans when they reach the viewer edges, revealing black canvas.
+The 18 × 24 pointer normally stays at the upper-left of the 120 × 136 mouse panel.
+The whole desktop pans when the controls reach the viewer edges, revealing black canvas.
 At the bottom, the canvas opens at twice the swipe speed because the touchpad leaves less room for the finger.
+During this assistance, the panel follows the video edge at the same speed, including on reverse swipes;
+the pointer continues to mark the actual remote click target.
+Once the margin closes, the panel follows the pointer again.
 This assistance stops at the margin needed to fit the panel at the desktop's bottom edge.
-The translation stays unchanged on reverse motion or idle collapse, and resets on rotation
+Idle collapse preserves both the translation and panel position. Upward motion closes the margin immediately;
+the translation resets on rotation
 or a switch to direct touch. Cursor placement and video rendering share the translated rectangle. The native cursor image
 has explicit layout dimensions so its 3x bitmap cannot enlarge it. Motion and direct touches use the displayed video rectangle,
 including the current zoom and translation.
