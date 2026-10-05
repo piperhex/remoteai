@@ -8,6 +8,7 @@ import org.json.JSONObject
 import java.util.UUID
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Scheduling, validation, base64 decoding, disk I/O and checkpoints stay off the UI and JS threads.
  * The bridge forwards bounded RPC packets through the existing authenticated/encrypted chat connection.
@@ -25,7 +26,29 @@ internal class DownloadEngine(
   private val windows = mutableMapOf<String, Int>()
   private var lastCheckpoint = 0L
   private var uncheckpointedBytes = 0L
+  private val publisher = DownloadPublisher()
+  private val saving = mutableMapOf<String, AtomicBoolean>()
+  private val deleting = mutableSetOf<String>()
+  private var shuttingDown = false
+  private val bulkStorage = BulkDownloadStorage(storage)
+  private val bulk = BulkDownloads(bulkStorage, BulkCallbacks(
+    execute = { worker.execute(it) }, request = { emit("downloadRequest", it.toString()) },
+    progress = { task, bytes -> recordProgress(task, bytes.toLong()) }, completed = { complete(it) },
+    failed = { task, code -> failTask(task, code) },
+  ))
+  private val stallTimer = worker.scheduleWithFixedDelay({
+    bulk.stalled()
+    if (uncheckpointedBytes > 0 && clock() - lastCheckpoint >= CHECKPOINT_INTERVAL_MS) checkpoint()
+  }, 1, 1, TimeUnit.SECONDS)
   private fun jobs(): LinkedHashMap<String, DownloadTask> = tasks ?: storage.load().also { tasks = it }
+
+  fun manifestPage(id: String, json: String) { bulkStorage.storePage(requireNotNull(jobs()[id]), json) }
+  fun failBulk(id: String, epoch: String, code: String) { bulk.failed(id, epoch, code); changed() }
+  fun invalidateBulk(owner: String, deviceId: String) {
+    jobs().values.filter { key(it.source) == owner + "\n" + deviceId && bulk.contains(it.id) }
+      .forEach { release(it); it.status = "paused" }
+    changed(); pump()
+  }
 
   fun submit(action: () -> Any?, resolve: (Any?) -> Unit, reject: (Exception) -> Unit) {
     worker.execute { try { resolve(action()) } catch (error: Exception) { reject(error) } }
@@ -34,8 +57,9 @@ internal class DownloadEngine(
   fun snapshot(): String = JSONArray().apply { jobs().values.forEach { put(it.data) } }.toString()
 
   private fun changed(persist: Boolean = true) {
-    if (persist) checkpoint()
-    emit("downloadTasksChanged", snapshot())
+    // A full disk must not hide the in-memory failure state from the download page.
+    try { if (persist) checkpoint() }
+    finally { emit("downloadTasksChanged", snapshot()) }
   }
 
   private fun checkpoint() {
@@ -60,7 +84,9 @@ internal class DownloadEngine(
     require(window in 0..MAX_READ_AHEAD)
     val key = owner + "\n" + deviceId
     if (window > 0) windows[key] = window else windows.remove(key)
-    if (window == 0) jobs().values.filter { key(it.source) == key && it.status in listOf("queued", "downloading") }
+    if (window == 0) jobs().values.filter {
+      key(it.source) == key && it.status in listOf("queued", "preparing", "downloading")
+    }
       .forEach { release(it); it.status = "paused" }
     jobs().values.filter { key(it.source) == key && it.status == "downloading" }.forEach { fill(it) }
     changed(); pump()
@@ -69,13 +95,18 @@ internal class DownloadEngine(
   fun pause(id: String) {
     val task = requireNotNull(jobs()[id])
     if (task.status == "completed") return
+    saving[id]?.set(true)
     release(task); task.status = "paused"
     changed(); pump()
   }
 
   fun resume(id: String) {
     val task = requireNotNull(jobs()[id])
-    if (task.status in listOf("completed", "queued", "downloading")) return
+    if (task.status in listOf("completed", "queued", "preparing", "downloading", "verifying", "saving")) return
+    if (task.data.optBoolean("readyToSave") && storage.part(task).length() == task.size) {
+      if (saving.containsKey(id)) { task.status = "queued"; changed(); return }
+      complete(task); return
+    }
     require(windows.containsKey(key(task.source)))
     task.status = "queued"; task.data.put("message", "")
     changed(); pump()
@@ -83,17 +114,22 @@ internal class DownloadEngine(
 
   fun delete(id: String) {
     val task = jobs()[id] ?: return
+    if (saving.containsKey(id)) {
+      deleting.add(id); pause(id); return
+    }
     release(task); task.status = "paused"
     try { storage.delete(task); jobs().remove(id) }
     finally { changed(); pump() }
   }
 
   private fun pump() {
-    val active = jobs().values.count { it.status == "downloading" }
+    if (shuttingDown) return
+    val active = jobs().values.count { it.status in listOf("preparing", "downloading", "verifying", "saving") }
     jobs().values.filter { it.status == "queued" && windows.containsKey(key(it.source)) }
+      .filter { !saving.containsKey(it.id) }
       .take(MAX_ACTIVE - active).forEach {
-        it.status = "downloading"
-        request(it, "open")
+        if (it.data.optBoolean("readyToSave") && storage.part(it).length() == it.size) complete(it)
+        else { it.status = "preparing"; request(it, "open") }
       }
     changed()
   }
@@ -107,10 +143,11 @@ internal class DownloadEngine(
     emit("downloadRequest", packet.toString())
     read.timeout = worker.schedule({
       if (task.pending.containsKey(requestId)) { release(task); task.fail(); changed(); pump() }
-    }, requestTimeout, TimeUnit.MILLISECONDS)
+    }, if (operation == "open") maxOf(requestTimeout, PREPARE_TIMEOUT_MS) else requestTimeout, TimeUnit.MILLISECONDS)
   }
 
   private fun fill(task: DownloadTask) {
+    if (bulk.contains(task.id)) { bulk.fill(); return }
     if (task.remoteId.isEmpty()) return
     val window = windows[key(task.source)] ?: return
     // Completed replies also occupy the window until their predecessors have been written.
@@ -122,16 +159,30 @@ internal class DownloadEngine(
   }
 
   fun accept(requestId: String, json: String?, failed: Boolean): Boolean {
+    val failureCode = if (failed && json != null) {
+      JSONObject(json).optString("code").takeIf { it.isNotEmpty() }
+    } else null
+    if (bulk.acknowledged(requestId, failed, failureCode)) return true
     val task = jobs().values.find { it.pending.containsKey(requestId) } ?: return false
     val read = task.pending.remove(requestId) ?: return false
     read.timeout?.cancel(false)
     try {
+      if (failureCode != null) throw BulkDownloadFailure(failureCode)
       check(!failed)
       val result = JSONObject(requireNotNull(json))
       if (read.operation == "open") opened(task, result) else received(task, read, result)
       if (task.received == task.size) complete(task) else fill(task)
-    } catch (_: Exception) { release(task); task.fail(); changed(); pump() }
+    } catch (error: Exception) {
+      failTask(task, (error as? BulkDownloadFailure)?.code)
+    }
     return true
+  }
+
+  private fun failTask(task: DownloadTask, code: String?) {
+    release(task); task.fail()
+    if (code != null) task.data.put("message", bulkFailureMessage(code))
+    if (code in listOf("PATH_UNAVAILABLE", "EPOCH_EXPIRED", "CANCELLED")) task.status = "paused"
+    changed(); pump()
   }
 
   private fun opened(task: DownloadTask, info: JSONObject) {
@@ -142,6 +193,18 @@ internal class DownloadEngine(
     val name = info.getString("name")
     require(name.isNotEmpty() && name !in listOf(".", "..") && name.length <= 255)
     require(name.none { it == '/' || it == '\\' || it.code < 32 || it.code == 127 })
+    task.status = "downloading"
+    if (info.has("bulk")) {
+      task.data.put("size", size).put("name", name).put("mimeType", info.getString("mimeType"))
+        .put("protocol", "bulk").put("message", "")
+      bulk.open(task, info.getJSONObject("bulk"))
+      task.lastProgress = clock(); task.sampledBytes = task.received
+      changed(); return
+    }
+    if (task.data.optString("protocol") == "bulk") {
+      task.received = 0; task.data.remove("manifest"); task.data.remove("checkpoint")
+    }
+    task.data.put("protocol", "legacy").put("message", "兼容模式")
     val revision = info.optString("revision")
     if (task.received > 0 && (revision.isEmpty() || revision != task.data.optString("revision") || task.size != size)) {
       task.received = 0; task.data.put("message", "文件已更新，已从头下载。")
@@ -163,11 +226,16 @@ internal class DownloadEngine(
     val bytes = Base64.decode(encoded, Base64.NO_WRAP)
     require(bytes.size == length)
     task.buffered[read.offset] = bytes
+    val before = task.received
     while (true) {
       val next = task.buffered.remove(task.received) ?: break
       storage.append(task, next)
-      uncheckpointedBytes += next.size
     }
+    recordProgress(task, task.received - before)
+  }
+
+  private fun recordProgress(task: DownloadTask, bytes: Long) {
+    uncheckpointedBytes += bytes
     val now = clock()
     if (uncheckpointedBytes > 0 && (now - lastCheckpoint >= CHECKPOINT_INTERVAL_MS
         || uncheckpointedBytes >= CHECKPOINT_BYTES)) checkpoint()
@@ -180,14 +248,62 @@ internal class DownloadEngine(
 
   private fun complete(task: DownloadTask) {
     release(task)
-    storage.publish(task) { checkpoint() }
-    task.status = "completed"; task.data.put("message", "已保存到下载文件夹")
-    changed()
-    storage.removePart(task)
-    pump()
+    task.status = "verifying"; task.data.put("savedBytes", 0)
+    changed(); pump()
+    val cancelled = AtomicBoolean(false)
+    saving[task.id] = cancelled
+    val copy = DownloadTask(JSONObject(task.data.toString()))
+    var progressAt = 0L
+    publisher.submit(cancelled, {
+      val verifying = System.nanoTime()
+      bulkStorage.verifyComplete(copy) { check(!cancelled.get()) }
+      worker.submit {
+        check(!cancelled.get())
+        downloadMeasurement(task, "verifyMs", (System.nanoTime() - verifying) / 1_000_000.0)
+        task.status = "saving"; task.data.put("readyToSave", true); changed()
+      }.get()
+      val publishing = System.nanoTime()
+      storage.publish(copy, {
+        worker.submit {
+          task.data.put("uri", copy.data.getString("uri")); checkpoint()
+        }.get()
+      }, { copied ->
+        check(!cancelled.get())
+        if (clock() - progressAt >= PROGRESS_INTERVAL_MS || copied == task.size) {
+          progressAt = clock()
+          worker.execute { if (!cancelled.get()) { task.data.put("savedBytes", copied); changed(false) } }
+        }
+      })
+      worker.execute { downloadMeasurement(task, "saveMs", (System.nanoTime() - publishing) / 1_000_000.0) }
+    }, { error -> worker.execute { saved(task, cancelled, error) } })
+  }
+
+  private fun saved(task: DownloadTask, cancelled: AtomicBoolean, error: Exception?) {
+    saving.remove(task.id)
+    try {
+      if (deleting.remove(task.id)) { storage.delete(task); jobs().remove(task.id); return }
+      if (cancelled.get()) { storage.removePublished(task); return }
+      if (error != null) {
+        task.status = "failed"
+        if (error is BulkDownloadFailure) {
+          task.data.put("readyToSave", false).put("message", bulkFailureMessage(error.code))
+        } else task.data.put("message", "保存未完成，请检查可用空间和权限后再次保存。")
+        return
+      }
+      task.status = "completed"; task.data.put("message", "已保存到下载文件夹")
+      checkpoint(); storage.removePart(task)
+    } finally {
+      changed(); pump()
+      if (shuttingDown && saving.isEmpty()) worker.shutdown()
+    }
   }
 
   private fun release(task: DownloadTask) {
+    bulk.close(task)
+    if (task.pending.values.any { it.operation == "open" }) {
+      emit("downloadRequest", JSONObject().put("operation", "cancelOpen").put("taskId", task.id)
+        .put("source", task.source).toString())
+    }
     task.data.put("bytesPerSecond", 0)
     task.pending.values.forEach { it.timeout?.cancel(false) }
     task.pending.clear(); task.buffered.clear()
@@ -200,11 +316,13 @@ internal class DownloadEngine(
 
   fun shutdown() {
     worker.execute {
-      jobs().values.filter { it.status in listOf("queued", "downloading") }.forEach {
+      shuttingDown = true; stallTimer.cancel(false)
+      saving.values.forEach { it.set(true) }; publisher.shutdown()
+      jobs().values.filter { it.status in listOf("queued", "preparing", "downloading", "verifying", "saving") }.forEach {
         release(it); it.status = "paused"
       }
       checkpoint()
+      if (saving.isEmpty()) worker.shutdown()
     }
-    worker.shutdown()
   }
 }

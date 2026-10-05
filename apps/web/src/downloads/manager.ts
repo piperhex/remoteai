@@ -1,11 +1,14 @@
 import { DownloadPolicyError } from '../../../../shared/remote-chat/policy';
-import { downloadBlob } from '../chat/fileDownloadTarget';
+import { DownloadCancelled } from '../../../../shared/remote-chat/fileDownload';
+import { BulkError } from '../../../../shared/remote-chat/bulkLimits';
+import { saveDownload } from './saveDownload';
 import type { AuthSession } from '../types';
-import { deleteDownload, downloadContent, listDownloads, storeDownload } from './storage';
+import { deleteDownload, listDownloads, storeDownload } from './storage';
 import { transferDownload } from './transfer';
 import type { DownloadConnection, DownloadSource, DownloadTask } from './types';
 
 const MAX_ACTIVE_DOWNLOADS = 2;
+const MAX_DOWNLOAD_RECORDS = 500;
 export const downloadOwner = (session: Pick<AuthSession, 'baseUrl' | 'email'>) =>
   JSON.stringify([session.baseUrl, session.email.toLowerCase()]);
 
@@ -27,7 +30,8 @@ export class WebDownloadManager {
   };
   initialize = () => this.initialization ??= listDownloads().then(tasks => {
     this.tasks = tasks.map(task => ({ ...task, bytesPerSecond: undefined,
-      status: ['queued', 'downloading'].includes(task.status) ? 'paused' : task.status }));
+      status: ['queued', 'preparing', 'downloading', 'verifying'].includes(task.status) ? 'paused'
+        : task.status === 'saving' ? 'ready' : task.status }));
     this.emit();
   }).catch(() => {
     this.failure = '无法读取下载记录，请检查浏览器存储空间后重试。';
@@ -58,8 +62,10 @@ export class WebDownloadManager {
     const existing = this.tasks.find(task => task.source.owner === source.owner
       && task.source.deviceId === source.deviceId && task.source.path === source.path
       && task.source.scope === source.scope && task.source.threadId === source.threadId
-      && task.source.cwd === source.cwd && ['queued', 'downloading', 'paused'].includes(task.status));
+      && task.source.cwd === source.cwd
+      && ['queued', 'preparing', 'downloading', 'verifying', 'saving', 'paused'].includes(task.status));
     if (existing) { await this.resume(existing.id); return existing.id; }
+    if (this.tasks.length >= MAX_DOWNLOAD_RECORDS) throw new Error('下载记录已满，请删除不再需要的记录后重试。');
     const task: DownloadTask = { id: crypto.randomUUID(), source,
       name: source.path.split(/[\\/]/).pop() || 'download', status: 'queued',
       received: 0, size: 0, createdAt: Date.now(), message: '' };
@@ -81,7 +87,7 @@ export class WebDownloadManager {
   }
   async resume(id: string) {
     const task = this.tasks.find(task => task.id === id);
-    if (!task || this.flights.has(id) || task.status === 'completed') return;
+    if (!task || this.flights.has(id) || ['completed', 'ready', 'saving'].includes(task.status)) return;
     await this.persist({ ...task, status: 'queued', message: '' });
     this.schedule();
   }
@@ -93,8 +99,21 @@ export class WebDownloadManager {
   }
   async save(id: string) {
     const task = this.tasks.find(task => task.id === id);
-    if (!task || task.status !== 'completed') return;
-    downloadBlob(await downloadContent(task), task.name);
+    if (!task || !['completed', 'ready'].includes(task.status)) return;
+    // Invoke the picker in the click stack before an IndexedDB await consumes user activation.
+    const saving = saveDownload(task, () => undefined);
+    this.update({ ...task, status: 'saving' });
+    try {
+      const confirmed = await saving;
+      await this.persist({ ...task, status: confirmed ? 'completed' : 'ready',
+        message: confirmed ? '已保存到设备' : '已开始保存，请在浏览器下载列表中确认。' });
+    } catch (error) {
+      const invalid = error instanceof BulkError && error.code === 'INTEGRITY_FAILED';
+      await this.persist({ ...task, status: invalid ? 'failed' : 'ready', verified: invalid ? false : task.verified,
+        message: invalid ? error.message : error instanceof DownloadCancelled ? ''
+        : '保存未完成，文件仍已就绪，可再次保存。' });
+      if (!(error instanceof DownloadCancelled)) throw error;
+    }
   }
   private async persist(task: DownloadTask) {
     await storeDownload(task);
@@ -116,10 +135,12 @@ export class WebDownloadManager {
     try {
       await this.persist({ ...task, status: 'downloading' });
       await transferDownload({ task, client, signal, update: value => { task = value; this.update(value); } });
-      await this.persist({ ...task, status: 'completed', bytesPerSecond: undefined });
+      await this.persist({ ...task, status: 'ready', bytesPerSecond: undefined });
     } catch (error) {
-      task = { ...task, status: signal.aborted ? 'paused' : 'failed', bytesPerSecond: undefined,
-        message: signal.aborted ? '' : error instanceof DownloadPolicyError ? error.message
+      const paused = signal.aborted || (error instanceof BulkError
+        && ['PATH_UNAVAILABLE', 'EPOCH_EXPIRED'].includes(error.code));
+      task = { ...task, status: paused ? 'paused' : 'failed', bytesPerSecond: undefined,
+        message: signal.aborted ? '' : error instanceof DownloadPolicyError || error instanceof BulkError ? error.message
           : '下载未完成，请检查连接和存储空间后重试。' };
       this.update(task);
       await storeDownload(task).catch(() => {

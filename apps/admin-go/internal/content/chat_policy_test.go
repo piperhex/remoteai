@@ -15,6 +15,7 @@ func TestChatPolicyDefaultsForOlderSettings(t *testing.T) {
 		"p2pDisconnectGraceSeconds":    10,
 		"relayHeartbeatTimeoutSeconds": 30,
 		"fileDownloadWindowSize":       5,
+		"fileBulkEnabled":              0,
 	}
 	for key := range defaults {
 		delete(policy, key)
@@ -26,6 +27,23 @@ func TestChatPolicyDefaultsForOlderSettings(t *testing.T) {
 	for key, expected := range defaults {
 		if parsed[key] != expected {
 			t.Fatalf("%s default: got %v, want %v", key, parsed[key], expected)
+		}
+	}
+}
+
+func TestBulkDownloadGateAcceptsOnlyExplicitZeroOrOne(t *testing.T) {
+	policy := defaultChatPolicy()
+	delete(policy, "titleSettings")
+	for _, value := range []float64{0, 1} {
+		policy["fileBulkEnabled"] = value
+		if parsed, err := parseChatPolicy(policy); err != nil || parsed["fileBulkEnabled"] != value {
+			t.Fatal(parsed, err)
+		}
+	}
+	for _, value := range []interface{}{true, "1", 2.0, -1.0, 0.5, math.NaN()} {
+		policy["fileBulkEnabled"] = value
+		if _, err := parseChatPolicy(policy); err == nil {
+			t.Fatalf("accepted unsafe gate value %v", value)
 		}
 	}
 }

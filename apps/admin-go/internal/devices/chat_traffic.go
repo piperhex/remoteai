@@ -20,6 +20,7 @@ type relayDelivery struct {
 	source, target   *peer
 	traffic          *sessionTraffic
 	fromDesktop      bool
+	device           string
 }
 
 type sessionTraffic struct {
@@ -61,14 +62,15 @@ func withChatClientInfo(frame platform.JSON, value interface{}) platform.JSON {
 }
 
 func (g *ChatGateway) deliverRelay(delivery relayDelivery, frame platform.JSON) {
-	delivery.target.sendGuarded(frame, func(bytes int) {
+	sent := func(bytes int) {
 		g.traffic.record(bytes)
 		if delivery.fromDesktop {
 			delivery.traffic.upload.Add(int64(bytes))
 		} else {
 			delivery.traffic.download.Add(int64(bytes))
 		}
-	}, func(bytes int, write func() error) error {
+	}
+	guard := func(bytes int, write func() error) error {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*heartbeatInterval)
 		defer cancel()
 		err := g.meter.Transmit(ctx, delivery.owner, bytes, write)
@@ -86,7 +88,28 @@ func (g *ChatGateway) deliverRelay(delivery relayDelivery, frame platform.JSON) 
 		delivery.source.send(message, nil)
 		delivery.target.send(message, nil)
 		return errRelaySkipped
-	})
+	}
+	if frame["type"] == "bulk" {
+		data, err := encodeBulkRelay(frame)
+		if err != nil {
+			delivery.source.close(4001, "Invalid download record")
+			return
+		}
+		output := outputFrame{bytes: data, sent: sent, guard: guard}
+		if g.bulkMeter != nil {
+			output.lease = &bulkWriter{meter: g.bulkMeter, session: delivery.sessionID, scope: chattraffic.BulkLeaseScope{
+				Owner: delivery.owner, Device: delivery.device, Writer: delivery.target.writerID},
+				failure: func() {
+					message := platform.JSON{"type": "relay-quota", "sessionId": delivery.sessionID,
+						"blocked": true, "reason": "unavailable"}
+					delivery.source.send(message, nil)
+					delivery.target.send(message, nil)
+				}}
+		}
+		delivery.target.sendBulk(output, delivery.owner)
+		return
+	}
+	delivery.target.sendGuarded(frame, sent, guard)
 }
 
 func (g *ChatGateway) publishTraffic() {

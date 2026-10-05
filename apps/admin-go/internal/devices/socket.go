@@ -12,6 +12,7 @@ import (
 
 	"github.com/codex-switch/admin-go/internal/platform"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -20,22 +21,30 @@ const authTimeout = 10 * time.Second
 const chatBufferLimit = 2 * 1024 * 1024
 
 type outputFrame struct {
-	kind  int
-	bytes []byte
-	sent  func(int)
-	guard func(int, func() error) error
+	lease   *bulkWriter
+	release func()
+	kind    int
+	bytes   []byte
+	sent    func(int)
+	guard   func(int, func() error) error
 }
 type peer struct {
-	serviceHost atomic.Bool
-	binaryRelay atomic.Bool
-	diagnostics *chatDiagnostics
-	conn        *websocket.Conn
-	queue       chan outputFrame
-	done        chan struct{}
-	closeOnce   sync.Once
-	buffered    atomic.Int64
-	alive       atomic.Bool
-	closed      atomic.Bool
+	writerID     string
+	pendingBulk  *outputFrame
+	serviceHost  atomic.Bool
+	binaryRelay  atomic.Bool
+	binaryBulk   atomic.Bool
+	bulkBuffered atomic.Int64
+	bulkQueue    chan outputFrame
+	bulkQueueMu  sync.Mutex
+	diagnostics  *chatDiagnostics
+	conn         *websocket.Conn
+	queue        chan outputFrame
+	done         chan struct{}
+	closeOnce    sync.Once
+	buffered     atomic.Int64
+	alive        atomic.Bool
+	closed       atomic.Bool
 }
 
 var upgrader = websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }}
@@ -45,7 +54,9 @@ func newPeer(conn *websocket.Conn) *peer {
 }
 
 func newPeerWithDiagnostics(conn *websocket.Conn, diagnostics *chatDiagnostics) *peer {
-	client := &peer{conn: conn, diagnostics: diagnostics, queue: make(chan outputFrame, 1024), done: make(chan struct{})}
+	client := &peer{conn: conn, diagnostics: diagnostics, writerID: uuid.NewString(),
+		queue: make(chan outputFrame, 1024), done: make(chan struct{})}
+	client.bulkQueue = make(chan outputFrame, 32)
 	client.alive.Store(true)
 	conn.SetPongHandler(func(string) error { client.alive.Store(true); return nil })
 	go client.writeLoop()
@@ -95,20 +106,34 @@ func (p *peer) encodeFrame(value interface{}) (int, []byte, error) {
 func (p *peer) writeLoop() {
 	timer := time.NewTicker(heartbeatInterval)
 	defer timer.Stop()
+	defer p.drainBulk()
 	for {
+		// Control/RPC frames take priority over the next bounded file record.
+		select {
+		case frame := <-p.queue:
+			if !p.writeQueued(frame, false) {
+				return
+			}
+			continue
+		default:
+		}
+		if p.pendingBulk != nil {
+			frame := *p.pendingBulk
+			p.pendingBulk = nil
+			if !p.writeQueued(frame, true) {
+				return
+			}
+			continue
+		}
 		select {
 		case <-p.done:
 			return
 		case frame := <-p.queue:
-			if err := p.conn.SetWriteDeadline(time.Now().Add(heartbeatInterval)); err != nil {
-				p.terminate()
+			if !p.writeQueued(frame, false) {
 				return
 			}
-			err := p.writeFrame(frame)
-			p.buffered.Add(-int64(len(frame.bytes)))
-			if err != nil {
-				p.diagnostics.log("chat write failed")
-				p.terminate()
+		case frame := <-p.bulkQueue:
+			if !p.writeQueued(frame, true) {
 				return
 			}
 		case <-timer.C:
@@ -146,6 +171,44 @@ func (p *peer) writeFrame(frame outputFrame) error {
 		frame.sent(len(frame.bytes))
 	}
 	return err
+}
+
+func (p *peer) writeQueued(frame outputFrame, bulk bool) bool {
+	if bulk && frame.lease != nil {
+		return p.writeBulkBatch(frame)
+	}
+	if frame.release != nil {
+		defer frame.release()
+	}
+	err := p.writeFrame(frame)
+	if !bulk {
+		p.buffered.Add(-int64(len(frame.bytes)))
+	}
+	if err != nil {
+		p.diagnostics.log("chat write failed")
+		p.terminate()
+		return false
+	}
+	return true
+}
+
+func (p *peer) drainBulk() {
+	p.bulkQueueMu.Lock()
+	defer p.bulkQueueMu.Unlock()
+	if p.pendingBulk != nil {
+		p.pendingBulk.release()
+		p.pendingBulk = nil
+	}
+	for {
+		select {
+		case frame := <-p.bulkQueue:
+			if frame.release != nil {
+				frame.release()
+			}
+		default:
+			return
+		}
+	}
 }
 
 func (p *peer) close(code int, reason string) {

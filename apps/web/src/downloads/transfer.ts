@@ -3,6 +3,7 @@ import { DownloadCancelled, transferFileChunks, validateFileInfo }
 import type { DownloadClient } from '../../../../shared/remote-chat/downloads';
 import { resetDownload, storeChunk } from './storage';
 import type { DownloadTask } from './types';
+import { transferBulkDownload } from './bulkTransfer';
 
 interface Options {
   task: DownloadTask; client: DownloadClient; signal: AbortSignal; update: (task: DownloadTask) => void;
@@ -17,9 +18,19 @@ export async function transferDownload({ task, client, signal, update }: Options
   try {
     validateFileInfo(info);
     checkCancelled(signal);
+    if (client.bulk?.available()) {
+      await transferBulkDownload({ task: { ...task, name: info.name, size: info.size, mimeType: info.mimeType },
+        info, client: client.bulk, signal, update });
+      return;
+    }
+    if (task.protocol === 'bulk' && task.received > 0) {
+      // Re-negotiate a fresh legacy session; its offsets cannot inherit unverified bulk/legacy content.
+      task = { ...task, received: 0, revision: undefined, manifest: undefined, checkpoint: undefined };
+      await resetDownload(task);
+    }
     const resume = !!info.revision && info.revision === task.revision && info.size === task.size;
     task = { ...task, name: info.name, size: info.size, revision: info.revision, mimeType: info.mimeType,
-      received: resume ? task.received : 0, status: 'downloading', message: '' };
+      received: resume ? task.received : 0, status: 'downloading', protocol: 'legacy', message: '兼容模式' };
     if (!resume) await resetDownload(task);
     update(task);
     const startedAt = performance.now();

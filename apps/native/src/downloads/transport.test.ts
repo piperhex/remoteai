@@ -2,6 +2,7 @@ import { expect, it, vi } from 'vitest';
 import { forwardDownloadRequest } from './transport';
 import type { DownloadNative, DownloadRequest } from './types';
 import type { DownloadClient } from '../../../../shared/remote-chat/downloads';
+import { BulkError } from '../../../../shared/remote-chat/bulkLimits';
 
 const source = { scope: 'computer' as const, owner: 'account', deviceId: 'pc', deviceName: 'PC', path: 'F:/app.apk' };
 const request: DownloadRequest = { requestId: 'request', taskId: 'job', source,
@@ -43,4 +44,11 @@ it('reports transport failure and keeps it isolated to its task', async () => {
   vi.mocked(client.open).mockRejectedValue(new Error('offline'));
   await forwardDownloadRequest({ request, client, native });
   expect(native.accept).toHaveBeenCalledWith('request', null, true);
+});
+
+it.each(['SOURCE_CHANGED', 'PATH_UNAVAILABLE'] as const)('preserves the authenticated download failure %s', async code => {
+  const { client, native } = setup();
+  vi.mocked(client.open).mockRejectedValue(new BulkError(code));
+  await forwardDownloadRequest({ request, client, native });
+  expect(native.accept).toHaveBeenCalledWith('request', JSON.stringify({ code }), true);
 });

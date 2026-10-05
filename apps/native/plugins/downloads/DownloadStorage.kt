@@ -11,6 +11,8 @@ import org.json.JSONArray
 import java.io.File
 import java.io.RandomAccessFile
 import java.util.UUID
+import java.io.InputStream
+import java.io.OutputStream
 
 /** Only the download executor accesses storage. Persisted IDs never act as arbitrary filesystem paths. */
 internal class DownloadStorage(private val context: Context) {
@@ -44,6 +46,7 @@ internal class DownloadStorage(private val context: Context) {
     // Batch fsync with checkpoints, instead of paying for two syncs per 256 KiB reply.
     tasks.filter { it.id in dirty }.forEach { task ->
       RandomAccessFile(part(task), "rw").use { it.fd.sync() }
+      task.data.optJSONObject("checkpoint")?.let { it.put("sequence", it.optLong("sequence") + 1) }
       dirty.remove(task.id)
     }
     val json = JSONArray().apply { tasks.forEach { put(it.data) } }.toString()
@@ -66,13 +69,19 @@ internal class DownloadStorage(private val context: Context) {
     dirty.add(task.id)
   }
 
-  fun publish(task: DownloadTask, checkpoint: () -> Unit) {
-    require(part(task).length() == task.size)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) publishMedia(task, checkpoint)
-    else publishLegacy(task, checkpoint)
+  fun writeAt(task: DownloadTask, offset: Long, bytes: ByteArray) {
+    require(offset >= 0 && offset + bytes.size <= task.size)
+    RandomAccessFile(part(task), "rw").use { it.seek(offset); it.write(bytes) }
+    dirty.add(task.id)
   }
 
-  private fun publishMedia(task: DownloadTask, checkpoint: () -> Unit) {
+  fun publish(task: DownloadTask, checkpoint: () -> Unit, progress: (Long) -> Unit = {}) {
+    require(part(task).length() == task.size)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) publishMedia(task, checkpoint, progress)
+    else publishLegacy(task, checkpoint, progress)
+  }
+
+  private fun publishMedia(task: DownloadTask, checkpoint: () -> Unit, progress: (Long) -> Unit) {
     val resolver = context.contentResolver
     // Save the pending URI before copying so a failed or interrupted publication can be removed on retry.
     removePublished(task)
@@ -84,17 +93,33 @@ internal class DownloadStorage(private val context: Context) {
     }
     val uri = checkNotNull(resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values))
     task.data.put("uri", uri.toString()); checkpoint()
-    checkNotNull(resolver.openOutputStream(uri)).use { output -> part(task).inputStream().use { it.copyTo(output) } }
+    checkNotNull(resolver.openOutputStream(uri)).use { output ->
+      part(task).inputStream().use { copy(it, output, progress) }
+    }
+    progress(task.size)
     check(resolver.update(uri, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null) == 1)
   }
 
   @Suppress("DEPRECATION") // API 24–28 require the legacy Downloads directory and runtime storage permission.
-  private fun publishLegacy(task: DownloadTask, checkpoint: () -> Unit) {
+  private fun publishLegacy(task: DownloadTask, checkpoint: () -> Unit, progress: (Long) -> Unit) {
     val root = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
     val destination = File(root, "Remote AI/${task.id}/${task.data.getString("name")}")
     check(destination.parentFile?.mkdirs() == true || destination.parentFile?.isDirectory == true)
     task.data.put("uri", Uri.fromFile(destination).toString()); checkpoint()
-    part(task).copyTo(destination, overwrite = true)
+    destination.outputStream().use { output -> part(task).inputStream().use { copy(it, output, progress) } }
+    progress(task.size)
+  }
+
+  private fun copy(input: InputStream, output: OutputStream, progress: (Long) -> Unit) {
+    val buffer = ByteArray(CHUNK_BYTES)
+    var copied = 0L
+    progress(copied)
+    while (true) {
+      val count = input.read(buffer)
+      if (count < 0) break
+      output.write(buffer, 0, count); copied += count; progress(copied)
+    }
+    output.flush()
   }
 
   fun removePublished(task: DownloadTask) {
@@ -121,5 +146,7 @@ internal class DownloadStorage(private val context: Context) {
     check(!file.exists() || file.delete())
     dirty.remove(task.id)
   }
-  fun delete(task: DownloadTask) { removePublished(task); removePart(task) }
+  fun delete(task: DownloadTask) {
+    removePublished(task); removePart(task); BulkDownloadStorage(this).delete(task)
+  }
 }

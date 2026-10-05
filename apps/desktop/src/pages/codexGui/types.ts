@@ -200,6 +200,7 @@ export type ApprovalReply = {
   answers?: Record<string, { answers: string[] }>;
 };
 export type Request =
+  | { operation: 'fileManifest'; threadId: string; id: string; page?: number; maxBytes: number }
   | import("../../../../../shared/remote-chat/video").VideoRequest
   | import("../../../../../shared/remote-chat/fileDownload").FileRequest
   | { operation: "textPreview"; threadId: string; path: string; maxBytes?: number }

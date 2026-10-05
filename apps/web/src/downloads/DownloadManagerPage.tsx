@@ -25,7 +25,7 @@ export function DownloadManagerPage({ owner, onBack }: { owner: string; onBack: 
     </div>
     <p className="download-help">{connection?.deviceName || t('先在聊天中连接电脑，即可浏览文件。')}
       {connection && <span role="status"> · {t(downloadConnectionLabel(connection.mode))}</span>}</p>
-    <p className="download-help">{t('切换页面后下载会继续。关闭网页会暂停，重新打开后可继续下载。完成后点击“保存到设备”。')}</p>
+    <p className="download-help">{t('切换页面后下载会继续。关闭网页会暂停，重新打开后可继续下载。文件就绪后点击“保存到设备”。')}</p>
     {error && <p role="alert" className="download-notice">{t(error)}</p>}
     <h3>{t('下载任务')} <small>{tasks.length}</small></h3>
     <div className="download-tasks">{tasks.map(task => <DownloadCard key={task.id} task={task} busy={busy === task.id}

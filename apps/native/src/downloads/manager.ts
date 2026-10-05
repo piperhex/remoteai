@@ -54,6 +54,10 @@ export const downloadManager = {
       && previous.threadId === value.threadId
       && previous.cwd === value.cwd && previous.deviceName === value.deviceName) return;
     connection = value; emit();
+    if (sameSource && previous.mode !== value.mode) {
+      void native?.invalidateBulk?.(value.owner, value.deviceId)
+        .catch(() => { error = t("下载暂时中断，请稍后继续。"); emit(); });
+    }
     if (sameSource && previous.ready === value.ready && previous.windowSize === value.windowSize) return;
     void this.initialize().then(() => {
       if (connection?.files === value.files && connection.ready === value.ready

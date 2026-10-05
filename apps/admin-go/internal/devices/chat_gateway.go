@@ -1,6 +1,7 @@
 package devices
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"sync"
@@ -21,6 +22,7 @@ type chatConnection struct {
 	timer         *time.Timer
 }
 type ChatGateway struct {
+	bulkMeter   *chattraffic.BulkMeter
 	meter       *chattraffic.Meter
 	service     *Service
 	sessions    *chatSessions
@@ -58,6 +60,9 @@ func newChatGateway(service *Service) (*ChatGateway, error) {
 				-1,
 			)}, ice: ice, done: make(chan struct{}), stopped: make(chan struct{}), stun: stun}
 	service.deps.FlushTraffic = traffic.flush
+	if service.deps.Config.Get("CHAT_BULK_LEASES_ENABLED", "false") == "true" {
+		gateway.bulkMeter = chattraffic.NewBulkMeter(gateway.meter)
+	}
 	service.deps.ReadBandwidth = traffic.bandwidth.Snapshot
 	gateway.sessions.deliver = gateway.deliverRelay
 	gateway.sessions.hot.deliver = gateway.deliverRelay
@@ -94,7 +99,11 @@ func (g *ChatGateway) serve(c *gin.Context) {
 	g.mu.Unlock()
 	defer g.disconnect(client)
 	for {
-		kind, data, err := conn.ReadMessage()
+		kind, reader, err := conn.NextReader()
+		var data []byte
+		if err == nil {
+			data, err = readChatPayload(client, kind, reader)
+		}
 		if err != nil {
 			code := websocket.CloseAbnormalClosure
 			var closed *websocket.CloseError
@@ -142,6 +151,7 @@ func (g *ChatGateway) receive(client *peer, state *chatConnection, message platf
 	token, _ := message["accessToken"].(string)
 	client.serviceHost.Store(isServiceCredential(token))
 	client.binaryRelay.Store(message["binaryRelay"] == true)
+	client.binaryBulk.Store(message["fileBulkV1"] == true && client.binaryRelay.Load())
 	// Serialize handshake snapshots with saved-policy broadcasts so stale reads cannot follow a new policy.
 	g.policyMu.Lock()
 	defer g.policyMu.Unlock()
@@ -163,7 +173,7 @@ func (g *ChatGateway) receive(client *peer, state *chatConnection, message platf
 	})
 	g.mu.Unlock()
 	client.send(platform.JSON{"type": "chat-policy", "policy": policy,
-		"binaryRelay": client.binaryRelay.Load(), "connectionDiagnostics": 1}, nil)
+		"binaryRelay": client.binaryRelay.Load(), "fileBulkV1": client.binaryBulk.Load(), "connectionDiagnostics": 1}, nil)
 	g.sessions.setLimit(policy["chatSessionLimit"].(float64))
 	return g.sessions.join(client, identity, message, g.ice)
 }
@@ -256,6 +266,13 @@ func (g *ChatGateway) maintain() {
 			g.refreshDesktopICE()
 		case <-timer.C:
 			g.sessions.prune()
+			if g.bulkMeter != nil {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				if err := g.bulkMeter.ReconcileExpired(ctx); err != nil {
+					slog.Warn("bulk lease reconciliation will be retried", "error", err)
+				}
+				cancel()
+			}
 			if err := g.meter.Flush(); err != nil {
 				slog.Warn("relay accounting settlement will be retried", "error", err)
 			}

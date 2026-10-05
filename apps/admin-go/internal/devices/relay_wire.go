@@ -17,6 +17,12 @@ func readChatFrame(client *peer, kind int, data []byte) (platform.JSON, error) {
 		return parseObject(data)
 	}
 	if kind == websocket.BinaryMessage && client.binaryRelay.Load() {
+		if len(data) >= len(bulkRelayMagic) && string(data[:4]) == bulkRelayMagic {
+			if !client.binaryBulk.Load() {
+				return nil, errors.New("bulk not negotiated")
+			}
+			return decodeBulkRelay(data)
+		}
 		return decodeRelay(data)
 	}
 	return nil, errors.New("unsupported chat frame")

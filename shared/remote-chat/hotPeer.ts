@@ -18,6 +18,7 @@ export class HotPeer {
   private readonly sessionPaths?: MultipathChannel;
   private readonly nativePath?: import('./nativePath').NativeChannel;
   constructor(private readonly options: {
+    bulkChannel?: import('./protocol').PeerOptions['bulkChannel'];
     desktop: boolean; iceServers: IceServer[]; createPeer: PeerFactory;
     sessionId?: string; tcp?: import('./tcp/types').TcpPunchConfig;
     nativeTraversal?: import('./nativePath').NativeTraversalConfig;
@@ -46,6 +47,7 @@ export class HotPeer {
     this.unhealthySince = undefined;
     try {
       this.peer = this.options.createPeer({
+        bulkChannel: this.options.bulkChannel,
         sessionId: this.options.sessionId, desktop: this.options.desktop, generation,
         tcp: this.options.tcp,
         iceServers: this.options.iceServers,

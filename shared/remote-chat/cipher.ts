@@ -5,6 +5,7 @@ import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
 import { decodeChatUtf8 } from './utf8';
 import type { PacketCipher, PacketCipherFactory } from './packetCipher';
+import { BulkCipher, type BulkCipherContext } from './bulkCipher';
 
 const REPLAY_WINDOW = 1024;
 
@@ -16,12 +17,15 @@ export function keyPair(random: (length: number) => Uint8Array) {
 /** Separate nonce namespaces per direction; authenticated session binding and replay rejection. */
 export class SessionCipher {
   private readonly key: Uint8Array;
+  private readonly bulkKey: Uint8Array;
+  private readonly bulkIdentity: Pick<BulkCipherContext, 'sessionId' | 'desktopKey' | 'clientKey' | 'desktop'>;
   private readonly context: Uint8Array;
   private readonly packetCipher?: PacketCipher;
   private destroyed = false;
   private sequence = 0;
   private highestReceived = 0;
   private readonly received = new Uint32Array(REPLAY_WINDOW);
+  private readonly bulkEpochs = new Set<string>();
 
   constructor(options: {
     secret: Uint8Array; publicKey: string; sessionId: string; desktop: boolean;
@@ -30,15 +34,27 @@ export class SessionCipher {
     const shared = x25519.getSharedSecret(options.secret, hexToBytes(options.publicKey));
     this.context = utf8ToBytes(`codex-switch-chat-v1:${options.sessionId}`);
     this.key = hkdf(sha256, shared, this.context, 'chat encryption', 32);
+    this.bulkKey = hkdf(sha256, this.key, this.context, 'file bulk root v1', 32);
+    const localKey = bytesToHex(x25519.getPublicKey(options.secret));
+    this.bulkIdentity = { sessionId: options.sessionId, desktop: options.desktop,
+      desktopKey: options.desktop ? localKey : options.publicKey,
+      clientKey: options.desktop ? options.publicKey : localKey };
     shared.fill(0);
     this.direction = options.desktop ? 1 : 2;
     try {
       this.packetCipher = options.createPacketCipher?.({ key: this.key, context: this.context });
-    } catch (error) { this.key.fill(0); throw error; }
+    } catch (error) { this.key.fill(0); this.bulkKey.fill(0); throw error; }
     if (this.packetCipher) this.key.fill(0);
   }
 
   private readonly direction: number;
+
+  createBulkCipher(context: Pick<BulkCipherContext, 'transferId' | 'manifestId' | 'epoch'>) {
+    if (this.destroyed) throw new Error('Session closed');
+    if (this.bulkEpochs.has(context.epoch) || this.bulkEpochs.size >= 1024) throw new Error('File epoch already used');
+    this.bulkEpochs.add(context.epoch);
+    return new BulkCipher(this.bulkKey, { ...this.bulkIdentity, ...context });
+  }
 
   encrypt(text: string) {
     if (this.destroyed) throw new Error('Session closed');
@@ -80,7 +96,9 @@ export class SessionCipher {
     if (this.destroyed) return;
     this.destroyed = true;
     this.key.fill(0);
+    this.bulkKey.fill(0);
     this.received.fill(0);
+    this.bulkEpochs.clear();
     this.packetCipher?.destroy();
   }
 }

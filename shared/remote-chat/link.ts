@@ -187,6 +187,11 @@ export class ChatLink {
     }
   }
   get resumable() { return this.implementation instanceof HotLink && this.implementation.resumable; }
+  get bulk() { return this.implementation instanceof HotLink ? this.implementation.bulk : undefined; }
+  createBulkCipher(context: Parameters<SessionCipher['createBulkCipher']>[0]) {
+    if (!(this.implementation instanceof HotLink)) throw new Error('Bulk unavailable');
+    return this.implementation.createBulkCipher(context);
+  }
   openNativeMedia(viewId: string) {
     return this.implementation instanceof HotLink ? this.implementation.openNativeMedia(viewId)
       : Promise.resolve(undefined);

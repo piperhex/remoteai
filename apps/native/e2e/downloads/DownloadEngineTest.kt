@@ -52,6 +52,17 @@ class DownloadEngineTest : InstrumentationTestCase() {
     (0 until tasks.length()).map { tasks.getJSONObject(it) }.first { it.getString("id") == taskId }.toString()
   } as String)
 
+  private fun completed(): JSONObject {
+    val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+    while (System.nanoTime() < deadline) {
+      val task = snapshot()
+      if (task.getString("status") == "completed") return task
+      assertFalse(task.getString("status") == "failed")
+      Thread.sleep(10)
+    }
+    throw AssertionError("Download did not finish saving")
+  }
+
   private fun requests(operation: String = "read"): List<JSONObject> {
     val result = mutableListOf<JSONObject>()
     run { result.addAll(packets.filter { it.optString("operation") == operation }) }
@@ -162,7 +173,7 @@ class DownloadEngineTest : InstrumentationTestCase() {
     open(size.toLong())
     for (index in listOf(4, 3, 2, 1, 0)) accept(requests()[index])
     accept(requests()[5])
-    val completed = snapshot()
+    val completed = completed()
     assertEquals("completed", completed.getString("status"))
     val uri = Uri.parse(completed.getString("uri"))
     val actual = instrumentation.targetContext.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
@@ -172,7 +183,19 @@ class DownloadEngineTest : InstrumentationTestCase() {
 
   fun testEmptyFileCompletesWithoutReads() {
     open(0)
-    assertEquals("completed", snapshot().getString("status"))
+    assertEquals("completed", completed().getString("status"))
     assertTrue(requests().isEmpty())
+  }
+
+  fun testUnavailableBulkPathPausesAndSourceChangeRemainsAnExplicitFailure() {
+    taskId = run { engine.enqueue(source) } as String
+    val first = requests("open").last().getString("requestId")
+    run { engine.accept(first, JSONObject().put("code", "PATH_UNAVAILABLE").toString(), true) }
+    assertEquals("paused", snapshot().getString("status"))
+    run { engine.resume(taskId) }
+    val second = requests("open").last().getString("requestId")
+    run { engine.accept(second, JSONObject().put("code", "SOURCE_CHANGED").toString(), true) }
+    assertEquals("failed", snapshot().getString("status"))
+    assertEquals("源文件已更新，请重新下载。", snapshot().getString("message"))
   }
 }

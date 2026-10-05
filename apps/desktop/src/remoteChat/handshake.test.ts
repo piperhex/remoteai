@@ -17,7 +17,7 @@ it.each([undefined, chatHandshake])('connects compatible phones and preserves pe
   expect(result.error).toBeUndefined();
   expect(chatApprovals(result.data)).toEqual(approvals);
   expect(guiApi.connect).toHaveBeenCalledWith({ reuseExisting: true });
-  if (body) expect(result.data).toEqual({ ...chatHandshake, approvals });
+  if (body) expect(result.data).toEqual({ ...chatHandshake, fileBulkV1: true, approvals });
   else expect(result.data).toEqual(approvals);
 });
 

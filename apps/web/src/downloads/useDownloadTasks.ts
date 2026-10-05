@@ -22,8 +22,8 @@ export function useDownloadTasks(owner: string) {
           content: t('将删除此网页保存的文件和下载记录。已保存到设备的文件和电脑上的原文件会保留。'),
           confirmText: t('删除'), cancelText: t('保留'), bodyStyle: { maxWidth: 400 } });
         if (confirmed) await downloadManager.remove(task.id);
-      } else if (task.status === 'completed') await downloadManager.save(task.id);
-      else if (['queued', 'downloading'].includes(task.status)) await downloadManager.pause(task.id);
+      } else if (['completed', 'ready'].includes(task.status)) await downloadManager.save(task.id);
+      else if (['queued', 'preparing', 'downloading', 'verifying'].includes(task.status)) await downloadManager.pause(task.id);
       else await downloadManager.resume(task.id);
     } catch { setError('操作未完成，请检查浏览器存储空间后重试。'); }
     finally { pending.current = false; setBusy(''); }

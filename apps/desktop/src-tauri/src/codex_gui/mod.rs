@@ -20,7 +20,7 @@ mod downloads;
 mod error;
 pub(crate) mod file_actions;
 pub(crate) mod file_preview;
-mod file_stream;
+pub(crate) mod file_stream;
 #[cfg(test)]
 mod fork_tests;
 pub(crate) mod git;
@@ -173,6 +173,9 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
             return Arc::clone(&state.downloads.0).open(&client, options).await
         }
         GuiRequest::FileRead(options) => return Arc::clone(&state.downloads.0).read(options).await,
+        GuiRequest::FileManifest(options) => {
+            return Arc::clone(&state.downloads.0).manifest(options).await
+        }
         GuiRequest::FileClose(options) => {
             return Arc::clone(&state.downloads.0).close(options).await
         }

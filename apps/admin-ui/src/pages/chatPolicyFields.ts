@@ -76,10 +76,15 @@ export const POLICY_SECTIONS: PolicySection[] = [
       hint: ['允许下载的最大文件大小', 'Maximum file size for download'], unit: ['MB', 'MB'] },
   ] },
   { key: 'downloads', title: ['文件下载', 'File downloads'],
-    hint: ['保存后应用到正在进行的下载。', 'Changes apply to downloads in progress after saving.'], fields: [
+    hint: ['选择下载方式，并调整兼容模式的传输数量。',
+      'Choose the download mode and adjust simultaneous transfers in compatibility mode.'], fields: [
+    { key: 'fileBulkEnabled', label: ['文件校验下载（试用）', 'Verified downloads (preview)'],
+      hint: ['开启后，新下载可使用文件校验和断点恢复。关闭后，正在使用此方式的下载会暂停。',
+        'New downloads can use file verification and resume. Turning this off pauses downloads using this mode.'],
+      unit: ['', ''] },
     { key: 'fileDownloadWindowSize', label: ['同时传输分块数', 'Concurrent download chunks'],
-      hint: ['每个文件默认同时传输 5 块，可设为 1–12 块。网络较慢时可适当调小。',
-        'Transfer 5 chunks per file by default. Choose 1–12; a lower value may help on slow connections.'],
+      hint: ['仅用于兼容模式，保存后对当前下载生效。每个文件默认 5 块，可设为 1–12 块。',
+        'Compatibility mode only; applies to current downloads after saving. Default: 5 chunks per file; range: 1–12.'],
       unit: ['块', 'chunks'] },
   ] },
 ];

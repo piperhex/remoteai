@@ -10,12 +10,12 @@ export function DownloadCard({ task, connected, busy, action, remove }: {
   action: () => void; remove: () => void;
 }) {
   useLanguage();
-  const active = task.status === 'downloading' || task.status === 'queued';
+  const active = ['downloading', 'queued', 'preparing', 'verifying', 'saving'].includes(task.status);
   const complete = task.status === 'completed';
   const paused = task.status === 'paused';
   const failed = task.status === 'failed';
-  const disabled = busy || (!connected && !active && !complete);
-  const label = active ? t("暂停") : complete ? t("打开文件") : t("继续下载");
+  const disabled = busy || (!connected && !active && !complete && !task.readyToSave);
+  const label = active ? t("暂停") : complete ? t("打开文件") : task.readyToSave ? t("再次保存") : t("继续下载");
   const icon = active ? 'pause-outline' : complete ? 'open-outline' : 'play-outline';
   const percent = downloadPercent(task);
   return <View style={styles.card}>
@@ -44,7 +44,7 @@ export function DownloadCard({ task, connected, busy, action, remove }: {
       </>}
     </View>
     {!!task.message && <Text style={failed ? styles.error : styles.text}>{task.message}</Text>}
-    {!connected && !complete && <Text style={styles.text}>{t("连接这台电脑后即可继续。")}</Text>}
+    {!connected && !complete && !task.readyToSave && <Text style={styles.text}>{t("连接这台电脑后即可继续。")}</Text>}
     <View style={[styles.toolbar, styles.cardActions]}>
       <Pressable accessibilityRole="button" accessibilityLabel={t("删除")} disabled={busy} onPress={remove}
         style={({ pressed }) => [styles.deleteButton, busy && styles.disabled, pressed && styles.pressed]}>

@@ -167,7 +167,7 @@ func (s *chatSessions) route(client *peer, message platform.JSON) error {
 		}
 		frame := platform.JSON{"type": "relay", "sessionId": id, "payload": payload}
 		if s.deliver != nil {
-			s.deliver(relayDelivery{session.owner, id, client, target, &session.traffic, client == session.desktop}, frame)
+			s.deliver(relayDelivery{session.owner, id, client, target, &session.traffic, client == session.desktop, ""}, frame)
 		} else {
 			target.send(frame, s.onRelay)
 		}

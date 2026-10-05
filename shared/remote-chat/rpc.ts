@@ -3,6 +3,8 @@ import { CONNECTION_ERRORS } from './connectionErrors';
 import { chatMessageCharLimit } from './framing';
 import type { TransferProgress } from './uploadProgress';
 import { taskRequest, type TaskDelivery } from './taskDelivery';
+import { BULK_LIMITS } from './bulkLimits';
+import { recordDownloadRpcLatency } from './downloadMetrics';
 
 const TRANSFER_CHARS_PER_SECOND = 128 * 1024;
 const SMALL_REQUEST_CHARS = 1024 * 1024;
@@ -11,6 +13,7 @@ const GIT_ACTION_TIMEOUT_MS = 5 * 60_000;
 function requestTimeout(body: unknown) {
   const operation = (body as { operation?: unknown } | null)?.operation;
   if (operation === 'guiGitAction') return GIT_ACTION_TIMEOUT_MS;
+  if (operation === 'fileBulk' && (body as { action?: string }).action === 'open') return BULK_LIMITS.prepareMs;
   // The direct size allowance is not a transfer estimate and must not turn a timeout into a multi-day wait.
   const chars = operation === 'queueEdit' ? chatMessageCharLimit('relay') : (JSON.stringify(body)?.length ?? 0);
   const transferMs = Math.ceil(Math.max(0, chars - SMALL_REQUEST_CHARS) / TRANSFER_CHARS_PER_SECOND) * 1000;
@@ -18,6 +21,7 @@ function requestTimeout(body: unknown) {
 }
 
 interface Pending {
+  started: number;
   progress?: TransferProgress;
   request: RpcRequest;
   resolve: (value: unknown) => void;
@@ -52,7 +56,8 @@ export class ChatRpc {
           if (items) progress(fraction, items);
           else progress(fraction);
         } : undefined;
-      this.pending.set(id, { request, resolve: (value) => resolve(value as T), reject, timer, progress: report });
+      this.pending.set(id, { request, resolve: (value) => resolve(value as T), reject, timer, progress: report,
+        started: performance.now() });
       this.report(request, 'sending');
       void this.options.send(request, report).then(() => {
         if (this.pending.has(id)) this.report(request, 'sent');
@@ -67,6 +72,7 @@ export class ChatRpc {
     if (!pending) return;
     this.pending.delete(message.id);
     clearTimeout(pending.timer);
+    recordDownloadRpcLatency(performance.now() - pending.started);
     this.report(pending.request, message.error ? 'unknown' : 'received');
     if (message.error) pending.reject(new Error(message.error));
     else pending.resolve(message.data);

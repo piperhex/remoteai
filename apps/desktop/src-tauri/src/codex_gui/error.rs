@@ -10,6 +10,8 @@ pub(super) enum GuiError {
     FileTooLarge,
     #[error("文件已更改，请重新打开。")]
     FileChanged,
+    #[error("SOURCE_CHANGED")]
+    FileSourceChanged,
     #[error("文件连接已过期，请重新打开。")]
     FileExpired,
     #[error("正在传输的文件较多，请稍后重试。")]

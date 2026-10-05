@@ -21,6 +21,8 @@ import { guiAccountBalances } from './guiAccountBalances';
 import { NativeChatTransport, type HostTransportEvent } from './nativeTransport';
 import { connectionDetails } from './connectionDetails';
 import { RelayQuota } from '../../../../shared/remote-chat/relayUsage';
+import { BulkSource } from './bulkSource';
+import { BULK_OPERATION } from '../../../../shared/remote-chat/bulkControl';
 
 export class ChatHost {
   private quota = new RelayQuota();
@@ -28,6 +30,7 @@ export class ChatHost {
   private generation = 0;
   private readonly leases = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly links = new Map<string, ChatLink>();
+  private readonly bulkSources = new Map<string, BulkSource>();
   private readonly connectedSessions = new Set<string>();
   private operations = new ChatOperations();
   private stream = new EventStream((event) => this.broadcast(event));
@@ -40,6 +43,7 @@ export class ChatHost {
   private readonly unsubscribeBalances: () => void;
   private closed = false;
   private diagnosticsEnabled = false;
+  private bulkRelayAvailable = false;
 
   constructor(private readonly onConnectionChange: (connected: boolean) => void) {
     this.transport = new NativeChatTransport((event) => this.transportEvent(event));
@@ -88,6 +92,8 @@ export class ChatHost {
   }
 
   private resetSessions() {
+    for (const source of this.bulkSources.values()) source.close();
+    this.bulkSources.clear();
     connectionDetails.reset();
     this.quota = new RelayQuota();
     const links = [...this.links.values()];
@@ -125,6 +131,7 @@ export class ChatHost {
   private async receive(data: string) {
     const message = parseMessage(data);
     if (message.type === CHAT_POLICY_MESSAGE) {
+      this.bulkRelayAvailable = message.fileBulkV1 === true;
       this.diagnosticsEnabled = message.connectionDiagnostics === 1;
       setChatPolicy(message.policy); return;
     }
@@ -166,6 +173,9 @@ export class ChatHost {
       typeof message.expiresAt === 'number' ? message.expiresAt : undefined);
     const keys = keyPair((size) => crypto.getRandomValues(new Uint8Array(size)));
     const link = new ChatLink({
+      binaryBulk: true,
+      bulkRelay: { available: () => this.bulkRelayAvailable && this.transport.ready,
+        send: bytes => this.transport.sendBulk(sessionId, bytes) },
       sessionId, desktop: true, secret: keys.secret, publicKey: String(message.publicKey),
       transportVersion: Number(message.transportVersion), reconnectRelay: () => this.transport.reconnect(),
       diagnosticsEnabled: () => this.diagnosticsEnabled,
@@ -181,7 +191,11 @@ export class ChatHost {
         if (request.kind !== 'request') return;
         // This namespace is added by Rust from its cloud identity, never from a mobile request.
         const terminalOwner = typeof message.terminalOwner === 'string' ? message.terminalOwner : sessionId;
-        void this.operations.execute(request, link.connectionMode, sessionId, terminalOwner).then((response) => {
+        const bulk = request.method === 'request'
+          && (request.body as { operation?: string })?.operation === BULK_OPERATION;
+        const response = bulk ? this.bulkSources.get(sessionId)!.execute(request)
+          : this.operations.execute(request, link.connectionMode, sessionId, terminalOwner);
+        void response.then((response) => {
           // A history response may include buffered fragments. Deliver those first to avoid replaying them afterward.
           this.stream.flush();
           return link.send(response);
@@ -190,6 +204,7 @@ export class ChatHost {
     });
     keys.secret.fill(0);
     this.links.set(sessionId, link);
+    this.bulkSources.set(sessionId, new BulkSource(link, sessionId));
     if (message.transportVersion === 2 && typeof message.resumeToken === 'string') {
       this.lease(sessionId, message.expiresAt);
     }
@@ -210,6 +225,7 @@ export class ChatHost {
   }
 
   private drop(sessionId: string) {
+    this.bulkSources.get(sessionId)?.close(); this.bulkSources.delete(sessionId);
     this.operations.release(sessionId);
     connectionDetails.remove(sessionId);
     const link = this.links.get(sessionId);
@@ -226,6 +242,8 @@ export class ChatHost {
     if (this.closed) return;
     for (const sessionId of this.links.keys()) this.endSession(sessionId);
     this.closed = true;
+    for (const source of this.bulkSources.values()) source.close();
+    this.bulkSources.clear();
     connectionDetails.reset();
     for (const lease of this.leases.values()) clearTimeout(lease);
     this.leases.clear();

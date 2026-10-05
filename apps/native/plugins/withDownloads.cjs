@@ -5,6 +5,7 @@ const path = require('node:path');
 const PACKAGE_LINE = 'packages.add(com.codexswitch.downloads.DownloadPackage())';
 
 module.exports = function withDownloads(config) {
+  require('../scripts/patch-webrtc-bulk.cjs').applyBulkPatch();
   config = withMainApplication(config, (result) => {
     const source = result.modResults.contents;
     if (!source.includes(PACKAGE_LINE)) {

@@ -14,6 +14,8 @@ class DownloadModule(private val context: ReactApplicationContext) : ReactContex
     }
   })
   override fun getName() = "FileDownloads"
+  override fun getConstants(): Map<String, Any> = mapOf("bulkBinaryAvailable" to
+    runCatching { javax.crypto.Cipher.getInstance(com.codexswitch.crypto.PacketCipher.TRANSFORMATION) }.isSuccess)
 
   private fun run(promise: Promise, action: () -> Any?) {
     engine.submit(action, { promise.resolve(it) }, {
@@ -30,6 +32,12 @@ class DownloadModule(private val context: ReactApplicationContext) : ReactContex
     run(promise) { engine.connection(owner, deviceId, window); null }
   @ReactMethod fun accept(requestId: String, result: String?, failed: Boolean, promise: Promise) =
     run(promise) { engine.accept(requestId, result, failed) }
+  @ReactMethod fun manifestPage(id: String, page: String, promise: Promise) =
+    run(promise) { engine.manifestPage(id, page); null }
+  @ReactMethod fun invalidateBulk(owner: String, deviceId: String, promise: Promise) =
+    run(promise) { engine.invalidateBulk(owner, deviceId); null }
+  @ReactMethod fun failBulk(id: String, epoch: String, code: String, promise: Promise) =
+    run(promise) { engine.failBulk(id, epoch, code); null }
 
   override fun invalidate() { engine.shutdown(); super.invalidate() }
 }

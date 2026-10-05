@@ -36,9 +36,8 @@ func allocate(db *gorm.DB, owner string, required int) (budget, error) {
 		if !Allowed(usage, required) {
 			return ErrQuota
 		}
-		var reserved int64
-		if err = tx.Raw(`SELECT COALESCE(SUM(bytes),0) FROM chat_relay_budgets
- WHERE user_id=? AND hour_start>=? AND NOT closed`, owner, MonthStart(now)).Scan(&reserved).Error; err != nil {
+		reserved, err := outstandingCredit(tx, owner, MonthStart(now))
+		if err != nil {
 			return err
 		}
 		usage.MonthUsedBytes += reserved

@@ -1,4 +1,5 @@
 import { SessionCipher } from './cipher';
+import { BulkTransport } from './bulkTransport';
 import { deliveryFrame, type DeliveryData } from './delivery';
 import { fitsRelayChunkLimit } from './framing';
 import { LinkDelivery } from './linkDelivery';
@@ -24,6 +25,7 @@ const TIMER_STALL_MS = 5000;
 
 /** Both paths stay open. Authenticated acknowledgements cover every fragment, including events. */
 export class HotLink {
+  readonly bulk: BulkTransport;
   private readonly diagnostic;
   private readonly peer: HotPeer;
   private readonly delivery: LinkDelivery;
@@ -56,6 +58,7 @@ export class HotLink {
     route?: ReturnType<PeerEndpointObservation['capture']> }>();
 
   constructor(private readonly options: LinkOptions) {
+    this.bulk = new BulkTransport(options.bulkRelay);
     this.diagnostic = connectionDiagnostic(options.sessionId, options.desktop, (event, fields) => {
       if (!this.closed && this.relay && options.diagnosticsEnabled?.() && options.relayBuffered() < MAX_BUFFER_BYTES) {
         options.signal({ type: 'diagnostic', sessionId: options.sessionId, payload: { event, ...fields } });
@@ -68,6 +71,7 @@ export class HotLink {
     this.delivery.setAvailable(false);
     if (options.publicKey) this.setKey(options.publicKey);
     this.peer = new HotPeer({ ...options,
+      bulkChannel: options.binaryBulk ? channel => this.bulk.attach(channel) : undefined,
       diagnostic: this.diagnostic,
       signal: (payload) => this.signal({ type: 'signal', payload }),
       channel: (channel) => this.attach(channel), disconnected: () => this.fallback(),
@@ -78,6 +82,10 @@ export class HotLink {
   get resumable() { return !this.closed && Boolean(this.cipher); }
   reportDiagnostic: import('./diagnostics').ConnectionDiagnostic = (event, fields) => this.diagnostic(event, fields);
   get connectionMode() { return this.mode; }
+  createBulkCipher(context: Parameters<SessionCipher['createBulkCipher']>[0]) {
+    if (!this.cipher) throw new Error('Session unavailable');
+    return this.cipher.createBulkCipher(context);
+  }
   get directEndpoints() {
     return !this.closed && this.mode === 'direct' ? this.endpointObservation.read(this.channel) : undefined;
   }
@@ -227,6 +235,7 @@ export class HotLink {
     if (mode !== this.mode) {
       this.diagnostic('mode', { mode, directHealthy: direct, relayHealthy: relay });
       this.mode = mode;
+      this.bulk.setMode(mode);
       this.options.mode(mode);
     }
     if (changed && path) this.delivery.flush(true);
@@ -310,6 +319,7 @@ export class HotLink {
     if (this.closed) return;
     if (notify) { this.transmit('direct', { kind: 'close' }); this.transmit('relay', { kind: 'close' }); }
     this.closed = true;
+    this.bulk.close();
     this.endpointObservation.clear();
     this.directPackets.clear();
     clearInterval(this.timer);

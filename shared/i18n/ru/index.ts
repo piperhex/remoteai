@@ -9,8 +9,10 @@ import { messages8 } from "./messages8";
 import { mobile } from './mobile';
 import { reliabilityRussian } from '../chatReliability';
 import { reviewRussian } from '../taskReview';
+import { downloads } from './downloads';
 
 export const russian = {
+  ...downloads,
   ...reliabilityRussian,
   ...reviewRussian,
   ...mobile,

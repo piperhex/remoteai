@@ -214,7 +214,7 @@ export class ChatOperations {
     try {
       const approvals = await guiApi.connect({ reuseExisting: true });
       this.titles.refreshSettings();
-      return body === undefined ? approvals : { ...chatHandshake, approvals };
+      return body === undefined ? approvals : { ...chatHandshake, approvals, fileBulkV1: true };
     } catch (error) { throw new Error(guiConnectionError(error)); }
   }
 

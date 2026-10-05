@@ -109,6 +109,7 @@ pub(super) enum Command {
     Detach(String),
     Reconnect(ReconnectRequest),
     Send(SendRequest),
+    Bulk(super::bulk::BulkSend),
     Ack(AckRequest),
 }
 

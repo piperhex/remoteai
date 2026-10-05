@@ -11,6 +11,9 @@ import { hasUpload, uploadProgress, type UploadProgress } from '../uploadProgres
 import { authorizationError, CONNECTION_ERRORS, socketConnectionError } from '../connectionErrors';
 import { SessionRenewal } from './sessionRenewal';
 import { PublicEndpointObserver } from '../publicEndpointObserver';
+import { downloadBulkClient } from './bulkClient';
+import { BULK_ERROR_EVENT } from '../bulkControl';
+import { BulkError, type BulkErrorCode } from '../bulkLimits';
 import {
   chatSocketUrl, parseMessage, type ConnectionMode, type IceServer, type RpcRequest, type Signal,
 } from '../protocol';
@@ -29,6 +32,8 @@ export interface ConnectionEvents {
 }
 
 interface ConnectionOptions extends ConnectionEvents {
+  binaryBulk?: boolean;
+  bulkFailure?: (transferId: string, epoch: string, code: string) => void;
   verifyHostKey?: HostKeyVerifier;
   /** Multi-device clients publish only the visible connection's transfer mode. */
   managePolicyMode?: boolean;
@@ -50,6 +55,14 @@ const SESSION_UNAVAILABLE_CODE = 4004;
 const MAX_RESUME_UNAVAILABLE_REPLIES = 2;
 
 export class ChatConnection {
+  private bulkSupported = false;
+  setBulkSupport(value: unknown) {
+    this.bulkSupported = !!value && typeof value === 'object'
+      && 'fileBulkV1' in value && value.fileBulkV1 === true;
+  }
+  readonly downloadsBulk = downloadBulkClient({ peer: () => this.options.deviceId,
+    link: () => this.link, supported: () => this.bulkSupported,
+    request: body => this.request('request', body) });
   private readonly publicEndpoints = new PublicEndpointObserver(value => this.options.publicEndpoints?.(value));
   private readonly quota = new RelayQuota();
   private socket?: ChatSocket;
@@ -120,11 +133,15 @@ export class ChatConnection {
       if (generation !== this.generation) { socket.close(); return; }
       socket.send(JSON.stringify({ type: 'authenticate', role: 'mobile',
         accessToken, deviceId: this.options.deviceId, publicKey: keys.publicKey,
-        transportVersion: 2, binaryRelay: true, tcpPunch: this.options.tcpPunch === true, resume: this.resume,
+        transportVersion: 2, binaryRelay: true, fileBulkV1: true,
+        tcpPunch: this.options.tcpPunch === true, resume: this.resume,
         nativeTraversal: Boolean(this.options.createNativePath),
         clientInfo: this.options.clientInfo ?? browserClientInfo() }));
     };
     let incoming = Promise.resolve();
+    socket.onbulk = (sessionId, bytes) => {
+      if (generation === this.generation && sessionId === this.resume?.sessionId) this.link?.bulk?.receive(bytes, 'relay');
+    };
     socket.onmessage = ({ data }: { data: unknown }) => {
       if (generation !== this.generation || typeof data !== 'string') return;
       incoming = incoming.then(() => {
@@ -261,6 +278,9 @@ export class ChatConnection {
       delivery: this.options.delivery,
       send: (message, progress) => this.link!.send(message, progress), event: this.options.event });
     this.link = new ChatLink({
+      binaryBulk: this.options.binaryBulk ?? typeof document !== 'undefined',
+      bulkRelay: { available: () => this.socket?.bulkAvailable === true,
+        send: async () => { throw new BulkError('INVALID_RECORD'); } },
       sessionId: input.id, desktop: false, secret: input.keys.secret, iceServers: input.iceServers, tcp: input.tcp,
       transportVersion: input.transportVersion, reconnectRelay: () => this.fail(CONNECTION_ERRORS.network, true),
       diagnosticsEnabled: () => this.diagnosticsEnabled,
@@ -273,7 +293,18 @@ export class ChatConnection {
         this.socket.send(JSON.stringify(frame));
       },
       relayBuffered: () => this.socket?.bufferedAmount ?? 0,
-      message: (message) => this.rpc?.receive(message), error: this.options.error,
+      message: (message) => {
+        if (message.kind === 'event') {
+          const event = message.event as { method?: string; params?: Record<string, string> };
+          if (event?.method === BULK_ERROR_EVENT && event.params) {
+            this.options.bulkFailure?.(event.params.transferId, event.params.epoch, event.params.code);
+            this.link?.bulk?.failTransfer(event.params.transferId, event.params.epoch,
+              new BulkError(event.params.code as BulkErrorCode));
+            return;
+          }
+        }
+        this.rpc?.receive(message);
+      }, error: this.options.error,
       mode: (mode) => {
         if (!this.active) return;
         this.publishPolicyMode(mode);

@@ -25,7 +25,9 @@ export function useDownloadTasks(session: AuthSession) {
         await downloadManager.delete(task.id);
         setDeleting(undefined);
       } else if (task.status === 'completed') await downloadManager.open(task);
-      else if (task.status === 'queued' || task.status === 'downloading') await downloadManager.pause(task.id);
+      else if (['queued', 'preparing', 'downloading', 'verifying', 'saving'].includes(task.status)) {
+        await downloadManager.pause(task.id);
+      }
       else await downloadManager.resume(task.id);
     } catch {
       setError(operation === 'delete' ? t("删除未完成，请稍后重试。")

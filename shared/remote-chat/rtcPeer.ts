@@ -1,6 +1,7 @@
 import type { Channel, Peer, PeerOptions, Signal } from './protocol';
 import { addIceCandidate } from './iceCandidate';
 import { RtcObserver } from './rtcObserver';
+import { binaryDataChannel } from './bulkRtc';
 
 const MAX_PENDING_CANDIDATES = 128;
 
@@ -32,6 +33,9 @@ export class RtcPeer implements Peer {
 
   constructor(private readonly options: PeerOptions, create: () => RTCPeerConnection) {
     this.pc = create();
+    // Negotiated ID prevents old peers from mistaking a new incoming channel for their RPC channel.
+    if (options.bulkChannel) options.bulkChannel(binaryDataChannel(this.pc.createDataChannel('remote-ai-file-v1',
+      { negotiated: true, id: 42, ordered: true }), () => this.pc.sctp?.maxMessageSize));
     this.observer = new RtcObserver(this.pc, options.diagnostic);
     this.pc.addEventListener('icecandidate', ({ candidate }) => {
       if (!this.closed && candidate) options.signal({ kind: 'ice', candidate: candidate.candidate,

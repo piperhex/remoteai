@@ -294,19 +294,19 @@ func (s *hotSessions) forward(session *hotSession, target *peer, message platfor
 		}
 		target.send(platform.JSON{"type": "signal", "sessionId": session.id, "payload": payload}, nil)
 		return nil
-	case "relay":
-		payload, valid := relayPayload(message["payload"])
+	case "relay", "bulk":
+		payload, valid := forwardPayload(message, target)
 		if !valid {
 			return errors.New("invalid relay")
 		}
-		frame := platform.JSON{"type": "relay", "sessionId": session.id, "payload": payload}
+		frame := platform.JSON{"type": message["type"], "sessionId": session.id, "payload": payload}
 		source := session.desktop.socket
 		if source == target && session.mobile != nil {
 			source = session.mobile.socket
 		}
 		if s.deliver != nil {
 			s.deliver(relayDelivery{session.owner, session.id, source, target, &session.traffic,
-				source == session.desktop.socket}, frame)
+				source == session.desktop.socket, session.device}, frame)
 		} else {
 			target.send(frame, s.onRelay)
 		}

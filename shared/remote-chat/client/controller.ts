@@ -50,7 +50,8 @@ export class ChatController {
   private readonly listeners = new Set<() => void>();
   private readonly eventListeners = new Set<(event: GuiEvent) => void>();
   private readonly connection: Pick<ChatConnection, 'request' | 'start' | 'stop'>
-    & Partial<Pick<ChatConnection, 'confirmHostIdentity' | 'reportDiagnostic' | 'retryNow' | 'openNativeMedia'>>;
+    & Partial<Pick<ChatConnection, 'confirmHostIdentity' | 'reportDiagnostic' | 'retryNow' | 'openNativeMedia'
+      | 'downloadsBulk' | 'setBulkSupport'>>;
   private readonly queueConnection = new QueueConnection((body) => this.connection.request('request', body));
   private readonly asyncAnswers = new AsyncAnswers({ snapshot: () => this.state,
     request: (body) => this.connection.request('request', body), update: (patch) => this.update(patch),
@@ -92,7 +93,8 @@ export class ChatController {
   };
 
   constructor(createConnection: (events: ConnectionEvents) => Pick<ChatConnection, 'request' | 'start' | 'stop'>
-    & Partial<Pick<ChatConnection, 'confirmHostIdentity' | 'reportDiagnostic' | 'retryNow'>>,
+    & Partial<Pick<ChatConnection, 'confirmHostIdentity' | 'reportDiagnostic' | 'retryNow'
+      | 'downloadsBulk' | 'setBulkSupport'>>,
     private readonly offline?: OfflineHistoryStore, versions?: HistoryVersionSource) {
     this.historyReader = new HistoryReader((body) => this.connection.request('request', body), versions);
     if (offline) this.offlineWriter = new OfflineWriter(offline, this.cacheFailure);
@@ -114,6 +116,7 @@ export class ChatController {
       event: (event) => this.receive(event as GuiEvent),
       upload: (upload) => { if (this.state.sending) this.update({ upload }); },
     });
+    this.downloads.bulk = this.connection.downloadsBulk;
   }
 
   snapshot = () => this.state;
@@ -296,6 +299,7 @@ export class ChatController {
       const response = await this.connection.request<unknown>('connect', chatHandshake);
       if (!this.active || generation !== this.synchronization) return;
       const approvals = chatApprovals(response);
+      this.connection.setBulkSupport?.(response);
       if (response && typeof response === 'object' && 'desktopOnly' in response && response.desktopOnly === true) {
         this.update({ desktopOnly: true, approvals: [], selected: null, threads: [], queue: emptyQueue(),
           ready: true, connecting: false, retryAt: null, error: '', connectionStage: 'ready', connectionIssue: '' });

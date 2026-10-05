@@ -7,10 +7,11 @@ import java.util.concurrent.ScheduledFuture
 internal const val CHUNK_BYTES = 256 * 1024
 internal const val MAX_ACTIVE = 2
 internal const val REQUEST_TIMEOUT_MS = 60_000L
+internal const val PREPARE_TIMEOUT_MS = 15 * 60_000L
 internal const val MAX_READ_AHEAD = 12
 internal const val CHECKPOINT_INTERVAL_MS = 1_000L
 internal const val CHECKPOINT_BYTES = 4 * 1024 * 1024
-internal const val PROGRESS_INTERVAL_MS = 500L
+internal const val PROGRESS_INTERVAL_MS = 250L
 
 internal class DownloadRead(val operation: String, val offset: Long, val length: Int) {
   var timeout: ScheduledFuture<*>? = null

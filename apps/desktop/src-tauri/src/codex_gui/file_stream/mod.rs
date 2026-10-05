@@ -1,7 +1,11 @@
 //! Task-scoped file handles with bounded reads, expiry and no whole-file buffering.
+pub(crate) mod bulk;
+#[cfg(test)]
+mod bulk_tests;
 #[cfg(test)]
 mod download_tests;
 mod file;
+mod manifest;
 #[cfg(test)]
 mod tests;
 
@@ -15,6 +19,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     path::PathBuf,
+    sync::atomic::{AtomicBool, Ordering},
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
@@ -64,6 +69,7 @@ struct Session {
     thread_id: String,
     touched: Instant,
     file: Arc<Mutex<StreamFile>>,
+    cancelled: Arc<AtomicBool>,
 }
 #[derive(Clone, Copy, Default)]
 pub(super) enum StreamKind {
@@ -72,10 +78,20 @@ pub(super) enum StreamKind {
     Download,
 }
 
-#[derive(Default)]
 pub(crate) struct FileStreams {
     kind: StreamKind,
     sessions: Mutex<HashMap<String, Session>>,
+    bulk_workers: Arc<tokio::sync::Semaphore>,
+}
+
+impl Default for FileStreams {
+    fn default() -> Self {
+        Self {
+            kind: StreamKind::Video,
+            sessions: Mutex::default(),
+            bulk_workers: Arc::new(tokio::sync::Semaphore::new(2)),
+        }
+    }
 }
 
 fn response(value: impl Serialize) -> Result<GuiResponse> {
@@ -97,6 +113,7 @@ impl FileStreams {
         Self {
             kind: StreamKind::Download,
             sessions: Mutex::default(),
+            ..Self::default()
         }
     }
 
@@ -118,7 +135,7 @@ impl FileStreams {
         let file = StreamFile::open(&root, &options.path, options.max_bytes, self.kind)?;
         let info = file.info();
         let mut sessions = self.sessions.lock().map_err(|_| GuiError::FileRead)?;
-        sessions.retain(|_, session| session.touched.elapsed() < IDLE_TIMEOUT);
+        sessions.retain(|_, session| session.retain());
         if sessions.len() >= MAX_SESSIONS {
             return Err(GuiError::FileBusy);
         }
@@ -127,6 +144,7 @@ impl FileStreams {
             Session {
                 thread_id: options.thread_id,
                 touched: Instant::now(),
+                cancelled: Arc::clone(&file.cancelled),
                 file: Arc::new(Mutex::new(file)),
             },
         );
@@ -134,18 +152,20 @@ impl FileStreams {
     }
 
     fn read_chunk(&self, options: StreamRead) -> Result<StreamChunk> {
-        let file = {
-            let mut sessions = self.sessions.lock().map_err(|_| GuiError::FileRead)?;
-            sessions.retain(|_, session| session.touched.elapsed() < IDLE_TIMEOUT);
-            let session = sessions.get_mut(&options.id).ok_or(GuiError::FileExpired)?;
-            if session.thread_id != options.thread_id {
-                return Err(GuiError::FileExpired);
-            }
-            session.touched = Instant::now();
-            Arc::clone(&session.file)
-        };
+        let file = self.authorized_file(&options.id, &options.thread_id)?;
         let mut file = file.lock().map_err(|_| GuiError::FileRead)?;
         file.read(&options)
+    }
+
+    fn authorized_file(&self, id: &str, thread_id: &str) -> Result<Arc<Mutex<StreamFile>>> {
+        let mut sessions = self.sessions.lock().map_err(|_| GuiError::FileRead)?;
+        sessions.retain(|_, session| session.retain());
+        let session = sessions.get_mut(id).ok_or(GuiError::FileExpired)?;
+        if session.thread_id != thread_id {
+            return Err(GuiError::FileExpired);
+        }
+        session.touched = Instant::now();
+        Ok(Arc::clone(&session.file))
     }
 
     pub(super) async fn read(self: Arc<Self>, options: StreamRead) -> Result<GuiResponse> {
@@ -162,7 +182,9 @@ impl FileStreams {
         {
             return Err(GuiError::FileExpired);
         }
-        sessions.remove(&options.id);
+        if let Some(session) = sessions.remove(&options.id) {
+            session.cancelled.store(true, Ordering::Relaxed);
+        }
         Ok(())
     }
 
@@ -173,5 +195,15 @@ impl FileStreams {
         })
         .await
         .map_err(|_| GuiError::FileRead)?
+    }
+}
+
+impl Session {
+    fn retain(&self) -> bool {
+        if self.touched.elapsed() < IDLE_TIMEOUT {
+            return true;
+        }
+        self.cancelled.store(true, Ordering::Relaxed);
+        false
     }
 }

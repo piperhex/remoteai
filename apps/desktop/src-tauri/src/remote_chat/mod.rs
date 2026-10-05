@@ -2,6 +2,7 @@
 //! WebRTC and the encrypted application protocol still run in the main WebView.
 
 mod bridge;
+pub(crate) mod bulk;
 mod client;
 mod client_runtime;
 mod config;

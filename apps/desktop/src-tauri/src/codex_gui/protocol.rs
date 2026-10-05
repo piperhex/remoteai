@@ -24,6 +24,7 @@ pub(crate) enum GuiRequest {
     FileOpen(super::file_stream::StreamOpen),
     FileRead(super::file_stream::StreamRead),
     FileClose(super::file_stream::StreamClose),
+    FileManifest(super::file_stream::bulk::ManifestRead),
     VideoOpen(super::file_stream::StreamOpen),
     VideoRead(super::file_stream::StreamRead),
     VideoClose(super::file_stream::StreamClose),
@@ -220,7 +221,8 @@ impl GuiRequest {
             | Self::VideoClose(_)
             | Self::FileOpen(_)
             | Self::FileRead(_)
-            | Self::FileClose(_) => Err(GuiError::InvalidRequest),
+            | Self::FileClose(_)
+            | Self::FileManifest(_) => Err(GuiError::InvalidRequest),
             Self::ProjectFiles(_) => Err(GuiError::InvalidRequest),
             Self::ProjectDirectories { .. } => Err(GuiError::InvalidRequest),
             Self::TextPreview { .. } => Err(GuiError::InvalidRequest),

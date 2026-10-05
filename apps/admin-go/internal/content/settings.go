@@ -156,6 +156,7 @@ var policyFields = []policyField{
 	{"filePreviewMaxMb", 1, 2, false}, {"imagePreviewMaxMb", 1, 20, false}, {"videoPreviewMaxMb", 1, 100, true},
 	{"fileDownloadMaxMb", 1, 20, false},
 	{"fileDownloadWindowSize", 1, 5, true},
+	{"fileBulkEnabled", 0, 0, true},
 }
 var titleModelPattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,127}$`)
 
@@ -205,6 +206,7 @@ func parseChatPolicy(record map[string]interface{}) (map[string]interface{}, err
 			math.Abs(number) > 9007199254740991 ||
 			number < field.Minimum ||
 			(field.Name == "fileDownloadWindowSize" && number > maxFileDownloadWindowSize) ||
+			(field.Name == "fileBulkEnabled" && number > 1) ||
 			(field.Default == -1 && number == 0) {
 			return nil, errors.New("invalid chat limit")
 		}

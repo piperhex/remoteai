@@ -7,9 +7,14 @@ export interface DownloadSource extends DownloadLocation {
 }
 export interface DownloadTask {
   id: string; source: DownloadSource; name: string;
-  status: 'queued' | 'downloading' | 'paused' | 'completed' | 'failed';
+  status: 'queued' | 'preparing' | 'downloading' | 'verifying' | 'ready' | 'saving'
+    | 'paused' | 'completed' | 'failed';
   received: number; size: number; createdAt: number; message: string;
   revision?: string; mimeType?: string; bytesPerSecond?: number;
+  protocol?: 'bulk' | 'legacy';
+  manifest?: import('../../../../shared/remote-chat/downloadManifest').DownloadManifest;
+  checkpoint?: import('../../../../shared/remote-chat/downloadManifest').DownloadCheckpoint;
+  verified?: boolean;
 }
 export interface DownloadConnection {
   owner: string; deviceId: string; deviceName: string; ready: boolean; mode: ConnectionMode;

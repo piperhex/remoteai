@@ -70,4 +70,13 @@ internal class PacketCipher(private val key: ByteArray, private val context: Byt
     key.fill(0)
     context.fill(0)
   }
+
+  /** File records stay binary on the native side, with their complete header authenticated as AAD. */
+  @Synchronized
+  fun decryptBytes(encrypted: ByteArray, nonce: ByteArray, aad: ByteArray): ByteArray {
+    check(!closed)
+    require(nonce.size == NONCE_BYTES && aad.size <= 256)
+    require(encrypted.size in TAG_BYTES..MAX_PLAIN_BYTES + TAG_BYTES)
+    return cipher(Cipher.DECRYPT_MODE, nonce).apply { updateAAD(aad) }.doFinal(encrypted)
+  }
 }

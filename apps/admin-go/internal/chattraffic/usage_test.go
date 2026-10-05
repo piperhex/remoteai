@@ -71,6 +71,13 @@ func trafficFixture(t *testing.T) (*gorm.DB, string) {
 	if err = db.Exec(string(budgets)).Error; err != nil {
 		t.Fatal(err)
 	}
+	leases, err := os.ReadFile("../migrations/009_chat_bulk_leases.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = db.Exec(string(leases)).Error; err != nil {
+		t.Fatal(err)
+	}
 	id := uuid.NewString()
 	if err = db.Exec(`INSERT INTO users(id,email,"passwordHash",role) VALUES(?,?,?,'user')`,
 		id, id+"@traffic-fixture.test", "unused").Error; err != nil {

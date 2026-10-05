@@ -1,4 +1,5 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
+import { encodeBulkRelay } from '../../../../shared/remote-chat/bulkRelayWire';
 
 export type HostTransportEvent = { generation: number } & (
   { type: 'ready' | 'reset' | 'disconnected' } | { type: 'message'; data: string }
@@ -34,6 +35,17 @@ export class NativeChatTransport {
 
   get ready() { return this.registered && !this.closed; }
   get bufferedAmount() { return this.buffered; }
+
+  async sendBulk(sessionId: string, record: Uint8Array) {
+    if (!this.ready) throw new Error('Download connection unavailable');
+    const bytes = encodeBulkRelay(sessionId, record);
+    this.buffered += bytes.length;
+    try {
+      await invoke('remote_chat_bulk_send', bytes, { headers: {
+        'x-file-bulk-client': this.clientId, 'x-file-bulk-generation': String(this.generation),
+      } });
+    } finally { this.buffered -= bytes.length; }
+  }
 
   private deliver(batch: Batch) {
     if (this.closed) return;

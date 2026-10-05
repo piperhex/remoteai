@@ -2,16 +2,20 @@ use std::{
     fs::{File, Metadata},
     io::{Read, Seek, SeekFrom},
     path::Path,
+    sync::{atomic::AtomicBool, Arc},
     time::SystemTime,
 };
 
 use super::super::error::{GuiError, Result};
+use super::manifest::Manifest;
 use super::{StreamChunk, StreamInfo, StreamKind, StreamRead, CHUNK_BYTES};
 
 pub(super) struct StreamFile {
     file: File,
     info: StreamInfo,
     modified: SystemTime,
+    manifest: Option<Manifest>,
+    pub(super) cancelled: Arc<AtomicBool>,
 }
 
 fn local_path(root: &Path, source: &str) -> Result<std::path::PathBuf> {
@@ -110,6 +114,8 @@ impl StreamFile {
             file,
             info,
             modified,
+            manifest: None,
+            cancelled: Arc::new(AtomicBool::new(false)),
         })
     }
 
@@ -117,15 +123,41 @@ impl StreamFile {
         self.info.clone()
     }
 
+    pub(super) fn manifest(&mut self, max_bytes: u64) -> Result<&Manifest> {
+        self.check_source(max_bytes)?;
+        if self.manifest.is_none() {
+            self.manifest = Some(Manifest::scan(
+                &mut self.file,
+                &self.info.revision,
+                &self.cancelled,
+            )?);
+        }
+        self.manifest.as_ref().ok_or(GuiError::FileRead)
+    }
+
+    pub(super) fn bulk_read(&mut self, request: &super::bulk::BlockRead) -> Result<Vec<u8>> {
+        self.check_source(request.max_bytes)?;
+        let manifest = self.manifest.as_ref().ok_or(GuiError::InvalidRequest)?;
+        if manifest.info.manifest_id != request.manifest_id {
+            return Err(GuiError::FileChanged);
+        }
+        manifest.read(&mut self.file, request.block)
+    }
+
+    fn check_source(&self, max_bytes: u64) -> Result<()> {
+        let metadata = self.file.metadata().map_err(|_| GuiError::FileRead)?;
+        check_size(&metadata, max_bytes)?;
+        if metadata.len() != self.info.size || metadata.modified().ok() != Some(self.modified) {
+            return Err(GuiError::FileChanged);
+        }
+        Ok(())
+    }
+
     pub(super) fn read(&mut self, request: &StreamRead) -> Result<StreamChunk> {
         if request.length == 0 || request.length > CHUNK_BYTES || request.offset >= self.info.size {
             return Err(GuiError::InvalidRequest);
         }
-        let metadata = self.file.metadata().map_err(|_| GuiError::FileRead)?;
-        check_size(&metadata, request.max_bytes)?;
-        if metadata.len() != self.info.size || metadata.modified().ok() != Some(self.modified) {
-            return Err(GuiError::FileChanged);
-        }
+        self.check_source(request.max_bytes)?;
         let length = request.length.min(self.info.size - request.offset);
         let mut bytes = vec![0; length as usize];
         self.file
