@@ -12,7 +12,8 @@ function fixture() {
     initialize: async () => {}, snapshot: () => tasks, connection: () => connection, error: () => '',
     subscribe: fn => { listeners.add(fn); return () => { listeners.delete(fn); }; },
     enqueue: vi.fn(async (source: PreviewSource) => {
-      const task = { id: crypto.randomUUID(), source, createdAt: Date.now(), status: 'completed', size: 12, message: '' };
+      const task = { id: crypto.randomUUID(), source, createdAt: Date.now(), status: 'completed',
+        size: 12, received: 12, message: '' };
       tasks.push(task); emit(); return task.id;
     }),
     resume: vi.fn(async id => { tasks.find(task => task.id === id)!.status = 'completed'; emit(); }),
@@ -20,7 +21,7 @@ function fixture() {
     image: vi.fn(async task => `blob:${task.id}`), text: vi.fn(async () => '文本内容'),
     save: vi.fn(async () => {}), release: vi.fn(),
   };
-  return { backend, tasks, connection, listeners, previews: new PreviewDownloads(backend, identity) };
+  return { backend, tasks, connection, listeners, emit, previews: new PreviewDownloads(backend, identity) };
 }
 
 it('routes text, thumbnails and originals through separate managed jobs and reuses originals for save', async () => {
@@ -89,4 +90,44 @@ it('cleans up waiting listeners on disposal and bounds old cache records without
   const rejection = expect(pending).rejects.toThrow('关闭');
   previews.dispose(); await rejection;
   expect(listeners.size).toBe(0);
+});
+
+it('shares real progress across original viewers and detaches a closed viewer without cancelling the transfer', async () => {
+  const { backend, previews, tasks, emit, listeners } = fixture();
+  vi.mocked(backend.enqueue).mockImplementation(async source => {
+    tasks.push({ id: 'transfer', source, createdAt: Date.now(), status: 'downloading', size: 4096,
+      received: 1024, bytesPerSecond: 512, message: '' });
+    return 'transfer';
+  });
+  const first = vi.fn(); const second = vi.fn(); const closed = new AbortController();
+  const one = previews.image('thread', 'image.png', true, { onProgress: first, signal: closed.signal });
+  const two = previews.image('thread', 'image.png', true, { onProgress: second });
+  await vi.waitFor(() => expect(second).toHaveBeenLastCalledWith({
+    received: 1024, total: 4096, bytesPerSecond: 512, status: 'downloading',
+  }));
+  expect(first.mock.calls[0][0]).toEqual({ received: 0, status: 'preparing' });
+  expect(backend.enqueue).toHaveBeenCalledOnce();
+  closed.abort(); const firstCount = first.mock.calls.length;
+  tasks[0].received = 2048; emit();
+  expect(second).toHaveBeenLastCalledWith(expect.objectContaining({ received: 2048 }));
+  expect(first).toHaveBeenCalledTimes(firstCount);
+  tasks[0].received = 4096; tasks[0].status = 'completed'; emit();
+  expect(await one).toBe(await two);
+  expect(second).toHaveBeenLastCalledWith({ received: 4096, total: 4096,
+    bytesPerSecond: undefined, status: 'completed' });
+  expect(listeners.size).toBe(0);
+});
+
+it('reports resumed text bytes and does not confuse its progress with a thumbnail or original', async () => {
+  const { backend, previews, tasks, emit } = fixture();
+  await previews.text('thread', 'note.txt');
+  tasks[0].received = 6; tasks[0].status = 'paused';
+  vi.mocked(backend.resume).mockImplementation(async () => { tasks[0].status = 'downloading'; emit(); });
+  const report = vi.fn();
+  const text = previews.text('thread', 'note.txt', { onProgress: report });
+  await vi.waitFor(() => expect(report).toHaveBeenLastCalledWith(expect.objectContaining({ received: 6, total: 12 })));
+  await previews.image('thread', 'note.txt', false);
+  expect(report).toHaveBeenLastCalledWith(expect.objectContaining({ received: 6, total: 12 }));
+  tasks[0].received = 12; tasks[0].status = 'completed'; emit();
+  await expect(text).resolves.toMatchObject({ text: '文本内容' });
 });

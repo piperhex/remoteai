@@ -29,3 +29,5 @@
 .cs-image-original { position: absolute; bottom: 88px; left: 50%; transform: translateX(-50%);
   min-height: 44px; padding: 0 18px; border-radius: 22px; background: #282b2a !important; }
 .cs-image-original ~ .cs-image-status { bottom: 140px; }
+.cs-image-transfer { width: 288px; max-width: calc(100vw - 32px); }
+.cs-image-transfer .cs-preview-progress { background: #252827; }

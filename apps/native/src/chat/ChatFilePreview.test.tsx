@@ -5,6 +5,7 @@ import { ChatFileProvider } from './ChatFilePreview';
 import { ChatImageFilePreview } from './ChatImageFilePreview';
 import { ImageViewer } from './ImageViewer';
 import { VideoViewer } from './video/VideoViewer';
+import { PreviewTransferProgress } from './PreviewTransferProgress';
 
 const state = vi.hoisted(() => ({
   file: null as FileReference | null, provider: true, ready: true,
@@ -86,7 +87,7 @@ it.each([
   expect(viewer.type).toBe(ImageViewer);
   expect(viewer.props.thumbnail).toBeUndefined();
   await expect(viewer.props.load()).resolves.toBe(original);
-  expect(state.load).toHaveBeenCalledWith('thread-with-image', parseFileReference(href)!.path, true);
+  expect(state.load).toHaveBeenCalledWith('thread-with-image', parseFileReference(href)!.path, true, undefined);
   expect(fileClient.open).not.toHaveBeenCalled();
   expect(providerProps.load).not.toHaveBeenCalled();
   viewer.props.close();
@@ -97,7 +98,7 @@ it('lets the image loader retrieve a cached original while offline', async () =>
   state.ready = false;
   const preview = openFile('./cached.png');
   await expect(ChatImageFilePreview(preview.props).props.load()).resolves.toBe(original);
-  expect(state.load).toHaveBeenCalledWith('thread-with-image', './cached.png', true);
+  expect(state.load).toHaveBeenCalledWith('thread-with-image', './cached.png', true, undefined);
 });
 
 it('preserves video playback and ordinary file previews', () => {
@@ -123,11 +124,25 @@ it('loads and displays code in an external deployment directory using its exact 
   const sheet = component(preview.props);
   const effect = vi.mocked(React.useEffect).mock.calls.at(-1)![0];
   const cleanup = effect();
-  expect(providerProps.load).toHaveBeenCalledWith(providerProps.threadId, path);
+  expect(providerProps.load).toHaveBeenCalledWith(providerProps.threadId, path,
+    expect.objectContaining({ onProgress: expect.any(Function), signal: expect.any(AbortSignal) }));
   expect(descendants(sheet).find(node => node.type === 'Code')?.props).toMatchObject({
     text: state.text.text, lineNumbers: true, copyLabel: '复制文件内容',
   });
   cleanup?.();
+  expect(providerProps.load.mock.calls.at(-1)?.[2].signal.aborted).toBe(true);
+});
+
+it('shows the same compact, accessible progress for file and image previews', () => {
+  const preview = openFile('./source.ts');
+  const component = preview.type as (props: typeof preview.props) => React.ReactElement;
+  expect(descendants(component(preview.props)).some(node => node.type === PreviewTransferProgress)).toBe(true);
+  const tree = PreviewTransferProgress({ label: '正在读取文件…', progress: {
+    received: 3 * 1024 * 1024, total: 8 * 1024 * 1024, bytesPerSecond: 850 * 1024, status: 'downloading',
+  } });
+  expect(tree.props.accessibilityValue).toMatchObject({ now: 37, text: '37% · 3 / 8 MB · 850 KB/s' });
+  expect(descendants(tree).filter(node => node.type === 'Text').map(node => node.props.children))
+    .toEqual(['正在读取文件…', '37%', '3 / 8 MB', '850 KB/s']);
 });
 
 it.each(['./index.html', './INDEX.HTM'])('renders HTML files directly while retaining the download action: %s', path => {

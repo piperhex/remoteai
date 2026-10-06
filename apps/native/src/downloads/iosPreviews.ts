@@ -94,14 +94,18 @@ class IosPreviewBackend {
         task.received = 0; await fs.writeFile(this.file(task.id), '', 'base64');
       }
       Object.assign(task, { size: info.size, revision: info.revision, mimeType: info.mimeType, name: info.name,
-        status: 'downloading' });
+        status: 'downloading', bytesPerSecond: undefined });
       await this.persist();
+      const startedAt = performance.now();
+      const startingOffset = task.received;
       await transferFileChunks({ client, threadId: task.id, info,
         signal: new AbortController().signal, offset: task.received,
         write: async (chunk, received) => {
-          await fs.appendFile(this.file(task.id), chunk.data, 'base64'); task.received = received; await this.persist();
+          await fs.appendFile(this.file(task.id), chunk.data, 'base64'); task.received = received;
+          task.bytesPerSecond = (received - startingOffset) * 1000 / Math.max(1, performance.now() - startedAt);
+          await this.persist();
         } });
-      task.status = 'completed'; await this.persist();
+      task.status = 'completed'; task.bytesPerSecond = undefined; await this.persist();
     } catch {
       task.status = 'paused'; task.message = '加载中断，重新打开即可继续。';
       await this.persist().catch(() => console.warn('Could not checkpoint preview download.'));

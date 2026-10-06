@@ -12,24 +12,30 @@ import { loadVideoPreview } from './videoPreview';
 import { FileDownloadButton } from '../downloads/FileDownloadButton';
 import { ImageFileDownload } from './ImageFileDownload';
 import { localImageSource } from '../../../../shared/chat/imageSources';
+import type { PreviewLoadOptions, PreviewProgress } from '../../../../shared/remote-chat/previewProgress';
+import { PreviewTransferProgress } from '../../../../shared/chat/PreviewTransferProgress';
 
 export interface FilePreviewContext {
   client: FileClient; threadId: string | null; ready: boolean;
-  load?: (threadId: string, path: string) => Promise<TextPreview>;
+  load?: (threadId: string, path: string, options?: PreviewLoadOptions) => Promise<TextPreview>;
 }
 function TextFile({ path, context, line }: { path: string; context: FilePreviewContext; line?: number }) {
   useLanguage();
   const [result, setResult] = useState<TextPreview>();
   const [error, setError] = useState('');
+  const [progress, setProgress] = useState<PreviewProgress>();
   useEffect(() => {
-    let cancelled = false;
+    const observer = new AbortController();
+    setResult(undefined); setError(''); setProgress(undefined);
     if (!context.threadId || !context.load || !context.ready) { setError(t("连接电脑后即可预览。")); return; }
-    void context.load(context.threadId, path).then(value => { if (!cancelled) setResult(value); })
-      .catch(() => { if (!cancelled) setError(t("暂时无法预览此文件，可以下载后查看。")); });
-    return () => { cancelled = true; };
+    void context.load(context.threadId, path, { signal: observer.signal,
+      onProgress: value => { if (!observer.signal.aborted) setProgress(value); },
+    }).then(value => { if (!observer.signal.aborted) setResult(value); })
+      .catch(() => { if (!observer.signal.aborted) setError(t("暂时无法预览此文件，可以下载后查看。")); });
+    return () => { observer.abort(); };
   }, [context.load, context.threadId, context.ready, path]);
   if (error) return <p className="chat-error" role="status">{t(error)}</p>;
-  if (!result) return <p role="status" className="chat-muted">{t("正在读取文件…")}</p>;
+  if (!result) return <PreviewTransferProgress progress={progress} label={t("正在读取文件…")} />;
   return <>{line && <p className="chat-muted">{t('引用位置：第 {line} 行', { line })}</p>}
     {isHtmlPath(path) ? <ChatHtmlPreview text={result.text} />
       : isMarkdownPath(path) ? <ChatMarkdownPreview text={result.text} />

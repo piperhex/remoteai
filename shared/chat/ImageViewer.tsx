@@ -1,10 +1,12 @@
 import { useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import { useImageViewer } from './useImageViewer';
+import type { PreviewImageLoader } from '../remote-chat/previewProgress';
+import { PreviewTransferProgress } from './PreviewTransferProgress';
 import { clampZoom, INITIAL_TRANSFORM, moveImage, type Point } from './imageTransform';
 import './imageViewer.css';
 
 interface Props {
-  thumbnail: string; description: string; load: () => Promise<string>; close: () => void;
+  thumbnail: string; description: string; load: PreviewImageLoader; close: () => void;
   download?: (url: string) => void | Promise<void>;
   contextMenu?: (event: MouseEvent, url: string) => void;
   feedback?: string;
@@ -64,7 +66,8 @@ export function ImageViewer({ thumbnail, description, load, close, download, con
       <button type="button" aria-label={translate('旋转图片')} onClick={() => setTransform((v) => ({ ...v,
         rotation: (v.rotation + 90) % 360 }))}>↻</button>
     </div>
-    {image.loading && <div className="cs-image-status" role="status">{translate('正在加载原图…')}</div>}
+    {image.loading && <div className="cs-image-status cs-image-transfer">
+      <PreviewTransferProgress progress={image.progress} label={translate('正在加载原图…')} /></div>}
     {downloadError && <div className="cs-image-status" role="status">{downloadError}</div>}
     {feedback && <div className="cs-image-status" role="status">{feedback}</div>}
     {image.error && <div className="cs-image-status" role="status">{translate('原图加载失败')}</div>}

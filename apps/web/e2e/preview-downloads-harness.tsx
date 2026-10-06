@@ -15,14 +15,16 @@ const THREAD = '33333333-3333-4333-8333-333333333333';
 const IMAGE = '44444444-4444-4444-8444-444444444444';
 const THUMB = '55555555-5555-4555-8555-555555555555';
 const TEXT = '66666666-6666-4666-8666-666666666666';
+const CODE = '77777777-7777-4777-8777-777777777777';
 const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 32;
 canvas.getContext('2d')!.fillStyle = 'rgba(24,180,72,0.5)';
 canvas.getContext('2d')!.fillRect(0, 0, 16, 32);
 const thumb = Uint8Array.from(atob(canvas.toDataURL().split(',')[1]), value => value.charCodeAt(0));
 // PNG decoders ignore trailing bytes. The original spans multiple blocks for real resume coverage.
 const original = new Uint8Array(2 * 1024 * 1024 + 17); original.set(thumb);
+const code = new TextEncoder().encode('/*' + ' '.repeat(2 * 1024 * 1024) + '*/\nconst ready = true;');
 const content = (id: string) => id === THUMB ? thumb : id === TEXT
-  ? new TextEncoder().encode('这是统一下载的文本预览。') : original;
+  ? new TextEncoder().encode('这是统一下载的文本预览。') : id === CODE ? code : original;
 const fixture = { size: original.length, revision: 'first', delay: 150, corrupt: false, offsets: [] as number[],
   bulk: true, recordBytes: 0, wireBytes: 0, cipherFailure: false, content,
   requests: [] as Record<string, unknown>[], hash: bytesToHex(sha256(original)),
@@ -35,15 +37,16 @@ const controller = new ChatController(() => ({ start() {}, stop() {}, request: a
   const request = body as Record<string, unknown>; fixture.requests.push(request);
   if (request.operation === 'fileClose') return undefined as T;
   if (request.operation !== 'previewOpen') throw new Error('Old preview RPC must not carry content');
-  const id = request.preview === 'text' ? TEXT : request.preview === 'thumbnail' ? THUMB : IMAGE;
-  return { id, name: id === TEXT ? 'preview.txt' : 'image.png', size: content(id).length,
-    mimeType: id === TEXT ? 'text/plain' : 'image/png', revision: 'first' } as T;
+  const text = request.preview === 'text';
+  const id = text ? (request.path === './source.ts' ? CODE : TEXT) : request.preview === 'thumbnail' ? THUMB : IMAGE;
+  return { id, name: text ? 'preview.txt' : 'image.png', size: content(id).length,
+    mimeType: text ? 'text/plain' : 'image/png', revision: 'first' } as T;
 } }));
 controller.downloads.bulk = bulk.client;
 controller.previewDownloads = createPreviewDownloads({ owner: 'preview-owner', deviceId: 'preview-pc' });
 function Harness() {
   const [text, setText] = useState('');
-  const [file, setFile] = useState(false);
+  const [file, setFile] = useState('');
   useEffect(() => {
     downloadManager.bind({ owner: 'preview-owner', deviceId: 'preview-pc', deviceName: 'PC', ready: true,
       mode: 'direct', files: controller.files, client: controller.downloads });
@@ -53,9 +56,10 @@ function Harness() {
     <ChatImageContext.Provider value={{ threadId: THREAD, ready: true, load: controller.imagePreview,
       save: controller.savePreviewImage }}>
       <ChatImage source="./透明图片.png" description="透明图片" />
-      <button onClick={() => setFile(true)}>打开图片文件</button>
-      {file && <ChatFilePreview path="./透明图片.png" context={{ client: controller.files, ready: true,
-        threadId: THREAD, load: controller.textPreview }} onClose={() => setFile(false)} />}
+      <button onClick={() => setFile('./透明图片.png')}>打开图片文件</button>
+      <button onClick={() => setFile('./source.ts')}>打开代码文件</button>
+      {file && <ChatFilePreview path={file} context={{ client: controller.files, ready: true,
+        threadId: THREAD, load: controller.textPreview }} onClose={() => setFile('')} />}
     </ChatImageContext.Provider>
     <button onClick={() => { void controller.textPreview(THREAD, './note.txt').then(value => setText(value.text)); }}>
       查看文本</button><p>{text}</p>

@@ -8,9 +8,11 @@ import { useImageViewer } from '../../../../shared/chat/useImageViewer';
 import { useImageOrientation } from './useImageOrientation';
 import { useImageGestures } from './useImageGestures';
 import { useSaveImage } from './useSaveImage';
+import type { PreviewImageLoader } from '../../../../shared/remote-chat/previewProgress';
+import { PreviewTransferProgress } from './PreviewTransferProgress';
 
 interface Props {
-  thumbnail?: string; description: string; load: () => Promise<string>; close: () => void;
+  thumbnail?: string; description: string; load: PreviewImageLoader; close: () => void;
   save?: (url: string) => Promise<void>;
 }
 
@@ -57,7 +59,7 @@ export function ImageViewer({ thumbnail, description, load, close, save }: Props
             <View pointerEvents="box-none" style={styles.notices}>
               {!!message && <Text pointerEvents="none" accessibilityLiveRegion="polite"
                 style={styles.status}>{message}</Text>}
-              {image.loading && <Text pointerEvents="none" style={styles.status}>{t("正在加载原图…")}</Text>}
+              {image.loading && <PreviewTransferProgress progress={image.progress} dark label={t("正在加载原图…")} />}
               {image.error && <View style={styles.error}>
                 <Text style={styles.status}>{t("原图加载失败")}</Text>
               </View>}

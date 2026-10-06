@@ -77,3 +77,31 @@ test('the image file header exports the same cached original as the full-screen 
     .toBe(await page.evaluate(() => window.previewFixture.hash));
   expect(await originalRequests(page)).toBe(1);
 });
+
+test('original images and code previews show compact live byte progress and speed', async ({ page }, info) => {
+  await open(page);
+  await page.evaluate(() => { window.previewFixture.delay = 1500; });
+  await page.getByRole('button', { name: '查看原图', exact: true }).click();
+  const imageProgress = page.locator('.cs-image-transfer .cs-preview-progress');
+  await expect(imageProgress.locator('strong')).toHaveText('49%');
+  await expect(imageProgress).toContainText('1 / 2 MB');
+  await expect(imageProgress).toContainText(/\d[\d.]* [KM]?B\/s/);
+  await expect(imageProgress.locator('[role="progressbar"]')).toHaveAttribute('aria-valuenow', '49');
+  await expect(imageProgress.locator('.cs-preview-progress-fill')).toHaveAttribute('style', 'width: 49%;');
+  const bounds = await imageProgress.boundingBox();
+  expect(bounds!.width).toBeLessThanOrEqual(400);
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await page.screenshot({ path: `../../.codex-tmp/preview-progress-image-${info.project.name}.png` });
+  await page.getByRole('button', { name: '关闭图片' }).click();
+  await page.getByRole('button', { name: '打开代码文件' }).click();
+  const fileProgress = page.locator('.chat-detail-stack .cs-preview-progress');
+  await expect(fileProgress).toContainText('正在读取文件…');
+  await expect(fileProgress.locator('strong')).toHaveText('49%', { timeout: 15_000 });
+  await expect(fileProgress).toContainText('1 / 2 MB');
+  await expect(fileProgress).toContainText(/\d[\d.]* [KM]?B\/s/);
+  const fileBounds = await fileProgress.boundingBox();
+  expect(fileBounds!.width).toBeLessThanOrEqual(400);
+  expect(fileBounds!.x + fileBounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await page.screenshot({ path: `../../.codex-tmp/preview-progress-code-${info.project.name}.png` });
+});

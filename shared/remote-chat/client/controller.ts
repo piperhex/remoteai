@@ -596,8 +596,9 @@ export class ChatController {
     if (generation !== this.synchronization || !this.state.ready) throw new Error('连接已中断，请连接后再发送。');
   }
 
-  imagePreview = async (threadId: string, source: string, original = false) => {
-    if (this.managedPreviews) return this.previewDownloads!.image(threadId, source, original);
+  imagePreview = async (threadId: string, source: string, original = false,
+    options?: import('../previewProgress').PreviewLoadOptions) => {
+    if (this.managedPreviews) return this.previewDownloads!.image(threadId, source, original, options);
     const key = JSON.stringify([threadId, await contentStringHash(source), original]);
     return offlineImage({ store: this.offline, online: this.state.ready, key,
       load: () => this.images.load(threadId, source, original), failed: this.cacheFailure });
@@ -633,9 +634,11 @@ export class ChatController {
     close: (transferId, id) => this.files.close(transferId, id),
   };
 
-  textPreview = (threadId: string, path: string) => this.managedPreviews
-    ? this.previewDownloads!.text(threadId, path)
-    : this.connection.request<import('../textPreview').TextPreview>('request', { operation: 'textPreview', threadId, path });
+  textPreview = (threadId: string, path: string, options?: import('../previewProgress').PreviewLoadOptions) =>
+    this.managedPreviews ? this.previewDownloads!.text(threadId, path, options)
+      : this.connection.request<import('../textPreview').TextPreview>('request', {
+        operation: 'textPreview', threadId, path,
+      });
 
   loadSkills = async (cwd: string) => {
     const generation = this.skillGeneration;

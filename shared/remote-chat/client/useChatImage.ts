@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { isInlineImage, localImageSource } from '../../chat/imageSources';
+import type { PreviewLoadOptions } from '../previewProgress';
 
 export interface ImagePreviewOptions {
   threadId: string | null;
   ready: boolean;
   offline?: boolean;
-  load: (threadId: string, source: string, original?: boolean) => Promise<string>;
+  load: (threadId: string, source: string, original?: boolean, options?: PreviewLoadOptions) => Promise<string>;
   save?: (url: string) => Promise<void>;
 }
 
@@ -36,10 +37,10 @@ export function useChatImage(source: string | undefined, options: ImagePreviewOp
     save: remote ? undefined : options?.save,
     key, url: remote || current?.url, failed: current?.failed || failedKey === key || !supported,
     loading: Boolean(local && supported && !current),
-    original: async () => {
+    original: async (progress?: PreviewLoadOptions) => {
       if (remote) return remote;
       if (!threadId || !local || !load) throw new Error('图片暂时无法加载，请重试。');
-      return load(threadId, local, true);
+      return load(threadId, local, true, progress);
     },
     fail: () => setFailedKey(key), retry: () => setAttempt((value) => value + 1),
   };

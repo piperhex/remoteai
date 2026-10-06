@@ -47,11 +47,14 @@ it('continues the normal range-download fallback from its saved offset and expor
   const checkpoint = JSON.parse([...data.index.values()][0])[0];
   expect(checkpoint.received).toBe(262_144);
   reconnect(); client.read.mockClear();
-  const url = await previews.image('thread', './image.png', true);
+  const progress = vi.fn();
+  const url = await previews.image('thread', './image.png', true, { onProgress: progress });
   expect(client.read.mock.calls[0][0].offset).toBe(262_144);
   expect(data.files.get(url.slice('file://'.length))).toEqual(bytes);
   await previews.saveImage(url);
   expect(saveImage).toHaveBeenCalledWith(url, 'image/png');
   expect(client.open).toHaveBeenCalledTimes(2);
   expect(client.open.mock.calls[0][0]).toMatchObject({ preview: 'image' });
+  expect(progress).toHaveBeenCalledWith(expect.objectContaining({ received: 262_144, total: bytes.length }));
+  expect(progress.mock.calls.some(([value]) => value.bytesPerSecond > 0)).toBe(true);
 });

@@ -1,16 +1,17 @@
 import type { DownloadLocation, PreviewKind } from './downloads';
 import type { TextPreview } from './textPreview';
+import { PreviewProgressEmitter, type PreviewLoadOptions } from './previewProgress';
 
 export interface PreviewSource extends DownloadLocation {
   owner: string; deviceId: string; deviceName: string; path: string; preview?: PreviewKind;
 }
 export interface PreviewTask {
   id: string; source: PreviewSource; status: string; size: number; createdAt: number; message: string;
-  exported?: boolean;
+  exported?: boolean; received: number; bytesPerSecond?: number;
 }
 export interface PreviewAdapter {
-  image: (threadId: string, source: string, original: boolean) => Promise<string>;
-  text: (threadId: string, path: string) => Promise<TextPreview>;
+  image: (threadId: string, source: string, original: boolean, options?: PreviewLoadOptions) => Promise<string>;
+  text: (threadId: string, path: string, options?: PreviewLoadOptions) => Promise<TextPreview>;
   saveImage: (url: string) => Promise<void>;
   dispose: () => void;
 }
@@ -43,7 +44,7 @@ const sourceKey = (source: PreviewSource) => JSON.stringify([
  * Only explicit save actions export files. Account/device identity is part of every cache lookup.
  */
 export class PreviewDownloads<T extends PreviewTask> implements PreviewAdapter {
-  private readonly pending = new Map<string, Promise<T>>();
+  private readonly pending = new Map<string, { result: Promise<T>; progress: PreviewProgressEmitter }>();
   private readonly images = new Map<string, T>();
   private readonly saving = new Set<string>();
   private readonly waiting = new Set<() => void>();
@@ -79,27 +80,32 @@ export class PreviewDownloads<T extends PreviewTask> implements PreviewAdapter {
     });
   }
 
-  private load(threadId: string, path: string, preview: PreviewKind): Promise<T> {
+  private load(threadId: string, path: string, preview: PreviewKind, options: PreviewLoadOptions = {}): Promise<T> {
     this.disposed = false;
     const source: PreviewSource = { ...this.identity, deviceName: this.backend.connection()?.deviceName ?? '',
       scope: 'project', threadId, path, preview };
     const key = sourceKey(source);
-    const existing = this.pending.get(key);
-    if (existing) return existing;
-    const request = this.obtain(source, this.generation).finally(() => {
-      if (this.pending.get(key) === request) this.pending.delete(key);
-    });
-    this.pending.set(key, request);
-    return request;
+    let request = this.pending.get(key);
+    if (!request) {
+      const progress = new PreviewProgressEmitter();
+      const result = this.obtain(source, this.generation, progress).finally(() => {
+        if (this.pending.get(key)?.result === result) this.pending.delete(key);
+      });
+      request = { result, progress };
+      this.pending.set(key, request);
+    }
+    const unsubscribe = request.progress.subscribe(options);
+    return request.result.finally(unsubscribe);
   }
 
-  private async obtain(source: PreviewSource, generation: number) {
+  private async obtain(source: PreviewSource, generation: number, progress: PreviewProgressEmitter) {
     await this.backend.initialize();
     if (this.disposed || generation !== this.generation) throw new Error('预览已关闭，请重新打开。');
     const candidates = this.backend.snapshot().filter(task => sourceKey(task.source) === sourceKey(source));
     const cached = candidates.filter(complete).sort((a, b) => b.createdAt - a.createdAt)[0];
     // Reopening text online reads a fresh snapshot. Images have a short, explicit cache lifetime.
     if (cached && (!this.connected() || (source.preview !== 'text' && Date.now() - cached.createdAt < CACHE_AGE_MS))) {
+      progress.update(cached);
       return cached;
     }
     await this.wait(() => this.connected() || undefined, 5000);
@@ -111,6 +117,7 @@ export class PreviewDownloads<T extends PreviewTask> implements PreviewAdapter {
     return this.wait(() => {
       const task = this.backend.snapshot().find(value => value.id === id);
       if (!task) throw new Error('预览缓存已清理，请重试。');
+      progress.update(task);
       if (complete(task)) return task;
       if (!active(task)) throw new Error(task.message || '加载中断，重新打开即可继续。');
       return undefined;
@@ -132,14 +139,14 @@ export class PreviewDownloads<T extends PreviewTask> implements PreviewAdapter {
     }
   }
 
-  image = async (threadId: string, path: string, original: boolean) => {
-    const task = await this.load(threadId, path, original ? 'image' : 'thumbnail');
+  image = async (threadId: string, path: string, original: boolean, options?: PreviewLoadOptions) => {
+    const task = await this.load(threadId, path, original ? 'image' : 'thumbnail', options);
     const url = await this.read(task, () => this.backend.image(task));
     if (original) this.images.set(url, task);
     return url;
   };
-  text = async (threadId: string, path: string): Promise<TextPreview> => {
-    const task = await this.load(threadId, path, 'text');
+  text = async (threadId: string, path: string, options?: PreviewLoadOptions): Promise<TextPreview> => {
+    const task = await this.load(threadId, path, 'text', options);
     return { path, text: await this.read(task, () => this.backend.text(task)) };
   };
   private async read(task: T, read: () => Promise<string>) {
