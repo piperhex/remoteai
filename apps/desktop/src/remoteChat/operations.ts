@@ -1,4 +1,4 @@
-import { fileDownloadByteLimit, getChatPolicy, textPreviewByteLimit, videoByteLimit }
+import { fileDownloadByteLimit, getChatPolicy, imagePreviewByteLimit, textPreviewByteLimit, videoByteLimit }
   from '../../../../shared/remote-chat/policy';
 import { remoteAttachments } from '../../../../shared/remote-chat/composerAttachments';
 import { guiApi } from '../pages/codexGui/api';
@@ -36,7 +36,7 @@ import { DESKTOP_OPERATION } from '../../../../shared/remote-desktop/protocol';
 import { RemoteThreadTitles } from './threadTitles';
 
 const OPERATIONS = new Set([
-  'downloadOpen', 'downloadBrowse',
+  'downloadOpen', 'downloadBrowse', 'previewOpen',
   'fileOpen', 'fileRead', 'fileClose',
   'videoOpen', 'videoRead', 'videoClose',
   'projectDirectories',
@@ -48,7 +48,7 @@ interface Cached {
   fingerprint: string; result: Promise<RpcResponse>; expires: number; completed: boolean; readOnly: boolean;
 }
 const READ_OPERATIONS = new Set([
-  'downloadOpen', 'downloadBrowse',
+  'downloadOpen', 'downloadBrowse', 'previewOpen',
   'guiCliStatus', 'guiCliRelease', 'guiTerminalRead', 'guiTerminalList',
   'guiGitChanges', 'guiGitDiff', 'guiGitHistory', 'guiGitRepository', 'guiGitCommitFiles',
   'fileOpen', 'fileRead', 'fileClose',
@@ -191,6 +191,10 @@ export class ChatOperations {
     }
     if (body.operation === 'list') body.limit = getChatPolicy().threadPageSize;
     if (body.operation === 'textPreview') body.maxBytes = textPreviewByteLimit(mode);
+    if (body.operation === 'previewOpen') {
+      body.maxBytes = body.preview === 'text' ? textPreviewByteLimit(mode) : imagePreviewByteLimit(mode);
+      if (body.preview !== 'text') body.path = await this.images.downloadSource(body.threadId, body.path);
+    }
     if (body.operation === 'fileOpen' || body.operation === 'fileRead' || body.operation === 'downloadOpen') {
       body.maxBytes = fileDownloadByteLimit(mode);
     }
@@ -214,7 +218,7 @@ export class ChatOperations {
     try {
       const approvals = await guiApi.connect({ reuseExisting: true });
       this.titles.refreshSettings();
-      return body === undefined ? approvals : { ...chatHandshake, approvals, fileBulkV1: true };
+      return body === undefined ? approvals : { ...chatHandshake, approvals, fileBulkV1: true, filePreviewsV1: true };
     } catch (error) { throw new Error(guiConnectionError(error)); }
   }
 

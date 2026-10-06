@@ -10,10 +10,12 @@ import { bulkCapability, type BulkClient, type BulkRequest } from '../../../shar
 interface Fixture {
   size: number; revision: string; delay: number; corrupt: boolean; offsets: number[];
   bulk: boolean; recordBytes: number; wireBytes: number; cipherFailure: boolean;
+  content?: (id: string) => Uint8Array;
 }
 interface Transfer {
   epoch: string; size: number; manifest: DownloadManifest; hashes: Uint8Array[];
   sender: BulkCipher; receiver: BulkCipher; value: number; path: BulkPath;
+  bytes?: Uint8Array;
 }
 
 export function fixtureBulkClient(fixture: Fixture) {
@@ -33,7 +35,8 @@ export function fixtureBulkClient(fixture: Fixture) {
     const offset = request.block * BULK_LIMITS.blockBytes;
     fixture.offsets.push(offset);
     await new Promise(resolve => setTimeout(resolve, fixture.delay));
-    const bytes = new Uint8Array(Math.min(BULK_LIMITS.blockBytes, transfer.size - offset)).fill(transfer.value);
+    const bytes = transfer.bytes ? transfer.bytes.slice(offset, offset + BULK_LIMITS.blockBytes)
+      : new Uint8Array(Math.min(BULK_LIMITS.blockBytes, transfer.size - offset)).fill(transfer.value);
     if (fixture.corrupt && bytes.length) bytes[0] ^= 1;
     for (let part = 0; part < bytes.length; part += BULK_PAYLOAD_BYTES) {
       if (transfers.get(request.transferId) !== transfer) return;
@@ -49,11 +52,13 @@ export function fixtureBulkClient(fixture: Fixture) {
   const client: BulkClient = {
     peer: 'fixture-pc', available: () => fixture.bulk, path: () => current, transport: () => transport,
     open: async open => {
-      const size = open.id.startsWith('2222') ? 0 : fixture.size;
+      const content = fixture.content?.(open.id);
+      const size = content?.length ?? (open.id.startsWith('2222') ? 0 : fixture.size);
       const value = fixture.revision === 'first' ? 65 : 66;
       const hashes: Uint8Array[] = []; const whole = sha256.create();
       for (let offset = 0; offset < size; offset += BULK_LIMITS.blockBytes) {
-        const bytes = new Uint8Array(Math.min(BULK_LIMITS.blockBytes, size - offset)).fill(value);
+        const bytes = content ? content.subarray(offset, offset + BULK_LIMITS.blockBytes)
+          : new Uint8Array(Math.min(BULK_LIMITS.blockBytes, size - offset)).fill(value);
         hashes.push(sha256(bytes)); whole.update(bytes);
       }
       const fileHash = whole.digest();
@@ -62,7 +67,7 @@ export function fixtureBulkClient(fixture: Fixture) {
       const manifest: DownloadManifest = { ...dimensions, version: 1, algorithm: 'sha256', sourceVersion: 'constant',
         manifestId: bytesToHex(digest.update(fileHash).digest()), fileHash: bytesToHex(fileHash) };
       const context = { ...contexts, transferId: open.transferId, manifestId: manifest.manifestId, epoch: open.epoch };
-      const transfer = { epoch: open.epoch, size, manifest, hashes, value, path: open.path,
+      const transfer = { epoch: open.epoch, size, manifest, hashes, value, path: open.path, bytes: content,
         sender: new BulkCipher(root, { ...context, desktop: true }),
         receiver: new BulkCipher(root, { ...context, desktop: false }) };
       transfers.set(open.transferId, transfer);

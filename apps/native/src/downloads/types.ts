@@ -7,6 +7,7 @@ export interface DownloadSource extends DownloadLocation {
   deviceId: string;
   deviceName: string;
   path: string;
+  preview?: import('../../../../shared/remote-chat/downloads').PreviewKind;
 }
 export interface DownloadTask {
   id: string;
@@ -19,7 +20,10 @@ export interface DownloadTask {
   createdAt: number;
   message: string;
   uri?: string;
+  cacheUri?: string;
+  exported?: boolean;
   mimeType?: string;
+  revision?: string;
   readyToSave?: boolean;
   savedBytes?: number;
 }
@@ -51,6 +55,10 @@ export interface DownloadNative {
   invalidateBulk?: (owner: string, deviceId: string) => Promise<void>;
   list: () => Promise<string>;
   enqueue: (source: string) => Promise<string>;
+  previewText: (id: string) => Promise<string>;
+  previewUri: (id: string) => Promise<string>;
+  discardPreview: (id: string) => Promise<void>;
+  exportImage: (id: string) => Promise<void>;
   pause: (id: string) => Promise<void>;
   resume: (id: string) => Promise<void>;
   delete: (id: string) => Promise<void>;

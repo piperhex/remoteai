@@ -20,6 +20,7 @@ const PAGE_SIZE: u64 = 50;
 pub(crate) enum GuiRequest {
     DownloadBrowse(super::downloads::Browse),
     DownloadOpen(super::downloads::Open),
+    PreviewOpen(super::preview_download::Open),
     GenerateTitle(super::title_generation::TitleRequest),
     FileOpen(super::file_stream::StreamOpen),
     FileRead(super::file_stream::StreamRead),
@@ -214,7 +215,9 @@ impl GuiRequest {
     // Only this closed set of methods is exposed to the WebView.
     pub(super) fn into_rpc(self) -> Result<(&'static str, Value)> {
         match self {
-            Self::DownloadBrowse(_) | Self::DownloadOpen(_) => Err(GuiError::InvalidRequest),
+            Self::DownloadBrowse(_) | Self::DownloadOpen(_) | Self::PreviewOpen(_) => {
+                Err(GuiError::InvalidRequest)
+            }
             Self::GenerateTitle(_) => Err(GuiError::InvalidRequest),
             Self::VideoOpen(_)
             | Self::VideoRead(_)

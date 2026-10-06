@@ -19,7 +19,7 @@ async function openFile(options: {
   const { request, client, native, signal } = options;
   const { source, taskId, requestId } = request;
   const info = await client.open({ transferId: taskId, scope: source.scope,
-    threadId: source.threadId, cwd: source.cwd, path: source.path });
+    threadId: source.threadId, cwd: source.cwd, path: source.path, preview: source.preview });
   let accepted = false;
   let bulk: Awaited<ReturnType<typeof import('./bulkOpen')['openNativeBulk']>> | undefined;
   try {

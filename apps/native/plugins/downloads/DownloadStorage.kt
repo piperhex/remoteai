@@ -25,6 +25,13 @@ internal class DownloadStorage(private val context: Context) {
     return File(folder, "${task.id}.part")
   }
 
+  fun previewFile(task: DownloadTask): File {
+    require(task.isPreview && task.status == "completed")
+    return part(task).also { require(it.isFile && it.length() == task.size) }
+  }
+
+  fun exportImage(task: DownloadTask) = DownloadImages(context).publish(part(task), task)
+
   fun load(): LinkedHashMap<String, DownloadTask> {
     val result = linkedMapOf<String, DownloadTask>()
     if (!index.baseFile.exists()) return result
@@ -127,7 +134,8 @@ internal class DownloadStorage(private val context: Context) {
     if (value.isEmpty()) return
     val uri = Uri.parse(value)
     if (uri.scheme == "content") {
-      require(uri.authority == MediaStore.AUTHORITY && uri.path?.startsWith("/external/downloads/") == true)
+      require(uri.authority == MediaStore.AUTHORITY &&
+        listOf("/external/downloads/", "/external/images/media/").any { uri.path?.startsWith(it) == true })
       context.contentResolver.delete(uri, null, null)
     } else {
       val file = File(requireNotNull(uri.path))

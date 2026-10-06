@@ -1,4 +1,5 @@
 export const chat = {
+  '查看原图': 'View original',
   '正在加载模型…': 'Loading models…',
   '暂无可用模型，点击重试': 'No models available. Click to retry',
   '模型加载失败，点击重试': 'Could not load models. Click to retry',

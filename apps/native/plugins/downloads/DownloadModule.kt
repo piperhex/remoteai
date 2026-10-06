@@ -25,6 +25,15 @@ class DownloadModule(private val context: ReactApplicationContext) : ReactContex
 
   @ReactMethod fun list(promise: Promise) = run(promise) { engine.snapshot() }
   @ReactMethod fun enqueue(source: String, promise: Promise) = run(promise) { engine.enqueue(JSONObject(source)) }
+  @ReactMethod fun previewText(id: String, promise: Promise) = run(promise) { engine.previewText(id) }
+  @ReactMethod fun previewUri(id: String, promise: Promise) = run(promise) { engine.previewUri(id) }
+  @ReactMethod fun discardPreview(id: String, promise: Promise) = run(promise) { engine.discardPreview(id); null }
+  @ReactMethod fun exportImage(id: String, promise: Promise) {
+    engine.submit({ engine.exportImage(id) { error ->
+      if (error == null) promise.resolve(null)
+      else promise.reject("DOWNLOAD_FAILED", "保存失败，请检查存储空间和权限后重试。")
+    } }, {}, { promise.reject("DOWNLOAD_FAILED", "请重新加载原图后保存。") })
+  }
   @ReactMethod fun pause(id: String, promise: Promise) = run(promise) { engine.pause(id); null }
   @ReactMethod fun resume(id: String, promise: Promise) = run(promise) { engine.resume(id); null }
   @ReactMethod fun delete(id: String, promise: Promise) = run(promise) { engine.delete(id); null }

@@ -39,7 +39,7 @@ export function useDownloadTasks(session: AuthSession) {
   };
 
   return {
-    tasks: tasks.filter(task => task.source.owner === owner).slice().reverse(),
+    tasks: tasks.filter(task => task.source.owner === owner && (!task.source.preview || task.exported)).slice().reverse(),
     connection: connection?.owner === owner ? connection : undefined,
     error: error || initializationError, busy, deleting, setDeleting, run,
   };

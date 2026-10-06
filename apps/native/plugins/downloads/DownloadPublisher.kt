@@ -5,6 +5,7 @@ import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.RejectedExecutionException
 
 /** Final MediaStore copies never occupy the network receiver/checkpoint executor. */
 internal class DownloadPublisher {
@@ -13,10 +14,12 @@ internal class DownloadPublisher {
   })
 
   fun submit(cancelled: AtomicBoolean, action: () -> Unit, done: (Exception?) -> Unit) {
-    worker.execute {
-      val error = try { check(!cancelled.get()); action(); null } catch (error: Exception) { error }
-      done(error)
-    }
+    try {
+      worker.execute {
+        val error = try { check(!cancelled.get()); action(); null } catch (error: Exception) { error }
+        done(error)
+      }
+    } catch (error: RejectedExecutionException) { done(error) }
   }
   fun shutdown() { worker.shutdown() }
 }

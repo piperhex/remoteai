@@ -29,5 +29,6 @@ export function useDownloadTasks(owner: string) {
     finally { pending.current = false; setBusy(''); }
   };
   return { connection, busy, error: error || storageError, run,
-    tasks: allTasks.filter(task => task.source.owner === owner).slice().reverse() };
+    tasks: allTasks.filter(task => task.source.owner === owner && (!task.source.preview || task.exported))
+      .slice().reverse() };
 }

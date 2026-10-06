@@ -49,6 +49,8 @@ it.each(["![截图](/F:/images/page.jpg)", "[截图](/F:/images/page.jpg)"])
     const thumbnail = container.querySelector<HTMLButtonElement>('button[aria-label="放大查看：截图"]');
     expect(thumbnail?.querySelector("img")?.getAttribute("src")).toBe(image);
     await act(async () => thumbnail!.click());
+    expect(guiApi.request).toHaveBeenCalledTimes(1);
+    await act(async () => container.querySelector<HTMLButtonElement>('.cs-image-original')!.click());
     expect(guiApi.request).toHaveBeenLastCalledWith({ operation: "imagePreview", threadId: "task",
       source: "F:/images/page.jpg", variant: "original" });
     expect(container.querySelector("dialog[open] img")?.getAttribute("src")).toBe(original);

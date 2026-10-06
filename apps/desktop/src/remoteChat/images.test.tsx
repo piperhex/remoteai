@@ -80,6 +80,26 @@ it('shows Windows Markdown table images as thumbnails and loads the original on 
   for (const path of paths) expect(load).toHaveBeenCalledWith('task', path);
   expect(container.textContent).not.toContain('图片加载失败');
   await act(async () => container.querySelector<HTMLButtonElement>('td button')!.click());
+  expect(load).toHaveBeenCalledTimes(3);
+  await act(async () => container.querySelector<HTMLButtonElement>('.cs-image-original')!.click());
   expect(load).toHaveBeenLastCalledWith('task', paths[0], true);
   expect(container.querySelector('dialog[open] img')?.getAttribute('src')).toBe(dataUrl);
+});
+
+it('accepts managed blob thumbnails and saves the same lazily loaded original only once', async () => {
+  HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+  const save = vi.fn().mockResolvedValue(undefined);
+  load.mockResolvedValueOnce('blob:thumbnail').mockResolvedValue('blob:original');
+  await act(async () => root.render(<ChatImageContext.Provider value={{ ready: true, threadId: 'task', load, save }}>
+    <ChatImage source="./preview.png" />
+  </ChatImageContext.Provider>));
+  await act(async () => container.querySelector<HTMLButtonElement>('.chat-image')!.click());
+  expect(load).toHaveBeenCalledTimes(1);
+  expect(container.querySelector('dialog img')?.getAttribute('src')).toBe('blob:thumbnail');
+  await act(async () => container.querySelector<HTMLButtonElement>('.cs-image-download')!.click());
+  expect(load).toHaveBeenCalledTimes(2);
+  expect(save).toHaveBeenCalledWith('blob:original');
+  await act(async () => container.querySelector<HTMLButtonElement>('.cs-image-download')!.click());
+  expect(load).toHaveBeenCalledTimes(2);
+  expect(save).toHaveBeenCalledTimes(2);
 });

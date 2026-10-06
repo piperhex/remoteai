@@ -105,7 +105,8 @@ export function ConnectedChat({ chat, device, devices, active, scope, email, cho
     {!!state.error && <p role="alert" className="chat-error">{t(state.error)}</p>}
     {state.desktopOnly && <p className="chat-muted" style={{ maxWidth: 400 }}>
       {t('桌面已就绪。打开远程桌面，登录电脑后即可继续聊天。')}</p>}
-    <ChatImageContext.Provider value={{ threadId: state.selected?.id ?? null, ready, load: controller.imagePreview }}>
+    <ChatImageContext.Provider value={{ threadId: state.selected?.id ?? null, ready,
+      load: controller.imagePreview, save: controller.managedPreviews ? controller.savePreviewImage : undefined }}>
       <ChatFileContext.Provider value={{ threadId: state.selected?.id ?? null, ready, client: controller.files,
         load: controller.textPreview }}>
       <TaskReviewProvider controller={controller} state={state} active={active && foreground}>

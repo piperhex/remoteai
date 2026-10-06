@@ -6,11 +6,13 @@ import { ChatController } from '../../../../shared/remote-chat/client/controller
 import { RtcPeer } from '../../../../shared/remote-chat/rtcPeer';
 import { saveLastConnectedDevice } from './lastConnectedDevice';
 import { browserTrustStore, trustedHost, trustScope } from '../../../../shared/remote-chat/trustedHost';
+import { createPreviewDownloads } from '../downloads/previews';
+import { downloadOwner } from '../downloads/manager';
 
 const HISTORY_REFRESH_MS = 15_000;
 
 function createController(session: AuthSession, deviceId: string) {
-  return new ChatController((events) => new ChatConnection({ ...events, deviceId,
+  const controller = new ChatController((events) => new ChatConnection({ ...events, deviceId,
     verifyHostKey: trustedHost(browserTrustStore, trustScope(session.baseUrl, deviceId)),
     randomBytes: (length) => crypto.getRandomValues(new Uint8Array(length)),
     renewAuthorization: async () => {
@@ -30,6 +32,8 @@ function createController(session: AuthSession, deviceId: string) {
     },
     createPeer: (options) => new RtcPeer(options, () => new RTCPeerConnection({ iceServers: options.iceServers })),
   }));
+  controller.previewDownloads = createPreviewDownloads({ owner: downloadOwner(session), deviceId });
+  return controller;
 }
 
 export function useChat(session: AuthSession, deviceId: string, active: boolean) {

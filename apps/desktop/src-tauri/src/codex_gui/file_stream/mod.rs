@@ -7,6 +7,8 @@ mod download_tests;
 mod file;
 mod manifest;
 #[cfg(test)]
+mod preview_tests;
+#[cfg(test)]
 mod tests;
 
 use super::{
@@ -133,6 +135,22 @@ impl FileStreams {
 
     fn insert(&self, root: PathBuf, options: StreamOpen) -> Result<StreamInfo> {
         let file = StreamFile::open(&root, &options.path, options.max_bytes, self.kind)?;
+        self.insert_file(file, options.thread_id)
+    }
+
+    /// Only callers that have authorized and validated the complete preview may register a snapshot.
+    pub(super) fn insert_preview(
+        &self,
+        transfer_id: String,
+        bytes: &[u8],
+        name: String,
+        mime_type: String,
+    ) -> Result<GuiResponse> {
+        let file = StreamFile::snapshot(bytes, name, mime_type)?;
+        response(self.insert_file(file, transfer_id)?)
+    }
+
+    fn insert_file(&self, file: StreamFile, thread_id: String) -> Result<StreamInfo> {
         let info = file.info();
         let mut sessions = self.sessions.lock().map_err(|_| GuiError::FileRead)?;
         sessions.retain(|_, session| session.retain());
@@ -142,7 +160,7 @@ impl FileStreams {
         sessions.insert(
             info.id.clone(),
             Session {
-                thread_id: options.thread_id,
+                thread_id,
                 touched: Instant::now(),
                 cancelled: Arc::clone(&file.cancelled),
                 file: Arc::new(Mutex::new(file)),

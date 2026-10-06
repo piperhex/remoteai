@@ -40,6 +40,7 @@ pub(crate) mod notification_navigation;
 mod notifications;
 mod platform;
 pub(crate) mod plugin_client;
+mod preview_download;
 mod project_directories;
 mod project_files;
 mod prompt;
@@ -167,6 +168,9 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
         GuiRequest::DownloadBrowse(options) => return downloads::browse(&client, options).await,
         GuiRequest::DownloadOpen(options) => {
             return downloads::open(&client, Arc::clone(&state.downloads.0), options).await
+        }
+        GuiRequest::PreviewOpen(options) => {
+            return preview_download::open(&client, Arc::clone(&state.downloads.0), options).await
         }
         GuiRequest::GenerateTitle(options) => return client.generate_title(options).await,
         GuiRequest::FileOpen(options) => {

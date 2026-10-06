@@ -1,6 +1,6 @@
 use std::{
     fs::{File, Metadata},
-    io::{Read, Seek, SeekFrom},
+    io::{Read, Seek, SeekFrom, Write},
     path::Path,
     sync::{atomic::AtomicBool, Arc},
     time::SystemTime,
@@ -81,6 +81,31 @@ fn video_mime_type(path: &Path, file: &mut File) -> Result<&'static str> {
 }
 
 impl StreamFile {
+    /// A private, automatically deleted snapshot keeps previews on the normal download transport.
+    /// The content revision is stable across reopened snapshots, allowing verified blocks to resume.
+    pub(super) fn snapshot(bytes: &[u8], name: String, mime_type: String) -> Result<Self> {
+        use sha2::{Digest, Sha256};
+        let mut file = tempfile::tempfile().map_err(|_| GuiError::FileRead)?;
+        file.write_all(bytes).map_err(|_| GuiError::FileRead)?;
+        let modified = file
+            .metadata()
+            .and_then(|value| value.modified())
+            .map_err(|_| GuiError::FileRead)?;
+        Ok(Self {
+            file,
+            info: StreamInfo {
+                id: uuid::Uuid::new_v4().to_string(),
+                size: bytes.len() as u64,
+                name,
+                mime_type,
+                revision: format!("sha256:{:x}", Sha256::digest(bytes)),
+            },
+            modified,
+            manifest: None,
+            cancelled: Arc::new(AtomicBool::new(false)),
+        })
+    }
+
     pub(super) fn open(
         root: &Path,
         source: &str,

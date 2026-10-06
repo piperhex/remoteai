@@ -1,5 +1,8 @@
 import type { Thread } from '../src/pages/codexGui/types';
 import { demoVideoResponse } from './demo-videos';
+import thumbnail from '../src-tauri/icons/32x32.png?inline';
+import { demoOriginal } from './demo-images';
+import { detailText } from './demo-details';
 
 const MIB = 1024 * 1024;
 const sizes: Record<string, number> = {
@@ -7,6 +10,7 @@ const sizes: Record<string, number> = {
 };
 const handles = new Map<string, number>();
 const videoHandles = new Set<string>();
+const previewHandles = new Map<string, Uint8Array>();
 let revision = 0;
 let corrupt = false;
 
@@ -17,6 +21,24 @@ export function configureDownloadFixture(action: string) {
 }
 
 export function demoDownloads(input: Record<string, unknown>): { value: unknown } | undefined {
+  if (input.operation === 'previewOpen') {
+    const id = crypto.randomUUID();
+    const image = input.preview === 'thumbnail' ? thumbnail : demoOriginal();
+    const bytes = input.preview === 'text' ? new TextEncoder().encode(detailText)
+      : Uint8Array.from(atob(image.split(',')[1]), character => character.charCodeAt(0));
+    previewHandles.set(id, bytes);
+    return { value: { id, size: bytes.length, name: input.preview === 'text' ? 'preview.txt' : 'image.png',
+      mimeType: input.preview === 'text' ? 'text/plain' : 'image/png', revision: 'preview-v1' } };
+  }
+  const preview = previewHandles.get(String(input.id));
+  if (preview && input.operation === 'fileClose') {
+    previewHandles.delete(String(input.id)); return { value: null };
+  }
+  if (preview && input.operation === 'fileRead') {
+    const offset = Number(input.offset);
+    const bytes = preview.subarray(offset, offset + Number(input.length));
+    return { value: { offset, data: btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join('')) } };
+  }
   if (input.operation === 'downloadBrowse') {
     const root = input.scope === 'computer' && !input.directory;
     const directory = String(input.directory || (root ? '' : 'F:/projects/demo'));

@@ -11,7 +11,8 @@ function setup() {
   const client: DownloadClient = { open: vi.fn(), read: vi.fn(),
     close: vi.fn().mockResolvedValue(null), browse: vi.fn() };
   const native: DownloadNative = { accept: vi.fn().mockResolvedValue(true), list: vi.fn(), enqueue: vi.fn(),
-    pause: vi.fn(), resume: vi.fn(), delete: vi.fn(), connection: vi.fn() };
+    pause: vi.fn(), resume: vi.fn(), delete: vi.fn(), connection: vi.fn(),
+    previewText: vi.fn(), previewUri: vi.fn(), exportImage: vi.fn(), discardPreview: vi.fn() };
   return { client, native };
 }
 

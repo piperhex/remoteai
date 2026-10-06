@@ -15,6 +15,8 @@ test.beforeEach(async ({ page, request }) => {
 });
 
 test('renders rich replies, folded work, nested output, file previews and reply quotes', async ({ page, request }, info) => {
+  // Exercise the browser-download fallback; the native OS save picker is outside Playwright's page automation.
+  await page.evaluate(() => Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true }));
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await request.post(`${fixtureUrl}/test/sidebar`, { data: { action: 'web-parity' } });

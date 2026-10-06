@@ -1,6 +1,9 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { ChatController } from './controller';
 vi.mock('react-native', () => ({ Platform: { OS: 'android' }, NativeModules: {} }));
+vi.mock('../downloads/previews', () => ({ createPreviewDownloads: () => ({ dispose: vi.fn() }) }));
+vi.mock('../downloads/iosPreviews', () => ({ createIosPreviewDownloads: vi.fn() }));
+vi.mock('../downloads/manager', () => ({ downloadOwner: () => 'test-owner' }));
 import type { AuthSession } from '../types';
 import type { Thread } from './types';
 import type { ConnectionEvents } from '../../../../shared/remote-chat/client/connection';

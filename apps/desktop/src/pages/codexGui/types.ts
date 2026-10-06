@@ -206,7 +206,8 @@ export type Request =
   | { operation: "textPreview"; threadId: string; path: string; maxBytes?: number }
   | ({ operation: "projectFiles" } & import('../../../../../shared/remote-chat/projectFiles').ProjectFilesRequest)
   | { operation: "projectDirectories"; directory: string }
-  | ({ operation: 'downloadOpen' } & import('../../../../../shared/remote-chat/downloads').DownloadOpen)
+    | ({ operation: 'downloadOpen' } & import('../../../../../shared/remote-chat/downloads').DownloadOpen)
+    | ({ operation: 'previewOpen' } & import('../../../../../shared/remote-chat/downloads').PreviewOpen)
   | ({ operation: 'downloadBrowse' } & import('../../../../../shared/remote-chat/downloads').DownloadBrowse)
   | { operation: "editMessage"; threadId: string; turnId: string; itemId: string; text: string;
       removedImageIndexes?: number[]; images?: string[]; skills?: SkillReference[];

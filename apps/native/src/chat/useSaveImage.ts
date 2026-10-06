@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { DownloadPolicyError } from '../../../../shared/remote-chat/policy';
 import { ImageSavePermissionError, saveImage } from './saveImage';
 
-export function useSaveImage(url: string | undefined) {
+export function useSaveImage(options: { load: () => Promise<string>; save?: (url: string) => Promise<void> }) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const busy = useRef(false);
@@ -15,12 +15,13 @@ export function useSaveImage(url: string | undefined) {
     return () => clearTimeout(timer);
   }, [message]);
   const save = async () => {
-    if (!url || busy.current) return;
+    if (busy.current) return;
     busy.current = true;
     setSaving(true);
     setMessage('');
     try {
-      await saveImage(url);
+      const url = await options.load();
+      await (options.save ?? saveImage)(url);
       if (mounted.current) setMessage(t("已保存到相册"));
     } catch (error) {
       if (mounted.current) setMessage(error instanceof ImageSavePermissionError || error instanceof DownloadPolicyError

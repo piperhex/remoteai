@@ -27,7 +27,7 @@ export function ChatImage({ source, description = t("图片") }: { source?: stri
     {previewReady && <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button"
       accessibilityLabel={t("放大查看：{value1}", { value1: description })}
       onPress={() => { if (image.url) openPreview({ key: image.key, thumbnail: image.url,
-        description, load: image.original }); }}>
+        description, load: image.original, save: image.save }); }}>
       <Image key={image.key} source={{ uri: image.url }} accessibilityLabel={description}
         resizeMode="contain" fadeDuration={0} style={imageStyles.thumbnail} onError={image.fail} />
     </Pressable>}

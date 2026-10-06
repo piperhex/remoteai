@@ -92,7 +92,7 @@ export const downloadManager = {
     if (!connection?.ready || connection.owner !== source.owner || connection.deviceId !== source.deviceId) {
       throw new Error(t("请先连接这台电脑，再开始下载。"));
     }
-    if (Platform.OS === 'android' && Number(Platform.Version) < 29) {
+    if (!source.preview && Platform.OS === 'android' && Number(Platform.Version) < 29) {
       const permission = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
       if (permission !== PermissionsAndroid.RESULTS.GRANTED) throw new Error(t("允许保存文件后，即可开始下载。"));
     }
@@ -101,6 +101,16 @@ export const downloadManager = {
   pause: (id: string) => requireNative().pause(id),
   resume: (id: string) => requireNative().resume(id),
   delete: (id: string) => requireNative().delete(id),
+  previewText: (id: string) => requireNative().previewText(id),
+  previewUri: (id: string) => requireNative().previewUri(id),
+  discardPreview: (id: string) => requireNative().discardPreview(id),
+  async exportImage(id: string) {
+    if (Platform.OS === 'android' && Number(Platform.Version) < 29) {
+      const permission = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE);
+      if (permission !== PermissionsAndroid.RESULTS.GRANTED) throw new Error(t("请允许保存照片后重试"));
+    }
+    await requireNative().exportImage(id);
+  },
   async open(task: DownloadTask) {
     if (!task.uri || task.status !== 'completed') return;
     const uri = task.uri.startsWith('file://') ? decodeURI(task.uri.slice(7)) : task.uri;

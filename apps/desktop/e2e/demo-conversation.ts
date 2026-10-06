@@ -24,6 +24,7 @@ import { detailText, seedDemoDetails } from './demo-details';
 import { demoVideoResponse, seedDemoVideo } from './demo-videos';
 import { demoChatParityOperation, seedChatParity, seedAsyncQuestion } from './demo-chat-parity';
 import { configureDownloadFixture, demoDownloads, seedDownloads } from './demo-downloads';
+import { chatHandshake } from '../../../shared/remote-chat/handshake';
 
 type DemoLink = Pick<ChatLink, 'send'>;
 
@@ -65,7 +66,10 @@ export function demoState() {
 
 export function demoResponse(request: RpcRequest, link: DemoLink): unknown {
   sidebarLink = link;
-  if (request.method === 'connect') return [...approvals.values()].map(({ event }) => event);
+  if (request.method === 'connect') {
+    const events = [...approvals.values()].map(({ event }) => event);
+    return request.body === undefined ? events : { ...chatHandshake, approvals: events, filePreviewsV1: true };
+  }
   const input = (request.body ?? {}) as Record<string, unknown>;
   operations.push({ ...input, method: request.method });
   const download = demoDownloads(input);

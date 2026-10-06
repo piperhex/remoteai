@@ -8,7 +8,7 @@ use serde::Deserialize;
 use super::error::{GuiError, Result};
 
 // Includes base64 overhead, so the complete thumbnail URL stays below 100 kB on the wire.
-const MAX_THUMBNAIL_BYTES: usize = 74_000;
+pub(super) const MAX_THUMBNAIL_BYTES: usize = 74_000;
 const MAX_DECODE_BYTES: u64 = 128 * 1024 * 1024;
 const MAX_THUMBNAIL_EDGE: u32 = 1600;
 const MIN_THUMBNAIL_EDGE: u32 = 100;

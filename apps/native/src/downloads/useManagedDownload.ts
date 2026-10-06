@@ -15,9 +15,10 @@ function useAndroidDownload(options: Options) {
   const [starting, setStarting] = useState(false);
   const connection = downloadManager.connection();
   const task = [...tasks].reverse().find(item => item.source.path === options.path
+    && !item.source.preview && item.source.scope === 'project'
     && item.source.threadId === options.threadId && item.source.owner === connection?.owner
     && item.source.deviceId === connection?.deviceId);
-  const busy = starting || task?.status === 'queued' || task?.status === 'downloading';
+  const busy = starting || !!task && ['queued', 'preparing', 'downloading', 'verifying', 'saving'].includes(task.status);
   const percent = task?.size ? Math.floor(task.received / task.size * 100) : 0;
   const start = async () => {
     if (starting || (!options.ready && task?.status !== 'completed')

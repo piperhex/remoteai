@@ -63,6 +63,11 @@ export class RemoteImages {
     return original;
   }
 
+  async downloadSource(threadId: unknown, source: unknown) {
+    if (typeof threadId !== 'string' || typeof source !== 'string') throw new Error('图片请求无效，请重试。');
+    return this.resolve(threadId, source);
+  }
+
   private load(threadId: string, source: string, variant: 'thumbnail' | 'original', mode: ConnectionMode) {
     const maxBytes = imagePreviewByteLimit(mode);
     const key = JSON.stringify([threadId, source, variant, maxBytes]);

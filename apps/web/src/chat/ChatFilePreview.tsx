@@ -10,6 +10,8 @@ import { ChatHtmlPreview, isHtmlPath } from './ChatHtmlPreview';
 import { ChatImage } from './ChatImage';
 import { loadVideoPreview } from './videoPreview';
 import { FileDownloadButton } from '../downloads/FileDownloadButton';
+import { ImageFileDownload } from './ImageFileDownload';
+import { localImageSource } from '../../../../shared/chat/imageSources';
 
 export interface FilePreviewContext {
   client: FileClient; threadId: string | null; ready: boolean;
@@ -67,7 +69,7 @@ export function ChatFilePreview({ path, line, context, onClose }: {
   const image = /\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(path);
   return <AdaptiveSheet open title={path.split(/[\\/]/).at(-1) || t("文件预览")} width={800} onClose={onClose}>
     <div className="chat-detail-stack">
-      <FileDownloadButton path={path} context={context} />
+      {localImageSource(path) ? <ImageFileDownload path={path} /> : <FileDownloadButton path={path} context={context} />}
       {image ? <ChatImage source={path} description={t("文件预览")} />
       : isVideoPath(path) ? <VideoFile path={path} context={context} />
         : <TextFile key={path} path={path} context={context} line={line} />}</div>

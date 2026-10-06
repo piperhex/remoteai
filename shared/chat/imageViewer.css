@@ -26,3 +26,6 @@
 .cs-image-download { position: absolute; top: 16px; right: 80px; min-height: 44px; padding: 0 16px;
   border-radius: 22px; background: #282b2a; color: #eee; }
 .cs-image-download:disabled { opacity: .5; }
+.cs-image-original { position: absolute; bottom: 88px; left: 50%; transform: translateX(-50%);
+  min-height: 44px; padding: 0 18px; border-radius: 22px; background: #282b2a !important; }
+.cs-image-original ~ .cs-image-status { bottom: 140px; }

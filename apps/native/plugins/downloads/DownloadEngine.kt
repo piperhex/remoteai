@@ -57,6 +57,50 @@ internal class DownloadEngine(
 
   fun snapshot(): String = JSONArray().apply { jobs().values.forEach { put(it.data) } }.toString()
 
+  fun previewText(id: String): String {
+    val task = requireNotNull(jobs()[id])
+    require(task.source.optString("preview") == "text")
+    return storage.previewFile(task).readText(Charsets.UTF_8)
+  }
+
+  fun previewUri(id: String): String {
+    val task = requireNotNull(jobs()[id])
+    require(task.source.optString("preview") in listOf("thumbnail", "image"))
+    return android.net.Uri.fromFile(storage.previewFile(task)).toString()
+  }
+
+  fun discardPreview(id: String) {
+    val task = jobs()[id] ?: return
+    require(task.isPreview && !saving.containsKey(id))
+    // Cache eviction must never remove an image the user already saved to the photo library.
+    task.data.remove("uri")
+    delete(id)
+  }
+
+  fun exportImage(id: String, done: (Exception?) -> Unit) {
+    val task = requireNotNull(jobs()[id])
+    storage.previewFile(task)
+    require(task.source.optString("preview") == "image" && !saving.containsKey(id))
+    val cancelled = AtomicBoolean(false)
+    val copy = DownloadTask(JSONObject(task.data.toString()))
+    copy.data.remove("uri")
+    saving[id] = cancelled
+    publisher.submit(cancelled, {
+      bulkStorage.verifyComplete(copy) { check(!cancelled.get()) }
+      storage.exportImage(copy)
+    }, { error -> worker.execute {
+      saving.remove(id)
+      try {
+        if (error == null && !cancelled.get()) {
+          task.data.put("uri", copy.data.getString("uri")).put("exported", true).put("message", "已保存到相册")
+        } else storage.removePublished(copy)
+        if (deleting.remove(id)) { storage.delete(task); jobs().remove(id) }
+        changed(); done(error ?: if (cancelled.get()) IllegalStateException("Cancelled") else null)
+      } catch (failure: Exception) { done(failure) }
+      finally { if (shuttingDown && saving.isEmpty()) worker.shutdown() }
+    } })
+  }
+
   private fun changed(persist: Boolean = true) {
     // A full disk must not hide the in-memory failure state from the download page.
     try { if (persist) checkpoint() }
@@ -274,7 +318,7 @@ internal class DownloadEngine(
         task.status = "saving"; task.data.put("readyToSave", true); changed()
       }.get()
       val publishing = System.nanoTime()
-      storage.publish(copy, {
+      if (!copy.isPreview) storage.publish(copy, {
         worker.submit {
           task.data.put("uri", copy.data.getString("uri")); checkpoint()
         }.get()
@@ -301,8 +345,14 @@ internal class DownloadEngine(
         } else task.data.put("message", "保存未完成，请检查可用空间和权限后再次保存。")
         return
       }
-      task.status = "completed"; task.data.put("message", "已保存到下载文件夹")
-      checkpoint(); storage.removePart(task)
+      task.status = "completed"
+      if (task.isPreview) {
+        task.data.put("cacheUri", android.net.Uri.fromFile(storage.previewFile(task)).toString()).put("message", "")
+        checkpoint()
+      } else {
+        task.data.put("message", "已保存到下载文件夹")
+        checkpoint(); storage.removePart(task)
+      }
     } finally {
       changed(); pump()
       if (shuttingDown && saving.isEmpty()) worker.shutdown()

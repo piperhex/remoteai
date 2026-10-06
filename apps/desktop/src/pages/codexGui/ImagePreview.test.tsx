@@ -38,6 +38,7 @@ afterEach(async () => {
 async function render(load = async () => original) {
   await act(async () => root.render(<ImagePreview thumbnail="thumbnail" description="截图"
     load={load} close={() => {}} />));
+  await act(async () => container.querySelector<HTMLButtonElement>('.cs-image-original')?.click());
 }
 
 async function openMenu() {

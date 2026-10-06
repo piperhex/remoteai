@@ -10,5 +10,5 @@ export function ChatImageFilePreview({ path, close }: { path: string; close: () 
   const image = useChatImage(path, useContext(ChatImageContext));
   const description = path.split(/[\\/]/).at(-1) || t("图片");
   return <ImageViewer key={image.key} thumbnail={image.url} description={description}
-    load={image.original} close={close} />;
+    load={image.original} save={image.save} close={close} />;
 }

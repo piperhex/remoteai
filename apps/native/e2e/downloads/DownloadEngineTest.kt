@@ -187,6 +187,76 @@ class DownloadEngineTest : InstrumentationTestCase() {
     assertTrue(requests().isEmpty())
   }
 
+  private fun preview(kind: String, bytes: ByteArray, mime: String): JSONObject {
+    source.put("scope", "project").put("threadId", UUID.randomUUID().toString()).put("preview", kind)
+    taskId = run { engine.enqueue(source) } as String
+    val opened = requests("open").last()
+    val info = JSONObject().put("id", UUID.randomUUID().toString()).put("size", bytes.size)
+      .put("name", if (kind == "text") "preview.txt" else "image.png").put("mimeType", mime)
+      .put("revision", "snapshot-hash")
+    run { engine.accept(opened.getString("requestId"), info.toString(), false) }
+    for (packet in requests()) {
+      val offset = packet.getInt("offset")
+      val data = Base64.encodeToString(bytes.copyOfRange(offset, offset + packet.getInt("length")), Base64.NO_WRAP)
+      val chunk = JSONObject().put("offset", offset).put("data", data)
+      run { engine.accept(packet.getString("requestId"), chunk.toString(), false) }
+    }
+    return completed()
+  }
+
+  fun testTextPreviewStaysPrivateAndSurvivesEngineReload() {
+    val text = "统一下载预览\n保留 UTF-8 原始内容"
+    val task = preview("text", text.toByteArray(Charsets.UTF_8), "text/plain;charset=utf-8")
+    assertFalse(task.has("uri"))
+    assertEquals(text, run { engine.previewText(taskId) })
+    val restored = storage.load().getValue(taskId)
+    assertEquals("completed", restored.status)
+    assertEquals(text, storage.previewFile(restored).readText())
+    val opens = requests("open").size
+    run { engine.resume(taskId) }
+    assertEquals(opens, requests("open").size)
+  }
+
+  fun testOriginalImageExportsSameCachedBytesToAlbumWithoutAnotherTransfer() {
+    val bitmap = android.graphics.Bitmap.createBitmap(32, 32, android.graphics.Bitmap.Config.ARGB_8888)
+    bitmap.eraseColor(0x8024b448.toInt())
+    val output = java.io.ByteArrayOutputStream()
+    bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, output); bitmap.recycle()
+    val bytes = output.toByteArray()
+    val task = preview("image", bytes, "image/png")
+    assertFalse(task.has("uri"))
+    assertTrue((run { engine.previewUri(taskId) } as String).startsWith("file://"))
+    val opens = requests("open").size
+    val done = CompletableFuture<Unit>()
+    run { engine.exportImage(taskId) { error ->
+      if (error == null) done.complete(Unit) else done.completeExceptionally(error)
+    } }
+    done.get(10, TimeUnit.SECONDS)
+    val saved = snapshot()
+    assertTrue(saved.getBoolean("exported"))
+    val uri = Uri.parse(saved.getString("uri"))
+    val actual = instrumentation.targetContext.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+    assertTrue(bytes.contentEquals(actual))
+    assertTrue(storage.previewFile(DownloadTask(saved)).readBytes().contentEquals(bytes))
+    assertEquals(opens, requests("open").size)
+    try {
+      run { engine.discardPreview(taskId) }
+      val retained = instrumentation.targetContext.contentResolver.openInputStream(uri)!!.use { it.readBytes() }
+      assertTrue(bytes.contentEquals(retained))
+    } finally { instrumentation.targetContext.contentResolver.delete(uri, null, null) }
+  }
+
+  fun testThumbnailCheckpointContinuesAfterPauseAndNeverPublishes() {
+    source.put("scope", "project").put("threadId", UUID.randomUUID().toString()).put("preview", "thumbnail")
+    open(CHUNK_BYTES * 3L)
+    accept(requests()[0]); run { engine.pause(taskId); engine.resume(taskId) }
+    open(CHUNK_BYTES * 3L)
+    val remaining = requests().takeLast(2)
+    assertEquals(CHUNK_BYTES.toLong(), remaining[0].getLong("offset"))
+    remaining.forEach { accept(it) }
+    assertFalse(completed().has("uri"))
+  }
+
   private fun awaitOpens(count: Int) {
     val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
     while (requests("open").size < count && System.nanoTime() < deadline) Thread.sleep(10)

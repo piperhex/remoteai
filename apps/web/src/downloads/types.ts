@@ -4,6 +4,7 @@ import type { ConnectionMode } from '../../../../shared/remote-chat/protocol';
 
 export interface DownloadSource extends DownloadLocation {
   owner: string; deviceId: string; deviceName: string; path: string;
+  preview?: import('../../../../shared/remote-chat/downloads').PreviewKind;
 }
 export interface DownloadTask {
   id: string; source: DownloadSource; name: string;
@@ -15,6 +16,7 @@ export interface DownloadTask {
   manifest?: import('../../../../shared/remote-chat/downloadManifest').DownloadManifest;
   checkpoint?: import('../../../../shared/remote-chat/downloadManifest').DownloadCheckpoint;
   verified?: boolean;
+  exported?: boolean;
 }
 export interface DownloadConnection {
   owner: string; deviceId: string; deviceName: string; ready: boolean; mode: ConnectionMode;

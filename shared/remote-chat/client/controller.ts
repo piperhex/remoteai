@@ -270,6 +270,7 @@ export class ChatController {
   };
 
   stop() {
+    this.previewDownloads?.dispose();
     void this.flushCache();
     this.active = false;
     this.composer.reset();
@@ -299,6 +300,8 @@ export class ChatController {
       const response = await this.connection.request<unknown>('connect', chatHandshake);
       if (!this.active || generation !== this.synchronization) return;
       const approvals = chatApprovals(response);
+      this.previewDownloadSupported = !!response && typeof response === 'object'
+        && 'filePreviewsV1' in response && response.filePreviewsV1 === true;
       this.connection.setBulkSupport?.(response);
       if (response && typeof response === 'object' && 'desktopOnly' in response && response.desktopOnly === true) {
         this.update({ desktopOnly: true, approvals: [], selected: null, threads: [], queue: emptyQueue(),
@@ -594,9 +597,18 @@ export class ChatController {
   }
 
   imagePreview = async (threadId: string, source: string, original = false) => {
+    if (this.managedPreviews) return this.previewDownloads!.image(threadId, source, original);
     const key = JSON.stringify([threadId, await contentStringHash(source), original]);
     return offlineImage({ store: this.offline, online: this.state.ready, key,
       load: () => this.images.load(threadId, source, original), failed: this.cacheFailure });
+  };
+
+  previewDownloads?: import('../previewDownloads').PreviewAdapter;
+  private previewDownloadSupported = true;
+  get managedPreviews() { return Boolean(this.previewDownloads && this.previewDownloadSupported); }
+  savePreviewImage = (url: string) => {
+    if (!this.previewDownloads) return Promise.reject(new Error('请更新应用后保存图片。'));
+    return this.previewDownloads.saveImage(url);
   };
 
   videos: import('../video').VideoClient = {
@@ -612,14 +624,18 @@ export class ChatController {
   };
 
   downloads: import('../downloads').DownloadClient = {
-    open: (options) => this.connection.request('request', { operation: 'downloadOpen', ...options }),
+    open: (options) => options.preview
+      ? this.connection.request('request', { operation: 'previewOpen', transferId: options.transferId,
+        threadId: options.threadId, path: options.path, preview: options.preview })
+      : this.connection.request('request', { operation: 'downloadOpen', ...options }),
     browse: (options) => this.connection.request('request', { operation: 'downloadBrowse', ...options }),
     read: (request) => this.files.read(request),
     close: (transferId, id) => this.files.close(transferId, id),
   };
 
-  textPreview = (threadId: string, path: string) =>
-    this.connection.request<import('../textPreview').TextPreview>('request', { operation: 'textPreview', threadId, path });
+  textPreview = (threadId: string, path: string) => this.managedPreviews
+    ? this.previewDownloads!.text(threadId, path)
+    : this.connection.request<import('../textPreview').TextPreview>('request', { operation: 'textPreview', threadId, path });
 
   loadSkills = async (cwd: string) => {
     const generation = this.skillGeneration;

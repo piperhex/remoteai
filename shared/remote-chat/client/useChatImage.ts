@@ -6,12 +6,13 @@ export interface ImagePreviewOptions {
   ready: boolean;
   offline?: boolean;
   load: (threadId: string, source: string, original?: boolean) => Promise<string>;
+  save?: (url: string) => Promise<void>;
 }
 
 export function useChatImage(source: string | undefined, options: ImagePreviewOptions | null) {
   const network = source && /^https?:\/\//i.test(source) ? source : undefined;
   const local = source ? (localImageSource(source)
-    ?? (options?.load && (network || isInlineImage(source)) ? source : undefined)) : undefined;
+    ?? (options?.load && network ? source : undefined)) : undefined;
   const remote = source && !local && (isInlineImage(source) || network) ? source : undefined;
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<{ key: string; url?: string; failed?: boolean }>();
@@ -23,13 +24,16 @@ export function useChatImage(source: string | undefined, options: ImagePreviewOp
     let cancelled = false;
     setResult(undefined);
     void load(threadId, local).then((url) => {
-      if (!cancelled) setResult(isInlineImage(url) ? { key, url } : { key, failed: true });
+      const cached = /^(blob:|file:\/\/)/.test(url);
+      if (!cancelled) setResult(isInlineImage(url) || cached ? { key, url } : { key, failed: true });
     }, () => { if (!cancelled) setResult({ key, failed: true }); });
     return () => { cancelled = true; };
   }, [local, threadId, ready, offline, load, key]);
   const current = result?.key === key ? result : undefined;
   const supported = Boolean(remote || (local && threadId && load));
   return {
+    // Inline attachments already belong to the device; only remote previews have a managed transfer to export.
+    save: remote ? undefined : options?.save,
     key, url: remote || current?.url, failed: current?.failed || failedKey === key || !supported,
     loading: Boolean(local && supported && !current),
     original: async () => {

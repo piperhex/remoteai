@@ -20,6 +20,6 @@ export function ChatImage({ source, description = t("图片") }: { source?: stri
         referrerPolicy="no-referrer" onError={image.fail} />
     </button>
     {preview && <ImageViewer key={image.key} thumbnail={image.url} description={description}
-      translate={t} load={image.original} download={downloadChatImage} close={() => setPreview(false)} />}
+      translate={t} load={image.original} download={image.save ?? downloadChatImage} close={() => setPreview(false)} />}
   </>;
 }

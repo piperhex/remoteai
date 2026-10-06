@@ -71,6 +71,7 @@ export class WebDownloadManager {
       && task.source.deviceId === source.deviceId && task.source.path === source.path
       && task.source.scope === source.scope && task.source.threadId === source.threadId
       && task.source.cwd === source.cwd
+      && task.source.preview === source.preview
       && ['queued', 'preparing', 'downloading', 'verifying', 'saving', 'paused'].includes(task.status));
     if (existing) { await this.resume(existing.id); return existing.id; }
     if (this.tasks.length >= MAX_DOWNLOAD_RECORDS) throw new Error('下载记录已满，请删除不再需要的记录后重试。');
@@ -115,10 +116,10 @@ export class WebDownloadManager {
     if (!task || !['completed', 'ready'].includes(task.status)) return;
     // Invoke the picker in the click stack before an IndexedDB await consumes user activation.
     const saving = saveDownload(task, () => undefined);
-    this.update({ ...task, status: 'saving' });
+    this.update({ ...task, status: 'saving', exported: true });
     try {
       const confirmed = await saving;
-      await this.persist({ ...task, status: confirmed ? 'completed' : 'ready',
+      await this.persist({ ...task, exported: true, status: confirmed ? 'completed' : 'ready',
         message: confirmed ? '已保存到设备' : '已开始保存，请在浏览器下载列表中确认。' });
     } catch (error) {
       const invalid = error instanceof BulkError && error.code === 'INTEGRITY_FAILED';

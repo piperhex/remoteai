@@ -5,7 +5,7 @@ import './imageViewer.css';
 
 interface Props {
   thumbnail: string; description: string; load: () => Promise<string>; close: () => void;
-  download?: (url: string) => void;
+  download?: (url: string) => void | Promise<void>;
   contextMenu?: (event: MouseEvent, url: string) => void;
   feedback?: string;
   translate?: (text: string) => string;
@@ -15,6 +15,7 @@ export function ImageViewer({ thumbnail, description, load, close, download, con
   translate = (text: string) => text }: Props) {
   const image = useImageViewer(load);
   const [downloadError, setDownloadError] = useState('');
+  const [saving, setSaving] = useState(false);
   const [transform, setTransform] = useState(INITIAL_TRANSFORM);
   const pointers = useRef(new Map<number, Point>());
   const anchor = useRef({ before: transform, start: [] as Point[] });
@@ -43,13 +44,16 @@ export function ImageViewer({ thumbnail, description, load, close, download, con
           + `rotate(${transform.rotation}deg) scale(${transform.scale})` }} />
     </div>
     <button type="button" className="cs-image-close" aria-label={translate('关闭图片')} onClick={close}>×</button>
-    {download && <button type="button" className="cs-image-download" disabled={!image.url || image.error}
-      onClick={() => {
-        if (!image.url) return;
+    {download && <button type="button" className="cs-image-download" disabled={saving || image.loading}
+      onClick={async () => {
+        setSaving(true);
         setDownloadError('');
-        try { download(image.url); }
+        try { await download(await image.loadOriginal()); }
         catch (error) { setDownloadError(error instanceof Error ? error.message : translate('下载失败，请重试。')); }
-      }}>{translate('下载图片')}</button>}
+        finally { setSaving(false); }
+      }}>{translate(saving ? '正在保存…' : '下载图片')}</button>}
+    {!image.url && !image.loading && <button type="button" className="cs-image-original" onClick={image.request}>
+        {translate(image.error ? '重新加载原图' : '查看原图')}</button>}
     <div className="cs-image-toolbar">
       <button type="button" aria-label={translate('缩小图片')} onClick={() => setTransform((v) => ({ ...v,
         scale: clampZoom(v.scale / 1.5) }))}>−</button>
@@ -60,10 +64,9 @@ export function ImageViewer({ thumbnail, description, load, close, download, con
       <button type="button" aria-label={translate('旋转图片')} onClick={() => setTransform((v) => ({ ...v,
         rotation: (v.rotation + 90) % 360 }))}>↻</button>
     </div>
-    {!image.url && !image.error && <div className="cs-image-status" role="status">{translate('正在加载原图…')}</div>}
+    {image.loading && <div className="cs-image-status" role="status">{translate('正在加载原图…')}</div>}
     {downloadError && <div className="cs-image-status" role="status">{downloadError}</div>}
     {feedback && <div className="cs-image-status" role="status">{feedback}</div>}
-    {image.error && <div className="cs-image-status" role="status">{translate('原图加载失败')}
-      <button type="button" onClick={image.retry}>{translate('重试')}</button></div>}
+    {image.error && <div className="cs-image-status" role="status">{translate('原图加载失败')}</div>}
   </dialog>;
 }

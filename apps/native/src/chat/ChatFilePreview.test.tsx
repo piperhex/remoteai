@@ -45,7 +45,7 @@ vi.mock('./useImageGestures', () => ({ useImageGestures: () => ({ gesture: {}, a
 vi.mock('./useImageOrientation', () => ({ useImageOrientation: () => ({ displayed: 'portrait' }) }));
 vi.mock('./useSaveImage', () => ({ useSaveImage: () => ({ saving: false, message: '', save: vi.fn() }) }));
 vi.mock('../../../../shared/chat/useImageViewer', () => ({ useImageViewer: () => ({
-  url: state.original, error: state.imageError, fail: vi.fn(), retry: vi.fn(),
+  url: state.original, error: state.imageError, fail: vi.fn(), request: vi.fn(), loading: false, loadOriginal: state.load,
 }) }));
 
 const fileClient = { open: vi.fn(), read: vi.fn(), close: vi.fn() };
@@ -152,11 +152,13 @@ it.each(['./verification.md', 'C:/docs/README.MARKDOWN'])('opens Markdown with r
   expect((sheet.props as { actions: { label: string }[] }).actions[0].label).toBe('下载');
 });
 
-it('keeps loading visible without mounting an empty image, then displays the fetched original', () => {
+it('offers original loading without starting it and allows an explicit save before it loads', () => {
   const props = { description: 'mobile.png', load: state.load, close: vi.fn() };
   const loading = descendants(ImageViewer(props));
   expect(loading.some(node => node.type === 'Image')).toBe(false);
-  expect(loading.some(node => node.props.children === '正在加载原图…')).toBe(true);
+  expect(loading.some(node => node.props.children === '正在加载原图…')).toBe(false);
+  expect(loading.some(node => node.props.accessibilityLabel === '查看原图')).toBe(true);
+  expect(loading.find(node => node.props.accessibilityLabel === '下载图片到相册')?.props.disabled).toBe(false);
   state.original = original;
   const loaded = descendants(ImageViewer(props));
   expect(loaded.find(node => node.type === 'Image')?.props.source).toEqual({ uri: original });
@@ -172,5 +174,5 @@ it('shows a retry when an image file cannot be loaded', async () => {
   state.imageError = true;
   const nodes = descendants(ImageViewer(props));
   expect(nodes.some(node => node.props.accessibilityLabel === '重新加载原图')).toBe(true);
-  expect(nodes.find(node => node.props.accessibilityLabel === '下载图片到相册')?.props.disabled).toBe(true);
+  expect(nodes.find(node => node.props.accessibilityLabel === '下载图片到相册')?.props.disabled).toBe(false);
 });

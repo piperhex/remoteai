@@ -19,7 +19,12 @@ async function requestSavePermission() {
   if (!permission.granted) throw new ImageSavePermissionError(t("请允许保存照片后重试"));
 }
 
-async function prepareImage(source: string, directory: string) {
+async function prepareImage(source: string, directory: string, mimeType?: string) {
+  if (source.startsWith('file://') && mimeType && EXTENSIONS[mimeType]) {
+    const uri = `${directory}image.${EXTENSIONS[mimeType]}`;
+    await FileSystem.copyAsync({ from: source, to: uri });
+    return { uri, mime: mimeType };
+  }
   const inline = /^data:(image\/(?:png|jpeg|webp|gif));base64,([a-z0-9+/=]+)$/i.exec(source);
   if (inline) {
     checkDownloadSize(base64Bytes(source));
@@ -42,14 +47,14 @@ async function prepareImage(source: string, directory: string) {
 }
 
 /** Save the original bytes; preview gestures never modify the album copy. */
-export async function saveImage(source: string): Promise<void> {
+export async function saveImage(source: string, mimeType?: string): Promise<void> {
   await requestSavePermission();
   if (!FileSystem.cacheDirectory) throw new Error('Image cache unavailable');
   const id = randomUUID();
   const directory = `${FileSystem.cacheDirectory}save-image-${id}/`;
   try {
     await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
-    const { uri, mime } = await prepareImage(source, directory);
+    const { uri, mime } = await prepareImage(source, directory, mimeType);
     if (usesMediaStore()) {
       // MediaStore writes on Android 10+ require no permission to read the user's photos.
       await ReactNativeBlobUtil.MediaCollection.copyToMediaStore({

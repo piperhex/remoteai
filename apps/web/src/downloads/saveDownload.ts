@@ -10,7 +10,7 @@ import { DownloadMetrics } from '../../../../shared/remote-chat/downloadMetrics'
 interface SaveHandle { createWritable(): Promise<FileSystemWritableFileStream> }
 interface SavePicker { showSaveFilePicker?: (options: { suggestedName: string }) => Promise<SaveHandle> }
 
-async function verifySnapshot(task: DownloadTask, blob: Blob) {
+export async function verifySnapshot(task: DownloadTask, blob: Blob) {
   bulkAssert(blob.size === task.size, 'INTEGRITY_FAILED');
   if (!task.manifest) return;
   const worker = new DownloadWorker();
@@ -30,7 +30,8 @@ export async function saveDownload(task: DownloadTask, update: (received: number
 }
 
 async function publishDownload(task: DownloadTask, update: (received: number) => void): Promise<boolean> {
-  const picker = (window as Window & SavePicker).showSaveFilePicker;
+  const picker = navigator.userActivation?.isActive === false
+    ? undefined : (window as Window & SavePicker).showSaveFilePicker;
   if (!picker) {
     const blob = await downloadContent(task);
     // Verify the immutable Blob actually handed to the browser, not a separate read of IndexedDB.

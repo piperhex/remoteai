@@ -23,6 +23,16 @@ it('passes scoped text previews to the desktop and retains safe failure messages
     .toMatchObject({ error: '文件暂时无法读取。' });
 });
 
+it.each(['text', 'thumbnail', 'image'])('opens a %s snapshot with the authenticated policy limit', async preview => {
+  vi.mocked(guiApi.request).mockResolvedValue({ id: 'file', size: 12 });
+  const body = { operation: 'previewOpen', threadId: 'chat', transferId: 'transfer', path: './image.png',
+    preview, maxBytes: Number.MAX_SAFE_INTEGER };
+  const operations = new ChatOperations();
+  await operations.execute({ kind: 'request', id: `preview-${preview}`, method: 'request', body }, 'relay');
+  expect(guiApi.request).toHaveBeenCalledWith({ ...body,
+    maxBytes: (preview === 'text' ? 2 : 20) * 1024 * 1024 });
+});
+
 it('executes a retried mutation once even while the original is still running', async () => {
   let finish: (value: unknown) => void = () => undefined;
   vi.mocked(guiApi.request).mockImplementation(() => new Promise((resolve) => { finish = resolve; }));

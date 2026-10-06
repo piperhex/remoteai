@@ -14,8 +14,8 @@ const checkCancelled = (signal: AbortSignal) => { if (signal.aborted) throw new 
 /** Resume only when both size and revision match, so edits cannot mix old and new file contents. */
 export async function transferDownload({ task, client, signal, update }: Options) {
   checkCancelled(signal);
-  const { scope, threadId, cwd, path } = task.source;
-  const info = await client.open({ scope, threadId, cwd, path, transferId: task.id });
+  const { scope, threadId, cwd, path, preview } = task.source;
+  const info = await client.open({ scope, threadId, cwd, path, preview, transferId: task.id });
   try {
     validateFileInfo(info);
     checkCancelled(signal);

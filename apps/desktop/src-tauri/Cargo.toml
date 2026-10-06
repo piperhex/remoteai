@@ -55,6 +55,7 @@ serde_yaml = "0.9"
 semver = "1"
 sha2 = "0.10"
 tauri = { version = "2", features = ["tray-icon", "macos-private-api", "unstable"] }
+tempfile = "3"
 tauri-plugin-autostart = "2.5.1"
 tauri-plugin-clipboard-manager = "2.3.2"
 tauri-plugin-dialog = "2"

@@ -20,6 +20,7 @@ internal class DownloadRead(val operation: String, val offset: Long, val length:
 internal class DownloadTask(val data: JSONObject) {
   val id: String get() = data.getString("id")
   val source: JSONObject get() = data.getJSONObject("source")
+  val isPreview: Boolean get() = source.optString("preview").isNotEmpty()
   var status: String
     get() = data.getString("status")
     set(value) { data.put("status", value) }
@@ -45,6 +46,11 @@ internal class DownloadTask(val data: JSONObject) {
       require(source.getString("deviceId").length in 1..256)
       require(source.getString("path").length in 1..4096)
       require(source.getString("scope") in listOf("project", "computer"))
+      if (source.has("preview")) {
+        require(source.getString("preview") in listOf("text", "thumbnail", "image"))
+        require(source.getString("scope") == "project")
+        UUID.fromString(source.getString("threadId"))
+      }
       return DownloadTask(JSONObject().put("id", UUID.randomUUID().toString()).put("source", source)
         .put("name", source.getString("path").replace('\\', '/').substringAfterLast('/'))
         .put("status", "queued").put("received", 0).put("size", 0).put("message", "")
