@@ -44,11 +44,15 @@ class BulkDownloadTest : InstrumentationTestCase() {
   }
 
   private fun content(length: Int) = ByteArray(length) { (it % 251).toByte() }
-  private fun open(bytes: ByteArray): DownloadTask {
+  private fun open(bytes: ByteArray, prefix: ByteArray = ByteArray(0)): DownloadTask {
     val task = DownloadTask.create(JSONObject().put("owner", "test").put("deviceId", "pc")
       .put("scope", "computer").put("path", "native-bulk.bin"))
     task.data.put("size", bytes.size).put("mimeType", "application/octet-stream")
     task.status = "downloading"; tasks.add(task)
+    if (prefix.isNotEmpty()) {
+      task.data.put("protocol", "legacy")
+      storage.prepare(task); storage.append(task, prefix); storage.save(tasks)
+    }
     val manifest = manifest(bytes)
     for (page in 0 until (manifest.count + BULK_PAGE_BLOCKS - 1) / BULK_PAGE_BLOCKS) {
       val hashes = JSONArray()
@@ -183,5 +187,44 @@ class BulkDownloadTest : InstrumentationTestCase() {
     assertEquals("STORAGE_FAILED", failureCode)
     assertEquals(0L, task.received)
     assertEquals(0, completed)
+  }
+
+  fun testLegacyResumeKeepsFiveVerifiedBlocksAndFetchesOnlyTheMissingTail() {
+    val bytes = content(8 * BULK_BLOCK_BYTES + 37)
+    val task = open(bytes, bytes.copyOfRange(0, 5 * BULK_BLOCK_BYTES + CHUNK_BYTES))
+    assertEquals(5L * BULK_BLOCK_BYTES, task.received)
+    storage.save(tasks)
+    assertEquals(5L * BULK_BLOCK_BYTES, storage.load().getValue(task.id).received)
+    bulk.fill()
+    var index = 0
+    while (index < requests.size) send(requests[index++], bytes)
+    assertEquals(listOf(5, 6, 7, 8), requests.map { it.getInt("block") })
+    assertEquals(1, completed); assertEquals(0, failed)
+    blocks.verifyComplete(task) {}
+    assertTrue(bytes.contentEquals(storage.part(task).readBytes()))
+  }
+
+  fun testLegacyResumeReplacesCorruptBlocksButKeepsOtherVerifiedData() {
+    val bytes = content(4 * BULK_BLOCK_BYTES + 17)
+    val prefix = bytes.copyOfRange(0, 3 * BULK_BLOCK_BYTES + CHUNK_BYTES)
+    prefix[BULK_BLOCK_BYTES + 7] = (prefix[BULK_BLOCK_BYTES + 7].toInt() xor 1).toByte()
+    val task = open(bytes, prefix)
+    assertEquals(2L * BULK_BLOCK_BYTES, task.received)
+    assertEquals("[0,2]", task.data.getJSONObject("checkpoint").getJSONArray("committed").toString())
+    bulk.fill()
+    var index = 0
+    while (index < requests.size) send(requests[index++], bytes)
+    assertEquals(listOf(1, 3, 4), requests.map { it.getInt("block") })
+    blocks.verifyComplete(task) {}
+    assertEquals(1, completed)
+  }
+
+  fun testLegacyResumeKeepsTheCompleteFinalPartialBlockAndTrimsStaleTail() {
+    val bytes = content(BULK_BLOCK_BYTES + 17)
+    val task = open(bytes, bytes + byteArrayOf(42))
+    assertEquals(bytes.size.toLong(), task.received)
+    assertEquals(bytes.size.toLong(), storage.part(task).length())
+    assertEquals("[0,1]", task.data.getJSONObject("checkpoint").getJSONArray("committed").toString())
+    blocks.verifyComplete(task) {}
   }
 }

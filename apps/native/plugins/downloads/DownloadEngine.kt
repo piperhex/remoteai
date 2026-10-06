@@ -210,6 +210,8 @@ internal class DownloadEngine(
       changed(); return
     }
     if (task.data.optString("protocol") == "bulk") {
+      // A transient channel change must not erase authenticated blocks to start legacy from zero.
+      if (task.received > 0) throw BulkDownloadFailure("PATH_UNAVAILABLE")
       task.received = 0; task.data.remove("manifest"); task.data.remove("checkpoint")
     }
     task.data.put("protocol", "legacy").put("message", "兼容模式")

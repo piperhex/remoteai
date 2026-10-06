@@ -2,6 +2,15 @@ import { BULK_LIMITS, BulkError } from '../../../../shared/remote-chat/bulkLimit
 import { blockLength, type ManifestPage } from '../../../../shared/remote-chat/downloadManifest';
 import { complete, openDownloadDatabase, result } from './storage';
 import type { DownloadTask } from './types';
+import { replaceChunkRanges, truncateChunks } from './chunkRanges';
+
+export async function storeBulkCheckpoint(task: DownloadTask) {
+  const db = await openDownloadDatabase();
+  const transaction = db.transaction(['chunks', 'tasks'], 'readwrite');
+  truncateChunks(transaction.objectStore('chunks'), task.id, task.size);
+  transaction.objectStore('tasks').put(task);
+  await complete(transaction);
+}
 
 export async function storeManifestPage(id: string, page: ManifestPage) {
   const db = await openDownloadDatabase();
@@ -55,9 +64,8 @@ export class BulkBlockStore {
       received: committed.reduce((sum, block) => sum + blockLength(manifest, block), 0) };
     const db = await openDownloadDatabase();
     const transaction = db.transaction(['chunks', 'tasks'], 'readwrite');
-    for (const block of batch) transaction.objectStore('chunks').put({
-      id: this.task.id, offset: block.block * manifest.blockSize, blob: block.blob,
-    });
+    replaceChunkRanges(transaction.objectStore('chunks'), this.task.id,
+      batch.map(block => ({ offset: block.block * manifest.blockSize, blob: block.blob })));
     transaction.objectStore('tasks').put(next);
     await complete(transaction);
     this.task = next; this.update(next);

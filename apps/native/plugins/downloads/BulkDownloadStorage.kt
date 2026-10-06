@@ -40,14 +40,9 @@ internal class BulkDownloadStorage(private val storage: DownloadStorage) {
       throw BulkDownloadFailure("SOURCE_CHANGED")
     }
     val checkpoint = task.data.optJSONObject("checkpoint")
-    val matching = checkpoint?.optInt("version") == 1 && checkpoint.optString("manifestId") == manifest.id
-      && checkpoint.optString("temporaryId") == task.id && checkpoint.optLong("size") == manifest.size
-      && checkpoint.optInt("blockSize") == BULK_BLOCK_BYTES
-    val indices = if (matching) checkpoint?.optJSONArray("committed") ?: JSONArray() else JSONArray()
-    require(indices.length() <= manifest.count)
     val committed = mutableSetOf<Int>()
     RandomAccessFile(storage.part(task), "rw").use { file ->
-      if (!matching) file.setLength(0)
+      val indices = restoreCandidates(task, manifest, file)
       for (index in 0 until indices.length()) {
         val block = indices.getInt(index)
         if (block !in 0 until manifest.count) continue
@@ -64,6 +59,28 @@ internal class BulkDownloadStorage(private val storage: DownloadStorage) {
       .put("sequence", (checkpoint?.optLong("sequence") ?: 0) + 1).put("committed", JSONArray(committed.sorted())))
     task.received = committed.sumOf { manifest.length(it).toLong() }
     return committed
+  }
+
+  private fun restoreCandidates(task: DownloadTask, manifest: BulkManifest, file: RandomAccessFile): JSONArray {
+    val checkpoint = task.data.optJSONObject("checkpoint")
+    val matching = checkpoint?.optInt("version") == 1 && checkpoint.optString("manifestId") == manifest.id
+      && checkpoint.optString("temporaryId") == task.id && checkpoint.optLong("size") == manifest.size
+      && checkpoint.optInt("blockSize") == BULK_BLOCK_BYTES
+    if (matching) return (checkpoint?.optJSONArray("committed") ?: JSONArray()).also {
+      require(it.length() <= manifest.count)
+    }
+    // Legacy offsets describe a contiguous prefix. Authenticate full blocks before importing it;
+    // never infer a bulk bitmap from a byte count once a manifest already exists.
+    if (task.data.optJSONObject("manifest") != null || task.received <= 0) {
+      file.setLength(0); return JSONArray()
+    }
+    val indices = JSONArray()
+    val prefix = minOf(task.received, file.length(), manifest.size)
+    for (block in 0 until manifest.count) {
+      if (block.toLong() * BULK_BLOCK_BYTES + manifest.length(block) > prefix) break
+      indices.put(block)
+    }
+    return indices
   }
 
   fun write(task: DownloadTask, block: Int, bytes: ByteArray, committed: MutableSet<Int>) {

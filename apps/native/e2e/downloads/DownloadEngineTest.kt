@@ -224,4 +224,32 @@ class DownloadEngineTest : InstrumentationTestCase() {
     run { engine.connection("download-test", "pc", 0); tick += 5000; engine.connection("download-test", "pc", 5) }
     assertEquals("paused", snapshot().getString("status")); assertEquals(2, requests("open").size)
   }
+
+  fun testPauseResumeDoesNotDowngradeAPersistedBulkCheckpointOrTruncateItsFile() {
+    open(CHUNK_BYTES * 12L)
+    repeat(4) { accept(requests()[it]) }
+    run { engine.pause(taskId) }
+    engine.shutdown()
+    val saved = storage.load().getValue(taskId)
+    val checkpoint = JSONObject().put("version", 1).put("committed", JSONArray().put(0))
+      .put("manifestId", "verified-source").put("temporaryId", taskId)
+    saved.data.put("protocol", "bulk").put("checkpoint", checkpoint)
+      .put("manifest", JSONObject().put("manifestId", "verified-source"))
+    storage.save(listOf(saved))
+    val before = storage.part(saved).readBytes()
+    engine = DownloadEngine(storage, { event, data ->
+      if (event == "downloadRequest") packets.add(JSONObject(data))
+    }, clock = { tick })
+    run { engine.connection("download-test", "pc", 5); engine.resume(taskId) }
+    val reads = requests().size
+    open(CHUNK_BYTES * 12L)
+    assertEquals("queued", snapshot().getString("status"))
+    assertEquals(BULK_BLOCK_BYTES.toLong(), snapshot().getLong("received"))
+    assertEquals(checkpoint.toString(), snapshot().getJSONObject("checkpoint").toString())
+    assertEquals(reads, requests().size)
+    assertTrue(before.contentEquals(storage.part(saved).readBytes()))
+    run { engine.pause(taskId); tick += 5000; engine.connection("download-test", "pc", 5) }
+    assertEquals("paused", snapshot().getString("status"))
+    assertEquals(BULK_BLOCK_BYTES.toLong(), storage.load().getValue(taskId).received)
+  }
 }

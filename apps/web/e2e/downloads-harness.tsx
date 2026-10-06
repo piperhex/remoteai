@@ -11,10 +11,12 @@ import '../src/styles.css';
 import '../src/chat/chat.css';
 import '../src/chat/messages.css';
 import { fixtureBulkClient } from './bulk-download-fixture';
+import { resumeFixture } from './download-resume-fixture';
 
 Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true });
 
-const fixture = { size: 4 * 1024 * 1024, revision: 'first', corrupt: false, offsets: [] as number[], closes: 0,
+const fixture = { ...resumeFixture, size: 4 * 1024 * 1024, revision: 'first', corrupt: false,
+  offsets: [] as number[], closes: 0,
   bulk: false, recordBytes: 0, wireBytes: 0, cipherFailure: false, directAttempt: () => {},
   downloadLimit: (value: number) => setChatPolicy({ ...DEFAULT_CHAT_POLICY, fileDownloadMaxMb: value }),
   delay: 400, active: 0, peak: 0, windowSize: (value: number) =>

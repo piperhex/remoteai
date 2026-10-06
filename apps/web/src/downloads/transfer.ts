@@ -4,6 +4,7 @@ import type { DownloadClient } from '../../../../shared/remote-chat/downloads';
 import { resetDownload, storeChunk } from './storage';
 import type { DownloadTask } from './types';
 import { transferBulkDownload } from './bulkTransfer';
+import { BulkError } from '../../../../shared/remote-chat/bulkLimits';
 
 interface Options {
   task: DownloadTask; client: DownloadClient; signal: AbortSignal; update: (task: DownloadTask) => void;
@@ -24,13 +25,14 @@ export async function transferDownload({ task, client, signal, update }: Options
       return;
     }
     if (task.protocol === 'bulk' && task.received > 0) {
-      // Re-negotiate a fresh legacy session; its offsets cannot inherit unverified bulk/legacy content.
-      task = { ...task, received: 0, revision: undefined, manifest: undefined, checkpoint: undefined };
-      await resetDownload(task);
+      // Keep authenticated blocks through temporary loss of the binary channel.
+      throw new BulkError('PATH_UNAVAILABLE');
     }
-    const resume = !!info.revision && info.revision === task.revision && info.size === task.size;
+    const resume = task.protocol !== 'bulk' && !!info.revision
+      && info.revision === task.revision && info.size === task.size;
     task = { ...task, name: info.name, size: info.size, revision: info.revision, mimeType: info.mimeType,
-      received: resume ? task.received : 0, status: 'downloading', protocol: 'legacy', message: '兼容模式' };
+      received: resume ? task.received : 0, status: 'downloading', protocol: 'legacy', message: '兼容模式',
+      manifest: undefined, checkpoint: undefined, verified: false };
     if (!resume) await resetDownload(task);
     update(task);
     const startedAt = performance.now();

@@ -283,3 +283,85 @@ test('bulk aborts a failed final save and makes missing stored data downloadable
   await expect(card(page).getByRole('button', { name: '继续下载' })).toBeEnabled();
   await expect(page.locator('body')).toHaveAttribute('data-aborted-saves', '2');
 });
+
+test('legacy resume survives interrupted migration of chunks crossing bulk boundaries', async ({ page }) => {
+  await open(page);
+  await page.evaluate(async () => {
+    await window.downloadFixture.seedLegacy({ size: 8 * 1024 * 1024 + 17,
+      received: 5 * 1024 * 1024 + 12345, chunkBytes: 300001 });
+    await window.downloadFixture.coalesceBeforeReload();
+  });
+  await page.reload();
+  await expect(card(page)).toContainText('已暂停');
+  await page.evaluate(() => {
+    window.downloadFixture.bulk = true; window.downloadFixture.size = 8 * 1024 * 1024 + 17;
+    window.downloadFixture.delay = 30;
+  });
+  await card(page).getByRole('button', { name: '继续下载' }).click();
+  await expect(card(page)).toContainText('文件已就绪');
+  expect(await page.evaluate(() => window.downloadFixture.offsets)).toEqual([5, 6, 7, 8].map(n => n * 1024 * 1024));
+  expect(await save(page)).toEqual(Buffer.alloc(8 * 1024 * 1024 + 17, 'A'));
+});
+
+test('legacy migration preserves valid blocks around corruption and rewrites only invalid data', async ({ page }) => {
+  await open(page);
+  await page.evaluate(async () => {
+    await window.downloadFixture.seedLegacy({ size: 4 * 1024 * 1024 + 17,
+      received: 3 * 1024 * 1024 + 12345, chunkBytes: 300001, corruptBlock: 1 });
+  });
+  await page.reload();
+  await page.evaluate(() => {
+    window.downloadFixture.bulk = true; window.downloadFixture.size = 4 * 1024 * 1024 + 17;
+    window.downloadFixture.delay = 30;
+  });
+  await card(page).getByRole('button', { name: '继续下载' }).click();
+  await expect(card(page)).toContainText('文件已就绪');
+  expect(await page.evaluate(() => window.downloadFixture.offsets)).toEqual([1, 3, 4].map(n => n * 1024 * 1024));
+  expect(await save(page)).toEqual(Buffer.alloc(4 * 1024 * 1024 + 17, 'A'));
+});
+
+test('legacy migration keeps a verified final partial block and removes an obsolete source tail', async ({ page }) => {
+  await open(page);
+  await page.evaluate(async () => {
+    await window.downloadFixture.seedLegacy({ size: 2 * 1024 * 1024,
+      received: 2 * 1024 * 1024, chunkBytes: 300001 });
+  });
+  await page.reload();
+  await page.evaluate(() => {
+    window.downloadFixture.bulk = true; window.downloadFixture.size = 1024 * 1024 + 17;
+  });
+  await card(page).getByRole('button', { name: '继续下载' }).click();
+  await expect(card(page)).toContainText('文件已就绪');
+  expect(await page.evaluate(() => window.downloadFixture.offsets)).toEqual([]);
+  expect(await save(page)).toEqual(Buffer.alloc(1024 * 1024 + 17, 'A'));
+});
+
+test('pausing bulk then losing the binary path preserves its checkpoint until recovery', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => { window.downloadFixture.bulk = true; window.downloadFixture.size = 8 * 1024 * 1024; });
+  await enqueue(page);
+  await expect.poll(() => card(page).getByRole('progressbar').getAttribute('value')).not.toBe('0');
+  await card(page).getByRole('button', { name: '暂停', exact: true }).click();
+  await expect(card(page)).toContainText('已暂停');
+  const before = await page.evaluate(async () => (await window.downloadFixture.saved())[0]);
+  expect(before.received).toBeGreaterThan(0);
+  await page.evaluate(() => { window.downloadFixture.bulk = false; window.downloadFixture.offsets = []; });
+  await card(page).getByRole('button', { name: '继续下载' }).click();
+  await expect(card(page)).toContainText('正在重试');
+  const retrying = await page.evaluate(async () => (await window.downloadFixture.saved())[0]);
+  expect(retrying.received).toBe(before.received);
+  expect(retrying.checkpoint).toEqual(before.checkpoint);
+  expect(await page.evaluate(() => window.downloadFixture.offsets)).toEqual([]);
+  await card(page).getByRole('button', { name: '暂停', exact: true }).click();
+  await expect(card(page)).toContainText('已暂停');
+  await page.reload();
+  await page.evaluate(() => {
+    window.downloadFixture.bulk = true; window.downloadFixture.size = 8 * 1024 * 1024;
+    window.downloadFixture.delay = 30;
+  });
+  await card(page).getByRole('button', { name: '继续下载' }).click();
+  await expect(card(page)).toContainText('文件已就绪');
+  const offsets = await page.evaluate(() => window.downloadFixture.offsets);
+  for (const block of before.checkpoint!.committed) expect(offsets).not.toContain(block * 1024 * 1024);
+  expect(await save(page)).toEqual(Buffer.alloc(8 * 1024 * 1024, 'A'));
+});

@@ -1,39 +1,21 @@
 import { bulkCapability, type BulkClient } from '../../../../shared/remote-chat/bulkControl';
 import { BULK_LIMITS, BulkError, bulkAssert } from '../../../../shared/remote-chat/bulkLimits';
 import { BulkReceiver } from '../../../../shared/remote-chat/bulkReceiver';
-import { authenticateManifest, blockLength, checkpointBlocks, validateManifestPage }
+import { authenticateManifest, blockLength, validateManifestPage }
   from '../../../../shared/remote-chat/downloadManifest';
 import { negotiateBulk } from '../../../../shared/remote-chat/bulkProtocol';
 import { checkDownloadSize } from '../../../../shared/remote-chat/policy';
 import type { FileInfo } from '../../../../shared/remote-chat/fileDownload';
-import { BulkBlockStore, readManifestPage, storeManifestPage } from './bulkStorage';
+import { BulkBlockStore, readManifestPage, storeBulkCheckpoint, storeManifestPage } from './bulkStorage';
 import { readStoredBlock, resetDownload, storeDownload } from './storage';
 import { DownloadWorker } from './downloadWorker';
 import type { DownloadTask } from './types';
 import { DownloadSession } from '../../../../shared/remote-chat/downloadSession';
 import { DownloadMetrics } from '../../../../shared/remote-chat/downloadMetrics';
+import { restoreBulkTask } from './bulkResume';
 
 interface Options {
   task: DownloadTask; info: FileInfo; client: BulkClient; signal: AbortSignal; update: (task: DownloadTask) => void;
-}
-
-async function restore(task: DownloadTask, worker: DownloadWorker, signal: AbortSignal) {
-  const manifest = task.manifest!;
-  const committed: number[] = [];
-  for (const block of checkpointBlocks(manifest, task.checkpoint, task.id)) {
-    bulkAssert(!signal.aborted, 'CANCELLED');
-    const blob = await readStoredBlock(task.id, block * manifest.blockSize);
-    if (!blob || blob.size !== blockLength(manifest, block)) continue;
-    const index = Math.floor(block / BULK_LIMITS.hashesPerPage);
-    const page = validateManifestPage(manifest, await readManifestPage(task.id, index), index);
-    try {
-      await worker.verify(new Uint8Array(await blob.arrayBuffer()), page.hashes[block % BULK_LIMITS.hashesPerPage]);
-      committed.push(block);
-    } catch { /* Only verified stored blocks survive a restart; missing/corrupt blocks are requested again. */ }
-  }
-  return { ...task, received: committed.reduce((sum, block) => sum + blockLength(manifest, block), 0),
-    checkpoint: { version: 1 as const, manifestId: manifest.manifestId, size: manifest.size,
-      blockSize: manifest.blockSize, temporaryId: task.id, sequence: (task.checkpoint?.sequence ?? 0) + 1, committed } };
 }
 
 async function verifyFile(task: DownloadTask, worker: DownloadWorker, signal: AbortSignal) {
@@ -71,7 +53,7 @@ async function missingBlocks(options: {
 
 export async function transferBulkDownload(options: Options) {
   const { client, signal, info, update } = options;
-  let task: DownloadTask = { ...options.task, protocol: 'bulk', status: 'preparing', verified: false };
+  let task: DownloadTask = { ...options.task, status: 'preparing', verified: false };
   update(task);
   const path = client.path(); bulkAssert(path, 'PATH_UNAVAILABLE');
   const epoch = crypto.randomUUID();
@@ -91,14 +73,15 @@ export async function transferBulkDownload(options: Options) {
     await authenticateManifest({ manifest: opened.manifest, signal,
       read: page => client.page(task.id, page), store: page => storeManifestPage(task.id, page) });
     const changed = task.manifest && task.manifest.manifestId !== opened.manifest.manifestId;
+    const importLegacy = !task.manifest && !task.checkpoint && task.received > 0;
     task = { ...task, manifest: opened.manifest };
-    if (changed || !task.checkpoint) {
+    if (changed || (!task.checkpoint && !importLegacy)) {
       task = { ...task, received: 0, checkpoint: undefined }; await resetDownload(task);
       if (changed) { update(task); throw new BulkError('SOURCE_CHANGED'); }
     }
-    task = { ...await restore(task, worker, signal), status: 'downloading', message: '' };
+    task = { ...await restoreBulkTask({ task, worker, signal, importLegacy }), status: 'downloading', message: '' };
     session.move('downloading'); metrics.add('prepareMs', performance.now() - preparing);
-    await storeDownload(task); update(task);
+    await storeBulkCheckpoint(task); update(task);
     await worker.initialize(client.cipher({ transferId: task.id, manifestId: opened.manifest.manifestId, epoch }));
     receiver = new BulkReceiver({ client, opened, signal, decoder: worker, metrics });
     const started = performance.now(); const initial = task.received;
