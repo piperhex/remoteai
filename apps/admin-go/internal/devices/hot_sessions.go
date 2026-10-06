@@ -245,29 +245,38 @@ func (s *hotSessions) ready(session *hotSession) {
 }
 
 func (s *hotSessions) route(client *peer, message platform.JSON) (bool, error) {
+	handled, deliver, err := s.prepareRoute(client, message)
+	if err == nil && deliver != nil {
+		deliver()
+	}
+	return handled, err
+}
+
+// Resolve authorization and capture immutable endpoints under chatSessions.mu; deliver after unlocking.
+func (s *hotSessions) prepareRoute(client *peer, message platform.JSON) (bool, func(), error) {
 	id, err := identifier(message["sessionId"])
 	if err != nil {
-		return false, err
+		return false, nil, err
 	}
 	session := s.sessions[id]
 	if session == nil {
 		for _, socket := range s.closed[id].sockets {
 			if socket == client {
-				return true, nil
+				return true, nil, nil
 			}
 		}
-		return false, nil
+		return false, nil, nil
 	}
 	if client != session.desktop.socket && (session.mobile == nil || client != session.mobile.socket) {
-		return true, errors.New("unknown session")
+		return true, nil, errors.New("unknown session")
 	}
 	if !session.expires.After(time.Now()) {
 		s.remove(session)
-		return true, nil
+		return true, nil, nil
 	}
 	if message["type"] == "diagnostic" {
 		client.diagnostics.clientEvent(session.id, message["payload"])
-		return true, nil
+		return true, nil, nil
 	}
 	target := session.desktop.socket
 	if client == target {
@@ -276,7 +285,11 @@ func (s *hotSessions) route(client *peer, message platform.JSON) (bool, error) {
 			target = session.mobile.socket
 		}
 	}
-	return true, s.forward(session, target, message)
+	if message["type"] == "relay" || message["type"] == "bulk" {
+		deliver, err := s.prepareRelay(session, target, message)
+		return true, deliver, err
+	}
+	return true, nil, s.forward(session, target, message)
 }
 
 func (s *hotSessions) forward(session *hotSession, target *peer, message platform.JSON) error {
@@ -294,26 +307,29 @@ func (s *hotSessions) forward(session *hotSession, target *peer, message platfor
 		}
 		target.send(platform.JSON{"type": "signal", "sessionId": session.id, "payload": payload}, nil)
 		return nil
-	case "relay", "bulk":
-		payload, valid := forwardPayload(message, target)
-		if !valid {
-			return errors.New("invalid relay")
-		}
-		frame := platform.JSON{"type": message["type"], "sessionId": session.id, "payload": payload}
-		source := session.desktop.socket
-		if source == target && session.mobile != nil {
-			source = session.mobile.socket
-		}
-		if s.deliver != nil {
-			s.deliver(relayDelivery{session.owner, session.id, source, target, &session.traffic,
-				source == session.desktop.socket, session.device}, frame)
-		} else {
-			target.send(frame, s.onRelay)
-		}
-		return nil
 	default:
 		return errors.New("invalid hot standby frame")
 	}
+}
+
+func (s *hotSessions) prepareRelay(session *hotSession, target *peer, message platform.JSON) (func(), error) {
+	payload, valid := forwardPayload(message, target)
+	if !valid {
+		return nil, errors.New("invalid relay")
+	}
+	frame := platform.JSON{"type": message["type"], "sessionId": session.id, "payload": payload}
+	source := session.desktop.socket
+	if source == target && session.mobile != nil {
+		source = session.mobile.socket
+	}
+	if s.deliver == nil {
+		onRelay := s.onRelay
+		return func() { target.send(frame, onRelay) }, nil
+	}
+	deliver := s.deliver
+	endpoints := relayDelivery{session.owner, session.id, source, target, &session.traffic,
+		source == session.desktop.socket, session.device}
+	return func() { deliver(endpoints, frame) }, nil
 }
 
 func (s *hotSessions) disconnect(client *peer, revoke bool) {

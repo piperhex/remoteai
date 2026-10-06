@@ -91,6 +91,7 @@ services:
       POSTGRES_DB: admin_go
       POSTGRES_DB_SYNCHRONIZE: "false"
       REDIS_HOST: redis-go
+      CHAT_BULK_LEASES_ENABLED: "${CHAT_BULK_LEASES_ENABLED:-false}"
     ports: ["127.0.0.1:28081:8080", "127.0.0.1:13478:3478/udp"]
     volumes: ["./public:/app/public:ro", "./testdata:/fixtures:ro"]
     depends_on:

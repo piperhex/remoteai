@@ -21,12 +21,13 @@ const authTimeout = 10 * time.Second
 const chatBufferLimit = 2 * 1024 * 1024
 
 type outputFrame struct {
-	lease   *bulkWriter
-	release func()
-	kind    int
-	bytes   []byte
-	sent    func(int)
-	guard   func(int, func() error) error
+	sourceDone <-chan struct{}
+	lease      *bulkWriter
+	release    func()
+	kind       int
+	bytes      []byte
+	sent       func(int)
+	guard      func(int, func() error) error
 }
 type peer struct {
 	writerID     string

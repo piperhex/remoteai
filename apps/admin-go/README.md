@@ -124,6 +124,13 @@ Linux 并发检查使用独立 Docker 构建目标：
 docker build -f apps/admin-go/Dockerfile --target verify -t codex-admin-go:verify .
 ```
 
+下载背压回归使用 `node apps/admin-go/scripts/bulk-relay-smoke.mjs`，仅连接上述本地 Go 测试服务。
+测试使用共享加密协议、真实 WebSocket、PostgreSQL 和 Redis，覆盖 16 条记录连续突发、
+双文件、接收端短暂停读、传输期间控制消息，以及重连后的完整性校验。
+默认传输 32 MiB，可用 `BULK_SMOKE_MIB=212` 验证更大文件（上限 256 MiB）。
+分别以 `CHAT_BULK_LEASES_ENABLED=true/false` 重建本地 Go 测试容器，验证两种计费路径；
+该环境变量已接入 `compose.test.yml`。脚本结束会恢复本地聊天策略并删除测试设备。
+
 Windows 快速迭代前，先在仓库根目录运行 `npm run build --workspace @codex-switch/admin-ui`，
 生成供本地挂载的页面资源；然后运行 `scripts/build-local.ps1`，用 `compose.local.yml` 覆盖构建。
 正式验收使用上面的源码镜像与 `compose.image.yml`。

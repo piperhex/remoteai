@@ -95,7 +95,7 @@ func (g *ChatGateway) deliverRelay(delivery relayDelivery, frame platform.JSON) 
 			delivery.source.close(4001, "Invalid download record")
 			return
 		}
-		output := outputFrame{bytes: data, sent: sent, guard: guard}
+		output := outputFrame{bytes: data, sent: sent, guard: guard, sourceDone: delivery.source.done}
 		if g.bulkMeter != nil {
 			output.lease = &bulkWriter{meter: g.bulkMeter, session: delivery.sessionID, scope: chattraffic.BulkLeaseScope{
 				Owner: delivery.owner, Device: delivery.device, Writer: delivery.target.writerID},

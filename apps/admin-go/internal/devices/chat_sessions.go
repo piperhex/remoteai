@@ -134,11 +134,19 @@ func (s *chatSessions) joinMobile(
 
 func (s *chatSessions) route(client *peer, message platform.JSON) error {
 	s.mu.Lock()
-	defer s.mu.Unlock()
-	handled, err := s.hot.route(client, message)
-	if handled || err != nil {
-		return err
+	handled, deliver, err := s.hot.prepareRoute(client, message)
+	if !handled && err == nil {
+		err = s.routeLegacy(client, message)
 	}
+	s.mu.Unlock()
+	// A slow download must never hold the routing lock shared by all accounts and control frames.
+	if err == nil && deliver != nil {
+		deliver()
+	}
+	return err
+}
+
+func (s *chatSessions) routeLegacy(client *peer, message platform.JSON) error {
 	id, err := identifier(message["sessionId"])
 	if err != nil {
 		return err

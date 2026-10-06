@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/codex-switch/admin-go/internal/platform"
 	"github.com/gorilla/websocket"
@@ -16,12 +17,14 @@ const bulkRecordLimit = 16 * 1024
 const bulkConnectionQueue = 256 * 1024
 const bulkAccountQueue = 2 * 1024 * 1024
 const bulkInstanceQueue = 32 * 1024 * 1024
+const bulkQueueWaitTimeout = 5 * time.Second
 
 var bulkQueues = struct {
 	sync.Mutex
 	total    int
 	accounts map[string]int
-}{accounts: map[string]int{}}
+	changed  chan struct{}
+}{accounts: map[string]int{}, changed: make(chan struct{})}
 
 func forwardPayload(message platform.JSON, target *peer) (interface{}, bool) {
 	if message["type"] != "bulk" {
@@ -87,6 +90,8 @@ func reserveBulkQueue(owner string, bytes int) (func(), bool) {
 			if bulkQueues.accounts[owner] == 0 {
 				delete(bulkQueues.accounts, owner)
 			}
+			close(bulkQueues.changed)
+			bulkQueues.changed = make(chan struct{})
 		})
 	}, true
 }
@@ -95,29 +100,54 @@ func (p *peer) sendBulk(frame outputFrame, owner string) {
 	if p == nil {
 		return
 	}
+	timer := time.NewTimer(bulkQueueWaitTimeout)
+	defer timer.Stop()
+	for {
+		select {
+		case <-frame.sourceDone:
+			return
+		default:
+		}
+		// Subscribe before checking capacity so a concurrent release cannot be missed.
+		bulkQueues.Lock()
+		changed := bulkQueues.changed
+		bulkQueues.Unlock()
+		if p.trySendBulk(frame, owner) {
+			return
+		}
+		// Waiting in the source reader propagates TCP backpressure without another frame queue.
+		select {
+		case <-changed:
+		case <-p.done:
+			return
+		case <-frame.sourceDone:
+			return
+		case <-timer.C:
+			p.close(4008, "Download receiver stalled")
+			return
+		}
+	}
+}
+
+func (p *peer) trySendBulk(frame outputFrame, owner string) bool {
 	p.bulkQueueMu.Lock()
 	defer p.bulkQueueMu.Unlock()
 	if p.closed.Load() || !p.binaryBulk.Load() {
-		return
+		return true
 	}
 	bytes := int64(len(frame.bytes))
-	if p.bulkBuffered.Add(bytes) > bulkConnectionQueue {
-		p.bulkBuffered.Add(-bytes)
-		p.close(4008, "Download receiver is too slow")
-		return
+	if p.bulkBuffered.Load()+bytes > bulkConnectionQueue || len(p.bulkQueue) == cap(p.bulkQueue) {
+		return false
 	}
 	release, ok := reserveBulkQueue(owner, len(frame.bytes))
 	if !ok {
-		p.bulkBuffered.Add(-bytes)
-		p.close(4008, "Download queue is full")
-		return
+		return false
 	}
-	frame.release = func() { release(); p.bulkBuffered.Add(-bytes) }
+	p.bulkBuffered.Add(bytes)
+	var once sync.Once
+	frame.release = func() { once.Do(func() { p.bulkBuffered.Add(-bytes); release() }) }
 	frame.kind = websocket.BinaryMessage
-	select {
-	case p.bulkQueue <- frame:
-	default:
-		frame.release()
-		p.close(4008, "Download receiver is too slow")
-	}
+	// Producers share bulkQueueMu; the writer can only free slots after the capacity check.
+	p.bulkQueue <- frame
+	return true
 }
