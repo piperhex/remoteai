@@ -16,7 +16,8 @@ module.exports = function withChatConnectivity(config) {
   config = withDangerousMod(config, ['android', async result => {
     const target = path.join(result.modRequest.platformProjectRoot, 'app/src/main/java/com/codexswitch/connectivity');
     await fs.mkdir(target, { recursive: true });
-    for (const name of ['NativeConnectivity.kt', 'ChatConnectivityModule.kt', 'ChatConnectivityPackage.kt']) {
+    for (const name of ['NativeConnectivity.kt', 'ChatConnectivityModule.kt', 'ChatConnectivityPackage.kt',
+      'NativeBulkReceiver.kt']) {
       await fs.copyFile(path.join(__dirname, 'connectivity', name), path.join(target, name));
     }
     const notices = path.join(result.modRequest.platformProjectRoot, 'app/src/main/assets/chat-connectivity');

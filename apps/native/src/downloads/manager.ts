@@ -11,12 +11,25 @@ let tasks: DownloadTask[] = [];
 let connection: DownloadConnection | undefined;
 let error = '';
 let initialized: Promise<void> | undefined;
+let bulkTransport: ReturnType<NonNullable<DownloadConnection['client']['bulk']>['transport']>;
+let unlistenBulk: (() => void) | undefined;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach(listener => listener());
 const requireNative = () => {
   if (!native) throw new Error(t("请安装支持下载管理的新版 Android 应用。"));
   return native;
 };
+
+function observeBulk(value?: DownloadConnection) {
+  const transport = value?.client.bulk?.transport();
+  if (transport === bulkTransport) return;
+  unlistenBulk?.(); bulkTransport = transport;
+  unlistenBulk = transport?.onInvalidated(() => {
+    if (!value) return;
+    void native?.invalidateBulk?.(value.owner, value.deviceId)
+      .catch(() => { error = t("下载暂时中断，请稍后继续。"); emit(); });
+  });
+}
 
 export const downloadManager = {
   subscribe: (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
@@ -47,6 +60,7 @@ export const downloadManager = {
     return initialized;
   },
   bind(value: DownloadConnection) {
+    observeBulk(value);
     const previous = connection;
     const sameSource = previous?.files === value.files && previous.owner === value.owner
       && previous.deviceId === value.deviceId;
@@ -55,10 +69,6 @@ export const downloadManager = {
       && previous.threadId === value.threadId
       && previous.cwd === value.cwd && previous.deviceName === value.deviceName) return;
     connection = value; emit();
-    if (sameSource && previous.mode !== value.mode) {
-      void native?.invalidateBulk?.(value.owner, value.deviceId)
-        .catch(() => { error = t("下载暂时中断，请稍后继续。"); emit(); });
-    }
     if (sameSource && previous.ready === value.ready && previous.windowSize === value.windowSize) return;
     void this.initialize().then(() => {
       if (connection?.files === value.files && connection.ready === value.ready
@@ -73,6 +83,7 @@ export const downloadManager = {
     const previous = connection;
     // Pause before discarding the source. A new device must never receive an old device's read requests.
     connection = undefined; emit();
+    observeBulk();
     void native?.connection(previous.owner, previous.deviceId, 0)
       .catch(() => console.warn('Could not checkpoint disconnected downloads.'));
   },

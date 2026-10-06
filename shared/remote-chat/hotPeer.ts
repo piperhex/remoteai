@@ -31,7 +31,7 @@ export class HotPeer {
       options.channel(this.sessionPaths);
       try {
         this.nativePath = options.createNativePath({ sessionId: options.sessionId, desktop: options.desktop,
-          config: options.nativeTraversal, diagnostic: options.diagnostic });
+          config: options.nativeTraversal, diagnostic: options.diagnostic, bulkChannel: options.bulkChannel });
         this.sessionPaths.add(this.nativePath, 1, 'mesh');
       } catch { options.diagnostic?.('path-state', { transport: 'mesh', state: 'failed' }); }
     }

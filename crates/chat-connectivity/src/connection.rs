@@ -29,6 +29,7 @@ struct EngineControls {
     expiry: watch::Receiver<u64>,
     engine: watch::Sender<Option<Weak<NativeCoreInstance>>>,
     route: watch::Sender<RouteStatus>,
+    bulk: Option<Arc<crate::bulk::Bulk>>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -45,6 +46,9 @@ pub enum Event {
         route: RouteStatus,
     },
     Open,
+    Bulk {
+        generation: u64,
+    },
     Data {
         text: String,
     },
@@ -61,10 +65,16 @@ pub struct Connection {
     route: watch::Receiver<RouteStatus>,
     desktop: bool,
     media: Mutex<HashMap<String, Arc<crate::MediaProxy>>>,
+    bulk: Option<Arc<crate::bulk::Bulk>>,
 }
 
 impl Connection {
     pub fn start(config: Config) -> Result<Arc<Self>> {
+        Self::start_with_bulk(config, false)
+    }
+
+    /// Opt in only when the platform can consume raw file records without a JSON bridge.
+    pub fn start_with_bulk(config: Config, binary_bulk: bool) -> Result<Arc<Self>> {
         config.validate()?;
         let (sender, incoming) = mpsc::channel(QUEUE_MESSAGES);
         let (events, receiver) = mpsc::channel(QUEUE_MESSAGES);
@@ -76,6 +86,8 @@ impl Connection {
         let (engine_tx, engine) = watch::channel(None);
         let (route_tx, route) = watch::channel(RouteStatus::default());
         let terminated = cancel.clone();
+        let bulk = binary_bulk.then(crate::bulk::Bulk::new);
+        let running_bulk = bulk.clone();
         tokio::spawn(async move {
             // All exit paths close the event stream, including engine initialization errors.
             if serve(
@@ -87,6 +99,7 @@ impl Connection {
                     expiry,
                     engine: engine_tx,
                     route: route_tx,
+                    bulk: running_bulk,
                 },
             )
             .await
@@ -109,6 +122,7 @@ impl Connection {
             route,
             desktop,
             media: Mutex::default(),
+            bulk,
         }))
     }
 
@@ -134,6 +148,31 @@ impl Connection {
     }
     pub fn is_closed(&self) -> bool {
         self.sender.is_closed() || *self.cancel.borrow()
+    }
+
+    /// The generation belongs to this native stream, independent of a file transfer's epoch.
+    pub async fn send_bulk(&self, generation: u64, bytes: Vec<u8>) -> Result<()> {
+        if self.is_closed() || !self.desktop {
+            return Err(Error::Closed);
+        }
+        self.bulk
+            .as_ref()
+            .ok_or(Error::Unavailable)?
+            .send(generation, bytes)
+            .await
+    }
+
+    /// Consumed by a native download worker, never the JSON event poller.
+    pub async fn receive_bulk(&self) -> Option<Vec<u8>> {
+        if self.is_closed() || self.desktop {
+            return None;
+        }
+        let bulk = self.bulk.as_ref()?;
+        let mut canceled = self.cancel.subscribe();
+        tokio::select! {
+            _ = canceled.changed() => None,
+            record = bulk.receive() => record,
+        }
     }
 
     /// Reuse this authenticated engine; media never crosses the chat stream or JavaScript.
@@ -223,6 +262,7 @@ async fn serve(
         expiry,
         engine: engine_tx,
         route: route_tx,
+        bulk,
     } = controls;
     let core = config.core()?;
     let engine = tokio::task::spawn_blocking(move || create_native_instance(core))
@@ -234,12 +274,15 @@ async fn serve(
     let result = tokio::select! {
         _ = canceled.changed() => Ok(()),
         _ = crate::lease::expired(expiry) => Ok(()),
-        result = run(&engine, &config, incoming, events.clone()) => result,
+        result = run(&engine, &config, (incoming, events.clone()), (bulk.as_deref(), route_tx.subscribe())) => result,
         _ = diagnostics::monitor(&engine, config.remote_name(), events, punch_events) => Err(Error::Closed),
         _ = monitor_route(&engine, config.remote_name(), &route_tx) => Err(Error::Closed),
     };
     engine_tx.send_replace(None);
     route_tx.send_replace(RouteStatus::default());
+    if let Some(bulk) = bulk {
+        bulk.close();
+    }
     engine.stop().await;
     result
 }
@@ -259,11 +302,28 @@ async fn monitor_route(
 async fn run(
     instance: &Arc<NativeCoreInstance>,
     config: &Config,
+    queues: (mpsc::Receiver<String>, mpsc::Sender<Event>),
+    files: (Option<&crate::bulk::Bulk>, watch::Receiver<RouteStatus>),
+) -> Result<()> {
+    let (incoming, events) = queues;
+    diagnostics::report(&events, Stage::EngineStart, Snapshot::default());
+    instance.start().await.map_err(|_| Error::Unavailable)?;
+    if let Some(bulk) = files.0 {
+        tokio::select! {
+            result = chat_streams(instance, config, incoming, events.clone()) => result,
+            result = bulk.run(instance, config.desktop, (&files.1, &events)) => result,
+        }
+    } else {
+        chat_streams(instance, config, incoming, events).await
+    }
+}
+
+async fn chat_streams(
+    instance: &Arc<NativeCoreInstance>,
+    config: &Config,
     mut incoming: mpsc::Receiver<String>,
     events: mpsc::Sender<Event>,
 ) -> Result<()> {
-    diagnostics::report(&events, Stage::EngineStart, Snapshot::default());
-    instance.start().await.map_err(|_| Error::Unavailable)?;
     loop {
         diagnostics::report(&events, Stage::StreamConnect, Snapshot::default());
         let connected = connect(instance, config).await;

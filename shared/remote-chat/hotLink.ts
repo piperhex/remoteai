@@ -71,7 +71,7 @@ export class HotLink {
     this.delivery.setAvailable(false);
     if (options.publicKey) this.setKey(options.publicKey);
     this.peer = new HotPeer({ ...options,
-      bulkChannel: options.binaryBulk ? channel => this.bulk.attach(channel) : undefined,
+      bulkChannel: options.binaryBulk ? (channel, source) => this.bulk.attach(channel, source) : undefined,
       diagnostic: this.diagnostic,
       signal: (payload) => this.signal({ type: 'signal', payload }),
       channel: (channel) => this.attach(channel), disconnected: () => this.fallback(),

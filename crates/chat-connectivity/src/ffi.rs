@@ -66,14 +66,38 @@ struct Request {
 #[derive(Deserialize)]
 #[serde(tag = "operation", rename_all = "kebab-case")]
 enum Operation {
-    Open { config: Config },
-    Send { id: String, text: String },
-    Poll { id: String, wait_ms: Option<u64> },
-    Close { id: String },
-    Renew { id: String, expires_at: u64 },
-    MediaOpen { id: String, view_id: String },
-    MediaStatus { id: String, view_id: String },
-    MediaClose { id: String, view_id: String },
+    Open {
+        config: Config,
+        #[serde(default)]
+        bulk: bool,
+    },
+    Send {
+        id: String,
+        text: String,
+    },
+    Poll {
+        id: String,
+        wait_ms: Option<u64>,
+    },
+    Close {
+        id: String,
+    },
+    Renew {
+        id: String,
+        expires_at: u64,
+    },
+    MediaOpen {
+        id: String,
+        view_id: String,
+    },
+    MediaStatus {
+        id: String,
+        view_id: String,
+    },
+    MediaClose {
+        id: String,
+        view_id: String,
+    },
     Reset,
     Addresses,
 }
@@ -84,7 +108,7 @@ fn dispatch(request: Request) -> Result<Value> {
     }
     let hub = hub()?;
     match request.operation {
-        Operation::Open { config } => open(hub, request.owner, config),
+        Operation::Open { config, bulk } => open(hub, request.owner, (config, bulk)),
         Operation::Close { id } => {
             if let Some(entry) = hub.handles.lock().map_err(|_| Error::Closed)?.remove(&id) {
                 entry.connection.close();
@@ -128,7 +152,8 @@ fn dispatch(request: Request) -> Result<Value> {
     }
 }
 
-fn open(hub: &Hub, owner: String, config: Config) -> Result<Value> {
+fn open(hub: &Hub, owner: String, input: (Config, bool)) -> Result<Value> {
+    let (config, bulk) = input;
     let mut handles = hub.handles.lock().map_err(|_| Error::Closed)?;
     handles.retain(|_, entry| !entry.connection.is_closed());
     if handles.len() >= MAX_HANDLES
@@ -144,7 +169,7 @@ fn open(hub: &Hub, owner: String, config: Config) -> Result<Value> {
     let entry = OwnedConnection {
         owner,
         session: config.session_id.clone(),
-        connection: Connection::start(config)?,
+        connection: Connection::start_with_bulk(config, bulk)?,
     };
     handles.insert(id.clone(), entry);
     Ok(json!(id))
@@ -183,6 +208,18 @@ fn owned_connection(hub: &Hub, id: &str, owner: &str) -> Result<Arc<Connection>>
         .filter(|entry| entry.owner == owner)
         .map(|entry| entry.connection.clone())
         .ok_or(Error::Closed)
+}
+
+/// Android calls this on a dedicated native worker. Empty means timeout; None means closed.
+#[cfg(target_os = "android")]
+pub(crate) fn receive_bulk(owner: &str, id: &str) -> Result<Option<Vec<u8>>> {
+    let hub = hub()?;
+    let connection = owned_connection(hub, id, owner)?;
+    Ok(hub.runtime.block_on(async {
+        tokio::time::timeout(Duration::from_millis(250), connection.receive_bulk())
+            .await
+            .unwrap_or_else(|_| Some(Vec::new()))
+    }))
 }
 
 pub(crate) fn call(request: &str) -> String {

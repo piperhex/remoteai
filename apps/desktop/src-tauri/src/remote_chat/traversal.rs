@@ -68,6 +68,8 @@ pub(crate) async fn remote_native_media(
 #[serde(rename_all = "camelCase")]
 pub(crate) struct OpenRequest {
     session_id: String,
+    #[serde(default)]
+    bulk: bool,
 }
 
 #[derive(Deserialize)]
@@ -111,7 +113,7 @@ pub(crate) async fn remote_native_path_open(
     if connections.len() >= MAX_CONNECTIONS {
         return Err(UNAVAILABLE.into());
     }
-    let connection = Connection::start(config).map_err(|_| UNAVAILABLE)?;
+    let connection = Connection::start_with_bulk(config, request.bulk).map_err(|_| UNAVAILABLE)?;
     let id = uuid::Uuid::new_v4().to_string();
     connections.insert(id.clone(), connection.clone());
     drop(connections);
@@ -194,4 +196,42 @@ pub(crate) async fn remote_chat_local_addresses(window: Webview) -> Result<Vec<S
         .await
         .map_err(|_| UNAVAILABLE.to_string())?
         .map_err(|_| UNAVAILABLE.to_string())
+}
+
+/// Raw IPC batches share the relay IPC memory budget and never enter the chat message queue.
+#[tauri::command]
+pub(crate) async fn remote_native_bulk_send(
+    app: AppHandle,
+    window: Webview,
+    request: tauri::ipc::Request<'_>,
+) -> Result<(), String> {
+    authorize(&window)?;
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err(UNAVAILABLE.into());
+    };
+    let _memory = super::bulk::reserve_bytes(bytes.len()).map_err(|_| UNAVAILABLE)?;
+    let header = |name| {
+        request
+            .headers()
+            .get(name)
+            .and_then(|value| value.to_str().ok())
+            .ok_or(UNAVAILABLE)
+    };
+    let id = header("x-file-bulk-handle")?;
+    uuid::Uuid::parse_str(id).map_err(|_| UNAVAILABLE)?;
+    let generation = header("x-file-bulk-generation")?
+        .parse::<u64>()
+        .map_err(|_| UNAVAILABLE)?;
+    let connection = app
+        .state::<State>()
+        .0
+        .lock()
+        .await
+        .get(id)
+        .cloned()
+        .ok_or(UNAVAILABLE)?;
+    connection
+        .send_bulk(generation, bytes.clone())
+        .await
+        .map_err(|_| UNAVAILABLE.into())
 }

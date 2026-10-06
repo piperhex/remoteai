@@ -4,6 +4,7 @@
 mod addresses;
 #[cfg(target_os = "android")]
 mod android;
+mod bulk;
 mod config;
 mod connection;
 mod diagnostics;

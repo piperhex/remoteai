@@ -1,0 +1,6 @@
+apply from: new File(initscript.sourceFile.parentFile, 'downloads.init.gradle')
+gradle.afterProject { project ->
+    if (project.path == ':app') {
+        project.android.sourceSets.androidTest.java.srcDir(new File(project.rootDir, '../e2e/connectivity'))
+    }
+}

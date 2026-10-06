@@ -1,7 +1,8 @@
 # Chat connectivity
 
 Session-scoped EasyTier integration for desktop, the Windows unattended service, Android and iOS.
-Uses userspace TCP for chat and a loopback WebRTC adapter over userspace UDP for desktop media;
+Uses separate userspace TCP streams for chat and file downloads, and a loopback WebRTC adapter over userspace UDP
+for desktop media;
 never creates a TUN device, changes host routes, or exposes arbitrary
 application ports. Browsers continue to use WebRTC and the existing encrypted WebSocket fallback.
 
@@ -42,6 +43,14 @@ device arm64 and both simulator architectures during installation of the local C
   EasyTier's `directly_connected_conns` excludes punched sockets and must not be used as a P2P allowlist.
   Transport admission alone does not open the chat stream; diagnostics use the same verified connection check.
 - Closing the owner cancels discovery, sockets and mapping leases. Native queues and frame sizes are bounded.
+- Binary file support is opt-in on both native endpoints. A version handshake on the dedicated file stream
+  must complete before it is advertised as available; older native clients retain their existing fallback.
+  Desktop submits up to 16 encrypted RAB1 records through raw Tauri IPC, sharing the existing 4 MiB IPC budget.
+  Each record is at most 16 KiB. Each native session allows one write in progress, one queued batch and
+  16 received records, with at most eight sessions. Android workers deliver JNI byte arrays directly to the
+  bounded download router; file bytes never cross the JSON poller or React Native bridge.
+  The file stream uses the same direct-route and grant checks as chat. Reconnection replaces its generation,
+  drops queued writes, and fences transfer epochs through the existing download control protocol.
 - Desktop media adapters reuse the same engine and authorization. They bind only loopback with ephemeral TURN
   credentials and allow datagrams only to/from the counterpart's virtual IP while its route is direct. Per-view
   close and grant revocation stop allocations; no raw media crosses the JSON ABI. A peer-specific UDP receive
@@ -59,6 +68,22 @@ cargo test --manifest-path crates/chat-connectivity/Cargo.toml browser_media -- 
 
 It verifies decoded video, received audio and control messages with Chromium WebRTC, including multiple initial
 allocations being pruned during BUNDLE negotiation. It does not measure real carrier NAT success rates.
+
+## Android binary downloads regression
+
+The default Rust tests exchange file records through real native engines, keep chat responsive during receiver
+backpressure, and reject writes from a replaced stream generation. The Android regression additionally checks
+4 MiB of byte-exact Rust/JNI delivery into the native download router, ownership and cleanup. It uses an isolated
+test application and a loopback fixture; it never contacts the production coordinator.
+
+After Android prebuild, build `:app:assembleDebug :app:assembleDebugAndroidTest` with
+`-I ../e2e/native-bulk.init.gradle -PreactNativeArchitectures=x86_64` (choose the device ABI), install both test APKs,
+and forward the fixture with `adb reverse tcp:18779 tcp:18779`. Start
+`cargo test --manifest-path crates/chat-connectivity/Cargo.toml android_binary_bridge_fixture -- --ignored --nocapture`,
+then run `com.codexswitch.connectivity.NativeBulkDeviceTest` using
+`com.codexswitch.mobile.downloadtest.test/com.codexswitch.downloads.DownloadTestRunner`.
+Run `DownloadEngineTest` and `BulkDownloadTest` with the same runner for pause/resume, AEAD, hashes and checkpoints.
+Remove the adb reverse rule after the test. This loopback regression does not predict mobile-network throughput.
 
 ## Dependency notices
 

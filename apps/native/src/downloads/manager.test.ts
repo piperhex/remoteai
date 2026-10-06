@@ -1,10 +1,14 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import type { DownloadConnection, DownloadRequest } from './types';
+import { BulkTransport } from '../../../../shared/remote-chat/bulkTransport';
+import { downloadBulkClient } from '../../../../shared/remote-chat/client/bulkClient';
+import { NativeBulkChannel } from '../../../../shared/remote-chat/nativeBulkChannel';
+import type { ChatLink } from '../../../../shared/remote-chat/link';
 
 const mocks = vi.hoisted(() => ({
   events: new Map<string, (value: string) => void>(),
   bridge: { list: vi.fn(), enqueue: vi.fn(), pause: vi.fn(), resume: vi.fn(), delete: vi.fn(),
-    connection: vi.fn(), accept: vi.fn() },
+    connection: vi.fn(), accept: vi.fn(), invalidateBulk: vi.fn() },
 }));
 vi.mock('react-native', () => ({ NativeModules: { FileDownloads: mocks.bridge },
   Platform: { OS: 'android', Version: 35 }, PermissionsAndroid: {},
@@ -25,6 +29,7 @@ beforeEach(() => {
   mocks.bridge.list.mockResolvedValue('[]');
   mocks.bridge.connection.mockResolvedValue(undefined);
   mocks.bridge.accept.mockResolvedValue(true);
+  mocks.bridge.invalidateBulk.mockResolvedValue(undefined);
 });
 
 it('continues forwarding native task requests after the last download view unsubscribes', async () => {
@@ -91,4 +96,21 @@ it('restores saved tasks and releases failed initialization listeners before ret
   await downloadManager.initialize();
   expect(downloadManager.snapshot()).toEqual([{ id: 'saved', status: 'paused', received: 262144 }]);
   expect(mocks.events.size).toBe(2);
+});
+
+it('invalidates native downloads when the file channel closes without changing the chat mode', async () => {
+  const { downloadManager } = await import('./manager');
+  const current = connection();
+  const transport = new BulkTransport(); transport.setMode('direct');
+  const channel = new NativeBulkChannel(); transport.attach(channel, 'native');
+  current.client.bulk = downloadBulkClient({ peer: () => 'pc', supported: () => true,
+    link: () => ({ bulk: transport }) as ChatLink, request: vi.fn() });
+  downloadManager.bind(current); await downloadManager.initialize();
+  downloadManager.pause('task'); channel.close();
+  expect(mocks.bridge.pause).toHaveBeenCalledWith('task');
+  expect(mocks.bridge.resume).not.toHaveBeenCalled();
+  expect(mocks.bridge.invalidateBulk).toHaveBeenCalledOnce();
+  expect(mocks.bridge.invalidateBulk).toHaveBeenCalledWith('owner', 'pc');
+  downloadManager.unbind(current.files);
+  transport.invalidate(); expect(mocks.bridge.invalidateBulk).toHaveBeenCalledOnce();
 });

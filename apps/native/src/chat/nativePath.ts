@@ -1,7 +1,7 @@
 import { NativeModules } from 'react-native';
 import { NativePath, type NativePathFactory, type NativePathEvent } from '../../../../shared/remote-chat/nativePath';
 
-interface ConnectivityModule { call(request: string): Promise<string> }
+interface ConnectivityModule { bulkBinaryAvailable?: boolean; call(request: string): Promise<string> }
 const connectivity = NativeModules.ChatConnectivity as ConnectivityModule | undefined;
 
 async function call<T>(request: object): Promise<T> {
@@ -18,9 +18,10 @@ export const createMobileNativePath: NativePathFactory | undefined = connectivit
   let stopped = false;
   return new NativePath(options, {
     open: async (input, receive) => {
-      const id = await call<string>({ operation: 'open', config: {
-        ...input.config, sessionId: input.sessionId, desktop: input.desktop,
-      } });
+      const id = await call<string>({ operation: 'open',
+        bulk: Boolean(input.bulkChannel && connectivity.bulkBinaryAvailable),
+        config: { ...input.config, sessionId: input.sessionId, desktop: input.desktop },
+      });
       const poll = async () => {
         while (!stopped) {
           const event = await call<NativePathEvent | null>({ operation: 'poll', id });

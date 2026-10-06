@@ -69,3 +69,15 @@ it('validates the entire batch and its memory bound before forwarding any record
     .rejects.toMatchObject({ code: 'RESOURCE_LIMIT' });
   expect(test.relay.send).not.toHaveBeenCalled();
 });
+
+it('keeps a healthy native file channel across RTC replacement and switches only when it closes', async () => {
+  const test = fixture(); const native = channel(), rtc = channel();
+  test.transport.attach(native, 'native'); test.transport.setMode('direct'); test.invalidated.mockClear();
+  test.transport.attach(rtc); test.transport.attach(channel()); rtc.close();
+  expect(test.invalidated).not.toHaveBeenCalled(); expect(native.close).not.toHaveBeenCalled();
+  await test.transport.send(test.record, 'direct', new AbortController().signal);
+  expect(native.send).toHaveBeenCalledWith(test.record);
+  native.close(); expect(test.invalidated).toHaveBeenCalledOnce();
+  expect(test.transport.path).toBe('direct');
+  test.transport.close();
+});

@@ -1,4 +1,5 @@
 import type { Channel } from './protocol';
+import { NativeBulkChannel } from './nativeBulkChannel';
 import type { ConnectionDiagnostic } from './diagnostics';
 import { sanitizeDiagnostic, type DiagnosticFields } from './diagnosticSchema';
 import type { NativeMediaEndpoint, NativeMediaRoute, NativeMediaSession } from '../remote-desktop/nativeMedia';
@@ -7,6 +8,7 @@ import { connectionEndpoint, type ConnectionEndpoints } from './connectionEndpoi
 export interface NativeTraversalConfig { secret: string; servers: string[]; stunServers: string[]; expiresAt: number }
 export interface NativePathOptions {
   sessionId: string; desktop: boolean; config: NativeTraversalConfig; diagnostic?: ConnectionDiagnostic;
+  bulkChannel?: import('./protocol').PeerOptions['bulkChannel'];
 }
 export interface NativeChannel extends Channel {
   renew(expiresAt: number): void;
@@ -14,6 +16,7 @@ export interface NativeChannel extends Channel {
 }
 export type NativePathFactory = (options: NativePathOptions) => NativeChannel;
 export type NativePathEvent = { type: 'open' | 'closed' } | { type: 'data'; text: string }
+  | { type: 'bulk'; generation: number }
   | { type: 'diagnostic'; stage: import('./diagnostics').DiagnosticFields['stage'];
     snapshot: Pick<import('./diagnostics').DiagnosticFields, 'elapsedMs' | 'connectedPeers' | 'routeCount'
       | 'remoteKnown' | 'direct' | 'udpNatType' | 'tcpNatType' | 'diagnosticVersion' | 'suppressed'> }
@@ -26,6 +29,7 @@ export type NativePathEvent = { type: 'open' | 'closed' } | { type: 'data'; text
 export interface NativePathBridge {
   open(options: NativePathOptions, event: (event: NativePathEvent) => void): Promise<string>;
   send(id: string, text: string): Promise<void>;
+  bulkSend?(id: string, generation: number, records: readonly Uint8Array[]): Promise<void>;
   close(id: string): Promise<void>;
   renew?(id: string, expiresAt: number): Promise<void>;
   mediaOpen?(id: string, viewId: string): Promise<NativeMediaEndpoint>;
@@ -44,6 +48,7 @@ export class NativePath implements Channel {
   private readonly opened = new Set<() => void>();
   private readonly closed = new Set<() => void>();
   private readonly messages = new Set<(text: string) => void>();
+  private bulk?: NativeBulkChannel;
 
   constructor(private readonly options: NativePathOptions, private readonly bridge: NativePathBridge) {
     this.id = bridge.open(options, event => this.receive(event));
@@ -76,6 +81,16 @@ export class NativePath implements Channel {
 
   private receive(event: NativePathEvent) {
     if (this.state === 'closed') return;
+    if (event.type === 'bulk') {
+      this.bulk?.close(); this.bulk = undefined;
+      if (event.generation > 0 && Number.isSafeInteger(event.generation) && this.options.bulkChannel) {
+        const send = this.bridge.bulkSend;
+        this.bulk = new NativeBulkChannel(send ? async records => send(await this.id, event.generation, records)
+          : undefined);
+        this.options.bulkChannel(this.bulk, 'native');
+      }
+      return;
+    }
     if (event.type === 'punch') {
       this.options.diagnostic?.('native-punch', {
         ...sanitizeDiagnostic(event.report), scope: 'chat', transport: 'mesh', protocol: 'udp',
@@ -117,6 +132,7 @@ export class NativePath implements Channel {
   close() {
     if (this.state === 'closed') return;
     this.state = 'closed';
+    this.bulk?.close(); this.bulk = undefined;
     void this.id.then(id => this.bridge.close(id)).catch(() => {
       // A native close or failed open has already released its session resources.
     });

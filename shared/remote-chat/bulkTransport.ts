@@ -7,6 +7,8 @@ export interface BinaryChannel {
   readonly maxRecordBytes?: number;
   readonly readyState: string; readonly bufferedAmount: number;
   send(bytes: Uint8Array): void; close(): void;
+  sendBatch?(records: readonly Uint8Array[]): Promise<void>;
+  onOpen?(callback: () => void): void;
   onMessage(callback: (bytes: Uint8Array) => void): void;
   onLow(callback: () => void): () => void;
   onClose(callback: () => void): void;
@@ -24,6 +26,7 @@ export interface BulkRelay {
 /** Bulk never enters LinkDelivery. A path change invalidates listeners instead of replaying old records. */
 export class BulkTransport {
   private channel?: BinaryChannel;
+  private readonly channels = new Map<'rtc' | 'native', BinaryChannel>();
   private mode: ConnectionMode = 'connecting';
   private readonly receivers = new Map<string, Receiver>();
   private readonly invalidated = new Set<() => void>();
@@ -41,19 +44,28 @@ export class BulkTransport {
     if (this.mode === 'relay' && this.relay?.available()) return 'relay';
     return undefined;
   }
-  attach(channel: BinaryChannel) {
-    if (this.channel === channel) return;
-    const previous = this.channel;
-    this.channel = channel;
-    // Background direct negotiation must not cancel an active relay transfer.
-    if (this.mode === 'direct') this.invalidate();
+  attach(channel: BinaryChannel, source: 'rtc' | 'native' = 'rtc') {
+    if (this.channels.get(source) === channel) return;
+    const previous = this.channels.get(source);
+    this.channels.set(source, channel);
+    this.selectChannel();
     previous?.close();
-    channel.onMessage(bytes => { if (this.channel === channel) this.receive(bytes, 'direct'); });
+    channel.onOpen?.(() => this.selectChannel());
+    // Each peer can select a different live direct transport; authenticated epochs fence old records.
+    channel.onMessage(bytes => { if (this.channels.get(source) === channel) this.receive(bytes, 'direct'); });
     channel.onClose(() => {
-      if (this.channel !== channel) return;
-      this.channel = undefined;
-      if (this.mode === 'direct') this.invalidate();
+      if (this.channels.get(source) !== channel) return;
+      this.channels.delete(source); this.selectChannel();
     });
+  }
+  private selectChannel() {
+    const channels = [...this.channels.values()];
+    if (this.channel?.readyState === 'open' && channels.includes(this.channel)) return;
+    const selected = channels.find(channel => channel.readyState === 'open');
+    if (this.channel === selected) return;
+    this.channel = selected;
+    // Background RTC retries must not replace a healthy native or relay file channel.
+    if (this.mode === 'direct') this.invalidate();
   }
   setMode(mode: ConnectionMode) {
     if (this.mode !== mode) this.invalidate();
@@ -100,6 +112,7 @@ export class BulkTransport {
         decodeBulkRecord(record);
       }
       if (path === 'relay' && this.relay?.sendBatch) { await this.relay.sendBatch(records); return; }
+      if (path === 'direct' && this.channel?.sendBatch) { await this.channel.sendBatch(records); return; }
       for (const record of records) {
         bulkAssert(generation === this.generation, 'PATH_UNAVAILABLE');
         await this.sendRecord(record, path, signal);
@@ -118,7 +131,7 @@ export class BulkTransport {
     if (channel.bufferedAmount + bytes.length > BULK_LIMITS.transportHighBytes) {
       await this.waitForCapacity(channel, signal);
     }
-    bulkAssert(this.path === path && !signal.aborted, 'PATH_UNAVAILABLE');
+    bulkAssert(this.path === path && this.channel === channel && !signal.aborted, 'PATH_UNAVAILABLE');
     channel.send(bytes);
   }
 
@@ -142,5 +155,9 @@ export class BulkTransport {
     this.receivers.clear();
     for (const callback of [...this.invalidated]) callback();
   }
-  close() { this.invalidate(); this.mode = 'offline'; this.channel?.close(); }
+  close() {
+    this.invalidate(); this.mode = 'offline';
+    for (const channel of this.channels.values()) channel.close();
+    this.channels.clear(); this.channel = undefined;
+  }
 }

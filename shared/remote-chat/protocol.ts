@@ -28,7 +28,7 @@ export interface Peer {
 }
 export type PeerConnectionState = 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed';
 export interface PeerOptions {
-  bulkChannel?: (channel: import('./bulkTransport').BinaryChannel) => void;
+  bulkChannel?: (channel: import('./bulkTransport').BinaryChannel, source?: 'native') => void;
   diagnostic?: import('./diagnostics').ConnectionDiagnostic;
   sessionId?: string;
   desktop?: boolean;
