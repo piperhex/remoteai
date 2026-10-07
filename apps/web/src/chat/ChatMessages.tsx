@@ -36,15 +36,16 @@ function WorkSummary({ entry, open, inline, desktop }: {
   if (desktop) return <div className="chat-work-summary chat-desktop-work">
     <button type="button" aria-label={t("查看处理过程，{value1} 项活动", { value1: entry.items.length })} aria-expanded={entry.inline}
       onClick={() => inline(entry.turn.id, !entry.inline)}>
-      {entry.timed ? <ChatTurnTiming turn={entry.turn} fallback={t("处理过程")} /> : t("处理过程")}
+      <span>{entry.timed ? <ChatTurnTiming turn={entry.turn} fallback={t("处理过程")} /> : t("处理过程")}</span>
       <ChevronRight size={14} /></button>
   </div>;
   return <div className="chat-work-summary">
     <button type="button" aria-label={t("查看处理过程，{value1} 项活动", { value1: entry.items.length })} onClick={open}>
-      {label}<ChevronRight size={14} /></button>
+      <span>{label}</span><ChevronRight size={14} /></button>
     {(entry.inline || ['inProgress', 'interrupted', 'failed'].includes(entry.turn.status)) &&
       <button type="button" aria-expanded={entry.inline} aria-label={entry.inline ? t("收起处理过程") : t("展开处理过程")}
-        onClick={() => inline(entry.turn.id, !entry.inline)}>{entry.inline ? t("收起") : t("展开")}<ChevronDown size={14} /></button>}
+        onClick={() => inline(entry.turn.id, !entry.inline)}>
+        <span>{entry.inline ? t("收起") : t("展开")}</span><ChevronDown size={14} /></button>}
   </div>;
 }
 

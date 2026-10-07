@@ -46,11 +46,15 @@
 }
 .chat-code-block code { font: inherit; font-family: ui-monospace, Consolas, monospace; }
 .chat-code-block > .chat-text-action { padding: 10px 14px; }
-.chat-work-summary { display: flex; justify-content: space-between; gap: 8px; }
+.chat-work-summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .chat-work-summary button, .chat-activity {
   display: flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 4px 0;
   color: #7a8880; font: inherit; font-size: 13px; cursor: pointer; text-align: left;
 }
+.chat-work-summary button { min-width: 0; }
+.chat-work-summary button > span { min-width: 0; overflow-wrap: anywhere; }
+.chat-work-summary button > svg { flex-shrink: 0; }
+.chat-work-summary button + button { flex-shrink: 0; max-width: 50%; }
 .chat-activity { width: 100%; min-width: 0; }
 .chat-activity > svg { flex-shrink: 0; }
 .chat-activity strong { font-weight: 400; }
