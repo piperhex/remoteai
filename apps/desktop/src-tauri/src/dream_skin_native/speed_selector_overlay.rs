@@ -1,7 +1,7 @@
 const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
   window.__CODEX_SWITCH_REFRESH_SPEED_SELECTOR__ = () => {
     const stateKey = "__CODEX_SWITCH_SPEED_SELECTOR__";
-    const overlayVersion = 18;
+    const overlayVersion = 19;
     const usageRefreshMs = 5000;
     const usageRequestTimeoutMs = 15000;
     const initialTier = __CODEX_SWITCH_SERVICE_TIER__;
@@ -37,6 +37,7 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
       onUsageVisible: null,
       pendingTier: null, previousTier: null, syncAll: null,
       completeSelection: null, completeUsageRequest: null, updateUsage: null, requestUsage: null,
+      updateLanguage: null,
       usage: {
         enabled: false, totalTokens: 0, estimatedCostUsd: 0,
         primaryRemainingPercent: null, primaryRemainingAggregated: false,
@@ -178,6 +179,11 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
       }
     };
     state.syncAll = syncAll;
+    state.updateLanguage = language => {
+      if (!["zh", "en", "ru"].includes(language) || state.language === language) return;
+      state.language = language;
+      syncAll();
+    };
     state.completeUsageRequest = () => { state.usagePending = false; state.usageRequestedAt = 0; };
     state.updateUsage = summary => {
       state.completeUsageRequest();

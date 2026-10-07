@@ -1,6 +1,62 @@
 use super::*;
 
 #[test]
+fn publishes_language_before_a_usage_query_fails() {
+    let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let (published, received) = std::sync::mpsc::channel();
+    let server = thread::spawn(move || capture_language_publication(listener, published));
+    let target = CdpTarget {
+        id: "language-test".to_string(),
+        kind: "page".to_string(),
+        url: "app://-/index.html".to_string(),
+        web_socket_debugger_url: format!("ws://127.0.0.1:{port}/devtools/page/language-test"),
+    };
+    let result = publish_usage_with_language(&target, port, Some("ru"), || {
+        // The renderer must already have the preference when slow/failing accounting starts.
+        assert_eq!(
+            received.try_recv().unwrap(),
+            "window.__CODEX_SWITCH_SPEED_SELECTOR__?.updateLanguage?.(\"ru\")"
+        );
+        Err("simulated accounting read failure".to_string())
+    });
+    assert_eq!(result.unwrap_err(), "simulated accounting read failure");
+    server.join().unwrap();
+}
+
+fn capture_language_publication(listener: TcpListener, published: std::sync::mpsc::Sender<String>) {
+    let (stream, _) = listener.accept().unwrap();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .unwrap();
+    let mut socket = tungstenite::accept(stream).unwrap();
+    for method in ["Runtime.enable", "Page.enable", "Runtime.evaluate"] {
+        let request = socket.read().unwrap();
+        let request: Value = serde_json::from_str(request.to_text().unwrap()).unwrap();
+        assert_eq!(request["method"], method);
+        if method == "Runtime.evaluate" {
+            published
+                .send(
+                    request["params"]["expression"]
+                        .as_str()
+                        .unwrap()
+                        .to_string(),
+                )
+                .unwrap();
+        }
+        socket
+            .send(Message::Text(
+                json!({
+                    "id": request["id"], "result": { "result": { "value": true } }
+                })
+                .to_string()
+                .into(),
+            ))
+            .unwrap();
+    }
+}
+
+#[test]
 fn usage_request_arriving_before_setup_acknowledgement_is_preserved() {
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
     let port = listener.local_addr().unwrap().port();

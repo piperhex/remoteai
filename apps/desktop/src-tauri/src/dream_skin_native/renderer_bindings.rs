@@ -78,27 +78,36 @@ fn acknowledge_service_tier(target: &CdpTarget, port: u16, tier: &str, succeeded
 }
 
 fn publish_usage_summary(target: &CdpTarget, port: u16) {
-    let summary = match crate::codex_usage_summary::load() {
-        Ok(summary) => summary,
-        Err(error) => {
-            eprintln!("Failed to load the Codex usage summary: {error}");
-            complete_usage_request(target, port);
-            return;
-        }
-    };
-    let summary = match serde_json::to_string(&summary) {
-        Ok(summary) => summary,
-        Err(error) => {
-            eprintln!("Failed to serialize the Codex usage summary: {error}");
-            complete_usage_request(target, port);
-            return;
-        }
-    };
-    let expression = format!("window.__CODEX_SWITCH_SPEED_SELECTOR__?.updateUsage?.({summary})");
-    if let Err(error) = evaluate_for_binding(target, port, &expression) {
+    if let Err(error) = load_and_publish_usage_summary(target, port) {
         eprintln!("Failed to publish the Codex usage summary: {error}");
         complete_usage_request(target, port);
     }
+}
+
+fn load_and_publish_usage_summary(target: &CdpTarget, port: u16) -> Result<(), String> {
+    let app = crate::codex_runtime::runtime_app_handle()
+        .ok_or_else(|| "Codex runtime is not initialized.".to_string())?;
+    let settings = crate::storage::read_app_settings(&app)?;
+    publish_usage_with_language(target, port, settings.language.as_deref(), || {
+        crate::codex_usage_summary::load(&app, &settings)
+    })
+}
+
+fn publish_usage_with_language(
+    target: &CdpTarget,
+    port: u16,
+    language: Option<&str>,
+    load_summary: impl FnOnce() -> Result<crate::codex_usage_summary::CodexUsageSummary, String>,
+) -> Result<(), String> {
+    // Preferences must reach the renderer before accounting I/O can block or fail.
+    let language = serde_json::to_string(&language).map_err(|error| error.to_string())?;
+    let expression = format!("window.__CODEX_SWITCH_SPEED_SELECTOR__?.updateLanguage?.({language})");
+    evaluate_for_binding(target, port, &expression)?;
+    let summary = load_summary()?;
+    let summary = serde_json::to_string(&summary).map_err(|error| error.to_string())?;
+    let expression = format!("window.__CODEX_SWITCH_SPEED_SELECTOR__?.updateUsage?.({summary})");
+    evaluate_for_binding(target, port, &expression)?;
+    Ok(())
 }
 
 fn complete_usage_request(target: &CdpTarget, port: u16) {

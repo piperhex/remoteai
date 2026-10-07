@@ -33,13 +33,14 @@ pub(crate) struct CodexUsageSummary {
 }
 
 #[cfg(any(target_os = "windows", target_os = "macos"))]
-pub(crate) fn load() -> Result<CodexUsageSummary, String> {
-    let app = crate::codex_runtime::runtime_app_handle()
-        .ok_or_else(|| "Codex runtime is not initialized.".to_string())?;
-    let settings = crate::storage::read_app_settings(&app)?;
+/// Loads accounting after the renderer has received the same snapshot's language preference.
+pub(crate) fn load(
+    app: &tauri::AppHandle,
+    settings: &crate::models::AppSettings,
+) -> Result<CodexUsageSummary, String> {
     if !settings.codex_usage_summary_enabled {
         return Ok(CodexUsageSummary {
-            language: settings.language,
+            language: settings.language.clone(),
             enabled: false,
             total_tokens: 0,
             estimated_cost_usd: 0.0,
@@ -48,10 +49,10 @@ pub(crate) fn load() -> Result<CodexUsageSummary, String> {
             provider_estimated_cost: None,
         });
     }
-    let paths = crate::storage::resolve_paths(&app)?;
+    let paths = crate::storage::resolve_paths(app)?;
     let state = crate::storage::read_state(&paths);
-    let mut summary = load_for_selection(&app, &paths, &state)?;
-    summary.language = settings.language;
+    let mut summary = load_for_selection(app, &paths, &state)?;
+    summary.language = settings.language.clone();
     Ok(summary)
 }
 

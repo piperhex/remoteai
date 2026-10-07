@@ -321,3 +321,43 @@ test("localizes the injected panel and updates an existing panel when language c
   assert.equal(harness.state.language, "ru");
   assert.match(harness.usage.title, /Остаток лимита аккаунта: 100%/);
 });
+
+test("updates language during a failed usage refresh without clearing data or overlapping requests", () => {
+  const harness = createHarness();
+  update(harness, { language: "en", providerEstimatedCost: { amountUsd: 1.25, aggregated: true } });
+  const previousUsage = harness.state.usage;
+  harness.flushTimeouts();
+  harness.state.updateLanguage("ru");
+  assert.equal(harness.state.usagePending, true);
+  assert.equal(harness.state.usage, previousUsage);
+  assert.equal(harness.document.querySelector("[data-speed-label]").textContent, "Быстрый режим");
+  assert.equal(harness.usage.querySelector("[data-today-tokens]").textContent, "1.2K");
+  assert.match(harness.usage.title, /Общая стоимость API за сегодня: 1\.25USD/);
+  for (let index = 0; index < 5; index += 1) harness.poll();
+  assert.equal(harness.requests, 1);
+  harness.state.completeUsageRequest();
+  assert.equal(harness.state.usage, previousUsage);
+  harness.poll();
+  assert.equal(harness.requests, 2);
+  update(harness, { language: "ru", totalTokens: 5000 });
+  assert.equal(harness.usage.querySelector("[data-today-tokens]").textContent, "5K");
+  assert.equal(harness.state.usagePending, false);
+});
+
+test("localizes Fast controls before any usage succeeds and ignores invalid language updates", () => {
+  const harness = createHarness();
+  harness.flushTimeouts();
+  harness.state.updateLanguage("ru");
+  const toggle = harness.document.querySelector("[data-speed-switch]");
+  assert.equal(harness.usage.hidden, true);
+  assert.equal(toggle.attributes["aria-label"], "Быстрый режим");
+  for (const language of [null, undefined, "unsupported", "__proto__"]) {
+    harness.state.updateLanguage(language);
+    assert.equal(harness.state.language, "ru");
+  }
+  harness.state.completeUsageRequest();
+  harness.state.updateLanguage("en");
+  assert.equal(toggle.attributes["aria-label"], "Fast mode");
+  assert.equal(harness.usage.hidden, true);
+  assert.equal(harness.document.querySelectorAll("[data-codex-switch-speed-selector]").length, 1);
+});
