@@ -291,3 +291,33 @@ test("clears old observers and all timers when reinstalling or disabling the ove
   assert.equal(harness.document.querySelectorAll("[data-codex-switch-speed-selector]").length, 0);
   assert.equal(harness.state, undefined);
 });
+
+test("localizes the injected panel and updates an existing panel when language changes", () => {
+  const harness = createHarness();
+  const selector = harness.document.querySelector("[data-codex-switch-speed-selector]");
+  const controls = selector.querySelector("[data-speed-controls]");
+  const toggle = selector.querySelector("[data-speed-switch]");
+  for (const [language, today, fast, cost] of [
+    ["ru", "Сегодня", "Быстрый режим", "Общая стоимость API за сегодня: 1.25USD"],
+    ["en", "Today", "Fast mode", "Combined API estimated cost today: 1.25USD"],
+    ["zh", "今日", "快速模式", "聚合 API 今日总预估成本：1.25USD"],
+  ]) {
+    update(harness, { language, providerEstimatedCost: { amountUsd: 1.25, aggregated: true } });
+    assert.equal(harness.usage.querySelector("[data-today-label]").textContent, today);
+    assert.equal(controls.querySelector("[data-speed-label]").textContent, fast);
+    assert.equal(toggle.attributes["aria-label"], fast);
+    assert.match(harness.usage.title, new RegExp(cost.replaceAll(".", "\\.")));
+    assert.equal(harness.usage.querySelector("[data-today-tokens]").textContent, "1.2K");
+    if (language !== "zh") {
+      assert.doesNotMatch(harness.usage.title + harness.usage.attributes["aria-label"]
+        + selector.attributes["aria-label"], /[\u4e00-\u9fff]/);
+    }
+    assert.equal(harness.document.querySelectorAll("[data-codex-switch-speed-selector]").length, 1);
+  }
+  update(harness, { language: "ru", enabled: false });
+  assert.equal(harness.usage.hidden, true);
+  assert.equal(controls.querySelector("[data-speed-label]").textContent, "Быстрый режим");
+  update(harness, { language: "unsupported", primaryRemainingPercent: 100 });
+  assert.equal(harness.state.language, "ru");
+  assert.match(harness.usage.title, /Остаток лимита аккаунта: 100%/);
+});
