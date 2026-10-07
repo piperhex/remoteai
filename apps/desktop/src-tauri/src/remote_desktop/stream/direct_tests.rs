@@ -116,7 +116,13 @@ async fn connect(host: &Arc<Peer>) -> (Peer, Arc<RTCDataChannel>) {
     let client = peer::create(vec![], false).await.unwrap();
     let (sender, mut receiver) = mpsc::unbounded_channel();
     client.connection.on_data_channel(Box::new(move |channel| {
-        sender.send(channel).unwrap();
+        let sender = sender.clone();
+        let opened_channel = Arc::clone(&channel);
+        // Discovery runs before WebRTC opens this endpoint; the host may already be ready.
+        channel.on_open(Box::new(move || {
+            sender.send(opened_channel).unwrap();
+            Box::pin(async {})
+        }));
         Box::pin(async {})
     }));
     let mut gathering = host.connection.gathering_complete_promise().await;
