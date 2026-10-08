@@ -26,6 +26,9 @@ pub(crate) struct Snapshot {
     pub permissions: Permissions,
     pub base_url: String,
     pub name: String,
+    // Older services omit this field and receive one compatibility update on the next app start.
+    #[serde(default)]
+    pub version: Option<String>,
 }
 #[derive(Deserialize, Serialize)]
 struct Response {
@@ -38,6 +41,7 @@ fn snapshot(config: configuration::Configuration) -> Snapshot {
         permissions: config.permissions,
         base_url: config.base_url,
         name: config.name,
+        version: Some(config.version),
     }
 }
 pub(super) async fn serve() -> Result<()> {

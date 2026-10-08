@@ -3,7 +3,7 @@ use super::{configuration, platform, Result, ServiceError, NAME};
 use std::{
     ffi::OsString,
     os::windows::fs::MetadataExt,
-    path::Path,
+    path::{Path, PathBuf},
     time::{Duration, Instant},
 };
 use windows_service::{
@@ -36,7 +36,7 @@ pub(super) fn query() -> Result<Option<windows_service::service::ServiceStatus>>
         Err(_) => Err(ServiceError::Unavailable),
     }
 }
-fn stop() -> Result<()> {
+pub(super) fn stop() -> Result<()> {
     let manager = manager(false)?;
     let service =
         match manager.open_service(NAME, ServiceAccess::QUERY_STATUS | ServiceAccess::STOP) {
@@ -69,7 +69,7 @@ fn stop() -> Result<()> {
     }
     Err(ServiceError::Unavailable)
 }
-fn protect_directory(path: &Path) -> Result<()> {
+pub(super) fn protect_directory(path: &Path) -> Result<()> {
     if path.exists()
         && std::fs::symlink_metadata(path)
             .map_err(|_| ServiceError::Storage)?
@@ -108,7 +108,7 @@ fn set_acl(path: &Path, args: &[&str]) -> Result<()> {
         Err(ServiceError::Storage)
     }
 }
-fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
+pub(super) fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
     reject_link(destination)?;
     std::fs::create_dir_all(destination).map_err(|_| ServiceError::Storage)?;
     for entry in std::fs::read_dir(source).map_err(|_| ServiceError::Setup)? {
@@ -128,7 +128,7 @@ fn copy_tree(source: &Path, destination: &Path) -> Result<()> {
     }
     Ok(())
 }
-fn reject_link(path: &Path) -> Result<()> {
+pub(super) fn reject_link(path: &Path) -> Result<()> {
     if let Ok(metadata) = std::fs::symlink_metadata(path) {
         if metadata.file_attributes() & 0x400 != 0 {
             return Err(ServiceError::Invalid);
@@ -137,16 +137,8 @@ fn reject_link(path: &Path) -> Result<()> {
     Ok(())
 }
 
-pub(super) fn install(prepared: &Path) -> Result<()> {
-    if !platform::elevated()? {
-        return Err(ServiceError::Denied);
-    }
-    let metadata = std::fs::metadata(prepared).map_err(|_| ServiceError::Invalid)?;
-    if metadata.len() > 64 * 1024 || !metadata.is_file() {
-        return Err(ServiceError::Invalid);
-    }
-    let config =
-        configuration::unseal(&std::fs::read(prepared).map_err(|_| ServiceError::Storage)?)?;
+/// Both installation and automatic updates require the complete, verified packaged runtime.
+pub(super) fn source_executable() -> Result<PathBuf> {
     let executable = std::env::current_exe().map_err(|_| ServiceError::Setup)?;
     let source = executable.parent().ok_or(ServiceError::Setup)?;
     super::assets::verify(source)?;
@@ -159,6 +151,21 @@ pub(super) fn install(prepared: &Path) -> Result<()> {
             return Err(ServiceError::Setup);
         }
     }
+    Ok(executable)
+}
+
+pub(super) fn install(prepared: &Path) -> Result<()> {
+    if !platform::elevated()? {
+        return Err(ServiceError::Denied);
+    }
+    let metadata = std::fs::metadata(prepared).map_err(|_| ServiceError::Invalid)?;
+    if metadata.len() > 64 * 1024 || !metadata.is_file() {
+        return Err(ServiceError::Invalid);
+    }
+    let config =
+        configuration::unseal(&std::fs::read(prepared).map_err(|_| ServiceError::Storage)?)?;
+    let executable = source_executable()?;
+    let source = executable.parent().ok_or(ServiceError::Setup)?;
     stop()?;
     let previous = configuration::read().ok();
     let root = configuration::install_root()?;
@@ -214,6 +221,18 @@ fn register(root: &Path) -> Result<()> {
         .set_description("Allows this computer's owner to use remote desktop before signing in.")
         .map_err(|_| ServiceError::Setup)?;
     recovery(&service)?;
+    start_service(&service)
+}
+
+/// Restart an existing service without changing its startup policy or account.
+pub(super) fn start() -> Result<()> {
+    let service = manager(false)?
+        .open_service(NAME, ServiceAccess::START | ServiceAccess::QUERY_STATUS)
+        .map_err(|_| ServiceError::Unavailable)?;
+    start_service(&service)
+}
+
+fn start_service(service: &windows_service::service::Service) -> Result<()> {
     service
         .start::<&str>(&[])
         .map_err(|_| ServiceError::Unavailable)?;

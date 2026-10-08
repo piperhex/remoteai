@@ -29,6 +29,7 @@ export function UnattendedDesktopSettings({ allowed }: { allowed: boolean }) {
     <h4>无人值守</h4>
     <p>启用后，可继续用手机或网页访问锁屏、尚未登录的电脑。安装和卸载需要管理员确认。</p>
     <p>无人值守绑定启用时的云端账号，退出应用或云端账号后仍会运行。停止访问请在此停用。</p>
+    <p>应用每次启动时会检查已启用的服务，有新版时尝试更新。需要时请确认管理员提示。</p>
     <p role="status">{status.installed ? status.running ? '服务正在运行' : '服务已安装，尚未运行' : '尚未启用'}</p>
     <Space wrap>
       <Button disabled={busy || !allowed} loading={busy} onClick={() => void change(true)}>

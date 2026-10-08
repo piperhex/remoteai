@@ -11,9 +11,12 @@ mod installer;
 pub(crate) mod platform;
 mod process;
 mod setup;
+mod startup;
 mod supervisor;
+mod upgrade;
 pub(crate) use commands::*;
 pub(crate) use setup::setup_gui;
+pub(crate) use startup::start;
 
 pub(crate) const NAME: &str = "CodexSwitchRemoteDesktop";
 #[derive(Debug, thiserror::Error)]
@@ -49,6 +52,10 @@ pub(crate) fn run_helper() -> bool {
             .ok_or(ServiceError::Invalid)
             .and_then(|path| installer::install(std::path::Path::new(path))),
         Some("--uninstall-desktop-service") => installer::uninstall(),
+        Some("--update-desktop-service") => args
+            .get(2)
+            .ok_or(ServiceError::Invalid)
+            .and_then(|version| upgrade::run(version)),
         _ => return false,
     };
     if let Err(error) = result {

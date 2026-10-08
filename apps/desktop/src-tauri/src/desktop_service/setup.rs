@@ -1,15 +1,12 @@
 //! Shared setup for explicit settings actions and the first local GUI connection.
 use super::{configuration, installer, platform, Result, ServiceError};
 use base64::{engine::general_purpose::STANDARD, Engine};
-use std::{
-    path::{Path, PathBuf},
-    sync::Mutex,
-    time::Duration,
-};
+use std::{path::PathBuf, time::Duration};
 use tauri::{AppHandle, Manager};
+use tokio::sync::Mutex;
 
 // Automatic setup and settings actions must not rotate credentials or elevate concurrently.
-static CHANGES: Mutex<()> = Mutex::new(());
+pub(super) static CHANGES: Mutex<()> = Mutex::const_new(());
 
 pub(super) fn supported() -> bool {
     cfg!(target_arch = "x86_64") && super::assets::ready()
@@ -20,7 +17,7 @@ pub(crate) fn setup_gui(app: &AppHandle, installing: impl FnOnce()) -> Result<bo
     if !supported() {
         return Ok(false);
     }
-    let _guard = CHANGES.lock().map_err(|_| ServiceError::Storage)?;
+    let _guard = CHANGES.blocking_lock();
     // Preserve existing ownership, stopped services, and an explicit remote-access opt-out.
     if installer::query()?.is_some()
         || !crate::remote_desktop::permissions::snapshot(app)
@@ -35,13 +32,13 @@ pub(crate) fn setup_gui(app: &AppHandle, installing: impl FnOnce()) -> Result<bo
 }
 
 pub(super) fn install(app: &AppHandle) -> Result<()> {
-    let _guard = CHANGES.lock().map_err(|_| ServiceError::Storage)?;
+    let _guard = CHANGES.blocking_lock();
     install_inner(app)
 }
 
 fn install_inner(app: &AppHandle) -> Result<()> {
     let (path, config) = prepare(app)?;
-    let result = elevate("--install-desktop-service", Some(&path));
+    let result = elevate("--install-desktop-service", Some(&path.to_string_lossy()));
     if std::fs::remove_file(&path).is_err() {
         eprintln!("desktop service setup temporary cleanup failed");
     }
@@ -52,7 +49,7 @@ fn install_inner(app: &AppHandle) -> Result<()> {
 }
 
 pub(super) fn uninstall() -> Result<()> {
-    let _guard = CHANGES.lock().map_err(|_| ServiceError::Storage)?;
+    let _guard = CHANGES.blocking_lock();
     elevate("--uninstall-desktop-service", None)
 }
 
@@ -150,7 +147,7 @@ pub(super) fn revoke(config: &configuration::Configuration) -> Result<()> {
         Err(ServiceError::Unavailable)
     }
 }
-fn elevate(action: &str, prepared: Option<&Path>) -> Result<()> {
+pub(super) fn elevate(action: &str, argument: Option<&str>) -> Result<()> {
     use std::{
         mem::size_of,
         os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle},
@@ -162,10 +159,10 @@ fn elevate(action: &str, prepared: Option<&Path>) -> Result<()> {
     let executable = std::env::current_exe().map_err(|_| ServiceError::Setup)?;
     let file = platform::wide(&executable.to_string_lossy());
     let verb = platform::wide("runas");
-    // Both action and the app-created UUID file path are internal; Windows paths cannot contain quote characters.
-    let parameters = platform::wide(&prepared.map_or_else(
+    // Arguments are internal UUID paths or validated semantic versions, never shell input.
+    let parameters = platform::wide(&argument.map_or_else(
         || action.to_owned(),
-        |path| format!("{action} \"{}\"", path.display()),
+        |value| format!("{action} \"{value}\""),
     ));
     let mut info = SHELLEXECUTEINFOW {
         cbSize: size_of::<SHELLEXECUTEINFOW>() as u32,
