@@ -7,10 +7,12 @@ async function openDesktop(page: Page) {
   await expect(page.getByRole('dialog', { name: '远程桌面' })).toBeVisible();
 }
 
-test('opens on iPhone and iPad without offering unsupported fullscreen controls', async ({ page }, info) => {
+test('keeps unsupported fullscreen unavailable on desktop, iPhone and iPad', async ({ page, isMobile }, info) => {
   await page.addInitScript(() => Object.defineProperty(document, 'fullscreenEnabled', { value: false }));
   await openDesktop(page);
-  await expect(page.getByRole('button', { name: '全屏', exact: true })).toHaveCount(0);
+  const fullscreen = page.getByRole('button', { name: '全屏', exact: true });
+  if (isMobile) await expect(fullscreen).toHaveCount(0);
+  else await expect(fullscreen).toBeDisabled();
   await expect(page.getByRole('button', { name: '键盘', exact: true })).toBeVisible();
   const dialog = (await page.getByRole('dialog', { name: '远程桌面' }).boundingBox())!;
   expect(dialog.x).toBe(0); expect(dialog.y).toBe(0);

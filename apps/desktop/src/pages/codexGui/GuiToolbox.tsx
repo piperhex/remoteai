@@ -42,6 +42,7 @@ export function GuiToolbox(props: Props) {
         connected={props.connected} active={props.active} deviceName={props.deviceName}
         onClose={() => setPanel(null)} />}
       {panel === 'desktop' && props.desktop && <RemoteDesktop client={props.desktop}
+        nativeWindow={isTauri()}
         localClipboard={isTauri() ? localDesktopClipboard : undefined}
         active={props.active && props.connected} close={() => setPanel(null)} />}
     </Suspense>

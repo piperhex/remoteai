@@ -10,15 +10,16 @@ interface Props {
   selected?: string;
   disabled: boolean;
   select: (displayId: string) => void;
+  nativeWindow?: boolean;
 }
 
-export function DesktopDisplayBar({ displays, selected, disabled, select }: Props) {
+export function DesktopDisplayBar({ displays, selected, disabled, select, nativeWindow }: Props) {
   const current = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     current.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [selected]);
   if (!displays.length) return null;
-  return <nav className="rd-display-bar" aria-label={t('显示器')}>
+  return <nav className="rd-display-bar" aria-label={t('显示器')} data-tauri-drag-region={nativeWindow || undefined}>
     {displays.map(display => <button key={display.id} type="button"
       ref={selected === display.id ? current : undefined} disabled={disabled}
       aria-pressed={selected === display.id} aria-label={displayLabel(display, t)}

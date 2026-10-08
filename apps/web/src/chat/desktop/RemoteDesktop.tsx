@@ -5,7 +5,8 @@ import type { DesktopClient } from '../../../../../shared/remote-desktop/protoco
 import type { LocalDesktopClipboard } from '../../../../../shared/remote-desktop/clipboard';
 import { useDesktopSession } from '../../../../../shared/remote-desktop/useDesktopSession';
 import { DisplaySettings } from './DisplaySettings';
-import { DesktopDisplayBar } from './DesktopDisplayBar';
+import { DesktopTitlebar } from './DesktopTitlebar';
+import { useDesktopWindow } from './useDesktopWindow';
 import { DesktopStats } from './DesktopStats';
 import { DesktopMouse } from './MousePad';
 import { useTrackpad } from './useTrackpad';
@@ -29,22 +30,27 @@ import './desktop.css';
 
 const createPeer = (configuration: RTCConfiguration) => new RTCPeerConnection(configuration);
 
-export function RemoteDesktop({ client, active, close, localClipboard }: {
+export function RemoteDesktop({ client, active, close, localClipboard, nativeWindow = false }: {
   client: DesktopClient; active: boolean; close: () => void; localClipboard?: LocalDesktopClipboard;
+  nativeWindow?: boolean;
 }) {
+  const root = useRef<HTMLDivElement>(null);
+  const windowControls = useDesktopWindow(root, active);
+  const shown = active && !windowControls.minimized;
   const visible = usePageVisibility();
   const session = useDesktopSession({ client, active: active && visible, createPeer });
   const viewOnly = session.capabilities.control === false;
   const [display, setDisplay] = useState(false);
   const [keyboard, setKeyboard] = useState(false);
-  const keyboardViewport = useKeyboardViewport(keyboard || display);
+  const keyboardViewport = useKeyboardViewport(shown && (keyboard || display));
   const [direct, setDirect] = useState(false);
   const [statsVisible, setStatsVisible] = useState(true);
   const hardware = useHardwarePointer();
-  const clipboard = useDesktopClipboard({ active: active && !!session.stream,
+  const desktopWindow = nativeWindow || hardware;
+  const clipboard = useDesktopClipboard({ active: shown && !!session.stream,
     clipboard: session.clipboard, localClipboard });
   const panelVisible = !viewOnly && !hardware && !direct && !display && !keyboard && !clipboard.open;
-  const panel = useMousePanel(active && panelVisible && !!session.stream);
+  const panel = useMousePanel(shown && panelVisible && !!session.stream);
   const video = useRef<HTMLVideoElement>(null);
   const playback = useDesktopPlayback(video, session.stream, session.muted);
   const silent = session.muted || playback.blocked;
@@ -52,12 +58,11 @@ export function RemoteDesktop({ client, active, close, localClipboard }: {
   const toggleAudio = () => {
     if (silent) { session.mute(false); playback.enable(); } else session.mute(true);
   };
-  const root = useRef<HTMLDivElement>(null);
-  useDesktopOrientation(root, active && !hardware);
+  useDesktopOrientation(root, shown && !desktopWindow);
   const stage = useRef<HTMLDivElement>(null);
-  const measured = useVideoViewport(stage, video, active);
+  const measured = useVideoViewport(stage, video, shown);
   const fitted = useInputViewport(measured, keyboard);
-  const zoom = useDesktopZoom(fitted, active && !!session.stream);
+  const zoom = useDesktopZoom(fitted, shown && !!session.stream);
   const viewport = useMouseViewport(session.pointer, zoom.viewport,
     panelVisible ? (panel.expanded ? MOUSE_PANEL_SIZE : MOUSE_ICON_SIZE) : undefined, zoom.modified);
   const trackpad = useTrackpad({ pointer: session.pointer, viewport, direct, panel, id: 'stage', zoom: zoom.gestures });
@@ -66,21 +71,23 @@ export function RemoteDesktop({ client, active, close, localClipboard }: {
   };
   const switchMode = (next: boolean) => { session.pointer.release(); setDirect(next); if (!next) panel.expand(); };
   useEffect(() => {
-    if (!active) return;
+    if (!shown) return;
     const previous = document.activeElement as HTMLElement | null;
     const target = hardware ? root.current?.querySelector<HTMLTextAreaElement>('.rd-key-capture') : root.current;
     target?.focus({ preventScroll: true });
-    return () => previous?.focus();
-  }, [active, hardware]);
+    return () => { session.pointer.release(); previous?.focus(); };
+  }, [shown, hardware, session.pointer]);
   const fullscreen = () => {
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
     else void document.documentElement.requestFullscreen?.().catch(() => undefined);
   };
   if (!active) return null;
-  return createPortal(<div ref={root} tabIndex={-1} className="rd-root" style={keyboardViewport}
+  return createPortal(<><div ref={root} tabIndex={-1} className="rd-root" style={keyboardViewport}
+    hidden={windowControls.minimized}
     role="dialog" aria-modal="true"
     aria-label={t('远程桌面')} onContextMenu={event => event.preventDefault()}>
-    {hardware && <DesktopDisplayBar displays={session.displays} selected={session.settings.displayId}
+    {desktopWindow && <DesktopTitlebar displays={session.displays} selected={session.settings.displayId}
+      nativeWindow={nativeWindow} controls={windowControls} close={close}
       disabled={session.saving || !session.stream}
       select={displayId => { void session.update({ ...session.settings, displayId }); }} />}
     <div className="rd-workspace">
@@ -89,7 +96,7 @@ export function RemoteDesktop({ client, active, close, localClipboard }: {
         left: viewport.content.x, top: viewport.content.y,
         width: viewport.content.width, height: viewport.content.height }} />
       <DesktopInputSurface key={direct ? 'direct' : 'trackpad'} pointer={session.pointer} viewport={viewport}
-        input={session.input} trackpad={trackpad} hardware={hardware} active={!!session.stream && active}
+        input={session.input} trackpad={trackpad} hardware={hardware} active={!!session.stream && shown}
         clipboard={clipboard} wheel={wheel} />
       {session.stats && statsVisible && !keyboard
         && <DesktopStats stats={session.stats} close={() => setStatsVisible(false)} />}
@@ -98,6 +105,7 @@ export function RemoteDesktop({ client, active, close, localClipboard }: {
         horizontal={!!session.capabilities.horizontalScroll} />}
       {session.status && <div className="rd-status" role="status"><span>{t(session.status)}</span>
         <button onClick={session.retry}>{t('重新连接')}</button></div>}
+      {windowControls.error && <div className="rd-clipboard-notice" role="alert">{t(windowControls.error)}</div>}
       {display && <DisplaySettings settings={session.settings} displays={session.displays} update={session.update}
         saving={session.saving || !session.stream}
         stats={{ visible: statsVisible, toggle: () => setStatsVisible(!statsVisible) }}
@@ -131,11 +139,17 @@ export function RemoteDesktop({ client, active, close, localClipboard }: {
         setDisplay(!display); setKeyboard(false); clipboard.setOpen(false);
       }}>
         <Settings2 /><span>{t('显示')}</span></button>
-      {document.fullscreenEnabled && <button onClick={fullscreen}><Maximize /><span>{t('全屏')}</span></button>}
-      <button onClick={close}><X /><span>{t('关闭')}</span></button>
+      {!desktopWindow && document.fullscreenEnabled
+        && <button onClick={fullscreen}><Maximize /><span>{t('全屏')}</span></button>}
+      {!desktopWindow && <button onClick={close}><X /><span>{t('关闭')}</span></button>}
     </nav>
     </div>
     {keyboard && <DesktopKeyboard input={session.input} close={() => setKeyboard(false)}
       supported={!!session.capabilities.keyboard} />}
-  </div>, document.body);
+  </div>
+    {windowControls.minimized && <button type="button" className="rd-restore"
+      aria-label={t('恢复远程桌面')} onClick={windowControls.restore}>
+      <Monitor size={22} /><span>{t('远程桌面')}</span>
+    </button>}
+  </>, document.body);
 }

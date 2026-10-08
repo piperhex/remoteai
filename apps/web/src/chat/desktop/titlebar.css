@@ -1,0 +1,18 @@
+.rd-titlebar { display: flex; align-items: stretch; flex: 0 0 auto; min-width: 0; min-height: 54px;
+  background: #171c28; border-bottom: 1px solid #303a4c; user-select: none; }
+.rd-titlebar .rd-display-bar { flex: 0 1 auto; border-bottom: 0; }
+.rd-titlebar-space { flex: 1 0 32px; }
+.rd-window-controls { display: flex; align-items: stretch; flex: 0 0 auto; }
+.rd-window-controls button { display: grid; place-items: center; width: 44px; padding: 0;
+  background: transparent; border-radius: 0; }
+.rd-window-controls button:hover:not(:disabled) { background: #ffffff14; }
+.rd-window-controls .rd-window-close:hover { background: #c42b3b; color: white; }
+.rd-root[hidden] { display: none; }
+.rd-restore { position: fixed; right: max(24px, env(safe-area-inset-right));
+  bottom: max(24px, env(safe-area-inset-bottom)); z-index: 2200; display: flex; align-items: center; gap: 10px;
+  max-width: min(400px, calc(100vw - 48px)); padding: 14px 18px; border: 1px solid #5b7fac;
+  border-radius: 28px; background: #2a3f5d; color: #e7edf8; font: 14px system-ui, sans-serif;
+  box-shadow: 0 6px 24px #0005; cursor: pointer; }
+.rd-restore:hover { background: #355987; }
+.rd-restore:focus-visible { outline: 2px solid #88b5ff; outline-offset: 3px; }
+.rd-restore svg { flex-shrink: 0; }
