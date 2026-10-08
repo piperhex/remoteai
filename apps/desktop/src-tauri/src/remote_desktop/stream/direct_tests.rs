@@ -34,6 +34,19 @@ fn native_media_markers_require_local_credentials_and_stay_available_in_direct_p
         remote_address: "10.253.0.2".into(),
     };
     assert!(adapter.validate().is_ok());
+    let mut dual_transport = adapter.clone();
+    dual_transport
+        .urls
+        .push("turn:127.0.0.1:12346?transport=tcp".into());
+    assert!(dual_transport.validate().is_ok());
+    for invalid in [
+        "turn:192.0.2.1:12346?transport=tcp",
+        "turn:127.0.0.1:80?transport=tcp",
+        "turn:127.0.0.1:12346?transport=tls",
+    ] {
+        dual_transport.urls[1] = invalid.into();
+        assert!(dual_transport.validate().is_err());
+    }
     let public = IceServer {
         urls: vec!["turn:relay.example.test:3478".into()],
         ..Default::default()

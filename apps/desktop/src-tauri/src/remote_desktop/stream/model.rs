@@ -67,10 +67,14 @@ impl IceServer {
             && self.username == "desktop-media"
             && self.credential.len() == 64
             && self.credential.bytes().all(|byte| byte.is_ascii_hexdigit())
-            && self.urls.len() == 1
+            && (1..=2).contains(&self.urls.len())
             && self.urls.iter().all(|url| {
                 url.strip_prefix("turn:127.0.0.1:")
-                    .and_then(|value| value.strip_suffix("?transport=udp"))
+                    .and_then(|value| {
+                        value
+                            .strip_suffix("?transport=udp")
+                            .or_else(|| value.strip_suffix("?transport=tcp"))
+                    })
                     .is_some_and(|port| port.parse::<u16>().is_ok_and(|port| port >= 1024))
             })
     }

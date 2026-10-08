@@ -4,6 +4,7 @@ mod listener;
 mod socket;
 #[cfg(test)]
 mod socket_tests;
+mod tcp;
 #[cfg(test)]
 mod tests;
 
@@ -79,25 +80,12 @@ impl MediaProxy {
         if *parent.borrow() {
             return Err(Error::Closed);
         }
-        let listener = Arc::new(listener::LocalSocket(
-            UdpSocket::bind((Ipv4Addr::LOCALHOST, 0)).await?,
-        ));
-        let endpoint = endpoint(listener.0.local_addr()?, desktop);
         let cancel = watch::channel(false).0;
         let mut lifetime = Lifetime {
             canceled: cancel.subscribe(),
             parent: parent.clone(),
         };
-        let generator = socket::Generator::new(
-            engine,
-            endpoint
-                .remote_address
-                .parse::<IpAddr>()
-                .map_err(|_| Error::Invalid)?,
-            route.clone(),
-            lifetime.clone(),
-        );
-        let server = create_server(listener, &endpoint, generator).await?;
+        let (server, endpoint) = prepare(engine, desktop, route.clone(), lifetime.clone()).await?;
         tokio::spawn(async move {
             lifetime.finished().await;
             if let Err(error) = server.close().await {
@@ -124,6 +112,35 @@ impl MediaProxy {
     pub fn close(&self) {
         self.cancel.send_replace(true);
     }
+}
+
+async fn prepare(
+    engine: Arc<NativeCoreInstance>,
+    desktop: bool,
+    route: watch::Receiver<RouteStatus>,
+    lifetime: Lifetime,
+) -> Result<(Server, MediaEndpoint)> {
+    let listener = Arc::new(listener::LocalSocket(
+        UdpSocket::bind((Ipv4Addr::LOCALHOST, 0)).await?,
+    ));
+    let local = listener.0.local_addr()?;
+    let mut endpoint = endpoint(local, desktop);
+    let peer = endpoint
+        .remote_address
+        .parse::<IpAddr>()
+        .map_err(|_| Error::Invalid)?;
+    let generator = socket::Generator::new(engine, peer, route, lifetime.clone());
+    let server = create_server(listener, &endpoint, generator).await?;
+    match tcp::start(local, lifetime).await {
+        Ok(address) => endpoint.urls.push(format!("turn:{address}?transport=tcp")),
+        Err(error) => {
+            if let Err(close_error) = server.close().await {
+                eprintln!("native media adapter cleanup failed: {close_error}");
+            }
+            return Err(error.into());
+        }
+    }
+    Ok((server, endpoint))
 }
 
 impl Drop for MediaProxy {

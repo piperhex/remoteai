@@ -58,6 +58,10 @@ device arm64 and both simulator architectures during installation of the local C
   credentials and allow datagrams only to/from the counterpart's virtual IP while its route is direct. Per-view
   close and grant revocation stop allocations; no raw media crosses the JSON ABI. A peer-specific UDP receive
   registration allows ICE's initial inbound packet without first sending to that port.
+  Both UDP and TCP loopback endpoints are available: Chromium on Windows binds UDP to enumerated physical
+  interfaces that cannot reach `127.0.0.1`, while TCP selects loopback correctly. TCP framing terminates on the
+  same device; the remote media still uses the verified native datagram route. Local TCP clients are bounded,
+  expire when idle, and stop when the view or grant closes; authentication and peer restrictions are unchanged.
 
 ## Desktop media regression
 
@@ -69,8 +73,10 @@ With npm dependencies and Microsoft Edge installed, run the additional browser i
 cargo test --manifest-path crates/chat-connectivity/Cargo.toml browser_media -- --ignored --nocapture
 ```
 
-It verifies decoded video, received audio and control messages with Chromium WebRTC, including multiple initial
-allocations being pruned during BUNDLE negotiation. It does not measure real carrier NAT success rates.
+It verifies decoded video, received audio and control messages with Chromium WebRTC, both with the default route
+and after media permission exposes physical/virtual interfaces. Only native adapter candidates are exchanged so
+a same-machine host candidate cannot conceal an adapter failure. It also exercises BUNDLE allocation pruning.
+It does not measure real carrier NAT success rates.
 
 ## Android binary downloads regression
 
