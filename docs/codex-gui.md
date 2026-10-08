@@ -251,6 +251,21 @@ First installation activates immediately; updates use the existing idle activati
 next launch. An unfinished automatic download does not block offline import. This file picker is local to
 the desktop; when using a remote computer, perform the import in Remote AI on that computer.
 
+Windows VM verification (2026-10-08, source `6fe753e1`): the packaged desktop build was tested through
+the native file picker in the Hyper-V `win11` VM. The official `rust-v0.161.0` Windows x64 package
+contained 159,175,817 bytes and matched release SHA-256
+`f3093b2483f857ae9085e87e1cc0d22488f65d2374889e4466c23a4f3d374c2d`.
+After preserving the original CLI directory, deleting the active installation and automatic-download cache,
+and disconnecting both VM network adapters, importing the complete archive without release metadata
+installed `0.161.0` and loaded existing conversations. Restarting the app retained the installed version.
+The VM network connections were restored afterward.
+
+The same VM test confirmed that importing an already installed version displays the version rejection,
+while importing a deliberately truncated 64 KiB archive displays the damaged-package/extraction error.
+**日志诊断 → 错误日志 → Codex CLI** retained `extract archive entry` and the original
+`unexpected end of file` cause, with local paths redacted. Neither case reported insufficient disk space.
+The clean offline import succeeded; the originally reported failure with a complete package was not reproduced.
+
 Both the executable and the conversation data live under the Tauri application data directory (`dev.codex.switch`):
 
 ```text
