@@ -3,7 +3,8 @@ import type { EChartsCoreOption } from "echarts/core";
 import type { Language } from "../../i18n";
 import { normalizeThemeColor } from "../../utils/theme";
 import { quotaChartLabels } from "./quotaChartLabels";
-import type { QuotaChartData, QuotaInterval, QuotaView } from "./quotaHistoryData";
+import type { QuotaChartData, QuotaInterval, QuotaSeriesPoint, QuotaView } from "./quotaHistoryData";
+import { sampleQuotaSeries, type QuotaVisibleRange } from "./quotaSeriesSampling";
 
 interface QuotaOptionProps {
   data: QuotaChartData;
@@ -15,6 +16,7 @@ interface QuotaOptionProps {
   language: Language;
   dark: boolean;
   themeColor: string;
+  visibleRange?: QuotaVisibleRange;
 }
 
 interface TooltipEntry {
@@ -45,16 +47,17 @@ function tooltipEntry(value: unknown): TooltipEntry | null {
   };
 }
 
-function formatTimestamp(ts: number, language: Language, interval: QuotaInterval) {
+function timestampFormatter(language: Language, interval: QuotaInterval) {
   return new Intl.DateTimeFormat(getLocale(language), {
     month: "short", day: "numeric", year: "numeric",
     ...(interval === "day" ? {} : { hour: "2-digit", minute: "2-digit", hour12: false } as const),
-  }).format(new Date(ts));
+  });
 }
 
 function tooltipFormatter(options: QuotaOptionProps) {
   const labels = quotaChartLabels(options.language);
   const unit = options.view === "drop" ? labels.points : "%";
+  const timestamp = timestampFormatter(options.language, options.interval);
   const number = new Intl.NumberFormat(options.language === "zh" ? "zh-CN" : "en-US", {
     maximumFractionDigits: 2,
   });
@@ -62,13 +65,14 @@ function tooltipFormatter(options: QuotaOptionProps) {
     const entries = (Array.isArray(params) ? params : [params])
       .map(tooltipEntry).filter((entry): entry is TooltipEntry => entry !== null);
     if (!entries.length) return "";
-    const timestamp = formatTimestamp(entries[0].ts, options.language, options.interval);
+    const formattedTimestamp = timestamp.format(entries[0].ts);
     const rows = entries.map((entry) => {
       const value = entry.value === null ? labels.unknown : `${number.format(entry.value)} ${unit}`;
       return `<div>${escapeHtml(entry.name)}: <b>${escapeHtml(value)}</b></div>`;
     }).join("");
     return `<section style="max-width:400px;white-space:normal;overflow-wrap:anywhere">`
-      + `<strong>${escapeHtml(options.accountLabel)}</strong><div>${escapeHtml(timestamp)}</div>${rows}</section>`;
+      + `<strong>${escapeHtml(options.accountLabel)}</strong>`
+      + `<div>${escapeHtml(formattedTimestamp)}</div>${rows}</section>`;
   };
 }
 
@@ -118,17 +122,23 @@ function quotaAxes(options: QuotaOptionProps, palette: ReturnType<typeof quotaPa
   };
 }
 
-function quotaDataZoom(options: QuotaOptionProps, palette: ReturnType<typeof quotaPalette>) {
+function quotaVisibleRange(options: QuotaOptionProps): QuotaVisibleRange {
   const range = quotaTimeRange(options);
+  return options.visibleRange ?? {
+    startValue: Math.max(range.start, range.end - DEFAULT_VISIBLE_DAYS * DAY_MILLISECONDS), endValue: range.end,
+  };
+}
+
+function quotaDataZoom(options: QuotaOptionProps, palette: ReturnType<typeof quotaPalette>) {
   const shared = {
     xAxisIndex: 0, filterMode: "none",
-    startValue: Math.max(range.start, range.end - DEFAULT_VISIBLE_DAYS * DAY_MILLISECONDS), endValue: range.end,
+    ...quotaVisibleRange(options),
     throttle: 100,
   };
   return [
     {
       ...shared, id: "quota-time-slider", type: "slider", height: 20, bottom: 4, left: 42, right: 18,
-      showDetail: false, showDataShadow: false, moveHandleSize: 0,
+      showDetail: false, showDataShadow: false, moveHandleSize: 0, realtime: false,
       borderColor: palette.grid, fillerColor: `${palette.series[0]}33`,
       handleStyle: { color: palette.series[0], borderColor: palette.series[0] },
       textStyle: { color: palette.text },
@@ -143,20 +153,38 @@ export function quotaChartDescription(options: Pick<QuotaOptionProps, "language"
   return `${labels.title}: ${options.accountLabel}. ${labels.primary} / ${labels.secondary}. ${viewHint}`;
 }
 
+function quotaLineSeries(item: { name: string; data: QuotaSeriesPoint[] }, index: number) {
+  return {
+    ...item, type: "line", smooth: false, connectNulls: false,
+    showSymbol: true, symbolSize: 4,
+    symbol: (_value: unknown, params: { dataIndex: number }) => {
+      const pointIndex = params.dataIndex;
+      const isolated = item.data[pointIndex]?.[1] != null
+        && item.data[pointIndex - 1]?.[1] == null && item.data[pointIndex + 1]?.[1] == null;
+      return isolated ? "circle" : "none";
+    },
+    lineStyle: { width: 2, type: index === 0 ? "solid" : "dashed" },
+    emphasis: { disabled: true },
+  };
+}
+
 export function quotaChartOption(options: QuotaOptionProps): EChartsCoreOption {
   const labels = quotaChartLabels(options.language);
   const palette = quotaPalette(options.dark, options.themeColor);
   const range = quotaTimeRange(options);
+  const visibleRange = quotaVisibleRange(options);
   const series = [
     { name: labels.primary, data: options.data.primary },
     { name: labels.secondary, data: options.data.secondary },
-  ];
+  ].map((item) => ({ ...item, data: sampleQuotaSeries(item.data, visibleRange)
+    .filter(([timestamp]) => timestamp >= range.start && timestamp <= range.end) }));
   return {
     animation: false,
     aria: { enabled: true, label: { description: quotaChartDescription(options) } },
     color: palette.series,
     tooltip: {
       trigger: "axis", confine: true, backgroundColor: palette.panel, textStyle: { color: palette.text },
+      transitionDuration: 0, axisPointer: { animation: false },
       extraCssText: "max-width:400px;white-space:normal;overflow-wrap:anywhere",
       formatter: tooltipFormatter(options),
     },
@@ -164,12 +192,6 @@ export function quotaChartOption(options: QuotaOptionProps): EChartsCoreOption {
     grid: { left: 12, right: 18, top: 45, bottom: 48, containLabel: true },
     dataZoom: quotaDataZoom(options, palette),
     ...quotaAxes(options, palette),
-    series: series.map((item, index) => ({
-      ...item, data: item.data.filter(([ts]) => ts >= range.start && ts <= range.end),
-      type: "line", smooth: false, connectNulls: false,
-      showSymbol: true, showAllSymbol: "auto", symbolSize: 4,
-      lineStyle: { width: 2, type: index === 0 ? "solid" : "dashed" },
-      emphasis: { focus: "series" },
-    })),
+    series: series.map(quotaLineSeries),
   };
 }

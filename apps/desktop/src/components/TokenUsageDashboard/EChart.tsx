@@ -8,6 +8,7 @@ interface EChartProps {
   label: string;
   className?: keyof typeof styles;
   preserveZoomKey?: string;
+  onZoomChange?: (range: ChartZoomRange) => void;
 }
 
 interface ChartZoomRange {
@@ -31,11 +32,22 @@ function withZoomRange(option: EChartsOption, range: ChartZoomRange | null) {
   return { ...option, dataZoom };
 }
 
-export function EChart({ option, label, className, preserveZoomKey }: EChartProps) {
+function withLegendSelection(option: EChartsOption, chart: EChartsType) {
+  if (!option.legend || typeof option.legend !== "object" || Array.isArray(option.legend)) return option;
+  const legends = chart.getOption().legend;
+  const current = Array.isArray(legends) ? legends[0] : undefined;
+  if (!current || typeof current !== "object" || !("selected" in current)) return option;
+  return { ...option, legend: { ...option.legend, selected: current.selected } };
+}
+
+export function EChart({ option, label, className, preserveZoomKey, onZoomChange }: EChartProps) {
   const elementRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<EChartsType | null>(null);
   const zoomRef = useRef<ChartZoomRange | null>(null);
   const zoomKeyRef = useRef<string>();
+  const zoomHandlerRef = useRef(onZoomChange);
+
+  useEffect(() => { zoomHandlerRef.current = onZoomChange; }, [onZoomChange]);
 
   useEffect(() => {
     const element = elementRef.current;
@@ -43,7 +55,10 @@ export function EChart({ option, label, className, preserveZoomKey }: EChartProp
     const chart = init(element, undefined, { renderer: "canvas" });
     chartRef.current = chart;
     chart.on("datazoom", () => {
-      if (zoomKeyRef.current !== undefined) zoomRef.current = readZoomRange(chart);
+      if (zoomKeyRef.current === undefined) return;
+      const range = readZoomRange(chart);
+      zoomRef.current = range;
+      if (range) zoomHandlerRef.current?.(range);
     });
     const observer = new ResizeObserver(() => chart.resize());
     observer.observe(element);
@@ -57,10 +72,12 @@ export function EChart({ option, label, className, preserveZoomKey }: EChartProp
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
-    if (zoomKeyRef.current !== preserveZoomKey) zoomRef.current = null;
+    const sameScope = preserveZoomKey !== undefined && zoomKeyRef.current === preserveZoomKey;
+    if (!sameScope) zoomRef.current = null;
     zoomKeyRef.current = preserveZoomKey;
+    const nextOption = sameScope ? withLegendSelection(option, chart) : option;
     // Render zoom views before they can be replaced or disposed during rapid navigation.
-    chart.setOption(withZoomRange(option, zoomRef.current), {
+    chart.setOption(withZoomRange(nextOption, zoomRef.current), {
       notMerge: true, lazyUpdate: preserveZoomKey === undefined,
     });
   }, [option, preserveZoomKey]);

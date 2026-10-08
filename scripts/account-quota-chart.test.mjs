@@ -19,7 +19,11 @@ function loadModule(path, dependencies = {}, globals = {}) {
 const componentPath = "../apps/desktop/src/components/TokenUsageDashboard/";
 const { buildQuotaChartData } = loadModule(`${componentPath}quotaHistoryData.ts`);
 const { quotaChartOption } = loadModule(`${componentPath}quotaChartOption.ts`, {
-  "./quotaChartLabels": loadModule(`${componentPath}quotaChartLabels.ts`),
+  "../../i18n": { getLocale: language => language === "zh" ? "zh-CN" : "en-US" },
+  "./quotaChartLabels": loadModule(`${componentPath}quotaChartLabels.ts`, {
+    "../../i18n/guiText": { guiText: text => text },
+  }),
+  "./quotaSeriesSampling": loadModule(`${componentPath}quotaSeriesSampling.ts`),
   "../../utils/theme": loadModule("../apps/desktop/src/utils/theme.ts"),
 });
 const START = new Date(2026, 8, 6, 0, 0, 0).getTime() / 1_000;
@@ -171,11 +175,13 @@ test("accessibility describes the quota series and missing periods without enume
 
 function chartHarness() {
   const refs = [], effects = [], pending = [], updates = [], listeners = new Map();
-  let refIndex = 0, effectIndex = 0, currentZoom, disposed = false, disconnected = false;
+  let refIndex = 0, effectIndex = 0, currentZoom, currentLegend, disposed = false, disconnected = false;
   const chart = {
     on: (name, callback) => listeners.set(name, callback),
-    getOption: () => ({ dataZoom: [currentZoom] }),
-    setOption: (option, flags) => { currentZoom = option.dataZoom?.[0]; updates.push(flags); },
+    getOption: () => ({ dataZoom: [currentZoom], legend: [currentLegend] }),
+    setOption: (option, flags) => {
+      currentZoom = option.dataZoom?.[0]; currentLegend = option.legend; updates.push(flags);
+    },
     resize: () => {}, dispose: () => { disposed = true; },
   };
   const { EChart } = loadModule(`${componentPath}EChart.tsx`, {
@@ -198,13 +204,15 @@ function chartHarness() {
   });
   return {
     updates,
-    render: (option, preserveZoomKey) => {
+    render: (option, preserveZoomKey, onZoomChange) => {
       refIndex = 0; effectIndex = 0;
-      EChart({ option, label: "Quota", preserveZoomKey });
+      EChart({ option, label: "Quota", preserveZoomKey, onZoomChange });
       while (pending.length) pending.shift()();
     },
     zoom: range => { currentZoom = range; listeners.get("datazoom")(); },
     current: () => currentZoom,
+    selectLegend: selected => { currentLegend = { selected }; },
+    legend: () => currentLegend,
     unmount: () => { effects.forEach(effect => effect.cleanup?.()); return disposed && disconnected; },
   };
 }
@@ -238,4 +246,62 @@ test("ordinary charts retain lazy rendering without quota zoom preservation", ()
   const harness = chartHarness();
   harness.render({ series: [] });
   assert.equal(harness.updates[0].lazyUpdate, true);
+});
+
+test("zoom reports the selected timestamps to the latest sampling callback only", () => {
+  const harness = chartHarness();
+  const obsolete = [], current = [];
+  harness.render({ dataZoom: [{ startValue: 0, endValue: 100 }] }, "account", range => obsolete.push(range));
+  harness.render({ dataZoom: [{ startValue: 0, endValue: 100 }] }, "account", range => current.push(range));
+  harness.zoom({ startValue: 30, endValue: 50 });
+  assert.equal(obsolete.length, 0);
+  assert.equal(current.length, 1);
+  assert.equal(current[0].startValue, 30);
+  harness.zoom({ startValue: NaN, endValue: 50 });
+  assert.equal(current.length, 1);
+  harness.unmount();
+});
+
+test("dense charts resample zoomed history while retaining the full slider range", () => {
+  const count = 30_000;
+  const points = Array.from({ length: count }, (_, index) => snapshot(index / 60, 100 - index / count * 100));
+  const endTs = points.at(-1).ts;
+  const data = build(points, { endTs, view: "remaining" });
+  const settings = { data, accountLabel: "account", startTs: START, endTs,
+    interval: "sixHours", view: "remaining", language: "en", dark: false, themeColor: "#35ada7" };
+  const overview = quotaChartOption(settings);
+  assert.ok(overview.series[0].data.length <= 800);
+  assert.equal(overview.series[1].data.length, 0);
+  assert.equal(overview.series[0].symbol(null, { dataIndex: 0 }), "none");
+  assert.equal(overview.dataZoom[0].realtime, false);
+  const visibleRange = { startValue: points[500].ts * 1_000, endValue: points[510].ts * 1_000 };
+  const zoomed = quotaChartOption({ ...settings, visibleRange });
+  assert.equal(zoomed.xAxis.min, START * 1_000);
+  assert.equal(zoomed.xAxis.max, endTs * 1_000);
+  assert.deepEqual(Array.from(zoomed.series[0].data, point => Array.from(point)),
+    points.slice(499, 511).map(point => [point.ts * 1_000, point.primaryRemainingPercent]));
+  assert.equal(zoomed.dataZoom[0].startValue, visibleRange.startValue);
+  assert.equal(zoomed.dataZoom[0].endValue, visibleRange.endValue);
+});
+
+test("isolated observations remain visible without adding symbols to continuous lines", () => {
+  const data = build([snapshot(0, 95), snapshot(3, 80)], { view: "remaining" });
+  const option = quotaChartOption({ data, accountLabel: "account", startTs: START, endTs: START + 4 * HOUR,
+    interval: "hour", view: "remaining", language: "en", dark: false, themeColor: "#35ada7" });
+  assert.equal(option.series[0].symbol(null, { dataIndex: 0 }), "circle");
+  assert.equal(option.series[0].symbol(null, { dataIndex: 1 }), "none");
+  assert.equal(option.series[0].symbol(null, { dataIndex: 2 }), "circle");
+});
+
+test("resampling and polling preserve hidden series but a new chart scope resets them", () => {
+  const harness = chartHarness();
+  const option = { legend: {}, dataZoom: [{ startValue: 0, endValue: 100 }] };
+  harness.render(option, "account");
+  harness.selectLegend({ Primary: true, Secondary: false });
+  harness.zoom({ startValue: 20, endValue: 40 });
+  harness.render({ ...option }, "account");
+  assert.equal(harness.legend().selected.Secondary, false);
+  harness.render({ ...option }, "other");
+  assert.equal(harness.legend().selected, undefined);
+  harness.unmount();
 });
