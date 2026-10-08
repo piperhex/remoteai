@@ -14,6 +14,7 @@ import { ImageFileDownload } from './ImageFileDownload';
 import { localImageSource } from '../../../../shared/chat/imageSources';
 import type { PreviewLoadOptions, PreviewProgress } from '../../../../shared/remote-chat/previewProgress';
 import { PreviewTransferProgress } from '../../../../shared/chat/PreviewTransferProgress';
+import { ChatDownloadFile, isDownloadOnlyFile } from './ChatDownloadFile';
 
 export interface FilePreviewContext {
   client: FileClient; threadId: string | null; ready: boolean;
@@ -34,7 +35,7 @@ function TextFile({ path, context, line }: { path: string; context: FilePreviewC
       .catch(() => { if (!observer.signal.aborted) setError(t("暂时无法预览此文件，可以下载后查看。")); });
     return () => { observer.abort(); };
   }, [context.load, context.threadId, context.ready, path]);
-  if (error) return <p className="chat-error" role="status">{t(error)}</p>;
+  if (error) return <p className="chat-file-preview-note" role="status">{t(error)}</p>;
   if (!result) return <PreviewTransferProgress progress={progress} label={t("正在读取文件…")} />;
   return <>{line && <p className="chat-muted">{t('引用位置：第 {line} 行', { line })}</p>}
     {isHtmlPath(path) ? <ChatHtmlPreview text={result.text} />
@@ -72,8 +73,10 @@ export function ChatFilePreview({ path, line, context, onClose }: {
   path: string; line?: number; context: FilePreviewContext; onClose: () => void;
 }) {
   useLanguage();
+  if (isDownloadOnlyFile(path)) return <ChatDownloadFile path={path} context={context} onClose={onClose} />;
   const image = /\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(path);
-  return <AdaptiveSheet open title={path.split(/[\\/]/).at(-1) || t("文件预览")} width={800} onClose={onClose}>
+  return <AdaptiveSheet open truncateTitle title={path.split(/[\\/]/).at(-1) || t("文件预览")}
+    width={800} onClose={onClose}>
     <div className="chat-detail-stack">
       {localImageSource(path) ? <ImageFileDownload path={path} /> : <FileDownloadButton path={path} context={context} />}
       {image ? <ChatImage source={path} description={t("文件预览")} />

@@ -57,6 +57,28 @@ test('keeps preview downloads running between pages and isolates accounts', asyn
   await expect(card(page)).toContainText('文件已就绪');
 });
 
+test('file download cards show managed progress and preserve pause and resume actions', async ({ page }, info) => {
+  await open(page);
+  await page.getByRole('button', { name: '预览文件' }).click();
+  const sheet = page.locator('.chat-download-sheet');
+  await sheet.getByRole('button', { name: '下载', exact: true }).click();
+  const progress = sheet.getByRole('progressbar', { name: '下载进度', exact: true });
+  await expect.poll(() => progress.getAttribute('value')).toMatch(/^[1-9]/);
+  await sheet.getByRole('button', { name: '暂停下载', exact: true }).click();
+  await expect(sheet.locator('.file-download-progress-heading')).toContainText('已暂停');
+  const checkpoint = await progress.getAttribute('value');
+  await page.screenshot({ path: `../../.codex-tmp/file-download-paused-${info.project.name}.png` });
+  await sheet.getByRole('button', { name: '关闭', exact: true }).click();
+  await page.getByRole('button', { name: '预览文件' }).click();
+  await expect(progress).toHaveAttribute('value', checkpoint!);
+  await sheet.getByRole('button', { name: '继续下载', exact: true }).click();
+  await expect(sheet.getByRole('button', { name: '保存到设备', exact: true })).toBeEnabled();
+  await expect(progress).toHaveAttribute('value', '100');
+  const saving = page.waitForEvent('download');
+  await sheet.getByRole('button', { name: '保存到设备', exact: true }).click();
+  expect(await readFile((await (await saving).path())!)).toEqual(Buffer.alloc(4 * 1024 * 1024, 'A'));
+});
+
 test('uses five concurrent blocks by default and applies administrator changes while downloading', async ({ page }) => {
   await open(page);
   await page.evaluate(() => { window.downloadFixture.size = 16 * 1024 * 1024; });

@@ -1,11 +1,15 @@
 import { useRef, useState, useSyncExternalStore } from 'react';
-import { Download, Pause } from 'lucide-react';
 import { useFileDownload } from '../../../../shared/remote-chat/useFileDownload';
+import { previewProgressText } from '../../../../shared/chat/previewProgress';
 import { t } from '../i18n';
 import type { FilePreviewContext } from '../chat/ChatFilePreview';
 import { browserDownloadTarget, prepareBrowserDownload } from '../chat/fileDownloadTarget';
 import { downloadManager } from './manager';
 import type { DownloadConnection } from './types';
+import { FileDownloadControl } from './FileDownloadControl';
+
+const DOWNLOAD_STATUS = { queued: '等待下载', preparing: '准备并校验文件', downloading: '下载中',
+  verifying: '正在校验', ready: '文件已就绪', saving: '正在保存', paused: '已暂停', completed: '已完成', failed: '下载失败' };
 
 interface Props { path: string; context: FilePreviewContext }
 
@@ -25,11 +29,9 @@ function ManagedDownload({ path, context, connection }: Props & { connection: Do
   const pending = useRef(false);
   const running = task && ['queued', 'preparing', 'downloading', 'verifying'].includes(task.status);
   const completed = task?.status === 'completed' || task?.status === 'ready';
-  const percent = task?.size ? Math.round(task.received / task.size * 100) : 0;
-  let label = t('下载');
-  if (completed) label = t('保存到设备');
-  else if (running) label = t('暂停下载 · {percent}%', { percent });
-  else if (task) label = t('继续下载');
+  const progress = task && previewProgressText({ received: task.received, status: task.status,
+    total: task.status === 'queued' || task.status === 'preparing' ? undefined : task.size,
+    bytesPerSecond: task.status === 'downloading' ? task.bytesPerSecond : undefined });
   const run = async () => {
     if (pending.current) return;
     pending.current = true; setBusy(true); setError('');
@@ -43,23 +45,25 @@ function ManagedDownload({ path, context, connection }: Props & { connection: Do
     } catch { setError('操作未完成，请检查浏览器存储空间后重试。'); }
     finally { pending.current = false; setBusy(false); }
   };
-  return <div><button type="button" className="chat-button" onClick={() => { void run(); }}
-    disabled={busy || task?.status === 'saving' || (!running && !completed && (!context.ready || !context.threadId))}>
-    {running ? <Pause size={15} /> : <Download size={15} />}{label}</button>
-    {task && <p className="chat-muted" style={{ maxWidth: 400 }}>{t('可在设置中的“下载管理”查看进度。')}</p>}
-    {(error || task?.message) && <p role="status" className="chat-muted" style={{ maxWidth: 400 }}>
-      {t(error || task?.message || '')}</p>}
-  </div>;
+  let action: 'download' | 'save' | 'pause' | 'resume' = 'download';
+  if (completed || task?.status === 'saving') action = 'save';
+  else if (running) action = 'pause';
+  else if (task) action = 'resume';
+  return <FileDownloadControl action={action} onAction={() => { void run(); }}
+    disabled={busy || task?.status === 'saving' || (!running && !completed && (!context.ready || !context.threadId))}
+    progress={task && progress ? { percent: progress.percent, status: DOWNLOAD_STATUS[task.status],
+      detail: `${progress.amount}${task.status === 'downloading' && task.bytesPerSecond ? ` · ${progress.speed}` : ''}`,
+    } : undefined} message={error || task?.message}
+    note={task ? '可在设置中的“下载管理”查看进度。' : undefined} />;
 }
 
 function DirectDownload({ path, context }: Props) {
   const download = useFileDownload({ ...context, path, target: browserDownloadTarget,
     prepare: () => prepareBrowserDownload(path), success: t('文件已交给浏览器保存') });
-  return <div><button type="button" className="chat-button"
+  return <FileDownloadControl action={download.busy ? 'cancel' : 'download'}
     disabled={!download.busy && (!context.ready || !context.threadId)}
-    onClick={download.busy ? download.cancel : download.start}><Download size={15} />
-    {download.busy ? t('取消下载 · {percent}%', { percent: download.percent }) : t('下载')}</button>
-    {download.busy && !!download.detail && <p className="chat-muted" style={{ maxWidth: 400 }}>{download.detail}</p>}
-    {!!download.message && <p role="status" className="chat-muted" style={{ maxWidth: 400 }}>{t(download.message)}</p>}
-  </div>;
+    onAction={download.busy ? download.cancel : download.start}
+    progress={download.busy ? { percent: download.detail ? download.percent : undefined,
+      status: download.detail ? '下载中' : '准备下载', detail: download.detail } : undefined}
+    message={download.message} />;
 }

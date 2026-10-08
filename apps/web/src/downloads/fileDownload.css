@@ -1,0 +1,34 @@
+.file-download-control { display: grid; gap: 12px; width: 100%; max-width: 400px; }
+.file-download-progress { display: grid; gap: 10px; min-width: 0; }
+.file-download-progress-heading {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  color: var(--ink, #17251f); font-size: 13px; line-height: 1.5;
+}
+.file-download-progress-heading strong { color: #14806f; font-size: 14px; font-variant-numeric: tabular-nums; }
+.file-download-progress progress {
+  display: block; width: 100%; height: 6px; overflow: hidden; border: 0; border-radius: 999px;
+  appearance: none; background: #e8efeb; accent-color: #14806f;
+}
+.file-download-progress progress::-webkit-progress-bar { border-radius: 999px; background: #e8efeb; }
+.file-download-progress progress::-webkit-progress-value { border-radius: 999px; background: #14806f; }
+.file-download-progress progress::-moz-progress-bar { border-radius: 999px; background: #14806f; }
+.file-download-detail {
+  margin: 0; color: var(--muted, #718079); font-size: 12px; line-height: 1.6; font-variant-numeric: tabular-nums;
+}
+.file-download-actions { display: flex; justify-content: flex-end; }
+.file-download-action {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px;
+  padding: 8px 16px; border: 1px solid transparent; border-radius: 9px;
+  color: #fff; background: #14806f; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background 150ms, border-color 150ms;
+}
+.file-download-action:hover:not(:disabled) { background: #106a5c; }
+.file-download-action.is-secondary { color: #53665b; background: #fff; border-color: #dfe8e3; }
+.file-download-action.is-secondary:hover:not(:disabled) { background: #f2f6f4; border-color: #c2d4c9; }
+.file-download-action:focus-visible { outline: 2px solid #14806f; outline-offset: 3px; }
+.file-download-action:disabled { opacity: .45; cursor: default; }
+.file-download-action svg { flex-shrink: 0; }
+.file-download-message, .file-download-note {
+  max-width: 400px; margin: 0; color: var(--muted, #718079); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere;
+}
+@media (prefers-reduced-motion: reduce) { .file-download-action { transition: none; } }

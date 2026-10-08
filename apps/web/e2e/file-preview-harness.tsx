@@ -5,6 +5,10 @@ import '../src/styles.css';
 import '../src/chat/chat.css';
 import '../src/chat/messages.css';
 
+const params = new URLSearchParams(location.search);
+const DOWNLOAD_BYTES = 8 * 1024 * 1024;
+Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true });
+
 const files: Record<string, string> = {
   'verification.md': markdown, 'README.MARKDOWN': markdown, 'long.md': longMarkdown,
   'empty.md': ' \n', 'source.ts': sourceCode, [externalCodePath]: sourceCode,
@@ -14,18 +18,25 @@ const files: Record<string, string> = {
     + '</script>',
 };
 const context: FilePreviewContext = {
-  threadId: 'file-preview', ready: true,
+  threadId: 'file-preview', ready: params.get('download') !== 'offline',
   load: async (_threadId, path) => {
     if (!(path in files)) throw new Error('File unavailable');
     return { path, text: files[path] };
   },
   client: {
-    open: async () => { throw new Error('Downloads are unavailable in this preview fixture'); },
-    read: async () => { throw new Error('Downloads are unavailable in this preview fixture'); },
+    open: async (_threadId, path) => {
+      if (params.get('download') === 'error') throw new Error('Download unavailable');
+      return { id: '11111111-1111-4111-8111-111111111111', size: DOWNLOAD_BYTES,
+        name: path.split(/[\\/]/).at(-1)!, mimeType: 'application/octet-stream' };
+    },
+    read: async ({ offset, length }) => {
+      await new Promise(resolve => setTimeout(resolve, Number(params.get('delay') || 600)));
+      return { offset, data: btoa('A'.repeat(length)) };
+    },
     close: async () => {},
   },
 };
-const path = new URLSearchParams(location.search).get('path') ?? 'verification.md';
+const path = params.get('path') ?? 'verification.md';
 createRoot(document.getElementById('root')!).render(
   <ChatFilePreview path={path} line={3} context={context} onClose={() => {}} />,
 );

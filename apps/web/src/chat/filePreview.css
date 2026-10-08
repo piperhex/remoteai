@@ -1,0 +1,27 @@
+.chat-download-sheet .ant-modal-content { padding: 22px 24px 24px; border-radius: 18px; }
+.chat-download-sheet .ant-modal-header { margin-bottom: 24px; padding-right: 32px; }
+.chat-download-sheet .modal-heading strong { color: var(--muted, #718079); font-size: 13px; font-weight: 500; }
+.chat-download-file { display: grid; gap: 16px; min-width: 0; }
+.chat-download-file-heading { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.chat-download-file-icon {
+  display: grid; place-items: center; flex-shrink: 0; width: 52px; height: 60px;
+  border: 1px solid #dcebe3; border-radius: 12px; background: #eff7f3; color: #14806f;
+}
+.chat-download-file-info { display: grid; gap: 7px; min-width: 0; }
+.chat-download-file-info h3 {
+  margin: 0; color: var(--ink, #17251f); font-size: 15px; font-weight: 600; line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.chat-download-file-type { color: var(--muted, #718079); font-size: 11px; font-weight: 600; letter-spacing: .6px; }
+.chat-download-file-hint {
+  max-width: 400px; margin: 0; color: var(--muted, #718079); font-size: 12px; line-height: 1.6;
+}
+.chat-download-file-transfer { min-width: 0; padding-top: 18px; border-top: 1px solid #edf1ef; }
+.chat-download-file-transfer .file-download-control { max-width: none; }
+.chat-download-file-transfer .file-download-action:not(.is-secondary) { width: 100%; }
+.chat-file-preview-note { max-width: 400px; margin: 0; color: var(--muted, #718079); font-size: 13px; line-height: 1.6; }
+@media (max-width: 767px) {
+  .chat-download-sheet .sheet-header h2 { font-size: 16px; letter-spacing: 0; }
+  .chat-download-file { padding-bottom: 18px; }
+  .chat-download-file-transfer .file-download-action { min-height: 42px; }
+}

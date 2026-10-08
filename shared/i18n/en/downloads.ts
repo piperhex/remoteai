@@ -1,4 +1,6 @@
 export const downloads: Readonly<Record<string, string>> = {
+  '文件下载': 'File download', '下载进度': 'Download progress', '准备下载': 'Preparing download',
+  '取消下载': 'Cancel download', '暂停下载': 'Pause download',
   '下载记录已满，请删除不再需要的记录后重试。': 'Download history is full. Remove records you no longer need and try again.',
   '下载数据无效，请重新连接后重试。': 'Invalid download data. Reconnect and try again.',
   '无法确认文件内容，请重新下载。': 'Could not verify the file. Download it again.',
