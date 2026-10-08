@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from "vitest";
-import { defaultLanguage, translate, type TranslationKey } from "../i18n";
+import { translate, type TranslationKey } from "../i18n";
 import { russian } from "./ru";
 import { russian as interfaceCopy } from "../../../../shared/i18n/ru";
 import { guiText, setGuiLanguage } from "./guiText";
@@ -18,10 +18,7 @@ it("covers desktop keys and preserves interpolation placeholders", () => {
   }
 });
 
-it("selects Russian only for Russian system locales and keeps existing languages", () => {
-  expect(defaultLanguage("ru-RU")).toBe("ru");
-  expect(defaultLanguage("ru")).toBe("ru");
-  expect(defaultLanguage("en-US")).toBe("zh");
+it("keeps Russian available as an explicit choice and preserves user content", () => {
   setGuiLanguage("ru");
   expect(guiText("取消")).toBe("Отмена");
   expect(guiText("未匹配的用户内容")).toBe("未匹配的用户内容");

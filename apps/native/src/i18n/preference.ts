@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { setInterfaceLanguage } from '../../../../shared/i18n/interfaceLanguage';
-import { isLanguage, systemLanguage, type Language } from '../../../../shared/i18n/language';
+import { deviceLanguage, isLanguage, type Language } from '../../../../shared/i18n/language';
 
 export const LANGUAGE_KEY = 'codex-switch.native.language.v1';
 let revision = 0;
@@ -12,8 +12,7 @@ export async function loadLanguage(): Promise<void> {
   try { saved = await SecureStore.getItemAsync(LANGUAGE_KEY); }
   catch { /* A language preference must never prevent startup. */ }
   if (current !== revision) return;
-  const locale = Intl.DateTimeFormat().resolvedOptions().locale;
-  setInterfaceLanguage(isLanguage(saved) ? saved : systemLanguage(locale));
+  setInterfaceLanguage(isLanguage(saved) ? saved : deviceLanguage());
 }
 
 export function setLanguage(language: Language): Promise<boolean> {

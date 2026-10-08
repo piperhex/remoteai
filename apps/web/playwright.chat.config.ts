@@ -17,7 +17,7 @@ export default defineConfig({
   outputDir: '../../.codex-tmp/h5-chat-playwright',
   reporter: [['list'], ['html', { outputFolder: '../../.codex-tmp/h5-chat-report', open: 'never' }]],
   use: { baseURL: webUrl, channel: process.env.CHAT_TEST_BROWSER ?? 'msedge',
-    headless: true, actionTimeout: 15_000, navigationTimeout: 20_000,
+    locale: 'zh-CN', headless: true, actionTimeout: 15_000, navigationTimeout: 20_000,
     screenshot: 'only-on-failure', trace: 'retain-on-failure' },
   projects: [
     { name: 'mobile', use: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true } },

@@ -1,4 +1,5 @@
 export type Language = 'zh' | 'en' | 'ru';
+export const DEFAULT_LANGUAGE: Language = 'en';
 export const LANGUAGE_OPTIONS = [
   { value: 'zh', label: '简体中文' },
   { value: 'en', label: 'English' },
@@ -8,8 +9,20 @@ export const languageLabel = (language: Language) => LANGUAGE_OPTIONS.find(item 
 export const localeForLanguage = (language: Language) => ({ zh: 'zh-CN', en: 'en-US', ru: 'ru-RU' })[language];
 export const isLanguage = (value: unknown): value is Language => value === 'zh' || value === 'en' || value === 'ru';
 
-/** Preserve the existing Chinese default for unrecognised locales. */
+/** Use Chinese only in a Chinese locale; all other locales fall back to English. */
 export function systemLanguage(locale: string): Language {
-  if (/^ru(?:[-_]|$)/i.test(locale)) return 'ru';
-  return /^en(?:[-_]|$)/i.test(locale) ? 'en' : 'zh';
+  return /^zh(?:[-_.@]|$)/i.test(locale.trim()) ? 'zh' : DEFAULT_LANGUAGE;
+}
+
+type DesktopLocaleGlobal = typeof globalThis & { __REMOTE_AI_SYSTEM_LOCALE__?: string };
+
+/** Linux supplies its message locale before rendering; other clients use native locale APIs. */
+export function deviceLanguage(): Language {
+  try {
+    const desktopLocale = (globalThis as DesktopLocaleGlobal).__REMOTE_AI_SYSTEM_LOCALE__;
+    const locale = desktopLocale || globalThis.navigator?.language || Intl.DateTimeFormat().resolvedOptions().locale;
+    return systemLanguage(locale);
+  } catch {
+    return DEFAULT_LANGUAGE;
+  }
 }

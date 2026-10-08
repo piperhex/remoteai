@@ -32,6 +32,12 @@ chmod +x "./CodexSwitch.AppImage"
 同样需要将文件名替换为实际名称。AppImage 若提示缺少系统库或 FUSE，可改用 `.deb` 安装。
 后面的后台服务示例使用 `.deb` 提供的 `/usr/bin/csw`。
 
+### 界面语言
+
+首次启动时，中文系统默认显示中文，其他语言环境默认显示英文。
+应用跟随桌面环境提供的系统语言；Linux 的 `LANG`、`LC_MESSAGES`、`LC_ALL` 会影响这一设置。
+也可在 **设置 / Settings → 语言 / Language** 中选择中文、英文或俄文，已保存的选择优先于系统语言。
+
 ### AppImage 提示 `AppRun.wrapped: Permission denied`
 
 已确认 v1.6.17 和 v1.6.18 的 AppImage 内部启动文件缺少其他用户的执行权限，

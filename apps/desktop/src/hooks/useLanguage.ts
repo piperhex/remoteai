@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { publishLanguageChange, subscribeToLanguageChanges } from "../api/backend";
-import { defaultLanguage, getLocale, LANGUAGE_STORAGE_KEY, isLanguage, translate, type Language } from "../i18n";
+import { getLocale, LANGUAGE_STORAGE_KEY, isLanguage, translate, type Language } from "../i18n";
+import { deviceLanguage } from "../../../../shared/i18n/language";
 import { setGuiLanguage } from "../i18n/guiText";
 
 function storedLanguage(): Language {
   try {
     const value = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    return isLanguage(value) ? value : defaultLanguage(navigator.language);
+    return isLanguage(value) ? value : deviceLanguage();
   } catch {
-    return defaultLanguage(navigator.language);
+    return deviceLanguage();
   }
 }
 

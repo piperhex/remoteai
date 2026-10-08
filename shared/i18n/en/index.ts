@@ -6,10 +6,12 @@ import { mobile } from './mobile';
 import { reliabilityEnglish } from '../chatReliability';
 import { reviewEnglish } from '../taskReview';
 import { cliImportEnglish } from '../cliImport';
+import { desktop } from './desktop';
 
 export const english: Readonly<Record<string, string>> = {
   ...messages, ...terminalMessages, ...gitMessages, ...remoteDesktopMessages, ...mobile,
   ...reliabilityEnglish,
   ...reviewEnglish,
   ...cliImportEnglish,
+  ...desktop,
 };

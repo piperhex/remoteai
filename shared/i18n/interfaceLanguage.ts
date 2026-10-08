@@ -1,4 +1,4 @@
-import { isLanguage, type Language } from './language';
+import { deviceLanguage, isLanguage, type Language } from './language';
 
 let language: Language | undefined;
 const listeners = new Set<() => void>();
@@ -9,7 +9,7 @@ export function getInterfaceLanguage(): Language {
     const stored = globalThis.localStorage?.getItem('codex-switch:language');
     if (isLanguage(stored)) return stored;
   } catch { /* The native app and private browser sessions may not have local storage. */ }
-  return 'zh';
+  return deviceLanguage();
 }
 
 export function setInterfaceLanguage(next: Language) {

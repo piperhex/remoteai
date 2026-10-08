@@ -70,5 +70,5 @@ it('notifies mounted consumers only when language changes and supports unsubscri
   setInterfaceLanguage('ru'); setInterfaceLanguage('ru'); setInterfaceLanguage('en');
   unsubscribe(); setInterfaceLanguage('zh');
   expect(changes).toEqual(['ru', 'en']);
-  expect(['zh-CN', 'en-US', 'ru_RU', 'fr-FR'].map(systemLanguage)).toEqual(['zh', 'en', 'ru', 'zh']);
+  expect(['zh-CN', 'en-US', 'ru_RU', 'fr-FR'].map(systemLanguage)).toEqual(['zh', 'en', 'en', 'en']);
 });

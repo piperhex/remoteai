@@ -6,6 +6,9 @@
 
 > Chinese is the default documentation language. For the Chinese README, see [README.md](README.md).
 
+The interface opens in Chinese on Chinese-language systems and English on other systems.
+You can choose English, Chinese, or Russian in Settings; your choice is remembered.
+
 Remote AI is a desktop workspace built on Codex CLI, combining a graphical coding assistant with multi-account management.
 Chat with Codex to understand code, build features, and troubleshoot problems while following progress and file changes.
 It also includes account sign-in and switching, usage monitoring, third-party Providers, a hot-switching local proxy,

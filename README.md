@@ -6,6 +6,9 @@
 
 > For English documentation, please see [README_EN.md](README_EN.md).
 
+首次打开时，中文系统默认显示中文，其他语言的系统默认显示英文。
+你可以在设置中选择中文、English 或 Русский，应用会记住你的选择。
+
 Remote AI 是一款基于 Codex CLI 的桌面工作台，集图形化编程助手与多账号管理于一体。
 你可以直接在应用中与 Codex 对话，理解代码、实现功能、排查问题，并随时查看执行进度和文件改动。
 它还提供账号登录与切换、用量查看、第三方 Provider、本地热切换代理、Token 分析、Skills 市场和一键换肤，

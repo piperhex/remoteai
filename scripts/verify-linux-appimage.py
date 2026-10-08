@@ -87,6 +87,10 @@ def isolated_environment(directory):
     # Xvfb has no hardware renderer. Keep WebKit's sandbox enabled.
     env["WEBKIT_DISABLE_DMABUF_RENDERER"] = "1"
     env["LIBGL_ALWAYS_SOFTWARE"] = "1"
+    # GTK otherwise prefers an inherited Wayland session (for example WSLg),
+    # placing the window outside Xvfb where xwininfo cannot observe it.
+    env["GDK_BACKEND"] = "x11"
+    env.pop("WAYLAND_DISPLAY", None)
     return env
 
 

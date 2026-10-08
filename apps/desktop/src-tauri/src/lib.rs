@@ -52,6 +52,7 @@ mod oauth;
 mod official_models;
 mod official_plugins;
 mod open_code;
+mod platform;
 mod preset_provider;
 mod prompt_plugins;
 mod provider_api_cache;
@@ -118,6 +119,7 @@ pub fn run() {
     }
 
     tauri::Builder::default()
+        .append_invoke_initialization_script(platform::interface_locale::initialization_script())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             match launch_options::LaunchOptions::parse(args) {
                 Ok(options) if options.headless => {

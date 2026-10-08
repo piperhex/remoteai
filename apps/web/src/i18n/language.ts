@@ -1,16 +1,17 @@
 import { useSyncExternalStore } from 'react';
 import { setInterfaceLanguage } from '../../../../shared/i18n/interfaceLanguage';
+import { DEFAULT_LANGUAGE, deviceLanguage, isLanguage, type Language } from '../../../../shared/i18n/language';
 
-export type Language = 'zh' | 'en' | 'ru';
+export type { Language } from '../../../../shared/i18n/language';
 export const LANGUAGE_KEY = 'codex-switch.web.language.v1';
 const listeners = new Set<() => void>();
 
 function readLanguage(): Language {
   try {
     const stored = localStorage.getItem(LANGUAGE_KEY);
-    if (stored === 'en' || stored === 'zh' || stored === 'ru') return stored;
+    if (isLanguage(stored)) return stored;
   } catch { /* Language switching still works without browser storage. */ }
-  return typeof navigator !== 'undefined' && /^ru(?:-|$)/i.test(navigator.language) ? 'ru' : 'zh';
+  return deviceLanguage();
 }
 
 let language = readLanguage();
@@ -44,5 +45,5 @@ if (typeof window !== 'undefined') {
 }
 
 export function useLanguage() {
-  return useSyncExternalStore(subscribe, getLanguage, () => 'zh' as const);
+  return useSyncExternalStore(subscribe, getLanguage, () => DEFAULT_LANGUAGE);
 }
