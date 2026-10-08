@@ -79,6 +79,8 @@ export class ChatConnection {
   private sessionReady = false;
   private socketAuthenticated = false;
   private diagnosticsEnabled = false;
+  private authRenewal = false;
+  private authRenewalTimer?: ReturnType<typeof setTimeout>;
   private leaseTimer?: ReturnType<typeof setTimeout>;
   private readonly renewal = new SessionRenewal(() => this.renewAuthorization());
 
@@ -105,6 +107,7 @@ export class ChatConnection {
     const generation = ++this.generation;
     this.socketAuthenticated = false;
     this.diagnosticsEnabled = false;
+    this.authRenewal = false;
     if (!this.link) this.options.mode('connecting');
     this.connectTimer = setTimeout(() => {
       if (generation !== this.generation) return;
@@ -187,6 +190,7 @@ export class ChatConnection {
   }
 
   private retrySocket() {
+    clearTimeout(this.authRenewalTimer);
     this.generation += 1;
     clearTimeout(this.connectTimer);
     clearTimeout(this.socketErrorTimer);
@@ -216,6 +220,16 @@ export class ChatConnection {
       throw error;
     }
     if (session !== this.resume || !this.active || !this.resume) return;
+    if (this.authRenewal && this.socketAuthenticated && this.socket?.readyState === WebSocket.OPEN) {
+      const socket = this.socket;
+      const credentials = await this.options.authorize();
+      if (session !== this.resume || !this.active) return;
+      if (socket !== this.socket) throw new Error('Connection changed during renewal');
+      socket.send(JSON.stringify({ type: 'renew-auth', accessToken: credentials.accessToken }));
+      clearTimeout(this.authRenewalTimer);
+      this.authRenewalTimer = setTimeout(() => this.fail(CONNECTION_ERRORS.network, true), CONNECTION_TIMEOUT_MS);
+      return;
+    }
     // Keep the data channel, cipher and pending RPCs while authenticating a replacement coordinator socket.
     this.link?.setRelayAvailable(false);
     this.retrySocket();
@@ -225,8 +239,10 @@ export class ChatConnection {
     const message = parseMessage(data);
     if (message.type === CHAT_POLICY_MESSAGE) {
       this.diagnosticsEnabled = message.connectionDiagnostics === 1;
+      this.authRenewal = message.authRenewal === true;
       setChatPolicy(message.policy); return;
     }
+    if (message.type === 'auth-renewed') { clearTimeout(this.authRenewalTimer); return; }
     if (this.quota.receive(message)) {
       this.link?.setRelayQuotaBlocked(this.quota.blocked);
       if (this.quota.blocked && message.type === 'relay-quota') this.options.error(
@@ -253,7 +269,7 @@ export class ChatConnection {
       this.lease(message.expiresAt);
       clearTimeout(this.connectTimer);
       this.attempt = 0;
-      this.link?.setRelayAvailable(true);
+      if (message.renewed !== true) this.link?.setRelayAvailable(true);
       return;
     }
     if (message.type === 'peer-offline') this.link?.setRelayAvailable(false);
@@ -341,6 +357,7 @@ export class ChatConnection {
   }
 
   private disconnected() {
+    clearTimeout(this.authRenewalTimer);
     this.generation += 1;
     clearTimeout(this.timer);
     this.timer = undefined;

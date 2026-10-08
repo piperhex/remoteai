@@ -82,13 +82,13 @@ it('skips socket backoff on foreground return without reinitializing chat or ove
 
 it('negotiates diagnostics per socket and disables them again when reconnecting to an older server', async () => {
   expect(state.options!.diagnosticsEnabled?.()).toBe(false);
-  Socket.instances[0].receive({ type: 'chat-policy', policy: {}, connectionDiagnostics: 1 });
+  Socket.instances[0].receive({ type: 'chat-policy', policy: DEFAULT_CHAT_POLICY, connectionDiagnostics: 1 });
   await vi.advanceTimersByTimeAsync(0);
   expect(state.options!.diagnosticsEnabled?.()).toBe(true);
   Socket.instances[0].onclose?.({ code: 1006 });
   await vi.advanceTimersByTimeAsync(1500);
   expect(state.options!.diagnosticsEnabled?.()).toBe(false);
-  Socket.instances[1].receive({ type: 'chat-policy', policy: {} });
+  Socket.instances[1].receive({ type: 'chat-policy', policy: DEFAULT_CHAT_POLICY });
   await vi.advanceTimersByTimeAsync(0);
   expect(state.options!.diagnosticsEnabled?.()).toBe(false);
 });
@@ -245,6 +245,40 @@ it('renews before expiry and preserves P2P, pending requests and the authenticat
   expect(state.close).not.toHaveBeenCalled();
   expect(error).not.toHaveBeenCalled();
   expect(mode.mock.calls.flat()).not.toContain('offline');
+});
+
+it('renews Relay on the same socket without pausing pending requests when the server supports it', async () => {
+  const socket = Socket.instances[0];
+  socket.receive({ type: 'chat-policy', policy: DEFAULT_CHAT_POLICY, authRenewal: true });
+  state.options!.mode('relay');
+  renewAuthorization.mockImplementationOnce(async () => { credentials.accessToken = 'renewed-token'; });
+  await vi.advanceTimersByTimeAsync(59_999);
+  const pending = connection.request('request', { operation: 'send', text: 'once' });
+  const request = state.send.mock.calls.at(-1)![0] as { id: string };
+  await vi.advanceTimersByTimeAsync(1);
+  expect(JSON.parse(socket.send.mock.calls.at(-1)![0])).toEqual({ type: 'renew-auth', accessToken: 'renewed-token' });
+  expect(socket.close).not.toHaveBeenCalled();
+  expect(state.relay).not.toHaveBeenCalled();
+  socket.receive({ type: 'resumed', renewed: true, sessionId: 'session', expiresAt: Date.now() + 900_000 });
+  socket.receive({ type: 'auth-renewed', expiresAt: Date.now() + 900_000 });
+  await vi.advanceTimersByTimeAsync(0);
+  state.options!.message({ kind: 'response', id: request.id, data: 'accepted' });
+  await expect(pending).resolves.toBe('accepted');
+  await vi.advanceTimersByTimeAsync(60_000);
+  expect(Socket.instances).toHaveLength(1);
+  expect(state.relay).not.toHaveBeenCalled();
+  expect(state.close).not.toHaveBeenCalled();
+  expect(error).not.toHaveBeenCalled();
+});
+
+it('recovers a missing renewal acknowledgement without dropping the encrypted session', async () => {
+  const socket = Socket.instances[0];
+  socket.receive({ type: 'chat-policy', policy: DEFAULT_CHAT_POLICY, authRenewal: true });
+  await vi.advanceTimersByTimeAsync(90_000);
+  expect(socket.close).toHaveBeenCalledOnce();
+  expect(state.close).not.toHaveBeenCalled();
+  await vi.advanceTimersByTimeAsync(1500);
+  expect(Socket.instances).toHaveLength(2);
 });
 
 it('keeps renewal valid when the coordinator reconnects during the credential refresh', async () => {

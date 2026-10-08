@@ -220,6 +220,10 @@ func (s *hotSessions) resume(input hotJoin, value interface{}) error {
 }
 
 func (s *hotSessions) ready(session *hotSession) {
+	s.notifyReady(session, false)
+}
+
+func (s *hotSessions) notifyReady(session *hotSession, renewed bool) {
 	if session.mobile == nil {
 		return
 	}
@@ -231,6 +235,9 @@ func (s *hotSessions) ready(session *hotSession) {
 		return
 	}
 	message := platform.JSON{"type": "resumed", "sessionId": session.id, "expiresAt": session.expires.UnixMilli()}
+	if renewed {
+		message["renewed"] = true
+	}
 	if native := s.nativeTraversal(session); native != nil {
 		message["nativeTraversal"] = native
 	}

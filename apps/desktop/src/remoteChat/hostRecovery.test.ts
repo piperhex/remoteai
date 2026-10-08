@@ -11,7 +11,8 @@ const state = vi.hoisted(() => ({ options: undefined as LinkOptions | undefined,
 vi.mock('../pages/codexGui/api', () => ({ guiApi: { subscribe: vi.fn(async () => vi.fn()) } }));
 vi.mock('../pages/codexGui/webEvents', () => ({ subscribeGuiEvent: vi.fn(async () => vi.fn()) }));
 vi.mock('./operations', () => ({ ChatOperations: class {
-  release = vi.fn(); execute = state.execute; desktop = { register: state.registerDesktop };
+  release = vi.fn(); execute = state.execute;
+  desktop = { register: state.registerDesktop, diagnose: vi.fn(), nativeMedia: vi.fn() };
 } }));
 vi.mock('./nativeTransport', () => ({ NativeChatTransport: class {
   ready = true; bufferedAmount = 0;
@@ -60,6 +61,20 @@ afterEach(() => { host.close(); vi.useRealTimers(); });
 
 it('applies the initial authenticated lease after constructing the desktop link', () => {
   expect(state.renew).toHaveBeenCalledWith(Date.now() + 120_000);
+});
+
+it('never lets an individual viewer timeout reset the shared native transport', () => {
+  state.options!.reconnectRelay?.();
+  expect(state.reconnect).not.toHaveBeenCalled();
+});
+
+it('extends a renewed lease while leaving the healthy relay path and requests available', () => {
+  state.options!.mode('relay');
+  message({ type: 'resumed', renewed: true, sessionId: 'session', expiresAt: Date.now() + 900_000 });
+  expect(state.renew).toHaveBeenLastCalledWith(Date.now() + 900_000);
+  expect(state.relay).not.toHaveBeenCalled();
+  expect(state.close).not.toHaveBeenCalled();
+  expect(state.reconnect).not.toHaveBeenCalled();
 });
 
 it('preserves direct sessions while Rust reconnects and restores the relay on a resume notification', () => {

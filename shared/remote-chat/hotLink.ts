@@ -42,6 +42,7 @@ export class HotLink {
     failed: error => { if (!(error instanceof ChannelBackpressureError)) this.fallback(); },
   });
   private relay = true;
+  private relayTimedOut = false;
   private quotaBlocked = false;
   private closed = false;
   private mode: ConnectionMode = 'connecting';
@@ -207,6 +208,7 @@ export class HotLink {
       route: probe.route, id, endpoint: frame.observedEndpoint });
     if (path === 'direct' && !this.healthy('direct')) this.directSince = Date.now();
     this.lastPong[path] = Date.now();
+    if (path === 'relay') this.relayTimedOut = false;
     this.choose();
   }
 
@@ -263,11 +265,16 @@ export class HotLink {
       this.peer.recover(this.healthy('direct'), this.relay);
       // Relay probes traverse the coordinator and the remote UI; brief stalls must not reset that socket.
       const relaySilence = now - Math.max(this.relaySince, this.lastPong.relay);
-      if (this.relay && !this.quotaBlocked
+      if (this.relay && !this.quotaBlocked && !this.relayTimedOut
         && this.timedOut('relay', Math.max(this.relaySince, this.lastPong.relay), now)) {
+        this.relayTimedOut = true;
         this.diagnostic('relay-timeout', { elapsedMs: relaySilence });
-        this.setRelayAvailable(false);
-        this.options.reconnectRelay?.();
+        // A silent viewer does not prove the host's shared coordinator socket is broken.
+        // Keep probing it; native WebSocket heartbeats recover an actual host socket outage.
+        if (!this.options.desktop) {
+          this.setRelayAvailable(false);
+          this.options.reconnectRelay?.();
+        }
       }
       // Keep established sessions through mobile background outages, bounded by the authenticated lease.
       if (!this.selected && !(this.established && this.expiresAt > now)
@@ -302,6 +309,7 @@ export class HotLink {
   setRelayAvailable(available: boolean) {
     if (this.closed) return;
     this.relay = available;
+    this.relayTimedOut = false;
     this.lastPong.relay = 0;
     this.relaySince = Date.now();
     if (available) this.probe('relay');

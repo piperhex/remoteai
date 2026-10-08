@@ -85,6 +85,7 @@ fn connect(
     );
     let now = Instant::now();
     ClientRuntime {
+        auth_renewal: super::auth_renewal::AuthRenewal::default(),
         socket,
         tcp: super::tcp::ClientSession::new(life.tcp_authority.clone(), request.client_id.clone()),
         binary_relay: false,
@@ -114,6 +115,7 @@ fn authentication_message(request: &OpenRequest, config: &Config) -> serde_json:
 }
 
 struct ClientRuntime {
+    auth_renewal: super::auth_renewal::AuthRenewal,
     socket: Socket,
     tcp: super::tcp::ClientSession,
     binary_relay: bool,
@@ -128,23 +130,29 @@ impl ClientRuntime {
         mut self,
         mut commands: mpsc::Receiver<ClientCommand>,
         life: Lifecycle,
-        config: Config,
+        mut config: Config,
     ) -> Result<u16, ChatError> {
         loop {
-            if !life
-                .configs
-                .borrow()
-                .as_ref()
-                .is_some_and(|current| config.same_owner(current))
-            {
+            let current = life.configs.borrow().clone();
+            let Some(current) = current.filter(|current| config.same_owner(current)) else {
                 return Ok(4001);
+            };
+            if current.access_token != config.access_token {
+                let Some(frame) = self.auth_renewal.request(&current.access_token) else {
+                    return Ok(1006);
+                };
+                self.socket.send(frame).map_err(|_| ChatError::Transport)?;
+                config = current;
             }
             self.commands(&mut commands)?;
             // IPC acknowledges queue admission; finish queued peer-close frames before teardown.
             if life.cancelled.load(Ordering::Acquire) && commands.is_empty() {
                 return Ok(1000);
             }
-            if !self.bridge.flush() || self.received.elapsed() > RECEIVE_TIMEOUT {
+            if self.auth_renewal.timed_out()
+                || !self.bridge.flush()
+                || self.received.elapsed() > RECEIVE_TIMEOUT
+            {
                 return Err(ChatError::Transport);
             }
             if self.pinged.elapsed() >= PING_INTERVAL {
@@ -217,6 +225,7 @@ impl ClientRuntime {
     fn message(&mut self, data: String) -> Result<(), ChatError> {
         let frame: serde_json::Value =
             serde_json::from_str(&data).map_err(|_| ChatError::InvalidFrame)?;
+        self.auth_renewal.receive(&frame);
         if frame["type"] == "chat-policy" {
             self.binary_relay |= frame["binaryRelay"] == true;
         }

@@ -36,7 +36,7 @@ it('keeps a relay session through a brief pause but reconnects a sustained black
   await vi.advanceTimersByTimeAsync(29_000);
   expect(harness.reconnect).not.toHaveBeenCalled();
   await vi.advanceTimersByTimeAsync(2000);
-  expect(harness.reconnect).toHaveBeenCalledTimes(2); // One recovery request per endpoint.
+  expect(harness.reconnect).toHaveBeenCalledOnce(); // Only the viewer owns a per-session socket.
   harness.restoreRelay();
   await vi.advanceTimersByTimeAsync(1500);
   expect(harness.links.phone.connectionMode).toBe('relay');
@@ -54,7 +54,7 @@ it('applies a changed relay timeout to existing sessions without overflowing tim
   expect(harness.links.phone.connectionMode).toBe('relay');
   setChatPolicy({ ...DEFAULT_CHAT_POLICY, relayHeartbeatTimeoutSeconds: 10 });
   await vi.advanceTimersByTimeAsync(250);
-  expect(harness.reconnect).toHaveBeenCalledTimes(2);
+  expect(harness.reconnect).toHaveBeenCalledOnce();
   harness.restoreRelay();
   await vi.advanceTimersByTimeAsync(1500);
   expect(harness.links.phone.connectionMode).toBe('relay');
@@ -67,4 +67,29 @@ it('defaults older relay policies to 30 seconds and rejects invalid timeout sett
   for (const value of [0, -1, 1.5, NaN, Infinity, '30', null]) {
     expect(() => parseChatPolicy({ ...DEFAULT_CHAT_POLICY, relayHeartbeatTimeoutSeconds: value })).toThrow();
   }
+});
+
+it('isolates a silent viewer and recovers while another relay chat keeps sending requests', async () => {
+  harness = hotLinkHarness();
+  const healthy = hotLinkHarness();
+  harness.paths.direct = healthy.paths.direct = false;
+  try {
+    await vi.advanceTimersByTimeAsync(1500);
+    harness.paths.relay = false;
+    await vi.advanceTimersByTimeAsync(31_000);
+    expect(harness.reconnect.mock.calls).toEqual([['phone']]);
+    expect(healthy.reconnect).not.toHaveBeenCalled();
+    const request = { kind: 'request' as const, id: 'unaffected', method: 'connect' as const };
+    const pending = healthy.links.phone.send(request);
+    await vi.advanceTimersByTimeAsync(1000);
+    await pending;
+    expect(healthy.messages.pc).toEqual([request]);
+    expect(healthy.modes.pc).toEqual(['relay']);
+    harness.paths.relay = true;
+    harness.links.phone.enableRelay();
+    await vi.advanceTimersByTimeAsync(1500);
+    expect(harness.links.pc.connectionMode).toBe('relay');
+    expect(harness.links.phone.connectionMode).toBe('relay');
+    expect(harness.reconnect.mock.calls).toEqual([['phone']]);
+  } finally { healthy.close(); }
 });

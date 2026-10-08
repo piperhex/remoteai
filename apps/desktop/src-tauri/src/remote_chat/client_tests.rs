@@ -9,6 +9,9 @@ use std::{
 use tauri::ipc::InvokeResponseBody;
 use tungstenite::Message;
 
+#[path = "client_renewal_tests.rs"]
+mod renewal_tests;
+
 fn request() -> OpenRequest {
     OpenRequest {
         client_id: uuid::Uuid::new_v4().to_string(),

@@ -59,7 +59,7 @@ export function hotLinkHarness(options: {
         const frame = value as { type: string; payload: string };
         if (frame.type === 'relay') send(side, 'relay', frame.payload);
       },
-      relayBuffered: () => 0, reconnectRelay: reconnect,
+      relayBuffered: () => 0, reconnectRelay: () => reconnect(side),
       message: (message) => messages[side].push(message), mode: (mode) => modes[side].push(mode), error,
     });
     channels[side] = { readyState: 'open', bufferedAmount: 0, close() {},

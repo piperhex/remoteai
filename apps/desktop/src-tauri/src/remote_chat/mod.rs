@@ -1,6 +1,7 @@
 //! Native ownership of chat registration, credentials, heartbeats and reconnection.
 //! WebRTC and the encrypted application protocol still run in the main WebView.
 
+mod auth_renewal;
 mod bridge;
 pub(crate) mod bulk;
 mod client;

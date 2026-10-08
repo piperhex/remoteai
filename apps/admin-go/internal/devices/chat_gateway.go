@@ -141,6 +141,9 @@ func (g *ChatGateway) receive(client *peer, state *chatConnection, message platf
 		if !state.identity.expires.After(time.Now()) {
 			return errors.New("expired token")
 		}
+		if message["type"] == "renew-auth" {
+			return g.renewAuthentication(client, state, message)
+		}
 		return g.sessions.route(client, message)
 	}
 	identity, err := g.authenticate(message)
@@ -165,12 +168,7 @@ func (g *ChatGateway) receive(client *peer, state *chatConnection, message platf
 		return errors.New("closed connection")
 	}
 	g.policy = policy
-	state.identity = &identity
-	state.timer.Stop()
-	state.timer = time.AfterFunc(time.Until(identity.expires), func() {
-		g.sessions.disconnect(client, true)
-		client.close(4001, "Session expired")
-	})
+	g.setAuthentication(client, state, identity)
 	g.mu.Unlock()
 	sendChatPolicy(client, policy)
 	g.sessions.setLimit(policy["chatSessionLimit"].(float64))
@@ -312,7 +310,8 @@ func (g *ChatGateway) refreshPolicy() {
 func sendChatPolicy(client *peer, policy map[string]interface{}) {
 	// Refreshes must preserve negotiated capabilities, independently of the live download policy switch.
 	client.send(platform.JSON{"type": "chat-policy", "policy": policy,
-		"binaryRelay": client.binaryRelay.Load(), "fileBulkV1": client.binaryBulk.Load(), "connectionDiagnostics": 1}, nil)
+		"binaryRelay": client.binaryRelay.Load(), "fileBulkV1": client.binaryBulk.Load(),
+		"connectionDiagnostics": 1, "authRenewal": true}, nil)
 }
 
 type Runtime struct {

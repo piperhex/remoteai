@@ -100,6 +100,51 @@ fn renewal_preserves_resumes_but_logout_and_owner_changes_revoke_them() {
 }
 
 #[test]
+fn negotiated_renewal_keeps_the_socket_generation_and_session_proofs() {
+    use std::net::TcpListener;
+    use tungstenite::protocol::Role;
+
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let stream = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+    let (remote, _) = listener.accept().unwrap();
+    remote
+        .set_read_timeout(Some(Duration::from_secs(2)))
+        .unwrap();
+    let mut server = WebSocket::from_raw_socket(remote, Role::Server, None);
+    let mut runtime = connected_identity();
+    runtime.socket = Some(WebSocket::from_raw_socket(
+        MaybeTlsStream::Plain(stream),
+        Role::Client,
+        None,
+    ));
+    runtime.registered = true;
+    runtime
+        .receive(r#"{"type":"chat-policy","authRenewal":true,"policy":{}}"#)
+        .unwrap();
+    let generation = runtime.generation;
+    let proof = serde_json::to_value(runtime.sessions.authentication()).unwrap();
+    let mut config = runtime.config.clone().unwrap();
+    config.access_token = "renewed-secret".into();
+    runtime.configure(Some(config));
+    let frame: serde_json::Value =
+        serde_json::from_str(server.read().unwrap().to_text().unwrap()).unwrap();
+    assert_eq!(
+        frame,
+        json!({"type": "renew-auth", "accessToken": "renewed-secret"})
+    );
+    assert_eq!(runtime.generation, generation);
+    assert!(runtime.socket.is_some());
+    assert!(runtime.registered);
+    assert_eq!(
+        serde_json::to_value(runtime.sessions.authentication()).unwrap(),
+        proof
+    );
+    runtime.configure(None);
+    assert!(runtime.socket.is_none());
+    assert!(!runtime.sessions.contains("phone"));
+}
+
+#[test]
 fn forgetting_a_destroyed_key_works_offline_and_across_a_socket_reconnect() {
     let mut runtime = connected_identity();
     let generation = runtime.generation;

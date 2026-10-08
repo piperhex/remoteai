@@ -157,7 +157,7 @@ export class ChatHost {
       if (Array.isArray(message.desktopIceServers)) {
         this.operations.desktop.register(sessionId, message.desktopIceServers as IceServer[], Number(message.expiresAt));
       }
-      link.setRelayAvailable(true);
+      if (message.renewed !== true) link.setRelayAvailable(true);
     }
     if (message.type === 'peer-offline') link.setRelayAvailable(false);
     if (message.type === 'signal') await link.acceptSignal(message.payload as Signal);
@@ -178,7 +178,7 @@ export class ChatHost {
         send: bytes => this.transport.sendBulk(sessionId, [bytes]),
         sendBatch: records => this.transport.sendBulk(sessionId, records) },
       sessionId, desktop: true, secret: keys.secret, publicKey: String(message.publicKey),
-      transportVersion: Number(message.transportVersion), reconnectRelay: () => this.transport.reconnect(),
+      transportVersion: Number(message.transportVersion),
       diagnosticsEnabled: () => this.diagnosticsEnabled,
       iceServers: message.iceServers as IceServer[],
       tcp: message.tcpPunch as import('../../../../shared/remote-chat/tcp/types').TcpPunchConfig | undefined,

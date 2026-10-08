@@ -71,6 +71,7 @@ struct ConnectionTimes {
 }
 
 pub(super) struct Runtime {
+    auth_renewal: super::auth_renewal::AuthRenewal,
     tcp_authority: Arc<super::tcp::Authority>,
     upload_policy: Arc<UploadPolicyStore>,
     config: Option<Config>,
@@ -90,6 +91,7 @@ impl Default for Runtime {
     fn default() -> Self {
         let now = Instant::now();
         Self {
+            auth_renewal: super::auth_renewal::AuthRenewal::default(),
             tcp_authority: Arc::default(),
             upload_policy: Arc::default(),
             config: None,
@@ -160,7 +162,7 @@ impl Runtime {
             .is_some_and(|(old, new)| old.same_owner(new));
         self.config = config;
         if same_owner {
-            self.disconnect();
+            self.renew_authentication();
         } else {
             self.reset();
             if self.upload_policy.update(&json!({})).is_err() {
@@ -168,6 +170,19 @@ impl Runtime {
             }
         }
         self.retry_at = Instant::now();
+    }
+
+    fn renew_authentication(&mut self) {
+        let frame = self
+            .config
+            .as_ref()
+            .filter(|_| self.registered)
+            .and_then(|config| self.auth_renewal.request(&config.access_token));
+        if frame.is_some_and(|frame| self.write(frame).is_ok()) {
+            return;
+        }
+        // Older coordinators still require a resumable reconnect to extend their expiry timer.
+        self.disconnect();
     }
 
     fn emit(&mut self, event: Event) {
@@ -232,7 +247,8 @@ impl Runtime {
             return;
         }
         let now = Instant::now();
-        if now.duration_since(self.times.received) > RECEIVE_TIMEOUT
+        if self.auth_renewal.timed_out()
+            || now.duration_since(self.times.received) > RECEIVE_TIMEOUT
             || (!self.registered && now.duration_since(self.times.opened) > AUTH_TIMEOUT)
         {
             self.disconnect();
@@ -291,6 +307,7 @@ impl Runtime {
     }
 
     fn authenticate(&mut self, mut socket: Socket) -> Result<(), ChatError> {
+        self.auth_renewal = super::auth_renewal::AuthRenewal::default();
         self.binary_relay = false;
         self.binary_bulk = false;
         let config = self.config.as_ref().ok_or(ChatError::Transport)?;
@@ -353,6 +370,7 @@ impl Runtime {
         }
         let mut message: serde_json::Value =
             serde_json::from_str(text).map_err(|_| ChatError::InvalidFrame)?;
+        self.auth_renewal.receive(&message);
         if message["type"] == "chat-policy" {
             self.binary_relay |= message["binaryRelay"] == true;
             self.binary_bulk = message["fileBulkV1"] == true;

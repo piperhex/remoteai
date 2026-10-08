@@ -74,7 +74,8 @@ async function receive(data: string) {
   if (message.type === 'peer-open') { await open(id, message); return; }
   const session = sessions.get(id); if (!session) return;
   if (message.type === 'resumed') {
-    lease(id, message.expiresAt); session.link.setRelayAvailable(true);
+    lease(id, message.expiresAt);
+    if (message.renewed !== true) session.link.setRelayAvailable(true);
     if (Array.isArray(message.desktopIceServers)) operations.desktop.register(id, message.desktopIceServers as IceServer[],
       Number(message.expiresAt));
   }

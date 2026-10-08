@@ -2,6 +2,24 @@
 
 The coordinator continues to use WebSocket/TCP. No UDP or QUIC transport is introduced.
 
+## Relay recovery and credential renewal
+
+A missing encrypted pong describes one peer path, not the host's shared coordinator socket.
+Only viewers reconnect their individual socket after a relay heartbeat timeout. Hosts keep
+probing that session while native WebSocket ping/pong handles shared socket failures, so a
+suspended viewer cannot disconnect other chats.
+
+Go coordinators advertise `authRenewal: true` in `chat-policy`. An authenticated endpoint may
+send `renew-auth` with a fresh `accessToken` on the same socket. The coordinator verifies the
+original owner, device, role and credential kind, replaces its expiry timer, updates the
+bound session leases and replies with `auth-renewed`. Expired sessions cannot be revived.
+Lease updates retain the existing `resumed` envelope with `renewed: true`; updated clients
+extend their deadline without resetting the healthy relay path or pending requests.
+
+Clients negotiate again for each socket and retain the resumable reconnect fallback for
+older coordinators. Missing renewal acknowledgements also trigger bounded recovery. Native
+desktop credentials remain in Rust and are never supplied through frontend IPC.
+
 ## Binary relay hop
 
 A client advertises `binaryRelay: true` in authentication. The Go coordinator confirms it in
