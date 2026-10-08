@@ -299,7 +299,7 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
     };
     const createSpeedIcon = () => {
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      for (const [key, value] of Object.entries({ width: "28", height: "18", viewBox: "0 0 30 20",
+      for (const [key, value] of Object.entries({ width: "26", height: "16", viewBox: "0 0 30 20",
         fill: "none", "aria-hidden": "true" })) svg.setAttribute(key, value);
       for (const index of [0, 1]) {
         const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
