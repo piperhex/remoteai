@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { Composer } from './Composer';
 import { GuiController } from './controller';
 import { guiApi } from './api';
+import { testModels } from './testModels';
 
 vi.mock('./api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 vi.mock('./UsageStatus', () => ({ UsageStatus: () => <span data-testid="usage" /> }));
@@ -40,7 +41,8 @@ beforeEach(async () => {
   vi.mocked(guiApi.connect).mockResolvedValue([]);
   vi.mocked(guiApi.subscribe).mockResolvedValue(() => {});
   vi.mocked(guiApi.request).mockImplementation(async (body) => {
-    if (body.operation === 'skills' || body.operation === 'models' || body.operation === 'list') return { data: [] };
+    if (body.operation === 'models') return { data: testModels, nextCursor: null };
+    if (body.operation === 'skills' || body.operation === 'list') return { data: [] };
     if (body.operation === 'goalSet') {
       if (failGoal) throw new Error('failed');
       return { goal: { threadId: thread.id, objective: body.objective, status: 'active' } };

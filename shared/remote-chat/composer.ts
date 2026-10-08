@@ -12,6 +12,7 @@ export interface ComposerSnapshot {
 }
 export interface ComposerModelsResponse { data: Model[]; nextCursor: string | null; composer?: ComposerSnapshot }
 export const COMPOSER_EVENT = 'chat/composer/updated';
+export const MODEL_CATALOG_ERROR = '模型列表暂时无法更新，请稍后重试。';
 export const DEFAULT_COMPOSER: ComposerSettings = { model: '', effort: '', access: 'workspace-write' };
 export function composerThreadId(value: unknown): string | null | undefined {
   if (value === undefined || value === null) return value;

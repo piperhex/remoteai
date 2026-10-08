@@ -2,6 +2,7 @@ import { guiText } from "../../i18n/guiText";
 import { guiApi } from "./api";
 import type { ListResponse, Model } from "./types";
 import { withModelCatalogTimeout } from "./modelCatalogTimeout";
+import { MODEL_CATALOG_ERROR } from "../../../../../shared/remote-chat/composer";
 
 const MAX_CATALOG_PAGES = 100;
 
@@ -67,6 +68,8 @@ export class GuiModelCatalog {
         const models = await withModelCatalogTimeout(this.readModels(current), attempt.signal);
         if (!this.active) return;
         if (generation !== this.generation) continue;
+        // The CLI can return an empty list after discovery times out; it is not a catalog update.
+        if (!models.length) throw new Error(guiText(MODEL_CATALOG_ERROR));
         const fingerprint = JSON.stringify(models);
         if (!this.invalid && fingerprint === this.fingerprint) return;
         generation = ++this.generation;

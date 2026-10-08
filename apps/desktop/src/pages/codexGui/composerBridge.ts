@@ -3,7 +3,7 @@ import { guiApi } from './api';
 import type { GuiController } from './controller';
 import { resolveModelSelection } from './modelSelection';
 import type { Model, ListResponse } from './types';
-import { composerPatch, DEFAULT_COMPOSER, type ComposerSettings,
+import { composerPatch, DEFAULT_COMPOSER, MODEL_CATALOG_ERROR, type ComposerSettings,
   type ComposerSnapshot, type RequestSpeed } from '../../../../../shared/remote-chat/composer';
 import { guiRequestSpeed, type RequestSpeedSource } from './requestSpeedBridge';
 
@@ -98,6 +98,7 @@ export class ComposerBridge {
       models.push(...result.data);
       cursor = result.nextCursor || undefined;
     } while (cursor);
+    if (!models.length) throw new Error(guiText(MODEL_CATALOG_ERROR));
     if (!this.binding) this.publish(models, this.value.settings);
   }
 

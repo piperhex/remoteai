@@ -25,6 +25,20 @@ beforeEach(() => {
 });
 afterEach(() => vi.useRealTimers());
 
+it("reports an empty initial catalog as a failed load and recovers on retry", async () => {
+  vi.mocked(guiApi.request).mockResolvedValue(page([]));
+  const controller = new GuiController();
+  await controller.connect();
+  expect(controller.getSnapshot()).toMatchObject({ models: [], modelCatalogLoading: true,
+    modelCatalogError: expect.stringContaining("模型列表") });
+  expect(await controller.send("wait", [])).toBe(false);
+  vi.mocked(guiApi.request).mockResolvedValue(page([current]));
+  await controller.refreshModels();
+  expect(controller.getSnapshot()).toMatchObject({ models: [current], modelCatalogLoading: false,
+    modelCatalogError: "", error: "" });
+  controller.dispose();
+});
+
 it("ends a stalled initial load, keeps sending blocked, and retries without reconnecting", async () => {
   const stalled = deferred<unknown>();
   vi.mocked(guiApi.request).mockImplementation(request => request.operation === "models"

@@ -23,11 +23,15 @@ vi.mock('./connection', () => ({ MobileChatConnection: class {
 } }));
 const session: AuthSession = { baseUrl: 'https://test', accessToken: 'test', refreshToken: 'test', email: 'test' };
 const thread: Thread = { id: 'chat', preview: '', cwd: '/project', updatedAt: 1, turns: [] };
+const models = [{ id: 'astra', model: 'astra', displayName: 'Astra', isDefault: true,
+  defaultReasoningEffort: 'xhigh', supportedReasoningEfforts: ['xhigh', 'ultra'].map(reasoningEffort =>
+    ({ reasoningEffort, description: '' })) }];
 beforeEach(() => { mocks.request.mockReset(); });
 afterEach(() => vi.useRealTimers());
 
 async function connectedController() {
-  mocks.request.mockImplementation(async (method) => method === 'connect' ? [] : { data: [], nextCursor: null });
+  mocks.request.mockImplementation(async (method, body) => method === 'connect' ? []
+    : { data: body?.operation === 'models' ? models : [], nextCursor: null });
   const controller = new ChatController(session, 'computer');
   controller.start();
   await vi.waitFor(() => expect(controller.snapshot().ready).toBe(true));
@@ -134,6 +138,7 @@ describe('mobile chat actions', () => {
     expect(await controller.send({ text: '', images, access: 'workspace-write' })).toBe(true);
     expect(mocks.request).toHaveBeenCalledWith('request', {
       operation: 'send', threadId: 'chat', text: '', images, access: 'workspace-write',
+      model: 'astra', effort: 'xhigh',
     });
   });
 
@@ -146,6 +151,7 @@ describe('mobile chat actions', () => {
     expect(await controller.send({ text: '看这张照片', images, access: 'workspace-write' })).toBe(true);
     expect(mocks.request).toHaveBeenCalledWith('request', {
       operation: 'queueEnqueue', threadId: 'chat', text: '看这张照片', images, access: 'workspace-write',
+      model: 'astra', effort: 'xhigh',
     });
   });
 
@@ -210,6 +216,7 @@ describe('mobile chat actions', () => {
     expect(mocks.request).not.toHaveBeenCalledWith('request', expect.objectContaining({ operation: 'resume' }));
     expect(mocks.request).toHaveBeenCalledWith('request', {
       operation: 'queueEnqueue', threadId: 'chat', text: 'continue', access: 'workspace-write', images: [],
+      model: 'astra', effort: 'xhigh',
     });
   });
 
@@ -247,6 +254,7 @@ describe('mobile chat actions', () => {
     expect(await controller.send({ text: 'continue here', access: 'workspace-write' })).toBe(true);
     expect(mocks.request).toHaveBeenCalledWith('request', {
       operation: 'queueEnqueue', threadId: thread.id, text: 'continue here', images: [], access: 'workspace-write',
+      model: 'astra', effort: 'xhigh',
     });
     expect(mocks.request.mock.calls.some(([, body]) => body.operation === 'start')).toBe(false);
     controller.stop();
@@ -260,6 +268,7 @@ describe('mobile chat actions', () => {
     await controller.send({ text: 'add detail', access: 'workspace-write' });
     expect(mocks.request).toHaveBeenCalledWith('request', {
       operation: 'queueEnqueue', threadId: 'chat', text: 'add detail', images: [], access: 'workspace-write',
+      model: 'astra', effort: 'xhigh',
     });
     await controller.interrupt();
     expect(mocks.request).toHaveBeenCalledWith('request', { operation: 'interrupt', threadId: 'chat', turnId: 'turn' });
@@ -336,7 +345,7 @@ describe('mobile chat actions', () => {
 
   it('synchronizes PC settings and keeps a newer change ahead of an older acknowledgement', async () => {
     const controller = await connectedController();
-    const current: ComposerSnapshot = { models: [], revision: 2,
+    const current: ComposerSnapshot = { models, revision: 2,
       settings: { model: 'astra', effort: 'xhigh', access: 'danger-full-access' } };
     mocks.events!.event({ method: COMPOSER_EVENT, params: current });
     expect(controller.snapshot().settings).toEqual(current.settings);

@@ -3,6 +3,7 @@ import { act, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { guiApi } from "./api";
+import { testModels } from "./testModels";
 import { GuiController } from "./controller";
 import { Messages } from "./Messages";
 import { conversation } from "./events";
@@ -47,7 +48,8 @@ beforeEach(async () => {
   });
   vi.mocked(guiApi.request).mockImplementation(async (request) => {
     if (request.operation === "imagePreview") return { url: "data:image/png;base64,cGljdHVyZQ==" };
-    if (request.operation === "list" || request.operation === "models") return { data: [], nextCursor: null };
+    if (request.operation === "models") return { data: testModels, nextCursor: null };
+    if (request.operation === "list") return { data: [], nextCursor: null };
     return { thread: { ...thread, turns: [] } };
   });
   controller = new GuiController();

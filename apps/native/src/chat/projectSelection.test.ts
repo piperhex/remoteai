@@ -7,6 +7,8 @@ async function setup() {
   const thread = { id: 'chosen', cwd: 'F:/projects/demo', preview: '', updatedAt: 1, turns: [] };
   const request = vi.fn(async (_method: string, body?: { operation?: string }) => {
     if (_method === 'connect') return [];
+    if (body?.operation === 'models') return { data: [{ id: 'model', model: 'model', displayName: 'Model',
+      isDefault: true, defaultReasoningEffort: 'high', supportedReasoningEfforts: [] }], nextCursor: null };
     if (body?.operation === 'start' || body?.operation === 'read') return { thread };
     return { data: [], nextCursor: null };
   });

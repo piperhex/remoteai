@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { GuiEvent, Request, Thread } from "./types";
 import { GuiController } from "./controller";
 import { guiApi } from "./api";
+import { testModels } from "./testModels";
 
 vi.mock("./api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn(), respond: vi.fn() } }));
 const thread: Thread = { id: "one", cwd: "D:/project", preview: "hello", updatedAt: 1, turns: [] };
@@ -17,7 +18,8 @@ beforeEach(() => {
     return vi.fn<() => void>();
   });
   vi.mocked(guiApi.request).mockImplementation(async (request) => {
-    if (request.operation === "list" || request.operation === "models") return { data: [], nextCursor: null };
+    if (request.operation === "models") return { data: testModels, nextCursor: null };
+    if (request.operation === "list") return { data: [], nextCursor: null };
     return { thread };
   });
 });

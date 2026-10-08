@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Composer } from "./Composer";
 import { GuiController } from "./controller";
 import { guiApi } from "./api";
+import { testModels } from "./testModels";
 
 vi.mock("./api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 vi.mock("./UsageStatus", () => ({ UsageStatus: () => null }));
@@ -49,7 +50,8 @@ beforeEach(async () => {
   vi.mocked(guiApi.connect).mockResolvedValue([]);
   vi.mocked(guiApi.subscribe).mockResolvedValue(() => {});
   vi.mocked(guiApi.request).mockImplementation(async (request) => {
-    if (request.operation === "list" || request.operation === "models") return { data: [], nextCursor: null };
+    if (request.operation === "models") return { data: testModels, nextCursor: null };
+    if (request.operation === "list") return { data: [], nextCursor: null };
     return { thread: { id: "existing", cwd: "", preview: "hello", updatedAt: 1, turns: [] } };
   });
   controller = new GuiController();

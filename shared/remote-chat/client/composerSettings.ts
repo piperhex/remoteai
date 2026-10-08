@@ -1,4 +1,4 @@
-import { COMPOSER_FIELDS, DEFAULT_COMPOSER, composerPatch, type ComposerModelsResponse,
+import { COMPOSER_FIELDS, DEFAULT_COMPOSER, MODEL_CATALOG_ERROR, composerPatch, type ComposerModelsResponse,
   type ComposerSettings, type ComposerSnapshot } from '../composer';
 import { resolveModelSelection } from '../../../apps/desktop/src/pages/codexGui/modelSelection';
 import type { ChatState } from './types';
@@ -15,6 +15,7 @@ interface Entry {
   saving?: Promise<void>;
   reading?: Promise<void>;
   failed: string;
+  catalogUnavailable: boolean;
 }
 const SAVE_ERROR = '设置尚未保存，请重试。';
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : SAVE_ERROR;
@@ -30,7 +31,7 @@ export class RemoteComposerSettings {
   private entry(threadId: string | null) {
     let entry = this.entries.get(threadId);
     if (!entry) {
-      entry = { pending: {}, failed: '' };
+      entry = { pending: {}, failed: '', catalogUnavailable: false };
       this.entries.set(threadId, entry);
     }
     return entry;
@@ -49,8 +50,8 @@ export class RemoteComposerSettings {
     this.host.update({ ...(entry.remote ? { models: entry.remote.models } : {}),
       settings: { ...(entry.remote?.settings ?? DEFAULT_COMPOSER), ...entry.pending },
       settingsBusy: Boolean(entry.remote?.syncing || entry.reading || entry.saving || entry.failed
-        || Object.keys(entry.pending).length || (this.scoped && !entry.remote)),
-      settingsError: entry.failed });
+        || entry.catalogUnavailable || Object.keys(entry.pending).length || (this.scoped && !entry.remote)),
+      settingsError: entry.failed || (entry.catalogUnavailable ? MODEL_CATALOG_ERROR : '') });
   }
 
   receive(snapshot: ComposerSnapshot) {
@@ -62,9 +63,14 @@ export class RemoteComposerSettings {
     const entry = this.entry(id);
     if (snapshot.revision < (entry.remote?.revision ?? -1)) return;
     const wasSyncing = entry.remote?.syncing;
-    entry.remote = snapshot;
+    entry.catalogUnavailable = !snapshot.models.length;
+    // Older hosts may publish empty results as success. Keep the display, but wait for a valid catalog before saving.
+    entry.remote = entry.catalogUnavailable && entry.remote?.models.length
+      ? { ...snapshot, models: entry.remote.models, settings: entry.remote.settings } : snapshot;
     if (id === this.scope()) this.show();
-    if (wasSyncing && !snapshot.syncing) queueMicrotask(() => this.flush());
+    if (!entry.catalogUnavailable && (wasSyncing || Object.keys(entry.pending).length)) {
+      queueMicrotask(() => this.flush());
+    }
   }
 
   async load(): Promise<void> {
@@ -122,6 +128,10 @@ export class RemoteComposerSettings {
     entry.pending = { ...entry.pending, ...patch };
     entry.failed = '';
     this.show();
+    if (entry.catalogUnavailable) {
+      void this.load().catch(() => { /* The failed read is shown by the settings panel. */ });
+      return;
+    }
     this.flush();
   }
 
@@ -134,7 +144,8 @@ export class RemoteComposerSettings {
   private async save(id: string | null): Promise<void> {
     const entry = this.entry(id);
     if (entry.saving) return entry.saving;
-    if (!this.host.ready() || entry.reading || entry.remote?.syncing || !Object.keys(entry.pending).length) return;
+    if (!this.host.ready() || entry.reading || entry.remote?.syncing || entry.catalogUnavailable
+      || !Object.keys(entry.pending).length) return;
     const generation = this.generation;
     const patch = { ...entry.pending };
     const saving = this.write({ id, patch, generation }).catch((error: unknown) => {
@@ -155,7 +166,8 @@ export class RemoteComposerSettings {
     const snapshot = await this.host.request<ComposerSnapshot>({ operation: 'composerSet', settings: patch,
       ...(this.scoped ? { threadId: id } : {}) });
     if (generation !== this.generation) return;
-    if (!snapshot?.settings || !Number.isSafeInteger(snapshot.revision)
+    if (!snapshot?.settings || !Array.isArray(snapshot.models) || !snapshot.models.length
+      || !Number.isSafeInteger(snapshot.revision)
       || (this.scoped && snapshot.threadId !== id)) throw new Error('电脑尚未确认设置，请重试。');
     const entry = this.entry(id);
     for (const field of COMPOSER_FIELDS) {

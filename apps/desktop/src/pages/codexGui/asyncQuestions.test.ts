@@ -3,6 +3,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { asyncAnswerText, pendingAsyncQuestions } from "./asyncQuestionState";
 import { GuiController } from "./controller";
 import { guiApi } from "./api";
+import { testModels } from "./testModels";
 import { conversation, reduceConversation } from "./events";
 import type { GuiEvent, Item, Thread } from "./types";
 
@@ -18,7 +19,8 @@ beforeEach(() => {
   vi.mocked(guiApi.connect).mockResolvedValue([]);
   vi.mocked(guiApi.subscribe).mockImplementation(async (callback) => { receive = callback; return vi.fn<() => void>(); });
   vi.mocked(guiApi.request).mockImplementation(async (request) => {
-    if (request.operation === "list" || request.operation === "models") return { data: [], nextCursor: null };
+    if (request.operation === "models") return { data: testModels, nextCursor: null };
+    if (request.operation === "list") return { data: [], nextCursor: null };
     if (request.operation === "send") return { turn: { id: "next", status: "inProgress", items: [] } };
     return { thread };
   });

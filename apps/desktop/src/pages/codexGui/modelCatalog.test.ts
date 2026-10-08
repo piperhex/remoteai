@@ -134,3 +134,58 @@ it("keeps a failed settings reconciliation blocked without repeatedly retrying i
   expect(accept).toHaveBeenCalledOnce();
   await expect(catalog.ready()).rejects.toThrow("模型正在同步");
 });
+
+it("keeps models and conversation choices when the CLI returns an empty catalog during polling", async () => {
+  vi.mocked(guiApi.request).mockImplementation(async request => ({
+    data: request.operation === "models" ? [existing] : [], nextCursor: null,
+  }));
+  const controller = new GuiController();
+  const bridge = new ComposerBridge();
+  const detach = bridge.attach(controller);
+  await controller.connect();
+  controller.settings({ model: existing.model, effort: "high" });
+  const previous = await bridge.read(null);
+  const guard = controller.modelCatalog.guard();
+  const changed = vi.fn();
+  const stop = bridge.subscribe(changed);
+  vi.mocked(guiApi.request).mockResolvedValue({ data: [], nextCursor: null });
+  await expect(controller.modelCatalog.refresh()).rejects.toThrow("模型列表");
+  expect(controller.getSnapshot()).toMatchObject({ models: [existing], modelCatalogLoading: false,
+    settings: { model: existing.model, effort: "high" }, modelCatalogError: expect.stringContaining("模型列表") });
+  expect(await bridge.read(null)).toEqual(previous);
+  expect(changed).not.toHaveBeenCalled();
+  expect(guard()).toBe(true);
+  vi.mocked(guiApi.request).mockResolvedValue({ data: [existing, released], nextCursor: null });
+  await controller.refreshModels();
+  expect((await bridge.read(null)).models).toEqual([existing, released]);
+  expect(controller.getSnapshot().modelCatalogError).toBe("");
+  stop(); detach(); controller.dispose();
+});
+
+it("preserves the old catalog for display but keeps a source switch blocked after an empty response", async () => {
+  const accept = vi.fn();
+  const syncing = vi.fn();
+  const catalog = new GuiModelCatalog({ ready: () => true, accept, syncing });
+  vi.mocked(guiApi.request).mockResolvedValueOnce({ data: [existing], nextCursor: null });
+  await catalog.refresh();
+  const guard = catalog.guard();
+  vi.mocked(guiApi.request).mockResolvedValue({ data: [], nextCursor: null });
+  await expect(catalog.switchSource(async () => {})).rejects.toThrow("模型列表");
+  expect(accept).toHaveBeenCalledExactlyOnceWith([existing]);
+  expect(guard()).toBe(false);
+  expect(syncing).toHaveBeenLastCalledWith(true);
+  await expect(catalog.ready()).rejects.toThrow("模型正在同步");
+  vi.mocked(guiApi.request).mockResolvedValue({ data: [released], nextCursor: null });
+  await catalog.refresh();
+  expect(accept).toHaveBeenLastCalledWith([released]);
+  await expect(catalog.ready()).resolves.toBeUndefined();
+});
+
+it("accepts a nonempty catalog with an empty pagination page", async () => {
+  const accept = vi.fn();
+  const catalog = new GuiModelCatalog({ ready: () => true, accept });
+  vi.mocked(guiApi.request).mockResolvedValueOnce({ data: [], nextCursor: "next" })
+    .mockResolvedValueOnce({ data: [existing], nextCursor: null });
+  await catalog.refresh();
+  expect(accept).toHaveBeenCalledExactlyOnceWith([existing]);
+});

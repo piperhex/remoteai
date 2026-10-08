@@ -76,6 +76,19 @@ it('loads all account model pages when the desktop GUI has not been opened', asy
   expect(guiApi.request).toHaveBeenLastCalledWith({ operation: 'models', cursor: 'next' });
 });
 
+it('does not publish an empty catalog over the last phone-only selection', async () => {
+  const bridge = new ComposerBridge();
+  const previous = await bridge.update({ model: 'second', effort: 'xhigh' });
+  const changed = vi.fn();
+  const stop = bridge.subscribe(changed);
+  vi.mocked(guiApi.request).mockResolvedValue({ data: [], nextCursor: null });
+  await expect(bridge.read()).rejects.toThrow('模型列表');
+  expect(changed).not.toHaveBeenCalled();
+  vi.mocked(guiApi.request).mockResolvedValue({ data: models, nextCursor: null });
+  expect(await bridge.read()).toMatchObject({ models: previous.models, settings: previous.settings });
+  stop();
+});
+
 it('accepts the resolved default when changing to a model without selectable reasoning levels', async () => {
   const bridge = new ComposerBridge();
   vi.mocked(guiApi.request).mockResolvedValue({ data: [

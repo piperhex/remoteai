@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { guiApi } from "./api";
+import { testModels } from "./testModels";
 import { GuiController } from "./controller";
 import { CONTINUE_MESSAGE } from "./continuation";
 import { isModelCapacityError, MODEL_CAPACITY_MESSAGE } from "./requestError";
@@ -34,7 +35,8 @@ beforeEach(async () => {
   vi.mocked(guiApi.connect).mockResolvedValue([]);
   vi.mocked(guiApi.subscribe).mockImplementation(async (callback) => { receive = callback; return vi.fn<() => void>(); });
   vi.mocked(guiApi.request).mockImplementation(async (request) => {
-    if (request.operation === "list" || request.operation === "models") return { data: [], nextCursor: null };
+    if (request.operation === "models") return { data: testModels, nextCursor: null };
+    if (request.operation === "list") return { data: [], nextCursor: null };
     if (request.operation === "send") return { turn: { id: `retry-${++nextTurn}`, status: "inProgress", items: [] } };
     return { thread: thread() };
   });

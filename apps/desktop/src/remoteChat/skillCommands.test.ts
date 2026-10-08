@@ -14,6 +14,8 @@ vi.mock('../pages/codexGui/composerBridge', () => ({ guiComposer: {
 vi.mock('../pages/codexGui/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
 const skill: Skill = { name: 'review', path: 'C:/skills/review/SKILL.md', description: '检查代码', enabled: true };
 const thread: Thread = { id: 'chat', preview: '', cwd: 'C:/project', updatedAt: 1, turns: [] };
+const models = [{ id: 'model', model: 'model', displayName: 'Model', isDefault: true,
+  defaultReasoningEffort: 'high', supportedReasoningEfforts: [{ reasoningEffort: 'high', description: '' }] }];
 let controller: ChatController;
 let handlers: ConnectionEvents;
 let remote: Thread;
@@ -34,7 +36,7 @@ beforeEach(async () => {
     handlers = events;
     return { start() { events.mode('relay'); events.ready(); }, stop() {},
       async request(method, body) {
-        if ((body as { operation?: string })?.operation === 'models') return { data: [], nextCursor: null };
+        if ((body as { operation?: string })?.operation === 'models') return { data: models, nextCursor: null };
         const response = await operations.execute({ kind: 'request', id: String(++serial), method, body });
         if (response.error) throw new Error(response.error);
         return response.data;

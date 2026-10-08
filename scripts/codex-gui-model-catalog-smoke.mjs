@@ -22,8 +22,9 @@ let models = [discovered, { ...discovered, slug: "fixture-hidden", visibility: "
 const requests = [];
 const server = createServer((request, response) => {
   requests.push({ url: request.url, authorization: request.headers.authorization });
-  response.writeHead(200, { "Content-Type": "application/json" });
-  response.end(JSON.stringify({ models }));
+  // Match the GUI proxy: an empty upstream catalog is a failed refresh, never a cache replacement.
+  response.writeHead(models.length ? 200 : 502, { "Content-Type": "application/json" });
+  response.end(JSON.stringify(models.length ? { models } : { error: { message: "Model catalog unavailable" } }));
 });
 server.listen(0, "127.0.0.1");
 await once(server, "listening");
@@ -55,11 +56,20 @@ try {
   await writeFile(cachePath, JSON.stringify({ ...cache, fetched_at: "2000-01-01T00:00:00Z" }));
   const refreshed = await client.rpc("model/list", { limit: 100 });
   assert.deepEqual(refreshed.data.map((model) => model.model), ["gpt-6.1-sol", "fixture-new-model"]);
+  const successful = JSON.parse(await readFile(cachePath, "utf8"));
+  const expired = JSON.stringify({ ...successful, fetched_at: "2000-01-01T00:00:00Z" });
+  await writeFile(cachePath, expired);
+  models = [];
+  const beforeEmpty = requests.length;
+  // This CLI can still return [] on failure; the UI protects its own last successful snapshot separately.
+  await client.rpc("model/list", { limit: 100 });
+  assert.ok(requests.length > beforeEmpty, "An expired catalog must attempt a refresh");
+  assert.equal(await readFile(cachePath, "utf8"), expired, "Failed refreshes must preserve the nonempty disk cache");
   models = [{ ...discovered, slug: "fixture-new-account" }];
   await unlink(cachePath);
   const switched = await client.rpc("model/list", { limit: 100 });
   assert.deepEqual(switched.data.map((model) => model.model), ["fixture-new-account"]);
-  console.log("PASS: discovery, visibility filtering, cache expiry and account changes without restarting the CLI.");
+  console.log("PASS: discovery, empty-response protection, cache expiry and account changes without CLI restart.");
 } finally {
   await client.close();
   server.closeAllConnections();

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { guiApi } from "./api";
+import { testModels } from "./testModels";
 import { GuiController } from "./controller";
 import type { GuiEvent, Thread } from "./types";
 import type { ThreadGoal } from "./goalTypes";
@@ -17,7 +18,8 @@ beforeEach(async () => {
   vi.mocked(guiApi.connect).mockResolvedValue([]);
   vi.mocked(guiApi.subscribe).mockImplementation(async (callback) => { receive = callback; return () => {}; });
   vi.mocked(guiApi.request).mockImplementation(async (request) => {
-    if (request.operation === "list" || request.operation === "models") return { data: [], nextCursor: null };
+    if (request.operation === "models") return { data: testModels, nextCursor: null };
+    if (request.operation === "list") return { data: [], nextCursor: null };
     if (request.operation === "goalGet") return { goal: null };
     if (request.operation === "goalSet") return { goal: { ...goal, status: request.status } };
     if (request.operation === "send") return { turn: { id: "turn", status: "completed", items: [] } };

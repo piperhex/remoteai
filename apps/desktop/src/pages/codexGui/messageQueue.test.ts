@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { guiApi } from "./api";
+import { testModels } from "./testModels";
 import { GuiController } from "./controller";
 import type { GuiEvent, Thread } from "./types";
 
@@ -22,7 +23,8 @@ beforeEach(async () => {
   vi.mocked(guiApi.subscribe).mockImplementation(async (callback) => { receive = callback; return vi.fn<() => void>(); });
   let batchCount = 0;
   vi.mocked(guiApi.request).mockImplementation(async (request) => {
-    if (request.operation === "list" || request.operation === "models") return { data: [], nextCursor: null };
+    if (request.operation === "models") return { data: testModels, nextCursor: null };
+    if (request.operation === "list") return { data: [], nextCursor: null };
     if (request.operation === "sendBatch") return {
       turn: { id: batchCount++ ? "next-batch" : "batch", status: "inProgress", items: [] } };
     if (request.operation === "resume") return { thread: {

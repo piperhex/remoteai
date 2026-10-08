@@ -8,6 +8,13 @@ pub(super) fn model_catalog(mut payload: UpstreamPayload) -> Result<UpstreamPayl
     let bytes = read_official_model_catalog_body(&mut payload.body)?;
     let mut catalog: Value = serde_json::from_slice(&bytes)
         .map_err(|_| "暂时无法读取 Codex GUI 模型列表，请重试。".to_string())?;
+    // A successful empty response would replace the CLI's last usable on-disk catalog.
+    if catalog["models"]
+        .as_array()
+        .is_none_or(|models| models.is_empty())
+    {
+        return Err("暂时无法读取 Codex GUI 模型列表，请重试。".to_string());
+    }
     allow_conversation_capacity(&mut catalog);
     let bytes = serde_json::to_vec(&catalog).map_err(|error| error.to_string())?;
     replace_model_catalog_etags(&mut payload.response_headers, &bytes);
@@ -85,6 +92,38 @@ fn update_usage(id: &str, capacity: Option<u64>, used: Option<u64>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn catalog_payload(catalog: Value) -> UpstreamPayload {
+        UpstreamPayload {
+            status: 200,
+            content_type: Some("application/json".into()),
+            response_headers: Vec::new(),
+            body: UpstreamBody::Buffered(serde_json::to_vec(&catalog).unwrap()),
+            token_usage_service_tier: None,
+            token_usage_account: None,
+        }
+    }
+
+    #[test]
+    fn empty_catalogs_are_not_successful_responses_that_replace_cli_cache() {
+        for catalog in [json!({"models": []}), json!({}), json!({"models": null})] {
+            let error = model_catalog(catalog_payload(catalog)).err().unwrap();
+            assert_eq!(error, "暂时无法读取 Codex GUI 模型列表，请重试。");
+        }
+    }
+
+    #[test]
+    fn nonempty_catalogs_keep_their_models_and_reach_cli_cache() {
+        let payload =
+            catalog_payload(json!({"models": [{"slug": "model", "max_context_window": 100}]}));
+        let mut result = model_catalog(payload).ok().unwrap();
+        assert_eq!(result.status, 200);
+        let bytes = read_official_model_catalog_body(&mut result.body).unwrap();
+        let catalog: Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(catalog["models"].as_array().unwrap().len(), 1);
+        assert_eq!(catalog["models"][0]["slug"], "model");
+        assert!(catalog["models"][0]["max_context_window"].is_null());
+    }
 
     #[test]
     fn relayed_limits_do_not_cap_gui_overrides_or_change_default_capacity() {

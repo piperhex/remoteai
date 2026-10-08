@@ -3,6 +3,7 @@ import { act, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { guiApi } from "./api";
+import { testModels } from "./testModels";
 import { GuiController } from "./controller";
 import { ComposerSubmit } from "./ComposerSubmit";
 import type { GuiEvent, Thread, Turn } from "./types";
@@ -44,7 +45,8 @@ beforeEach(async () => {
     return vi.fn<() => void>();
   });
   vi.mocked(guiApi.request).mockImplementation(async (request) => {
-    if (request.operation === "list" || request.operation === "models") return { data: [], nextCursor: null };
+    if (request.operation === "models") return { data: testModels, nextCursor: null };
+    if (request.operation === "list") return { data: [], nextCursor: null };
     if (request.operation === "send") return { turn: { id: "next", status: "inProgress", items: [] } };
     if (request.operation === "interrupt") receive({ method: "turn/completed",
       params: { threadId: thread.id, turn: stopped } });
