@@ -86,10 +86,13 @@ Community images are downloaded into the shared library without applying or rest
 Users can also disable the GUI background or follow the skin page, which remains the default for existing users.
 Independent choices survive restarts and are unaffected when the shared skin is changed, paused, or restored.
 
-Successful GUI turns send a native desktop completion notification, including when another conversation
+Successful top-level GUI turns send a native desktop completion notification, including when another conversation
 is selected or the app is minimized. On Windows, these appear in the system notification area at the
 bottom right, subject to the user's system notification settings. Failed, interrupted, and duplicate
-completion events do not send notifications. Delivery runs outside the UI and protocol reader threads.
+completion events do not send notifications. Subagent turns never send desktop completion notifications;
+the parent conversation notifies when its own turn finishes. If thread metadata cannot confirm a top-level
+conversation, the notification is skipped. User-created conversation forks still notify normally.
+Delivery runs outside the UI and protocol reader threads.
 
 Tool connections belong to a loaded conversation, so one conversation can own separate Chrome,
 computer-use and remote-command helper processes even between tool calls. The shared desktop backend
