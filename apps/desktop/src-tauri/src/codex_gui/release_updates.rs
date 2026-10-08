@@ -15,7 +15,7 @@ mod automatic;
 pub(crate) struct CliUpdateState {
     startup: OnceLock<()>,
     scheduler: OnceLock<()>,
-    metadata: Mutex<()>,
+    pub(super) metadata: Mutex<()>,
     // Serialize package writes without blocking other callers from discovering newer releases.
     download: tokio::sync::Mutex<()>,
 }
@@ -155,6 +155,15 @@ pub(super) async fn install(app: AppHandle) -> Result<Installed> {
         prepare_serialized(app.clone(), true).await?;
     }
     tauri::async_runtime::spawn_blocking(move || store::installed(&root(&app)?))
+        .await
+        .map_err(|_| GuiError::Install)?
+}
+
+/// Imported packages share idle activation with automatic updates, without waiting for network downloads.
+pub(super) async fn apply_import(app: &AppHandle) -> Result<CliStatus> {
+    automatic::apply_ready(app).await?;
+    let app = app.clone();
+    tauri::async_runtime::spawn_blocking(move || status(&app))
         .await
         .map_err(|_| GuiError::Install)?
 }

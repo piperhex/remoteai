@@ -1,4 +1,6 @@
 use super::error::{GuiError, Result};
+#[path = "release_import.rs"]
+pub(crate) mod manual;
 #[path = "release_store.rs"]
 mod store;
 #[cfg(test)]
@@ -163,6 +165,10 @@ fn release(client: &Client, version: Option<&str>) -> Result<(String, Asset)> {
         .and_then(|response| response.error_for_status())
         .and_then(|response| response.json())
         .map_err(|_| GuiError::Release)?;
+    select_asset(release)
+}
+
+fn select_asset(release: Release) -> Result<(String, Asset)> {
     let version = release
         .tag_name
         .strip_prefix("rust-v")
@@ -293,10 +299,9 @@ fn prepare_package(app: &AppHandle, version: &str, asset: &Asset, silent: bool) 
         }
         fs::create_dir(&staging).map_err(|_| GuiError::Install)?;
         unpack(&archive, &staging)?;
-        let destination = root.join(version);
-        if !destination.exists() {
-            fs::rename(&staging, destination).map_err(|_| GuiError::Install)?;
-        }
+        let state = app.state::<CliUpdateState>();
+        let _metadata = state.metadata.lock().map_err(|_| GuiError::Install)?;
+        store::stage(&root, version, &staging)?;
         Ok(())
     })();
     cleanup_package(&root, &archive, &staging);

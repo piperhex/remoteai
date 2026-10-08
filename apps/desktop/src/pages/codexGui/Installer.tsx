@@ -3,10 +3,12 @@ import { Button, Progress } from "antd";
 import { Download, ExternalLink, RefreshCw, Terminal } from "lucide-react";
 import { isDesktopApp } from "../../api/backend";
 import type { useCliInstaller } from "./useCliInstaller";
+import { CliManualDownload } from "./CliManualDownload";
 import styles from "./styles.module.less";
 
 export function Installer({ installer, compact = false, running = false, remote = false, disabled = false }: {
-  installer: ReturnType<typeof useCliInstaller>; compact?: boolean; running?: boolean;
+  installer: Omit<ReturnType<typeof useCliInstaller>, "onImported"> &
+    Partial<Pick<ReturnType<typeof useCliInstaller>, "onImported">>; compact?: boolean; running?: boolean;
   remote?: boolean; disabled?: boolean;
 }) {
   const { version, release, checking, installing, progress, checked, check, install } = installer;
@@ -27,6 +29,8 @@ export function Installer({ installer, compact = false, running = false, remote 
       </Button>}
       {!available && <Button loading={checking || !checked} icon={<RefreshCw size={15} />}
         disabled={installing || disabled} onClick={() => void check()}>{release && version ? guiText("已是最新版本") : guiText("检查版本")}</Button>}
+      {isDesktopApp && !remote && installer.onImported && <CliManualDownload version={release?.version ?? null}
+        disabled={installing || disabled} onImported={installer.onImported} />}
       <Button type="text" icon={<ExternalLink size={14} />} href="https://github.com/openai/codex/releases"
         target="_blank" rel="noopener noreferrer">{guiText("官方发布页")}</Button>
     </div>

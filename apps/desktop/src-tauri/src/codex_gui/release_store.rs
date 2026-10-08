@@ -38,6 +38,21 @@ pub(super) fn ready(root: &Path, version: &str) -> bool {
     valid_version(version) && root.join(version).join(entrypoint()).is_file()
 }
 
+/// Publish only complete packages, with the metadata guard held by every writer.
+pub(super) fn stage(root: &Path, version: &str, staging: &Path) -> Result<()> {
+    if !valid_version(version) || !staging.join(entrypoint()).is_file() {
+        return Err(GuiError::Integrity);
+    }
+    let destination = root.join(version);
+    if !destination.exists() {
+        fs::rename(staging, destination).map_err(|_| GuiError::Install)?;
+    }
+    if !ready(root, version) {
+        return Err(GuiError::Install);
+    }
+    Ok(())
+}
+
 pub(super) fn pending(root: &Path) -> Result<Option<ReleaseInfo>> {
     let Some(mut candidate) = read::<ReleaseInfo>(&root.join("pending.json"))? else {
         return Ok(None);

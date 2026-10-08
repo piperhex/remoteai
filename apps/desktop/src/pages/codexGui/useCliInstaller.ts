@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "../../api/backend";
 import { subscribeGuiEvent } from "./webEvents";
 import type { GuiController } from "./controller";
+import type { CliSnapshot } from "./cliManualDownloadApi";
 
 interface Release { version: string; size: number; ready?: boolean }
 interface Progress { downloaded: number; total: number; phase: "downloading" | "installing" }
-interface CliSnapshot { version: string | null; release: Release | null }
 
 export function useCliInstaller(active: boolean,
   controller: Pick<GuiController, "report" | "clearError" | "connect">, autoUpdate = false) {
@@ -133,5 +133,14 @@ export function useCliInstaller(active: boolean,
     } catch (error) { if (mounted.current) controller.report(error); }
     finally { busy.current = false; if (mounted.current) setInstalling(false); }
   };
-  return { version, release, checking, installing, progress, checked, check, install };
+  const onImported = async (snapshot: CliSnapshot) => {
+    snapshotRevision.current += 1;
+    releaseRevision.current += 1;
+    currentVersion.current = snapshot.version;
+    setVersion(snapshot.version);
+    setRelease(snapshot.release);
+    controller.clearError();
+    if (snapshot.version) await controller.connect({ reuseExisting: true });
+  };
+  return { version, release, checking, installing, progress, checked, check, install, onImported };
 }

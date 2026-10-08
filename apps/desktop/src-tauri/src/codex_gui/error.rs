@@ -60,6 +60,14 @@ pub(super) enum GuiError {
     Integrity,
     #[error("Codex 安装未完成，请检查磁盘空间后重试。")]
     Install,
+    #[error("请选择下载好的完整安装包和版本校验文件。")]
+    ImportFile,
+    #[error("版本校验文件无效，请从引导中的官方链接重新下载。")]
+    ImportMetadata,
+    #[error("安装包与校验文件不匹配，请下载同一版本、适合当前电脑的文件。")]
+    ImportMismatch,
+    #[error("此版本已安装，或已有更新版本。请下载最新版本后再导入。")]
+    ImportVersion,
 }
 
 impl GuiError {

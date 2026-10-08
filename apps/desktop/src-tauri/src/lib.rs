@@ -356,6 +356,8 @@ pub fn run() {
             codex_gui::releases::updates::codex_gui_cli_check,
             codex_gui::releases::updates::codex_gui_cli_prepare,
             codex_gui::releases::codex_gui_cli_install,
+            codex_gui::releases::manual::codex_gui_cli_manual_download,
+            codex_gui::releases::manual::codex_gui_cli_import,
             codex_gui::codex_gui_request,
             codex_gui::file_stream::bulk::codex_gui_file_bulk_read,
             codex_gui::codex_gui_respond,

@@ -10,9 +10,11 @@ import { mobile } from './mobile';
 import { reliabilityRussian } from '../chatReliability';
 import { reviewRussian } from '../taskReview';
 import { downloads } from './downloads';
+import { cliImportRussian } from '../cliImport';
 
 export const russian = {
   ...downloads,
+  ...cliImportRussian,
   ...reliabilityRussian,
   ...reviewRussian,
   ...mobile,

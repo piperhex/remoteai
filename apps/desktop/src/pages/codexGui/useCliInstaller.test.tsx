@@ -144,6 +144,17 @@ it("manual installation changes the active version and reconnects", async () => 
   expect(controller.connect).toHaveBeenCalledTimes(2);
 });
 
+it("refreshes offline imports without requesting another download or interrupting active conversations", async () => {
+  await act(async () => root.render(<Fixture />));
+  const count = mocks.invoke.mock.calls.length;
+  await act(async () => installer.onImported({ version: latest.version, release: null }));
+  expect(installer.version).toBe(latest.version);
+  expect(installer.release).toBeNull();
+  expect(mocks.invoke.mock.calls).toHaveLength(count);
+  expect(controller.connect).toHaveBeenLastCalledWith({ reuseExisting: true });
+  expect(controller.clearError).toHaveBeenCalled();
+});
+
 it("receives background downloads and activation without installing or restarting again", async () => {
   await act(async () => root.render(<Fixture />));
   const receive = mocks.subscribe.mock.calls.find(([name]) => name === "codex-gui-cli-state")![1];

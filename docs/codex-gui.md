@@ -234,6 +234,15 @@ SHA-256 digest, and extracts into a staging directory before marking it ready. T
 requires clicking **下载并开始** or restarting after the download finishes. Earlier version directories are retained.
 The app's network proxy settings also apply to downloads. Remote computer updates remain manually controlled.
 
+On the local desktop, **手动下载** beside the version check opens an offline installation guide. It provides
+official links for the current platform's complete `.tar.gz` package and release metadata (save the JSON page
+as a file). Select both downloaded files and choose **导入并安装**; no network request is needed during import.
+The metadata identifies the version, platform, expected size, and SHA-256 digest. Import verifies the entire
+archive before publishing it, preserves the original downloads, and rejects older or mismatched releases.
+First installation activates immediately; updates use the existing idle activation flow or wait until the
+next launch. An unfinished automatic download does not block offline import. This file picker is local to
+the desktop; when using a remote computer, perform the import in Remote AI on that computer.
+
 Both the executable and the conversation data live under the Tauri application data directory (`dev.codex.switch`):
 
 ```text
