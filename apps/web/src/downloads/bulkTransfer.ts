@@ -13,9 +13,11 @@ import type { DownloadTask } from './types';
 import { DownloadSession } from '../../../../shared/remote-chat/downloadSession';
 import { DownloadMetrics } from '../../../../shared/remote-chat/downloadMetrics';
 import { restoreBulkTask } from './bulkResume';
+import type { ConnectionMode } from '../../../../shared/remote-chat/protocol';
 
 interface Options {
   task: DownloadTask; info: FileInfo; client: BulkClient; signal: AbortSignal; update: (task: DownloadTask) => void;
+  mode?: () => ConnectionMode;
 }
 
 async function verifyFile(task: DownloadTask, worker: DownloadWorker, signal: AbortSignal) {
@@ -30,6 +32,7 @@ async function verifyFile(task: DownloadTask, worker: DownloadWorker, signal: Ab
 
 async function missingBlocks(options: {
   task: DownloadTask; receiver: BulkReceiver; store: BulkBlockStore; signal: AbortSignal;
+  mode?: () => ConnectionMode;
 }) {
   const { task, receiver, store, signal } = options;
   const manifest = task.manifest!;
@@ -37,7 +40,7 @@ async function missingBlocks(options: {
   let next = 0;
   const run = async () => {
     while (next < manifest.blockCount) {
-      bulkAssert(!signal.aborted, 'CANCELLED'); checkDownloadSize(manifest.size);
+      bulkAssert(!signal.aborted, 'CANCELLED'); checkDownloadSize(manifest.size, options.mode?.());
       const block = next++;
       if (committed.has(block)) continue;
       const index = Math.floor(block / BULK_LIMITS.hashesPerPage);
@@ -90,7 +93,7 @@ export async function transferBulkDownload(options: Options) {
         bytesPerSecond: (value.received - initial) * 1000 / Math.max(1, performance.now() - started) };
       update(task);
     });
-    await missingBlocks({ task, receiver, store, signal }); await store.close();
+    await missingBlocks({ task, receiver, store, signal, mode: options.mode }); await store.close();
     task = { ...task, status: 'verifying', bytesPerSecond: undefined }; update(task);
     session.move('verifying');
     const verificationWorker = worker;

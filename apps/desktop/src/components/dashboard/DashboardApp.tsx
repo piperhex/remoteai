@@ -56,6 +56,7 @@ import { TokenUsageHeatmap } from "../TokenUsageHeatmap";
 import { TokenUsageDashboard } from "../TokenUsageDashboard";
 import { TotpPage } from "../../pages/TotpPage";
 import { LogDiagnosticsPage, type LogDiagnosticsTab } from "../../pages/LogDiagnosticsPage";
+import { DownloadsPage } from "../../pages/DownloadsPage";
 import logDiagnosticsStyles from "../../pages/LogDiagnosticsPage/index.module.less";
 import { CloudLoginModal } from "../modals/CloudLoginModal";
 import { CloudAccountModal } from "../modals/CloudAccountModal";
@@ -188,6 +189,7 @@ type SystemMenuAction =
   | "sessions"
   | "proxy-sessions"
   | "log-diagnostics"
+  | "downloads"
   | "totp"
   | "system-prompts"
   | "settings"
@@ -1007,6 +1009,9 @@ export function DashboardApp() {
       case "log-diagnostics":
         setPage("logDiagnostics");
         break;
+      case "downloads":
+        setPage("downloads");
+        break;
       case "system-prompts":
         setPage("systemPrompts");
         break;
@@ -1302,7 +1307,7 @@ export function DashboardApp() {
             : page === "dreamSkin" ? "dream-skin-main"
               : page === "sessions" ? "sessions-main"
               : page === "codexConfig" ? codexConfigStyles.main : undefined}>
-          {page !== "tokens" && page !== "dreamSkin" && page !== "codexGui" && page !== "logDiagnostics" && (
+          {!['tokens', 'dreamSkin', 'codexGui', 'logDiagnostics', 'downloads'].includes(page) && (
           <>
           {isAccountManagementPage(page) ? (
             <AccountManagementToolbar section={page} onSectionChange={setPage} t={t}
@@ -1371,6 +1376,7 @@ export function DashboardApp() {
           )}
 
           {page === "totp" && <TotpPage accounts={manager.accounts} manager={totpManager} t={t} />}
+          {page === "downloads" && <DownloadsPage auth={cloud.state} />}
           {page === "logDiagnostics" && <LogDiagnosticsPage activeTab={diagnosticsTab}
             onTabChange={setDiagnosticsTab} language={language} t={t} />}
           <section className="page-panel" hidden={page !== "dreamSkin"}>

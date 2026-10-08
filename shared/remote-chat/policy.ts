@@ -60,8 +60,8 @@ export class DownloadPolicyError extends Error {}
 export function fileDownloadByteLimit(mode?: ConnectionMode) {
   return Math.min(Number.MAX_SAFE_INTEGER, getChatPolicy(mode).fileDownloadMaxMb * MIB);
 }
-export function checkDownloadSize(bytes: number) {
-  if (bytes > fileDownloadByteLimit()) {
+export function checkDownloadSize(bytes: number, mode?: ConnectionMode) {
+  if (bytes > fileDownloadByteLimit(mode)) {
     throw new DownloadPolicyError(`文件超过 ${current.fileDownloadMaxMb} MB，无法下载。`);
   }
 }

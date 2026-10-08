@@ -14,6 +14,7 @@ import { remoteTerminalApi } from './terminalApi';
 import { RemoteGuiTools } from './RemoteGuiTools';
 import styles from '../styles.module.less';
 import './remoteGui.less';
+import { useDesktopDownloads } from '../../../downloads/useDesktopDownloads';
 
 const TerminalPanel = lazy(() => import('../terminal/TerminalPanel'));
 
@@ -23,6 +24,7 @@ export default function RemoteGuiWorkspace(props: {
 }) {
   const { active, identity, device, computers } = props;
   const chat = useRemoteGui(identity, device.deviceId, active);
+  useDesktopDownloads({ identity, device, controller: chat.controller });
   const terminal = useRemoteTerminalPanel({ client: chat.controller.guiTools.terminal, connected: chat.state.ready,
     cwd: chat.state.selected?.cwd ?? chat.state.draftProject?.cwd ?? '' });
   const terminalApi = useMemo(() => remoteTerminalApi(chat.controller.guiTools.terminal), [chat.controller]);

@@ -1,0 +1,26 @@
+.page { min-width: 0; width: 100%; }
+.header { align-items: center; border-bottom: 1px solid var(--line); }
+.total { color: var(--muted); font-size: 13px; }
+.content { max-width: 1080px; margin: 0 auto; padding: 24px var(--page-x, 24px) 40px; }
+.toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 22px;
+  p { max-width: 400px; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+}
+.notice { max-width: 400px; color: var(--danger); font-size: 13px; overflow-wrap: anywhere; }
+.tasks { display: grid; gap: 14px;
+  :global(.download-card) { background: var(--panel); border-color: var(--line); }
+  :global(.download-task-heading strong) { font-size: 14px; font-weight: 600; }
+  :global(.download-task-heading span) { color: var(--green); }
+  :global(.download-path) { margin-block: 7px; color: var(--muted); font-size: 12px; }
+  :global(.download-button) { min-height: 34px; border-radius: 8px; border-color: var(--line);
+    background: var(--panel); color: var(--ink); font-size: 12px;
+    &:hover:not(:disabled) { background: var(--green-selection); }
+    &:disabled { opacity: .45; cursor: default; }
+  }
+  :global(.download-danger) { color: var(--danger, #c25b55); }
+  :global(.download-task-meta) { color: var(--muted); font-variant-numeric: tabular-nums; }
+  :global(.download-notice) { color: var(--muted); font-size: 12px; }
+}
+.empty { display: grid; justify-items: center; gap: 12px; padding: 72px 20px; text-align: center; color: var(--muted);
+  h2 { margin: 0; color: var(--ink); font-size: 16px; font-weight: 600; }
+  p { max-width: 400px; margin: 0; font-size: 13px; line-height: 1.7; }
+}

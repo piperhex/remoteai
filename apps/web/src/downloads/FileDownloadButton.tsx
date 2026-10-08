@@ -14,7 +14,8 @@ const DOWNLOAD_STATUS = { queued: '等待下载', preparing: '准备并校验文
 interface Props { path: string; context: FilePreviewContext }
 
 export function FileDownloadButton(props: Props) {
-  const connection = useSyncExternalStore(downloadManager.subscribe, downloadManager.connection);
+  const connection = useSyncExternalStore(downloadManager.subscribe,
+    () => downloadManager.connectionForFile(props.context.client));
   if (connection?.files === props.context.client) return <ManagedDownload {...props} connection={connection} />;
   return <DirectDownload {...props} />;
 }
@@ -54,7 +55,7 @@ function ManagedDownload({ path, context, connection }: Props & { connection: Do
     progress={task && progress ? { percent: progress.percent, status: DOWNLOAD_STATUS[task.status],
       detail: `${progress.amount}${task.status === 'downloading' && task.bytesPerSecond ? ` · ${progress.speed}` : ''}`,
     } : undefined} message={error || task?.message}
-    note={task ? '可在设置中的“下载管理”查看进度。' : undefined} />;
+    note={task ? '下载会在后台继续，可在“下载管理”查看进度。' : undefined} />;
 }
 
 function DirectDownload({ path, context }: Props) {

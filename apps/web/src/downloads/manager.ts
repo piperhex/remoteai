@@ -17,6 +17,7 @@ export class WebDownloadManager {
   private tasks: DownloadTask[] = [];
   private listeners = new Set<() => void>();
   private current?: DownloadConnection;
+  private connections = new Map<DownloadConnection['files'], DownloadConnection>();
   private initialization?: Promise<void>;
   private failure = '';
   private flights = new Map<string, { controller: AbortController; done: Promise<void> }>();
@@ -25,6 +26,10 @@ export class WebDownloadManager {
   private readonly paused = new Set<string>();
   snapshot = () => this.tasks;
   connection = () => this.current;
+  connectionForFile = (files: DownloadConnection['files']) => this.connections.get(files);
+  connectionForSource = (source: Pick<DownloadSource, 'owner' | 'deviceId'>) =>
+    [...this.connections.values()].find(connection => connection.owner === source.owner
+      && connection.deviceId === source.deviceId);
   error = () => this.failure;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private emit = () => { this.listeners.forEach(listener => listener()); };
@@ -43,26 +48,33 @@ export class WebDownloadManager {
   });
 
   bind(connection: DownloadConnection) {
+    this.connections.clear();
+    this.register(connection);
+  }
+  /** Desktop workspaces retain independent connections while navigating between computers. */
+  register(connection: DownloadConnection) {
+    this.connections.set(connection.files, connection);
     this.current = connection;
+    this.pauseDisconnected();
+    this.emit();
+    this.schedule();
+  }
+  private pauseDisconnected() {
     for (const task of this.tasks) {
       if (!this.connected(task)) {
         this.flights.get(task.id)?.controller.abort();
         if (this.retryTimers.has(task.id)) void this.pause(task.id).catch(() => this.storageFailed());
       }
     }
-    this.emit();
-    this.schedule();
   }
   unbind(client: DownloadConnection['files']) {
-    if (this.current?.files !== client) return;
-    this.current = undefined;
-    this.flights.forEach(flight => flight.controller.abort());
-    for (const id of this.retryTimers.keys()) void this.pause(id).catch(() => this.storageFailed());
+    this.connections.delete(client);
+    if (this.current?.files === client) this.current = [...this.connections.values()].at(-1);
+    this.pauseDisconnected();
     this.emit();
   }
   private connected(task: DownloadTask) {
-    return this.current?.ready && this.current.owner === task.source.owner
-      && this.current.deviceId === task.source.deviceId;
+    return this.connectionForSource(task.source)?.ready;
   }
   async enqueue(source: DownloadSource) {
     await this.initialize();
@@ -137,20 +149,22 @@ export class WebDownloadManager {
     if (this.failure) return;
     for (const task of this.tasks) {
       if (this.flights.size >= MAX_ACTIVE_DOWNLOADS) return;
+      const connection = this.connectionForSource(task.source);
       if (task.status !== 'queued' || this.flights.has(task.id) || this.retryTimers.has(task.id) || this.paused.has(task.id)
-        || !this.connected(task) || !this.current) continue;
+        || !connection?.ready) continue;
       const controller = new AbortController();
-      const client = this.current.client;
-      const done = Promise.resolve().then(() => this.run(task, client, controller.signal)).finally(() => {
+      const done = Promise.resolve().then(() => this.run(task, connection, controller.signal)).finally(() => {
         this.flights.delete(task.id); this.schedule();
       });
       this.flights.set(task.id, { controller, done });
     }
   }
-  private async run(task: DownloadTask, client: DownloadConnection['client'], signal: AbortSignal) {
+  private async run(task: DownloadTask, connection: DownloadConnection, signal: AbortSignal) {
     try {
       await this.persist({ ...task, status: 'downloading' });
-      await transferDownload({ task, client, signal, update: value => { task = value; this.update(value); } });
+      await transferDownload({ task, client: connection.client, signal,
+        mode: () => this.connectionForSource(task.source)?.mode ?? 'offline',
+        update: value => { task = value; this.update(value); } });
       this.clearRetry(task.id);
       await this.persist({ ...task, status: 'ready', bytesPerSecond: undefined });
     } catch (error) {

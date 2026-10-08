@@ -1,4 +1,12 @@
 export const downloads: Readonly<Record<string, string>> = {
+  '下载会在后台继续，可在“下载管理”查看进度。': 'Downloads continue in the background. Track progress in Downloads.',
+  '将删除此下载任务和临时文件，已保存的文件会保留。':
+    'Remove this task and its temporary files. Files you have saved will be kept.',
+  '{count} 个任务': '{count} tasks', '未完成': 'In progress', '已就绪': 'Ready',
+  '切换页面后下载会继续，文件就绪后可保存到设备。':
+    'Downloads continue between pages. Save files to your device when they are ready.',
+  '没有符合条件的下载任务': 'No downloads in this view',
+  '在聊天中打开文件并点击下载，任务会显示在这里。': 'Open a file in chat and choose Download to see it here.',
   '文件下载': 'File download', '下载进度': 'Download progress', '准备下载': 'Preparing download',
   '取消下载': 'Cancel download', '暂停下载': 'Pause download',
   '下载记录已满，请删除不再需要的记录后重试。': 'Download history is full. Remove records you no longer need and try again.',

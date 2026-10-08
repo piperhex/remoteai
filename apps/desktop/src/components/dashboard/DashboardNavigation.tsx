@@ -1,6 +1,7 @@
 import {
   BarChart3,
   ClipboardList,
+  Download,
   FolderOpen,
   FileSliders,
   PackageOpen,
@@ -24,6 +25,7 @@ export type DashboardPage =
   | "settings"
   | "codexConfig"
   | "logDiagnostics"
+  | "downloads"
   | "totp"
   | "claudeCode";
 
@@ -50,6 +52,7 @@ const NAVIGATION_ITEMS = [
 const LOG_DIAGNOSTICS_ITEM = {
   page: "logDiagnostics", icon: ClipboardList, labelKey: "logDiagnostics.title",
 } as const;
+const DOWNLOADS_ITEM = { page: "downloads", icon: Download, labelKey: "downloads.title" } as const;
 
 const TOTP_ITEM = { page: "totp", icon: ShieldCheck, labelKey: "totp.action" } as const;
 
@@ -60,7 +63,7 @@ const TOOLBOX_NAVIGATION_ITEMS = [
 ] as const;
 
 export function isToolboxPage(page: DashboardPage) {
-  return page === "systemPrompts" || page === "logDiagnostics" || page === "totp"
+  return page === "systemPrompts" || page === "logDiagnostics" || page === "downloads" || page === "totp"
     || TOOLBOX_NAVIGATION_ITEMS.some((item) => item.page === page);
 }
 
@@ -72,9 +75,9 @@ export function DashboardNavigation({
   variant = "top",
 }: DashboardNavigationProps) {
   const navigationButton = (item: typeof NAVIGATION_ITEMS[number] | typeof TOOLBOX_NAVIGATION_ITEMS[number] | {
-    page: "settings" | "codexConfig" | "logDiagnostics" | "totp";
+    page: "settings" | "codexConfig" | "logDiagnostics" | "downloads" | "totp";
     icon: typeof Settings;
-    labelKey: "nav.settings" | "nav.codexConfig" | "logDiagnostics.title" | "totp.action";
+    labelKey: "nav.settings" | "nav.codexConfig" | "logDiagnostics.title" | "downloads.title" | "totp.action";
   }) => {
     const Icon = item.icon;
     const label = t(item.labelKey);
@@ -94,10 +97,12 @@ export function DashboardNavigation({
       data-tauri-drag-region={variant === "sidebar" ? true : undefined}>
       {variant !== "toolbox" && NAVIGATION_ITEMS.map(navigationButton)}
       {variant !== "top" && TOOLBOX_NAVIGATION_ITEMS.map(navigationButton)}
+      {variant === "toolbox" && navigationButton(DOWNLOADS_ITEM)}
       {variant === "toolbox" && navigationButton(LOG_DIAGNOSTICS_ITEM)}
       {variant === "toolbox" && navigationButton(TOTP_ITEM)}
       {variant === "sidebar" && (
         <div className="sidebar-nav-tools" data-tauri-drag-region>
+          {navigationButton(DOWNLOADS_ITEM)}
           {navigationButton(LOG_DIAGNOSTICS_ITEM)}
           {navigationButton(TOTP_ITEM)}
           {navigationButton({ page: "codexConfig", icon: FileSliders, labelKey: "nav.codexConfig" })}

@@ -1,4 +1,5 @@
 export const messages1 = {
+  "downloads.title": "Загрузки",
   "logDiagnostics.title": "Диагностика",
   "errorLogs.title": "Журнал ошибок",
   "logDiagnostics.eyebrow": "ДИАГНОСТИКА",

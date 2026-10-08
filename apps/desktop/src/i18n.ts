@@ -15,6 +15,7 @@ export const DEFAULT_LANGUAGE: Language = "zh";
 const translations = {
   ru: russian,
   en: {
+    "downloads.title": "Downloads",
     "logDiagnostics.title": "Log diagnostics",
     "errorLogs.title": "Error logs",
     "logDiagnostics.eyebrow": "LOG DIAGNOSTICS",
@@ -2598,6 +2599,7 @@ const translations = {
     "dreamSkin.theme.starlightNoodleStall.description": "A tiny futuristic noodle stall beneath a crowded starfield. Original science-fiction art with a calm left UI area.",
   },
   zh: {
+    "downloads.title": "下载管理",
     "logDiagnostics.title": "日志诊断",
     "errorLogs.title": "错误日志",
     "logDiagnostics.eyebrow": "运行记录",
