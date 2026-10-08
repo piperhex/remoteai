@@ -38,8 +38,9 @@ async function openDialog() {
 
 async function chooseFiles() {
   mocks.open.mockResolvedValueOnce("C:\\Downloads\\package.tar.gz")
-    .mockResolvedValueOnce("C:\\Downloads\\release.json");
+    .mockResolvedValueOnce("C:\\Downloads\\rust-v0.161.0");
   await click("选择文件"); await click("选择文件");
+  for (const [options] of mocks.open.mock.calls) expect(options.filters).toBeUndefined();
 }
 
 it("opens usable download links even without a successful version check and handles cancelled selection", async () => {
@@ -62,7 +63,7 @@ it("imports both selected paths, coalesces clicks and reports deferred activatio
   await click("导入并安装"); await click("导入并安装");
   expect(mocks.invoke.mock.calls.filter(([command]) => command === "codex_gui_cli_import")).toHaveLength(1);
   expect(mocks.invoke).toHaveBeenLastCalledWith("codex_gui_cli_import", { request: {
-    packagePath: "C:\\Downloads\\package.tar.gz", metadataPath: "C:\\Downloads\\release.json",
+    packagePath: "C:\\Downloads\\package.tar.gz", metadataPath: "C:\\Downloads\\rust-v0.161.0",
   } });
   expect(buttons("关闭")[0].disabled).toBe(true);
   const snapshot = { version: "0.160.0", release: { version: "0.161.0", size: 100, ready: true } };

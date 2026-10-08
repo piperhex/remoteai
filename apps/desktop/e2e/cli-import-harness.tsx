@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Button, ConfigProvider, Popover } from "antd";
 import { mockIPC } from "@tauri-apps/api/mocks";
-import { setGuiLanguage } from "../src/i18n/guiText";
+import { guiText, setGuiLanguage } from "../src/i18n/guiText";
 import type { CliSnapshot } from "../src/pages/codexGui/cliManualDownloadApi";
 import "antd/dist/reset.css";
 
@@ -10,10 +10,10 @@ const query = new URLSearchParams(location.search);
 const language = query.get("language");
 setGuiLanguage(language === "en" || language === "ru" ? language : "zh");
 mockIPC(async (command, args) => {
-  const options = args as { options?: { filters: { extensions: string[] }[] } };
+  const options = args as { options?: { title?: string } };
   if (command === "plugin:dialog|open") {
-    return options.options?.filters[0].extensions[0] === "gz"
-      ? "C:\\Downloads\\codex-package-x86_64-pc-windows-msvc.tar.gz" : "C:\\Downloads\\release.json";
+    return options.options?.title === guiText("选择完整安装包")
+      ? "C:\\Downloads\\codex-package-x86_64-pc-windows-msvc.tar.gz" : "C:\\Downloads\\rust-v0.161.0";
   }
   if (command === "codex_gui_cli_manual_download") return {
     platform: "Windows / x64", assetName: "codex-package-x86_64-pc-windows-msvc.tar.gz",

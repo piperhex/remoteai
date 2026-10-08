@@ -27,9 +27,6 @@ export function useCliManualDownload(version: string | null, onImported: (value:
     try {
       const selected = await open({ multiple: false, directory: false,
         title: guiText(kind === "package" ? "选择完整安装包" : "选择版本校验文件"),
-        filters: [{ name: kind === "package" ? "Codex (.tar.gz)" : "JSON",
-          extensions: [kind === "package" ? "gz" : "json"] },
-          { name: guiText("所有文件"), extensions: ["*"] }],
       });
       if (typeof selected === "string" && mounted.current) {
         (kind === "package" ? setPackagePath : setMetadataPath)(selected);

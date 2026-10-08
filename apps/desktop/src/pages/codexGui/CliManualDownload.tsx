@@ -40,7 +40,7 @@ function DownloadDialog({ version, onImported, onClose }: Props & { onClose: () 
           description={links.assetName} selected={state.packagePath} disabled={busy}
           onChoose={() => void state.choose("package")} />
         <FileStep title={guiText("2. 版本校验文件")} href={links.metadataUrl}
-          description={guiText("打开链接后，将页面另存为 JSON 文件，用于检查安装包是否完整。")}
+          description={guiText("打开链接后，将页面另存为文件即可，无需修改文件名或后缀。")}
           selected={state.metadataPath} disabled={busy} onChoose={() => void state.choose("metadata")} />
         <a href={links.releaseUrl} target="_blank" rel="noopener noreferrer" className={styles.release}>
           <ExternalLink size={14} />{guiText("官方发布页")}</a>

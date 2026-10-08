@@ -53,18 +53,25 @@ fn links_work_without_network_or_known_version() {
 
 #[test]
 fn offline_import_keeps_helpers_and_activates_first_installation() {
-    let fixture = Fixture::new();
-    let request = package(&fixture, "0.161.0");
-    let (temporary, candidate) = prepare_import(&fixture.0, &request).unwrap();
-    assert!(store::installed(&fixture.0).unwrap().version.is_none());
-    commit_import(&fixture.0, &temporary.path().join("unpacked"), candidate).unwrap();
-    assert_eq!(
-        store::installed(&fixture.0).unwrap().version.as_deref(),
-        Some("0.161.0")
-    );
-    assert!(fixture.0.join("0.161.0/bin/helper").is_file());
-    assert!(request.package_path.is_file());
-    assert!(request.metadata_path.is_file());
+    for name in ["latest", "rust-v0.161.0", "release.txt", "release.json"] {
+        let fixture = Fixture::new();
+        let mut request = package(&fixture, "0.161.0");
+        let metadata_path = fixture.0.join(name);
+        if request.metadata_path != metadata_path {
+            fs::rename(&request.metadata_path, &metadata_path).unwrap();
+            request.metadata_path = metadata_path;
+        }
+        let (temporary, candidate) = prepare_import(&fixture.0, &request).unwrap();
+        assert!(store::installed(&fixture.0).unwrap().version.is_none());
+        commit_import(&fixture.0, &temporary.path().join("unpacked"), candidate).unwrap();
+        assert_eq!(
+            store::installed(&fixture.0).unwrap().version.as_deref(),
+            Some("0.161.0")
+        );
+        assert!(fixture.0.join("0.161.0/bin/helper").is_file());
+        assert!(request.package_path.is_file());
+        assert!(request.metadata_path.is_file());
+    }
 }
 
 #[test]

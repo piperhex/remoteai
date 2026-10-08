@@ -236,7 +236,8 @@ The app's network proxy settings also apply to downloads. Remote computer update
 
 On the local desktop, **手动下载** beside the version check opens an offline installation guide. It provides
 official links for the current platform's complete `.tar.gz` package and release metadata (save the JSON page
-as a file). Select both downloaded files and choose **导入并安装**; no network request is needed during import.
+as a file, without renaming it). File names and extensions are unrestricted; validation uses file contents.
+Select both downloaded files and choose **导入并安装**; no network request is needed during import.
 The metadata identifies the version, platform, expected size, and SHA-256 digest. Import verifies the entire
 archive before publishing it, preserves the original downloads, and rejects older or mismatched releases.
 First installation activates immediately; updates use the existing idle activation flow or wait until the

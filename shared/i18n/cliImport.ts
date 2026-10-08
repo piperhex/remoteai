@@ -11,8 +11,8 @@ export const cliImportEnglish: Readonly<Record<string, string>> = {
     "1. Complete package",
   "2. 版本校验文件":
     "2. Release verification file",
-  "打开链接后，将页面另存为 JSON 文件，用于检查安装包是否完整。":
-    "Open the link and save the page as a JSON file to verify the package.",
+  "打开链接后，将页面另存为文件即可，无需修改文件名或后缀。":
+    "Open the link and save the page as a file. Keep its original name and extension.",
   "两个文件须来自同一版本。导入无需联网；有对话正在运行时，更新会稍后安装。":
     "Both files must be from the same release. Import works offline; updates wait until conversations are idle.",
   "下载文件":
@@ -68,8 +68,8 @@ export const cliImportRussian: Readonly<Record<string, string>> = {
     "1. Полный установочный пакет",
   "2. 版本校验文件":
     "2. Файл проверки версии",
-  "打开链接后，将页面另存为 JSON 文件，用于检查安装包是否完整。":
-    "Откройте ссылку и сохраните страницу как файл JSON для проверки пакета.",
+  "打开链接后，将页面另存为文件即可，无需修改文件名或后缀。":
+    "Откройте ссылку и сохраните страницу как файл, не меняя имя или расширение.",
   "两个文件须来自同一版本。导入无需联网；有对话正在运行时，更新会稍后安装。":
     "Оба файла должны быть одной версии. Импорт работает без интернета; обновление дождётся завершения диалогов.",
   "下载文件":

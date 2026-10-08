@@ -15,7 +15,7 @@ test("version popover opens the offline guide and imports both selected files", 
   await expect(dialog.getByRole("button", { name: "导入并安装" })).toBeDisabled();
   await dialog.getByRole("button", { name: "选择文件", exact: true }).first().click();
   await dialog.getByRole("button", { name: "选择文件", exact: true }).click();
-  await expect(dialog.getByText("已选择：release.json")).toBeVisible();
+  await expect(dialog.getByText("已选择：rust-v0.161.0")).toBeVisible();
   await page.screenshot({ path: "../../.codex-tmp/cli-import-selected.png" });
   await dialog.getByRole("button", { name: "导入并安装" }).click();
   await expect(dialog.getByRole("button", { name: /^关\s*闭$/ })).toBeDisabled();
