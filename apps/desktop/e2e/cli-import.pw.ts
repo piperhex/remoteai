@@ -42,3 +42,19 @@ test("first-install guide fits a narrow window and keeps errors inside the dialo
   await expect(dialog.getByRole("button", { name: "重新选择" })).toHaveCount(2);
   await page.screenshot({ path: "../../.codex-tmp/cli-import-narrow.png" });
 });
+
+test("package-only import is enabled and the optional label sits beside the verification title", async ({ page }) => {
+  await page.goto("/e2e/cli-import-harness.html?first&package-only");
+  await page.getByRole("button", { name: "手动下载", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "手动下载 Codex" });
+  const title = await dialog.getByText("2. 版本校验文件", { exact: true }).boundingBox();
+  const optional = await dialog.getByText("非必填", { exact: true }).boundingBox();
+  expect(optional!.x).toBeGreaterThan(title!.x + title!.width);
+  expect(Math.abs(optional!.y - title!.y)).toBeLessThan(4);
+  await expect(dialog.getByRole("button", { name: "导入并安装" })).toBeDisabled();
+  await dialog.getByRole("button", { name: "选择文件", exact: true }).first().click();
+  await expect(dialog.getByRole("button", { name: "导入并安装" })).toBeEnabled();
+  await page.screenshot({ path: "../../.codex-tmp/cli-import-optional.png" });
+  await dialog.getByRole("button", { name: "导入并安装" }).click();
+  await expect(dialog.getByText("Codex 已安装，可以开始使用了。")).toBeVisible();
+});

@@ -237,9 +237,11 @@ The app's network proxy settings also apply to downloads. Remote computer update
 On the local desktop, **手动下载** beside the version check opens an offline installation guide. It provides
 official links for the current platform's complete `.tar.gz` package and release metadata (save the JSON page
 as a file, without renaming it). File names and extensions are unrestricted; validation uses file contents.
-Select both downloaded files and choose **导入并安装**; no network request is needed during import.
-The metadata identifies the version, platform, expected size, and SHA-256 digest. Import verifies the entire
-archive before publishing it, preserves the original downloads, and rejects older or mismatched releases.
+Select the complete package and choose **导入并安装**; the release verification file is optional and can be
+removed after selection. No network request is needed during import. Without release metadata, the bundled
+`codex-package.json` identifies the version and platform; import validates the package layout and gzip integrity.
+When metadata is supplied, its expected size and SHA-256 digest must also match; failed verification is never
+silently skipped. Import preserves the original downloads and rejects older or incompatible releases.
 First installation activates immediately; updates use the existing idle activation flow or wait until the
 next launch. An unfinished automatic download does not block offline import. This file picker is local to
 the desktop; when using a remote computer, perform the import in Remote AI on that computer.

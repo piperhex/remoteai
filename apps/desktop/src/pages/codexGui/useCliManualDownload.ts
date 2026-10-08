@@ -37,19 +37,23 @@ export function useCliManualDownload(version: string | null, onImported: (value:
   };
 
   const importFiles = async () => {
-    if (locked.current || !packagePath || !metadataPath) return;
+    if (locked.current || !packagePath) return;
     locked.current = true; setBusy(true); setImporting(true); setError(""); setResult(null);
     try {
-      const imported = await importCliPackage({ packagePath, metadataPath });
+      const imported = await importCliPackage({ packagePath, ...(metadataPath ? { metadataPath } : {}) });
       await onImported(imported);
       if (mounted.current) setResult(imported);
     } catch (cause) {
       if (mounted.current) setError(typeof cause === "string" ? guiText(cause)
-        : guiText("导入未完成，请确认两个文件下载完整后重试。"));
+        : guiText("导入未完成，请确认所选文件下载完整后重试。"));
     } finally {
       locked.current = false;
       if (mounted.current) { setBusy(false); setImporting(false); }
     }
   };
-  return { links, packagePath, metadataPath, error, busy, importing, result, choose, importFiles };
+  const clearMetadata = () => {
+    if (locked.current) return;
+    setMetadataPath(""); setError(""); setResult(null);
+  };
+  return { links, packagePath, metadataPath, error, busy, importing, result, choose, clearMetadata, importFiles };
 }

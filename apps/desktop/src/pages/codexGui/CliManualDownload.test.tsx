@@ -83,3 +83,31 @@ it("keeps file selections after a failed import so users can replace a bad file 
   await click("导入并安装");
   expect(document.body.textContent).toContain("Codex 已安装，可以开始使用了。");
 });
+
+it("marks verification optional and imports a package without a verification file", async () => {
+  await openDialog();
+  const heading = document.querySelector("section:nth-of-type(2) strong")!.parentElement!;
+  expect(heading.textContent).toBe("2. 版本校验文件非必填");
+  mocks.open.mockResolvedValueOnce("C:\\Downloads\\package");
+  await click("选择文件");
+  expect(buttons("导入并安装")[0].disabled).toBe(false);
+  mocks.invoke.mockResolvedValueOnce({ version: "0.161.0", release: null });
+  await click("导入并安装");
+  expect(mocks.invoke).toHaveBeenLastCalledWith("codex_gui_cli_import", {
+    request: { packagePath: "C:\\Downloads\\package" },
+  });
+  expect(document.body.textContent).toContain("Codex 已安装，可以开始使用了。");
+});
+
+it("allows removing optional verification while keeping the selected package", async () => {
+  await openDialog(); await chooseFiles();
+  await click("移除");
+  expect(document.body.textContent).not.toContain("已选择：rust-v0.161.0");
+  expect(buttons("重新选择")).toHaveLength(1);
+  expect(buttons("导入并安装")[0].disabled).toBe(false);
+  mocks.invoke.mockResolvedValueOnce({ version: "0.161.0", release: null });
+  await click("导入并安装");
+  expect(mocks.invoke).toHaveBeenLastCalledWith("codex_gui_cli_import", {
+    request: { packagePath: "C:\\Downloads\\package.tar.gz" },
+  });
+});

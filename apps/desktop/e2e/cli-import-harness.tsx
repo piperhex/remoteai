@@ -22,6 +22,10 @@ mockIPC(async (command, args) => {
     releaseUrl: "https://github.com/openai/codex/releases/latest",
   };
   if (command === "codex_gui_cli_import") {
+    const { request } = args as { request: { packagePath?: string; metadataPath?: string } };
+    if (!request.packagePath || (query.has("package-only") && request.metadataPath)) {
+      throw new Error("Unexpected import files");
+    }
     await new Promise(resolve => setTimeout(resolve, 600));
     if (query.has("failure")) throw "安装包与校验文件不匹配，请下载同一版本、适合当前电脑的文件。";
     return { version: "0.161.0", release: null };

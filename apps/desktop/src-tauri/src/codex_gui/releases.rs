@@ -264,6 +264,16 @@ pub(super) fn unpack(archive: &Path, destination: &Path) -> Result<()> {
             return Err(GuiError::Integrity);
         }
     }
+    // Tar can stop at its end marker before gzip validates the trailer. Drain the decoder so
+    // truncated or corrupt archives are rejected even when an optional digest was not supplied.
+    let remaining = std::io::copy(
+        &mut archive.into_inner().take(MAX_DOWNLOAD * 4 + 1),
+        &mut std::io::sink(),
+    )
+    .map_err(|_| GuiError::Integrity)?;
+    if remaining > MAX_DOWNLOAD * 4 {
+        return Err(GuiError::Integrity);
+    }
     if !destination.join(entrypoint()).is_file() {
         return Err(GuiError::Install);
     }

@@ -16,5 +16,5 @@ export interface CliDownloadLinks {
 export const cliDownloadLinks = (version: string | null) =>
   invoke<CliDownloadLinks>("codex_gui_cli_manual_download", { version });
 
-export const importCliPackage = (request: { packagePath: string; metadataPath: string }) =>
+export const importCliPackage = (request: { packagePath: string; metadataPath?: string }) =>
   invoke<CliSnapshot>("codex_gui_cli_import", { request });

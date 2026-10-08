@@ -1,4 +1,4 @@
-//! Offline import of the official complete package and its release metadata.
+//! Offline import of the official complete package, with optional release metadata verification.
 use super::{
     asset_name, root, select_asset, store, unpack, updates, valid_version, Asset, CliStatus,
     CliUpdateState, GuiError, Release, ReleaseInfo, Result, MAX_DOWNLOAD, RELEASE_API,
@@ -15,6 +15,19 @@ use tauri::{AppHandle, Manager};
 const RELEASE_PAGE: &str = "https://github.com/openai/codex/releases";
 const MAX_METADATA: u64 = 2 * 1024 * 1024;
 const COPY_BUFFER: usize = 256 * 1024;
+const PACKAGE_LAYOUT_VERSION: u32 = 1;
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PackageManifest {
+    layout_version: u32,
+    version: String,
+    target: String,
+    variant: String,
+    entrypoint: String,
+    resources_dir: String,
+    path_dir: String,
+}
 
 fn platform_label() -> String {
     let system = match std::env::consts::OS {
@@ -44,7 +57,7 @@ pub(crate) struct ManualDownload {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct ImportRequest {
     package_path: PathBuf,
-    metadata_path: PathBuf,
+    metadata_path: Option<PathBuf>,
 }
 
 fn download_links(version: Option<&str>) -> Result<ManualDownload> {
@@ -105,15 +118,20 @@ fn read_release(path: &Path) -> Result<(String, Asset)> {
     select_asset(release).map_err(|_| GuiError::ImportMetadata)
 }
 
-fn copy_verified(source: &Path, destination: &Path, asset: &Asset) -> Result<()> {
-    let expected = asset
+fn expected_digest(asset: &Asset) -> Result<&str> {
+    asset
         .digest
         .as_deref()
         .and_then(|digest| digest.strip_prefix("sha256:"))
         .filter(|digest| digest.len() == 64 && digest.bytes().all(|byte| byte.is_ascii_hexdigit()))
-        .ok_or(GuiError::ImportMetadata)?;
+        .ok_or(GuiError::ImportMetadata)
+}
+
+fn copy_package(source: &Path, destination: &Path, asset: Option<&Asset>) -> Result<u64> {
+    let expected = asset.map(expected_digest).transpose()?;
     let mut source = local_file(source, MAX_DOWNLOAD)?;
-    if source.metadata().map_err(|_| GuiError::ImportFile)?.len() != asset.size {
+    let size = source.metadata().map_err(|_| GuiError::ImportFile)?.len();
+    if asset.is_some_and(|asset| size != asset.size) {
         return Err(GuiError::ImportMismatch);
     }
     let mut destination = fs::File::create(destination).map_err(|_| GuiError::Install)?;
@@ -126,7 +144,7 @@ fn copy_verified(source: &Path, destination: &Path, asset: &Asset) -> Result<()>
             break;
         }
         copied += count as u64;
-        if copied > asset.size {
+        if copied > size {
             return Err(GuiError::ImportMismatch);
         }
         hash.update(&buffer[..count]);
@@ -134,10 +152,32 @@ fn copy_verified(source: &Path, destination: &Path, asset: &Asset) -> Result<()>
             .write_all(&buffer[..count])
             .map_err(|_| GuiError::Install)?;
     }
-    if copied != asset.size || !format!("{:x}", hash.finalize()).eq_ignore_ascii_case(expected) {
+    let digest = format!("{:x}", hash.finalize());
+    if copied != size || expected.is_some_and(|expected| !digest.eq_ignore_ascii_case(expected)) {
         return Err(GuiError::ImportMismatch);
     }
-    Ok(())
+    Ok(copied)
+}
+
+/// Read the bundled identity without executing any imported code or accessing the network.
+fn package_version(staging: &Path) -> Result<String> {
+    let file = local_file(&staging.join("codex-package.json"), MAX_METADATA)
+        .map_err(|_| GuiError::ImportPackage)?;
+    let package: PackageManifest = serde_json::from_reader(file.take(MAX_METADATA + 1))
+        .map_err(|_| GuiError::ImportPackage)?;
+    if package.layout_version != PACKAGE_LAYOUT_VERSION
+        || !valid_version(&package.version)
+        || format!("codex-package-{}.tar.gz", package.target) != asset_name()?
+        || package.variant != "codex"
+        || package.entrypoint != super::entrypoint()
+        || package.resources_dir != "codex-resources"
+        || package.path_dir != "codex-path"
+        || !staging.join(&package.resources_dir).is_dir()
+        || !staging.join(&package.path_dir).is_dir()
+    {
+        return Err(GuiError::ImportPackage);
+    }
+    Ok(package.version)
 }
 
 fn check_version(root: &Path, version: &str) -> Result<()> {
@@ -162,22 +202,34 @@ fn prepare_import(
     root: &Path,
     request: &ImportRequest,
 ) -> Result<(tempfile::TempDir, ReleaseInfo)> {
-    let (version, asset) = read_release(&request.metadata_path)?;
+    let release = request
+        .metadata_path
+        .as_deref()
+        .map(read_release)
+        .transpose()?;
     fs::create_dir_all(root).map_err(|_| GuiError::Install)?;
     let temporary = tempfile::Builder::new()
         .prefix("import-")
         .tempdir_in(root)
         .map_err(|_| GuiError::Install)?;
     let archive = temporary.path().join("package.tar.gz");
-    copy_verified(&request.package_path, &archive, &asset)?;
+    let size = copy_package(
+        &request.package_path,
+        &archive,
+        release.as_ref().map(|(_, asset)| asset),
+    )?;
     let staging = temporary.path().join("unpacked");
     fs::create_dir(&staging).map_err(|_| GuiError::Install)?;
     unpack(&archive, &staging)?;
+    let version = match release {
+        Some((version, _)) => version,
+        None => package_version(&staging)?,
+    };
     Ok((
         temporary,
         ReleaseInfo {
             version,
-            size: asset.size,
+            size,
             ready: true,
         },
     ))
