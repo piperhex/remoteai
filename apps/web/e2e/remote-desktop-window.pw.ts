@@ -9,8 +9,8 @@ test.beforeEach(({ isMobile }) => {
 
 async function openDesktop(page: Page, native = false, query = '') {
   await page.goto(`e2e/remote-desktop-harness.html?displays${native ? '&native-clipboard' : ''}${query}`);
-  await page.getByRole('button', { name: native ? '打开工具箱' : '打开工具', exact: true }).click();
-  await page.getByRole('button', { name: '远程桌面', exact: true }).click();
+  if (!native) await page.getByRole('button', { name: '打开工具', exact: true }).click();
+  await page.getByRole('button', { name: native ? '打开远程桌面' : '远程桌面', exact: true }).click();
   await expect.poll(() => page.locator('video').evaluate(video => video.videoWidth)).toBeGreaterThan(0);
   await expect(page.getByText('正在连接桌面…', { exact: true })).not.toBeVisible();
 }
@@ -37,10 +37,24 @@ for (const native of [false, true]) {
       await expect(page.getByRole('dialog', { name: '远程桌面', exact: true })).not.toBeVisible();
       const restore = page.getByRole('button', { name: '恢复远程桌面', exact: true });
       await expect(restore).toBeVisible();
-      const bubble = (await restore.boundingBox())!;
-      expect(bubble.x + bubble.width).toBe(1416);
-      expect(bubble.y + bubble.height).toBe(876);
+      const launcher = (await restore.boundingBox())!;
+      if (native) {
+        const connection = (await page.locator('.chat-connection-info').boundingBox())!;
+        const header = (await page.locator('.chat-header').boundingBox())!;
+        expect(launcher.x + launcher.width).toBeLessThan(connection.x);
+        expect(launcher.y).toBeGreaterThanOrEqual(header.y);
+        expect(launcher.y + launcher.height).toBeLessThanOrEqual(header.y + header.height);
+        const status = restore.getByRole('status', { name: '正在后台运行' });
+        await expect(status).toBeVisible();
+        await expect(status).toHaveCSS('background-color', 'rgb(34, 197, 94)');
+        expect((await status.boundingBox())!.x).toBeGreaterThan((await restore.locator('svg').boundingBox())!.x);
+        await expect(page.locator('.rd-restore')).toHaveCount(0);
+      } else {
+        expect(launcher.x + launcher.width).toBe(1416);
+        expect(launcher.y + launcher.height).toBe(876);
+      }
       await page.screenshot({ path: info.outputPath('remote-desktop-minimized.png') });
+      await page.getByRole('textbox', { name: '本机聊天消息' }).click();
       const before = await page.evaluate(() => ({ frames: window.desktopTest.frames,
         inputs: window.desktopTest.inputs.length }));
       await page.keyboard.type('local chat');
@@ -48,6 +62,7 @@ for (const native of [false, true]) {
       expect(await page.evaluate(() => window.desktopTest.inputs.length)).toBe(before.inputs);
       expect(await page.evaluate(() => window.desktopTest.closed)).toBe(0);
       await restore.click();
+      await expect(page.getByRole('status', { name: '正在后台运行' })).toHaveCount(0);
       await expect(page.getByRole('dialog', { name: '远程桌面', exact: true })).toBeVisible();
       expect(await video!.evaluate(element => element === document.querySelector('video'))).toBe(true);
       await page.keyboard.press('a');
@@ -57,6 +72,7 @@ for (const native of [false, true]) {
       await page.getByRole('button', { name: '关闭', exact: true }).click();
       await expect(page.locator('.rd-root')).toHaveCount(0);
       await expect(restore).toHaveCount(0);
+      if (native) await expect(page.getByRole('button', { name: '打开远程桌面', exact: true })).toBeVisible();
       await expect.poll(() => page.evaluate(() => window.desktopTest.closed)).toBe(1);
       expect(errors).toEqual([]);
     });
@@ -102,6 +118,9 @@ test('keeps window controls visible in a narrow window with display tabs', async
   await expect(controls.getByRole('button', { name: '最小化' })).toBeInViewport();
   await expect(controls.getByRole('button', { name: '关闭' })).toBeInViewport();
   expect(await page.locator('.rd-root').evaluate(node => node.scrollWidth === node.clientWidth)).toBe(true);
+  await page.getByRole('button', { name: '最小化', exact: true }).click();
+  await expect(page.getByRole('button', { name: '恢复远程桌面', exact: true })).toBeInViewport();
+  expect(await page.locator('.chat-header').evaluate(node => node.scrollWidth === node.clientWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('remote-desktop-narrow.png') });
 });
 

@@ -30,7 +30,7 @@ export function RemoteGuiTools({ controller, state, active, terminal, deviceName
   };
   return <div className="gui-remote-tools">
     <GuiToolbox active={active} connected={connected} cwd={state.selected?.cwd ?? state.draftProject?.cwd ?? ''}
-      deviceName={deviceName} git={controller.guiTools.git} desktop={controller.guiTools.desktop} />
+      deviceName={deviceName} git={controller.guiTools.git} />
     <Tooltip title={guiText("重新连接远程 Codex")} styles={{ root: { maxWidth: 400 } }}>
       <Button type="text" icon={<RefreshCw size={16} />} aria-label={guiText("重新连接远程 Codex")}
         loading={reconnecting || state.connecting} disabled={running || installer.installing}

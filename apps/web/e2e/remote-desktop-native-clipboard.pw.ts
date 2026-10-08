@@ -6,8 +6,7 @@ declare global { interface Window { desktopTest: typeof desktopTest } }
 test.beforeEach(async ({ page, isMobile }) => {
   test.skip(!!isMobile, 'The desktop viewer uses a physical keyboard and native clipboard.');
   await page.goto('e2e/remote-desktop-harness.html?native-clipboard');
-  await page.getByRole('button', { name: '打开工具箱' }).click();
-  await page.getByRole('button', { name: '远程桌面', exact: true }).click();
+  await page.getByRole('button', { name: '打开远程桌面', exact: true }).click();
   await expect.poll(() => page.locator('video').evaluate(video => video.videoWidth)).toBeGreaterThan(0);
   await page.locator('.rd-touch').click();
   await expect(page.locator('.rd-key-capture')).toBeFocused();

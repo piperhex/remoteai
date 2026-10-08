@@ -70,6 +70,8 @@ export const remoteDesktopMessages: Record<string, string> = {
   '声音': 'Sound', '开启声音': 'Enable sound', '静音': 'Mute', '声音暂不可用': 'Sound unavailable',
   '远程桌面': 'Remote desktop', '远程桌面操作': 'Remote desktop controls',
   '远程桌面窗口操作': 'Remote desktop window controls', '恢复远程桌面': 'Restore remote desktop',
+  '打开远程桌面': 'Open remote desktop', '正在后台运行': 'Running in the background',
+  '远程桌面正在后台运行，点击恢复': 'Remote desktop is running in the background. Click to restore.',
   '最小化': 'Minimize', '退出全屏': 'Exit fullscreen',
   '暂时无法切换全屏，请重试。': 'Unable to switch fullscreen. Please try again.',
   '暂时无法退出全屏，请重试。': 'Unable to exit fullscreen. Please try again.',

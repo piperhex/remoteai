@@ -1,0 +1,31 @@
+.launcher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--green) 24%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--green) 12%, transparent);
+  color: var(--ink);
+  font: inherit;
+  font-size: calc(var(--gui-font-size, 14px) - 2px);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: color-mix(in srgb, var(--green) 22%, transparent); }
+  &:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+  &:disabled { opacity: .4; cursor: default; }
+  svg { flex-shrink: 0; }
+}
+
+.status {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #22c55e;
+}

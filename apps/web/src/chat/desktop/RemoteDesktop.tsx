@@ -6,7 +6,7 @@ import type { LocalDesktopClipboard } from '../../../../../shared/remote-desktop
 import { useDesktopSession } from '../../../../../shared/remote-desktop/useDesktopSession';
 import { DisplaySettings } from './DisplaySettings';
 import { DesktopTitlebar } from './DesktopTitlebar';
-import { useDesktopWindow } from './useDesktopWindow';
+import { useDesktopWindow, type DesktopWindowState } from './useDesktopWindow';
 import { DesktopStats } from './DesktopStats';
 import { DesktopMouse } from './MousePad';
 import { useTrackpad } from './useTrackpad';
@@ -30,12 +30,13 @@ import './desktop.css';
 
 const createPeer = (configuration: RTCConfiguration) => new RTCPeerConnection(configuration);
 
-export function RemoteDesktop({ client, active, close, localClipboard, nativeWindow = false }: {
+export function RemoteDesktop({ client, active, close, localClipboard, nativeWindow = false, windowState }: {
   client: DesktopClient; active: boolean; close: () => void; localClipboard?: LocalDesktopClipboard;
   nativeWindow?: boolean;
+  windowState?: DesktopWindowState;
 }) {
   const root = useRef<HTMLDivElement>(null);
-  const windowControls = useDesktopWindow(root, active);
+  const windowControls = useDesktopWindow(root, active, windowState);
   const shown = active && !windowControls.minimized;
   const visible = usePageVisibility();
   const session = useDesktopSession({ client, active: active && visible, createPeer });
@@ -147,7 +148,7 @@ export function RemoteDesktop({ client, active, close, localClipboard, nativeWin
     {keyboard && <DesktopKeyboard input={session.input} close={() => setKeyboard(false)}
       supported={!!session.capabilities.keyboard} />}
   </div>
-    {windowControls.minimized && <button type="button" className="rd-restore"
+    {windowControls.minimized && !windowState && <button type="button" className="rd-restore"
       aria-label={t('恢复远程桌面')} onClick={windowControls.restore}>
       <Monitor size={22} /><span>{t('远程桌面')}</span>
     </button>}

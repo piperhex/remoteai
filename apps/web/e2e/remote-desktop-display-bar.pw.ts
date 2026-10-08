@@ -8,8 +8,8 @@ test.beforeEach(({ isMobile }) => {
 });
 
 async function openDesktop(page: Page, native = false) {
-  await page.getByRole('button', { name: native ? '打开工具箱' : '打开工具', exact: true }).click();
-  await page.getByRole('button', { name: '远程桌面', exact: true }).click();
+  if (!native) await page.getByRole('button', { name: '打开工具', exact: true }).click();
+  await page.getByRole('button', { name: native ? '打开远程桌面' : '远程桌面', exact: true }).click();
   await expect.poll(() => page.locator('video').evaluate(video => video.videoWidth)).toBeGreaterThan(0);
   await expect(page.getByText('正在连接桌面…', { exact: true })).not.toBeVisible();
 }

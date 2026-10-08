@@ -139,11 +139,11 @@ for (const blocked of [false, true]) {
     await page.getByRole('button', { name: '关闭 Git', exact: true }).click();
     await chooseComputer(page, 'Office PC');
     await page.getByRole('button', { name: 'Office', exact: true }).click();
-    await expect(page.locator('.chat-connection')).toContainText(blocked ? 'Relay' : 'P2P');
+    await expect(page.locator('.chat-connection-status')).toContainText(blocked ? 'Relay' : 'P2P');
     await expect(page.getByRole('button', { name: '远程 Codex CLI 更新' })).toContainText('0.155.0');
     await expect(page.locator('.gui-remote-tools > button').first()).toHaveAttribute('aria-label', '打开工具箱');
     await page.getByRole('button', { name: '打开工具箱', exact: true }).click();
-    await expect(toolbox.getByRole('button')).toHaveText(['远程桌面', 'Git']);
+    await expect(toolbox.getByRole('button')).toHaveText(['Git']);
     expect((await page.locator('.ant-popover:visible').boundingBox())!.width).toBeLessThanOrEqual(400);
     await page.screenshot({ path: `../../.codex-tmp/gui-remote-toolbox-${blocked ? 'relay' : 'p2p'}.png` });
     await toolbox.getByRole('button', { name: 'Git', exact: true }).click();
@@ -152,8 +152,13 @@ for (const blocked of [false, true]) {
     await expect.poll(() => office.evaluate(() => window.chatTest.demoState().operations
       .some(operation => operation.operation === 'guiGitChanges' && operation.cwd === 'F:/projects/demo'))).toBe(true);
     await page.getByRole('button', { name: '关闭 Git', exact: true }).click();
-    await page.getByRole('button', { name: '打开工具箱', exact: true }).click();
-    await toolbox.getByRole('button', { name: '远程桌面', exact: true }).click();
+    const launcher = page.getByRole('button', { name: '打开远程桌面', exact: true });
+    await expect(launcher).toBeVisible();
+    const bounds = (await launcher.boundingBox())!;
+    const connection = (await page.locator('.chat-connection-info').boundingBox())!;
+    expect(bounds.x + bounds.width).toBeLessThan(connection.x);
+    expect(bounds.y).toBeGreaterThanOrEqual((await page.locator('.chat-header').boundingBox())!.y);
+    await launcher.click();
     const desktop = page.getByRole('dialog', { name: '远程桌面', exact: true });
     await expect(desktop).toBeVisible();
     await expect.poll(() => desktop.locator('video').evaluate(video => video.videoWidth), { timeout: 20_000 })
@@ -161,6 +166,11 @@ for (const blocked of [false, true]) {
     await desktop.getByRole('button', { name: '显示桌面', exact: true }).click();
     await expect.poll(() => office.evaluate(() => window.desktopTest.inputs.at(-1)))
       .toEqual({ kind: 'key', key: 'desktop' });
+    await desktop.getByRole('button', { name: '最小化', exact: true }).click();
+    const restore = page.getByRole('button', { name: '恢复远程桌面', exact: true });
+    await expect(restore.getByRole('status', { name: '正在后台运行' })).toBeVisible();
+    await page.screenshot({ path: `../../.codex-tmp/gui-remote-desktop-pill-${blocked ? 'relay' : 'p2p'}.png` });
+    await restore.click();
     await desktop.getByRole('button', { name: '关闭', exact: true }).click();
     await expect(desktop).toHaveCount(0);
     await expect.poll(() => office.evaluate(() => window.desktopTest.closed)).toBeGreaterThan(0);

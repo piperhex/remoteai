@@ -35,7 +35,7 @@ export interface ConnectedChatProps {
   device?: ChatComputer; devices: ChatComputer[]; active: boolean;
   scope: string; email: string; chooseDevice: (id: string) => void;
   chooseLocal?: () => void; accountPicker?: ReactNode; headerActions?: ReactNode;
-  headerEnd?: ReactNode;
+  headerConnectionActions?: ReactNode; headerEnd?: ReactNode;
   renderSidebar?: (actions: ChatSidebarActions) => ReactNode;
   composerHeader?: ReactNode;
   conversationFooter?: ReactNode;
@@ -51,7 +51,8 @@ export interface ChatSidebarActions {
 
 /** Conversation UI shared by the web client and the desktop's remote workspace. */
 export function ConnectedChat({ chat, device, devices, active, scope, email, chooseDevice,
-  chooseLocal, accountPicker, headerActions, headerEnd, renderSidebar, composerHeader, conversationFooter,
+  chooseLocal, accountPicker, headerActions, headerConnectionActions, headerEnd, renderSidebar, composerHeader,
+  conversationFooter,
   readClipboardImages, desktopDiffs }: ConnectedChatProps) {
   useLanguage();
   const { state, controller, foreground } = chat;
@@ -90,6 +91,7 @@ export function ConnectedChat({ chat, device, devices, active, scope, email, cho
         aria-expanded={listOpen} onClick={() => { if (desktop) setSidebar(!sidebar); else setDrawer(!drawer); }}>
         <ListToggleIcon size={21} /></button>
       <div className="chat-grow"><h2>{state.selected ? threadPresentation(state.selected, state.sidebar, t).title : t("新聊天")}</h2>
+        {headerConnectionActions}
         <ChatConnectionInfo state={state} controller={controller} device={device} active={active}
           chooseDevice={() => setPickingDevice(true)} /></div>
       {state.selected && state.selectedArchived && <button type="button" className="chat-button"

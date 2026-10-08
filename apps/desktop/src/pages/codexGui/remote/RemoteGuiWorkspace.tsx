@@ -12,6 +12,7 @@ import { readClipboardImages } from '../clipboardImages';
 import { useRemoteTerminalPanel } from '../../../../../../shared/remote-chat/useRemoteTerminalPanel';
 import { remoteTerminalApi } from './terminalApi';
 import { RemoteGuiTools } from './RemoteGuiTools';
+import { GuiRemoteDesktop } from '../GuiRemoteDesktop';
 import styles from '../styles.module.less';
 import './remoteGui.less';
 import { useDesktopDownloads } from '../../../downloads/useDesktopDownloads';
@@ -41,6 +42,8 @@ export default function RemoteGuiWorkspace(props: {
       chooseLocal={() => computers.choose(null)}
       chooseDevice={(id) => { const device = computers.devices.find((entry) => entry.deviceId === id);
         if (device) computers.choose(device); }}
+      headerConnectionActions={<GuiRemoteDesktop client={chat.controller.guiTools.desktop} active={active}
+        connected={chat.state.mode === 'direct' || chat.state.mode === 'relay'} />}
       headerActions={<><RemoteGuiTools controller={chat.controller} state={chat.state} active={active}
         terminal={terminal} deviceName={device.name} />
         <span className="gui-remote-focus"><FocusModeButton {...props.focusMode} /></span></>}

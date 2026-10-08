@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 
+export interface DesktopWindowState {
+  minimized: boolean;
+  setMinimized: (minimized: boolean) => void;
+}
+
 /** Hiding the viewer keeps its media session mounted; only closing it disconnects. */
-export function useDesktopWindow(root: RefObject<HTMLElement>, active: boolean) {
-  const [minimized, setMinimized] = useState(false);
+export function useDesktopWindow(root: RefObject<HTMLElement>, active: boolean, state?: DesktopWindowState) {
+  const [internalMinimized, setInternalMinimized] = useState(false);
+  const { minimized, setMinimized } = state ?? { minimized: internalMinimized, setMinimized: setInternalMinimized };
   const [fullscreen, setFullscreen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -12,7 +18,7 @@ export function useDesktopWindow(root: RefObject<HTMLElement>, active: boolean) 
     document.addEventListener('fullscreenchange', update);
     return () => document.removeEventListener('fullscreenchange', update);
   }, [root]);
-  useEffect(() => { if (!active) setMinimized(false); }, [active]);
+  useEffect(() => { if (!active) setMinimized(false); }, [active, setMinimized]);
 
   const run = async (operation: (element: HTMLElement) => Promise<void>, message: string) => {
     const element = root.current;
