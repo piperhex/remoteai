@@ -5,6 +5,7 @@ mod models;
 #[cfg(test)]
 mod pagination_tests;
 mod sanitize;
+mod schema;
 #[cfg(test)]
 mod tests;
 mod worker;
@@ -41,6 +42,15 @@ pub(crate) fn setup<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
 pub(crate) fn record_proxy_error(message: &str, status_code: Option<u16>) {
     if let Some(service) = SERVICE.get() {
         service.record_proxy(message, status_code);
+    }
+}
+
+/// Queue installer diagnostics without blocking the UI; the worker redacts sensitive values.
+pub(crate) fn record_codex_error(message: &str) {
+    if let Some(service) = SERVICE.get() {
+        service.record_codex(message);
+    } else {
+        eprintln!("{}", sanitize_diagnostic_message(message));
     }
 }
 

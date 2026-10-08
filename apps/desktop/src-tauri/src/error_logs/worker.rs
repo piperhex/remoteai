@@ -30,35 +30,45 @@ enum Task {
 /// A single worker owns all SQLite state; callers never share or lock its connection.
 pub(super) struct LogService {
     sender: mpsc::SyncSender<Task>,
-    dropped_proxy_entries: Arc<AtomicU64>,
+    dropped_entries: Arc<AtomicU64>,
 }
 
 impl LogService {
     pub(super) fn start(path: PathBuf) -> Result<Self, LogError> {
         let (sender, receiver) = mpsc::sync_channel(QUEUE_CAPACITY);
-        let dropped_proxy_entries = Arc::new(AtomicU64::new(0));
-        let worker_dropped = dropped_proxy_entries.clone();
+        let dropped_entries = Arc::new(AtomicU64::new(0));
+        let worker_dropped = dropped_entries.clone();
         thread::Builder::new()
             .name("error-log-writer".to_string())
             .spawn(move || run(&path, receiver, &worker_dropped))?;
         Ok(Self {
             sender,
-            dropped_proxy_entries,
+            dropped_entries,
         })
     }
 
     pub(super) fn record_proxy(&self, message: &str, status: Option<u16>) {
-        let Some(entry) = new_entry(ErrorLogSource::Proxy, message, status) else {
+        self.record_background(ErrorLogSource::Proxy, message, status);
+    }
+
+    pub(super) fn record_codex(&self, message: &str) {
+        self.record_background(ErrorLogSource::Codex, message, None);
+    }
+
+    fn record_background(&self, source: ErrorLogSource, message: &str, status: Option<u16>) {
+        let Some(entry) = new_entry(source, message, status) else {
             return;
         };
         match self.sender.try_send(Task::Record(entry, None)) {
             Ok(()) => {}
-            Err(mpsc::TrySendError::Full(_)) => {
-                self.dropped_proxy_entries.fetch_add(1, Ordering::Relaxed);
+            Err(mpsc::TrySendError::Full(Task::Record(entry, _))) => {
+                self.dropped_entries.fetch_add(1, Ordering::Relaxed);
+                eprintln!("Error log queue is full: {}", entry.message);
             }
-            Err(mpsc::TrySendError::Disconnected(_)) => {
-                eprintln!("Error log worker is unavailable")
+            Err(mpsc::TrySendError::Disconnected(Task::Record(entry, _))) => {
+                eprintln!("Error log worker is unavailable: {}", entry.message);
             }
+            Err(_) => unreachable!("only record tasks are queued here"),
         }
     }
 
@@ -117,11 +127,13 @@ fn run(path: &Path, receiver: mpsc::Receiver<Task>, dropped: &AtomicU64) {
 fn handle_task(connection: &mut Option<Connection>, path: &Path, task: Task) {
     match task {
         Task::Record(entry, reply) => {
+            // Keep the sanitized cause available even when a full disk prevents saving the log.
+            let fallback = entry.message.clone();
             let result = with_connection(connection, path, |db| database::insert(db, entry));
             if let Some(reply) = reply {
                 respond(reply, result);
             } else if result.is_err() {
-                eprintln!("Could not save an error log entry");
+                eprintln!("Could not save an error log entry: {fallback}");
             }
         }
         Task::List(query, reply) => respond(
@@ -144,8 +156,8 @@ fn record_overflow(connection: &mut Option<Connection>, path: &Path, dropped: &A
     }
     let entry = NewEntry {
         created_at: Utc::now().to_rfc3339(),
-        source: ErrorLogSource::Proxy,
-        message: format!("代理错误较多，已跳过 {count} 条记录。"),
+        source: ErrorLogSource::Toast,
+        message: format!("错误日志较多，已跳过 {count} 条记录。"),
         status_code: None,
     };
     if with_connection(connection, path, |db| database::insert(db, entry)).is_err() {
@@ -180,7 +192,7 @@ mod tests {
         let dropped = Arc::new(AtomicU64::new(0));
         let service = LogService {
             sender,
-            dropped_proxy_entries: dropped.clone(),
+            dropped_entries: dropped.clone(),
         };
         service.record_proxy("first error", Some(502));
         service.record_proxy("second error", Some(503));

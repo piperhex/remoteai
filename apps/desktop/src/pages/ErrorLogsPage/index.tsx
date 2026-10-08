@@ -13,6 +13,7 @@ interface ErrorLogsPageProps {
 }
 
 function logColumns({ language, t }: ErrorLogsPageProps): TableColumnsType<ErrorLogEntry> {
+  const sources = { proxy: t("errorLogs.proxy"), toast: t("errorLogs.toast"), codex: "Codex CLI" };
   return [
     {
       title: t("errorLogs.time"), dataIndex: "createdAt", width: 174,
@@ -25,7 +26,7 @@ function logColumns({ language, t }: ErrorLogsPageProps): TableColumnsType<Error
       title: t("errorLogs.source"), dataIndex: "source", width: 110,
       render: (source: ErrorLogEntry["source"]) => (
         <Tag color={source === "proxy" ? "error" : "default"}>
-          {t(source === "proxy" ? "errorLogs.proxy" : "errorLogs.toast")}
+          {sources[source]}
         </Tag>
       ),
     },
@@ -49,6 +50,7 @@ function LogToolbar({ logs, t }: { logs: ReturnType<typeof useErrorLogs>; t: Tra
           { value: "all", label: t("errorLogs.all") },
           { value: "proxy", label: t("errorLogs.proxy") },
           { value: "toast", label: t("errorLogs.toast") },
+          { value: "codex", label: "Codex CLI" },
         ]} />
       <div className={styles.actions}>
         <Button size="small" icon={<RefreshCw size={14} />} loading={logs.operation === "refresh"}

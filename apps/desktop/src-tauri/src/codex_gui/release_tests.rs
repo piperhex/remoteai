@@ -1,6 +1,30 @@
 use super::*;
 
 #[test]
+fn broken_archives_and_missing_executables_have_specific_errors() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("package.tar.gz");
+    let destination = root.path().join("unpacked");
+    fs::create_dir(&destination).unwrap();
+    fs::write(&path, b"not a gzip archive").unwrap();
+    assert!(matches!(
+        unpack(&path, &destination),
+        Err(GuiError::InstallUnpack)
+    ));
+    let file = fs::File::create(&path).unwrap();
+    let encoder = flate2::write::GzEncoder::new(file, flate2::Compression::fast());
+    tar::Builder::new(encoder)
+        .into_inner()
+        .unwrap()
+        .finish()
+        .unwrap();
+    assert!(matches!(
+        unpack(&path, &destination),
+        Err(GuiError::InstallMissingExecutable)
+    ));
+}
+
+#[test]
 fn version_and_archive_paths_cannot_escape_the_managed_directory() {
     for version in ["../official", "1/2", "", "C:/codex", "1.2.3/../outside"] {
         assert!(!valid_version(version));

@@ -51,6 +51,20 @@ it("requests one visible page and keeps polling single-flight", async () => {
   expect(requests).toHaveLength(2);
 });
 
+it("filters Codex installation diagnostics and retains the filter while polling", async () => {
+  await finish(0, page([35]));
+  await act(async () => logs.setFilter("codex"));
+  expect(listErrorLogs).toHaveBeenLastCalledWith({ limit: 10, source: "codex",
+    pagination: { page: 1, snapshotId: null } });
+  const result: ErrorLogPage = { ...page([36], 1, 1), entries: [{ id: 36,
+    createdAt: "2026-09-23T12:00:00Z", source: "codex", message: "Codex CLI [extract]: os error 32" }] };
+  await finish(1, result);
+  expect(logs.entries[0].source).toBe("codex");
+  await act(async () => vi.advanceTimersByTime(2_000));
+  expect(listErrorLogs).toHaveBeenLastCalledWith({ limit: 10, source: "codex",
+    pagination: { page: 1, snapshotId: null } });
+});
+
 it("anchors historical pages and resumes live polling on page one", async () => {
   await finish(0, page([35, 34]));
   await act(async () => logs.changePage(2, 10));

@@ -58,8 +58,28 @@ pub(super) enum GuiError {
     Release,
     #[error("下载文件校验未通过，请重新下载。")]
     Integrity,
-    #[error("Codex 安装未完成，请检查磁盘空间后重试。")]
+    #[error("Codex 安装意外中断，请重启应用后重试。")]
     Install,
+    #[error("安装所在磁盘空间不足，请释放空间后重试。")]
+    InstallDiskFull,
+    #[error("没有权限访问安装文件，请检查文件夹权限后重试。")]
+    InstallPermission,
+    #[error("安装文件被其他程序占用，请关闭相关程序后重试。")]
+    InstallInUse,
+    #[error("无法创建安装文件夹，请检查文件夹是否可写后重试。")]
+    InstallDirectory,
+    #[error("无法写入安装文件，请检查磁盘是否可写后重试。")]
+    InstallWrite,
+    #[error("无法读取安装文件，请重新选择安装包或重新下载。")]
+    InstallRead,
+    #[error("安装包无法解压，可能已损坏。请重新下载完整安装包。")]
+    InstallUnpack,
+    #[error("安装包缺少 Codex 启动文件，请下载适合当前电脑的完整安装包。")]
+    InstallMissingExecutable,
+    #[error("无法读取已安装版本的信息，请在日志诊断中查看详情。")]
+    InstallStateRead,
+    #[error("无法保存安装结果，请检查磁盘是否可写后重试。")]
+    InstallStateWrite,
     #[error("所选文件无法读取，请重新选择下载好的文件。")]
     ImportFile,
     #[error("安装包无效或不适合当前电脑，请重新下载完整安装包。")]

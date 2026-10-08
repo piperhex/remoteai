@@ -1,4 +1,6 @@
 use super::error::{GuiError, Result};
+#[path = "release_errors.rs"]
+mod errors;
 #[path = "release_import.rs"]
 pub(crate) mod manual;
 #[path = "release_store.rs"]
@@ -67,7 +69,9 @@ pub(super) fn root(app: &AppHandle) -> Result<PathBuf> {
     Ok(app
         .path()
         .app_data_dir()
-        .map_err(|_| GuiError::Startup)?
+        .map_err(|error| {
+            errors::failure("locate installation directory", &error, GuiError::Startup)
+        })?
         .join("codex-cli"))
 }
 
@@ -146,7 +150,7 @@ fn http_client() -> Result<Client> {
         .connect_timeout(Duration::from_secs(20))
         .timeout(Duration::from_secs(600))
         .build()
-        .map_err(|_| GuiError::Release)
+        .map_err(|error| errors::failure("prepare download connection", &error, GuiError::Release))
 }
 
 fn release(client: &Client, version: Option<&str>) -> Result<(String, Asset)> {
@@ -164,7 +168,7 @@ fn release(client: &Client, version: Option<&str>) -> Result<(String, Asset)> {
         .send()
         .and_then(|response| response.error_for_status())
         .and_then(|response| response.json())
-        .map_err(|_| GuiError::Release)?;
+        .map_err(|error| errors::failure("fetch release information", &error, GuiError::Release))?;
     select_asset(release)
 }
 
@@ -209,14 +213,17 @@ fn download(
         .get(&asset.browser_download_url)
         .send()
         .and_then(|response| response.error_for_status())
-        .map_err(|_| GuiError::Release)?;
-    let mut file = fs::File::create(path).map_err(|_| GuiError::Install)?;
+        .map_err(|error| errors::failure("download package", &error, GuiError::Release))?;
+    let mut file = fs::File::create(path)
+        .map_err(|error| errors::io("create download file", error, GuiError::InstallWrite))?;
     let mut hash = Sha256::new();
     let mut buffer = vec![0u8; 256 * 1024];
     let mut downloaded = 0;
     let mut last_percent = 0;
     loop {
-        let count = response.read(&mut buffer).map_err(|_| GuiError::Release)?;
+        let count = response.read(&mut buffer).map_err(|error| {
+            errors::failure("read download response", &error, GuiError::Release)
+        })?;
         if count == 0 {
             break;
         }
@@ -226,7 +233,7 @@ fn download(
         }
         hash.update(&buffer[..count]);
         file.write_all(&buffer[..count])
-            .map_err(|_| GuiError::Install)?;
+            .map_err(|error| errors::io("write download file", error, GuiError::InstallWrite))?;
         let percent = downloaded * 100 / asset.size.max(1);
         if percent > last_percent {
             progress(Progress {
@@ -244,38 +251,73 @@ fn download(
 }
 
 pub(super) fn unpack(archive: &Path, destination: &Path) -> Result<()> {
-    let file = fs::File::open(archive).map_err(|_| GuiError::Install)?;
+    let file = fs::File::open(archive)
+        .map_err(|error| errors::io("open archive", error, GuiError::InstallRead))?;
     let mut archive = tar::Archive::new(flate2::read::GzDecoder::new(file));
-    let mut total = 0u64;
-    for entry in archive.entries().map_err(|_| GuiError::Install)? {
-        let mut entry = entry.map_err(|_| GuiError::Install)?;
-        let kind = entry.header().entry_type();
-        if !kind.is_file() && !kind.is_dir() {
-            return Err(GuiError::Integrity);
-        }
-        total = total.checked_add(entry.size()).ok_or(GuiError::Integrity)?;
-        if total > MAX_DOWNLOAD * 4 {
-            return Err(GuiError::Integrity);
-        }
-        if !entry
-            .unpack_in(destination)
-            .map_err(|_| GuiError::Install)?
-        {
-            return Err(GuiError::Integrity);
-        }
-    }
-    // Tar can stop at its end marker before gzip validates the trailer. Drain the decoder so
-    // truncated or corrupt archives are rejected even when an optional digest was not supplied.
+    unpack_entries(&mut archive, destination)?;
+    // Tar can stop before gzip validates its trailer; drain it to reject truncated packages.
     let remaining = std::io::copy(
         &mut archive.into_inner().take(MAX_DOWNLOAD * 4 + 1),
         &mut std::io::sink(),
     )
-    .map_err(|_| GuiError::Integrity)?;
+    .map_err(|error| errors::io("verify gzip trailer", error, GuiError::InstallUnpack))?;
     if remaining > MAX_DOWNLOAD * 4 {
-        return Err(GuiError::Integrity);
+        return Err(errors::invalid(
+            "verify gzip trailer",
+            "trailing data exceeds limit",
+            GuiError::Integrity,
+        ));
     }
     if !destination.join(entrypoint()).is_file() {
-        return Err(GuiError::Install);
+        return Err(errors::invalid(
+            "verify executable",
+            entrypoint(),
+            GuiError::InstallMissingExecutable,
+        ));
+    }
+    Ok(())
+}
+
+fn unpack_entries(archive: &mut tar::Archive<impl Read>, destination: &Path) -> Result<()> {
+    let mut total = 0u64;
+    for entry in archive
+        .entries()
+        .map_err(|error| errors::io("read archive", error, GuiError::InstallUnpack))?
+    {
+        let mut entry = entry
+            .map_err(|error| errors::io("read archive entry", error, GuiError::InstallUnpack))?;
+        let kind = entry.header().entry_type();
+        if !kind.is_file() && !kind.is_dir() {
+            return Err(errors::invalid(
+                "validate archive entry",
+                "unsupported entry type",
+                GuiError::Integrity,
+            ));
+        }
+        total = total.checked_add(entry.size()).ok_or_else(|| {
+            errors::invalid(
+                "validate archive size",
+                "entry size overflow",
+                GuiError::Integrity,
+            )
+        })?;
+        if total > MAX_DOWNLOAD * 4 {
+            return Err(errors::invalid(
+                "validate archive size",
+                "extracted size exceeds limit",
+                GuiError::Integrity,
+            ));
+        }
+        if !entry
+            .unpack_in(destination)
+            .map_err(|error| errors::io("extract archive entry", error, GuiError::InstallUnpack))?
+        {
+            return Err(errors::invalid(
+                "validate archive path",
+                "entry escapes installation folder",
+                GuiError::Integrity,
+            ));
+        }
     }
     Ok(())
 }
@@ -283,7 +325,13 @@ pub(super) fn unpack(archive: &Path, destination: &Path) -> Result<()> {
 fn prepare_package(app: &AppHandle, version: &str, asset: &Asset, silent: bool) -> Result<()> {
     let root = root(app)?;
     let client = http_client()?;
-    fs::create_dir_all(&root).map_err(|_| GuiError::Install)?;
+    fs::create_dir_all(&root).map_err(|error| {
+        errors::io(
+            "create install directory",
+            error,
+            GuiError::InstallDirectory,
+        )
+    })?;
     let archive = root.join(format!("download-{}.tar.gz", uuid::Uuid::new_v4()));
     let staging = root.join(format!("staging-{}", uuid::Uuid::new_v4()));
     let outcome = (|| {
@@ -307,10 +355,18 @@ fn prepare_package(app: &AppHandle, version: &str, asset: &Asset, silent: bool) 
                 },
             );
         }
-        fs::create_dir(&staging).map_err(|_| GuiError::Install)?;
+        fs::create_dir(&staging).map_err(|error| {
+            errors::io(
+                "create extraction directory",
+                error,
+                GuiError::InstallDirectory,
+            )
+        })?;
         unpack(&archive, &staging)?;
         let state = app.state::<CliUpdateState>();
-        let _metadata = state.metadata.lock().map_err(|_| GuiError::Install)?;
+        let _metadata = state.metadata.lock().map_err(|error| {
+            errors::failure("lock installation records", &error, GuiError::Install)
+        })?;
         store::stage(&root, version, &staging)?;
         Ok(())
     })();

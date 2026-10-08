@@ -1,5 +1,21 @@
 import { expect, test } from "@playwright/test";
 
+test("file lock failures show specific compact copy and leave import usable", async ({ page }) => {
+  await page.goto("/e2e/cli-import-harness.html?first&locked");
+  await page.getByRole("button", { name: "手动下载", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "手动下载 Codex" });
+  await dialog.getByRole("button", { name: "选择文件", exact: true }).first().click();
+  await dialog.getByRole("button", { name: "导入并安装" }).click();
+  const alert = dialog.getByText("安装文件被其他程序占用，请关闭相关程序后重试。", { exact: true });
+  await expect(alert).toBeVisible();
+  expect((await alert.boundingBox())!.width).toBeLessThanOrEqual(400);
+  await expect(dialog.getByRole("button", { name: "导入并安装" })).toBeEnabled();
+  await page.setViewportSize({ width: 390, height: 740 });
+  await expect(alert).toBeVisible();
+  expect(await dialog.evaluate(element => element.scrollWidth > element.clientWidth)).toBe(false);
+  await page.screenshot({ path: "../../.codex-tmp/cli-import-specific-error.png" });
+});
+
 test("version popover opens the offline guide and imports both selected files", async ({ page }) => {
   await page.goto("/e2e/cli-import-harness.html");
   await page.getByRole("button", { name: "Codex v0.160.0" }).click();

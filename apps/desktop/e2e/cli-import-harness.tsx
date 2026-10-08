@@ -27,6 +27,7 @@ mockIPC(async (command, args) => {
       throw new Error("Unexpected import files");
     }
     await new Promise(resolve => setTimeout(resolve, 600));
+    if (query.has("locked")) throw "安装文件被其他程序占用，请关闭相关程序后重试。";
     if (query.has("failure")) throw "安装包与校验文件不匹配，请下载同一版本、适合当前电脑的文件。";
     return { version: "0.161.0", release: null };
   }

@@ -1,5 +1,5 @@
 use super::{
-    http_client, prepare_package, release, root, store, CliStatus, GuiError, Installed,
+    errors, http_client, prepare_package, release, root, store, CliStatus, GuiError, Installed,
     ReleaseInfo, Result,
 };
 use std::{
@@ -39,7 +39,10 @@ pub(crate) fn start(app: &AppHandle) {
 pub(super) fn status(app: &AppHandle) -> Result<CliStatus> {
     initialize(app);
     let state = app.state::<CliUpdateState>();
-    let _metadata = state.metadata.lock().map_err(|_| GuiError::Install)?;
+    let _metadata = state
+        .metadata
+        .lock()
+        .map_err(|error| errors::failure("lock installation records", &error, GuiError::Install))?;
     store::status(&root(app)?)
 }
 
@@ -47,7 +50,10 @@ fn check(app: &AppHandle) -> Result<ReleaseInfo> {
     initialize(app);
     let (version, asset) = release(&http_client()?, None)?;
     let state = app.state::<CliUpdateState>();
-    let _guard = state.metadata.lock().map_err(|_| GuiError::Install)?;
+    let _guard = state
+        .metadata
+        .lock()
+        .map_err(|error| errors::failure("lock installation records", &error, GuiError::Install))?;
     store::remember(
         &root(app)?,
         ReleaseInfo {
@@ -86,7 +92,9 @@ fn prepare_latest(
 ) -> Result<ReleaseInfo> {
     loop {
         let candidate = {
-            let _guard = metadata.lock().map_err(|_| GuiError::Install)?;
+            let _guard = metadata.lock().map_err(|error| {
+                errors::failure("lock installation records", &error, GuiError::Install)
+            })?;
             store::pending(root)?.ok_or(GuiError::Release)?
         };
         let outcome = if candidate.ready {
@@ -94,7 +102,9 @@ fn prepare_latest(
         } else {
             download(&candidate)
         };
-        let _guard = metadata.lock().map_err(|_| GuiError::Install)?;
+        let _guard = metadata.lock().map_err(|error| {
+            errors::failure("lock installation records", &error, GuiError::Install)
+        })?;
         let current = store::pending(root)?.ok_or(GuiError::Release)?;
         if current.version != candidate.version {
             // A newer check won while this download was running. Never publish/activate the stale result.
@@ -121,7 +131,7 @@ async fn prepare_serialized(app: AppHandle, activate: bool) -> Result<ReleaseInf
     let worker_app = app.clone();
     let prepared = tauri::async_runtime::spawn_blocking(move || prepare(&worker_app, activate))
         .await
-        .map_err(|_| GuiError::Install)??;
+        .map_err(|error| errors::failure("run installation worker", &error, GuiError::Install))??;
     if !activate {
         automatic::apply_ready(&app).await?;
     }
@@ -143,20 +153,22 @@ pub(super) async fn install(app: AppHandle) -> Result<Installed> {
         Ok(candidate) => Ok(candidate),
         Err(error) => {
             let state = check_app.state::<CliUpdateState>();
-            let _guard = state.metadata.lock().map_err(|_| GuiError::Install)?;
+            let _guard = state.metadata.lock().map_err(|error| {
+                errors::failure("lock installation records", &error, GuiError::Install)
+            })?;
             store::pending(&root(&check_app)?)?
                 .filter(|candidate| candidate.ready)
                 .ok_or(error)
         }
     })
     .await
-    .map_err(|_| GuiError::Install)??;
+    .map_err(|error| errors::failure("run installation worker", &error, GuiError::Install))??;
     if candidate.size > 0 {
         prepare_serialized(app.clone(), true).await?;
     }
     tauri::async_runtime::spawn_blocking(move || store::installed(&root(&app)?))
         .await
-        .map_err(|_| GuiError::Install)?
+        .map_err(|error| errors::failure("run installation worker", &error, GuiError::Install))?
 }
 
 /// Imported packages share idle activation with automatic updates, without waiting for network downloads.
@@ -165,5 +177,5 @@ pub(super) async fn apply_import(app: &AppHandle) -> Result<CliStatus> {
     let app = app.clone();
     tauri::async_runtime::spawn_blocking(move || status(&app))
         .await
-        .map_err(|_| GuiError::Install)?
+        .map_err(|error| errors::failure("run installation worker", &error, GuiError::Install))?
 }

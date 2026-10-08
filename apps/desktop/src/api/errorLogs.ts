@@ -1,6 +1,6 @@
 import { hasLocalBackend, invoke } from "./backend";
 
-export type ErrorLogSource = "proxy" | "toast";
+export type ErrorLogSource = "proxy" | "toast" | "codex";
 
 export interface ErrorLogEntry {
   id: number;

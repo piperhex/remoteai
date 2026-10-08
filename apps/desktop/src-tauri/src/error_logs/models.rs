@@ -11,6 +11,7 @@ const MAX_PAGE_SIZE: u32 = 200;
 pub(crate) enum ErrorLogSource {
     Proxy,
     Toast,
+    Codex,
 }
 
 impl ErrorLogSource {
@@ -18,6 +19,7 @@ impl ErrorLogSource {
         match self {
             Self::Proxy => "proxy",
             Self::Toast => "toast",
+            Self::Codex => "codex",
         }
     }
 }

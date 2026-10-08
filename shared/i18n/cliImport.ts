@@ -1,4 +1,26 @@
 export const cliImportEnglish: Readonly<Record<string, string>> = {
+  "Codex 安装意外中断，请重启应用后重试。":
+    "Codex installation was interrupted. Restart the app and try again.",
+  "安装所在磁盘空间不足，请释放空间后重试。":
+    "The installation disk is full. Free up space and try again.",
+  "没有权限访问安装文件，请检查文件夹权限后重试。":
+    "Access to the installation files was denied. Check folder permissions and try again.",
+  "安装文件被其他程序占用，请关闭相关程序后重试。":
+    "Another program is using the installation files. Close it and try again.",
+  "无法创建安装文件夹，请检查文件夹是否可写后重试。":
+    "Unable to create the installation folder. Check that the folder is writable and try again.",
+  "无法写入安装文件，请检查磁盘是否可写后重试。":
+    "Unable to write installation files. Check that the disk is writable and try again.",
+  "无法读取安装文件，请重新选择安装包或重新下载。":
+    "Unable to read installation files. Select the package again or download it again.",
+  "安装包无法解压，可能已损坏。请重新下载完整安装包。":
+    "The package could not be extracted and may be damaged. Download the complete package again.",
+  "安装包缺少 Codex 启动文件，请下载适合当前电脑的完整安装包。":
+    "The package is missing the Codex executable. Download the complete package for this computer.",
+  "无法读取已安装版本的信息，请在日志诊断中查看详情。":
+    "Unable to read the installed version information. Check Log diagnostics for details.",
+  "无法保存安装结果，请检查磁盘是否可写后重试。":
+    "Unable to save the installation result. Check that the disk is writable and try again.",
   "非必填": "Optional",
   "移除": "Remove",
   "安装包无效或不适合当前电脑，请重新下载完整安装包。":
@@ -61,6 +83,28 @@ export const cliImportEnglish: Readonly<Record<string, string>> = {
 };
 
 export const cliImportRussian: Readonly<Record<string, string>> = {
+  "Codex 安装意外中断，请重启应用后重试。":
+    "Установка Codex прервана. Перезапустите приложение и попробуйте снова.",
+  "安装所在磁盘空间不足，请释放空间后重试。":
+    "На диске для установки нет места. Освободите место и попробуйте снова.",
+  "没有权限访问安装文件，请检查文件夹权限后重试。":
+    "Нет доступа к файлам установки. Проверьте права доступа к папке и попробуйте снова.",
+  "安装文件被其他程序占用，请关闭相关程序后重试。":
+    "Файлы установки заняты другой программой. Закройте её и попробуйте снова.",
+  "无法创建安装文件夹，请检查文件夹是否可写后重试。":
+    "Не удалось создать папку установки. Проверьте доступность папки для записи и попробуйте снова.",
+  "无法写入安装文件，请检查磁盘是否可写后重试。":
+    "Не удалось записать файлы установки. Проверьте доступность диска для записи и попробуйте снова.",
+  "无法读取安装文件，请重新选择安装包或重新下载。":
+    "Не удалось прочитать файлы установки. Выберите пакет ещё раз или скачайте его заново.",
+  "安装包无法解压，可能已损坏。请重新下载完整安装包。":
+    "Не удалось распаковать пакет: возможно, он повреждён. Скачайте полный пакет заново.",
+  "安装包缺少 Codex 启动文件，请下载适合当前电脑的完整安装包。":
+    "В пакете нет файла запуска Codex. Скачайте полный пакет для этого компьютера.",
+  "无法读取已安装版本的信息，请在日志诊断中查看详情。":
+    "Не удалось прочитать сведения об установленной версии. Подробности — в диагностике журналов.",
+  "无法保存安装结果，请检查磁盘是否可写后重试。":
+    "Не удалось сохранить результат установки. Проверьте доступность диска для записи и попробуйте снова.",
   "非必填": "Необязательно",
   "移除": "Убрать",
   "安装包无效或不适合当前电脑，请重新下载完整安装包。":

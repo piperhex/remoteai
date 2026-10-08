@@ -1,4 +1,5 @@
 //! One application-owned worker checks and stages CLI updates, independent of GUI visibility.
+use super::super::errors;
 use super::{check, initialize, prepare, root, store, CliStatus, CliUpdateState, GuiError, Result};
 use crate::codex_gui::{client::Client, protocol::GuiEvent, releases::Executable, GuiState};
 use std::{sync::atomic::Ordering, sync::Arc, time::Duration};
@@ -32,7 +33,7 @@ async fn snapshot(app: &AppHandle) -> Result<CliStatus> {
     let app = app.clone();
     tauri::async_runtime::spawn_blocking(move || super::status(&app))
         .await
-        .map_err(|_| GuiError::Install)?
+        .map_err(|error| errors::failure("run installation worker", &error, GuiError::Install))?
 }
 
 async fn publish(app: &AppHandle) -> Result<()> {
@@ -61,7 +62,9 @@ async fn cycle(app: &AppHandle) -> Result<()> {
         let worker_app = app.clone();
         tauri::async_runtime::spawn_blocking(move || prepare(&worker_app, false))
             .await
-            .map_err(|_| GuiError::Install)??;
+            .map_err(|error| {
+                errors::failure("run installation worker", &error, GuiError::Install)
+            })??;
     }
     apply_ready(app).await?;
     checked.map(|_| ())
@@ -137,11 +140,13 @@ async fn activate_pointer(app: &AppHandle, expected: &str) -> Result<bool> {
     let expected = expected.to_owned();
     tauri::async_runtime::spawn_blocking(move || {
         let state = app.state::<CliUpdateState>();
-        let _metadata = state.metadata.lock().map_err(|_| GuiError::Install)?;
+        let _metadata = state.metadata.lock().map_err(|error| {
+            errors::failure("lock installation records", &error, GuiError::Install)
+        })?;
         store::activate_expected(&root(&app)?, &expected).map(|installed| installed.is_some())
     })
     .await
-    .map_err(|_| GuiError::Install)?
+    .map_err(|error| errors::failure("run installation worker", &error, GuiError::Install))?
 }
 
 fn publish_connection(app: &AppHandle) {
@@ -177,7 +182,7 @@ async fn replacement(
         }))
     })
     .await
-    .map_err(|_| GuiError::Install)??;
+    .map_err(|error| errors::failure("run installation worker", &error, GuiError::Install))??;
     let Some(binary) = binary else {
         return Ok(None);
     };

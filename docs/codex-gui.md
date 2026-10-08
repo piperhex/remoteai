@@ -234,6 +234,11 @@ SHA-256 digest, and extracts into a staging directory before marking it ready. T
 requires clicking **下载并开始** or restarting after the download finishes. Earlier version directories are retained.
 The app's network proxy settings also apply to downloads. Remote computer updates remain manually controlled.
 
+Installation failures distinguish disk-full, permission, file-lock, extraction, missing-executable and
+installation-record errors. Original error chains and the failing step are saved under
+**日志诊断 → 错误日志 → Codex CLI**, with the existing credential and path redaction policy.
+Only confirmed storage-full errors suggest freeing disk space; no free-space threshold is assumed.
+
 On the local desktop, **手动下载** beside the version check opens an offline installation guide. It provides
 official links for the current platform's complete `.tar.gz` package and release metadata (save the JSON page
 as a file, without renaming it). File names and extensions are unrestricted; validation uses file contents.

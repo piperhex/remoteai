@@ -2,6 +2,22 @@ use super::*;
 use std::path::PathBuf;
 
 #[test]
+fn corrupt_installation_records_and_failed_publication_are_distinct() {
+    let fixture = Fixture::new();
+    fs::write(fixture.0.join("installed.json"), b"invalid json").unwrap();
+    assert!(matches!(
+        installed(&fixture.0),
+        Err(GuiError::InstallStateRead)
+    ));
+    let record = fixture.0.join("record-directory");
+    fs::create_dir(&record).unwrap();
+    assert!(matches!(
+        write_record(&record, &Installed { version: None }),
+        Err(GuiError::InstallStateWrite | GuiError::InstallPermission)
+    ));
+}
+
+#[test]
 fn cached_status_exposes_updates_through_download_and_clears_them_after_activation() {
     let fixture = Fixture::new();
     fixture.remember("0.99.0");

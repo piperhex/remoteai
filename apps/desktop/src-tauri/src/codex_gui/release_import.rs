@@ -1,7 +1,7 @@
 //! Offline import of the official complete package, with optional release metadata verification.
 use super::{
-    asset_name, root, select_asset, store, unpack, updates, valid_version, Asset, CliStatus,
-    CliUpdateState, GuiError, Release, ReleaseInfo, Result, MAX_DOWNLOAD, RELEASE_API,
+    asset_name, errors, root, select_asset, store, unpack, updates, valid_version, Asset,
+    CliStatus, CliUpdateState, GuiError, Release, ReleaseInfo, Result, MAX_DOWNLOAD, RELEASE_API,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -94,13 +94,30 @@ pub(crate) async fn codex_gui_cli_manual_download(
 
 fn local_file(path: &Path, maximum: u64) -> Result<fs::File> {
     if !path.is_absolute() {
-        return Err(GuiError::ImportFile);
+        return Err(errors::invalid(
+            "locate selected file",
+            "path is not absolute",
+            GuiError::ImportFile,
+        ));
     }
-    let path = path.canonicalize().map_err(|_| GuiError::ImportFile)?;
-    let file = fs::File::open(path).map_err(|_| GuiError::ImportFile)?;
-    let metadata = file.metadata().map_err(|_| GuiError::ImportFile)?;
+    let path = path
+        .canonicalize()
+        .map_err(|error| errors::io("locate selected file", error, GuiError::ImportFile))?;
+    let file = fs::File::open(path)
+        .map_err(|error| errors::io("open selected file", error, GuiError::ImportFile))?;
+    let metadata = file
+        .metadata()
+        .map_err(|error| errors::io("inspect selected file", error, GuiError::ImportFile))?;
     if !metadata.is_file() || metadata.len() == 0 || metadata.len() > maximum {
-        return Err(GuiError::ImportFile);
+        return Err(errors::invalid(
+            "inspect selected file",
+            &format!(
+                "is_file={}, bytes={}, maximum={maximum}",
+                metadata.is_file(),
+                metadata.len()
+            ),
+            GuiError::ImportFile,
+        ));
     }
     Ok(file)
 }
@@ -110,12 +127,16 @@ fn read_release(path: &Path) -> Result<(String, Asset)> {
     let mut bytes = Vec::new();
     file.take(MAX_METADATA + 1)
         .read_to_end(&mut bytes)
-        .map_err(|_| GuiError::ImportFile)?;
+        .map_err(|error| errors::io("read verification file", error, GuiError::ImportFile))?;
     if bytes.len() as u64 > MAX_METADATA {
         return Err(GuiError::ImportMetadata);
     }
-    let release: Release = serde_json::from_slice(&bytes).map_err(|_| GuiError::ImportMetadata)?;
-    select_asset(release).map_err(|_| GuiError::ImportMetadata)
+    let release: Release = serde_json::from_slice(&bytes).map_err(|error| {
+        errors::failure("parse verification file", &error, GuiError::ImportMetadata)
+    })?;
+    select_asset(release).map_err(|error| {
+        errors::failure("select verified package", &error, GuiError::ImportMetadata)
+    })
 }
 
 fn expected_digest(asset: &Asset) -> Result<&str> {
@@ -124,37 +145,61 @@ fn expected_digest(asset: &Asset) -> Result<&str> {
         .as_deref()
         .and_then(|digest| digest.strip_prefix("sha256:"))
         .filter(|digest| digest.len() == 64 && digest.bytes().all(|byte| byte.is_ascii_hexdigit()))
-        .ok_or(GuiError::ImportMetadata)
+        .ok_or_else(|| {
+            errors::invalid(
+                "read package checksum",
+                "missing or invalid SHA-256 digest",
+                GuiError::ImportMetadata,
+            )
+        })
 }
 
 fn copy_package(source: &Path, destination: &Path, asset: Option<&Asset>) -> Result<u64> {
     let expected = asset.map(expected_digest).transpose()?;
     let mut source = local_file(source, MAX_DOWNLOAD)?;
-    let size = source.metadata().map_err(|_| GuiError::ImportFile)?.len();
+    let size = source
+        .metadata()
+        .map_err(|error| errors::io("inspect selected package", error, GuiError::ImportFile))?
+        .len();
     if asset.is_some_and(|asset| size != asset.size) {
-        return Err(GuiError::ImportMismatch);
+        return Err(errors::invalid(
+            "verify package size",
+            "size differs from release metadata",
+            GuiError::ImportMismatch,
+        ));
     }
-    let mut destination = fs::File::create(destination).map_err(|_| GuiError::Install)?;
+    let mut destination = fs::File::create(destination)
+        .map_err(|error| errors::io("create import copy", error, GuiError::InstallWrite))?;
     let mut buffer = vec![0; COPY_BUFFER];
     let mut hash = Sha256::new();
     let mut copied = 0;
     loop {
-        let count = source.read(&mut buffer).map_err(|_| GuiError::ImportFile)?;
+        let count = source
+            .read(&mut buffer)
+            .map_err(|error| errors::io("read selected package", error, GuiError::ImportFile))?;
         if count == 0 {
             break;
         }
         copied += count as u64;
         if copied > size {
-            return Err(GuiError::ImportMismatch);
+            return Err(errors::invalid(
+                "copy selected package",
+                "source grew while copying",
+                GuiError::ImportMismatch,
+            ));
         }
         hash.update(&buffer[..count]);
         destination
             .write_all(&buffer[..count])
-            .map_err(|_| GuiError::Install)?;
+            .map_err(|error| errors::io("copy selected package", error, GuiError::InstallWrite))?;
     }
     let digest = format!("{:x}", hash.finalize());
     if copied != size || expected.is_some_and(|expected| !digest.eq_ignore_ascii_case(expected)) {
-        return Err(GuiError::ImportMismatch);
+        return Err(errors::invalid(
+            "verify imported package",
+            "size or SHA-256 mismatch",
+            GuiError::ImportMismatch,
+        ));
     }
     Ok(copied)
 }
@@ -163,8 +208,10 @@ fn copy_package(source: &Path, destination: &Path, asset: Option<&Asset>) -> Res
 fn package_version(staging: &Path) -> Result<String> {
     let file = local_file(&staging.join("codex-package.json"), MAX_METADATA)
         .map_err(|_| GuiError::ImportPackage)?;
-    let package: PackageManifest = serde_json::from_reader(file.take(MAX_METADATA + 1))
-        .map_err(|_| GuiError::ImportPackage)?;
+    let package: PackageManifest =
+        serde_json::from_reader(file.take(MAX_METADATA + 1)).map_err(|error| {
+            errors::failure("parse package manifest", &error, GuiError::ImportPackage)
+        })?;
     if package.layout_version != PACKAGE_LAYOUT_VERSION
         || !valid_version(&package.version)
         || format!("codex-package-{}.tar.gz", package.target) != asset_name()?
@@ -175,13 +222,19 @@ fn package_version(staging: &Path) -> Result<String> {
         || !staging.join(&package.resources_dir).is_dir()
         || !staging.join(&package.path_dir).is_dir()
     {
-        return Err(GuiError::ImportPackage);
+        return Err(errors::invalid(
+            "validate package manifest",
+            "unsupported layout, version, target or missing package resources",
+            GuiError::ImportPackage,
+        ));
     }
     Ok(package.version)
 }
 
 fn check_version(root: &Path, version: &str) -> Result<()> {
-    let imported = semver::Version::parse(version).map_err(|_| GuiError::ImportMetadata)?;
+    let imported = semver::Version::parse(version).map_err(|error| {
+        errors::failure("parse imported version", &error, GuiError::ImportMetadata)
+    })?;
     let status = store::status(root)?;
     let installed = status
         .version
@@ -207,11 +260,19 @@ fn prepare_import(
         .as_deref()
         .map(read_release)
         .transpose()?;
-    fs::create_dir_all(root).map_err(|_| GuiError::Install)?;
+    fs::create_dir_all(root).map_err(|error| {
+        errors::io("create import directory", error, GuiError::InstallDirectory)
+    })?;
     let temporary = tempfile::Builder::new()
         .prefix("import-")
         .tempdir_in(root)
-        .map_err(|_| GuiError::Install)?;
+        .map_err(|error| {
+            errors::io(
+                "create temporary import directory",
+                error,
+                GuiError::InstallDirectory,
+            )
+        })?;
     let archive = temporary.path().join("package.tar.gz");
     let size = copy_package(
         &request.package_path,
@@ -219,7 +280,13 @@ fn prepare_import(
         release.as_ref().map(|(_, asset)| asset),
     )?;
     let staging = temporary.path().join("unpacked");
-    fs::create_dir(&staging).map_err(|_| GuiError::Install)?;
+    fs::create_dir(&staging).map_err(|error| {
+        errors::io(
+            "create extraction directory",
+            error,
+            GuiError::InstallDirectory,
+        )
+    })?;
     unpack(&archive, &staging)?;
     let version = match release {
         Some((version, _)) => version,
@@ -252,11 +319,14 @@ fn import_package(app: &AppHandle, request: ImportRequest) -> Result<()> {
     let (temporary, release) = prepare_import(&root, &request)?;
     let state = app.state::<CliUpdateState>();
     let outcome = {
-        let _metadata = state.metadata.lock().map_err(|_| GuiError::Install)?;
+        let _metadata = state.metadata.lock().map_err(|error| {
+            errors::failure("lock installation records", &error, GuiError::Install)
+        })?;
         commit_import(&root, &temporary.path().join("unpacked"), release)
     };
-    if temporary.close().is_err() {
-        eprintln!("Codex GUI import cleanup failed");
+    if let Err(error) = temporary.close() {
+        // Cleanup must not replace the actual installation result.
+        errors::io("clean up import files", error, GuiError::InstallWrite);
     }
     outcome
 }
@@ -269,7 +339,9 @@ pub(crate) async fn codex_gui_cli_import(
     let worker_app = app.clone();
     tauri::async_runtime::spawn_blocking(move || import_package(&worker_app, request))
         .await
-        .map_err(|_| GuiError::Install.to_string())?
+        .map_err(|error| {
+            errors::failure("run installation worker", &error, GuiError::Install).to_string()
+        })?
         .map_err(|error| error.to_string())?;
     updates::apply_import(&app)
         .await

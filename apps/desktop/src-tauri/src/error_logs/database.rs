@@ -13,20 +13,10 @@ pub(super) fn open(path: &Path) -> Result<Connection, LogError> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    let connection = Connection::open(path)?;
+    let mut connection = Connection::open(path)?;
     connection.busy_timeout(DATABASE_BUSY_TIMEOUT)?;
-    connection.execute_batch(
-        "PRAGMA journal_mode=WAL;
-         PRAGMA secure_delete=ON;
-         CREATE TABLE IF NOT EXISTS error_logs (
-             id INTEGER PRIMARY KEY AUTOINCREMENT,
-             created_at TEXT NOT NULL,
-             source TEXT NOT NULL CHECK(source IN ('proxy', 'toast')),
-             message TEXT NOT NULL,
-             status_code INTEGER
-         );
-         CREATE INDEX IF NOT EXISTS error_logs_source_id ON error_logs(source, id);",
-    )?;
+    connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA secure_delete=ON;")?;
+    super::schema::initialize(&mut connection)?;
     Ok(connection)
 }
 
@@ -100,10 +90,10 @@ fn read_entry(row: &rusqlite::Row<'_>) -> rusqlite::Result<ErrorLogEntry> {
     Ok(ErrorLogEntry {
         id: row.get(0)?,
         created_at: row.get(1)?,
-        source: if row.get::<_, String>(2)? == "proxy" {
-            ErrorLogSource::Proxy
-        } else {
-            ErrorLogSource::Toast
+        source: match row.get::<_, String>(2)?.as_str() {
+            "proxy" => ErrorLogSource::Proxy,
+            "codex" => ErrorLogSource::Codex,
+            _ => ErrorLogSource::Toast,
         },
         message: row.get(3)?,
         status_code: row.get(4)?,

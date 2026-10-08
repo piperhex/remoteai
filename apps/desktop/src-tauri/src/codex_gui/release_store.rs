@@ -1,17 +1,26 @@
 //! Persistent candidates are replaced before downloading so a failed newer download
 //! can never cause an older cached update to be activated on the next launch.
 use super::{
-    entrypoint, valid_version, CliStatus, GuiError, Installed, ReleaseInfo, Result, MAX_DOWNLOAD,
+    entrypoint, errors, valid_version, CliStatus, GuiError, Installed, ReleaseInfo, Result,
+    MAX_DOWNLOAD,
 };
 use std::{fs, path::Path};
 
 fn read<T: serde::de::DeserializeOwned>(path: &Path) -> Result<Option<T>> {
     match fs::read(path) {
-        Ok(bytes) => serde_json::from_slice(&bytes)
-            .map(Some)
-            .map_err(|_| GuiError::Install),
+        Ok(bytes) => serde_json::from_slice(&bytes).map(Some).map_err(|error| {
+            errors::failure(
+                "parse installation record",
+                &error,
+                GuiError::InstallStateRead,
+            )
+        }),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(_) => Err(GuiError::Install),
+        Err(error) => Err(errors::io(
+            "read installation record",
+            error,
+            GuiError::InstallStateRead,
+        )),
     }
 }
 
@@ -45,10 +54,15 @@ pub(super) fn stage(root: &Path, version: &str, staging: &Path) -> Result<()> {
     }
     let destination = root.join(version);
     if !destination.exists() {
-        fs::rename(staging, destination).map_err(|_| GuiError::Install)?;
+        fs::rename(staging, destination)
+            .map_err(|error| errors::io("move installed package", error, GuiError::InstallWrite))?;
     }
     if !ready(root, version) {
-        return Err(GuiError::Install);
+        return Err(errors::invalid(
+            "verify installed package",
+            "existing version has no executable",
+            GuiError::InstallMissingExecutable,
+        ));
     }
     Ok(())
 }
@@ -91,9 +105,7 @@ pub(super) fn remember(root: &Path, mut candidate: ReleaseInfo) -> Result<Releas
         }
     }
     candidate.ready = ready(root, &candidate.version);
-    fs::create_dir_all(root).map_err(|_| GuiError::Install)?;
-    crate::storage::write_json_atomic(&root.join("pending.json"), &serde_json::json!(candidate))
-        .map_err(|_| GuiError::Install)?;
+    write_record(&root.join("pending.json"), &candidate)?;
     Ok(candidate)
 }
 
@@ -114,9 +126,44 @@ pub(super) fn activate(root: &Path) -> Result<Installed> {
     let installed = Installed {
         version: Some(candidate.version),
     };
-    crate::storage::write_json_atomic(&root.join("installed.json"), &serde_json::json!(installed))
-        .map_err(|_| GuiError::Install)?;
+    write_record(&root.join("installed.json"), &installed)?;
     Ok(installed)
+}
+
+fn write_record(path: &Path, value: &impl serde::Serialize) -> Result<()> {
+    let parent = path.parent().ok_or(GuiError::InstallStateWrite)?;
+    fs::create_dir_all(parent).map_err(|error| {
+        errors::io("create record directory", error, GuiError::InstallDirectory)
+    })?;
+    let mut temporary = tempfile::NamedTempFile::new_in(parent).map_err(|error| {
+        errors::io(
+            "create installation record",
+            error,
+            GuiError::InstallStateWrite,
+        )
+    })?;
+    let bytes = serde_json::to_vec_pretty(value).map_err(|error| {
+        errors::failure(
+            "serialize installation record",
+            &error,
+            GuiError::InstallStateWrite,
+        )
+    })?;
+    std::io::Write::write_all(&mut temporary, &bytes).map_err(|error| {
+        errors::io(
+            "write installation record",
+            error,
+            GuiError::InstallStateWrite,
+        )
+    })?;
+    temporary.persist(path).map_err(|error| {
+        errors::io(
+            "save installation record",
+            error.error,
+            GuiError::InstallStateWrite,
+        )
+    })?;
+    Ok(())
 }
 
 pub(super) fn activation_candidate(root: &Path, expected: &str) -> Result<bool> {

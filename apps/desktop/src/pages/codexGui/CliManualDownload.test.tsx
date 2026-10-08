@@ -111,3 +111,18 @@ it("allows removing optional verification while keeping the selected package", a
     request: { packagePath: "C:\\Downloads\\package.tar.gz" },
   });
 });
+
+it.each([
+  "安装所在磁盘空间不足，请释放空间后重试。",
+  "安装文件被其他程序占用，请关闭相关程序后重试。",
+  "安装包无法解压，可能已损坏。请重新下载完整安装包。",
+  "安装包缺少 Codex 启动文件，请下载适合当前电脑的完整安装包。",
+])("shows the specific installation failure and allows retry: %s", async message => {
+  await openDialog(); await chooseFiles();
+  mocks.invoke.mockRejectedValueOnce(message);
+  await click("导入并安装");
+  expect(document.querySelector(".ant-alert-message")?.textContent).toBe(message);
+  expect(buttons("导入并安装")[0].disabled).toBe(false);
+  expect(buttons("重新选择")).toHaveLength(2);
+  expect(onImported).not.toHaveBeenCalled();
+});
