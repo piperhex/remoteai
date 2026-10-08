@@ -11,6 +11,7 @@ interface Packet { side: Side; path: Path; payload: string; frame: Record<string
 
 export function hotLinkHarness(options: {
   relayDelay?: number; endpoints?: Partial<Record<Side, ConnectionEndpoints>>;
+  wrapDirectChannel?: (channel: Channel) => Channel;
 } = {}) {
   const keys = { phone: keyPair((size) => crypto.getRandomValues(new Uint8Array(size))),
     pc: keyPair((size) => crypto.getRandomValues(new Uint8Array(size))) };
@@ -66,7 +67,9 @@ export function hotLinkHarness(options: {
       send: (payload) => send(side, 'direct', payload), onOpen() {}, onClose() {},
       onMessage: (callback) => { receive[side] = callback; } };
   }
-  for (const side of ['phone', 'pc'] as const) peers[side].channel(channels[side]);
+  for (const side of ['phone', 'pc'] as const) {
+    peers[side].channel(options.wrapDirectChannel?.(channels[side]) ?? channels[side]);
+  }
   return { links, messages, modes, paths, packets, error, reconnect, deliver, endpoints,
     filter: (callback: typeof filter) => { filter = callback; },
     restoreRelay: () => { paths.relay = true; links.phone.enableRelay(); links.pc.enableRelay(); },

@@ -32,6 +32,12 @@ use crate::{
 use crate::packet::stun::{Attribute, ChangeRequest, tid_to_u32, u32_to_tid};
 use stun_codec::rfc5389::methods::BINDING;
 
+use super::server_address::is_direct_stun_address;
+
+#[cfg(test)]
+#[path = "client_proxy_tests.rs"]
+mod proxy_tests;
+
 pub trait StunSocketRuntime: VirtualUdpSocketFactory + VirtualTcpSocketFactory {}
 
 impl<T> StunSocketRuntime for T where T: VirtualUdpSocketFactory + VirtualTcpSocketFactory {}
@@ -111,7 +117,7 @@ where
             }
 
             if let Some(addr) = explicit_socket_addr(&endpoint) {
-                if addr.is_ipv6() == self.use_ipv6 {
+                if addr.is_ipv6() == self.use_ipv6 && is_direct_stun_address(addr.ip()) {
                     return Some(addr);
                 }
                 continue;
@@ -129,7 +135,7 @@ where
                 Ok(ips) => {
                     self.ips = ips
                         .into_iter()
-                        .filter(|ip| ip.is_ipv6() == self.use_ipv6)
+                        .filter(|ip| ip.is_ipv6() == self.use_ipv6 && is_direct_stun_address(*ip))
                         .map(|ip| SocketAddr::new(ip, port))
                         .choose_multiple(&mut rand::thread_rng(), self.max_ip_per_domain as usize);
                 }

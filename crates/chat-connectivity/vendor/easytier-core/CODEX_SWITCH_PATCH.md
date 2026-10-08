@@ -64,6 +64,19 @@ Run the hole-punch tests from the parent workspace with `--no-default-features` 
 The simulator validates packet filtering and socket reuse; it is not a real carrier-network success-rate test.
 Replace this patch when upstream provides an equivalent bounded mixed-NAT strategy, retaining its regression tests.
 
+## STUN proxy isolation
+
+The shared STUN resolver excludes the `198.18.0.0/15` benchmark range commonly used for proxy Fake-IP DNS,
+including IPv4-mapped IPv6 forms. Filtering happens before per-domain sampling and applies to explicit,
+DNS and TXT-expanded endpoints. UDP/TCP classification and fallback port mapping use the same resolver,
+so a proxy's public egress cannot be introduced through these synthetic destinations.
+
+Configure at least two independent STUN endpoints verified to use the intended direct egress, with a similarly
+verified backup. Filtering alone does not provide missing observations: insufficient evidence stays unknown,
+and actual multi-egress or symmetric mappings retain their conservative classification. No proxy bypass,
+unconditional cone classification or changed P2P admission rule is introduced. Resolver regression tests cover
+mixed answers, filtered-only configurations, TXT, mapped IPv6 and preservation of genuine symmetric results.
+
 ## Desktop media UDP receive registration
 
 `gateway/dataplane/{udp,flow,packet,mod}.rs` adds `DataPlaneUdpSocket::allow_peer` for the native desktop

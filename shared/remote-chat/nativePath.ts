@@ -4,6 +4,7 @@ import type { ConnectionDiagnostic } from './diagnostics';
 import { sanitizeDiagnostic, type DiagnosticFields } from './diagnosticSchema';
 import type { NativeMediaEndpoint, NativeMediaRoute, NativeMediaSession } from '../remote-desktop/nativeMedia';
 import { connectionEndpoint, type ConnectionEndpoints } from './connectionEndpoints';
+import { ChannelBackpressureError } from './channelBackpressure';
 
 export interface NativeTraversalConfig { secret: string; servers: string[]; stunServers: string[]; expiresAt: number }
 export interface NativePathOptions {
@@ -121,7 +122,8 @@ export class NativePath implements Channel {
 
   send(text: string) {
     const bytes = text.length * 2;
-    if (this.state !== 'open' || this.pending + bytes > MAX_BUFFER) throw new Error('Direct path unavailable');
+    if (this.state !== 'open') throw new Error('Direct path unavailable');
+    if (this.pending + bytes > MAX_BUFFER) throw new ChannelBackpressureError();
     this.pending += bytes;
     this.outgoing = this.outgoing.then(async () => {
       const id = await this.id;

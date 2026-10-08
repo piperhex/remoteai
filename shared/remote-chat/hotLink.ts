@@ -11,6 +11,7 @@ import { getChatPolicy } from './policy';
 import type { LinkOptions } from './linkOptions';
 import type { ConnectionEndpoints } from './connectionEndpoints';
 import { PeerEndpointObservation } from './peerEndpointObservation';
+import { ChannelBackpressureError } from './channelBackpressure';
 import { MAX_BUFFER_BYTES, type Channel, type ConnectionMode, type RpcMessage, type Signal } from './protocol';
 
 type Path = 'direct' | 'relay';
@@ -38,7 +39,7 @@ export class HotLink {
       if (this.channel?.readyState !== 'open') throw new Error('Direct path unavailable');
       this.channel.send(payload);
     },
-    failed: () => this.fallback(),
+    failed: error => { if (!(error instanceof ChannelBackpressureError)) this.fallback(); },
   });
   private relay = true;
   private quotaBlocked = false;
@@ -139,7 +140,10 @@ export class HotLink {
       if (path === 'relay') return this.signal({ type: 'relay', payload });
       this.directPackets.send(payload, 'kind' in frame && frame.kind === 'data');
       return true;
-    } catch { this.lastPong[path] = 0; return false; }
+    } catch (error) {
+      if (!(path === 'direct' && error instanceof ChannelBackpressureError)) this.lastPong[path] = 0;
+      return false;
+    }
   }
 
   private sendData(frame: DeliveryData, retry: boolean): boolean {

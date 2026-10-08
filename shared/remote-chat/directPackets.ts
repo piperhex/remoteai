@@ -8,7 +8,7 @@ export class DirectPackets {
   private chars = 2;
   private timer?: ReturnType<typeof setTimeout>;
 
-  constructor(private readonly transport: { send: (payload: string) => void; failed: () => void }) {}
+  constructor(private readonly transport: { send: (payload: string) => void; failed: (error: unknown) => void }) {}
 
   enable() { this.enabled = true; }
   get bufferedAmount() { return this.packets.length ? this.chars : 0; }
@@ -22,7 +22,7 @@ export class DirectPackets {
     this.chars += chars;
     if (this.packets.length >= MAX_BATCH_PACKETS) this.flush();
     else this.timer ??= setTimeout(() => {
-      try { this.flush(); } catch { this.transport.failed(); }
+      try { this.flush(); } catch (error) { this.transport.failed(error); }
     }, 0);
   }
 

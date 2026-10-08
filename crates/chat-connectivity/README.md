@@ -43,6 +43,9 @@ device arm64 and both simulator architectures during installation of the local C
   EasyTier's `directly_connected_conns` excludes punched sockets and must not be used as a P2P allowlist.
   Transport admission alone does not open the chat stream; diagnostics use the same verified connection check.
 - Closing the owner cancels discovery, sockets and mapping leases. Native queues and frame sizes are bounded.
+- A full frontend send queue is retryable backpressure, not proof of a lost direct route. Pending chat fragments
+  retain their acknowledgements and retry without clearing healthy probes; native write failures and heartbeat
+  timeouts still activate the relay. Desktop and mobile share this distinction in `shared/remote-chat`.
 - Binary file support is opt-in on both native endpoints. A version handshake on the dedicated file stream
   must complete before it is advertised as available; older native clients retain their existing fallback.
   Desktop submits up to 16 encrypted RAB1 records through raw Tauri IPC, sharing the existing 4 MiB IPC budget.
