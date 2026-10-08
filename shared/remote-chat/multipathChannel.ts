@@ -1,5 +1,6 @@
 import type { Channel, PeerOptions } from './protocol';
 import type { ConnectionEndpoints } from './connectionEndpoints';
+import { ChannelBackpressureError } from './channelBackpressure';
 
 const PROBE_MS = 1000;
 const PATH_TIMEOUT_MS = 3000;
@@ -48,7 +49,10 @@ export class MultipathChannel implements Channel {
 
   private write(path: Path, frame: unknown[]) {
     try { path.channel.send(JSON.stringify(frame)); }
-    catch { path.pong = 0; }
+    catch (error) {
+      // A full send queue does not invalidate the last pong; the usual heartbeat timeout still applies.
+      if (!(error instanceof ChannelBackpressureError)) path.pong = 0;
+    }
   }
 
   private receive(path: Path, text: string, endpoints?: ConnectionEndpoints) {
