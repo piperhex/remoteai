@@ -31,7 +31,9 @@ class Element {
     this.listeners.get(name).add(callback);
   }
   removeEventListener(name, callback) { this.listeners.get(name)?.delete(callback); }
-  dispatch(name) { for (const callback of this.listeners.get(name) ?? []) callback(); }
+  dispatch(name) {
+    for (const callback of this.listeners.get(name) ?? []) callback({ preventDefault() {}, stopPropagation() {} });
+  }
 
   append(...children) {
     for (const child of children) {
@@ -66,10 +68,11 @@ class Element {
   }
 }
 
-function createHarness({ dark = false, binding, fastModeAllowed = true } = {}) {
+function createHarness({ dark = false, binding, fastModeAllowed = true, speedBinding } = {}) {
   const document = new Element();
   document.documentElement = document;
   document.createElement = () => new Element();
+  document.createElementNS = () => new Element();
   const wrapper = new Element();
   const inner = new Element();
   const anchor = new Element();
@@ -86,6 +89,7 @@ function createHarness({ dark = false, binding, fastModeAllowed = true } = {}) {
     __CODEX_SWITCH_COMPOSER_STATUS_ALLOWED__: true,
     __CODEX_SWITCH_FAST_MODE_ALLOWED__: fastModeAllowed,
     codexSwitchRequestUsageSummary() { requests += 1; binding?.(); },
+    codexSwitchSetServiceTier(tier) { speedBinding?.(tier); },
   };
   const context = {
     window, document,
@@ -296,7 +300,7 @@ test("localizes the injected panel and updates an existing panel when language c
   const harness = createHarness();
   const selector = harness.document.querySelector("[data-codex-switch-speed-selector]");
   const controls = selector.querySelector("[data-speed-controls]");
-  const toggle = selector.querySelector("[data-speed-switch]");
+  const toggle = selector.querySelector("[data-speed-button]");
   for (const [language, today, fast, cost] of [
     ["ru", "Сегодня", "Быстрый режим", "Общая стоимость API за сегодня: 1.25USD"],
     ["en", "Today", "Fast mode", "Combined API estimated cost today: 1.25USD"],
@@ -304,8 +308,8 @@ test("localizes the injected panel and updates an existing panel when language c
   ]) {
     update(harness, { language, providerEstimatedCost: { amountUsd: 1.25, aggregated: true } });
     assert.equal(harness.usage.querySelector("[data-today-label]").textContent, today);
-    assert.equal(controls.querySelector("[data-speed-label]").textContent, fast);
-    assert.equal(toggle.attributes["aria-label"], fast);
+    assert.equal(controls.querySelector("[data-speed-label]"), null);
+    assert.ok(toggle.attributes["aria-label"].includes(fast));
     assert.match(harness.usage.title, new RegExp(cost.replaceAll(".", "\\.")));
     assert.equal(harness.usage.querySelector("[data-today-tokens]").textContent, "1.2K");
     if (language !== "zh") {
@@ -316,7 +320,7 @@ test("localizes the injected panel and updates an existing panel when language c
   }
   update(harness, { language: "ru", enabled: false });
   assert.equal(harness.usage.hidden, true);
-  assert.equal(controls.querySelector("[data-speed-label]").textContent, "Быстрый режим");
+  assert.match(toggle.attributes["aria-label"], /Быстрый режим/);
   update(harness, { language: "unsupported", primaryRemainingPercent: 100 });
   assert.equal(harness.state.language, "ru");
   assert.match(harness.usage.title, /Остаток лимита аккаунта: 100%/);
@@ -330,7 +334,7 @@ test("updates language during a failed usage refresh without clearing data or ov
   harness.state.updateLanguage("ru");
   assert.equal(harness.state.usagePending, true);
   assert.equal(harness.state.usage, previousUsage);
-  assert.equal(harness.document.querySelector("[data-speed-label]").textContent, "Быстрый режим");
+  assert.match(harness.document.querySelector("[data-speed-button]").attributes["aria-label"], /Быстрый режим/);
   assert.equal(harness.usage.querySelector("[data-today-tokens]").textContent, "1.2K");
   assert.match(harness.usage.title, /Общая стоимость API за сегодня: 1\.25USD/);
   for (let index = 0; index < 5; index += 1) harness.poll();
@@ -348,16 +352,73 @@ test("localizes Fast controls before any usage succeeds and ignores invalid lang
   const harness = createHarness();
   harness.flushTimeouts();
   harness.state.updateLanguage("ru");
-  const toggle = harness.document.querySelector("[data-speed-switch]");
+  const toggle = harness.document.querySelector("[data-speed-button]");
   assert.equal(harness.usage.hidden, true);
-  assert.equal(toggle.attributes["aria-label"], "Быстрый режим");
+  assert.match(toggle.attributes["aria-label"], /Быстрый режим/);
   for (const language of [null, undefined, "unsupported", "__proto__"]) {
     harness.state.updateLanguage(language);
     assert.equal(harness.state.language, "ru");
   }
   harness.state.completeUsageRequest();
   harness.state.updateLanguage("en");
-  assert.equal(toggle.attributes["aria-label"], "Fast mode");
+  assert.match(toggle.attributes["aria-label"], /Fast mode/);
   assert.equal(harness.usage.hidden, true);
   assert.equal(harness.document.querySelectorAll("[data-codex-switch-speed-selector]").length, 1);
+});
+
+test("cycles normal, Fast and Ultrafast with the matching tier and illuminated bolts", () => {
+  const tiers = [];
+  const harness = createHarness({ speedBinding: tier => tiers.push(tier) });
+  const button = harness.document.querySelector("[data-speed-button]");
+  assert.equal(harness.document.querySelector("[data-speed-switch]"), null);
+  assert.equal(button.dataset.speed, "normal");
+  for (const [tier, speed, count, color] of [
+    ["priority", "fast", 1, "#3984ed"], ["ultrafast", "ultrafast", 2, "#9560ed"],
+    ["default", "normal", 0, "none"],
+  ]) {
+    button.dispatch("click");
+    assert.equal(button.dataset.speed, speed);
+    assert.equal(button.disabled, true);
+    assert.equal(button.attributes["aria-busy"], "true");
+    assert.equal(tiers.at(-1), tier);
+    const bolts = button.querySelectorAll("[data-speed-bolt]");
+    assert.equal(bolts.filter(bolt => bolt.attributes.class === "is-lit").length, count);
+    assert.equal(bolts[0].attributes.fill, color);
+    const requestCount = tiers.length;
+    button.dispatch("click");
+    harness.window.__CODEX_SWITCH_REFRESH_SPEED_SELECTOR__();
+    assert.equal(tiers.length, requestCount);
+    assert.equal(button.dataset.speed, speed);
+    harness.state.completeSelection(tier, true);
+    assert.equal(button.disabled, false);
+    assert.equal(button.attributes["aria-busy"], "false");
+  }
+  assert.deepEqual(tiers, ["priority", "ultrafast", "default"]);
+});
+
+test("restores the confirmed speed after rejected changes or disconnected bindings", () => {
+  const harness = createHarness();
+  const button = harness.document.querySelector("[data-speed-button]");
+  button.dispatch("click");
+  harness.state.completeSelection("priority", true);
+  button.dispatch("click");
+  harness.state.completeSelection("priority", false);
+  assert.equal(button.dataset.speed, "ultrafast");
+  harness.state.completeSelection("ultrafast", false);
+  assert.equal(button.dataset.speed, "fast");
+  assert.equal(button.disabled, false);
+  assert.match(harness.document.querySelector("[data-speed-tooltip]").textContent, /未能切换/);
+  harness.window.codexSwitchSetServiceTier = () => { throw new Error("Disconnected"); };
+  button.dispatch("click");
+  assert.equal(button.dataset.speed, "fast");
+  assert.equal(button.disabled, false);
+});
+
+test("does not request a speed change when acceleration is unavailable", () => {
+  const tiers = [];
+  const harness = createHarness({ fastModeAllowed: false, speedBinding: tier => tiers.push(tier) });
+  const button = harness.document.querySelector("[data-speed-button]");
+  button.dispatch("click");
+  assert.equal(button.disabled, true);
+  assert.deepEqual(tiers, []);
 });

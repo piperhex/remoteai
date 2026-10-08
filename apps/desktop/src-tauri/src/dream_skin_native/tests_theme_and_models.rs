@@ -314,7 +314,7 @@
         assert!(expression.contains("data-composer-navigation-target"));
         assert!(expression.contains("modelWrapper.before(container)"));
         assert!(expression.contains("pointerdown"));
-        assert!(expression.contains("data-speed-switch"));
+        assert!(expression.contains("data-speed-button"));
         assert!(expression.contains("data-today-usage"));
         assert!(expression.contains("align-items:center"));
         assert!(expression.contains("transform:translateY(1px)"));
@@ -331,7 +331,9 @@
         assert!(expression.contains("rgb(10,132,105)"));
         assert!(expression.contains("rgb(180,93,0)"));
         assert!(expression.contains("style.setProperty(\"color\", tokens, \"important\")"));
-        assert!(expression.contains("setAttribute(\"role\", \"switch\")"));
+        assert!(!expression.contains("setAttribute(\"role\", \"switch\")"));
+        assert!(!expression.contains("data-speed-switch"));
+        assert!(expression.contains("ultrafast: { name: \"ultrafast\", next: \"default\", bolts: 2 }"));
         assert!(expression.contains("border-radius:9999px"));
         assert!(!expression.contains("menuitemradio"));
         assert!(!expression.contains("openSubmenu"));

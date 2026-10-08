@@ -392,6 +392,10 @@ fn proxy_service_tier_api_accepts_only_supported_values() {
         parse_proxy_service_tier(&json!({ "service_tier": "fast" })),
         Ok(ProxyServiceTier::Priority)
     );
+    assert_eq!(
+        parse_proxy_service_tier(&json!({ "service_tier": "ultrafast" })),
+        Ok(ProxyServiceTier::Ultrafast)
+    );
 }
 
 #[test]
@@ -426,6 +430,8 @@ fn proxy_speed_stays_explicit_through_toggles_restarts_and_openai_login() {
 
     assert!(set_proxy_service_tier_by_name("priority"));
     assert_proxy_speed_matches_forwarded_requests("priority");
+    assert!(set_proxy_service_tier_by_name("ultrafast"));
+    assert_proxy_speed_matches_forwarded_requests("ultrafast");
     assert!(set_proxy_service_tier_by_name("default"));
     assert_proxy_speed_matches_forwarded_requests("default");
 

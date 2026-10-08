@@ -70,7 +70,7 @@ fn status<R: Runtime>(app: &tauri::AppHandle<R>) -> LocalProxyStatus {
     let running = is_running();
     LocalProxyStatus {
         running,
-        fast_mode_enabled: running && proxy_service_tier_name() == "priority",
+        fast_mode_enabled: running && proxy_service_tier() != ProxyServiceTier::Default,
         fast_mode_available: running
             && resolve_paths(app)
                 .is_ok_and(|paths| providers::current_target_supports_fast_mode(&paths)),
