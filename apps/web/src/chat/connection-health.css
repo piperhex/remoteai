@@ -8,9 +8,48 @@
 .connection-health-sheet .adaptive-sheet-content { padding-top: 19px; }
 .connection-health-sheet .sheet-close,
 .connection-health-sheet .ant-modal-close { border-radius: 50%; background: #f0f2f3; }
-.connection-health-sheet .ant-modal-content { padding: 20px; border-radius: 24px; }
-.connection-health-sheet .ant-modal-header { margin-bottom: 19px; padding-right: 32px; }
-.connection-health-sheet .ant-modal-body { max-height: 70dvh; overflow-y: auto; overscroll-behavior: contain; }
+.connection-health-sheet.ant-modal { padding-bottom: 0; }
+.connection-health-sheet.ant-modal .ant-modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(23, 37, 31, .06);
+  border-radius: 20px;
+  box-shadow: 0 24px 80px rgba(23, 37, 31, .16);
+}
+.connection-health-sheet.ant-modal .ant-modal-header {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 22px 56px 18px 24px;
+  border-bottom: 1px solid #edf1ef;
+}
+.connection-health-sheet.ant-modal .modal-heading { display: flex; flex-direction: column; gap: 4px; }
+.connection-health-sheet.ant-modal .modal-heading strong {
+  color: var(--ink); font-size: 20px; line-height: 28px; font-weight: 650;
+}
+.connection-health-sheet.ant-modal .modal-heading span { color: var(--muted); font-weight: 400; }
+.connection-health-sheet.ant-modal .ant-modal-close {
+  top: 20px; right: 20px; width: 28px; height: 28px; color: #84918b; background: #f5f7f6;
+}
+.connection-health-sheet.ant-modal .ant-modal-close:hover { color: var(--ink); background: #eaf0ed; }
+.connection-health-sheet.ant-modal .ant-modal-body {
+  min-height: 0;
+  max-height: none;
+  padding: 20px 24px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(23, 37, 31, .16) transparent;
+}
+.connection-health-sheet.ant-modal .ant-modal-body::-webkit-scrollbar { width: 5px; }
+.connection-health-sheet.ant-modal .ant-modal-body::-webkit-scrollbar-track { background: transparent; }
+.connection-health-sheet.ant-modal .ant-modal-body::-webkit-scrollbar-thumb {
+  border-radius: 8px; background: rgba(23, 37, 31, .16);
+}
+.connection-health-sheet.ant-modal .ant-modal-body::-webkit-scrollbar-thumb:hover { background: rgba(23, 37, 31, .28); }
+.connection-health-sheet.ant-modal .ant-modal-body::-webkit-scrollbar-button { display: none; }
 .connection-health {
   display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 400px;
   margin: 0 auto; padding-bottom: 24px; color: var(--ink); overflow-wrap: anywhere;
@@ -72,3 +111,24 @@
 }
 .connection-health-reconnect:hover { background: #096f58; }
 .connection-health-reconnect:focus-visible { outline: 2px solid #0b8065; outline-offset: 3px; }
+
+@media (min-width: 768px) {
+  .connection-health { gap: 16px; padding-bottom: 0; }
+  .connection-health-summary { gap: 12px; padding: 16px; border-radius: 12px; }
+  .connection-health-summary-icon { width: 36px; height: 36px; }
+  .connection-health-steps { gap: 0; padding: 0 14px; border: 1px solid #e9eeeb; border-radius: 12px; }
+  .connection-health-step { gap: 12px; min-height: 66px; padding: 12px 0; border: 0; border-radius: 0; }
+  .connection-health-step + .connection-health-step { border-top: 1px solid #f0f3f1; }
+  .connection-health-step-icon { width: 32px; height: 32px; border-radius: 10px; }
+  .connection-health-step-icon svg { width: 18px; height: 18px; }
+  .connection-health-badge { flex-shrink: 0; gap: 4px; padding: 4px 0 4px 4px; background: transparent; }
+  .connection-health-addresses { padding: 14px 16px; border-color: #edf1ef; border-radius: 12px; background: #f8faf9; }
+  .connection-health-addresses dt { color: #637269; font-size: 12px; line-height: 18px; font-weight: 500; }
+  .connection-health-addresses dd span {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-variant-numeric: tabular-nums;
+  }
+  .connection-health-addresses dd .connection-health-address-unknown { font-family: inherit; }
+  .connection-health-note { align-items: flex-start; gap: 10px; margin-top: 0; padding: 14px; border-radius: 12px; }
+  .connection-health-note > svg { width: 18px; height: 18px; margin-top: 2px; }
+  .connection-health-note strong { font-size: 13px; line-height: 20px; }
+}
