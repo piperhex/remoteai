@@ -22,6 +22,7 @@ import { ChatDrawer, type ChatDrawerMethods } from './ChatDrawer';
 import { ChatDevices } from './ChatDevices';
 import { ChatConnectionInfo } from './ChatConnectionInfo';
 import { ChatTaskStatus } from './ChatTaskStatus';
+import { visibleChatError } from '../../../../shared/remote-chat/chatError';
 import { TaskReviewProvider } from '../../../../shared/remote-chat/TaskReviewContext';
 import { ChatRetryProvider } from '../../../../shared/remote-chat/ChatRetryProvider';
 import { ChatTools } from './ChatTools';
@@ -91,6 +92,7 @@ function ConnectedChat({ session, device, devices, active: pageActive, chooseDev
     drawerRef.current?.closeDrawer(); setPickingDevice(false); setSearching(false);
   }, [notification]);
   const ready = state.ready;
+  const error = visibleChatError(state.error);
   const runningTurn = ready ? state.selected?.turns?.find((turn) => turn.status === 'inProgress') : undefined;
   const running = Boolean(runningTurn);
   const openDrawer = useCallback(() => { Keyboard.dismiss(); setDrawer(true); drawerRef.current?.openDrawer(); }, []);
@@ -159,7 +161,7 @@ function ConnectedChat({ session, device, devices, active: pageActive, chooseDev
       </View>
     </View>
     <ChatTaskStatus state={state} />
-    {!!state.error && <Text accessibilityRole="alert" style={styles.error}>{state.error}</Text>}
+    {!!error && <Text accessibilityRole="alert" style={styles.error}>{error}</Text>}
     {state.desktopOnly && <Text style={[styles.subtitle, { maxWidth: 400, paddingHorizontal: 16 }]}>
       {t("桌面已就绪。打开远程桌面，登录电脑后即可继续聊天。")}</Text>}
     {!!state.cacheError && <Text style={[styles.subtitle, { maxWidth: 400 }]}>{state.cacheError}</Text>}
@@ -184,7 +186,7 @@ function ConnectedChat({ session, device, devices, active: pageActive, chooseDev
         {state.approvals.filter((event) => event.params.threadId === state.selected?.id).map((event) =>
           <ChatApproval key={String(event.id)} event={event} respond={(reply) => controller.respond(reply)} />)}
       </ScrollView>}
-    <ChatAsyncQuestions thread={state.selected} error={state.error}
+    <ChatAsyncQuestions thread={state.selected} error={error}
       disabled={!ready || state.sending || state.settingsBusy || state.selectedArchived || state.queueBusy
         || state.compacting === state.selected?.id}
       answer={controller.answerAsyncQuestion} />

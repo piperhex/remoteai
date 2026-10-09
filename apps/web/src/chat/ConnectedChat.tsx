@@ -15,6 +15,7 @@ import { useDesktopLayout, usePanelVisibility } from '../useDesktopLayout';
 import { ChatDevices } from './ChatDevices';
 import { ChatConnectionInfo } from './ChatConnectionInfo';
 import { ChatTaskStatus } from './ChatTaskStatus';
+import { visibleChatError } from '../../../../shared/remote-chat/chatError';
 import { TaskReviewProvider } from '../../../../shared/remote-chat/TaskReviewContext';
 import { ChatRetryProvider } from '../../../../shared/remote-chat/ChatRetryProvider';
 import { ChatQuotesProvider } from './ChatQuotes';
@@ -70,6 +71,7 @@ export function ConnectedChat({ chat, device, devices, active, scope, email, cho
   useChatDrawerSwipe({ enabled: active && !desktop && !pickingDevice && !searching && !tokenSummary,
     open: drawer, onOpenChange: setDrawer });
   const ready = state.ready;
+  const error = visibleChatError(state.error);
   const cwd = state.selected?.cwd ?? state.draftProject?.cwd ?? '';
   const catalog = useChatCatalog(controller, cwd, ready);
   const runningTurn = state.selected?.turns?.find((turn) => turn.status === 'inProgress');
@@ -105,7 +107,7 @@ export function ConnectedChat({ chat, device, devices, active, scope, email, cho
       {headerEnd}
     </header>
     <ChatTaskStatus state={state} />
-    {!!state.error && <p role="alert" className="chat-error">{t(state.error)}</p>}
+    {!!error && <p role="alert" className="chat-error">{t(error)}</p>}
     {state.desktopOnly && <p className="chat-muted" style={{ maxWidth: 400 }}>
       {t('桌面已就绪。打开远程桌面，登录电脑后即可继续聊天。')}</p>}
     <ChatImageContext.Provider value={{ threadId: state.selected?.id ?? null, ready,
@@ -126,7 +128,7 @@ export function ConnectedChat({ chat, device, devices, active, scope, email, cho
       {approvals.map((event) => <ChatApproval key={String(event.id)} event={event}
         ready={ready} respond={(reply) => controller.respond(reply)} />)}
     </div>}
-    <ChatAsyncQuestions thread={state.selected} error={state.error}
+    <ChatAsyncQuestions thread={state.selected} error={error}
       scope={scope}
       disabled={!ready || state.sending || state.settingsBusy || state.selectedArchived || state.queueBusy
         || state.compacting === state.selected?.id} answer={controller.answerAsyncQuestion} />
