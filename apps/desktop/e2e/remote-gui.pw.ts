@@ -7,6 +7,7 @@ import type { ChatSessions as Sessions } from '../../admin/src/modules/devices/c
 import type { ChatIdentity } from '../../admin/src/modules/devices/chat/protocol';
 import type { desktopTest } from '../../web/e2e/remote-desktop-fixture';
 import './chat-harness-types';
+import { checkGitDiffReview } from './git-diff-checks';
 
 declare global { interface Window { desktopTest: typeof desktopTest } }
 
@@ -135,6 +136,7 @@ for (const blocked of [false, true]) {
     await page.screenshot({ path: `../../.codex-tmp/gui-local-git-${blocked ? 'relay' : 'p2p'}.png` });
     await page.getByRole('button', { name: '打开 Git', exact: true }).click();
     await expect(page.locator('.git-project')).toContainText('/local/workspace');
+    await checkGitDiffReview(page, `gui-local-git-diff-${blocked ? 'relay' : 'p2p'}`);
     await page.getByRole('button', { name: '关闭 Git', exact: true }).click();
     await chooseComputer(page, 'Office PC');
     await page.getByRole('button', { name: 'Office', exact: true }).click();
@@ -147,6 +149,7 @@ for (const blocked of [false, true]) {
     await expect(page.locator('.chat-terminal-device')).toContainText('Office PC');
     await expect.poll(() => office.evaluate(() => window.chatTest.demoState().operations
       .some(operation => operation.operation === 'guiGitChanges' && operation.cwd === 'F:/projects/demo'))).toBe(true);
+    await checkGitDiffReview(page, `gui-remote-git-diff-${blocked ? 'relay' : 'p2p'}`);
     await page.getByRole('button', { name: '关闭 Git', exact: true }).click();
     const launcher = page.getByRole('button', { name: '打开远程桌面', exact: true });
     await expect(launcher).toBeVisible();

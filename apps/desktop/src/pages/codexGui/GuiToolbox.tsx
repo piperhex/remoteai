@@ -36,7 +36,7 @@ export function GuiToolbox(props: Props) {
     </Popover>}
     <Suspense fallback={null}>
       {panel === 'git' && <ChatGit key={props.cwd} client={props.git} cwd={props.cwd}
-        connected={props.connected} active={props.active} deviceName={props.deviceName}
+        connected={props.connected} active={props.active} deviceName={props.deviceName} desktopDiffs
         onClose={() => setPanel(null)} />}
     </Suspense>
   </>;
