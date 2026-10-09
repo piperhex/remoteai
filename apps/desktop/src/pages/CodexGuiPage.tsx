@@ -11,6 +11,7 @@ import { canForkConversation } from "./codexGui/forkConversation";
 import { ThreadSidebar, threadTitle } from "./codexGui/ThreadSidebar";
 import { Composer, type ComposerHandle } from "./codexGui/Composer";
 import { Messages } from "./codexGui/Messages";
+import { ConversationRetryProvider } from "./codexGui/ConversationRetryProvider";
 import { Approvals } from "./codexGui/Approvals";
 import { AsyncQuestions } from "./codexGui/AsyncQuestions";
 import { Installer } from "./codexGui/Installer";
@@ -160,6 +161,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
       </div>}
       <div className={paneStyles.conversation} hidden={view !== "conversation"}>
       {!installer.version ? <Installer installer={installer} /> :
+        <ConversationRetryProvider controller={controller} state={state}>
         <Messages value={current} selected={state.selected} active={conversationActive}
           retry={state.capacityRetry} onCancelRetry={controller.capacityRetry.cancel}
           editCwd={state.selected ? state.projectOverrides[state.selected] : undefined}
@@ -173,7 +175,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
               || Boolean(state.deleting) || state.compacting === state.selected} />
           <Composer ref={composer} state={state} controller={controller} active={conversationActive}
             hostPicker={hostPicker} />
-        </>} />}
+        </>} /></ConversationRetryProvider>}
       {isDesktopApp && terminal.tabs.length > 0 && <Suspense fallback={null}>
         <TerminalPanel panel={terminal} active={conversationActive} api={terminalApi} />
       </Suspense>}

@@ -23,6 +23,7 @@ import { ChatDevices } from './ChatDevices';
 import { ChatConnectionInfo } from './ChatConnectionInfo';
 import { ChatTaskStatus } from './ChatTaskStatus';
 import { TaskReviewProvider } from '../../../../shared/remote-chat/TaskReviewContext';
+import { ChatRetryProvider } from '../../../../shared/remote-chat/ChatRetryProvider';
 import { ChatTools } from './ChatTools';
 import { useChat } from './useChat';
 import { useDownloadConnection } from '../downloads/useDownloadConnection';
@@ -168,10 +169,11 @@ function ConnectedChat({ session, device, devices, active: pageActive, chooseDev
       <ChatFileProvider key={state.selected?.id ?? 'new'} threadId={state.selected?.id ?? null}
         ready={ready} load={controller.textPreview} videos={controller.videos} files={controller.files}>
       <TaskReviewProvider controller={controller} state={state} active={active && foreground}>
+      <ChatRetryProvider controller={controller} state={state}>
       <ChatMessages key={state.selected?.id ?? 'new'} thread={state.selected} offline={!ready}
         loading={state.historyLoading} loadingMore={state.historyLoadingMore} hasMore={state.historyHasMore}
         loadOlder={() => controller.loadOlder()} />
-      </TaskReviewProvider>
+      </ChatRetryProvider></TaskReviewProvider>
       </ChatFileProvider>
       </ChatImagePreviewProvider>
     </ChatImageContext.Provider>

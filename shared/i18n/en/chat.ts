@@ -368,6 +368,8 @@ export const chat = {
   "复制报错详情": "Copy error details",
   "待开始": "Pending",
   "本次回复遇到问题，可以继续发送消息重试。": "This reply encountered a problem. Send another message to try again.",
+  "本次回复遇到问题，已中断。": "This reply stopped because of a problem.",
+  "正在重试…": "Retrying…",
   "本次回复曾出现连接中断，现已恢复。": "The connection was interrupted and has recovered.",
   "本次回复曾出现连接中断。": "The connection was interrupted during this reply.",
   "连接暂时中断，Codex 正在重试…": "Connection interrupted. Codex is retrying…",

@@ -11,13 +11,14 @@ import type { Turn } from './types';
 import { palette, styles } from './styles';
 import { useTaskReviewAvailable } from '../../../../shared/remote-chat/TaskReviewContext';
 import { ReviewButton } from './review/ReviewButton';
+import { ChatRetryButton } from './ChatRetryButton';
 
 export type TurnPanel = 'plan' | 'changes' | 'error' | 'result';
 interface Props { turn: Turn; onOpen: (turnId: string, panel: TurnPanel) => void }
 const PREVIEW_FILES = 3;
 
 export function turnErrorNotice(turn: Turn) {
-  if (turn.status === 'failed' || turn.error) return t("本次回复遇到问题，可以继续发送消息重试。");
+  if (turn.status === 'failed' || turn.error) return t("本次回复遇到问题，已中断。");
   if (turn.status === 'completed') return t("本次回复曾出现连接中断，现已恢复。");
   if (turn.status === 'interrupted') return t("本次回复曾出现连接中断。");
   return t("连接暂时中断，Codex 正在重试…");
@@ -107,11 +108,11 @@ export function ChatTurnSummary({ turn, onOpen }: Props) {
       onOpen={() => onOpen(turn.id, 'changes')}
       onResult={reviewAvailable ? () => onOpen(turn.id, 'result') : undefined} />}
     {turn.status === 'interrupted' && <Text style={styles.subtitle}>{t("已停止生成")}</Text>}
-    {(turn.error || turn.retryError || turn.status === 'failed') && <Pressable accessibilityRole="button"
+    {(turn.error || turn.retryError || turn.status === 'failed') && <View><Pressable accessibilityRole="button"
       accessibilityLabel={t("查看报错详情")} onPress={() => onOpen(turn.id, 'error')}>
       <Text style={summaryStyles.notice}>{turnErrorNotice(turn)}
         {' '}<Text style={summaryStyles.noticeLink}>{t("查看报错详情")}</Text></Text>
-    </Pressable>}
+    </Pressable><ChatRetryButton turnId={turn.id} /></View>}
   </View>;
 }
 

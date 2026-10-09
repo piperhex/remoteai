@@ -12,6 +12,23 @@
 
 .hint { margin-left: 8px; text-decoration: underline; }
 
+.retryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 5px 10px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  &:hover:not(:disabled) { background: var(--line); }
+  &:disabled { opacity: 0.5; cursor: default; }
+  &:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+}
+
 .capacityNotice {
   display: flex;
   flex-wrap: wrap;

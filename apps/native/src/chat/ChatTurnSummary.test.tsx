@@ -15,7 +15,7 @@ vi.mock('react-native', () => ({ Pressable: 'Pressable', Text: 'Text', View: 'Vi
 vi.mock('@expo/vector-icons', () => ({ Ionicons: 'Icon' }));
 vi.mock('./ChatImage', () => ({ ChatImage: 'Image' }));
 
-interface Props { children?: ReactNode; accessibilityLabel?: string; onPress?: () => void }
+interface Props { children?: ReactNode; accessibilityLabel?: string; onPress?: () => void; disabled?: boolean }
 function descendants(node: ReactNode): { type: unknown; props: Props }[] {
   return Children.toArray(node).flatMap(child => {
     if (!isValidElement<Props>(child)) return [];
@@ -79,4 +79,24 @@ it('hides acceptance when review is unavailable or the turn has no file changes'
   const unavailable = ChatTurnSummary({ turn: { ...turn, status: 'completed' }, onOpen: vi.fn() });
   expect(content(unavailable)).not.toContain('验收结果');
   expect(content(unavailable)).toContain('审核');
+});
+
+it('shows retry after the error notice and continues when pressed', () => {
+  const retry = vi.fn();
+  reviewContext.value = { turnId: 'turn', disabled: false, pending: false, retry };
+  const tree = ChatTurnSummary({ turn: { ...turn, status: 'failed' }, onOpen: vi.fn() });
+  expect(content(tree)).toContain('本次回复遇到问题，已中断。 查看报错详情重试');
+  const button = descendants(tree).find(node => node.type === 'Pressable' && content(node.props.children) === '重试');
+  expect(button?.props.disabled).toBe(false);
+  button?.props.onPress?.();
+  expect(retry).toHaveBeenCalledOnce();
+});
+
+it('disables retry while pending and omits it from older errors', () => {
+  reviewContext.value = { turnId: 'turn', disabled: true, pending: true, retry: vi.fn() };
+  const failed = { ...turn, status: 'failed' };
+  const tree = ChatTurnSummary({ turn: failed, onOpen: vi.fn() });
+  const button = descendants(tree).find(node => node.type === 'Pressable' && content(node.props.children) === '正在重试…');
+  expect(button?.props.disabled).toBe(true);
+  expect(content(ChatTurnSummary({ turn: { ...failed, id: 'old' }, onOpen: vi.fn() }))).not.toContain('正在重试…');
 });
