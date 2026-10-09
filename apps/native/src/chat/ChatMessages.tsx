@@ -1,5 +1,5 @@
 import { t, useLanguage } from '../i18n';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState, type ReactNode } from 'react';
 import { ActivityIndicator, FlatList, Keyboard, Pressable, RefreshControl, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useChatScroll } from './useChatScroll';
@@ -55,7 +55,8 @@ const TimelineEntry = memo(function TimelineEntry({ entry, open, onInline }: {
     running={entry.turn.status === 'inProgress' && entry.item.status !== 'completed'} />;
 });
 
-export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder, offline }: ChatMessagesProps) {
+export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder, offline, processing }:
+  ChatMessagesProps & { processing?: ReactNode }) {
   useLanguage();
   const turns = useMemo(() => (thread?.turns ?? []).map((turn) => offline && turn.status === 'inProgress'
     ? { ...turn, status: 'cached' } : turn), [thread?.turns, offline]);
@@ -85,7 +86,7 @@ export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder,
     style={showInitialLoading && styles.messageListLoading}
     pointerEvents={showInitialLoading ? 'none' : 'auto'} accessibilityElementsHidden={showInitialLoading}
     importantForAccessibility={showInitialLoading ? 'no-hide-descendants' : 'auto'}
-    contentContainerStyle={entries.length ? styles.messages : styles.empty}
+    contentContainerStyle={entries.length || processing ? styles.messages : styles.empty}
     renderItem={({ item: entry }) => <View collapsable={false} onLayout={() => onItemLayout(entry.id)}>
       <TimelineEntry entry={entry} open={open} onInline={setInline} />
     </View>}
@@ -107,13 +108,13 @@ export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder,
         <Text style={styles.subtitle}>{t("加载更早的消息")}</Text>
       </Pressable>)}
     </View>}
-    ListEmptyComponent={showInitialLoading ? null : <View style={styles.empty}>
+    ListEmptyComponent={showInitialLoading || processing ? null : <View style={styles.empty}>
       <Ionicons name="terminal-outline" size={28} color={palette.green} />
       <Text style={styles.title}>{t("想一起完成什么？")}</Text>
       <Text style={[styles.subtitle, styles.centerText]}>{t("直接提问，或选择一个项目开始任务。")}</Text>
     </View>}
     ListFooterComponent={<View style={[styles.messageFooter, { paddingBottom: historyBottomSpace }]}
-      onLayout={onFooterLayout} />} />
+      onLayout={onFooterLayout}>{processing}</View>} />
     {showScrollToBottom && !showInitialLoading && entries.length > 0 && <Pressable
       accessibilityRole="button" accessibilityLabel={t("回到底部")} onPress={scrollToBottom}
       style={({ pressed }) => [styles.scrollToBottom, pressed && styles.scrollToBottomPressed]}>

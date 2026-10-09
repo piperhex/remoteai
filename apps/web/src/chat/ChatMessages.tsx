@@ -1,5 +1,5 @@
 import { t, useLanguage } from '../i18n';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ArrowDown, ChevronDown, ChevronRight, Terminal } from 'lucide-react';
 import type { ChatMessagesProps } from '../../../../shared/remote-chat/client/messageProps';
 import { useConversationEntries } from '../../../../shared/chat/useConversationEntries';
@@ -79,7 +79,7 @@ function TimelineEntry({ entry, open, inline, desktop }: {
     running={entry.turn.status === 'inProgress' && entry.item.status !== 'completed'} />;
 }
 
-export function ChatMessages(props: ChatMessagesProps) {
+export function ChatMessages(props: ChatMessagesProps & { processing?: ReactNode }) {
   useLanguage();
   const desktop = useDesktopLayout();
   const { thread, loading, loadingMore, hasMore, offline } = props;
@@ -114,7 +114,9 @@ export function ChatMessages(props: ChatMessagesProps) {
             data-message-id={'item' in entry ? entry.item.id : entry.id} className={`chat-entry-${entry.kind}`}>
             <TimelineEntry entry={entry} open={setSelection} inline={setInline} desktop={desktop} />
           </div>)}
-          {!entries.length && !loading && <div className="chat-empty"><Terminal size={28} className="chat-empty-glyph" />
+          {props.processing}
+          {!entries.length && !loading && !props.processing && <div className="chat-empty">
+            <Terminal size={28} className="chat-empty-glyph" />
             <h2>{t("想一起完成什么？")}</h2><p className="chat-muted">{t("直接提问，或选择一个项目开始任务。")}</p>
             {desktop && <div className="chat-empty-suggestions"><span>{t("理解代码")}</span><span>{t("实现功能")}</span>
               <span>{t("排查问题")}</span></div>}</div>}

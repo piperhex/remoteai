@@ -4,9 +4,10 @@ import { ChatMessages } from './ChatMessages';
 import { conversationEntries } from './turnPresentation';
 import type { TimelineEntry } from './activityTimeline';
 import type { Item, Turn } from './types';
+import { styles } from './styles';
 
 const state = vi.hoisted(() => ({ selection: null as unknown, inline: new Map<string, boolean>(),
-  scroll: vi.fn(), dismiss: vi.fn() }));
+  scroll: vi.fn(), dismiss: vi.fn(), footerLayout: vi.fn() }));
 vi.mock('react', async importOriginal => ({ ...await importOriginal<typeof import('react')>(),
   memo: <T,>(component: T) => component,
   useMemo: <T,>(compute: () => T) => compute(),
@@ -33,11 +34,14 @@ vi.mock('./useConversationEntries', () => ({ useConversationEntries: (turns: Tur
 }) }));
 vi.mock('./useChatScroll', () => ({ useChatScroll: (options: unknown) => {
   state.scroll(options);
-  return { list: { current: null }, initializing: false, onItemLayout: vi.fn(), scrollEventThrottle: 16 };
+  return { list: { current: null }, initializing: false, onItemLayout: vi.fn(), scrollEventThrottle: 16,
+    onFooterLayout: state.footerLayout, historyBottomSpace: 120 };
 } }));
 
 interface ListProps {
   data: TimelineEntry[]; renderItem: (props: { item: TimelineEntry }) => ReactElement; scrollEventThrottle: number;
+  ListFooterComponent: ReactElement<{ children?: ReactNode; onLayout: () => void; style: unknown }>;
+  ListEmptyComponent: ReactNode; contentContainerStyle: unknown;
 }
 interface DrawerProps { entry: { items: Item[] }; onOpen: (id: string) => void; onClose: () => void }
 interface DetailProps { item: Item; onBack: () => void }
@@ -75,6 +79,31 @@ const render = (turn: Turn) => ChatMessages({ thread: { id: 'thread', cwd: '', p
 it('passes the initial positioning event frequency through to the native list', () => {
   const tree = render({ id: 'turn', status: 'completed', items: [command('single')] });
   expect(element<ListProps>(tree, 'FlatList').props.scrollEventThrottle).toBe(16);
+});
+
+it('keeps progress in the scrolling footer and preserves the history spacer and layout measurement', () => {
+  const processing = <span>正在生成回复 · 12秒 (共计42秒)</span>;
+  const tree = ChatMessages({ thread: { id: 'thread', cwd: '', preview: '', updatedAt: 0,
+    turns: [{ id: 'turn', status: 'inProgress', items: [{ id: 'reply', type: 'agentMessage', text: '回复' }] }] },
+    processing });
+  const list = element<ListProps>(tree, 'FlatList').props;
+  expect(list.data.at(-1)).toMatchObject({ item: { id: 'reply' } });
+  expect(list.ListFooterComponent.props.children).toBe(processing);
+  expect(list.ListFooterComponent.props.style).toEqual([styles.messageFooter, { paddingBottom: 120 }]);
+  list.ListFooterComponent.props.onLayout();
+  expect(state.footerLayout).toHaveBeenCalledOnce();
+  expect(findElement(tree, 'span')).toBeUndefined();
+});
+
+it('shows progress instead of the empty welcome and removes it when the reply completes', () => {
+  const processing = <span>正在等待响应</span>;
+  const waiting = element<ListProps>(ChatMessages({ thread: null, processing }), 'FlatList').props;
+  expect(waiting.ListEmptyComponent).toBeNull();
+  expect(waiting.contentContainerStyle).toBe(styles.messages);
+  expect(waiting.ListFooterComponent.props.children).toBe(processing);
+  const completed = element<ListProps>(render({ id: 'turn', status: 'completed',
+    items: [{ id: 'reply', type: 'agentMessage', text: '回复完成' }] }), 'FlatList').props;
+  expect(completed.ListFooterComponent.props.children).toBeUndefined();
 });
 
 function activityRow(tree: ReactNode): ActivityProps {

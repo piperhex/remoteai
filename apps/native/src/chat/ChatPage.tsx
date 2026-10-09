@@ -172,13 +172,13 @@ function ConnectedChat({ session, device, devices, active: pageActive, chooseDev
       <ChatRetryProvider controller={controller} state={state}>
       <ChatMessages key={state.selected?.id ?? 'new'} thread={state.selected} offline={!ready}
         loading={state.historyLoading} loadingMore={state.historyLoadingMore} hasMore={state.historyHasMore}
-        loadOlder={() => controller.loadOlder()} />
+        loadOlder={() => controller.loadOlder()}
+        processing={runningTurn && <ChatProcessing key={runningTurn.id} turn={runningTurn}
+          processing={state.processing} active={active && ready && foreground} />} />
       </ChatRetryProvider></TaskReviewProvider>
       </ChatFileProvider>
       </ChatImagePreviewProvider>
     </ChatImageContext.Provider>
-    {runningTurn && <ChatProcessing key={runningTurn.id} turn={runningTurn}
-      processing={state.processing} active={active && ready && foreground} />}
     {ready && state.approvals.some((event) => event.params.threadId === state.selected?.id) &&
       <ScrollView style={{ maxHeight: 280 }} contentContainerStyle={styles.padded} keyboardShouldPersistTaps="handled">
         {state.approvals.filter((event) => event.params.threadId === state.selected?.id).map((event) =>

@@ -33,6 +33,7 @@ export function Messages({ value, selected, active = true, footer, pendingReques
   const quote = useQuoteSelection({ root: content, selected, enabled: active && Boolean(onQuote) });
   const sending = pendingRequest && pendingRequest.threadId === selected && !value?.activeTurn;
   const processing = value?.processing;
+  const activeTurn = value?.turns.find((turn) => turn.id === value.activeTurn);
   return <MessageEditContext.Provider value={{ cwd: editCwd ?? value?.thread.cwd ?? "", active }}>
     <FileThreadContext.Provider value={selected}>
     <ImageThreadContext.Provider value={selected}><div className={styles.messageArea}>
@@ -74,8 +75,8 @@ export function Messages({ value, selected, active = true, footer, pendingReques
             running={value?.activeTurn === turn.id} active={active} />)}
           {value?.error && <p className={styles.turnError} role="status">{value.error}</p>}
           {value?.activeTurn && <WorkingStatus key={`${selected}:${value.activeTurn}`} active={active}
-            phase={processing?.phase ?? "request"} />}
-          {sending && <WorkingStatus key={`sending:${selected}`} active={active} phase="sending" />}
+            turn={activeTurn} processing={processing} />}
+          {sending && <WorkingStatus key={`sending:${selected}`} active={active} pendingRequest={pendingRequest} />}
         </div>
         <div className={styles.messageFooter}>
           {away && <button type="button" className={styles.jumpToLatest} onClick={jumpToLatest}>

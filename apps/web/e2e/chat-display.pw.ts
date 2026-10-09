@@ -21,7 +21,8 @@ async function open(page: Page, value: Thread) {
 async function update(page: Page, value: Thread) {
   await page.evaluate(detail => window.dispatchEvent(new CustomEvent('display-fixture', { detail })), value);
 }
-test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop', 'PC message presentation'));
+test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop'
+  && !info.title.startsWith('preserves reading and typing'), 'PC message presentation'));
 
 test('copies and expands tables, wraps long code and contains overflow', async ({ page }, info) => {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -111,19 +112,7 @@ test('shows one stop notice before the partial response and keeps the next respo
   await expect(page.getByText('后续对话正常')).toBeVisible();
 });
 
-test('preserves reading and typing during streaming and dismisses selection quotes on scroll', async ({ page }) => {
-  const value = fixture([{ ...reply, text: Array.from({ length: 80 }, (_, i) => `第 ${i + 1} 段：历史消息。`)
-    .join('\n\n'), status: 'inProgress' }], true);
-  await open(page, value);
-  const viewport = page.getByLabel('聊天记录');
-  await viewport.evaluate(node => { node.scrollTop = 400; node.dispatchEvent(new Event('scroll')); });
-  const input = page.getByRole('textbox', { name: '消息' });
-  await input.fill('保留正在输入的草稿');
-  const position = await viewport.evaluate(node => node.scrollTop);
-  value.turns![0].items[1].text += '\n\n追加的流式内容。';
-  await update(page, value);
-  expect(await viewport.evaluate(node => node.scrollTop)).toBe(position);
-  await expect(input).toHaveValue('保留正在输入的草稿');
+async function checkSelectionQuoteDismissal(page: Page) {
   const paragraph = page.locator('.chat-assistant-message p').nth(10);
   await paragraph.evaluate(node => {
     const range = document.createRange(); range.selectNodeContents(node);
@@ -132,12 +121,46 @@ test('preserves reading and typing during streaming and dismisses selection quot
   });
   const quote = page.getByRole('button', { name: '引用选中文字并回复' });
   await expect(quote).toBeVisible();
-  await viewport.evaluate(node => { node.scrollTop += 100; node.dispatchEvent(new Event('scroll')); });
+  await page.getByLabel('聊天记录').evaluate(node => {
+    node.scrollTop += 100; node.dispatchEvent(new Event('scroll'));
+  });
   await expect(quote).toHaveCount(0);
   await page.evaluate(() => document.dispatchEvent(new Event('selectionchange')));
   await expect(quote).toHaveCount(0);
+}
+
+test('preserves reading and typing during streaming and dismisses selection quotes on scroll', async ({ page }, info) => {
+  const value = fixture([{ ...reply, text: Array.from({ length: 80 }, (_, i) => `第 ${i + 1} 段：历史消息。`)
+    .join('\n\n'), status: 'inProgress' }], true);
+  await open(page, value);
+  const viewport = page.getByLabel('聊天记录');
+  const processing = viewport.locator('.chat-message-content > .chat-processing-status');
+  await expect(processing).toBeInViewport();
+  await expect(processing).toContainText(/共计.*秒/);
+  const lastReply = page.locator('.chat-assistant-message p').last();
+  const replyBounds = (await lastReply.boundingBox())!;
+  expect((await processing.boundingBox())!.y).toBeGreaterThanOrEqual(replyBounds.y + replyBounds.height);
+  await viewport.evaluate(node => { node.scrollTop = 400; node.dispatchEvent(new Event('scroll')); });
+  await expect(processing).not.toBeInViewport();
+  const input = page.getByRole('textbox', { name: '消息' });
+  await input.fill('保留正在输入的草稿');
+  const position = await viewport.evaluate(node => node.scrollTop);
+  value.turns![0].items[1].text += '\n\n追加的流式内容。';
+  await update(page, value);
+  expect(await viewport.evaluate(node => node.scrollTop)).toBe(position);
+  await expect(input).toHaveValue('保留正在输入的草稿');
+  if (info.project.name === 'desktop') await checkSelectionQuoteDismissal(page);
   await page.getByRole('button', { name: '回到底部' }).click();
   await expect(page.getByText('追加的流式内容。')).toBeVisible();
+  await expect(processing).toBeInViewport();
+  await page.screenshot({ path: info.outputPath('processing-follow.png'), animations: 'disabled' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(processing).toBeInViewport();
+  expect(await viewport.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath('processing-follow-narrow.png'), animations: 'disabled' });
+  value.turns![0].status = 'completed';
+  await update(page, value);
+  await expect(processing).toHaveCount(0);
 });
 
 test('keeps long messages readable in a narrow desktop conversation pane', async ({ page }, info) => {

@@ -181,3 +181,29 @@ test("stopping preserves partial progress and a later reply does not inherit the
   await expect(reply).not.toContainText("已停止生成");
   await page.screenshot({ path: "../../.codex-tmp/chat-display-alignment/stop-continue.png", animations: "disabled" });
 });
+
+test("local progress ticks phase and total time beside the reply and retains the completed duration", async ({ page }) => {
+  const now = Date.now();
+  await page.clock.install({ time: now });
+  const value = fixture([{ ...answer, status: "inProgress", text: "正在整理回复。" }], true);
+  value.turns[0].startedAt = (now - 40_000) / 1000;
+  value.processing = { turnId: "turn", id: "answer", phase: "response", startedAtMs: now - 10_000,
+    activities: [], completedIds: [] };
+  await open(page, value);
+  const status = page.locator('[data-processing-phase="response"]');
+  await expect(status).toHaveText("正在生成回复 · 10秒 (共计40秒)");
+  await page.clock.runFor(2000);
+  await expect(status).toHaveText("正在生成回复 · 12秒 (共计42秒)");
+  const response = page.getByText("正在整理回复。", { exact: true });
+  const bounds = (await response.boundingBox())!;
+  expect((await status.boundingBox())!.y).toBeGreaterThanOrEqual(bounds.y + bounds.height);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "切换主题" }).click();
+  await expect(status).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  await page.screenshot({ path: "../../.codex-tmp/local-processing-timing.png", animations: "disabled" });
+  await update(page, { ...value, activeTurn: null, processing: undefined,
+    turns: [{ ...value.turns[0], status: "completed", durationMs: 42_000 }] });
+  await expect(status).toHaveCount(0);
+  await expect(page.getByText("用时 42秒", { exact: true })).toBeVisible();
+});

@@ -248,6 +248,9 @@ test(`keeps remote connections across device switches over ${blocked ? 'Relay' :
   await page.getByRole('button', { name: '发送消息', exact: true }).click();
   await expect.poll(() => office.evaluate(() => window.chatTest.demoState().operations
     .some(operation => operation.operation === 'send'))).toBe(true);
+  const processing = page.locator('.gui-remote-workspace:visible .chat-message-content > .chat-processing-status');
+  await expect(processing).toContainText(/共计.*秒/);
+  await expect(processing).toBeInViewport();
   await page.getByRole('textbox', { name: '聊天消息', exact: true }).fill('Unsent office draft');
   await page.getByRole('button', { name: /^切换 GUI 账户：/ }).click();
   await page.getByRole('button', { name: /演示账户二/ }).click();
@@ -278,7 +281,8 @@ test(`keeps remote connections across device switches over ${blocked ? 'Relay' :
     await chooseHost(page, name);
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
     await expect(page.getByRole('textbox', { name: '聊天消息', exact: true })).toHaveValue(draft);
-    await expect(page.locator('.gui-remote-workspace:visible .chat-connection')).toContainText(blocked ? 'Relay' : 'P2P');
+    await expect(page.locator('.gui-remote-workspace:visible .chat-connection-status'))
+      .toContainText(blocked ? 'Relay' : 'P2P');
   }
   const lifecycle = await page.evaluate(() => window.remoteGuiFixture.commands
     .filter(command => command === 'gui_remote_open' || command === 'gui_remote_close'));

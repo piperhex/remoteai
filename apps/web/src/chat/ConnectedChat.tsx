@@ -116,12 +116,12 @@ export function ConnectedChat({ chat, device, devices, active, scope, email, cho
       <ChatRetryProvider controller={controller} state={state}>
       <ChatMessages key={state.selected?.id ?? 'new'} thread={state.selected} offline={!ready}
         loading={state.historyLoading} loadingMore={state.historyLoadingMore} hasMore={state.historyHasMore}
-        loadOlder={() => controller.loadOlder()} />
+        loadOlder={() => controller.loadOlder()}
+        processing={runningTurn && <ChatProcessing key={runningTurn.id} turn={runningTurn}
+          processing={state.processing} active={active && ready} />} />
       </ChatRetryProvider></TaskReviewProvider>
       </ChatFileContext.Provider>
     </ChatImageContext.Provider>
-    {runningTurn && <ChatProcessing key={runningTurn.id} turn={runningTurn}
-      processing={state.processing} active={active && ready} />}
     {!!approvals.length && <div className="chat-approvals chat-scroll">
       {approvals.map((event) => <ChatApproval key={String(event.id)} event={event}
         ready={ready} respond={(reply) => controller.respond(reply)} />)}

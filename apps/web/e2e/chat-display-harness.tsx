@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ChatMessages } from '../src/chat/ChatMessages';
+import { ChatProcessing } from '../src/chat/ChatProcessing';
 import { ChatQuotesProvider } from '../src/chat/ChatQuotes';
 import { ChatDetailsWorkspace } from '../src/chat/ChatDetailsWorkspace';
 import { ConversationChangesButton } from '../../desktop/src/pages/codexGui/ConversationChangesButton';
@@ -14,6 +15,7 @@ function Harness() {
   const [thread, setThread] = useState<Thread | null>(null);
   const [hasMore, setHasMore] = useState(new URLSearchParams(location.search).has('history'));
   const [loadingMore, setLoadingMore] = useState(false);
+  const runningTurn = thread?.turns?.find(turn => turn.status === 'inProgress');
   const loadOlder = async () => {
     setLoadingMore(true);
     try {
@@ -39,7 +41,8 @@ function Harness() {
           {desktop && <ConversationChangesButton value={thread?.turns ? { turns: thread.turns } : undefined} />}
         </header>
         <ChatMessages key={thread?.id} thread={thread} hasMore={hasMore}
-          loadingMore={loadingMore} loadOlder={loadOlder} />
+          loadingMore={loadingMore} loadOlder={loadOlder}
+          processing={runningTurn && <ChatProcessing key={runningTurn.id} turn={runningTurn} active />} />
         <footer style={{ padding: 20 }}><input aria-label="消息" placeholder="输入消息…" /></footer>
       </div>
       </ChatDetailsWorkspace>

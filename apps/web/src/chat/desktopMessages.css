@@ -7,7 +7,7 @@
     font-family: "DM Sans", "Microsoft YaHei UI", sans-serif;
   }
   .chat-message-region .chat-messages { padding: 0; }
-  .chat-message-region .chat-message-content, .chat-conversation > .chat-processing-status {
+  .chat-message-region .chat-message-content {
     box-sizing: border-box; width: 100%; max-width: 900px; margin-inline: auto; padding-inline: 32px;
   }
   .chat-message-region .chat-message-content { padding-block: 28px; gap: 18px; }
@@ -109,13 +109,13 @@
     font-size: 12px; border: 1px solid #dfe5df; border-radius: 8px; padding: 8px 13px; color: #718078;
   }
   @container chat-message-panel (max-width: 500px) {
-    .chat-message-region .chat-message-content, .chat-conversation > .chat-processing-status { padding-inline: 14px; }
+    .chat-message-region .chat-message-content { padding-inline: 14px; }
     .chat-message-region .chat-message-content { padding-block: 18px; }
     .chat-message-region .chat-user-message-wrap { max-width: 95%; }
   }
 }
 @media (min-width: 861px) and (max-width: 1150px) {
-  .chat-message-region .chat-message-content, .chat-conversation > .chat-processing-status { padding-inline: 20px; }
+  .chat-message-region .chat-message-content { padding-inline: 20px; }
   .chat-message-region .chat-message-content { padding-block: 20px; }
 }
 
