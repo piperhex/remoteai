@@ -348,7 +348,7 @@ test('matches local GUI layout and sends pasted images over Relay under the desk
   await page.goto(`/e2e/remote-gui-harness.html?socket=${encodeURIComponent(endpoint)}`);
   await chooseComputer(page, 'Office PC');
   await page.getByRole('button', { name: 'Office', exact: true }).click();
-  await expect(page.locator('.chat-connection')).toContainText('Relay');
+  await expect(page.locator('.chat-connection-status')).toContainText('Relay');
   await expect(page.locator('.gui-remote-workspace')).toHaveAttribute('data-dream-skin', 'true');
   await expect(page.getByRole('button', { name: '新对话', exact: true })).toBeVisible();
   await expect(page.getByText('最近', { exact: true })).toBeVisible();

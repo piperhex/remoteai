@@ -29,8 +29,10 @@
     :not(pre) > code { background: var(--bg); }
   }
   .chat-user-message-wrap { max-width: 85%; }
-  .chat-user-message { color: var(--ink); background: var(--bg); border-radius: 24px;
-    max-width: 100%; padding: 10px 16px; box-shadow: none; }
+  .chat-user-message { color: var(--ink); background: var(--gui-chat-surface); border-radius: 24px;
+    max-width: 100%; padding: 10px 16px;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gui-border) 50%, transparent);
+    -webkit-backdrop-filter: var(--gui-chat-backdrop); backdrop-filter: var(--gui-chat-backdrop); }
   .chat-code-block, .chat-capsule { background: var(--bg); border-color: var(--line); }
   .chat-code-block > header { color: var(--ink); }
   .chat-text-action, .chat-turn-duration, .chat-activity, .chat-process-prose, .chat-desktop-work button {
