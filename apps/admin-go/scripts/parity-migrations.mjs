@@ -10,11 +10,14 @@ const { Client } = require('pg');
 const bootstrapDatabase = 'admin_go_bootstrap';
 const containerName = 'codex-admin-bootstrap-test';
 const projectName = 'codex-admin-parity';
+// Upgraded installations retain these rollback tables; new installations do not create them.
+const retiredUsageTables = ['official_usage_devices', 'official_usage_accounts', 'official_usage_minutes',
+  'official_quota_observations', 'official_quota_declines'];
 const goOnlyTables = ['token_cost_preset_settings', 'user_login_locks', 'chat_relay_user_limits',
   'chat_relay_user_months', 'chat_relay_user_hours', 'chat_relay_budgets', 'chat_relay_bulk_leases',
   'chat_push_subscriptions', 'chat_push_deliveries', 'desktop_service_credentials',
-  'official_usage_devices', 'official_usage_accounts', 'official_usage_minutes',
-  'official_quota_observations', 'official_quota_declines'];
+  'official_usage_v2_devices', 'official_usage_v2_accounts', 'official_usage_v2_minutes',
+  'official_quota_v2_observations', 'official_quota_v2_declines'];
 
 function docker(...args) {
   return execFileSync('docker', args, { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }).trim();
@@ -27,10 +30,11 @@ function serviceContainer(service) {
   return id;
 }
 
-function schema(postgres, database, legacyOnly = false) {
+function schema(postgres, database, legacyOnly = false, excludedTables = []) {
+  const excluded = legacyOnly ? [...goOnlyTables, ...retiredUsageTables] : excludedTables;
   const dump = docker('exec', postgres, 'pg_dump', '-U', 'parity', '-d', database,
     '--schema-only', '--no-owner', '--no-privileges',
-    ...(legacyOnly ? goOnlyTables.map((table) => `--exclude-table=public.${table}`) : []))
+    ...excluded.map((table) => `--exclude-table=public.${table}`))
     .split('\n').filter((line) => !line.startsWith('\\restrict ') && !line.startsWith('\\unrestrict '))
     .join('\n');
   // GUI columns are asserted separately; the frozen Nest schema cannot contain them.
@@ -81,6 +85,30 @@ async function stopBootstrap() {
   if (id) docker('rm', '-f', containerName);
 }
 
+async function checkUsageMigration(postgres) {
+  const client = await database('admin_go');
+  const baseline = schema(postgres, 'admin_go');
+  const accountId = 'quota-v2-migration-sentinel';
+  const owner = (await client.query('SELECT id FROM users ORDER BY id LIMIT 1')).rows[0].id;
+  try {
+    await client.query('INSERT INTO official_usage_accounts(owner_id,account_id,label) VALUES($1,$2,$3)',
+      [owner, accountId, 'preserve old usage']);
+    const migration = readFileSync(new URL('../sql/20261009-official-usage-v2.sql', import.meta.url), 'utf8');
+    await client.query(migration);
+    await client.query(migration);
+    assert.equal(schema(postgres, 'admin_go'), baseline, 'usage migration reruns must preserve schema');
+    const old = await client.query('SELECT label FROM official_usage_accounts WHERE owner_id=$1 AND account_id=$2',
+      [owner, accountId]);
+    assert.deepEqual(old.rows, [{ label: 'preserve old usage' }]);
+    const fresh = await client.query('SELECT account_id FROM official_usage_v2_accounts WHERE account_id=$1', [accountId]);
+    assert.deepEqual(fresh.rows, [], 'legacy usage must not be imported into v2 statistics');
+    console.log('PASS usage v2 migration preserves old records without importing them and supports reruns');
+  } finally {
+    await client.query('DELETE FROM official_usage_accounts WHERE owner_id=$1 AND account_id=$2', [owner, accountId]);
+    await client.end();
+  }
+}
+
 export async function runMigrations() {
   const postgres = serviceContainer('postgres');
   const config = JSON.parse(docker('inspect', serviceContainer('admin-go')))[0];
@@ -88,6 +116,7 @@ export async function runMigrations() {
   await checkGuiColumns('admin_go');
   assert.equal(schema(postgres, 'admin_go', true), original, 'existing Go database must retain every legacy schema object');
   console.log('PASS existing PostgreSQL columns, defaults, indexes and constraints match');
+  await checkUsageMigration(postgres);
   await stopBootstrap();
   const admin = await database('legacy');
   try {
@@ -103,8 +132,8 @@ export async function runMigrations() {
       const tables = await fresh.query(`SELECT count(*)::int AS total FROM information_schema.tables
         WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`);
       assert.equal(tables.rows[0].total, 30 + goOnlyTables.length);
-      assert.equal(schema(postgres, bootstrapDatabase), schema(postgres, 'admin_go'),
-        'new and upgraded databases must have identical Go tables');
+      assert.equal(schema(postgres, bootstrapDatabase), schema(postgres, 'admin_go', false, retiredUsageTables),
+        'new and upgraded databases must have identical active Go tables');
       const guiSchema = schema(postgres, bootstrapDatabase);
       const guiMigration = readFileSync(new URL('../sql/20260924-device-gui-model-selection.sql', import.meta.url), 'utf8');
       await fresh.query(guiMigration);
@@ -134,6 +163,7 @@ export async function runMigrations() {
     await admin.end();
   }
   return [{ label: 'existing schema unchanged' }, { label: 'empty schema initialization' },
+    { label: 'usage v2 upgrade retains legacy data without importing it' },
     { label: 'idempotent initialization and data preservation' }];
 }
 
