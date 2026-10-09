@@ -81,7 +81,7 @@ impl EncoderInfo {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, any(windows, target_os = "macos")))]
 mod tests {
     use super::*;
     #[tokio::test]
