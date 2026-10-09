@@ -15,6 +15,7 @@ use tungstenite::{stream::MaybeTlsStream, Error as SocketError, Message, WebSock
 use super::{
     bridge::{Batch, Bridge},
     client::{ClientCommand, OpenRequest},
+    client_bulk::ClientBulk,
     config::Config,
     protocol::{ChatError, Envelope, Event, Outgoing, FRAME_LIMIT},
 };
@@ -24,6 +25,7 @@ pub(super) struct Lifecycle {
     pub configs: watch::Receiver<Option<Config>>,
     pub cancelled: Arc<AtomicBool>,
     pub tcp_authority: Arc<super::tcp::Authority>,
+    pub bulk_events: Option<Channel<tauri::ipc::Response>>,
 }
 const POLL_INTERVAL: Duration = Duration::from_millis(20);
 const PING_INTERVAL: Duration = Duration::from_secs(20);
@@ -76,7 +78,9 @@ fn connect(
     }
     socket
         .send(Message::Text(
-            authentication_message(request, &config).to_string().into(),
+            authentication_message(request, &config, life.bulk_events.is_some())
+                .to_string()
+                .into(),
         ))
         .map_err(|_| ChatError::Transport)?;
     let bridge = Bridge::new(
@@ -89,6 +93,7 @@ fn connect(
         socket,
         tcp: super::tcp::ClientSession::new(life.tcp_authority.clone(), request.client_id.clone()),
         binary_relay: false,
+        bulk: ClientBulk::new(life.bulk_events.clone()),
         bridge,
         received: now,
         pinged: now,
@@ -100,11 +105,12 @@ fn connect(
     .poll(commands, life, config)
 }
 
-fn authentication_message(request: &OpenRequest, config: &Config) -> serde_json::Value {
+fn authentication_message(request: &OpenRequest, config: &Config, bulk: bool) -> serde_json::Value {
     let mut message = serde_json::json!({
         "type": "authenticate", "role": "mobile", "accessToken": config.access_token,
         "deviceId": request.device_id, "publicKey": request.public_key,
         "transportVersion": 2, "binaryRelay": true, "tcpPunch": true, "nativeTraversal": true,
+        "fileBulkV1": bulk,
         "clientInfo": { "name": "Remote AI PC", "platform": std::env::consts::OS },
     });
     // Both backends treat the presence of resume as a recovery attempt, including null.
@@ -119,6 +125,7 @@ struct ClientRuntime {
     socket: Socket,
     tcp: super::tcp::ClientSession,
     binary_relay: bool,
+    bulk: ClientBulk,
     bridge: Bridge,
     received: Instant,
     pinged: Instant,
@@ -145,6 +152,7 @@ impl ClientRuntime {
                 config = current;
             }
             self.commands(&mut commands)?;
+            self.bulk.flush()?;
             // IPC acknowledges queue admission; finish queued peer-close frames before teardown.
             if life.cancelled.load(Ordering::Acquire) && commands.is_empty() {
                 return Ok(1000);
@@ -161,6 +169,11 @@ impl ClientRuntime {
                     .map_err(|_| ChatError::Transport)?;
                 self.pinged = Instant::now();
             }
+            // Keep servicing IPC acknowledgements and cancellation while the renderer catches up.
+            if !self.bulk.has_capacity() {
+                std::thread::sleep(POLL_INTERVAL);
+                continue;
+            }
             if let Some(code) = self.receive()? {
                 return Ok(code);
             }
@@ -171,6 +184,7 @@ impl ClientRuntime {
         for _ in 0..COMMANDS_PER_TICK {
             match commands.try_recv() {
                 Ok(ClientCommand::Ack(sequence)) => self.bridge.acknowledge(sequence),
+                Ok(ClientCommand::BulkAck(sequence)) => self.bulk.acknowledge(sequence),
                 Ok(ClientCommand::Send(message)) => {
                     if self.session_id.as_deref() != Some(message.session_id()) {
                         return Err(ChatError::InvalidFrame);
@@ -206,7 +220,12 @@ impl ClientRuntime {
                     return Err(ChatError::InvalidFrame);
                 }
                 self.received = Instant::now();
-                self.message(super::wire::decode(&bytes)?)?;
+                if bytes.starts_with(b"CSF1") {
+                    self.bulk
+                        .enqueue(bytes.to_vec(), self.session_id.as_deref())?;
+                } else {
+                    self.message(super::wire::decode(&bytes)?)?;
+                }
             }
             Ok(Message::Ping(payload)) => {
                 self.received = Instant::now();
@@ -228,6 +247,7 @@ impl ClientRuntime {
         self.auth_renewal.receive(&frame);
         if frame["type"] == "chat-policy" {
             self.binary_relay |= frame["binaryRelay"] == true;
+            self.bulk.negotiate(frame["fileBulkV1"] == true);
         }
         if matches!(frame["type"].as_str(), Some("paired" | "resumed")) {
             self.session_id = frame["sessionId"].as_str().map(str::to_owned);

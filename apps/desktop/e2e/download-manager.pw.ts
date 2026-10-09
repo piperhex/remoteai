@@ -59,3 +59,28 @@ test('disconnecting one computer pauses only its download and allows removing th
   await page.getByRole('dialog').getByRole('button', { name: /^删\s*除$/ }).click();
   await expect(office).toHaveCount(0);
 });
+
+test('PC relay downloads use raw binary IPC and stay responsive through pause, resume and navigation',
+  async ({ page }) => {
+    await page.goto('/e2e/download-manager-harness.html?nativeBulk');
+    await enqueue(page);
+    const navigation = page.getByRole('navigation');
+    await navigation.getByRole('button', { name: '下载管理', exact: true }).click();
+    const office = page.getByRole('article', { name: 'office.msi' });
+    await expect.poll(() => page.evaluate(() => window.desktopDownloads.nativeBulkStats.batches)).toBeGreaterThan(4);
+    await office.getByRole('button', { name: '暂停', exact: true }).click();
+    await expect(office).toContainText('已暂停');
+    const before = await page.evaluate(() => window.desktopDownloads.nativeBulkStats.polls);
+    await office.getByRole('button', { name: '继续下载', exact: true }).click();
+    await navigation.getByRole('button', { name: '日志诊断', exact: true }).click();
+    await expect(page.locator('main')).toContainText('日志诊断');
+    await navigation.getByRole('button', { name: '下载管理', exact: true }).click();
+    await expect(office).toContainText('文件已就绪');
+    const stats = await page.evaluate(() => window.desktopDownloads.nativeBulkStats);
+    expect(stats.polls).toBeGreaterThan(before);
+    expect(stats.batches).toBe(stats.acknowledged);
+    expect(await page.evaluate(() => window.desktopDownloads.offsets)).toEqual([]);
+    const saved = page.waitForEvent('download');
+    await office.getByRole('button', { name: '保存到设备' }).click();
+    expect(await readFile((await (await saved).path())!)).toEqual(Buffer.alloc(8 * 1024 * 1024, 'A'));
+  });

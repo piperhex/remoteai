@@ -21,7 +21,8 @@ afterEach(async () => { sockets.splice(0).forEach(socket => socket.close()); awa
 it('passes public peer identity to native authentication without forwarding credentials', async () => {
   const socket = await connect();
   expect(invoke).toHaveBeenCalledWith('gui_remote_open', { request: { clientId: socket.clientId,
-    deviceId: 'other', identity, publicKey: 'ab'.repeat(32), resume: { sessionId: 'session', resumeToken: 'resume' } },
+    deviceId: 'other', identity, publicKey: 'ab'.repeat(32), resume: { sessionId: 'session', resumeToken: 'resume' },
+    bulkEvents: expect.any(Channel) },
     events: expect.any(Channel) });
   expect(JSON.stringify(vi.mocked(invoke).mock.calls)).not.toContain('must-not-cross-ipc');
   socket.send(JSON.stringify({ type: 'signal', sessionId: 'session', payload: { kind: 'key', key: 'peer' } }));
@@ -47,8 +48,8 @@ it('acknowledges batches and ignores late frames after a native disconnect', asy
   const socket = await connect();
   const { events } = vi.mocked(invoke).mock.calls[0][1] as { events: Channel<unknown> };
   socket.onmessage = vi.fn(); socket.onclose = vi.fn();
-  events.onmessage({ sequence: 7, events: [{ type: 'message', data: 'first' }] });
-  expect(socket.onmessage).toHaveBeenCalledWith({ data: 'first' });
+  events.onmessage({ sequence: 7, events: [{ type: 'message', data: '{"type":"notice"}' }] });
+  expect(socket.onmessage).toHaveBeenCalledWith({ data: '{"type":"notice"}' });
   expect(invoke).toHaveBeenCalledWith('gui_remote_ack', { request: { clientId: socket.clientId, sequence: 7 } });
   events.onmessage({ sequence: 0, events: [{ type: 'closed', code: 4001 }] });
   events.onmessage({ sequence: 8, events: [{ type: 'message', data: 'stale' }] });

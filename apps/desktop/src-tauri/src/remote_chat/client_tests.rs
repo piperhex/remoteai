@@ -12,6 +12,9 @@ use tungstenite::Message;
 #[path = "client_renewal_tests.rs"]
 mod renewal_tests;
 
+#[path = "client_bulk_runtime_tests.rs"]
+mod bulk_runtime_tests;
+
 fn request() -> OpenRequest {
     OpenRequest {
         client_id: uuid::Uuid::new_v4().to_string(),
@@ -22,6 +25,7 @@ fn request() -> OpenRequest {
         },
         public_key: "ab".repeat(32),
         resume: None,
+        bulk_events: None,
     }
 }
 
@@ -143,6 +147,23 @@ fn native_remote_gui_validates_peer_keys_and_resume_limits() {
 }
 
 #[test]
+fn native_bulk_callback_uses_tauris_channel_id_and_legacy_requests_can_omit_it() {
+    let mut value = json!({"clientId":uuid::Uuid::new_v4(),"deviceId":"other-pc",
+        "identity":{"baseUrl":"https://example.test","userId":"owner"},"publicKey":"ab".repeat(32)});
+    assert!(serde_json::from_value::<OpenRequest>(value.clone())
+        .unwrap()
+        .bulk_events
+        .is_none());
+    value["bulkEvents"] = json!("__CHANNEL__:17");
+    assert!(serde_json::from_value::<OpenRequest>(value.clone())
+        .unwrap()
+        .bulk_events
+        .is_some());
+    value["bulkEvents"] = json!("arbitrary-callback");
+    assert!(serde_json::from_value::<OpenRequest>(value).is_err());
+}
+
+#[test]
 fn native_peer_authenticates_routes_its_session_and_closes_after_logout() {
     exercise_native_peer(None);
 }
@@ -232,6 +253,14 @@ struct NativePeer {
 }
 
 fn start_peer(address: SocketAddr, resume: Option<ResumeRequest>) -> NativePeer {
+    start_peer_with_bulk(address, resume, None)
+}
+
+fn start_peer_with_bulk(
+    address: SocketAddr,
+    resume: Option<ResumeRequest>,
+    bulk_events: Option<Channel<tauri::ipc::Response>>,
+) -> NativePeer {
     let config = Config {
         websocket_url: format!("ws://{address}/device-chat"),
         access_token: "native-secret".into(),
@@ -261,6 +290,7 @@ fn start_peer(address: SocketAddr, resume: Option<ResumeRequest>) -> NativePeer 
                 configs: receiver,
                 cancelled: Arc::new(AtomicBool::new(false)),
                 tcp_authority: worker_authority,
+                bulk_events,
             },
         )
     });
@@ -357,6 +387,7 @@ fn serve_binary_peer(listener: TcpListener, stopped: sync_mpsc::Receiver<()>) {
     let mut socket = tungstenite::accept(stream).unwrap();
     let auth: Value = serde_json::from_str(&socket.read().unwrap().into_text().unwrap()).unwrap();
     assert_eq!(auth["binaryRelay"], true);
+    assert_eq!(auth["fileBulkV1"], false);
     for frame in [
         json!({"type": "chat-policy", "binaryRelay": true, "policy": {}}),
         json!({"type": "paired", "sessionId": "paired-session"}),

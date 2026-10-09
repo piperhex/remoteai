@@ -10,22 +10,26 @@ import type { DownloadClient } from '../../../shared/remote-chat/downloads';
 import type { GuiComputer } from '../src/pages/codexGui/remote/types';
 import { ChatFilePreview } from '../../web/src/chat/ChatFilePreview';
 import { DEFAULT_CHAT_POLICY, setChatConnectionMode, setChatPolicy } from '../../../shared/remote-chat/policy';
+import { nativeBulkFixture, nativeBulkStats } from './native-bulk-fixture';
 import 'antd/dist/reset.css';
 import '../src/styles.css';
 
 Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true });
 setChatConnectionMode('offline');
-setChatPolicy({ ...DEFAULT_CHAT_POLICY, fileDownloadMaxMb: 1 });
+const nativeBulk = new URLSearchParams(location.search).has('nativeBulk');
+setChatPolicy({ ...DEFAULT_CHAT_POLICY, fileDownloadMaxMb: nativeBulk ? 20 : 1,
+  fileBulkEnabled: nativeBulk ? 1 : 0 });
 const identity = { baseUrl: 'https://fixture.test', userId: 'owner' };
 const auth = { ...identity, enabled: true, authenticated: true, sessionExpired: false };
-const fixture = { delay: 500, offsets: [] as { device: string; offset: number }[] };
+const fixture = { delay: 500, offsets: [] as { device: string; offset: number }[], nativeBulkStats };
 declare global { interface Window { desktopDownloads: typeof fixture } }
 window.desktopDownloads = fixture;
 
 function controller(device: string) {
-  let state = { ...initialChatState(), ready: true, mode: 'direct' as const };
+  let state = { ...initialChatState(), ready: true, mode: nativeBulk ? 'relay' as const : 'direct' as const };
   const listeners = new Set<() => void>();
   const downloads: DownloadClient = {
+    bulk: nativeBulk && device === 'office' ? nativeBulkFixture() : undefined,
     open: async ({ path }) => ({ id: '11111111-1111-4111-8111-111111111111', size: 8 * 1024 * 1024,
       name: path.split('/').at(-1)!, mimeType: 'application/octet-stream', revision: 'first' }),
     read: async ({ offset, length }) => {

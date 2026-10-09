@@ -10,7 +10,7 @@ use serde::Deserialize;
 use tauri::{ipc::Channel, AppHandle, Manager, Webview};
 use tokio::sync::{mpsc, watch, Mutex};
 
-use super::{bridge::Batch, config::Config, protocol::Outgoing, AckRequest, ClientRequest};
+use super::{bridge::Batch, config::Config, protocol::Outgoing, ClientRequest};
 
 const UNAVAILABLE: &str = "连接暂时不可用，请重新选择电脑。";
 
@@ -22,6 +22,16 @@ pub(crate) struct OpenRequest {
     pub(super) identity: crate::cloud::GuiCloudIdentity,
     pub(super) public_key: String,
     pub(super) resume: Option<ResumeRequest>,
+    pub(super) bulk_events: Option<tauri::ipc::JavaScriptChannelId>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct RemoteAckRequest {
+    client_id: String,
+    sequence: u64,
+    #[serde(default)]
+    bulk: bool,
 }
 
 #[derive(Deserialize, serde::Serialize)]
@@ -70,6 +80,7 @@ pub(crate) struct RemoteSendRequest {
 pub(super) enum ClientCommand {
     Send(Outgoing),
     Ack(u64),
+    BulkAck(u64),
 }
 
 struct ConnectionHandle {
@@ -144,6 +155,7 @@ pub(crate) async fn gui_remote_open(
     connections.lock().await.insert(client_id.clone(), handle);
     let configs = state.configs.clone();
     let tcp_authority = app.state::<super::tcp::State>().client_authority.clone();
+    let bulk_events = request.bulk_events.as_ref().map(|id| id.channel_on(window));
     std::thread::spawn(move || {
         super::client_runtime::run(
             request,
@@ -153,6 +165,7 @@ pub(crate) async fn gui_remote_open(
                 configs,
                 cancelled: cancelled.clone(),
                 tcp_authority,
+                bulk_events,
             },
         );
         connections.blocking_lock().finished(&client_id, &cancelled);
@@ -184,10 +197,15 @@ pub(crate) async fn gui_remote_send(
 pub(crate) async fn gui_remote_ack(
     app: AppHandle,
     window: Webview,
-    request: AckRequest,
+    request: RemoteAckRequest,
 ) -> Result<(), String> {
     require_main(&window)?;
-    submit(app, request.client_id, ClientCommand::Ack(request.sequence)).await
+    let command = if request.bulk {
+        ClientCommand::BulkAck(request.sequence)
+    } else {
+        ClientCommand::Ack(request.sequence)
+    };
+    submit(app, request.client_id, command).await
 }
 
 #[tauri::command]

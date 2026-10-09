@@ -5,6 +5,7 @@ mod auth_renewal;
 mod bridge;
 pub(crate) mod bulk;
 mod client;
+mod client_bulk;
 mod client_runtime;
 mod config;
 pub(crate) mod host_health;
