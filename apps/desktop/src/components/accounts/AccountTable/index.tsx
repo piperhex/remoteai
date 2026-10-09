@@ -72,6 +72,7 @@ import { TokenCostColumnTitle, useTokenCostDisplaySettings } from "../../TokenCo
 import { AccountNoteModal } from "../../modals/AccountNoteModal";
 import { AccountExpandedPanel } from "../AccountExpandedPanel";
 import { AccountAvatar } from "../AccountAvatar";
+import { AccountCredits, AccountCreditsTitle } from "../AccountCredits";
 import { AccountCardAutoSwitchSettings } from "../AccountCardAutoSwitchSettings";
 import { AccountGroupCell, ConcurrentRoutingControl } from "../AccountGroupControls";
 import { AccountUseActionIcon } from "../AccountUseActionIcon";
@@ -110,6 +111,8 @@ interface AccountTableProps {
   onDeactivate: (id: string) => void;
   onCopyAuthJson: (id: string) => void;
   onRefresh: (id: string) => void;
+  onRefreshAllUsage: () => void;
+  refreshingAllUsage: boolean;
   onDelete: (id: string) => void;
   onConsumeQuotaMany: (ids: string[]) => Promise<string[]>;
   onDeleteMany: (ids: string[]) => Promise<string[]>;
@@ -174,6 +177,7 @@ const ACCOUNT_TABLE_COLUMN_KEYS = [
   "group",
   "fiveHours",
   "oneWeek",
+  "credits",
   "tokenTotals",
   "estimatedCost",
   "availableQuota",
@@ -187,6 +191,7 @@ const REORDERABLE_ACCOUNT_TABLE_COLUMN_KEYS: ReorderableAccountTableColumnKey[] 
   "group",
   "fiveHours",
   "oneWeek",
+  "credits",
   "tokenTotals",
   "estimatedCost",
   "availableQuota",
@@ -346,6 +351,8 @@ export function AccountTable({
   onDeactivate,
   onCopyAuthJson,
   onRefresh,
+  onRefreshAllUsage,
+  refreshingAllUsage,
   onDelete,
   onConsumeQuotaMany,
   onDeleteMany,
@@ -741,6 +748,12 @@ export function AccountTable({
         language={language} t={t} />,
     },
     {
+      title: <AccountCreditsTitle refreshing={refreshingAllUsage} onRefresh={onRefreshAllUsage} t={t} />,
+      key: "credits", width: 140, align: "center" as const,
+      render: (_: unknown, account: Account) => <AccountCredits credits={account.usage.credits}
+        language={language} t={t} />,
+    },
+    {
       title: t("table.tokenTotals"), key: "tokenTotals", width: 92, align: "center" as const,
       render: (_: unknown, account: Account) => (
         <div className="account-token-chart-cell">
@@ -930,6 +943,7 @@ export function AccountTable({
     { key: "group", label: t("accounts.group.column") },
     { key: "fiveHours", label: t("table.fiveHours") },
     { key: "oneWeek", label: t("table.oneWeek") },
+    { key: "credits", label: t("table.credits") },
     { key: "tokenTotals", label: t("table.tokenTotals") },
     { key: "estimatedCost", label: t("table.estimatedTokenCost") },
     { key: "availableQuota", label: officialUsageLabels(language).remaining },

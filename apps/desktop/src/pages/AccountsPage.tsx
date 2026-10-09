@@ -22,6 +22,8 @@ export function AccountsPage({
   onDeactivate,
   onCopyAuthJson,
   onRefresh,
+  onRefreshAllUsage,
+  refreshingAllUsage,
   onDelete,
   onConsumeQuotaMany,
   onDeleteMany,
@@ -66,6 +68,8 @@ export function AccountsPage({
   onDeactivate: (id: string) => void;
   onCopyAuthJson: (id: string) => void;
   onRefresh: (id: string) => void;
+  onRefreshAllUsage: () => void;
+  refreshingAllUsage: boolean;
   onDelete: (id: string) => void;
   onConsumeQuotaMany: (ids: string[]) => Promise<string[]>;
   onDeleteMany: (ids: string[]) => Promise<string[]>;
@@ -123,6 +127,7 @@ export function AccountsPage({
         providers={providers} busyAccountId={busyAccountId}
         onSwitch={onSwitch} onDeactivate={onDeactivate}
         onCopyAuthJson={onCopyAuthJson} onRefresh={onRefresh} onDelete={onDelete}
+        onRefreshAllUsage={onRefreshAllUsage} refreshingAllUsage={refreshingAllUsage}
         onConsumeQuotaMany={onConsumeQuotaMany} onDeleteMany={onDeleteMany}
         onEnableMany={onEnableMany} onDisableMany={onDisableMany}
         onAccountGroupChange={onAccountGroupChange}

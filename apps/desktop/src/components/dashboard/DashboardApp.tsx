@@ -1588,6 +1588,8 @@ export function DashboardApp() {
               onDeactivate={(id) => void manager.deactivateAccount(id)}
               onCopyAuthJson={manager.copyAuthJson}
               onRefresh={refreshUsage}
+              onRefreshAllUsage={() => void manager.refreshAll()}
+              refreshingAllUsage={manager.refreshingAll}
               onDelete={deleteAccount}
               onConsumeQuotaMany={manager.consumeAccountsQuota}
               onDeleteMany={manager.deleteAccounts}

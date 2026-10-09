@@ -22,6 +22,7 @@ export const DEMO_ACCOUNTS: Account[] = [
     usage: {
       primary: { usedPercent: 28, remainingPercent: 72, resetsAt: Date.now() / 1000 + 8200 },
       secondary: { usedPercent: 43, remainingPercent: 57, resetsAt: Date.now() / 1000 + 238000 },
+      credits: { hasCredits: true, unlimited: false, balance: "62500" },
       fetchedAt: new Date().toISOString(),
     },
   },
@@ -44,6 +45,7 @@ export const DEMO_ACCOUNTS: Account[] = [
     metadataEditable: true,
     accountId: "workspace-studio",
     usage: {
+      credits: { hasCredits: false, unlimited: false, balance: "0" },
       primary: { usedPercent: 64, remainingPercent: 36, resetsAt: Date.now() / 1000 + 4500 },
       secondary: { usedPercent: 19, remainingPercent: 81, resetsAt: Date.now() / 1000 + 410000 },
       fetchedAt: new Date(Date.now() - 12 * 60_000).toISOString(),

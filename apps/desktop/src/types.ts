@@ -8,10 +8,17 @@ export interface UsageWindow {
 export interface UsageSummary {
   primary?: UsageWindow | null;
   secondary?: UsageWindow | null;
+  credits?: CreditsSnapshot | null;
   apiExpiresAt?: string | null;
   plan?: string | null;
   fetchedAt?: string | null;
   error?: string | null;
+}
+
+export interface CreditsSnapshot {
+  hasCredits: boolean;
+  unlimited: boolean;
+  balance: string | null;
 }
 
 export interface Account {

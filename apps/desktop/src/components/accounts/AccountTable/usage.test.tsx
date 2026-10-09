@@ -21,6 +21,7 @@ const usage = [{ accountId: account.id, accountEmail: null, totalTokens: 1200,
 const props: ComponentProps<typeof AccountTable> = {
   active: true, accounts: [account], accountGroups: [], providers: [], busyAccountId: null,
   onSwitch: vi.fn(), onDeactivate: vi.fn(), onCopyAuthJson: vi.fn(), onRefresh: vi.fn(), onDelete: vi.fn(),
+  onRefreshAllUsage: vi.fn(), refreshingAllUsage: false,
   onConsumeQuotaMany: vi.fn(), onDeleteMany: vi.fn(), onEnableMany: vi.fn(), onDisableMany: vi.fn(),
   onAccountGroupChange: vi.fn(), onAutoSwitchEnabledChange: vi.fn(), autoSwitchBusyAccountId: null,
   onAutoSwitchPriorityChange: vi.fn(), autoSwitchPriorityBusyAccountId: null,
@@ -63,6 +64,27 @@ afterEach(async () => {
 async function render(overrides: Partial<typeof props> = {}) {
   await act(async () => root.render(<AccountTable {...props} {...overrides} />));
 }
+
+it("shows credits in a separate column and reuses usage refresh without overlapping clicks", async () => {
+  // Existing saved column preferences must still include the newly added column.
+  localStorage.setItem("codex-switch:account-table-column-order", JSON.stringify(["fiveHours", "oneWeek"]));
+  const withCredits = { ...account, usage: { ...account.usage,
+    credits: { hasCredits: true, unlimited: false, balance: "62500" } } };
+  await render({ displayMode: "table", accounts: [withCredits] });
+  expect(container.querySelector(".account-credits")?.textContent).toBe("62,500");
+  const refresh = container.querySelector<HTMLButtonElement>('button[aria-label="table.refreshCredits"]');
+  expect(refresh?.closest("th")?.textContent).toContain("table.credits");
+  await act(async () => refresh?.click());
+  expect(props.onRefreshAllUsage).toHaveBeenCalledTimes(1);
+  await render({ displayMode: "table", accounts: [withCredits], refreshingAllUsage: true });
+  await act(async () => refresh?.click());
+  expect(props.onRefreshAllUsage).toHaveBeenCalledTimes(1);
+  const updated = { ...withCredits, usage: { ...withCredits.usage,
+    credits: { ...withCredits.usage.credits, balance: "62000" } } };
+  await render({ displayMode: "table", accounts: [updated] });
+  expect(container.querySelector(".account-credits")?.textContent).toBe("62,000");
+  expect(props.onRefresh).not.toHaveBeenCalled();
+});
 
 it.each([true, false])("shows recorded tokens and cost regardless of proxy running=%s", async (hotSwitchEnabled) => {
   await render({ hotSwitchEnabled });

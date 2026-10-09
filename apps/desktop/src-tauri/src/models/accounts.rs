@@ -82,10 +82,20 @@ pub(crate) struct UpdateAccountDetailsInput {
 pub(crate) struct UsageSummary {
     pub(crate) primary: Option<UsageWindow>,
     pub(crate) secondary: Option<UsageWindow>,
+    pub(crate) credits: Option<CreditsSnapshot>,
     pub(crate) api_expires_at: Option<String>,
     pub(crate) plan: Option<String>,
     pub(crate) fetched_at: Option<String>,
     pub(crate) error: Option<String>,
+}
+
+/// Purchased Codex credits, independent of the plan's usage windows.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct CreditsSnapshot {
+    pub(crate) has_credits: bool,
+    pub(crate) unlimited: bool,
+    pub(crate) balance: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

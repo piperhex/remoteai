@@ -578,6 +578,7 @@ fn account_with_usage(id: &str, primary: f64, secondary: f64) -> AccountSummary 
         official: false,
         metadata_editable: true,
         usage: UsageSummary {
+            credits: None,
             primary: Some(UsageWindow {
                 used_percent: 100.0 - primary,
                 remaining_percent: primary,

@@ -2,6 +2,8 @@ use chrono::{DateTime, NaiveDate, Utc};
 use reqwest::blocking::{Client, Response};
 use serde_json::{json, Value};
 
+mod credits;
+
 use crate::{
     auth::{account_fields, decode_jwt, token_string},
     models::{ResetCredit, ResetCreditsSummary, UsageSummary, UsageWindow},
@@ -281,6 +283,7 @@ pub(crate) fn parse_usage(payload: &Value) -> UsageSummary {
     UsageSummary {
         primary,
         secondary,
+        credits: credits::parse_credits(payload.get("credits")),
         api_expires_at: None,
         plan: payload
             .get("plan_type")
