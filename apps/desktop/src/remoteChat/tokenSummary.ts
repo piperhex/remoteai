@@ -4,6 +4,7 @@ import {
 import { aggregateEntries, calendarDateKeys, startOfCalendar } from '../components/TokenUsageDashboard/chartUtils';
 import { loadLongContextCostSettings } from '../utils/tokenCostLongContext';
 import { MAX_SUMMARY_WEEKS, MIN_SUMMARY_WEEKS, type TokenSummary } from '../../../../shared/remote-chat/tokenSummary';
+import { loadOfficialUsage } from '../api/officialUsage';
 
 const DEFAULT_WEEKS = 20;
 const DEFAULT_REFRESH_SECONDS = 60;
@@ -17,9 +18,10 @@ export async function readTokenSummary(requestedWeeks: unknown): Promise<TokenSu
   const thresholdTokens = loadLongContextCostSettings().thresholdTokens;
   const startTs = Math.floor(startOfCalendar(weeks).getTime() / 1000);
   const endTs = Math.floor(Date.now() / 1000);
-  const [entries, daily, breakdown, quota] = await Promise.allSettled([
+  const [entries, daily, breakdown, quota, official] = await Promise.allSettled([
     loadTokenUsageEntries(), loadDailyTokenUsage(startTs),
     loadTokenUsageBreakdown(startTs, thresholdTokens), loadAccountQuotaHistory(startTs, endTs),
+    loadOfficialUsage(startTs),
   ]);
   const recent = entries.status === 'fulfilled' ? entries.value : [];
   return {
@@ -28,6 +30,9 @@ export async function readTokenSummary(requestedWeeks: unknown): Promise<TokenSu
     dailyUsage: daily.status === 'fulfilled' ? daily.value : [],
     breakdown: breakdown.status === 'fulfilled' ? breakdown.value : [],
     quotaHistory: quota.status === 'fulfilled' ? quota.value : [],
+    officialUsage: official.status === 'fulfilled'
+      ? official.value
+      : { accounts: [], status: 'unavailable', updatedAt: endTs },
     rankings: {
       providers: aggregateEntries(recent, (entry) => entry.provider),
       models: aggregateEntries(recent, (entry) => entry.model),

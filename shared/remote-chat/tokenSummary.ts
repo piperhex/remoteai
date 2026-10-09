@@ -1,4 +1,5 @@
 import type { DailyTokenUsage } from '../../apps/desktop/src/types';
+import type { OfficialUsageSummary } from '../officialUsage';
 import type { AccountQuotaHistory, DailyTokenUsageBreakdown } from
   '../../apps/desktop/src/types/tokenUsageAnalytics';
 
@@ -17,6 +18,7 @@ export interface TokenSummary {
   dailyUsage: DailyTokenUsage[];
   breakdown: DailyTokenUsageBreakdown[];
   quotaHistory: AccountQuotaHistory[];
+  officialUsage?: OfficialUsageSummary;
   rankings: { providers: UsageRanking; models: UsageRanking; accounts: UsageRanking };
   entryCount: number;
   errors: { usage: boolean; analytics: boolean; quota: boolean };

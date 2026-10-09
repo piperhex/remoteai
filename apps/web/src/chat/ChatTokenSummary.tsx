@@ -6,6 +6,7 @@ import type { ReadTokenSummary, TokenSummary, UsageRanking } from '../../../../s
 import { formatTokens } from '../../../../shared/remote-chat/usage';
 import type { DailyTokenUsageBreakdown } from '../../../desktop/src/types/tokenUsageAnalytics';
 import { TokenBars, TokenQuota } from './ChatTokenCharts';
+import { OfficialUsagePanel } from './OfficialUsagePanel';
 import './tokenSummary.css';
 
 const TOKEN_FIELDS = [['总计', 'totalTokens'], ['输入', 'inputTokens'], ['输出', 'outputTokens'],
@@ -54,6 +55,7 @@ function SummaryContent({ data }: { data: TokenSummary }) {
       {data.errors.usage && <p className="chat-error">{t("部分 Token 数据加载失败，请刷新重试。")}</p>}
     </section>
     <TokenQuota data={data} />
+    <OfficialUsagePanel data={data} />
     <Consumption data={data} title={t("短 / 长上下文消耗")} fields={CONTEXT_FIELDS}
       hint={t("单次输入超过 {value1} Tokens（含缓存）计为长上下文。", { value1: data.thresholdTokens.toLocaleString(getLocale()) })} />
     <Consumption data={data} title={t("普通 / 快速模式消耗")} fields={MODE_FIELDS}

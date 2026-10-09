@@ -234,6 +234,7 @@ pub fn run() {
             codex_gui::scheduled_tasks::start(app.handle());
             remote_control::start(app.handle().clone());
             remote_command::start(app.handle().clone());
+            cloud::start_official_usage_reporting(app.handle().clone());
             if !launch_options.headless {
                 remote_chat::start(app.handle().clone());
                 #[cfg(windows)]
@@ -516,6 +517,7 @@ pub fn run() {
             local_proxy::list_account_token_usage,
             local_proxy::list_token_usage_breakdown,
             account_quota_history::list_account_quota_history,
+            cloud::get_official_usage_summary,
             local_proxy::list_provider_token_usage,
             local_proxy::show_token_usage_window,
             local_proxy::start_local_proxy,

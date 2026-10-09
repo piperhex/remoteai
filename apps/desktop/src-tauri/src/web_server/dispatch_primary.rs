@@ -251,6 +251,9 @@ fn dispatch_command(app: AppHandle, command: &str, args: Value) -> Result<Value,
                 argument(&args, "endTs")?,
             ),
         )),
+        "get_official_usage_summary" => serialize(block_on(crate::cloud::get_official_usage_summary(
+            app, argument(&args, "startTs")?,
+        ))),
         "list_provider_token_usage" => serialize(block_on(
             crate::local_proxy::list_provider_token_usage(app, argument(&args, "startTs")?),
         )),

@@ -15,6 +15,7 @@ import (
 var apiPrefixes = []string{
 	"/auth",
 	"/sync",
+	"/official-usage",
 	"/admin/api",
 	"/announcements",
 	"/notifications",

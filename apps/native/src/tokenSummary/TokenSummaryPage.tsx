@@ -9,6 +9,7 @@ import { UsageTotals, UsageTrend, RankingPanel } from './UsagePanels';
 import { ConsumptionPanels } from './ConsumptionPanels';
 import { UsageHeatmap } from './UsageHeatmap';
 import { QuotaPanel } from './QuotaPanel';
+import { OfficialUsagePanel } from './OfficialUsagePanel';
 import { summaryStyles as s } from './styles';
 
 interface Props { read: ReadTokenSummary; ready: boolean; foreground: boolean; deviceName?: string; onBack: () => void }
@@ -56,6 +57,7 @@ export function TokenSummaryPage({ read, ready, foreground, deviceName, onBack }
       {data && <>
         <UsageTotals data={data} />
         <QuotaPanel data={data} />
+        <OfficialUsagePanel data={data} />
         <ConsumptionPanels data={data} />
         <UsageHeatmap data={data} />
         <UsageTrend data={data} />

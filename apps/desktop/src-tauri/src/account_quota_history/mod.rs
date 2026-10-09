@@ -20,8 +20,8 @@ use crate::{
     storage::{read_json, resolve_paths, Paths},
 };
 
-pub(crate) use models::AccountQuotaHistory;
-use models::{AccountQuotaPoint, HistoryError, HistoryRange};
+pub(crate) use models::{AccountQuotaHistory, AccountQuotaPoint};
+use models::{HistoryError, HistoryRange};
 
 /// Only successful observations are recorded; failed refreshes retain stale cached levels.
 pub(crate) fn record_usage(
@@ -103,6 +103,15 @@ fn list_history(
     let mut histories: Vec<_> = accounts.into_values().collect();
     histories.sort_by(|left, right| left.account_label.cmp(&right.account_label));
     Ok(histories)
+}
+
+/// All filesystem access, SQLite waits, and history processing stay off the UI thread.
+pub(crate) fn read_history(
+    paths: &Paths,
+    start_ts: i64,
+    end_ts: i64,
+) -> Result<Vec<AccountQuotaHistory>, HistoryError> {
+    list_history(paths, HistoryRange::new(start_ts, end_ts)?)
 }
 
 /// All filesystem access, SQLite waits, and history processing stay off the UI thread.

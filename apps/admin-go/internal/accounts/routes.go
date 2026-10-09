@@ -13,6 +13,8 @@ func Register(router *gin.Engine, deps *platform.Dependencies) error {
 	s := &service{deps: deps}
 	sync := router.Group("/sync", deps.RequireAuth())
 	s.registerSync(sync)
+	s.registerOfficialUsage(router.Group("/official-usage", deps.RequireAuth()),
+		deps.RequirePermissions("self.accounts.read"))
 	s.registerAdmin(router.Group("/admin/api", deps.RequireAuth()))
 	return nil
 }

@@ -35,6 +35,9 @@ var desktopServiceSchema string
 //go:embed 009_chat_bulk_leases.sql
 var bulkLeaseSchema string
 
+//go:embed 010_official_usage.sql
+var officialUsageSchema string
+
 // InitializeEmpty never changes existing tables, constraints, indexes, or customer data.
 // Existing deployments continue to apply the versioned apps/admin-go/sql migrations.
 func InitializeEmpty(db *gorm.DB) error {
@@ -75,6 +78,9 @@ func InitializeEmpty(db *gorm.DB) error {
 		if err := tx.Exec(desktopServiceSchema).Error; err != nil {
 			return err
 		}
-		return tx.Exec(bulkLeaseSchema).Error
+		if err := tx.Exec(bulkLeaseSchema).Error; err != nil {
+			return err
+		}
+		return tx.Exec(officialUsageSchema).Error
 	})
 }

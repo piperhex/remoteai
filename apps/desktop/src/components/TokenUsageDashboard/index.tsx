@@ -1,6 +1,6 @@
 import { getLocale } from "../../i18n";
 import { guiText } from "../../i18n/guiText";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button, InputNumber } from "antd";
 import { BarChart, HeatmapChart, LineChart, PieChart } from "echarts/charts";
 import {
@@ -26,6 +26,7 @@ import { useDashboardData } from "./useDashboardData";
 import { useLongContextThreshold } from "./useLongContextThreshold";
 import { ConsumptionCharts } from "./ConsumptionCharts";
 import { AccountQuotaChart } from "./QuotaHistoryChart";
+import { OfficialAccountUsage } from "./OfficialAccountUsage";
 
 
 use([
@@ -63,6 +64,7 @@ export function TokenUsageDashboard({
   embedded?: boolean;
 }) {
   const thresholdTokens = useLongContextThreshold();
+  const [officialRefreshKey, setOfficialRefreshKey] = useState(0);
   const { entries, dailyUsage, breakdown, quotaHistory, loading, error, analyticsError, quotaError,
     updatedAt, startTs, endTs, load } = useDashboardData({ weeks, refreshSeconds, thresholdTokens });
   const locale = getLocale(language);
@@ -149,7 +151,7 @@ export function TokenUsageDashboard({
             <span>{weeksUnit}</span>
           </label>
           <Button icon={<RefreshCw className={loading ? "spin" : ""} size={15} />}
-            onClick={() => void load()} disabled={loading}>
+            onClick={() => { void load(); setOfficialRefreshKey((value) => value + 1); }} disabled={loading}>
             {labels.refresh}
           </Button>
         </div>
@@ -157,6 +159,8 @@ export function TokenUsageDashboard({
       {error ? <div className={styles.tokenUsageError} role="alert">
         {(language === "ru" ? guiText("Token 数据刷新失败，请重试。", {}, language) : language === "zh" ? "Token 数据刷新失败，请重试。" : "Could not refresh token usage. Please retry.")}
       </div> : null}
+      <OfficialAccountUsage language={language} refreshSeconds={refreshSeconds}
+        startTs={startTs} refreshKey={officialRefreshKey} />
       <AccountQuotaChart history={quotaHistory} startTs={startTs} endTs={endTs}
         language={language} dark={dark} themeColor={themeColor} loading={loading}
         error={quotaError ? ((language === "ru" ? guiText("额度记录刷新失败，请重试。", {}, language) : language === "zh" ? "额度记录刷新失败，请重试。" : "Could not refresh quota history.")) : undefined} />

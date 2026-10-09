@@ -79,6 +79,9 @@ import { OfficialContextSettings } from "../OfficialContextSettings";
 import { UsageMeter, UsageRefreshAge } from "../UsageMeter";
 import { canReceiveConcurrentConversation } from "../concurrentAccountEligibility";
 import { createAccountTokenUsageLookup } from "../accountCardUsage";
+import { useOfficialUsage } from "../../../hooks/useOfficialUsage";
+import { officialUsageLabels } from "../../../../../../shared/officialUsageLabels";
+import { AvailableQuota } from "../../TokenUsageDashboard/OfficialAccountUsage";
 import { getSwitchableAccounts } from "../accountSelectors";
 import { confirmOfficialAuthAccountChange } from "../confirmOfficialAuthAccountChange";
 import styles from "./index.module.less";
@@ -173,6 +176,7 @@ const ACCOUNT_TABLE_COLUMN_KEYS = [
   "oneWeek",
   "tokenTotals",
   "estimatedCost",
+  "availableQuota",
   "autoSwitchPriority",
   "autoSwitchThreshold",
   "actions",
@@ -185,6 +189,7 @@ const REORDERABLE_ACCOUNT_TABLE_COLUMN_KEYS: ReorderableAccountTableColumnKey[] 
   "oneWeek",
   "tokenTotals",
   "estimatedCost",
+  "availableQuota",
   "autoSwitchPriority",
   "autoSwitchThreshold",
 ];
@@ -411,6 +416,9 @@ export function AccountTable({
   const modelContextWindow = useGpt56SolContextWindow();
   const [tableScrollY, setTableScrollY] = useState(0);
   const [accountTokenUsage, setAccountTokenUsage] = useState<AccountTokenUsageTotals[]>([]);
+  const officialUsage = useOfficialUsage({ active, refreshSeconds: tokenUsageRefreshSeconds });
+  const officialUsageById = useMemo(() => new Map(officialUsage.accounts.map((account) => [account.accountId, account])),
+    [officialUsage.accounts]);
   const accountUsageRefreshing = useRef(false);
   const refreshCurrentAccountUsage = useRef<(() => void) | null>(null);
   const [accountConversationCounts, setAccountConversationCounts] = useState<Record<string, number>>({});
@@ -756,6 +764,10 @@ export function AccountTable({
         </Tooltip>;
       },
     },
+    {
+      title: officialUsageLabels(language).remaining, key: "availableQuota", width: 190, align: "center" as const,
+      render: (_: unknown, account: Account) => <AvailableQuota account={officialUsageById.get(account.id)} language={language} />,
+    },
     ...(customPriorityActive ? [{
       title: t("table.autoSwitchPriority"), key: "autoSwitchPriority", width: 150,
       align: "center" as const, fixed: "right" as const,
@@ -920,6 +932,7 @@ export function AccountTable({
     { key: "oneWeek", label: t("table.oneWeek") },
     { key: "tokenTotals", label: t("table.tokenTotals") },
     { key: "estimatedCost", label: t("table.estimatedTokenCost") },
+    { key: "availableQuota", label: officialUsageLabels(language).remaining },
     ...(customPriorityActive
       ? [{ key: "autoSwitchPriority" as const, label: t("table.autoSwitchPriority") }]
       : []),

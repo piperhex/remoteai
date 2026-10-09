@@ -1,8 +1,8 @@
 use std::{error::Error, fmt, io};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AccountQuotaHistory {
     pub(crate) account_id: String,
@@ -12,7 +12,7 @@ pub(crate) struct AccountQuotaHistory {
 
 /// Actual sampled levels, with the preceding observation included for range deltas.
 /// Reset timestamps allow callers to avoid counting replenished quota as consumption.
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AccountQuotaPoint {
     pub(crate) ts: i64,

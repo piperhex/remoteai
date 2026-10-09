@@ -39,6 +39,7 @@ services:
       - name: codex-switch-protected
         paths:
           - /sync
+          - /official-usage
           - /admin/api
           - /devices
           - /chat-push

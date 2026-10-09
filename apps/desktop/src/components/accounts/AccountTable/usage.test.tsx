@@ -5,6 +5,9 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as backend from "../../../api/backend";
 import { DEMO_ACCOUNTS } from "../../../demo";
 import { AccountTable } from ".";
+import { loadOfficialUsage } from '../../../api/officialUsage';
+
+vi.mock('../../../api/officialUsage', () => ({ loadOfficialUsage: vi.fn() }));
 
 vi.mock("../../../api/backend", async (original) => ({
   ...await original<typeof backend>(),
@@ -44,6 +47,7 @@ beforeEach(() => {
   vi.stubGlobal("matchMedia", () => ({ matches: false, addListener() {}, removeListener() {} }));
   localStorage.clear();
   vi.mocked(backend.loadAccountTokenUsage).mockResolvedValue(usage);
+  vi.mocked(loadOfficialUsage).mockResolvedValue({ accounts: [], status: 'signedOut', updatedAt: 0 });
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
@@ -73,6 +77,17 @@ it("shows actual zeroes when no usage was recorded", async () => {
   await render();
   expect(container.querySelector(".account-card-token-summary")?.textContent).toBe("Tokens: 0");
   expect(container.querySelector(".account-card-token-cost")?.textContent).toBe("0.00 USD");
+});
+
+it('shows the combined official quota estimate in the account table in USD', async () => {
+  const now = Math.floor(Date.now() / 1000);
+  vi.mocked(loadOfficialUsage).mockResolvedValue({ status: 'ready', updatedAt: now,
+    accounts: [{ accountId: account.id, accountLabel: account.email, tokens: 200, costUsd: 10,
+      remainingUsd: 30, primary: null, secondary: null, devices: [] }],
+  });
+  await render({ displayMode: 'table' });
+  expect(container.textContent).toContain('Estimated available (USD)');
+  expect(container.textContent).toContain('$30.00');
 });
 
 it("keeps actions responsive and polling single-flight while usage is pending", async () => {

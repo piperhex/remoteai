@@ -2,6 +2,7 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import * as backend from '../api/backend';
 import { readTokenSummary } from './tokenSummary';
+import { loadOfficialUsage } from '../api/officialUsage';
 import { ChatOperations } from './operations';
 import { LONG_CONTEXT_COST_STORAGE_KEY, DEFAULT_LONG_CONTEXT_COST_SETTINGS } from '../utils/tokenCostLongContext';
 import { ChatController } from '../../../../shared/remote-chat/client/controller';
@@ -10,6 +11,7 @@ import type { RpcRequest } from '../../../../shared/remote-chat/protocol';
 
 vi.mock('../api/backend', () => ({ loadAppSettings: vi.fn(), loadTokenUsageEntries: vi.fn(),
   loadDailyTokenUsage: vi.fn(), loadTokenUsageBreakdown: vi.fn(), loadAccountQuotaHistory: vi.fn(), invoke: vi.fn() }));
+vi.mock('../api/officialUsage', () => ({ loadOfficialUsage: vi.fn() }));
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -24,6 +26,19 @@ beforeEach(() => {
   vi.mocked(backend.loadDailyTokenUsage).mockResolvedValue([]);
   vi.mocked(backend.loadTokenUsageBreakdown).mockResolvedValue([]);
   vi.mocked(backend.loadAccountQuotaHistory).mockResolvedValue([]);
+  vi.mocked(loadOfficialUsage).mockResolvedValue({ accounts: [], status: 'signedOut', updatedAt: 0 });
+});
+
+it('forwards the server estimate and range to remote clients without recalculating it', async () => {
+  const official = { status: 'ready' as const, updatedAt: 123, accounts: [{
+    accountId: 'official', accountLabel: 'Official account', tokens: 300, costUsd: 6, remainingUsd: 18,
+    primary: { capacityUsd: 30, remainingUsd: 18, consumedUsd: 6, declinePercent: 20,
+      startPercent: 80, remainingPercent: 60, startTs: 100, endTs: 200 }, secondary: null, devices: [],
+  }] };
+  vi.mocked(loadOfficialUsage).mockResolvedValue(official);
+  const summary = await readTokenSummary(4);
+  expect(loadOfficialUsage).toHaveBeenCalledWith(summary.startTs);
+  expect(summary.officialUsage).toEqual(official);
 });
 
 it('uses PC preferences, threshold, range and ranking semantics through remote RPC', async () => {
