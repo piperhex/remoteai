@@ -6,11 +6,20 @@ use serde::Deserialize;
 use tauri::{ipc::Channel, AppHandle, Manager, Webview};
 use tokio::sync::Mutex;
 
+#[path = "traversal_bulk.rs"]
+mod bulk;
+pub(crate) use bulk::*;
+
 const UNAVAILABLE: &str = "暂时无法直连，正在尝试其他连接方式。";
 const MAX_CONNECTIONS: usize = 8;
 
 #[derive(Default)]
-pub(crate) struct State(Mutex<HashMap<String, Arc<Connection>>>);
+pub(crate) struct State(Mutex<HashMap<String, Arc<NativeConnection>>>);
+
+struct NativeConnection {
+    connection: Arc<Connection>,
+    bulk_reader: Mutex<()>,
+}
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -41,7 +50,7 @@ pub(crate) async fn remote_native_media(
         .lock()
         .await
         .get(&request.id)
-        .cloned()
+        .map(|path| path.connection.clone())
         .ok_or(UNAVAILABLE)?;
     let result = match request.action {
         MediaAction::Open => serde_json::to_value(
@@ -115,7 +124,13 @@ pub(crate) async fn remote_native_path_open(
     }
     let connection = Connection::start_with_bulk(config, request.bulk).map_err(|_| UNAVAILABLE)?;
     let id = uuid::Uuid::new_v4().to_string();
-    connections.insert(id.clone(), connection.clone());
+    connections.insert(
+        id.clone(),
+        Arc::new(NativeConnection {
+            connection: connection.clone(),
+            bulk_reader: Mutex::new(()),
+        }),
+    );
     drop(connections);
     tauri::async_runtime::spawn(forward(
         app,
@@ -168,7 +183,7 @@ pub(crate) async fn remote_native_path_send(
         .lock()
         .await
         .get(&request.id)
-        .cloned()
+        .map(|path| path.connection.clone())
         .ok_or(UNAVAILABLE)?;
     connection
         .send(request.text)
@@ -184,7 +199,7 @@ pub(crate) async fn remote_native_path_close(
 ) -> Result<(), String> {
     authorize(&window)?;
     if let Some(connection) = app.state::<State>().0.lock().await.remove(&id) {
-        connection.close();
+        connection.connection.close();
     }
     Ok(())
 }
@@ -228,7 +243,7 @@ pub(crate) async fn remote_native_bulk_send(
         .lock()
         .await
         .get(id)
-        .cloned()
+        .map(|path| path.connection.clone())
         .ok_or(UNAVAILABLE)?;
     connection
         .send_bulk(generation, bytes.clone())

@@ -348,6 +348,7 @@ pub fn run() {
             remote_chat::traversal::remote_native_path_open,
             remote_chat::traversal::remote_native_path_send,
             remote_chat::traversal::remote_native_bulk_send,
+            remote_chat::traversal::remote_native_bulk_receive,
             remote_chat::traversal::remote_native_path_close,
             remote_chat::traversal::remote_native_media,
             remote_chat::traversal::remote_chat_local_addresses,

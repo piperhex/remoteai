@@ -3,7 +3,8 @@ import { BulkTransport, type BinaryChannel } from '../../../../shared/remote-cha
 import { BulkCipher } from '../../../../shared/remote-chat/bulkCipher';
 import { HotPeer } from '../../../../shared/remote-chat/hotPeer';
 import { NativePath, type NativePathEvent } from '../../../../shared/remote-chat/nativePath';
-import { encodeNativeBulkBatch, NativeBulkChannel } from '../../../../shared/remote-chat/nativeBulkChannel';
+import { decodeNativeBulkBatch, encodeNativeBulkBatch, NativeBulkChannel }
+  from '../../../../shared/remote-chat/nativeBulkChannel';
 import { downloadBulkClient } from '../../../../shared/remote-chat/client/bulkClient';
 import { DEFAULT_CHAT_POLICY, setChatPolicy } from '../../../../shared/remote-chat/policy';
 import type { ChatLink } from '../../../../shared/remote-chat/link';
@@ -87,4 +88,45 @@ it('reports native transport loss as resumable rather than a file integrity fail
   const channel = new NativeBulkChannel(async () => { throw new Error('native handle closed'); });
   await expect(channel.sendBatch([record()])).rejects.toMatchObject({ code: 'PATH_UNAVAILABLE' });
   expect(channel.bufferedAmount).toBe(0);
+});
+
+it('validates full receive batches and gives each worker record its own transferable buffer', () => {
+  const first = record(), second = record();
+  const batch = encodeNativeBulkBatch([first, second]);
+  const records = decodeNativeBulkBatch(batch.buffer);
+  expect(records).toEqual([first, second]);
+  structuredClone(records[0], { transfer: [records[0].buffer] });
+  expect(records[1]).toEqual(second);
+  expect(decodeNativeBulkBatch(new ArrayBuffer(0))).toEqual([]);
+  for (let length = 1; length < batch.length; length++) {
+    expect(() => decodeNativeBulkBatch(batch.slice(0, length).buffer)).toThrow();
+  }
+  expect(() => decodeNativeBulkBatch(new Uint8Array([...batch, 0]).buffer)).toThrow();
+  const oversized = batch.slice(); new DataView(oversized.buffer).setUint32(5, 0xffffffff);
+  expect(() => decodeNativeBulkBatch(oversized.buffer)).toThrow();
+});
+
+it('keeps a single native receive loop through idle replies and binary stream replacement', async () => {
+  let event!: (value: NativePathEvent) => void;
+  let reply!: (records: Uint8Array[]) => void;
+  const bulkReceive = vi.fn(() => new Promise<Uint8Array[]>(resolve => { reply = resolve; }));
+  const channels: NativeBulkChannel[] = [];
+  const path = new NativePath({ sessionId: 'session', desktop: false, config,
+    bulkChannel: channel => channels.push(channel as NativeBulkChannel) }, {
+    open: async (_options, callback) => { event = callback; return 'handle'; },
+    bulkReceive, send: async () => {}, close: async () => {},
+  });
+  event({ type: 'open' }); event({ type: 'bulk', generation: 1 });
+  await Promise.resolve();
+  reply([]); await Promise.resolve();
+  expect(bulkReceive).toHaveBeenCalledTimes(2);
+  const old = vi.fn(), current = vi.fn(); channels[0].onMessage(old);
+  event({ type: 'bulk', generation: 0 }); event({ type: 'bulk', generation: 2 });
+  channels[1].onMessage(current);
+  expect(bulkReceive).toHaveBeenCalledTimes(2);
+  const bytes = record(); reply([bytes]); await Promise.resolve();
+  expect(old).not.toHaveBeenCalled(); expect(current).toHaveBeenCalledWith(bytes);
+  expect(bulkReceive).toHaveBeenCalledTimes(3);
+  path.close(); reply([bytes]); await Promise.resolve();
+  expect(current).toHaveBeenCalledOnce(); expect(bulkReceive).toHaveBeenCalledTimes(3);
 });

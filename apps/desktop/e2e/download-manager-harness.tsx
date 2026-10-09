@@ -11,26 +11,30 @@ import type { GuiComputer } from '../src/pages/codexGui/remote/types';
 import { ChatFilePreview } from '../../web/src/chat/ChatFilePreview';
 import { DEFAULT_CHAT_POLICY, setChatConnectionMode, setChatPolicy } from '../../../shared/remote-chat/policy';
 import { nativeBulkFixture, nativeBulkStats } from './native-bulk-fixture';
+import { nativeDirectBulkFixture, nativeDirectStats, NATIVE_DIRECT_FILE_BYTES } from './native-direct-bulk-fixture';
 import 'antd/dist/reset.css';
 import '../src/styles.css';
 
 Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true });
 setChatConnectionMode('offline');
 const nativeBulk = new URLSearchParams(location.search).has('nativeBulk');
+const nativeDirect = new URLSearchParams(location.search).has('nativeDirect');
+const size = nativeDirect ? NATIVE_DIRECT_FILE_BYTES : 8 * 1024 * 1024;
 setChatPolicy({ ...DEFAULT_CHAT_POLICY, fileDownloadMaxMb: nativeBulk ? 20 : 1,
-  fileBulkEnabled: nativeBulk ? 1 : 0 });
+  fileBulkEnabled: nativeBulk || nativeDirect ? 1 : 0 });
 const identity = { baseUrl: 'https://fixture.test', userId: 'owner' };
 const auth = { ...identity, enabled: true, authenticated: true, sessionExpired: false };
-const fixture = { delay: 500, offsets: [] as { device: string; offset: number }[], nativeBulkStats };
+const fixture = { delay: 500, offsets: [] as { device: string; offset: number }[], nativeBulkStats, nativeDirectStats };
 declare global { interface Window { desktopDownloads: typeof fixture } }
 window.desktopDownloads = fixture;
 
 function controller(device: string) {
   let state = { ...initialChatState(), ready: true, mode: nativeBulk ? 'relay' as const : 'direct' as const };
   const listeners = new Set<() => void>();
+  const bulk = device === 'office' && nativeDirect ? nativeDirectBulkFixture() : undefined;
   const downloads: DownloadClient = {
-    bulk: nativeBulk && device === 'office' ? nativeBulkFixture() : undefined,
-    open: async ({ path }) => ({ id: '11111111-1111-4111-8111-111111111111', size: 8 * 1024 * 1024,
+    bulk: bulk ?? (nativeBulk && device === 'office' ? nativeBulkFixture() : undefined),
+    open: async ({ path }) => ({ id: '11111111-1111-4111-8111-111111111111', size,
       name: path.split('/').at(-1)!, mimeType: 'application/octet-stream', revision: 'first' }),
     read: async ({ offset, length }) => {
       fixture.offsets.push({ device, offset });

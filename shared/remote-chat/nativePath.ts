@@ -31,6 +31,7 @@ export interface NativePathBridge {
   open(options: NativePathOptions, event: (event: NativePathEvent) => void): Promise<string>;
   send(id: string, text: string): Promise<void>;
   bulkSend?(id: string, generation: number, records: readonly Uint8Array[]): Promise<void>;
+  bulkReceive?(id: string): Promise<readonly Uint8Array[]>;
   close(id: string): Promise<void>;
   renew?(id: string, expiresAt: number): Promise<void>;
   mediaOpen?(id: string, viewId: string): Promise<NativeMediaEndpoint>;
@@ -50,6 +51,7 @@ export class NativePath implements Channel {
   private readonly closed = new Set<() => void>();
   private readonly messages = new Set<(text: string) => void>();
   private bulk?: NativeBulkChannel;
+  private receivingBulk = false;
 
   constructor(private readonly options: NativePathOptions, private readonly bridge: NativePathBridge) {
     this.id = bridge.open(options, event => this.receive(event));
@@ -89,6 +91,7 @@ export class NativePath implements Channel {
         this.bulk = new NativeBulkChannel(send ? async records => send(await this.id, event.generation, records)
           : undefined);
         this.options.bulkChannel(this.bulk, 'native');
+        void this.receiveBulk();
       }
       return;
     }
@@ -118,6 +121,20 @@ export class NativePath implements Channel {
         state: event.route.direct ? 'connected' : 'disconnected',
         ipv6: event.route.ipv6, rttMs: event.route.rttMs });
     }
+  }
+
+  private async receiveBulk() {
+    if (this.receivingBulk || this.options.desktop || !this.bridge.bulkReceive) return;
+    this.receivingBulk = true;
+    try {
+      const id = await this.id;
+      while (this.state !== 'closed' && this.bulk?.readyState === 'open') {
+        const records = await this.bridge.bulkReceive(id);
+        // The current transfer's authenticated epoch rejects records left over from an older stream.
+        for (const record of records) this.bulk?.receive(record);
+      }
+    } catch { this.close(); }
+    finally { this.receivingBulk = false; }
   }
 
   send(text: string) {

@@ -111,6 +111,12 @@ Web 下载回归使用 `apps/web/playwright.chat.config.ts` 下的 `downloads.pw
 Admin 配置持久化和实时推送使用 Go 的 `scripts/chat-policy-smoke.mjs` 验证。
 
 ### 持续传输与连接切换回归
+电脑客户端作为下载接收端时，通过异步 `remote_native_bulk_receive` 读取原生 P2P 文件流，
+每次最多返回 16 条原始二进制记录，同一连接只允许一个读取请求；空闲等待最多 250 ms。
+数据经原生批次解码后进入共享下载器的 Worker 校验和 IndexedDB 写入，关闭连接后停止读取。
+Android 继续使用原生文件写入器，Web 继续使用 WebRTC 文件通道。
+桌面 `download-manager.pw.ts` 覆盖 32 MiB 原生 P2P 下载、暂停续传、页面切换和保存内容校验。
+
 
 后台 direct 通道的创建、替换和关闭只影响被选中的 direct 路径，不能取消正在工作的 relay 下载。
 真正切换路径仍终止旧 epoch，Android 和 Web 在连接可用时按 1、2、4 秒重试，重新协商并校验断点。
