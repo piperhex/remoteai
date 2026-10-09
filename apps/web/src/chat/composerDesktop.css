@@ -1,9 +1,10 @@
 @media (min-width: 861px) {
   .chat-composer-dock { width: min(100%, 920px); align-self: center; padding: 0 28px 14px;
-    --chat-border: #dfe5df; --chat-green: #35ada7; --chat-muted: #718078; }
-  .chat-conversation .chat-composer { padding: 12px 12px 9px;
+    --chat-composer-padding: 12px; --chat-border: #dfe5df; --chat-green: #35ada7; --chat-muted: #718078; }
+  .chat-conversation .chat-composer { padding: 12px var(--chat-composer-padding) 9px;
     border: 1px solid var(--chat-border); border-radius: 18px;
-    background: #fbfcfa; box-shadow: 0 5px 25px #173c2810; font-size: 14px; }
+    box-shadow: 0 5px 25px #173c2810; font-size: 14px; }
+  .chat-conversation .chat-composer, .chat-composer-dock .chat-queue { background: #fbfcfa; }
   .chat-composer:focus-within { border-color: var(--chat-green); }
   .chat-composer textarea { min-height: 83px; padding: 5px 8px 12px; font-size: 14px; line-height: 1.7; }
   .chat-composer textarea::placeholder { color: var(--chat-muted); }
@@ -32,9 +33,9 @@
   .chat-composer-access > span { font-size: 10px; }
   .chat-composer-access:hover, .chat-composer-access[aria-expanded="true"] { background: var(--chat-pale); }
   .chat-composer-access.is-full-access { color: #b8860b; background: #d4a01712; }
-  .chat-composer-dock:has(.chat-queue) .chat-composer { border-top-left-radius: 0; border-top-right-radius: 0; }
-  .chat-composer-dock .chat-queue { margin-bottom: 0; border-bottom: 0;
-    border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  /* Include the composer border to align the queue with the add and send buttons. */
+  .chat-composer-dock .chat-queue { width: auto; margin: 0 calc(var(--chat-composer-padding) + 1px) -1px;
+    border-bottom: 0; border-radius: 18px 18px 0 0; }
 }
 .chat-composer-access-menu { width: min(320px, calc(100vw - 24px)); max-width: 400px; padding: 8px 6px 6px;
   color: #13231c; font-size: 12px; }

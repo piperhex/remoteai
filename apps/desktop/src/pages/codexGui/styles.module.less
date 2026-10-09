@@ -8,6 +8,7 @@
   container-type: inline-size;
   --gui-border: var(--line);
   --gui-muted: var(--muted, #7b8781);
+  --gui-composer-surface: var(--panel);
   --gui-chat-surface: color-mix(in srgb, var(--panel) 78%, transparent);
   --gui-chat-backdrop: blur(14px) saturate(1.05);
   display: grid; grid-template-columns: 236px minmax(0, 1fr); height: 100%; min-height: 0;
@@ -16,13 +17,13 @@
 }
 .collapsed { grid-template-columns: minmax(0, 1fr); }
 .page[data-dream-skin='true'] {
+  --gui-composer-surface: color-mix(in srgb, var(--panel) 92%, transparent);
   background-image: linear-gradient(
     color-mix(in srgb, var(--panel) var(--gui-skin-overlay), transparent),
     color-mix(in srgb, var(--panel) var(--gui-skin-overlay), transparent)
   ), var(--gui-skin-image);
   background-size: cover; background-position: center; background-repeat: no-repeat;
   .sidebar, .messageFooter { background: transparent; }
-  .composer { background: color-mix(in srgb, var(--panel) 92%, transparent); }
   :global(.ant-btn-text), textarea:global(.ant-input) { color: var(--ink); }
   textarea:global(.ant-input)::placeholder { color: var(--gui-muted); }
 }
@@ -186,17 +187,18 @@
 .turnError { color: #c96c3d; font-size: calc(var(--gui-font-size, 14px) - 2px); }
 .composerWrap, .questionWrap { width: min(100%, 920px); align-self: center;
   padding: 0 28px; flex-shrink: 0; box-sizing: border-box; }
-.composerWrap { padding-bottom: 14px; }
+.composerWrap { --gui-composer-padding: 12px; padding-bottom: 14px; }
 .projectBar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 5px 10px 8px; min-width: 0;
   > button { max-width: 50%; > span:last-child { overflow: hidden; text-overflow: ellipsis; } }
   :global(.ant-select) { width: 120px; } }
 .localLabel { font-size: calc(var(--gui-font-size, 14px) - 2px); color: var(--gui-muted); margin-left: auto; }
-.composer { border: 1px solid var(--gui-border); background: var(--panel); border-radius: 18px;
-  container: gui-composer / inline-size; padding: 12px 12px 9px; box-shadow: 0 5px 25px #173c2810;
+.composer { position: relative; border: 1px solid var(--gui-border); border-radius: 18px;
+  background: var(--gui-composer-surface);
+  container: gui-composer / inline-size; padding: 12px var(--gui-composer-padding) 9px;
+  box-shadow: 0 5px 25px #173c2810;
   &:focus-within { border-color: var(--green); }
   textarea:global(.ant-input) { border: 0; background: transparent; resize: none; box-shadow: none;
     padding: 5px 8px 12px; font-size: var(--gui-font-size, 14px); } }
-.composerAttached { border-top-left-radius: 0; border-top-right-radius: 0; }
 .composerControls { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
 .composerSecondary { display: contents; }
 .modelControls { margin-left: auto; display: flex; gap: 8px; align-items: center;

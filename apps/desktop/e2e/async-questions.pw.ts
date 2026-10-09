@@ -42,11 +42,11 @@ test("async questions show choices during work, preserve failed answers, and fit
   await expect(card.getByRole("textbox", { name: title, exact: true })).toHaveValue(options[1]);
   for (const width of [520, 1440, 800]) {
     await page.setViewportSize({ width, height: 900 });
-    const queue = page.getByLabel("待发送消息", { exact: true });
+    const composer = page.getByLabel("消息", { exact: true }).locator("..");
     await expect.poll(async () => {
       const questionBox = (await card.boundingBox())!;
-      const queueBox = (await queue.boundingBox())!;
-      return Math.abs(questionBox.width - queueBox.width) + Math.abs(questionBox.x - queueBox.x);
+      const composerBox = (await composer.boundingBox())!;
+      return Math.abs(questionBox.width - composerBox.width) + Math.abs(questionBox.x - composerBox.x);
     }).toBeLessThan(2);
   }
   await page.getByLabel("消息", { exact: true }).fill("任务执行时仍然能输入");

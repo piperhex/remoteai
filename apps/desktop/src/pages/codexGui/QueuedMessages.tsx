@@ -50,7 +50,7 @@ function QueueItem({ item, context, canMoveUp, canMoveDown }: QueueItemProps) {
 
 export function QueuedMessages({ messages, ...context }: QueueProps) {
   if (!messages.length) return null;
-  return <div className={`${styles.queue} ${context.running ? styles.attached : ""}`}>
+  return <div className={styles.queue}>
     <div className={styles.heading}>{guiText("待发送 ·")} {messages.length}
       {!context.running && <Button type="text" size="small"
         disabled={!context.connected || messages.some((item) => item.busy)}

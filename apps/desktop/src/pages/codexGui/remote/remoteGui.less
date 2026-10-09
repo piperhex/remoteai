@@ -44,7 +44,8 @@
   }
   .chat-composer-dock { --chat-border: var(--line); --chat-green: var(--green); --chat-muted: var(--muted);
     width: min(100%, 920px); padding: 0 28px 14px; align-self: center; }
-  .chat-composer { color: var(--ink); background: var(--panel); font-size: var(--gui-font-size, 14px); }
+  .chat-composer, .chat-queue { background: var(--gui-composer-surface); }
+  .chat-composer { color: var(--ink); font-size: var(--gui-font-size, 14px); }
   .chat-composer textarea { background: transparent; color: var(--ink); font-size: var(--gui-font-size, 14px); }
   .chat-composer textarea::placeholder { color: var(--muted); }
   .chat-composer-hint { font-size: calc(var(--gui-font-size, 14px) - 4px); }
@@ -65,7 +66,6 @@
   .composer-model-option:hover, .chat-composer-access-menu button:hover { background: var(--green-selection); }
   .chat-menu-options small, .composer-model-name, .composer-model-hint, .chat-composer-access-menu small,
   .chat-composer-access-heading { color: var(--muted); }
-  &[data-dream-skin='true'] .chat-composer { background: color-mix(in srgb, var(--panel) 92%, transparent); }
 }
 @media (max-width: 1150px) {
   .gui-remote-workspace.chat-page {

@@ -57,7 +57,6 @@ export const Composer = forwardRef<ComposerHandle, {
     ? state.projectOverrides[state.selected] ?? current?.thread.cwd ?? "" : state.settings.cwd;
   const running = Boolean(current?.activeTurn);
   const queuedMessages = state.selected ? state.queued[state.selected] ?? [] : [];
-  const attachedQueue = running && queuedMessages.length > 0;
   const disabled = workspaceBusy || state.connection !== "ready" || state.sending || state.archived
     || state.compacting === state.selected;
   const hasDraft = Boolean(draft.text.trim() || draft.images.length
@@ -92,7 +91,7 @@ export const Composer = forwardRef<ComposerHandle, {
     {state.selected && <QueuedMessages threadId={state.selected} messages={queuedMessages}
       running={running} connected={state.connection === "ready"} queue={controller.queue}
       editDisabled={disabled || reading || !active} onEdit={editQueuedMessage} />}
-    <div ref={composer} className={`${styles.composer} ${attachedQueue ? styles.composerAttached : ""}`}>
+    <div ref={composer} className={styles.composer}>
       <ImageAttachments key={`images:${key}`} images={draft.images} active={active}
         disabled={state.sending} onRemove={removeImage} />
       <ComposerReferences key={`references:${key}`} items={draft.attachments ?? []} disabled={disabled}

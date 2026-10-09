@@ -13,17 +13,19 @@ test('queues supplements on the PC, sends one immediately and restores the rest 
     await expect(page.getByRole('status').filter({ hasText: /P2P|Relay/ }))
       .toBeVisible({ timeout: 20_000 });
     await openChatList(page);
-    await page.getByRole('button', { name: /移动端聊天体验/ }).click();
+    await page.getByRole('button', { name: '移动端聊天体验', exact: true }).click();
     await send(page, 'slow queue test');
     await expect(page.getByRole('button', { name: '暂停生成' })).toBeVisible();
     await send(page, '先检查边界情况');
     await send(page, '再补充回归测试');
     const queue = page.getByRole('region', { name: '待发送消息', exact: true });
     await expect(queue.getByRole('listitem')).toHaveCount(2);
-    const composerBounds = (await page.locator('.chat-composer').boundingBox())!;
     const queueBounds = (await queue.boundingBox())!;
-    expect(queueBounds.x).toBeCloseTo(composerBounds.x, 0);
-    expect(queueBounds.width).toBeCloseTo(composerBounds.width, 0);
+    const desktop = page.viewportSize()!.width > 860;
+    const leftBounds = (await page.locator(desktop ? '.chat-composer-add' : '.chat-composer').boundingBox())!;
+    const rightBounds = (await page.locator(desktop ? '.chat-composer-submit' : '.chat-composer').boundingBox())!;
+    expect(queueBounds.x).toBeCloseTo(leftBounds.x, 0);
+    expect(queueBounds.x + queueBounds.width).toBeCloseTo(rightBounds.x + rightBounds.width, 0);
     const first = queue.getByRole('listitem').first();
     await expect(queue.getByRole('button', { name: '上移待发送消息' })).toBeDisabled();
     await queue.getByRole('button', { name: '下移待发送消息' }).click();

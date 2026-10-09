@@ -36,10 +36,12 @@ function Harness() {
                 const response = await fetch("/async-answer", { method: "POST", body: JSON.stringify({ item, answers }) });
                 return response.ok;
               }} /><div className={styles.composerWrap}>
-                <div className={[queueStyles.queue, queueStyles.attached].join(" ")} aria-label="待发送消息">
+                <div className={queueStyles.queue} aria-label="待发送消息">
                   待发送 · 1
                 </div>
-                <input aria-label="消息" placeholder="输入消息…" style={{ padding: 12 }} />
+                <div className={styles.composer}>
+                  <input aria-label="消息" placeholder="输入消息…" style={{ padding: 12 }} />
+                </div>
               </div></>} />}
         </Profiler>
       </div>

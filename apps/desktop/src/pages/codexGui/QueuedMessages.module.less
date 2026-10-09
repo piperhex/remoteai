@@ -1,7 +1,8 @@
-.queue { margin: 0 8px 8px; border: 1px solid var(--gui-border); border-radius: 12px;
-  background: var(--panel); font-size: calc(var(--gui-font-size, 14px) - 1px);
+// Include the composer border so the queue edges line up with its outer buttons.
+.queue { margin: 0 calc(var(--gui-composer-padding) + 1px) -1px;
+  border: 1px solid var(--gui-border); border-bottom: 0; border-radius: 18px 18px 0 0;
+  background: var(--gui-composer-surface); font-size: calc(var(--gui-font-size, 14px) - 1px);
   ul { list-style: none; padding: 0; margin: 0; max-height: 240px; overflow-y: auto; } }
-.attached { margin: 0; border-bottom: 0; border-radius: 18px 18px 0 0; }
 .heading { display: flex; align-items: center; justify-content: space-between;
   padding: 6px 12px; color: var(--gui-muted); font-size: calc(var(--gui-font-size, 14px) - 2px); }
 .item { border-top: 1px solid var(--gui-border); }
