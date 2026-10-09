@@ -68,8 +68,11 @@ pub(super) fn list() -> Result<Vec<Monitor>> {
             (&mut monitors as *mut Vec<Monitor>) as LPARAM,
         )
     };
-    if result == 0 || monitors.is_empty() {
-        return Err(DesktopError::Platform);
+    if result == 0 {
+        return Err(DesktopError::DisplayEnumeration);
+    }
+    if monitors.is_empty() {
+        return Err(DesktopError::NoDisplays);
     }
     monitors.sort_by(|left, right| left.info.id.cmp(&right.info.id));
     Ok(monitors)

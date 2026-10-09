@@ -28,7 +28,7 @@ pub(super) struct Encoder {
 impl Encoder {
     pub async fn open(path: &Path, profile: Profile, display: &Monitor) -> Result<(Self, Vec<u8>)> {
         if profile.codec != super::codec::VideoCodec::H264 {
-            return Err(DesktopError::Unsupported);
+            return Err(DesktopError::UnsupportedCodec);
         }
         let display = display.clone();
         let display = tauri::async_runtime::spawn_blocking(move || display.refresh())
@@ -38,9 +38,13 @@ impl Encoder {
         let first = tokio::time::timeout(START_TIMEOUT, encoder.next()).await;
         match first {
             Ok(Ok(frame)) => Ok((encoder, frame)),
-            _ => {
+            Ok(Err(_)) => {
                 encoder.stop().await;
-                Err(DesktopError::Platform)
+                Err(DesktopError::EncoderFirstFrame)
+            }
+            Err(_) => {
+                encoder.stop().await;
+                Err(DesktopError::EncoderTimeout)
             }
         }
     }
@@ -66,8 +70,8 @@ impl Encoder {
             .stderr(Stdio::null())
             .kill_on_drop(true)
             .spawn()
-            .map_err(|_| DesktopError::Platform)?;
-        let output = child.stdout.take().ok_or(DesktopError::Platform)?;
+            .map_err(|_| DesktopError::EncoderStart)?;
+        let output = child.stdout.take().ok_or(DesktopError::EncoderStart)?;
         Ok(Self {
             child,
             output,

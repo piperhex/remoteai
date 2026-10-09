@@ -3,6 +3,7 @@ import type { DesktopSettings, DesktopSignal } from '../../../../shared/remote-d
 import { DesktopHostSession } from './session';
 import { NativeDesktopSession } from './nativeSession';
 import type { ConnectionDiagnostic } from '../../../../shared/remote-chat/diagnostics';
+import { desktopFailure } from '../../../../shared/remote-desktop/diagnostics';
 
 /** Keep a working capture fallback for Windows installations without a supported native encoder. */
 export class HostSession {
@@ -21,8 +22,16 @@ export class HostSession {
       await this.session.close();
       if (this.stopped) throw new Error('桌面连接已结束。');
       if (!fallback) throw error;
-      this.session = new DesktopHostSession(this.settings, this.iceServers, this.expiresAt, this.diagnostic);
-      return this.offer(await this.session.open());
+      this.diagnostic?.('desktop-stage', { stage: 'fallback-open', state: 'connecting' });
+      try {
+        this.session = new DesktopHostSession(this.settings, this.iceServers, this.expiresAt, this.diagnostic);
+        const offer = this.offer(await this.session.open());
+        this.diagnostic?.('desktop-stage', { stage: 'ready' });
+        return offer;
+      } catch (fallbackError) {
+        this.diagnostic?.('desktop-failed', { ...desktopFailure(fallbackError), stage: 'fallback-open' });
+        throw fallbackError;
+      }
     }
   }
   private offer(offer: Awaited<ReturnType<NativeDesktopSession['open']>>) {

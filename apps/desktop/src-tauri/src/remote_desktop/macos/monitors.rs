@@ -58,8 +58,11 @@ pub(in crate::remote_desktop) fn list() -> Result<Vec<Monitor>> {
     // SAFETY: Both output pointers address live writable storage of the declared capacity.
     let status =
         unsafe { CGGetActiveDisplayList(MAX_DISPLAYS as u32, handles.as_mut_ptr(), &mut count) };
-    if status != 0 || count == 0 || count as usize > handles.len() {
-        return Err(DesktopError::Platform);
+    if status != 0 || count as usize > handles.len() {
+        return Err(DesktopError::DisplayEnumeration);
+    }
+    if count == 0 {
+        return Err(DesktopError::NoDisplays);
     }
     handles[..count as usize]
         .iter()

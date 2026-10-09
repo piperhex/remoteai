@@ -7,7 +7,7 @@ const RESERVED_EVENTS = 40;
 
 /** Preserve outcomes when repeated candidates and dial attempts exhaust the routine log budget. */
 export function isDiagnosticOutcome(event: DiagnosticEvent, fields?: DiagnosticFields): boolean {
-  return event === 'mode' || event === 'path-selected'
+  return event === 'mode' || event === 'path-selected' || event === 'desktop-failed'
     || (event === 'native-punch' && fields?.stage !== 'starting');
 }
 

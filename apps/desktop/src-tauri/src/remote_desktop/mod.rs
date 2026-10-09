@@ -46,6 +46,14 @@ pub(super) enum DesktopError {
     Expired,
     #[error("desktop capture or input failed")]
     Platform,
+    #[error("desktop settings unavailable")]
+    Settings,
+    #[cfg(any(windows, target_os = "macos"))]
+    #[error("desktop display enumeration failed")]
+    DisplayEnumeration,
+    #[cfg(any(windows, target_os = "macos"))]
+    #[error("no active desktop displays")]
+    NoDisplays,
     #[cfg(any(windows, target_os = "macos"))]
     #[error("selected desktop display disconnected")]
     DisplayGone,
@@ -61,6 +69,18 @@ pub(super) enum DesktopError {
     #[cfg(target_os = "macos")]
     #[error("accessibility permission required")]
     InputPermission,
+    #[cfg(target_os = "macos")]
+    #[error("desktop encoder could not start")]
+    EncoderStart,
+    #[cfg(target_os = "macos")]
+    #[error("desktop encoder produced no first frame")]
+    EncoderFirstFrame,
+    #[cfg(target_os = "macos")]
+    #[error("desktop encoder first frame timed out")]
+    EncoderTimeout,
+    #[cfg(target_os = "macos")]
+    #[error("desktop codec unsupported")]
+    UnsupportedCodec,
 }
 type Result<T> = std::result::Result<T, DesktopError>;
 const LEASE: Duration = Duration::from_secs(15);
@@ -145,8 +165,21 @@ fn safe_error(error: DesktopError) -> String {
         DesktopError::Expired => "桌面连接已结束，请重新连接。",
         DesktopError::Invalid => "远程操作无效，请重试。",
         DesktopError::Platform => "暂时无法访问桌面，请稍后重试。",
+        DesktopError::Settings => "远程桌面设置未能读取，请在电脑端重新打开远程设置。",
+        #[cfg(any(windows, target_os = "macos"))]
+        DesktopError::DisplayEnumeration => "未能读取显示器信息，请在电脑端重新连接显示器后重试。",
+        #[cfg(any(windows, target_os = "macos"))]
+        DesktopError::NoDisplays => "未找到可用显示器，请确认电脑已连接显示器并登录桌面。",
         #[cfg(any(windows, target_os = "macos"))]
         DesktopError::DisplayGone => "显示器已断开，请重新连接桌面。",
+        #[cfg(target_os = "macos")]
+        DesktopError::EncoderStart => "未能启动屏幕共享，请重新打开电脑端应用后重试。",
+        #[cfg(target_os = "macos")]
+        DesktopError::EncoderFirstFrame => "未能获取屏幕画面，请确认电脑已登录桌面后重试。",
+        #[cfg(target_os = "macos")]
+        DesktopError::EncoderTimeout => "获取屏幕画面超时，请重新连接。",
+        #[cfg(target_os = "macos")]
+        DesktopError::UnsupportedCodec => "暂时无法共享屏幕，请更新两端应用后重试。",
     }
     .into()
 }

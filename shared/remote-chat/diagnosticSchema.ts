@@ -2,7 +2,7 @@ export const DIAGNOSTIC_EVENTS = [
   'mode', 'relay-timeout', 'peer-created', 'peer-create-failed', 'peer-state', 'peer-retry',
   'peer-offer-failed', 'peer-signal-failed', 'channel-closed', 'link-failed', 'path-state', 'path-selected',
   'candidate-rejected', 'tcp-discovery', 'tcp-dial', 'ice-state', 'ice-gathering', 'ice-candidate',
-  'ice-error', 'ice-summary', 'sdp-state', 'desktop-start', 'desktop-failed', 'desktop-closed',
+  'ice-error', 'ice-summary', 'sdp-state', 'desktop-start', 'desktop-stage', 'desktop-failed', 'desktop-closed',
   'native-state', 'native-punch', 'diagnostic-throttled',
 ] as const;
 export const DIAGNOSTIC_ENUMS = {
@@ -11,7 +11,13 @@ export const DIAGNOSTIC_ENUMS = {
   mode: ['connecting', 'direct', 'relay', 'offline'],
   stage: ['starting', 'ready', 'failed', 'exhausted', 'gathering', 'complete', 'offer', 'answer',
     'engine-start', 'engine-failed', 'discovery', 'stream-connect', 'stream-failed', 'stream-open', 'stopped',
-    'selected', 'skipped', 'cancelled'],
+    'selected', 'skipped', 'cancelled', 'runtime-check', 'capture-open', 'fallback-open', 'request-open',
+    'lease-renew', 'status', 'signal'],
+  desktopError: ['screen-permission', 'accessibility-permission', 'desktop-disabled', 'macos-version',
+    'platform-unsupported', 'runtime-unavailable', 'settings-unavailable', 'no-displays', 'display-enumeration',
+    'display-unavailable', 'desktop-busy', 'lease-expired', 'invalid-request', 'capture-failed',
+    'encoder-start', 'encoder-first-frame', 'encoder-timeout', 'codec-unsupported', 'unknown'],
+  hostPlatform: ['windows', 'macos'],
   strategy: ['none', 'cone-to-cone', 'sym-to-cone', 'easy-sym-to-easy-sym', 'hard-sym-to-easy-sym'],
   phase: ['selection', 'waiting-lock', 'punch', 'public-mapping', 'listener-rpc', 'socket-bind',
     'probe-send', 'probe-rpc', 'handshake', 'admission'],
@@ -30,11 +36,12 @@ export const DIAGNOSTIC_NUMBERS = [
   'generation', 'elapsedMs', 'attempt', 'rttMs', 'errorCode', 'localCandidates', 'remoteCandidates',
   'candidatePairs', 'failedPairs', 'succeededPairs', 'requestsSent', 'requestsReceived', 'responsesReceived',
   'bytesSent', 'bytesReceived', 'rejectedCandidates', 'connectedPeers', 'routeCount', 'udpNatType', 'tcpNatType',
-  'suppressed', 'stunServers', 'turnServers',
+  'suppressed', 'stunServers', 'turnServers', 'displayCount',
   'diagnosticVersion', 'peerUdpNatType', 'durationMs', 'sockets', 'predictedPorts', 'probesSent', 'probesReceived',
   'matchedProbes', 'rejectedProbes', 'probeSendErrors', 'probeReceiveErrors', 'handshakeAttempts', 'handshakeFailures',
 ] as const;
-export const DIAGNOSTIC_BOOLEANS = ['directHealthy', 'relayHealthy', 'ipv6', 'remoteKnown', 'direct'] as const;
+export const DIAGNOSTIC_BOOLEANS = ['directHealthy', 'relayHealthy', 'ipv6', 'remoteKnown', 'direct',
+  'desktopEnabled', 'nativeOnly'] as const;
 type EnumFields = { [K in keyof typeof DIAGNOSTIC_ENUMS]?: (typeof DIAGNOSTIC_ENUMS)[K][number] };
 export type DiagnosticFields = EnumFields & Partial<Record<(typeof DIAGNOSTIC_NUMBERS)[number], number>>
   & Partial<Record<(typeof DIAGNOSTIC_BOOLEANS)[number], boolean>>;

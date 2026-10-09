@@ -24,6 +24,48 @@ beforeEach(() => {
 });
 afterEach(() => { vi.useRealTimers(); });
 
+it.each([
+  ['remote_desktop_stream_available', false, 'runtime-check', 'runtime-unavailable'],
+  ['remote_desktop_stream_available', 'private native failure', 'runtime-check', 'unknown'],
+  ['remote_desktop_open', '请在 Mac 的远程设置中开启屏幕录制权限，然后重新连接。',
+    'capture-open', 'screen-permission'],
+  ['remote_desktop_open', '未找到可用显示器，请确认电脑已连接显示器并登录桌面。', 'capture-open', 'no-displays'],
+  ['remote_desktop_stream_open', '未能启动屏幕共享，请重新打开电脑端应用后重试。', 'stream-open', 'encoder-start'],
+])('uploads early native startup failures at %s', async (failingCommand, error, stage, desktopError) => {
+  const original = call.getMockImplementation()!, diagnostic = vi.fn();
+  call.mockImplementation(async (command, args) => {
+    if (command !== failingCommand) return original(command, args);
+    if (error === false) return false;
+    throw error;
+  });
+  const session = new NativeDesktopSession(DEFAULT_SETTINGS, [], undefined, diagnostic);
+  await expect(session.open()).rejects.toBeDefined();
+  const failures = diagnostic.mock.calls.filter(([event]) => event === 'desktop-failed');
+  expect(failures).toHaveLength(1);
+  expect(failures[0][1]).toMatchObject({ stage, desktopError, durationMs: expect.any(Number) });
+  if (typeof error === 'string') expect(JSON.stringify(diagnostic.mock.calls)).not.toContain(error);
+  if (stage !== 'stream-open') expect(call.mock.calls.some(([command]) => command === 'remote_desktop_stream_open'))
+    .toBe(false);
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+it('reports safe platform and display metadata without names, IDs or credentials', async () => {
+  const original = call.getMockImplementation()!, diagnostic = vi.fn();
+  call.mockImplementation(async (command, args) => {
+    if (command === 'remote_desktop_open') return { id: 'private-lease', nativeOnly: true, platform: 'macos',
+      displays: [{ id: 'private-id', name: 'private-name' }], permissions: { enabled: true } };
+    return original(command, args);
+  });
+  const session = new NativeDesktopSession(DEFAULT_SETTINGS,
+    [{ urls: 'turn:private.test', username: 'private-user', credential: 'private-secret' }], undefined, diagnostic);
+  await session.open();
+  expect(diagnostic).toHaveBeenCalledWith('desktop-stage', expect.objectContaining({
+    stage: 'ready', hostPlatform: 'macos', displayCount: 1, nativeOnly: true, desktopEnabled: true,
+  }));
+  expect(JSON.stringify(diagnostic.mock.calls)).not.toContain('private');
+  await session.close();
+});
+
 it('renews only the authenticated expiry and closes when renewal is refused', async () => {
   const expiresAt = Date.now() + 30_000;
   const session = new NativeDesktopSession(DEFAULT_SETTINGS, [], expiresAt);
@@ -45,7 +87,8 @@ it('releases a lease returned after cancellation without starting capture', asyn
   let resolveLease!: (value: string) => void;
   call.mockImplementation(async command => command === 'remote_desktop_stream_available'
     ? true : command === 'remote_desktop_open' ? new Promise<string>(resolve => { resolveLease = resolve; }) : undefined);
-  const session = new NativeDesktopSession(DEFAULT_SETTINGS, []);
+  const diagnostic = vi.fn();
+  const session = new NativeDesktopSession(DEFAULT_SETTINGS, [], undefined, diagnostic);
   const opening = session.open();
   const rejected = expect(opening).rejects.toThrow('连接已结束');
   await vi.advanceTimersByTimeAsync(0);
@@ -53,6 +96,8 @@ it('releases a lease returned after cancellation without starting capture', asyn
   await rejected;
   expect(call).toHaveBeenCalledWith('remote_desktop_stream_close', { id: 'late-lease' });
   expect(call.mock.calls.some(([command]) => command === 'remote_desktop_stream_open')).toBe(false);
+  expect(diagnostic).toHaveBeenCalledWith('desktop-stage', expect.objectContaining({ stage: 'cancelled' }));
+  expect(diagnostic.mock.calls.some(([event]) => event === 'desktop-failed')).toBe(false);
 });
 
 it('waits for failed encoder cleanup before allowing the fallback to open', async () => {

@@ -74,6 +74,46 @@ func TestIceDiagnosticsRetainEveryGeneration(t *testing.T) {
 	d.queued(platform.JSON{"type": "signal", "sessionId": "empty", "payload": platform.JSON{"kind": "ice"}})
 }
 
+func TestDesktopStartupFailureSurvivesNoiseAndRejectsPrivateDetails(t *testing.T) {
+	d, buffer := diagnosticFixture()
+	for range clientDiagnosticLimit {
+		d.clientEvent("session", platform.JSON{"event": "ice-candidate"})
+	}
+	d.clientEvent("session", platform.JSON{"event": "desktop-failed", "scope": "desktop",
+		"stage": "capture-open", "desktopError": "screen-permission", "reason": "permission",
+		"hostPlatform": "macos", "durationMs": float64(6), "displayCount": float64(0), "nativeOnly": true,
+		"error": "private-error", "path": "private-path", "displayName": "private-name"})
+	output := buffer.String()
+	for _, required := range []string{`"event":"desktop-failed"`, `"stage":"capture-open"`,
+		`"desktopError":"screen-permission"`, `"hostPlatform":"macos"`, `"durationMs":6`, `"displayCount":0`} {
+		if !strings.Contains(output, required) {
+			t.Fatalf("missing %s", required)
+		}
+	}
+	if strings.Contains(output, "private-") {
+		t.Fatal("private desktop details entered diagnostics")
+	}
+	for range clientDiagnosticLimit {
+		d.clientEvent("session", platform.JSON{"event": "desktop-failed", "desktopError": "private-code"})
+	}
+	if strings.Count(buffer.String(), `"msg":"connection diagnostic"`) != clientDiagnosticLimit ||
+		strings.Contains(buffer.String(), "private-") {
+		t.Fatal("desktop failures bypassed rate limits or enum sanitization")
+	}
+}
+
+func TestDesktopStartupStagesRetainSafeCaptureMetadata(t *testing.T) {
+	d, buffer := diagnosticFixture()
+	d.clientEvent("session", platform.JSON{"event": "desktop-stage", "scope": "desktop", "stage": "stream-open",
+		"hostPlatform": "macos", "displayCount": float64(2), "nativeOnly": true, "desktopEnabled": true})
+	for _, field := range []string{`"event":"desktop-stage"`, `"displayCount":2`, `"nativeOnly":true`,
+		`"desktopEnabled":true`} {
+		if !strings.Contains(buffer.String(), field) {
+			t.Fatalf("missing %s", field)
+		}
+	}
+}
+
 func TestClientDiagnosticsRequireSessionMembershipAndDoNotForward(t *testing.T) {
 	sessions := newHotSessions(nil)
 	desktop, mobile, outsider := queuedPeer(), queuedPeer(), queuedPeer()

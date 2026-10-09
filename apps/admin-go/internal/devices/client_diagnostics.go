@@ -15,7 +15,7 @@ const maxDiagnosticInteger = 1<<53 - 1
 
 var clientDiagnosticEvents = strings.Fields(`mode relay-timeout peer-created peer-create-failed peer-state peer-retry
 peer-offer-failed peer-signal-failed channel-closed link-failed path-state path-selected candidate-rejected
-tcp-discovery tcp-dial ice-state ice-gathering ice-candidate ice-error ice-summary sdp-state desktop-start
+tcp-discovery tcp-dial ice-state ice-gathering ice-candidate ice-error ice-summary sdp-state desktop-start desktop-stage
 desktop-failed desktop-closed native-state native-punch diagnostic-throttled`)
 
 var clientDiagnosticEnums = map[string]string{
@@ -23,8 +23,14 @@ var clientDiagnosticEnums = map[string]string{
 	"state": "new checking connecting connected completed disconnected failed closed",
 	"mode":  "connecting direct relay offline",
 	"stage": "starting ready failed exhausted gathering complete offer answer engine-start engine-failed " +
-		"discovery stream-connect stream-failed stream-open stopped selected skipped cancelled",
-	"strategy": "none cone-to-cone sym-to-cone easy-sym-to-easy-sym hard-sym-to-easy-sym",
+		"discovery stream-connect stream-failed stream-open stopped selected skipped cancelled " +
+		"runtime-check capture-open fallback-open request-open lease-renew status signal",
+	"desktopError": "screen-permission accessibility-permission desktop-disabled macos-version " +
+		"platform-unsupported runtime-unavailable settings-unavailable no-displays display-enumeration " +
+		"display-unavailable desktop-busy lease-expired invalid-request capture-failed " +
+		"encoder-start encoder-first-frame encoder-timeout codec-unsupported unknown",
+	"hostPlatform": "windows macos",
+	"strategy":     "none cone-to-cone sym-to-cone easy-sym-to-easy-sym hard-sym-to-easy-sym",
 	"phase": "selection waiting-lock punch public-mapping listener-rpc socket-bind " +
 		"probe-send probe-rpc handshake admission",
 	"localType": "host srflx prflx relay unknown", "remoteType": "host srflx prflx relay unknown",
@@ -40,11 +46,12 @@ var clientDiagnosticEnums = map[string]string{
 var clientDiagnosticNumbers = strings.Fields(`generation elapsedMs attempt rttMs errorCode localCandidates
 remoteCandidates candidatePairs failedPairs succeededPairs requestsSent requestsReceived responsesReceived
 bytesSent bytesReceived rejectedCandidates connectedPeers routeCount udpNatType tcpNatType
-suppressed stunServers turnServers diagnosticVersion peerUdpNatType durationMs sockets predictedPorts
+suppressed stunServers turnServers displayCount diagnosticVersion peerUdpNatType durationMs sockets predictedPorts
 probesSent probesReceived matchedProbes rejectedProbes probeSendErrors probeReceiveErrors
 handshakeAttempts handshakeFailures`)
 
-var clientDiagnosticBooleans = strings.Fields("directHealthy relayHealthy ipv6 remoteKnown direct")
+var clientDiagnosticBooleans = strings.Fields(
+	"directHealthy relayHealthy ipv6 remoteKnown direct desktopEnabled nativeOnly")
 
 // The session membership is checked by hotSessions.route. Identity comes from authentication, never the payload.
 // Invalid telemetry is ignored so an older client diagnostic cannot take down an otherwise healthy session.
@@ -82,7 +89,8 @@ func clientDiagnosticOutcome(value interface{}) bool {
 		return false
 	}
 	event := input["event"]
-	return event == "mode" || event == "path-selected" || (event == "native-punch" && input["stage"] != "starting")
+	return event == "mode" || event == "path-selected" || event == "desktop-failed" ||
+		(event == "native-punch" && input["stage"] != "starting")
 }
 
 func sanitizeClientDiagnostic(value interface{}) []interface{} {

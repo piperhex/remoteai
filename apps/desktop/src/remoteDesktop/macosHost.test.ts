@@ -48,3 +48,16 @@ it('retains Windows compatibility fallback without opening an extra lease', asyn
   expect(await new HostSession(DEFAULT_SETTINGS, []).open()).toMatchObject({ sdp: 'compatibility-offer' });
   expect(call.mock.calls.some(([command]) => command === 'remote_desktop_open')).toBe(false);
 });
+
+it('retains both the original startup failure and a different fallback failure', async () => {
+  call.mockImplementation(async () => false);
+  fallback.open.mockRejectedValue('请在 Mac 的远程设置中开启辅助功能权限，然后重新连接。');
+  const diagnostic = vi.fn();
+  await expect(new HostSession(DEFAULT_SETTINGS, [], undefined, diagnostic).open()).rejects.toBeDefined();
+  expect(diagnostic).toHaveBeenCalledWith('desktop-failed', expect.objectContaining({
+    stage: 'runtime-check', desktopError: 'runtime-unavailable',
+  }));
+  expect(diagnostic).toHaveBeenCalledWith('desktop-failed', expect.objectContaining({
+    stage: 'fallback-open', desktopError: 'accessibility-permission',
+  }));
+});

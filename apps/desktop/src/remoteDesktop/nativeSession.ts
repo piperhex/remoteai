@@ -3,7 +3,7 @@ import type { IceServer } from '../../../../shared/remote-chat/protocol';
 import type { DesktopDisplays, DesktopSettings, DesktopSignal, DesktopSignalReply }
   from '../../../../shared/remote-desktop/protocol';
 import { openDesktopCapture } from './displays';
-import { diagnosticError } from '../../../../shared/remote-chat/iceCandidate';
+import { desktopFailure } from '../../../../shared/remote-desktop/diagnostics';
 import type { ConnectionDiagnostic, DiagnosticFields } from '../../../../shared/remote-chat/diagnostics';
 
 const STATUS_INTERVAL = 2000;
@@ -30,35 +30,52 @@ export class NativeDesktopSession {
     private readonly diagnostic?: ConnectionDiagnostic) {}
 
   async open() {
+    const started = performance.now();
+    let stage: DiagnosticFields['stage'] = 'runtime-check';
     this.diagnostic?.('desktop-start', { transport: 'rtc' });
-    if (!await invoke<boolean>('remote_desktop_stream_available')) {
-      throw new Error('远程桌面暂不可用，请更新电脑端应用后重试。');
+    try {
+      this.diagnostic?.('desktop-stage', { stage, state: 'checking' });
+      if (!await invoke<boolean>('remote_desktop_stream_available')) {
+        throw new Error('远程桌面暂不可用，请更新电脑端应用后重试。');
+      }
+      if (this.stopped) throw new Error('桌面连接已结束。');
+      stage = 'capture-open';
+      this.diagnostic?.('desktop-stage', { stage, state: 'checking' });
+      const { id, nativeOnly, ...displays } = await openDesktopCapture(this.settings.displayId, this.expiresAt);
+      this.nativeOnly = nativeOnly === true;
+      this.id = id; this.displays = displays;
+      if (this.stopped) throw new Error('桌面连接已结束。');
+      stage = 'stream-open';
+      this.diagnostic?.('desktop-stage', { stage, state: 'connecting', ...this.captureDiagnostic() });
+      const offer = await this.openStream();
+      if (this.stopped) throw new Error('桌面连接已结束。');
+      this.diagnostic?.('desktop-stage', { stage: 'ready', durationMs: performance.now() - started,
+        ...this.captureDiagnostic() });
+      this.schedule();
+      return { ...offer, ...this.displays, iceServers: this.iceServers };
+    } catch (error) {
+      const fields = { durationMs: performance.now() - started, ...this.captureDiagnostic() };
+      if (this.stopped) this.diagnostic?.('desktop-stage', { ...fields, stage: 'cancelled', reason: 'cancelled' });
+      else this.diagnostic?.('desktop-failed', { ...desktopFailure(error), stage, ...fields });
+      await this.closeNative();
+      throw error;
     }
-    if (this.stopped) throw new Error('桌面连接已结束。');
-    const { id, nativeOnly, ...displays } = await openDesktopCapture(this.settings.displayId, this.expiresAt);
-    this.nativeOnly = nativeOnly === true;
-    this.id = id; this.displays = displays;
-    if (this.stopped) { await this.closeNative(); throw new Error('桌面连接已结束。'); }
-    const offer = await this.openStream();
-    if (this.stopped) { await this.closeNative(); throw new Error('桌面连接已结束。'); }
-    this.schedule();
-    return { ...offer, ...this.displays, iceServers: this.iceServers };
   }
 
-  private async openStream() {
-    try {
-      return await invoke<{ sdp: string; directUpgrade?: boolean; relayStandby?: boolean }>(
-        'remote_desktop_stream_open', { request: {
+  private captureDiagnostic(): DiagnosticFields {
+    return { hostPlatform: this.displays.platform, displayCount: this.displays.displays?.length,
+      desktopEnabled: this.displays.permissions?.enabled,
+      ...(this.id ? { nativeOnly: this.nativeOnly } : {}) };
+  }
+
+  private openStream() {
+    return invoke<{ sdp: string; directUpgrade?: boolean; relayStandby?: boolean }>(
+      'remote_desktop_stream_open', { request: {
         id: this.id, profile: profile(this.settings), clipboardChannel: this.settings.clipboardChannel === true,
         relayStandby: this.settings.relayStandby === true,
         iceServers: this.iceServers.map(server => ({ ...server,
           urls: Array.isArray(server.urls) ? server.urls : [server.urls] })),
       } });
-    } catch (error) {
-      this.diagnostic?.('desktop-failed', { reason: diagnosticError(error) });
-      await this.closeNative();
-      throw error;
-    }
   }
 
   signal(signal: DesktopSignal) {
@@ -82,8 +99,10 @@ export class NativeDesktopSession {
 
   private async refresh() {
     if (this.stopped) return;
+    let stage: DiagnosticFields['stage'] = 'lease-renew';
     try {
       if (this.expiresAt !== undefined) await this.renew(this.expiresAt);
+      stage = 'status';
       const status = await invoke<{ closed: boolean; ice?: DiagnosticFields }>(
         'remote_desktop_stream_status', { id: this.id });
       if (this.stopped) return;
@@ -93,7 +112,10 @@ export class NativeDesktopSession {
         this.diagnostic?.('ice-summary', { ...status.ice, transport: 'rtc' });
       }
       if (status.closed) this.close();
-    } catch (error) { this.diagnostic?.('desktop-failed', { reason: diagnosticError(error) }); this.close(); }
+    } catch (error) {
+      if (this.stopped) return;
+      this.diagnostic?.('desktop-failed', { ...desktopFailure(error), stage }); this.close();
+    }
     if (!this.stopped) this.schedule();
   }
 

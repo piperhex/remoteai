@@ -116,4 +116,26 @@ export const remoteDesktopMessages: Record<string, string> = {
   '无法访问桌面，请确认电脑已解锁后重试。': 'Unable to access the desktop. Unlock your computer and try again.',
   '这台电脑暂不支持远程桌面，请使用 Windows 电脑。': 'This computer does not support remote desktop yet. Use a Windows computer.',
   '已有远程桌面连接，请先关闭后再试。': 'A remote desktop is already connected. Close it before trying again.',
+  '请在 Mac 的远程设置中开启屏幕录制权限，然后重新连接。':
+    'Enable Screen Recording in Remote settings on your Mac, then reconnect.',
+  '请在 Mac 的远程设置中开启辅助功能权限，然后重新连接。':
+    'Enable Accessibility in Remote settings on your Mac, then reconnect.',
+  '远程桌面需要 macOS 13 或更新版本。': 'Remote desktop requires macOS 13 or later.',
+  '这台电脑暂不支持远程桌面，请使用 Windows 或 Mac 电脑。':
+    'Remote desktop is unavailable on this computer. Use a Windows PC or Mac.',
+  '远程桌面暂不可用，请更新电脑端应用后重试。':
+    'Remote desktop is unavailable. Update the app on the computer and try again.',
+  '远程桌面设置未能读取，请在电脑端重新打开远程设置。':
+    'Unable to read remote desktop settings. Reopen Remote settings on the computer.',
+  '未能读取显示器信息，请在电脑端重新连接显示器后重试。':
+    'Unable to read display information. Reconnect the display to the computer and try again.',
+  '未找到可用显示器，请确认电脑已连接显示器并登录桌面。':
+    'No display is available. Connect a display and sign in to the computer.',
+  '未能启动屏幕共享，请重新打开电脑端应用后重试。':
+    'Unable to start screen sharing. Reopen the app on the computer and try again.',
+  '未能获取屏幕画面，请确认电脑已登录桌面后重试。':
+    'Unable to capture the screen. Sign in to the computer and try again.',
+  '获取屏幕画面超时，请重新连接。': 'Screen capture timed out. Please reconnect.',
+  '暂时无法共享屏幕，请更新两端应用后重试。':
+    'Screen sharing is unavailable. Update the app on both devices and try again.',
 };
