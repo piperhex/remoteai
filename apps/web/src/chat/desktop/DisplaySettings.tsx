@@ -37,7 +37,7 @@ export function DisplaySettings({ settings, displays, update, saving, close, sta
         { value: 'clear', label: '高清' }, { value: 'original', label: '超清' }] as const).map(item =>
         <button key={item.value} disabled={saving} aria-pressed={settings.quality === item.value}
           onClick={() => { void update({ ...settings, quality: item.value }); }}>{t(item.label)}</button>)}
-    </div><small>{t('默认根据网络情况调整画质和帧率，让操作保持流畅。')}</small>
+    </div><small>{t('自动模式优先使用最高画质和 60 帧。网络不稳时先降帧，尽量保持清晰。')}</small>
     <p>{t('鼠标操作')}</p><small>
       {t('在鼠标面板外，双指张合缩放画面，双指滑动平移画面。')}
     </small><br /><small>

@@ -10,6 +10,8 @@ pub(crate) struct Profile {
     pub codec: super::codec::VideoCodec,
     #[serde(default)]
     pub adaptive_fps: bool,
+    #[serde(default)]
+    pub adaptive_resolution: bool,
     pub width: u32,
     pub fps: u32,
     pub bitrate: u32,

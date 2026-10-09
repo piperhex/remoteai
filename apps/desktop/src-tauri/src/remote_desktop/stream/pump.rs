@@ -11,7 +11,7 @@ struct Progress {
     started: Instant,
     frames: u32,
     bytes: usize,
-    rate: super::feedback::RateController,
+    rate: super::rate_control::RateController,
 }
 
 impl Progress {
@@ -74,7 +74,7 @@ async fn video(stream: &Arc<Stream>, path: PathBuf, encoder: &mut Encoder) -> Re
         started: Instant::now(),
         frames: 0,
         bytes: 0,
-        rate: super::feedback::RateController::new(*settings.borrow()),
+        rate: super::rate_control::RateController::new(*settings.borrow()),
     };
     let profile = *settings.borrow();
     reconfigure(stream, &path, encoder, profile).await?;
@@ -109,7 +109,7 @@ async fn video(stream: &Arc<Stream>, path: PathBuf, encoder: &mut Encoder) -> Re
             _ = settings.changed() => {
                 let profile = *settings.borrow_and_update();
                 reconfigure(stream, &path, encoder, profile).await?;
-                progress.rate = super::feedback::RateController::new(profile);
+                progress.rate = super::rate_control::RateController::new(profile);
                 progress.reset();
             },
             frame = encoder.next() => {

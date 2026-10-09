@@ -53,6 +53,7 @@ export class DesktopHostSession {
       bind: peer => this.bind(peer), activate: peer => this.activate(peer),
       retain: this.standby ? peer => this.standby!.retain(peer) : undefined });
     this.settings = settings;
+    this.adaptation.update(settings);
     this.pc = new RTCPeerConnection({ iceServers });
     this.initialPc = this.pc;
     if (diagnostic) this.observer = new RtcObserver(this.pc, diagnostic);
@@ -103,8 +104,9 @@ export class DesktopHostSession {
   }
 
   async open() {
-    const stream = await this.capture.open(this.adaptation.profile(this.settings).width, this.settings.displayId, this.expiresAt);
+    const stream = await this.capture.open(this.adaptation.profile().width, this.settings.displayId, this.expiresAt);
     if (this.stopped) throw new Error('桌面连接已结束。');
+    this.adaptation.update(this.settings, this.capture.displays);
     this.media = stream;
     this.sender = this.pc.addTrack(stream.getVideoTracks()[0], stream);
     // Android's bundled decoder factory offers native H.264 hardware decoding with native software fallback.
@@ -117,6 +119,7 @@ export class DesktopHostSession {
     const offer = await this.pc.createOffer();
     if (this.stopped) throw new Error('桌面连接已结束。');
     await this.pc.setLocalDescription(offer);
+    await this.applyProfile();
     this.lastStats = performance.now();
     void this.tick();
     return { sdp: offer.sdp ?? '', iceServers: this.iceServers, directUpgrade: true,
@@ -166,14 +169,14 @@ export class DesktopHostSession {
     if (!await this.standby?.fallback(pc) && this.pc === pc) await this.close();
   }
 
-  update(settings: DesktopSettings) { this.settings = settings; }
+  update(settings: DesktopSettings) { this.settings = settings; this.adaptation.update(settings); }
   async renew(expiresAt: number) { this.expiresAt = expiresAt; await this.capture.renew(expiresAt); }
 
   private async tick() {
     if (this.stopped) return;
     const started = performance.now();
     try {
-      const profile = this.adaptation.profile(this.settings);
+      const profile = this.adaptation.profile();
       await this.capture.frame(profile.width);
       this.frames += 1;
       if (started - this.lastStats >= STATS_INTERVAL) await this.updateStats(started);
@@ -204,13 +207,8 @@ export class DesktopHostSession {
       }
     });
     this.adaptation.sample(sample);
-    const profile = this.adaptation.profile(this.settings);
-    const parameters = this.sender?.getParameters();
-    if (parameters?.encodings?.length) {
-      parameters.encodings[0].maxBitrate = profile.bitrate;
-      parameters.encodings[0].maxFramerate = profile.fps;
-      await this.sender?.setParameters(parameters);
-    }
+    const profile = this.adaptation.profile();
+    await this.applyProfile(profile);
     if (this.channel.readyState === 'open' && !this.stopped) {
       this.channel.send(JSON.stringify({ kind: 'stats', width: encodedWidth ?? this.capture.canvas.width,
         height: encodedHeight ?? this.capture.canvas.height,
@@ -218,6 +216,15 @@ export class DesktopHostSession {
         bitrate: profile.bitrate, connection }));
     }
     this.frames = 0; this.lastStats = now;
+  }
+
+  private async applyProfile(profile = this.adaptation.profile()) {
+    const parameters = this.sender?.getParameters();
+    if (!parameters?.encodings?.length) return;
+    parameters.degradationPreference = 'maintain-resolution';
+    parameters.encodings[0].maxBitrate = profile.bitrate;
+    parameters.encodings[0].maxFramerate = profile.fps;
+    await this.sender?.setParameters(parameters);
   }
 
   private fail() {

@@ -141,12 +141,18 @@ video received on the native and Web viewers.
   or insufficient reported capacity and probes upward after three healthy samples. Capture stops while ICE
   connects, then restarts to discard startup backlog. Frame selection preserves source timing instead of
   padding a slow display with repeated frames. Native input runs on blocking workers with an expiring lease.
-- Native automatic mode targets 1920 pixels / 60 FPS / 6 Mbps. Manual FPS accepts integers from 1 to 144 and is
-  independent of image quality. These are limits, not guarantees: source refresh, GPU/CPU, decoder and network
+- Native automatic mode starts at the maximum supported width (2560 pixels) / 60 FPS / 12 Mbps,
+  capped to the source display without upscaling. Congestion lowers FPS in steps of 10 to 30 before reducing
+  automatic resolution. Bitrate follows the pixel/frame budget to preserve per-frame quality. Manual FPS
+  accepts integers from 1 to 144 and sets the recovery ceiling; manual quality keeps its resolution.
+  Three fresh healthy reports allow one recovery step, restoring resolution before FPS above 30.
+  Stale or already-consumed native network reports cannot trigger repeated adaptation.
+  These are limits, not guarantees: source refresh, GPU/CPU, decoder and network
   capacity all matter. Hyper-V's enhanced display can limit genuine capture to approximately 30 FPS even on a fast LAN.
 - When the native runtime or capture is unavailable, the original GDI/JPEG → WebView canvas → browser WebRTC
-  sender remains a compatibility fallback. Its automatic mode starts at 1280 pixels / 24 FPS and adapts to
-  measured capture/network limits. Capture and input commands remain asynchronous and run off the UI thread.
+  sender remains a compatibility fallback. It shares the same initial quality and frame-first adaptation policy,
+  and asks browser WebRTC to maintain resolution when adapting. Capture and input commands remain asynchronous
+  and run off the UI thread.
 - webrtc-rs 0.17 implements TURN/UDP gathering. A private loopback transport adapter supplies TURN/TCP and TLS
   framing without changing its authentication/allocation logic. TLS validates normal trust roots and the server
   name; there is no production option to disable verification. The adapter lifetime belongs to the stream.

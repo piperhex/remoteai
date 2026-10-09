@@ -1,29 +1,114 @@
 import { describe, expect, it } from 'vitest';
 import { DesktopAdaptation } from '../../../../shared/remote-desktop/adaptation';
-import { DEFAULT_SETTINGS, validateSettings } from '../../../../shared/remote-desktop/protocol';
+import { desktopProfile, lowerDesktopProfile, raiseDesktopProfile } from '../../../../shared/remote-desktop/profiles';
+import { DEFAULT_SETTINGS, validateSettings, type DesktopSettings } from '../../../../shared/remote-desktop/protocol';
+
+function congest(adaptation: DesktopAdaptation) {
+  adaptation.sample({});
+  adaptation.sample({ loss: 0.1 });
+  return adaptation.profile();
+}
+function recover(adaptation: DesktopAdaptation) {
+  for (let index = 0; index < 3; index++) adaptation.sample({ loss: 0, rtt: 0.02 });
+  return adaptation.profile();
+}
 
 describe('remote desktop display adaptation', () => {
-  it('starts conservatively, immediately reduces load and waits for stable capacity before upgrading', () => {
-    const adaptation = new DesktopAdaptation();
-    expect(adaptation.profile(DEFAULT_SETTINGS)).toMatchObject({ width: 1280, fps: 24 });
-    adaptation.sample({ bitrate: 200_000, rtt: 0.5, loss: 0.08 });
-    expect(adaptation.profile(DEFAULT_SETTINGS)).toMatchObject({ width: 854, fps: 12 });
-    adaptation.sample({ bitrate: 10_000_000, rtt: 0.02 });
-    adaptation.sample({ bitrate: 10_000_000, rtt: 0.02 });
-    expect(adaptation.profile(DEFAULT_SETTINGS).width).toBe(854);
-    adaptation.sample({ bitrate: 10_000_000, rtt: 0.02 });
-    expect(adaptation.profile(DEFAULT_SETTINGS).width).toBe(1280);
+  it('starts at the highest supported resolution and 60 FPS', () => {
+    expect(new DesktopAdaptation().profile()).toEqual({ width: 2560, fps: 60, bitrate: 12_000_000 });
   });
-  it('preserves a custom frame limit while automatically reducing image size', () => {
+
+  it('uses the selected display width without creating oversized resolution steps', () => {
+    const adaptation = new DesktopAdaptation();
+    adaptation.update(DEFAULT_SETTINGS, { displayId: 'second', displays: [
+      { id: 'primary', name: '4K', primary: true, width: 3840, height: 2160 },
+      { id: 'second', name: '1080p', primary: false, width: 1920, height: 1080 },
+    ] });
+    expect(adaptation.profile()).toEqual({ width: 1920, fps: 60, bitrate: 12_000_000 });
+    for (let index = 0; index < 3; index++) expect(congest(adaptation).width).toBe(1920);
+    expect(congest(adaptation).width).toBe(1280);
+    expect(recover(adaptation)).toMatchObject({ width: 1920, fps: 30 });
+  });
+
+  it('lowers frames before resolution and keeps the same per-frame pixel budget', () => {
+    const adaptation = new DesktopAdaptation();
+    for (const fps of [50, 40, 30]) {
+      expect(congest(adaptation)).toEqual({ width: 2560, fps, bitrate: fps * 200_000 });
+    }
+    expect(congest(adaptation)).toEqual({ width: 1920, fps: 30, bitrate: 3_375_000 });
+    expect(congest(adaptation)).toMatchObject({ width: 1280, fps: 30 });
+    expect(congest(adaptation)).toMatchObject({ width: 854, fps: 30 });
+    expect(congest(adaptation)).toMatchObject({ width: 854, fps: 20 });
+    expect(congest(adaptation)).toMatchObject({ width: 854, fps: 15 });
+  });
+
+  it('restores resolution before high frame rates and requires three healthy samples', () => {
+    const adaptation = new DesktopAdaptation();
+    for (let index = 0; index < 5; index++) congest(adaptation);
+    expect(adaptation.profile()).toMatchObject({ width: 1280, fps: 30 });
+    for (let index = 0; index < 2; index++) {
+      adaptation.sample({ loss: 0 });
+      expect(adaptation.profile().width).toBe(1280);
+    }
+    adaptation.sample({ loss: 0 });
+    expect(adaptation.profile()).toMatchObject({ width: 1920, fps: 30 });
+    expect(recover(adaptation)).toMatchObject({ width: 2560, fps: 30 });
+    for (const fps of [40, 50, 60]) expect(recover(adaptation).fps).toBe(fps);
+    expect(recover(adaptation)).toEqual(desktopProfile(DEFAULT_SETTINGS));
+  });
+
+  it('treats a custom frame rate as a ceiling and retains manually selected quality', () => {
+    const settings: DesktopSettings = { fps: 45, quality: 'clear' };
+    const adaptation = new DesktopAdaptation(settings);
+    expect(congest(adaptation)).toMatchObject({ width: 1920, fps: 35 });
+    expect(congest(adaptation)).toMatchObject({ width: 1920, fps: 30 });
+    const reduced = congest(adaptation);
+    expect(reduced).toMatchObject({ width: 1920, fps: 30 });
+    expect(reduced.bitrate).toBeLessThan(8_000_000 * 30 / 45);
+    for (let index = 0; index < 10; index++) recover(adaptation);
+    expect(adaptation.profile()).toEqual(desktopProfile(settings));
+  });
+
+  it.each([1, 24, 30])('preserves manual frame caps at %i FPS when reducing resolution', fps => {
+    const adaptation = new DesktopAdaptation({ fps, quality: 'auto' });
+    expect(congest(adaptation)).toMatchObject({ width: 1920, fps });
+    expect(recover(adaptation)).toMatchObject({ width: 2560, fps });
+  });
+
+  it('does not change load without measurements, and waits between reductions', () => {
     const adaptation = new DesktopAdaptation();
     adaptation.sample({ limited: true });
-    expect(adaptation.profile({ quality: 'auto', fps: 45 })).toMatchObject({ width: 854, fps: 45 });
-    expect(adaptation.profile({ quality: 'clear', fps: 'auto' })).toMatchObject({ width: 1920, fps: 12 });
-  });
-  it('does not raise load without measured bandwidth and rejects malformed display settings', () => {
-    const adaptation = new DesktopAdaptation();
+    expect(adaptation.profile().fps).toBe(50);
+    adaptation.sample({ limited: true });
+    expect(adaptation.profile().fps).toBe(50);
     for (let index = 0; index < 10; index++) adaptation.sample({});
-    expect(adaptation.profile(DEFAULT_SETTINGS).width).toBe(1280);
+    expect(adaptation.profile().fps).toBe(50);
+    adaptation.sample({ bitrate: 100_000 });
+    expect(adaptation.profile().fps).toBe(40);
+  });
+
+  it('applies changed settings immediately without resetting on unrelated updates', () => {
+    const adaptation = new DesktopAdaptation();
+    congest(adaptation);
+    adaptation.update({ ...DEFAULT_SETTINGS, clipboardChannel: true });
+    expect(adaptation.profile().fps).toBe(50);
+    adaptation.update({ quality: 'clear', fps: 90 });
+    expect(adaptation.profile()).toEqual({ width: 1920, fps: 90, bitrate: 8_000_000 });
+    adaptation.update(DEFAULT_SETTINGS);
+    expect(adaptation.profile()).toEqual(desktopProfile(DEFAULT_SETTINGS));
+  });
+
+  it.each([31, 90, 144])('recovers after deep congestion without exceeding %i FPS', fps => {
+    const settings: DesktopSettings = { fps, quality: 'auto' };
+    const requested = desktopProfile(settings);
+    let current = requested;
+    for (let index = 0; index < 50; index++) current = lowerDesktopProfile(current, requested, settings);
+    expect(current.bitrate).toBeGreaterThanOrEqual(200_000);
+    for (let index = 0; index < 80; index++) current = raiseDesktopProfile(current, requested);
+    expect(current).toEqual(requested);
+  });
+
+  it('rejects malformed settings', () => {
     for (const fps of [0, -1, 145, 1.5, Infinity, '30', null]) {
       expect(() => validateSettings({ fps, quality: 'auto' })).toThrow();
     }

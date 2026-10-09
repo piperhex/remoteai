@@ -53,7 +53,7 @@ export function DisplaySettings({ settings, displays, update, saving, close, sta
           style={[s.choice, settings.quality === item.value && s.selected]}
           onPress={() => { void update({ ...settings, quality: item.value }); }}>
           <Text style={s.text}>{item.label}</Text></Pressable>)}
-    </View><Text style={s.hint}>{t("默认根据网络情况调整画质和帧率，让操作保持流畅。")}</Text>
+    </View><Text style={s.hint}>{t("自动模式优先使用最高画质和 60 帧。网络不稳时先降帧，尽量保持清晰。")}</Text>
     <Text style={s.text}>{t("鼠标操作")}</Text>
     <Text style={s.hint}>{t("在鼠标面板外，双指张合缩放画面，双指滑动平移画面。")}</Text>
     <Text style={s.hint}>

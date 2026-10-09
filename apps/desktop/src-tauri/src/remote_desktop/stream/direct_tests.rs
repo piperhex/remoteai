@@ -101,6 +101,7 @@ async fn fixture_with_servers(relay_standby: bool, ice_servers: Vec<IceServer>) 
         profile: watch::channel(Profile {
             codec: Default::default(),
             adaptive_fps: false,
+            adaptive_resolution: false,
             width: 1280,
             fps: 30,
             bitrate: 1_000_000,

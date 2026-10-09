@@ -92,8 +92,8 @@ export const remoteDesktopMessages: Record<string, string> = {
   '流畅': 'Smooth', '高清': 'High', '超清': 'Ultra',
   '支持 1–144 帧。实际帧率取决于网络和电脑性能。': 'Choose 1–144 FPS. Actual performance depends on your network and computer.',
   '请输入 1–144 的整数。': 'Enter a whole number from 1 to 144.',
-  '默认根据网络情况调整画质和帧率，让操作保持流畅。':
-    'Quality and frame rate adapt to your connection by default to keep controls responsive.',
+  '自动模式优先使用最高画质和 60 帧。网络不稳时先降帧，尽量保持清晰。':
+    'Auto starts at the highest quality and 60 FPS. If the connection slows, frame rate drops first to preserve clarity.',
   '触屏': 'Touch', '展开鼠标面板': 'Expand mouse controls',
   '切换为触屏模式': 'Switch to touch mode', '切换为鼠标模式': 'Switch to mouse mode',
   '鼠标操作': 'Mouse controls', '鼠标': 'Mouse', '键盘': 'Keyboard',

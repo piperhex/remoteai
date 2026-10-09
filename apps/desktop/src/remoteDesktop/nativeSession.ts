@@ -5,15 +5,14 @@ import type { DesktopDisplays, DesktopSettings, DesktopSignal, DesktopSignalRepl
 import { openDesktopCapture } from './displays';
 import { desktopFailure } from '../../../../shared/remote-desktop/diagnostics';
 import type { ConnectionDiagnostic, DiagnosticFields } from '../../../../shared/remote-chat/diagnostics';
+import { desktopProfile } from '../../../../shared/remote-desktop/profiles';
 
 const STATUS_INTERVAL = 2000;
 
-function profile(settings: DesktopSettings) {
-  const profiles = { auto: { width: 1920, bitrate: 6_000_000 }, smooth: { width: 854, bitrate: 1_500_000 },
-    clear: { width: 1920, bitrate: 8_000_000 }, original: { width: 2560, bitrate: 12_000_000 } };
-  return { ...profiles[settings.quality], fps: settings.fps === 'auto' ? 60 : settings.fps,
+function profile(settings: DesktopSettings, displays: DesktopDisplays) {
+  return { ...desktopProfile(settings, displays),
     codec: settings.videoCodecs?.includes('h265') ? 'h265' : 'h264',
-    adaptiveFps: settings.fps === 'auto' };
+    adaptiveFps: settings.fps === 'auto', adaptiveResolution: settings.quality === 'auto' };
 }
 
 /** The WebView holds signaling handles; native capture/encoding never returns pixels through IPC. */
@@ -71,7 +70,7 @@ export class NativeDesktopSession {
   private openStream() {
     return invoke<{ sdp: string; directUpgrade?: boolean; relayStandby?: boolean }>(
       'remote_desktop_stream_open', { request: {
-        id: this.id, profile: profile(this.settings), clipboardChannel: this.settings.clipboardChannel === true,
+        id: this.id, profile: profile(this.settings, this.displays), clipboardChannel: this.settings.clipboardChannel === true,
         relayStandby: this.settings.relayStandby === true,
         iceServers: this.iceServers.map(server => ({ ...server,
           urls: Array.isArray(server.urls) ? server.urls : [server.urls] })),
@@ -85,7 +84,7 @@ export class NativeDesktopSession {
   }
 
   async update(settings: DesktopSettings) {
-    await invoke('remote_desktop_stream_update', { id: this.id, profile: profile(settings) });
+    await invoke('remote_desktop_stream_update', { id: this.id, profile: profile(settings, this.displays) });
     this.settings = settings;
   }
   async renew(expiresAt: number) {

@@ -31,6 +31,8 @@ mod peer;
 #[cfg(any(windows, target_os = "macos"))]
 mod pump;
 #[cfg(any(windows, target_os = "macos"))]
+mod rate_control;
+#[cfg(any(windows, target_os = "macos"))]
 mod relay;
 #[cfg(any(windows, target_os = "macos"))]
 mod sample;

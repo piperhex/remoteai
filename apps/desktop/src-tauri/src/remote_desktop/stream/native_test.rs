@@ -41,6 +41,7 @@ async fn native_capture_reaches_a_real_browser_decoder() {
                 super::codec::VideoCodec::H264
             },
             adaptive_fps: false,
+            adaptive_resolution: false,
             width: 1920,
             fps: std::env::var("CSW_NATIVE_TEST_FPS")
                 .map(|value| value.parse().expect("test frame rate"))

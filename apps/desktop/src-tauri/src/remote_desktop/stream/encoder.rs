@@ -409,6 +409,7 @@ mod tests {
         let profile = Profile {
             codec: Default::default(),
             adaptive_fps: false,
+            adaptive_resolution: false,
             width: 1920,
             fps: 60,
             bitrate: 6_000_000,

@@ -5,6 +5,23 @@ import { DEFAULT_SETTINGS } from '../../../../shared/remote-desktop/protocol';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 const call = vi.mocked(invoke);
+it('starts automatic native capture at maximum quality and restores it after manual settings', async () => {
+  const session = new NativeDesktopSession(DEFAULT_SETTINGS, []);
+  await session.open();
+  const automatic = { width: 2560, fps: 60, bitrate: 12_000_000, codec: 'h264',
+    adaptiveFps: true, adaptiveResolution: true };
+  expect(call).toHaveBeenCalledWith('remote_desktop_stream_open', { request: expect.objectContaining({
+    profile: automatic,
+  }) });
+  await session.update({ quality: 'clear', fps: 45 });
+  expect(call).toHaveBeenLastCalledWith('remote_desktop_stream_update', { id: 'native-lease', profile: {
+    width: 1920, fps: 45, bitrate: 8_000_000, codec: 'h264', adaptiveFps: false, adaptiveResolution: false,
+  } });
+  await session.update(DEFAULT_SETTINGS);
+  expect(call).toHaveBeenLastCalledWith('remote_desktop_stream_update', { id: 'native-lease', profile: automatic });
+  await session.close();
+});
+
 it('requests HEVC only for receivers that advertised it', async () => {
   const session = new NativeDesktopSession({ ...DEFAULT_SETTINGS, videoCodecs: ['h265', 'h264'] }, []);
   await session.open();
