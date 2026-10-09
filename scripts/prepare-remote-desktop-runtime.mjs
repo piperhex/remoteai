@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDesktopVideo } from './build-desktop-video.mjs';
+import { buildDesktopVideoMacos } from './build-desktop-video-macos.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const build = 'ffmpeg-n8.1.2-50-g1a748fe2cd-win64-lgpl-shared-8.1';
@@ -14,6 +15,7 @@ const cache = join(root, '.codex-tmp', 'remote-desktop-runtime');
 const destination = join(root, 'apps', 'desktop', 'src-tauri', 'resources', 'remote-desktop', 'runtime');
 
 export async function prepareDesktopVideoRuntime() {
+  if (process.platform === 'darwin') { buildDesktopVideoMacos(); return; }
   if (process.platform !== 'win32' || process.arch !== 'x64') return;
   const manifest = join(destination, 'archive.sha256');
   const extracted = join(cache, 'extracted');

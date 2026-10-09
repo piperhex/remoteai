@@ -23,14 +23,19 @@ export class NativeDesktopSession {
   private displays: DesktopDisplays = {};
   private timer?: ReturnType<typeof setTimeout>;
   private lastDiagnostic = '';
+  private nativeOnly = false;
+  get allowsCaptureFallback() { return !this.nativeOnly; }
   constructor(private settings: DesktopSettings, private readonly iceServers: IceServer[], private expiresAt?: number,
     private readonly diagnostic?: ConnectionDiagnostic) {}
 
   async open() {
     this.diagnostic?.('desktop-start', { transport: 'rtc' });
-    if (!await invoke<boolean>('remote_desktop_stream_available')) throw new Error('当前电脑暂不可用。');
+    if (!await invoke<boolean>('remote_desktop_stream_available')) {
+      throw new Error('远程桌面暂不可用，请更新电脑端应用后重试。');
+    }
     if (this.stopped) throw new Error('桌面连接已结束。');
-    const { id, ...displays } = await openDesktopCapture(this.settings.displayId, this.expiresAt);
+    const { id, nativeOnly, ...displays } = await openDesktopCapture(this.settings.displayId, this.expiresAt);
+    this.nativeOnly = nativeOnly === true;
     this.id = id; this.displays = displays;
     if (this.stopped) { await this.closeNative(); throw new Error('桌面连接已结束。'); }
     const offer = await this.openStream();

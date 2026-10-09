@@ -127,6 +127,7 @@ export function RemoteDesktop({ client, active, close }: {
             : <View style={s.toolbar}>{buttons}</View>}
         </View>
         {active && keyboard && <DesktopKeyboard input={session.input} compact={orientation.landscape}
+          platform={session.capabilities.platform}
           supported={!!session.capabilities.keyboard} close={() => setKeyboard(false)} />}
       </KeyboardAvoidingView>
     </SafeAreaView></SafeAreaProvider>

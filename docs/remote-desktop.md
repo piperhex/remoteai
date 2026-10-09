@@ -11,7 +11,15 @@ physical pixel bounds, including negative coordinates, portrait screens and mixe
 FFmpeg and WebView compatibility capture all honor the selection. Reconnection refreshes the display list;
 if the selected display was removed, it returns to the primary display and updates the selection.
 Older hosts without display discovery keep their existing single-screen controls.
-macOS/Linux hosts return an explicit unsupported-platform message.
+macOS 13 and later hosts also support video, display selection, mouse/keyboard control and clipboard
+copy/cut/paste (including files and images). Open **Remote settings → Mac access permissions** on the Mac
+and grant Screen Recording to Remote AI; grant Accessibility when mouse/keyboard control is enabled.
+These grants are shared with Computer Use, but that plugin does not need to be installed. Reading permission
+status never prompts; only clicking a permission button opens System Settings. Reconnect after granting access,
+and restart Remote AI if macOS requests it. Keep the app running in a logged-in desktop session.
+Linux hosting remains unsupported.
+The native and Web keyboard panels use Cmd/Option and Mac shortcuts when connected to a Mac; hosts that
+do not report their platform retain the existing Windows keyboard layout.
 The viewer works on Android/iOS through `react-native-webrtc` and on Web through the browser's WebRTC engine.
 
 ## iPhone and iPad
@@ -54,8 +62,23 @@ output and avoiding microphone capture. The version-pinned WebRTC playback patch
 configuration. A new native build is required for these audio route changes.
 
 An old host, missing native runtime, unavailable output device or the legacy WebView capture fallback can
-still show video without sound; the sound button is unavailable in that case. macOS/Linux hosting retains
-the existing unsupported-platform behavior.
+still show video without sound; the sound button is unavailable in that case. Linux hosting remains
+unsupported. macOS hosting currently sends video without system audio and does not offer the Windows
+unattended/secure-desktop service.
+
+macOS capture uses Apple's ScreenCaptureKit and VideoToolbox H.264 encoder in a bundled universal helper.
+The shared native WebRTC path handles ICE, TURN, direct upgrades, clipboard and authenticated session expiry.
+Video dimensions are physical pixels; Quartz input coordinates use each display's logical point bounds,
+so Retina scaling and displays positioned left of or above the primary screen do not shift pointer input.
+Closing, expiry and permission changes release held input. The helper stops on stdin EOF or host cancellation;
+bounded output buffers and periodic still-screen frames keep video responsive without unbounded backlog.
+
+On a Mac, run `node scripts/prepare-remote-desktop-runtime.mjs` before `tauri dev`; `build:app` and the release
+workflow prepare the helper automatically. The build compiles both Apple Silicon and Intel slices, signs the
+helper, and runs a synthetic H.264/keyframe/framing self-test that does not need Screen Recording access.
+The macOS CI workflow checks Rust on both architectures. A real logged-in Mac is still required to verify
+the system permission prompts, Retina/secondary-screen clicks, dragging, text/Command shortcuts and live
+video received on the native and Web viewers.
 
 - The existing authenticated, end-to-end encrypted chat connection carries offer/answer, ICE and display settings.
   Host ownership is the individual chat session, not a client-supplied owner or the persistent terminal owner.

@@ -12,9 +12,13 @@ export class DesktopCapture {
   displays: DesktopDisplays = {};
   private stream?: MediaStream;
   async open(width: number, displayId?: string, expiresAt?: number) {
-    const { id, ...displays } = await openDesktopCapture(displayId, expiresAt);
+    const { id, nativeOnly, ...displays } = await openDesktopCapture(displayId, expiresAt);
     this.id = id; this.displays = displays;
     if (this.stopped) { await this.release(); throw new Error('桌面连接已结束。'); }
+    if (nativeOnly) {
+      await this.release();
+      throw new Error('远程桌面暂不可用，请更新电脑端应用后重试。');
+    }
     await this.frame(width);
     if (this.stopped) throw new Error('桌面连接已结束。');
     this.stream = this.canvas.captureStream(0);

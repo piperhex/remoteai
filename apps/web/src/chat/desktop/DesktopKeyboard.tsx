@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
-import type { DesktopInput } from '../../../../../shared/remote-desktop/protocol';
-import { DESKTOP_SHORTCUTS, INPUT_TABS, KEYBOARD_PAGES, MODIFIERS }
+import type { DesktopInput, DesktopPlatform } from '../../../../../shared/remote-desktop/protocol';
+import { desktopShortcuts, desktopModifiers, INPUT_TABS, KEYBOARD_PAGES }
   from '../../../../../shared/remote-desktop/softKeyboard';
 import { useSoftKeyboard } from '../../../../../shared/remote-desktop/useSoftKeyboard';
 import { bindDesktopIme } from '../../../../../shared/remote-desktop/ime';
@@ -19,8 +19,9 @@ function DesktopIme({ input }: { input: (event: DesktopInput) => void }) {
     aria-label={t('发送到电脑的文字')} placeholder={t('输入文字，即时发送到电脑')} />;
 }
 
-export function DesktopKeyboard({ input, close, supported }: {
+export function DesktopKeyboard({ input, close, supported, platform }: {
   input: (event: DesktopInput) => void; close: () => void; supported: boolean;
+  platform?: DesktopPlatform;
 }) {
   const keyboard = useSoftKeyboard(input);
   return <section className="rd-keyboard" aria-label={t('远程输入')}>
@@ -36,7 +37,7 @@ export function DesktopKeyboard({ input, close, supported }: {
         {!supported && <p className="rd-keyboard-notice" role="status">
           {t('更新远程电脑上的应用后，即可使用这些按键。')}</p>}
         {keyboard.tab === 'shortcuts' ? <div className="rd-shortcuts">
-          {DESKTOP_SHORTCUTS.map(shortcut => <button key={shortcut.label} disabled={!supported}
+          {desktopShortcuts(platform).map(shortcut => <button key={shortcut.label} disabled={!supported}
             onClick={() => keyboard.shortcut(shortcut.codes)}>
             <span>{shortcut.label}</span><small>{t(shortcut.description)}</small>
           </button>)}
@@ -44,7 +45,8 @@ export function DesktopKeyboard({ input, close, supported }: {
           <div className="rd-key-row">
             <label className="rd-combination"><input type="checkbox" checked={keyboard.combination}
               onChange={keyboard.toggleCombination} />{t('组合键模式')}</label>
-            {MODIFIERS.map(key => <button key={key.code} aria-pressed={keyboard.modifiers.includes(key.code)}
+            {desktopModifiers(platform).map(key => <button key={key.code}
+              aria-pressed={keyboard.modifiers.includes(key.code)}
               disabled={!supported} onClick={() => keyboard.modifier(key.code)}>{key.label}</button>)}
           </div>
           {KEYBOARD_PAGES[keyboard.page].map((row, index) => <div key={index} className="rd-key-row">

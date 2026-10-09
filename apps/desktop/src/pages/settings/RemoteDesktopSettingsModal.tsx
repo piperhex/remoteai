@@ -3,6 +3,7 @@ import { Alert, Button, Modal, Space, Switch, Typography } from 'antd';
 import { invoke } from '../../api/backend';
 import type { DesktopPermissions } from '../../../../../shared/remote-desktop/protocol';
 import { UnattendedDesktopSettings } from './UnattendedDesktopSettings';
+import { DesktopSystemPermissions } from './DesktopSystemPermissions';
 
 const fields: { key: keyof DesktopPermissions; title: string }[] = [
   { key: 'enabled', title: '允许远程访问桌面' },
@@ -45,6 +46,7 @@ export function RemoteDesktopSettingsModal({ open, onClose }: RemoteDesktopSetti
       <Typography.Text type="secondary">
         选择其他设备可以在这台电脑上进行的操作。更改权限会断开当前远程桌面连接。
       </Typography.Text>
+      <DesktopSystemPermissions active={open} />
       {fields.map(field => <div key={field.key}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <label htmlFor={`remote-desktop-${field.key}`}>{field.title}</label>

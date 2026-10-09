@@ -1,51 +1,54 @@
 //! Encoded desktop video stays in native WebRTC; only signaling and settings cross the WebView boundary.
 #[cfg(windows)]
 mod annex_b;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod audio;
 #[cfg(windows)]
 mod audio_packet;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod candidates;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod capture_recovery;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod direct;
 #[cfg(windows)]
 mod encoder;
-#[cfg(windows)]
+#[cfg(target_os = "macos")]
+#[path = "macos_encoder.rs"]
+mod encoder;
+#[cfg(any(windows, target_os = "macos"))]
 mod feedback;
 mod model;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod native;
 #[cfg(all(test, windows))]
 mod native_test;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod packets;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod peer;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod pump;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod relay;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod sample;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod signaling;
 #[cfg(all(test, windows))]
 mod stack_test;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 mod turn_transport;
 use super::{safe_error, DesktopError};
 pub(crate) use model::*;
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 const MAX_CANDIDATES: usize = 128;
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 static STREAM: tokio::sync::Mutex<Option<std::sync::Arc<native::Stream>>> =
     tokio::sync::Mutex::const_new(None);
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 async fn current(id: &str) -> super::Result<std::sync::Arc<native::Stream>> {
     STREAM
         .lock()
@@ -58,7 +61,7 @@ async fn current(id: &str) -> super::Result<std::sync::Arc<native::Stream>> {
 
 #[tauri::command]
 pub(crate) async fn remote_desktop_stream_available(app: tauri::AppHandle) -> bool {
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     {
         use tauri::Manager;
         let Ok(directory) = app.path().resource_dir() else {
@@ -68,7 +71,7 @@ pub(crate) async fn remote_desktop_stream_available(app: tauri::AppHandle) -> bo
             .await
             .unwrap_or(false)
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         let _ = app;
         false
@@ -76,7 +79,7 @@ pub(crate) async fn remote_desktop_stream_available(app: tauri::AppHandle) -> bo
 }
 
 pub(super) async fn revoke() {
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     {
         let active = STREAM.lock().await.take();
         if let Some(stream) = active {
@@ -99,7 +102,7 @@ pub(crate) async fn remote_desktop_stream_open<R: tauri::Runtime>(
         )
         .await;
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     {
         use tauri::Manager;
         let directory = app
@@ -108,14 +111,14 @@ pub(crate) async fn remote_desktop_stream_open<R: tauri::Runtime>(
             .map_err(|_| safe_error(DesktopError::Platform))?;
         open_at(directory, request).await
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         let _ = (app, request);
         Err(safe_error(DesktopError::Unsupported))
     }
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 pub(super) async fn open_at(
     directory: std::path::PathBuf,
     request: OpenRequest,
@@ -154,7 +157,7 @@ pub(crate) async fn remote_desktop_stream_signal(
         )
         .await;
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     {
         current(&request.id)
             .await
@@ -163,7 +166,7 @@ pub(crate) async fn remote_desktop_stream_signal(
             .await
             .map_err(safe_error)
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         let _ = request;
         Err(safe_error(DesktopError::Unsupported))
@@ -184,7 +187,7 @@ pub(crate) async fn remote_desktop_stream_update(
         )
         .await;
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     {
         let profile = profile.validate().map_err(safe_error)?;
         let stream = current(&id).await.map_err(safe_error)?;
@@ -193,7 +196,7 @@ pub(crate) async fn remote_desktop_stream_update(
         }
         Ok(())
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         let _ = (id, profile);
         Err(safe_error(DesktopError::Unsupported))
@@ -213,7 +216,7 @@ pub(crate) async fn remote_desktop_stream_status(
         )
         .await;
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     {
         Ok(current(&id)
             .await
@@ -223,7 +226,7 @@ pub(crate) async fn remote_desktop_stream_status(
             .await
             .clone())
     }
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         let _ = id;
         Err(safe_error(DesktopError::Unsupported))
@@ -241,7 +244,7 @@ pub(crate) async fn remote_desktop_stream_close(id: String) -> std::result::Resu
         )
         .await;
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     {
         let stream = {
             let mut active = STREAM.lock().await;

@@ -5,7 +5,7 @@ mod automatic;
 pub(crate) mod commands;
 mod install;
 mod package;
-mod permissions;
+pub(crate) mod permissions;
 mod platform;
 mod session;
 mod state;

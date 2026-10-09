@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import { desktopKeyCode } from '../../../../../shared/remote-desktop/keyboard';
-import { DESKTOP_SHORTCUTS, KEYBOARD_PAGES, MODIFIERS, sendDesktopChord }
+import { DESKTOP_SHORTCUTS, KEYBOARD_PAGES, MODIFIERS, sendDesktopChord, desktopShortcuts, desktopModifiers }
   from '../../../../../shared/remote-desktop/softKeyboard';
 import { parseDesktopImeMessage } from '../../../../../shared/remote-desktop/ime';
 
@@ -29,4 +29,15 @@ it('limits the native IME bridge to committed text and supported editing keys', 
     .toEqual({ kind: 'key', key: 'backspace' });
   for (const invalid of ['null', '{', '{"kind":"text","text":42}', '{"kind":"key","key":"desktop"}',
     JSON.stringify({ kind: 'text', text: 'a'.repeat(1001) })]) expect(parseDesktopImeMessage(invalid)).toBeUndefined();
+});
+
+it('uses Mac shortcuts and modifier labels only for a Mac host', () => {
+  expect(desktopShortcuts()).toBe(DESKTOP_SHORTCUTS);
+  expect(desktopModifiers('windows')).toBe(MODIFIERS);
+  expect(desktopModifiers('macos').map(key => key.label)).toEqual(['Ctrl', 'Shift', 'Option', 'Cmd']);
+  const shortcuts = desktopShortcuts('macos');
+  expect(shortcuts.find(item => item.description === '复制')?.codes).toEqual(['MetaLeft', 'KeyC']);
+  expect(shortcuts.find(item => item.description === '锁定屏幕')?.codes)
+    .toEqual(['ControlLeft', 'MetaLeft', 'KeyQ']);
+  expect(shortcuts.flatMap(item => item.codes).every(desktopKeyCode)).toBe(true);
 });

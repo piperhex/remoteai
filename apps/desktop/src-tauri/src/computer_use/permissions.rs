@@ -11,8 +11,8 @@ pub(super) use macos::supported as supported_macos;
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Permissions {
-    accessibility: bool,
-    screen_recording: bool,
+    pub(crate) accessibility: bool,
+    pub(crate) screen_recording: bool,
 }
 
 #[derive(Deserialize)]
@@ -22,7 +22,7 @@ pub(crate) enum Permission {
     ScreenRecording,
 }
 
-pub(super) fn status() -> Option<Permissions> {
+pub(crate) fn status() -> Option<Permissions> {
     #[cfg(target_os = "macos")]
     if macos::supported() {
         return Some(macos::status());
@@ -30,7 +30,7 @@ pub(super) fn status() -> Option<Permissions> {
     None
 }
 
-pub(super) fn request(permission: Permission) -> Result<()> {
+pub(crate) fn request(permission: Permission) -> Result<()> {
     #[cfg(target_os = "macos")]
     if macos::supported() {
         return macos::request(permission);

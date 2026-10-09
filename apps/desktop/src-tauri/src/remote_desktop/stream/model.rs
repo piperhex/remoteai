@@ -1,4 +1,4 @@
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 use super::super::{DesktopError, Result};
 use serde::{Deserialize, Serialize};
 
@@ -13,7 +13,7 @@ pub(crate) struct Profile {
     pub bitrate: u32,
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 impl Profile {
     pub(super) fn validate(self) -> Result<Self> {
         super::super::validation::width(self.width)?;
@@ -40,7 +40,7 @@ pub(crate) struct IceServer {
     pub remote_address: String,
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
 impl IceServer {
     pub(super) fn validate(&self) -> Result<()> {
         if self.urls.len() > 8 || self.username.len() > 512 || self.credential.len() > 512 {

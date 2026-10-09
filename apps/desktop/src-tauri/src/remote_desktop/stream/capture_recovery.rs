@@ -9,7 +9,7 @@ const RECOVERY_LIMIT: Duration = Duration::from_secs(15);
 const RETRY_INTERVAL: Duration = Duration::from_millis(250);
 
 pub(super) async fn display(id: &str) -> Result<super::super::monitors::Monitor> {
-    if !super::super::input_desktop::is_worker() {
+    if !super::capture_recovery::desktop_switch_recovery() {
         return read_display(id).await;
     }
     let (_owner, cancel) = watch::channel(false);
@@ -31,7 +31,7 @@ pub(super) async fn open(
     display: &super::super::monitors::Monitor,
     id: &str,
 ) -> Result<(Encoder, Vec<u8>)> {
-    if !super::super::input_desktop::is_worker() {
+    if !super::capture_recovery::desktop_switch_recovery() {
         return Encoder::open(path, profile, display).await;
     }
     let (_owner, cancel) = watch::channel(false);
@@ -51,7 +51,7 @@ pub(super) async fn reopen(
     encoder: &mut Encoder,
     profile: Profile,
 ) -> Result<Vec<u8>> {
-    if !super::super::input_desktop::is_worker() {
+    if !super::capture_recovery::desktop_switch_recovery() {
         return Err(DesktopError::Platform);
     }
     encoder.stop().await;
@@ -89,6 +89,18 @@ where
     tokio::select! {
         _ = cancel.changed() => Err(DesktopError::Expired),
         result = tokio::time::timeout(limit, recovery) => result.map_err(|_| DesktopError::Platform)?,
+    }
+}
+
+/// Only the Windows service can follow a switch to the secure input desktop.
+pub(super) fn desktop_switch_recovery() -> bool {
+    #[cfg(windows)]
+    {
+        super::super::input_desktop::is_worker()
+    }
+    #[cfg(not(windows))]
+    {
+        false
     }
 }
 

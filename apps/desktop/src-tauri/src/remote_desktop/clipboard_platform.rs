@@ -154,11 +154,40 @@ fn paste_selection(session: &mut super::Session) -> ClipboardResult<()> {
     super::windows_input::clipboard_shortcut(windows_sys::Win32::UI::Input::KeyboardAndMouse::VK_V)
         .map_err(|_| ClipboardError::Access)
 }
-#[cfg(not(windows))]
+#[cfg(target_os = "macos")]
+fn copy_selection(session: &mut super::Session, shortcut: Shortcut) -> ClipboardResult<()> {
+    let before = super::macos::pasteboard::change_count()?;
+    let key = match shortcut {
+        Shortcut::Copy => 8,
+        Shortcut::Cut => 7,
+    };
+    session
+        .input
+        .chord(&[55, key])
+        .map_err(|_| ClipboardError::Access)?;
+    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(1500);
+    while std::time::Instant::now() < deadline {
+        if super::macos::pasteboard::change_count()? != before {
+            return Ok(());
+        }
+        std::thread::sleep(std::time::Duration::from_millis(15));
+    }
+    Err(ClipboardError::Copy)
+}
+
+#[cfg(target_os = "macos")]
+fn paste_selection(session: &mut super::Session) -> ClipboardResult<()> {
+    session
+        .input
+        .chord(&[55, 9])
+        .map_err(|_| ClipboardError::Access)
+}
+
+#[cfg(not(any(windows, target_os = "macos")))]
 fn copy_selection(_: &mut super::Session, _: Shortcut) -> ClipboardResult<()> {
     Err(ClipboardError::Access)
 }
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "macos")))]
 fn paste_selection(_: &mut super::Session) -> ClipboardResult<()> {
     Err(ClipboardError::Access)
 }

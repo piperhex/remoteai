@@ -11,6 +11,14 @@ pub(crate) mod displays;
 pub(crate) mod input_desktop;
 mod keyboard;
 mod lease;
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(any(target_os = "macos", test))]
+mod macos_keymap;
+#[cfg(target_os = "macos")]
+use macos::{input as platform_input, monitors};
+#[cfg(windows)]
+use windows_input as platform_input;
 pub(crate) mod local_clipboard;
 #[cfg(windows)]
 mod monitors;
@@ -18,6 +26,7 @@ pub(crate) mod permissions;
 #[cfg(windows)]
 pub(crate) mod service_worker;
 pub(crate) mod stream;
+pub(crate) mod system_permissions;
 mod validation;
 #[cfg(windows)]
 mod windows;
@@ -26,7 +35,7 @@ mod windows_input;
 
 #[derive(Debug, thiserror::Error)]
 pub(super) enum DesktopError {
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     #[error("desktop session already active")]
     Busy,
     #[error("desktop permission denied")]
@@ -37,12 +46,21 @@ pub(super) enum DesktopError {
     Expired,
     #[error("desktop capture or input failed")]
     Platform,
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     #[error("selected desktop display disconnected")]
     DisplayGone,
     #[error("desktop platform unsupported")]
-    #[cfg(not(windows))]
+    #[cfg(not(any(windows, target_os = "macos")))]
     Unsupported,
+    #[cfg(target_os = "macos")]
+    #[error("macOS 13 or later required")]
+    MacVersion,
+    #[cfg(target_os = "macos")]
+    #[error("screen recording permission required")]
+    ScreenPermission,
+    #[cfg(target_os = "macos")]
+    #[error("accessibility permission required")]
+    InputPermission,
 }
 type Result<T> = std::result::Result<T, DesktopError>;
 const LEASE: Duration = Duration::from_secs(15);
@@ -52,20 +70,20 @@ struct Session {
     touched: Instant,
     deadline: Instant,
     clipboard: Option<clipboard::Transfer>,
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     display: monitors::Monitor,
-    #[cfg(windows)]
-    input: windows_input::InputState,
+    #[cfg(any(windows, target_os = "macos"))]
+    input: platform_input::InputState,
 }
 static SESSION: OnceLock<Mutex<Option<Session>>> = OnceLock::new();
 
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 #[cfg_attr(
-    not(windows),
+    not(any(windows, target_os = "macos")),
     expect(
         dead_code,
-        reason = "Keep the IPC input schema on all platforms; only Windows injects these input fields."
+        reason = "Keep the IPC input schema on platforms without a desktop host."
     )
 )]
 pub(crate) enum DesktopInput {
@@ -113,15 +131,21 @@ pub(crate) enum Key {
 
 fn safe_error(error: DesktopError) -> String {
     match error {
-        #[cfg(windows)]
+        #[cfg(any(windows, target_os = "macos"))]
         DesktopError::Busy => "已有远程桌面连接，请先关闭后再试。",
         DesktopError::Denied => "这台电脑未允许此远程操作，请在电脑的设置中调整。",
-        #[cfg(not(windows))]
-        DesktopError::Unsupported => "这台电脑暂不支持远程桌面，请使用 Windows 电脑。",
+        #[cfg(not(any(windows, target_os = "macos")))]
+        DesktopError::Unsupported => "这台电脑暂不支持远程桌面，请使用 Windows 或 Mac 电脑。",
+        #[cfg(target_os = "macos")]
+        DesktopError::MacVersion => "远程桌面需要 macOS 13 或更新版本。",
+        #[cfg(target_os = "macos")]
+        DesktopError::ScreenPermission => "请在 Mac 的远程设置中开启屏幕录制权限，然后重新连接。",
+        #[cfg(target_os = "macos")]
+        DesktopError::InputPermission => "请在 Mac 的远程设置中开启辅助功能权限，然后重新连接。",
         DesktopError::Expired => "桌面连接已结束，请重新连接。",
         DesktopError::Invalid => "远程操作无效，请重试。",
         DesktopError::Platform => "暂时无法访问桌面，请稍后重试。",
-        #[cfg(windows)]
+        #[cfg(any(windows, target_os = "macos"))]
         DesktopError::DisplayGone => "显示器已断开，请重新连接桌面。",
     }
     .into()
@@ -162,12 +186,14 @@ fn open(
     if !permissions.enabled {
         return Err(DesktopError::Denied);
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    macos::authorize(permissions.control)?;
+    #[cfg(not(any(windows, target_os = "macos")))]
     {
         let _ = (display_id, expires_at);
         Err(DesktopError::Unsupported)
     }
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     {
         if display_id
             .as_ref()
@@ -178,29 +204,14 @@ fn open(
         let monitors = monitors::list()?;
         let display = monitors::select(&monitors, display_id.as_deref())?;
         let display_id = display.info.id.clone();
-        let mut guard = SESSION
-            .get_or_init(|| Mutex::new(None))
-            .lock()
-            .map_err(|_| DesktopError::Platform)?;
-        if let Some(session) = guard.as_mut() {
-            if session.touched.elapsed() <= LEASE && Instant::now() < session.deadline {
-                return Err(DesktopError::Busy);
-            }
-            session.input.release()?;
-        }
-        let id = uuid::Uuid::new_v4().to_string();
-        *guard = Some(Session {
-            permissions,
-            id: id.clone(),
-            touched: Instant::now(),
-            deadline: lease::deadline(expires_at)?,
-            clipboard: None,
-            display,
-            input: windows_input::InputState::default(),
-        });
-        let watched = id.clone();
-        std::thread::spawn(move || expire(watched));
+        let id = begin_session(display, permissions, expires_at)?;
         Ok(displays::Opened {
+            platform: Some(if cfg!(target_os = "macos") {
+                displays::HostPlatform::Macos
+            } else {
+                displays::HostPlatform::Windows
+            }),
+            native_only: cfg!(target_os = "macos"),
             permissions,
             id,
             display_id,
@@ -209,7 +220,39 @@ fn open(
     }
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, target_os = "macos"))]
+fn begin_session(
+    display: monitors::Monitor,
+    permissions: permissions::Permissions,
+    expires_at: Option<u64>,
+) -> Result<String> {
+    let deadline = lease::deadline(expires_at)?;
+    let mut guard = SESSION
+        .get_or_init(|| Mutex::new(None))
+        .lock()
+        .map_err(|_| DesktopError::Platform)?;
+    if let Some(session) = guard.as_mut() {
+        if session.touched.elapsed() <= LEASE && Instant::now() < session.deadline {
+            return Err(DesktopError::Busy);
+        }
+        session.input.release()?;
+    }
+    let id = uuid::Uuid::new_v4().to_string();
+    *guard = Some(Session {
+        permissions,
+        id: id.clone(),
+        touched: Instant::now(),
+        deadline,
+        clipboard: None,
+        display,
+        input: platform_input::InputState::default(),
+    });
+    let watched = id.clone();
+    std::thread::spawn(move || expire(watched));
+    Ok(id)
+}
+
+#[cfg(any(windows, target_os = "macos"))]
 fn expire(id: String) {
     loop {
         std::thread::sleep(Duration::from_secs(1));
@@ -222,6 +265,7 @@ fn expire(id: String) {
         if session.touched.elapsed() <= LEASE && Instant::now() < session.deadline {
             continue;
         }
+        #[cfg(windows)]
         let _desktop = match input_desktop::InputDesktop::enter() {
             Ok(desktop) => Some(desktop),
             Err(error) => {
@@ -244,7 +288,7 @@ fn revoke() -> Result<()> {
         .get_or_init(|| Mutex::new(None))
         .lock()
         .map_err(|_| DesktopError::Platform)?;
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     if let Some(session) = guard.as_mut() {
         session.input.release()?;
     }
@@ -260,7 +304,7 @@ fn close(id: &str) -> Result<()> {
         .lock()
         .map_err(|_| DesktopError::Platform)?;
     if let Some(_session) = guard.as_mut().filter(|session| session.id == id) {
-        #[cfg(windows)]
+        #[cfg(any(windows, target_os = "macos"))]
         _session.input.release()?;
         *guard = None;
     }
@@ -320,7 +364,13 @@ pub(crate) async fn remote_desktop_frame(
         #[cfg(windows)]
         return with_session(&id, |session| windows::capture(width, &session.display))
             .map(tauri::ipc::Response::new);
-        #[cfg(not(windows))]
+        #[cfg(target_os = "macos")]
+        {
+            // macOS uses ScreenCaptureKit and the native H.264 stream, never legacy JPEG capture.
+            let _ = id;
+            Err(DesktopError::Platform)
+        }
+        #[cfg(not(any(windows, target_os = "macos")))]
         {
             let _ = id;
             Err(DesktopError::Unsupported)
@@ -342,9 +392,9 @@ pub(crate) async fn remote_desktop_input(
             if !session.permissions.control {
                 return Err(DesktopError::Denied);
             }
-            #[cfg(windows)]
+            #[cfg(any(windows, target_os = "macos"))]
             return session.input.apply(input, &session.display);
-            #[cfg(not(windows))]
+            #[cfg(not(any(windows, target_os = "macos")))]
             Err(DesktopError::Unsupported)
         })
     })

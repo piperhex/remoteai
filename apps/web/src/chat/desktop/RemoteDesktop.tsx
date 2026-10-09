@@ -146,6 +146,7 @@ export function RemoteDesktop({ client, active, close, localClipboard, nativeWin
     </nav>
     </div>
     {keyboard && <DesktopKeyboard input={session.input} close={() => setKeyboard(false)}
+      platform={session.capabilities.platform}
       supported={!!session.capabilities.keyboard} />}
   </div>
     {windowControls.minimized && !windowState && <button type="button" className="rd-restore"

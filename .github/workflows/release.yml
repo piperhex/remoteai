@@ -202,8 +202,8 @@ jobs:
       - name: Run checks
         run: npm run check
 
-      - name: Prepare Windows desktop video runtime
-        if: startsWith(matrix.name, 'windows')
+      - name: Prepare desktop video runtime
+        if: startsWith(matrix.name, 'windows') || startsWith(matrix.name, 'macos')
         run: node scripts/prepare-remote-desktop-runtime.mjs
 
       # tauri-action invokes Tauri directly, so build:app's service preparation is not run.

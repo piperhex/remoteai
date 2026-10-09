@@ -1,15 +1,16 @@
 import { t, useLanguage } from '../../i18n';
 import { Keyboard, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import type { DesktopInput } from '../../../../../shared/remote-desktop/protocol';
-import { DESKTOP_SHORTCUTS, INPUT_TABS, KEYBOARD_PAGES, MODIFIERS }
+import type { DesktopInput, DesktopPlatform } from '../../../../../shared/remote-desktop/protocol';
+import { desktopShortcuts, desktopModifiers, INPUT_TABS, KEYBOARD_PAGES }
   from '../../../../../shared/remote-desktop/softKeyboard';
 import { useSoftKeyboard } from '../../../../../shared/remote-desktop/useSoftKeyboard';
 import { DesktopIme } from './DesktopIme';
 import { keyboardStyles as s } from './keyboardStyles';
 
-export function DesktopKeyboard({ input, close, compact, supported }: {
+export function DesktopKeyboard({ input, close, compact, supported, platform }: {
   input: (input: DesktopInput) => void; close: () => void; compact: boolean; supported: boolean;
+  platform?: DesktopPlatform;
 }) {
   useLanguage();
   const keyboard = useSoftKeyboard(input);
@@ -30,7 +31,7 @@ export function DesktopKeyboard({ input, close, compact, supported }: {
         contentContainerStyle={s.content} keyboardShouldPersistTaps="always">
         {!supported && <Text accessibilityRole="alert" style={s.notice}>{t("更新远程电脑上的应用后，即可使用这些按键。")}</Text>}
         {keyboard.tab === 'shortcuts' ? <View style={s.shortcuts}>
-          {DESKTOP_SHORTCUTS.map(shortcut => <Pressable key={shortcut.label} accessibilityRole="button"
+          {desktopShortcuts(platform).map(shortcut => <Pressable key={shortcut.label} accessibilityRole="button"
             accessibilityLabel={`${shortcut.label} ${t(shortcut.description)}`} disabled={!supported}
             style={[s.shortcut, { width: compact ? '15.5%' : '31%' }, !supported && s.disabled]}
             onPress={() => keyboard.shortcut(shortcut.codes)}>
@@ -45,7 +46,8 @@ export function DesktopKeyboard({ input, close, compact, supported }: {
               <Ionicons name={keyboard.combination ? 'checkbox-outline' : 'square-outline'} size={20}
                 color={keyboard.combination ? '#568aff' : '#ddd'} />
               <Text style={s.description}>{t("组合键模式")}</Text></Pressable>
-            {MODIFIERS.map(key => <Pressable key={key.code} accessibilityRole="button" accessibilityLabel={key.label}
+            {desktopModifiers(platform).map(key => <Pressable key={key.code} accessibilityRole="button"
+              accessibilityLabel={key.label}
               accessibilityState={{ selected: keyboard.modifiers.includes(key.code), disabled: !supported }}
               disabled={!supported} style={[s.key, keyboard.modifiers.includes(key.code) && s.selected]}
               onPress={() => keyboard.modifier(key.code)}><Text style={s.keyLabel}>{key.label}</Text></Pressable>)}

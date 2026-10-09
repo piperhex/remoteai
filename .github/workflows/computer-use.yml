@@ -6,6 +6,8 @@ on:
       - "apps/desktop/src-tauri/src/**"
       - "apps/desktop/src-tauri/Cargo.*"
       - "apps/desktop/src-tauri/Info.plist"
+      - "apps/desktop/src-tauri/desktop-video-macos/**"
+      - "scripts/build-desktop-video-macos.mjs"
       - "apps/desktop/src-tauri/resources/codex-switch-computer-use/**"
       - ".github/workflows/computer-use.yml"
   pull_request:
@@ -13,6 +15,8 @@ on:
       - "apps/desktop/src-tauri/src/**"
       - "apps/desktop/src-tauri/Cargo.*"
       - "apps/desktop/src-tauri/Info.plist"
+      - "apps/desktop/src-tauri/desktop-video-macos/**"
+      - "scripts/build-desktop-video-macos.mjs"
       - "apps/desktop/src-tauri/resources/codex-switch-computer-use/**"
       - ".github/workflows/computer-use.yml"
   workflow_dispatch:
@@ -43,10 +47,13 @@ jobs:
           workspaces: "./apps/desktop/src-tauri -> target"
       - run: npm ci
       - run: brew install protobuf
+      - name: Build and test the universal macOS desktop video helper
+        run: node scripts/build-desktop-video-macos.mjs
       - run: npm run build:desktop
       - run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
       - run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
       - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests computer_use
+      - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests remote_desktop
       - name: Verify the pinned macOS release archive
         env:
           CSW_CUA_TEST_ARCHIVE: ${{ runner.temp }}/cua-driver.tar.gz

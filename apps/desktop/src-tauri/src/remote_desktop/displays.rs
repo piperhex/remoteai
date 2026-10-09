@@ -1,6 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-/// Display identifiers are Windows device names, never caller-provided native handles.
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum HostPlatform {
+    Windows,
+    Macos,
+}
+
+/// Display identifiers come from host enumeration, never caller-provided native handles.
 #[derive(Clone, Deserialize, Serialize)]
 pub(crate) struct DisplayInfo {
     pub id: String,
@@ -13,13 +20,17 @@ pub(crate) struct DisplayInfo {
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Opened {
+    #[serde(default)]
+    pub platform: Option<HostPlatform>,
+    #[serde(default)]
+    pub native_only: bool,
     pub permissions: super::permissions::Permissions,
     pub id: String,
     pub displays: Vec<DisplayInfo>,
     pub display_id: String,
 }
 
-#[cfg(any(windows, test))]
+#[cfg(any(windows, target_os = "macos", test))]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct Bounds {
     pub x: i32,
@@ -28,7 +39,7 @@ pub(super) struct Bounds {
     pub height: u32,
 }
 
-#[cfg(any(windows, test))]
+#[cfg(any(windows, target_os = "macos", test))]
 impl Bounds {
     pub fn point(self, x: f64, y: f64) -> (i32, i32) {
         (
@@ -60,5 +71,18 @@ mod tests {
             height: 1920,
         };
         assert_eq!(portrait.point(1.0, 1.0), (3639, 839));
+    }
+
+    #[test]
+    fn retina_input_uses_logical_bounds_independently_of_stream_resolution() {
+        let retina = Bounds {
+            x: -1512,
+            y: -200,
+            width: 1512,
+            height: 982,
+        };
+        // A 3024x1964 Retina screen still targets the same Quartz point at every stream quality.
+        assert_eq!(retina.point(1.0, 1.0), (-1, 781));
+        assert_eq!(retina.point(0.5, 0.5), (-756, 291));
     }
 }

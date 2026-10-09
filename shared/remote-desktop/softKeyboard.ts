@@ -1,4 +1,4 @@
-import type { DesktopInput } from './protocol';
+import type { DesktopInput, DesktopPlatform } from './protocol';
 
 export const INPUT_TABS = [
   { id: 'ime', label: '输入法' }, { id: 'shortcuts', label: '快捷键' }, { id: 'keyboard', label: '电脑键盘' },
@@ -46,4 +46,21 @@ export function sendDesktopChord(input: (event: DesktopInput) => void, codes: st
   const unique = [...new Set(codes)];
   for (const code of unique) input({ kind: 'keyboard', code, down: true });
   for (const code of unique.reverse()) input({ kind: 'keyboard', code, down: false });
+}
+
+const MAC_MODIFIERS = MODIFIERS.map(key => ({ ...key,
+  label: key.code === 'MetaLeft' ? 'Cmd' : key.code === 'AltLeft' ? 'Option' : key.label }));
+const MAC_SHORTCUTS = [
+  DESKTOP_SHORTCUTS[0],
+  ...[['C', '复制'], ['V', '粘贴'], ['X', '剪切'], ['A', '全选'], ['Z', '撤销'], ['S', '保存']]
+    .map(([key, description]) => ({ label: `Cmd+${key}`, description, codes: ['MetaLeft', `Key${key}`] })),
+  { label: 'Cmd+Space', description: '搜索', codes: ['MetaLeft', 'Space'] },
+  { label: 'F11', description: '显示桌面', codes: ['F11'] },
+  { label: 'Cmd+Tab', description: '切换窗口', codes: ['MetaLeft', 'Tab'] },
+  { label: 'Ctrl+Cmd+Q', description: '锁定屏幕', codes: ['ControlLeft', 'MetaLeft', 'KeyQ'] },
+];
+
+export function desktopModifiers(platform?: DesktopPlatform) { return platform === 'macos' ? MAC_MODIFIERS : MODIFIERS; }
+export function desktopShortcuts(platform?: DesktopPlatform) {
+  return platform === 'macos' ? MAC_SHORTCUTS : DESKTOP_SHORTCUTS;
 }

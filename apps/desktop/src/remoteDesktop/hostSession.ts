@@ -16,16 +16,19 @@ export class HostSession {
     try {
       return this.offer(await this.session.open());
     }
-    catch {
+    catch (error) {
+      const fallback = !(this.session instanceof NativeDesktopSession) || this.session.allowsCaptureFallback;
       await this.session.close();
       if (this.stopped) throw new Error('桌面连接已结束。');
+      if (!fallback) throw error;
       this.session = new DesktopHostSession(this.settings, this.iceServers, this.expiresAt, this.diagnostic);
       return this.offer(await this.session.open());
     }
   }
   private offer(offer: Awaited<ReturnType<NativeDesktopSession['open']>>) {
     const policy = offer.permissions;
-    return { ...offer, capabilities: { keyboard: policy?.control ?? true, control: policy?.control ?? true,
+    return { ...offer, capabilities: { platform: offer.platform,
+      keyboard: policy?.control ?? true, control: policy?.control ?? true,
       clipboard: !policy || policy.clipboardRead || policy.clipboardWrite, horizontalScroll: policy?.control ?? true } };
   }
   signal(signal: DesktopSignal) { return this.session.signal(signal); }

@@ -133,6 +133,7 @@ windows = { version = "0.61", features = [
   "Win32_System_WinRT",
   "Win32_UI_Shell",
 ] }
+[target.'cfg(any(windows, target_os = "macos"))'.dependencies]
 webrtc = "0.17.1"
 tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
 webpki-roots = "1"

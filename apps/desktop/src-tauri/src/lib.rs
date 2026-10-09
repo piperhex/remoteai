@@ -289,6 +289,7 @@ pub fn run() {
             #[cfg(windows)]
             desktop_service::remote_desktop_service_uninstall,
             remote_desktop::permissions::remote_desktop_permissions,
+            remote_desktop::system_permissions::remote_desktop_system_permissions,
             remote_desktop::remote_desktop_frame,
             remote_desktop::remote_desktop_input,
             remote_desktop::clipboard::remote_desktop_clipboard,

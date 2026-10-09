@@ -95,7 +95,9 @@ Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       selected = desktopTest.displays.find(item => item.id === args.displayId) ?? desktopTest.displays[0];
       desktopTest.selectedDisplays.push(selected.id);
       const id = `capture-${++opened}`;
-      return multiDisplay ? { id, displays: desktopTest.displays, displayId: selected.id } : id;
+      const macos = new URLSearchParams(location.search).has('macos');
+      return multiDisplay || macos ? { id, displays: desktopTest.displays, displayId: selected.id,
+        ...(macos ? { platform: 'macos' } : {}) } : id;
     }
     if (command === 'remote_desktop_frame') return frame(args.width!);
     if (command === 'remote_desktop_input') {

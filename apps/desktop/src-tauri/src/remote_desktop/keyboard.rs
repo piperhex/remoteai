@@ -1,7 +1,7 @@
 use super::DesktopError;
 use serde::Deserialize;
 
-/// Validated browser physical key, mapped to a Windows virtual key at the IPC boundary.
+/// Validated physical key in the original wire mapping; macOS translates it to a Quartz keycode.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd)]
 #[serde(try_from = "String")]
 pub(crate) struct KeyboardKey {

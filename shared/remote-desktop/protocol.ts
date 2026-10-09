@@ -12,8 +12,12 @@ export interface DesktopDisplay { id: string; name: string; width: number; heigh
 export interface DesktopPermissions {
   enabled: boolean; control: boolean; clipboardRead: boolean; clipboardWrite: boolean; files: boolean; audio: boolean;
 }
-export interface DesktopDisplays { displays?: DesktopDisplay[]; displayId?: string; permissions?: DesktopPermissions }
+export type DesktopPlatform = 'windows' | 'macos';
+export interface DesktopDisplays {
+  displays?: DesktopDisplay[]; displayId?: string; permissions?: DesktopPermissions; platform?: DesktopPlatform;
+}
 export interface DesktopCapabilities {
+  platform?: DesktopPlatform;
   keyboard?: boolean; clipboard?: boolean; horizontalScroll?: boolean; control?: boolean;
 }
 export interface DesktopOffer extends DesktopDisplays {

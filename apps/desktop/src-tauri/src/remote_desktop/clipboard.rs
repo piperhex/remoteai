@@ -20,7 +20,7 @@ pub(super) enum ClipboardError {
     Access,
     #[error("暂不支持复制文件夹，请先压缩后再复制。")]
     Directory,
-    #[cfg(windows)]
+    #[cfg(any(windows, target_os = "macos"))]
     #[error("未能复制所选内容，请确认远程窗口后重试。")]
     Copy,
 }
