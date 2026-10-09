@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ArrowRight, LogIn, RefreshCw } from "lucide-react";
 import type { Language, Translate } from "../i18n";
 import type { AccountDisplayMode } from "../hooks/useAccountDisplayMode";
@@ -16,6 +17,7 @@ export function AccountsPage({
   busyAccountId,
   localProxy,
   proxyBusy,
+  proxySpeedControl,
   resetCredits,
   onAdd,
   onSwitch,
@@ -62,6 +64,7 @@ export function AccountsPage({
   busyAccountId: string | null;
   localProxy: LocalProxyStatus | null;
   proxyBusy: boolean;
+  proxySpeedControl?: ReactNode;
   resetCredits: Record<string, ResetCreditsLoadState>;
   onAdd: () => void;
   onSwitch: (id: string) => void;
@@ -124,6 +127,7 @@ export function AccountsPage({
   return (
     <div className={`accounts-page${displayMode === "table" ? " accounts-table-page" : ""}`}>
       <AccountTable active={active} accounts={accounts} accountGroups={accountGroups}
+        proxySpeedControl={proxySpeedControl}
         providers={providers} busyAccountId={busyAccountId}
         onSwitch={onSwitch} onDeactivate={onDeactivate}
         onCopyAuthJson={onCopyAuthJson} onRefresh={onRefresh} onDelete={onDelete}

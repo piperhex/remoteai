@@ -380,6 +380,11 @@ fn official_responses_body_applies_service_tier_to_existing_request() {
 
 #[test]
 fn proxy_service_tier_api_accepts_only_supported_values() {
+    for (name, tier) in [("default", ProxyServiceTier::Default),
+        ("priority", ProxyServiceTier::Priority), ("ultrafast", ProxyServiceTier::Ultrafast)] {
+        assert_eq!(serde_json::from_value::<ProxyServiceTier>(json!(name)).unwrap(), tier);
+    }
+    assert!(serde_json::from_value::<ProxyServiceTier>(json!("invalid")).is_err());
     assert_eq!(
         parse_proxy_service_tier(&json!({ "service_tier": "default" })),
         Ok(ProxyServiceTier::Default)

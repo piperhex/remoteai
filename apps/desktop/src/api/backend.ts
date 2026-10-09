@@ -1,4 +1,5 @@
 import { copyText } from "../utils/clipboard";
+import type { ProxyServiceTier } from "../types";
 import { cacheDisplayCurrencyRates } from "../utils/currencyDisplay";
 import { invoke as invokeTauri } from "@tauri-apps/api/core";
 import { hasDirectChatInput } from "../../../../shared/remote-chat/uploadMode";
@@ -277,6 +278,7 @@ const AGGREGATE_APIS_PREVIEW_KEY = "codex-switch:aggregate-apis";
 const DEFAULT_OPENAI_PROVIDER_MODEL = "gpt-6-astra";
 const LOCAL_PROXY_PREVIEW_KEY = "codex-switch:local-proxy-running";
 const LOCAL_PROXY_FAST_MODE_PREVIEW_KEY = "codex-switch:local-proxy-fast-mode";
+const LOCAL_PROXY_SERVICE_TIER_PREVIEW_KEY = "codex-switch:local-proxy-service-tier";
 const LOCAL_PROXY_AUTO_SWITCH_PREVIEW_KEY = "codex-switch:local-proxy-auto-switch";
 const LOCAL_PROXY_CONCURRENT_ROUTING_PREVIEW_KEY = "codex-switch:local-proxy-concurrent-routing";
 const LOCAL_PROXY_CONCURRENT_GROUP_PREVIEW_KEY = "codex-switch:local-proxy-concurrent-group";
@@ -505,11 +507,16 @@ function previewLocalProxyStatus(): LocalProxyStatus {
   const port = Number.isInteger(configuredPort) && configuredPort >= 1 && configuredPort <= 65_535
     ? configuredPort
     : 0;
+  const running = port > 0 && window.localStorage.getItem(LOCAL_PROXY_PREVIEW_KEY) === "true";
+  const storedTier = window.localStorage.getItem(LOCAL_PROXY_SERVICE_TIER_PREVIEW_KEY);
+  const savedTier = storedTier === "ultrafast" || storedTier === "priority" ? storedTier : "default";
+  const legacyTier = window.localStorage.getItem(LOCAL_PROXY_FAST_MODE_PREVIEW_KEY) === "true"
+    ? "priority" : "default";
+  const serviceTier = running ? (storedTier === null ? legacyTier : savedTier) : "default";
   return {
-    running: port > 0 && window.localStorage.getItem(LOCAL_PROXY_PREVIEW_KEY) === "true",
-    fastModeEnabled: port > 0
-      && window.localStorage.getItem(LOCAL_PROXY_PREVIEW_KEY) === "true"
-      && window.localStorage.getItem(LOCAL_PROXY_FAST_MODE_PREVIEW_KEY) === "true",
+    running,
+    serviceTier,
+    fastModeEnabled: serviceTier !== "default",
     fastModeAvailable: port > 0 && window.localStorage.getItem(LOCAL_PROXY_PREVIEW_KEY) === "true",
     address: window.localStorage.getItem(LOCAL_PROXY_LISTEN_ALL_INTERFACES_PREVIEW_KEY) === "true" ? "0.0.0.0" : "127.0.0.1",
     port,
@@ -1317,16 +1324,16 @@ export async function loadLocalProxyStatus(): Promise<LocalProxyStatus> {
   return invoke<LocalProxyStatus>("get_local_proxy_status");
 }
 
-export async function setLocalProxyFastMode(enabled: boolean): Promise<LocalProxyStatus> {
+export async function setLocalProxyServiceTier(serviceTier: ProxyServiceTier): Promise<LocalProxyStatus> {
   if (!hasLocalBackend) {
     if (!previewLocalProxyStatus().running) {
       throw new Error("Start the local proxy before changing request speed");
     }
-    window.localStorage.setItem(LOCAL_PROXY_FAST_MODE_PREVIEW_KEY, String(enabled));
+    window.localStorage.setItem(LOCAL_PROXY_SERVICE_TIER_PREVIEW_KEY, serviceTier);
     window.dispatchEvent(new CustomEvent(PROVIDERS_EVENT));
     return previewLocalProxyStatus();
   }
-  return invoke<LocalProxyStatus>("set_local_proxy_fast_mode", { enabled });
+  return invoke<LocalProxyStatus>("set_local_proxy_service_tier", { serviceTier });
 }
 
 export async function loadProxySessions(): Promise<ProxySession[]> {

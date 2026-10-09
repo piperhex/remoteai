@@ -209,6 +209,9 @@ fn dispatch_command(app: AppHandle, command: &str, args: Value) -> Result<Value,
         "get_local_proxy_status" => {
             serialize(block_on(crate::local_proxy::get_local_proxy_status(app)))
         }
+        "set_local_proxy_service_tier" => serialize(block_on(
+            crate::local_proxy::set_local_proxy_service_tier(app, argument(&args, "serviceTier")?),
+        )),
         "list_local_proxy_ipv4_addresses" => serialize(block_on(
             crate::local_proxy::endpoints::list_local_proxy_ipv4_addresses(),
         )),

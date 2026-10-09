@@ -13,7 +13,7 @@ import {
   setLocalProxyAutoDisableUnreachable,
   setLocalProxyCustomPriority,
   setLocalProxyCustomThreshold,
-  setLocalProxyFastMode,
+  setLocalProxyServiceTier,
   setLocalProxyGlobalThreshold,
   setLocalProxyImageAccount,
   setLocalProxyImageModelTarget,
@@ -43,6 +43,7 @@ import type {
   ImageModelTarget,
   ImageRouteKind,
   ProviderInput,
+  ProxyServiceTier,
   SystemPromptRule,
 } from "../types";
 import { useProviderData } from "./useProviderData";
@@ -571,11 +572,10 @@ export function useProviderManager(
     }
   }, [load, notify, t]);
 
-  const setProxyFastMode = useCallback(async (enabled: boolean) => {
+  const setProxyServiceTier = useCallback(async (serviceTier: ProxyServiceTier) => {
     setProxyBusy(true);
     try {
-      setLocalProxy(await setLocalProxyFastMode(enabled));
-      notify(t(enabled ? "toast.fastModeEnabled" : "toast.fastModeDisabled"));
+      setLocalProxy(await setLocalProxyServiceTier(serviceTier));
       await load();
     } catch (error) {
       notify(providerErrorMessage(error, t));
@@ -778,7 +778,7 @@ export function useProviderManager(
     deleteProviders,
     startProxy,
     stopProxy,
-    setProxyFastMode,
+    setProxyServiceTier,
     setProxyAutoSwitch,
     setProxyConcurrentRouting,
     setProxyAutoDisableUnreachable,

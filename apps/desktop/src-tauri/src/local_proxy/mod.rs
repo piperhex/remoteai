@@ -55,6 +55,7 @@ include!("conversation_attachments.rs");
 include!("conversation_multipart.rs");
 include!("conversation_response.rs");
 include!("commands_status.rs");
+include!("commands_speed.rs");
 include!("lifecycle.rs");
 include!("settings.rs");
 include!("lan_settings.rs");

@@ -4,8 +4,10 @@ fn set_local_proxy_enabled(paths: &Paths, enabled: bool) -> Result<(), String> {
     write_state(paths, &state)
 }
 
+/// Wire values shared by external proxy settings and upstream request bodies.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-enum ProxyServiceTier {
+#[serde(rename_all = "lowercase")]
+pub(crate) enum ProxyServiceTier {
     #[default]
     Default,
     Priority,

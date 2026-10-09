@@ -126,7 +126,7 @@ import { AccountToolbox } from "./AccountToolbox";
 import { AccountImageModelButton } from "./AccountImageModelButton";
 import { CodexConfigRepairButton } from "./CodexConfigRepairButton";
 import { AccountGroupManager } from "../accounts/AccountGroupManager";
-import { UsageSpeedPill } from "../accounts/UsageSpeedPill";
+import { ExternalProxySpeedButton } from "../accounts/ExternalProxySpeedButton";
 import type {
   AccountDetailsDraft,
   BubbleResetDisplay,
@@ -1181,12 +1181,8 @@ export function DashboardApp() {
       startDisabledReason={proxyStartDisabledReason} t={t} />
   );
   const sidebarNavigationEnabled = navigationStyle.style === "sidebar";
-  const usageSpeedPill = providerManager.localProxy?.running
-    && providerManager.localProxy.fastModeAvailable
-    ? <UsageSpeedPill fastModeEnabled={providerManager.localProxy.fastModeEnabled}
-      fastModeAvailable proxyRunning loading={providerManager.proxyBusy}
-      onChange={providerManager.setProxyFastMode} t={t} />
-    : null;
+  const proxySpeedControl = <ExternalProxySpeedButton proxy={providerManager.localProxy}
+    busy={providerManager.proxyBusy} onChange={providerManager.setProxyServiceTier} t={t} />;
   const proxyTopbarActions = (
     <ProxyTopbarActions manager={providerManager} showSessionManager={!sidebarNavigationEnabled}
       onOpenSessions={openProxySessions} t={t} />
@@ -1201,7 +1197,6 @@ export function DashboardApp() {
         <CodexConfigRepairButton disabled={providerManager.proxyBusy} notify={notify} t={t} />
         <AccountDisplayTabs displayMode={accountDisplayMode.displayMode}
           onChange={accountDisplayMode.setDisplayMode} t={t} />
-        {usageSpeedPill}
       </>}
     </AccountToolbox>
   );
@@ -1579,6 +1574,7 @@ export function DashboardApp() {
           <section id="account-panel-accounts" className="page-panel accounts-page-panel"
             role="tabpanel" aria-labelledby="account-section-accounts" hidden={page !== "accounts"}>
             <MemoAccountsPage active={page === "accounts"}
+              proxySpeedControl={proxySpeedControl}
               accounts={manager.accounts}
               accountGroups={managedAccountGroups}
               providers={providerManager.providers}

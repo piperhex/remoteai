@@ -500,6 +500,7 @@ pub fn run() {
             local_proxy::get_local_proxy_status,
             local_proxy::endpoints::list_local_proxy_ipv4_addresses,
             local_proxy::set_local_proxy_fast_mode,
+            local_proxy::set_local_proxy_service_tier,
             local_proxy::set_gpt_5_6_sol_context_window,
             local_proxy::get_official_model_context_settings,
             local_proxy::set_official_model_context_window,

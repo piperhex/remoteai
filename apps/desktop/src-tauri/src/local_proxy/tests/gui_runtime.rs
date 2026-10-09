@@ -191,9 +191,15 @@ fn verify_gui_polling_and_switches(fixture: &GuiRuntimeFixture, id: &str) {
     set_proxy_service_tier(ProxyServiceTier::Priority);
     fixture.speed(false);
     assert_eq!(proxy_service_tier(), ProxyServiceTier::Priority);
-    for _ in 0..3 {
+    for tier in [ProxyServiceTier::Priority, ProxyServiceTier::Ultrafast, ProxyServiceTier::Default] {
+        let changed = tauri::async_runtime::block_on(set_local_proxy_service_tier(app.clone(), tier)).unwrap();
+        assert_eq!(changed.service_tier, tier);
+        assert_eq!(serde_json::to_value(&changed).unwrap()["serviceTier"], tier.as_str());
+        assert_proxy_speed_matches_forwarded_requests(tier.as_str());
         let status = tauri::async_runtime::block_on(get_local_proxy_status(app.clone())).unwrap();
-        assert!(status.running && status.fast_mode_enabled);
+        assert!(status.running);
+        assert_eq!(status.fast_mode_enabled, tier != ProxyServiceTier::Default);
+        assert_eq!(gui_runtime::service_tier(app), ProxyServiceTier::Default);
         let sessions = tauri::async_runtime::block_on(list_proxy_sessions(app.clone())).unwrap();
         assert!(sessions
             .iter()
@@ -203,6 +209,9 @@ fn verify_gui_polling_and_switches(fixture: &GuiRuntimeFixture, id: &str) {
     }
     stop_server();
     assert!(!is_running());
+    assert!(tauri::async_runtime::block_on(set_local_proxy_service_tier(
+        app.clone(), ProxyServiceTier::Ultrafast,
+    )).is_err());
     assert!(gui_runtime_client()
         .get(format!("{external}/models"))
         .send()

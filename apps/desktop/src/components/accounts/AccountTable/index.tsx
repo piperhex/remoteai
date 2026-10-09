@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
   AutoComplete,
@@ -138,6 +138,7 @@ interface AccountTableProps {
   resetCreditBusyAccountId: string | null;
   hotSwitchEnabled: boolean;
   fastModeEnabled: boolean;
+  proxySpeedControl?: ReactNode;
   concurrentAccountRoutingEnabled: boolean;
   concurrentAccountGroup: string | null;
   concurrentAccountRoutingBusy: boolean;
@@ -378,6 +379,7 @@ export function AccountTable({
   resetCreditBusyAccountId,
   hotSwitchEnabled,
   fastModeEnabled,
+  proxySpeedControl,
   concurrentAccountRoutingEnabled,
   concurrentAccountGroup,
   concurrentAccountRoutingBusy,
@@ -1211,6 +1213,7 @@ export function AccountTable({
             onClear={modelContextWindow.clearModelValue} t={t} />
         </span>
       </Tooltip>
+      {proxySpeedControl}
     </div>
   );
   const concurrentRoutingControl = <ConcurrentRoutingControl busy={concurrentAccountRoutingBusy}

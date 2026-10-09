@@ -222,8 +222,11 @@ export interface LocalProxyLanApiKeyInput {
   usageReviewThreshold?: number;
 }
 
+export type ProxyServiceTier = "default" | "priority" | "ultrafast";
+
 export interface LocalProxyStatus {
   running: boolean;
+  serviceTier?: ProxyServiceTier;
   fastModeEnabled: boolean;
   fastModeAvailable: boolean;
   address: string;

@@ -68,9 +68,15 @@ fn status<R: Runtime>(app: &tauri::AppHandle<R>) -> LocalProxyStatus {
             None,
         ));
     let running = is_running();
+    let service_tier = if running {
+        proxy_service_tier()
+    } else {
+        ProxyServiceTier::Default
+    };
     LocalProxyStatus {
         running,
-        fast_mode_enabled: running && proxy_service_tier() != ProxyServiceTier::Default,
+        service_tier,
+        fast_mode_enabled: service_tier != ProxyServiceTier::Default,
         fast_mode_available: running
             && resolve_paths(app)
                 .is_ok_and(|paths| providers::current_target_supports_fast_mode(&paths)),
@@ -115,32 +121,6 @@ pub(crate) async fn get_local_proxy_status<R: Runtime + 'static>(
     tauri::async_runtime::spawn_blocking(move || Ok(status(&app)))
         .await
         .map_err(|error| format!("Local proxy status task failed: {error}"))?
-}
-
-#[tauri::command]
-pub(crate) async fn set_local_proxy_fast_mode<R: Runtime + 'static>(
-    app: tauri::AppHandle<R>,
-    enabled: bool,
-) -> Result<LocalProxyStatus, String> {
-    tauri::async_runtime::spawn_blocking(move || {
-        if !is_running() {
-            return Err("Start the local proxy before changing request speed".to_string());
-        }
-        let paths = resolve_paths(&app)?;
-        if enabled && !providers::current_target_supports_fast_mode(&paths) {
-            return Err("Fast mode is not available for the current provider".to_string());
-        }
-        let tier = if enabled { "priority" } else { "default" };
-        if !set_proxy_service_tier_by_name(tier) {
-            return Err("The selected request speed is not supported".to_string());
-        }
-        providers::refresh_codex_models_for_current_target(&paths);
-        app.emit("providers-changed", ())
-            .map_err(|error| error.to_string())?;
-        Ok(status(&app))
-    })
-    .await
-    .map_err(|error| format!("Request speed task failed: {error}"))?
 }
 
 #[tauri::command]
