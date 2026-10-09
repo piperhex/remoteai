@@ -23,6 +23,7 @@ import { GROK_FALLBACK_MODELS } from "../utils/grokProvider";
 import { findProviderPreset } from "../utils/providerCatalog";
 import { loadStoredModelTokenCosts, persistStoredModelTokenCosts } from "../pages/providers/providerUtils";
 import { estimateTokenCost } from "../utils/tokenCost";
+import { summarizeProxyRequests } from "../utils/proxyConversationMetrics";
 import type { AccountQuotaHistory, DailyTokenUsageBreakdown } from "../types/tokenUsageAnalytics";
 import { previewAccountQuotaHistory, previewTokenBreakdown } from "./tokenUsagePreview";
 import { previewHasLocalProxyLanApiKey, previewSetLegacyLanApiKey } from "./localProxyLanKeysPreview";
@@ -1473,12 +1474,7 @@ export async function loadRecentProxySessionLatency(): Promise<ProxySessionLaten
       .sort((left, right) => right.lastSeenAt - left.lastSeenAt)
       .slice(0, 5);
     const requests = await Promise.all(sessions.map((session) => loadProxySessionRequests(session.id)));
-    return requests.flat().reduce<ProxySessionLatencySummary>((summary, request) => {
-      if (request.firstResponseTimeMs == null) return summary;
-      summary.totalFirstResponseTimeMs += request.firstResponseTimeMs;
-      summary.requestCount += 1;
-      return summary;
-    }, { totalFirstResponseTimeMs: 0, requestCount: 0 });
+    return summarizeProxyRequests(requests.flat());
   }
   return invoke<ProxySessionLatencySummary>("get_recent_proxy_session_latency");
 }

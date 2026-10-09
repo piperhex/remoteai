@@ -351,11 +351,15 @@ main.providers-main .providers-page-panel { flex: 1; display: flex; flex-directi
 .token-heatmap-today b { color: var(--green-dark); font-size: 11px; letter-spacing: -.01em; cursor: help; }
 .token-heatmap-cost { display: flex; align-items: baseline; gap: 3px; white-space: nowrap; }
 .token-heatmap-cost b { color: var(--green-dark); font-size: 10px; letter-spacing: -.01em; }
-.token-heatmap-details .conversation-latency-indicator { white-space: nowrap; }
-.token-heatmap-details .conversation-latency-indicator svg {
+.token-heatmap-details .conversation-latency-indicator,
+.token-heatmap-details .conversation-tps-indicator { white-space: nowrap; }
+.token-heatmap-details .conversation-latency-indicator svg,
+.token-heatmap-details .conversation-tps-indicator svg {
   margin: 0 3px;
   vertical-align: -.2em;
 }
+.conversation-tps-indicator svg,
+.conversation-tps-indicator strong { color: var(--green-dark); }
 .token-heatmap-chart {
   --token-heatmap-top-padding: 2px;
   flex: 0 0 auto;

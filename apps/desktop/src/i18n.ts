@@ -1180,6 +1180,10 @@ const translations = {
     "table.editNoteAndExpiry": "Edit note",
     "table.currentAccountLabel": "Current account",
     "table.averageConversationLatencyLabel": "Average conversation latency",
+    "table.conversationTpsLabel": "Average output speed (TPS)",
+    "table.conversationTpsTooltip":
+      "Output tokens per second across completed requests in up to 5 recently active proxy conversations. " +
+      "Excludes the wait for the first response and interrupted requests ({requests} requests).",
     "table.averageConversationLatencyTooltip": "First response time divided by requests that have begun responding across up to 5 of the most recently active proxy conversations ({requests} requests).",
     "table.todayTokenUsageLabel": "Today's Token usage",
     "table.todayEstimatedCost": "Today's estimated cost",
@@ -3760,6 +3764,10 @@ const translations = {
     "table.editNoteAndExpiry": "编辑备注",
     "table.currentAccountLabel": "当前账户",
     "table.averageConversationLatencyLabel": "平均对话延迟",
+    "table.conversationTpsLabel": "平均输出速度（TPS）",
+    "table.conversationTpsTooltip":
+      "统计最近活跃的 5 个代理会话中，已完成请求的输出 token 总数 ÷ 输出总耗时。" +
+      "不含首次响应前的等待时间和中断请求（共 {requests} 个请求）。",
     "table.averageConversationLatencyTooltip": "统计最多最近活动的 5 个代理会话内，所有已开始响应请求的首次响应耗时总和 ÷ 请求数（共 {requests} 个请求）。",
     "table.todayTokenUsageLabel": "今日 Token 消耗",
     "table.todayEstimatedCost": "今日预估成本",

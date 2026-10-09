@@ -371,6 +371,10 @@ export const messages3 = {
   "table.editNoteAndExpiry": "Редактировать примечание",
   "table.currentAccountLabel": "Текущий аккаунт",
   "table.averageConversationLatencyLabel": "Среднее время до ответа",
+  "table.conversationTpsLabel": "Скорость вывода (TPS)",
+  "table.conversationTpsTooltip":
+    "Среднее число выходных токенов в секунду в пяти последних активных чатах через прокси. " +
+    "Без ожидания первого ответа и прерванных запросов. Завершённых запросов: {requests}.",
   "table.averageConversationLatencyTooltip": "Среднее время до первого ответа в пяти последних активных чатах через прокси. Учитываются запросы, на которые начался ответ: {requests}.",
   "table.todayTokenUsageLabel": "Токены за сегодня",
   "table.todayEstimatedCost": "Стоимость за сегодня",

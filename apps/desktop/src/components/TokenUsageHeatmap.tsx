@@ -2,15 +2,14 @@ import { getLocale } from "../i18n";
 import { guiText } from "../i18n/guiText";
 import { useEffect, useMemo, useState } from "react";
 import { Tooltip } from "antd";
-import { Signal } from "lucide-react";
 import {
   loadDailyTokenUsage,
-  loadRecentProxySessionLatency,
   loadTokenUsageEntries,
   subscribeToTokenUsageChanges,
 } from "../api/backend";
 import type { Language, Translate } from "../i18n";
-import type { DailyTokenUsage, Provider, ProxySessionLatencySummary } from "../types";
+import type { DailyTokenUsage, Provider } from "../types";
+import { ProxyConversationMetrics } from "./ProxyConversationMetrics";
 import { formatCompactTokenCount } from "../utils/tokenContext";
 import {
   estimateTokenCost,
@@ -34,25 +33,6 @@ import {
 
 const DAYS_PER_WEEK = 7;
 const TOKEN_USAGE_MORE_THRESHOLD = 100_000_000;
-const EMPTY_PROXY_SESSION_LATENCY: ProxySessionLatencySummary = {
-  totalFirstResponseTimeMs: 0,
-  requestCount: 0,
-};
-
-type ConversationLatencyLevel = "good" | "warning" | "poor" | "unknown";
-
-function formatAverageConversationLatency(summary: ProxySessionLatencySummary) {
-  if (!summary.requestCount) return "—";
-  return `${(summary.totalFirstResponseTimeMs / summary.requestCount / 1_000).toFixed(1)}s`;
-}
-
-function conversationLatencyLevel(summary: ProxySessionLatencySummary): ConversationLatencyLevel {
-  if (!summary.requestCount) return "unknown";
-  const averageSeconds = summary.totalFirstResponseTimeMs / summary.requestCount / 1_000;
-  if (averageSeconds < 2) return "good";
-  if (averageSeconds < 3) return "warning";
-  return "poor";
-}
 
 function dateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -125,9 +105,6 @@ export function TokenUsageHeatmap({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [calendarVersion, setCalendarVersion] = useState(0);
-  const [proxySessionLatency, setProxySessionLatency] = useState<ProxySessionLatencySummary>(
-    EMPTY_PROXY_SESSION_LATENCY,
-  );
   const columns = useMemo(() => calendarWeeks(weeks), [calendarVersion, weeks]);
   const today = dateKey(new Date());
 
@@ -190,29 +167,6 @@ export function TokenUsageHeatmap({
     };
   }, [providers, refreshSeconds, weeks]);
 
-  useEffect(() => {
-    let active = true;
-    let refreshing = false;
-    const refresh = async () => {
-      if (refreshing) return;
-      refreshing = true;
-      try {
-        const summary = await loadRecentProxySessionLatency();
-        if (active) setProxySessionLatency(summary);
-      } catch {
-        if (active) setProxySessionLatency(EMPTY_PROXY_SESSION_LATENCY);
-      } finally {
-        refreshing = false;
-      }
-    };
-    void refresh();
-    const timer = window.setInterval(() => void refresh(), 2_000);
-    return () => {
-      active = false;
-      window.clearInterval(timer);
-    };
-  }, []);
-
   const totals = useMemo(
     () => new Map(entries.map((entry) => [entry.date, entry])),
     [entries],
@@ -255,20 +209,7 @@ export function TokenUsageHeatmap({
             {t("table.todayEstimatedCost")}{language === "zh" ? "：" : ": "}
             <b>{formatEstimatedCost(todayEstimatedCost, tokenCostDisplay)}</b>
           </span>
-          <Tooltip title={t("table.averageConversationLatencyTooltip", {
-            requests: proxySessionLatency.requestCount,
-          })} styles={{ root: { maxWidth: 400 } }}>
-            <span
-              className={`conversation-latency-indicator is-${conversationLatencyLevel(proxySessionLatency)}`}
-              aria-label={`${t("table.averageConversationLatencyLabel")}: ${
-                formatAverageConversationLatency(proxySessionLatency)
-              }`}
-            >
-              <span>{t("table.averageConversationLatencyLabel")}{language === "zh" ? "：" : ": "}</span>
-              <Signal size={13} strokeWidth={2.5} aria-hidden="true" />
-              <strong>{formatAverageConversationLatency(proxySessionLatency)}</strong>
-            </span>
-          </Tooltip>
+          <ProxyConversationMetrics language={language} t={t} />
         </div>
       </div>
       <div className="token-heatmap-chart">

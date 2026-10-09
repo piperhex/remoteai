@@ -339,6 +339,9 @@ export interface ProxySessionRequest {
 export interface ProxySessionLatencySummary {
   totalFirstResponseTimeMs: number;
   requestCount: number;
+  totalOutputTokens: number;
+  totalOutputTimeMs: number;
+  outputRequestCount: number;
 }
 
 export interface DirectConversationSyncResult {

@@ -177,11 +177,14 @@ pub(crate) struct ProxySessionRequestSummary {
     pub(crate) cached_tokens: Option<u64>,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ProxySessionLatencySummary {
     pub(crate) total_first_response_time_ms: u64,
     pub(crate) request_count: u64,
+    pub(crate) total_output_tokens: u64,
+    pub(crate) total_output_time_ms: u64,
+    pub(crate) output_request_count: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

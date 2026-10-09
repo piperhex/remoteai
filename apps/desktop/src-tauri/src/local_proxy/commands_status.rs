@@ -366,35 +366,10 @@ pub(crate) async fn get_recent_proxy_session_latency() -> Result<ProxySessionLat
 }
 
 fn get_recent_proxy_session_latency_blocking() -> Result<ProxySessionLatencySummary, String> {
-    let mut sessions = proxy_sessions()
+    let sessions = proxy_sessions()
         .lock()
-        .map_err(|_| "Proxy session registry lock is poisoned".to_string())?
-        .values()
-        .cloned()
-        .collect::<Vec<_>>();
-    sessions.sort_by(|left, right| {
-        right
-            .last_seen_at
-            .cmp(&left.last_seen_at)
-            .then_with(|| left.id.cmp(&right.id))
-    });
-
-    let (total_first_response_time_ms, request_count) = sessions
-        .into_iter()
-        .take(5)
-        .flat_map(|session| session.requests.into_iter())
-        .filter_map(|request| request.first_response_time_ms)
-        .fold((0_u64, 0_u64), |(total, count), first_response_time_ms| {
-            (
-                total.saturating_add(first_response_time_ms),
-                count.saturating_add(1),
-            )
-        });
-
-    Ok(ProxySessionLatencySummary {
-        total_first_response_time_ms,
-        request_count,
-    })
+        .map_err(|_| "Proxy session registry lock is poisoned".to_string())?;
+    Ok(session_metrics::summarize_recent_sessions(sessions.values()))
 }
 
 #[tauri::command]

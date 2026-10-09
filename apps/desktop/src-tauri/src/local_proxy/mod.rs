@@ -30,6 +30,7 @@ mod official_input;
 mod quota_detection;
 mod quota_sse;
 mod responses_lite;
+mod session_metrics;
 mod session_titles;
 pub(crate) mod sse_idle_timeout;
 mod sse_transport;
