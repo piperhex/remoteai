@@ -42,7 +42,7 @@ export const Composer = forwardRef<ComposerHandle, {
   const [dialog, setDialog] = useState<"files" | "goal" | null>(null);
   const goalMode = useGoalMode(state.selected, Boolean(state.goalBusy));
   const workspaceBusy = Boolean(state.workspaceBusy);
-  const { draft, reading, editContent, removeImage, addImages, paste, pasteKeyDown, send: sendDraft,
+  const { draft, reading, editContent, removeImage, editImage, addImages, paste, pasteKeyDown, send: sendDraft,
     addAttachments, removeAttachment, addQuote, removeQuote, clearQuotes, editQueued } = useComposerDraft(key, controller);
   // Creating a goal first creates its conversation; keep the form until the goal request succeeds.
   useEffect(() => { if (!controller.getSnapshot().goalBusy || !active) setDialog(null); }, [key, active, controller]);
@@ -90,7 +90,7 @@ export const Composer = forwardRef<ComposerHandle, {
       editDisabled={disabled || reading || !active} onEdit={editQueuedMessage} />}
     <div ref={composer} className={styles.composer}>
       <ImageAttachments key={`images:${key}`} images={draft.images} active={active}
-        disabled={state.sending} onRemove={removeImage} />
+        disabled={state.sending} onRemove={removeImage} onEdit={editImage} />
       <ComposerReferences key={`references:${key}`} items={draft.attachments ?? []} disabled={disabled}
         active={active} onRemove={removeAttachment} />
       <ComposerQuotes quotes={draft.quotes ?? []} draftKey={key} active={active} disabled={disabled}

@@ -1,4 +1,5 @@
 import { validateChatImages } from '../remote-chat/attachments';
+import type { ConnectionMode } from '../remote-chat/protocol';
 import { getChatPolicy, KIB } from '../remote-chat/policy';
 import { imageEditorControls, imageEditorDialogs } from './imageEditorControls';
 import { imageEditorIcon } from './imageEditorIcons';
@@ -9,11 +10,13 @@ function escapeHtml(text: string) {
   return text.replace(/[&<>"']/g, character => `&#${character.charCodeAt(0)};`);
 }
 
-/** A local canvas editor shared by the phone WebView and browser. No remote images are loaded. */
+interface ImageEditorOptions { scriptUrl?: string; mode?: ConnectionMode }
+
+/** A local canvas editor shared by desktop, phone WebView and browser. No remote images are loaded. */
 export function imageEditorHtml(dataUrl: string, translate = (text: string) => text, language = 'zh-CN',
-  scriptUrl?: string) {
-  validateChatImages([dataUrl]);
-  const policy = getChatPolicy();
+  { scriptUrl, mode }: ImageEditorOptions = {}) {
+  validateChatImages([dataUrl], mode);
+  const policy = getChatPolicy(mode);
   const label = (text: string) => escapeHtml(translate(text));
   const config = JSON.stringify({ dataUrl, targetBytes: policy.imageTargetKb * KIB,
     maxEdge: policy.imageMaxEdge, labels: {
@@ -43,10 +46,10 @@ ${scriptUrl
     : `<script>const config = ${config};${imageEditorScript}</script>`}</body></html>`;
 }
 
-export function editedImageMessage(raw: string): string | null {
+export function editedImageMessage(raw: string, mode?: ConnectionMode): string | null {
   const message: unknown = JSON.parse(raw);
   if (!message || typeof message !== 'object' || !('type' in message)) return null;
   if (message.type !== 'save' || !('dataUrl' in message) || typeof message.dataUrl !== 'string') return null;
-  validateChatImages([message.dataUrl]);
+  validateChatImages([message.dataUrl], mode);
   return message.dataUrl;
 }

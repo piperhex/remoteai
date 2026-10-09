@@ -30,13 +30,16 @@ function Fixture({ active = true, disabled = false, draftKey = "one" }: {
     <textarea defaultValue="尚未发送的内容" />
     <ImageAttachments key={draftKey} images={attachments} active={active} disabled={disabled} onRemove={(id) => {
       removed(id); setAttachments((values) => values.filter((image) => image.id !== id));
-    }} />
+    }} onEdit={(id, url) => setAttachments((values) => values.map((image) =>
+      image.id === id ? { ...image, url } : image))} />
   </form>;
 }
 
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.clearAllMocks();
+  const getComputedStyle = window.getComputedStyle;
+  vi.spyOn(window, "getComputedStyle").mockImplementation((element) => getComputedStyle(element));
   Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
     configurable: true, value(this: HTMLDialogElement) { this.open = true; },
   });
@@ -51,6 +54,42 @@ afterEach(async () => {
 const render = (props: Parameters<typeof Fixture>[0] = {}) => act(async () => root.render(<Fixture {...props} />));
 const click = (label: string) => act(async () => host.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!.click());
 const dialog = () => document.querySelector("dialog");
+
+it("saves only the selected image and ignores messages from outside the editor", async () => {
+  await render(); await click("标注图片 2");
+  const frame = document.querySelector("iframe")!;
+  const data = JSON.stringify({ type: "save", dataUrl: "data:image/jpeg;base64,ZWRpdGVk" });
+  await act(async () => { window.dispatchEvent(new MessageEvent("message", { source: window, data })); });
+  expect(document.querySelector("iframe")).toBe(frame);
+  expect(host.querySelectorAll("img")[1].getAttribute("src")).toBe(images[1].url);
+  await act(async () => {
+    window.dispatchEvent(new MessageEvent("message", { source: frame.contentWindow, data }));
+  });
+  expect(document.querySelector("iframe")).toBeNull();
+  expect(host.querySelectorAll("img")[0].getAttribute("src")).toBe(images[0].url);
+  expect(host.querySelectorAll("img")[1].getAttribute("src")).toBe("data:image/jpeg;base64,ZWRpdGVk");
+  expect(host.querySelector("textarea")?.value).toBe("尚未发送的内容");
+  expect(submitted).not.toHaveBeenCalled();
+});
+
+it("closes annotation on cancel, page changes, draft switches and sending without altering images", async () => {
+  await render(); await click("标注图片 1");
+  const frame = document.querySelector("iframe")!;
+  await act(async () => { window.dispatchEvent(new MessageEvent("message", {
+    source: frame.contentWindow, data: '{"type":"cancel"}',
+  })); });
+  expect(document.querySelector("iframe")).toBeNull();
+  await click("标注图片 1"); await render({ active: false });
+  expect(document.querySelector("iframe")).toBeNull();
+  await render(); await click("标注图片 1"); await render({ draftKey: "other" });
+  expect(document.querySelector("iframe")).toBeNull();
+  await click("标注图片 1"); await render({ draftKey: "other", disabled: true });
+  expect(document.querySelector("iframe")).toBeNull();
+  await click("标注图片 1");
+  expect(document.querySelector("iframe")).toBeNull();
+  expect(host.querySelectorAll("img")[0].getAttribute("src")).toBe(images[0].url);
+  expect(submitted).not.toHaveBeenCalled();
+});
 
 it("opens the selected full-size image and closes with Escape without changing or sending the draft", async () => {
   await render();

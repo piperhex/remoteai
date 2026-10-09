@@ -24,7 +24,7 @@ ${WIDTHS.map(([width, dot, name]) => `<button class="width" data-width="${width}
 <button id="reset" disabled>${imageEditorIcon('reset')}${label('重置')}</button>
 <p id="notice" role="status">${label('正在加载图片…')}</p>
 <div class="history"><button id="redo" aria-label="${label('重做')}" hidden>${imageEditorIcon('redo')}</button>
-<button id="undo" disabled>${imageEditorIcon('undo')}${label('撤销')}</button></div>
+<button id="undo" aria-keyshortcuts="Control+z Meta+z" disabled>${imageEditorIcon('undo')}${label('撤销')}</button></div>
 </div></footer>`;
 }
 

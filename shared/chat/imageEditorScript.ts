@@ -119,7 +119,15 @@ redo.addEventListener('click', () => { if (undone.length) strokes.push(undone.po
 reset.addEventListener('click', () => { strokes.push({ tool: 'reset' }); undone.length = 0; render(); });
 document.querySelector('#cancel').addEventListener('click', () => send({ type: 'cancel' }));
 window.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !document.querySelector('dialog[open]')) send({ type: 'cancel' });
+  if (document.querySelector('dialog[open]')) return;
+  if (event.key === 'Escape') send({ type: 'cancel' });
+  if (event.defaultPrevented || event.isComposing || event.altKey || event.shiftKey
+    || !(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return;
+  if (event.target instanceof HTMLElement
+    && event.target.closest('input, textarea, [contenteditable]:not([contenteditable="false"])')) return;
+  event.preventDefault();
+  event.stopPropagation();
+  if (!event.repeat) undo.click();
 });
 function exportImage() {
   if (!strokes.length || strokes[strokes.length - 1].tool === 'reset') return config.dataUrl;

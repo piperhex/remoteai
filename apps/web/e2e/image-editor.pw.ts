@@ -79,6 +79,42 @@ test('cancels a text dialog without closing the image editor', async ({ page }) 
   expect(await snapshot(page)).toBe(clean);
 });
 
+test('undoes one action per shortcut press and leaves text undo in the text dialog', async ({ page }) => {
+  const clean = await snapshot(page);
+  await stroke(page);
+  const first = await snapshot(page);
+  await editor(page).getByRole('button', { name: '蓝色', exact: true }).click();
+  await stroke(page);
+  expect(await snapshot(page)).not.toBe(first);
+  await page.keyboard.down('Control');
+  await page.keyboard.down('z');
+  expect(await snapshot(page)).toBe(first);
+  await page.keyboard.down('z');
+  expect(await snapshot(page)).toBe(first);
+  await page.keyboard.up('z');
+  await page.keyboard.up('Control');
+  await page.keyboard.press('Control+z');
+  expect(await snapshot(page)).toBe(clean);
+  await editor(page).getByRole('button', { name: '重做', exact: true }).click();
+  expect(await snapshot(page)).toBe(first);
+  await page.keyboard.press('Meta+z');
+  expect(await snapshot(page)).toBe(clean);
+  await stroke(page);
+  const marked = await snapshot(page);
+  await editor(page).getByRole('button', { name: '文字', exact: true }).click();
+  await editor(page).locator('canvas').click();
+  const text = editor(page).getByRole('textbox', { name: '标注文字' });
+  await text.pressSequentially('Undo this text');
+  await text.press('Control+z');
+  await expect(text).toHaveValue('');
+  expect(await snapshot(page)).toBe(marked);
+  await page.keyboard.press('Escape');
+  await editor(page).getByRole('button', { name: '重置', exact: true }).click();
+  expect(await snapshot(page)).toBe(clean);
+  await page.keyboard.press('Control+z');
+  expect(await snapshot(page)).toBe(marked);
+});
+
 async function expectLayoutFits(page: Page) {
   const frame = page.locator('iframe');
   const viewport = page.viewportSize()!;

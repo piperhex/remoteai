@@ -19,4 +19,15 @@ describe('image editor boundary', () => {
       expect(() => imageEditorHtml(dataUrl)).toThrow();
     }
   });
+
+  it('allows local images above the relay limit without changing remote limits', () => {
+    const dataUrl = 'data:image/png;base64,' + 'a'.repeat(MAX_CHAT_IMAGE_CHARS);
+    const message = JSON.stringify({ type: 'save', dataUrl });
+    expect(imageEditorHtml(dataUrl, undefined, undefined, { mode: 'direct' })).toContain(dataUrl);
+    expect(editedImageMessage(message, 'direct')).toBe(dataUrl);
+    expect(() => imageEditorHtml(dataUrl)).toThrow();
+    expect(() => editedImageMessage(message)).toThrow();
+    expect(() => imageEditorHtml('https://example.test/image.png', undefined, undefined,
+      { mode: 'direct' })).toThrow();
+  });
 });

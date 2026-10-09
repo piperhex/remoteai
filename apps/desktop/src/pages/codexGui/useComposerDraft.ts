@@ -82,6 +82,8 @@ export function useComposerDraft(key: string, controller: GuiController) {
     ({ ...value, attachments: value.attachments?.filter((item) => item.path !== path) }));
   const removeImage = (id: string) => update((value) =>
     ({ ...value, images: value.images.filter((image) => image.id !== id) }));
+  const editImage = (id: string, url: string) => update((value) =>
+    ({ ...value, images: value.images.map((image) => image.id === id ? { ...image, url } : image) }));
   const addImages = (files: File[]) => {
     const valid = files.filter((file) => IMAGE_TYPES.includes(file.type) && file.size > 0
       && file.size <= MAX_IMAGE_BYTES);
@@ -127,7 +129,7 @@ export function useComposerDraft(key: string, controller: GuiController) {
       }
     } finally { submitting.current = false; }
   };
-  return { draft, reading, editText, editContent, removeImage, addImages, paste, pasteKeyDown,
+  return { draft, reading, editText, editContent, removeImage, editImage, addImages, paste, pasteKeyDown,
     send, addAttachments, removeAttachment,
     addQuote, removeQuote, clearQuotes, editQueued };
 }
