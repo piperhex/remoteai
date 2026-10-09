@@ -68,10 +68,13 @@ fn match_account<'a>(
     candidates.next().is_none().then_some(account.id.as_str())
 }
 
-pub(super) fn snapshot<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<DeviceUsage, String> {
+pub(super) fn snapshot<R: Runtime>(
+    app: &tauri::AppHandle<R>,
+    started_at: i64,
+) -> Result<DeviceUsage, String> {
     let paths = resolve_paths(app)?;
     let captured_at = chrono::Utc::now().timestamp();
-    let start_ts = (captured_at - HISTORY_SECONDS).max(0) / 60 * 60;
+    let start_ts = (captured_at - HISTORY_SECONDS).max(started_at);
     let history = read_history(&paths, start_ts, captured_at).map_err(|error| error.to_string())?;
     let (mut accounts, identities) = collect_accounts(&paths, history);
     let rates = codex_usage_cost_rates::load(&paths)?;
@@ -117,7 +120,7 @@ fn collect_accounts(
                 account_id: account.account_id,
                 account_label: account.account_label,
                 samples: Vec::new(),
-                points: compact_points(account.points),
+                points: account.points,
             },
         );
     }

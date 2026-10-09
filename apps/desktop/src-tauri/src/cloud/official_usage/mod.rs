@@ -1,6 +1,7 @@
 //! Devices automatically report compact official-account records. Summaries are computed by the server.
 mod local;
 mod summary;
+mod tracking;
 pub(crate) use summary::*;
 
 use super::*;
@@ -27,6 +28,7 @@ fn report_records<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<(), UsageErro
         return Ok(());
     }
     let _guard = ReportGuard;
+    let started_at = tracking::started_at(app)?;
     let settings = read_app_settings(app).map_err(|_| UsageError::Unavailable)?;
     let credentials = read_cloud_credentials(app);
     if !cloud_state(&settings, &credentials).authenticated {
@@ -39,7 +41,7 @@ fn report_records<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<(), UsageErro
         settings.cloud_base_url, settings.cloud_user_id, installation.device_id
     );
     let filename = format!(
-        "official-usage-report-{:x}.json",
+        "official-usage-report-v2-{:x}.json",
         Sha256::digest(identity.as_bytes())
     );
     let path = app
@@ -51,9 +53,9 @@ fn report_records<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<(), UsageErro
         .ok()
         .and_then(|bytes| serde_json::from_slice(&bytes).ok())
         .unwrap_or_default();
-    let snapshot = local::snapshot(app).map_err(|_| UsageError::Unavailable)?;
-    let (reports, checkpoint) =
-        local::prepare_report(snapshot, checkpoint).map_err(|_| UsageError::Unavailable)?;
+    let snapshot = local::snapshot(app, started_at).map_err(|_| UsageError::Unavailable)?;
+    let (reports, checkpoint) = local::prepare_report(snapshot, checkpoint, started_at)
+        .map_err(|_| UsageError::Unavailable)?;
     if !reports.is_empty() {
         upload_reports(app, reports, &identity)?;
     }
@@ -99,7 +101,7 @@ fn upload_report<R: Runtime>(
         &mut settings,
         &mut credentials,
         Method::POST,
-        "/official-usage/records",
+        "/official-usage/v2/records",
         Some(payload),
     )
     .map_err(|_| UsageError::Unavailable)?

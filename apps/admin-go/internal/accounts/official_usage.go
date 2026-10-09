@@ -11,6 +11,7 @@ import (
 
 const usageMinuteSeconds = 60
 const usageRetentionSeconds = 53 * 7 * 24 * 60 * 60
+const officialUsageVersion = 2
 
 // A minute is a compact batch of [second offset, token total, USD cost].
 // Retaining second offsets aligns costs exactly with quota observations without request IDs or model metadata.
@@ -34,14 +35,15 @@ type accountUsageReport struct {
 	Quotas       []quotaObservation `json:"quotas"`
 }
 type officialUsageReport struct {
+	Version    int                  `json:"version"`
 	DeviceName string               `json:"deviceName"`
 	Accounts   []accountUsageReport `json:"accounts"`
 }
 
 func (s *service) registerOfficialUsage(r *gin.RouterGroup, read gin.HandlerFunc) {
 	// Account readers may report their own consumption without editing the account credentials.
-	r.POST("/records", read, noStore, endpoint(s.reportOfficialUsage))
-	r.GET("/summary", read, noStore, endpoint(s.getOfficialUsageSummary))
+	r.POST("/v2/records", read, noStore, endpoint(s.reportOfficialUsage))
+	r.GET("/v2/summary", read, noStore, endpoint(s.getOfficialUsageSummary))
 }
 
 func usageInvalid() error { return platform.NewError(400, "Invalid official account usage") }
@@ -67,7 +69,8 @@ func (s *service) getOfficialUsageSummary(c *gin.Context) (interface{}, error) {
 }
 
 func validUsageReport(report officialUsageReport, device string, now int64) bool {
-	if device == "" || len(device) > 128 || len(report.DeviceName) > 256 || len(report.Accounts) > 1000 {
+	if report.Version != officialUsageVersion || device == "" || len(device) > 128 ||
+		len(report.DeviceName) > 256 || len(report.Accounts) > 1000 {
 		return false
 	}
 	count := 0

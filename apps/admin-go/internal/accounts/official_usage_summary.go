@@ -40,7 +40,7 @@ func readOfficialUsageSummary(tx *gorm.DB, owner string, start, now int64) (inte
 		AccountID string
 		Label     string
 	}
-	if err := tx.Raw(`SELECT account_id,label FROM official_usage_accounts WHERE owner_id=?`, owner).
+	if err := tx.Raw(`SELECT account_id,label FROM official_usage_v2_accounts WHERE owner_id=?`, owner).
 		Scan(&accounts).Error; err != nil {
 		return nil, err
 	}
@@ -79,8 +79,8 @@ func fillDeviceTotals(tx *gorm.DB, total *officialAccountTotal, options usageSum
             SUM(CASE WHEN m.minute_ts>=? AND m.minute_ts+59<=? THEN m.cost_usd
             ELSE (SELECT COALESCE(SUM((v->>2)::double precision),0) FROM jsonb_array_elements(m.samples) v
                 WHERE m.minute_ts+(v->>0)::bigint BETWEEN ? AND ?) END) AS cost_usd,
-            d.reported_at AS updated_at FROM official_usage_minutes m
-			JOIN official_usage_devices d ON d.owner_id=m.owner_id AND d.device_id=m.device_id
+            d.reported_at AS updated_at FROM official_usage_v2_minutes m
+			JOIN official_usage_v2_devices d ON d.owner_id=m.owner_id AND d.device_id=m.device_id
 			WHERE m.owner_id=? AND m.account_id=? AND m.minute_ts>=? AND m.minute_ts<=?
 			GROUP BY m.device_id,d.device_name,d.reported_at ORDER BY m.device_id`, start, now, start, now, start, now, start, now,
 		options.Owner, total.AccountID,
@@ -91,7 +91,7 @@ func fillQuotaEstimates(tx *gorm.DB, owner string, total *officialAccountTotal, 
 	for _, window := range []quotaWindow{primaryQuota, secondaryQuota} {
 		var phases []quotaDecline
 		if err := tx.Raw(`SELECT start_ts,end_ts,start_remaining,remaining,reset_at,decline_percent,
-			consumed_usd,after_usd FROM official_quota_declines WHERE owner_id=? AND account_id=?
+			consumed_usd FROM official_quota_v2_declines WHERE owner_id=? AND account_id=?
             AND quota_window=? AND is_current
 			LIMIT 1`, owner, total.AccountID, window).Scan(&phases).Error; err != nil {
 			return err

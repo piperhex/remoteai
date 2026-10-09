@@ -35,7 +35,7 @@ var desktopServiceSchema string
 //go:embed 009_chat_bulk_leases.sql
 var bulkLeaseSchema string
 
-//go:embed 010_official_usage.sql
+//go:embed 011_official_usage_v2.sql
 var officialUsageSchema string
 
 // InitializeEmpty never changes existing tables, constraints, indexes, or customer data.

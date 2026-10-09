@@ -30,7 +30,7 @@ func usageTestDB(t *testing.T) *gorm.DB {
 	t.Cleanup(func() { conn.Close() })
 	tx := db.Begin()
 	t.Cleanup(func() { tx.Rollback() })
-	migration, err := os.ReadFile("../migrations/010_official_usage.sql")
+	migration, err := os.ReadFile("../migrations/011_official_usage_v2.sql")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestOfficialUsageReportAndPersistedDeclines(t *testing.T) {
 	owner, other := usageTestOwner(t, db), usageTestOwner(t, db)
 	s := &service{deps: &platform.Dependencies{DB: db}}
 	base := time.Now().Unix()/60*60 - 600
-	report := officialUsageReport{DeviceName: "Office", Accounts: []accountUsageReport{{
+	report := officialUsageReport{Version: officialUsageVersion, DeviceName: "Office", Accounts: []accountUsageReport{{
 		AccountID: "official", AccountLabel: "Official account", Minutes: []usageMinute{{Ts: base,
 			Samples: [][3]float64{{20, 100, 2}}}},
 		Quotas: []quotaObservation{{Ts: base + 10, Primary: usagePtr(80.0)}, {Ts: base + 50, Primary: usagePtr(60.0)}},
@@ -102,7 +102,7 @@ func TestOfficialUsageReportAndPersistedDeclines(t *testing.T) {
 		t.Fatal("partial minute boundary lost", got)
 	}
 	var saved quotaDecline
-	if err := db.Raw(`SELECT * FROM official_quota_declines WHERE owner_id=? AND is_current`, owner).
+	if err := db.Raw(`SELECT * FROM official_quota_v2_declines WHERE owner_id=? AND is_current`, owner).
 		Scan(&saved).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +120,8 @@ func testLateUsageAndRebound(t *testing.T, s *service, owner string, report offi
 		t.Fatal(err)
 	}
 	total := readUsageTestSummary(t, s, owner, base)[0]
-	if total.Tokens != 500 || *total.Primary.CapacityUSD != 45 || *total.RemainingUSD != 26 {
+	if total.Tokens != 500 || total.Primary.ConsumedUSD != 10 ||
+		*total.Primary.CapacityUSD != 50 || *total.RemainingUSD != 30 {
 		t.Fatal(total)
 	}
 	report.Accounts[0].Minutes = nil
@@ -137,10 +138,55 @@ func testLateUsageAndRebound(t *testing.T, s *service, owner string, report offi
 		Current int
 	}
 	if err := s.deps.DB.Raw(`SELECT COUNT(*) AS all, COUNT(*) FILTER (WHERE is_current) AS current
-        FROM official_quota_declines WHERE owner_id=?`, owner).Scan(&counts).Error; err != nil {
+        FROM official_quota_v2_declines WHERE owner_id=?`, owner).Scan(&counts).Error; err != nil {
 		t.Fatal(err)
 	}
 	if counts.All != 2 || counts.Current != 1 {
 		t.Fatal("phase history/current marker incorrect", counts)
+	}
+}
+
+func TestOfficialUsageV2IgnoresLegacyDataAndAccumulatesAcrossDevices(t *testing.T) {
+	db := usageTestDB(t)
+	owner := usageTestOwner(t, db)
+	s := &service{deps: &platform.Dependencies{DB: db}}
+	legacy, err := os.ReadFile("../migrations/010_official_usage.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec(string(legacy)).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec(`INSERT INTO official_usage_accounts(owner_id,account_id,label)
+		VALUES(?,?,?)`, owner, "legacy-only", "Old account").Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(readUsageTestSummary(t, s, owner, 0)) != 0 {
+		t.Fatal("legacy data appeared in new statistics")
+	}
+	base := time.Now().Unix()/60*60 - 600
+	report := officialUsageReport{Version: officialUsageVersion, DeviceName: "Desktop", Accounts: []accountUsageReport{{
+		AccountID: "official", AccountLabel: "Account", Minutes: []usageMinute{{Ts: base,
+			Samples: [][3]float64{{20, 100, 2}}}},
+		Quotas: []quotaObservation{{Ts: base + 10, Primary: usagePtr(80.0)}, {Ts: base + 30, Primary: usagePtr(60.0)}},
+	}}}
+	if err := s.storeUsageReport(owner, "desktop", report); err != nil {
+		t.Fatal(err)
+	}
+	report.DeviceName = "Laptop"
+	report.Accounts[0].Quotas = nil
+	report.Accounts[0].Minutes[0].Samples = [][3]float64{{40, 200, 4}}
+	for range 2 {
+		if err := s.storeUsageReport(owner, "laptop", report); err != nil {
+			t.Fatal(err)
+		}
+	}
+	total := readUsageTestSummary(t, s, owner, base+35)[0]
+	if total.Primary.StartTs != base+10 || *total.Primary.StartPercent != 80 ||
+		total.Primary.ConsumedUSD != 6 || *total.Primary.CapacityUSD != 30 || *total.RemainingUSD != 18 {
+		t.Fatal("new costs must accumulate across devices without moving the baseline", total)
+	}
+	if total.Tokens != 200 || total.CostUSD != 4 {
+		t.Fatal("display date range must not change the calibration baseline", total)
 	}
 }

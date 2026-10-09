@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 
 const RECORD_BATCH_SIZE: usize = 500;
 const MINUTE_SECONDS: u64 = 60;
+const REPORT_VERSION: u8 = 2;
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,6 +33,7 @@ struct AccountReport {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UsageReport {
+    version: u8,
     device_name: String,
     accounts: Vec<AccountReport>,
 }
@@ -40,10 +42,18 @@ pub(crate) struct UsageReport {
 pub(crate) fn prepare_report(
     snapshot: DeviceUsage,
     previous: ReportCheckpoint,
+    started_at: i64,
 ) -> Result<(Vec<UsageReport>, ReportCheckpoint), String> {
     let mut checkpoint = ReportCheckpoint::default();
     let mut reports = Vec::new();
-    for account in snapshot.accounts {
+    for mut account in snapshot.accounts {
+        // History reads include the preceding quota point; it must not become
+        // the baseline for statistics started by this upgraded installation.
+        account.points.retain(|point| point.ts >= started_at);
+        account
+            .samples
+            .retain(|sample| sample.ts >= started_at as u64);
+        account.points = compact_points(account.points);
         let mut report = AccountReport {
             account_id: account.account_id.clone(),
             account_label: account.account_label.clone(),
@@ -61,6 +71,7 @@ pub(crate) fn prepare_report(
                 account_batches(report)
                     .into_iter()
                     .map(|account| UsageReport {
+                        version: REPORT_VERSION,
                         device_name: snapshot.device_name.clone(),
                         accounts: vec![account],
                     }),

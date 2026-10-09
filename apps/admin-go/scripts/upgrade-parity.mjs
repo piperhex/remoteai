@@ -11,6 +11,7 @@ const migrations = [
   '20260928-desktop-service.sql',
   '20261005-chat-bulk-leases.sql',
   '20261009-official-usage.sql',
+  '20261009-official-usage-v2.sql',
 ];
 
 // The frozen Nest schema lacks Go additions; upgrade only the fixed localhost fixture database.

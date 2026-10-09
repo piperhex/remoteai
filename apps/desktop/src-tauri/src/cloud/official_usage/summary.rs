@@ -69,7 +69,7 @@ fn load_summary<R: Runtime>(
         &mut settings,
         &mut credentials,
         Method::GET,
-        &format!("/official-usage/summary?startTs={start_ts}"),
+        &format!("/official-usage/v2/summary?startTs={start_ts}"),
         None,
     )
     .map_err(|_| UsageError::Unavailable)?
