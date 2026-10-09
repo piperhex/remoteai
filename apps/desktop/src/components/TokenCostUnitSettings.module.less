@@ -1,0 +1,16 @@
+.card :global(.settings-card-content) {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  > button { flex-shrink: 0; }
+}
+
+.form {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  p, small { margin: 0; color: var(--muted); line-height: 1.6; }
+  label { color: var(--ink); font-weight: 600; }
+  :global(.ant-input-number) { width: 100%; }
+}

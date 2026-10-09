@@ -87,8 +87,10 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
       return new Intl.NumberFormat("en-US").format(value);
     };
     const formatCost = value => {
+      const display = state.usage.costDisplay || { unit: "USD", usdMultiplier: 1 };
+      value *= display.usdMultiplier;
       const maximumFractionDigits = value > 0 && value < 0.01 ? 4 : 2;
-      return `${new Intl.NumberFormat("en-US", { maximumFractionDigits }).format(value)}USD`;
+      return `${new Intl.NumberFormat("en-US", { maximumFractionDigits }).format(value)} ${display.unit}`;
     };
     const displayedTrailingUsage = () => {
       if (Number.isFinite(state.usage.primaryRemainingPercent)) {
@@ -212,6 +214,10 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
         enabled: summary?.enabled === true,
         totalTokens: Number.isFinite(totalTokens) ? Math.max(0, totalTokens) : 0,
         estimatedCostUsd: Number.isFinite(estimatedCostUsd) ? Math.max(0, estimatedCostUsd) : 0,
+        costDisplay: typeof summary?.costDisplay?.unit === "string"
+          && summary.costDisplay.unit.trim() && Number.isFinite(summary.costDisplay.usdMultiplier)
+          && summary.costDisplay.usdMultiplier > 0
+          ? summary.costDisplay : { unit: "USD", usdMultiplier: 1 },
         primaryRemainingPercent: typeof primaryRemainingPercent === "number"
           && Number.isFinite(primaryRemainingPercent)
           ? Math.max(0, primaryRemainingPercent)

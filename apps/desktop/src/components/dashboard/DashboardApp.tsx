@@ -1419,7 +1419,8 @@ export function DashboardApp() {
             <CodexConfigPage active={page === "codexConfig"} homeKey={manager.info?.codexHome} />
           </section>
           <section className="page-panel" hidden={page !== "settings"}>
-            <MemoSettingsPage info={manager.info} autoRefreshEnabled={autoRefresh.enabled}
+            <MemoSettingsPage providers={providerManager.providers}
+              info={manager.info} autoRefreshEnabled={autoRefresh.enabled}
               autoUpdateEnabled={appUpdate.autoUpdateEnabled}
               onAutoUpdateChange={appUpdate.setAutoUpdateEnabled}
               launchAtStartupEnabled={launchAtStartup.enabled}

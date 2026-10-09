@@ -64,7 +64,7 @@ test("coalesces edits during an active request and sends the latest prices", asy
   const harness = createHarness();
   const { installCodexUsageCostSync } = harness.require("sync");
   const { persistStoredModelTokenCosts } = harness.require("../pages/providers/providerUtils");
-  const { saveCustomTokenCostRules } = harness.require("./tokenCost");
+  const { saveCustomTokenCostRules, saveTokenCostDisplaySettings } = harness.require("./tokenCost");
   const { saveTokenCostReferenceModel } = harness.require("./tokenCostPresets");
   const { saveFastModeCostMultiplier } = harness.require("./tokenCostFastMode");
   const { saveLongContextCostSettings, DEFAULT_LONG_CONTEXT_COST_SETTINGS } = harness.require("./tokenCostLongContext");
@@ -74,6 +74,7 @@ test("coalesces edits during an active request and sends the latest prices", asy
   saveCustomTokenCostRules([{ providerId: "relay", model: "model", input: 4, cachedInput: 1, output: 5 }]);
   saveTokenCostReferenceModel("gpt-5.6-terra");
   saveFastModeCostMultiplier(3);
+  saveTokenCostDisplaySettings({ unit: "元", usdMultiplier: 7, currencyCode: "CNY" });
   saveLongContextCostSettings({ ...DEFAULT_LONG_CONTEXT_COST_SETTINGS, thresholdTokens: 300_000, outputMultiplier: 2 });
   assert.equal(harness.calls.length, 1);
   harness.calls[0].resolve();
@@ -86,6 +87,9 @@ test("coalesces edits during an active request and sends the latest prices", asy
   assert.equal(harness.calls[1].rates.referenceModel, "gpt-5.6-terra");
   assert.equal(harness.calls[0].rates.fastModeMultiplier, null);
   assert.equal(harness.calls[1].rates.fastModeMultiplier, 3);
+  assert.equal(harness.calls[0].rates.display.unit, "USD");
+  assert.equal(harness.calls[1].rates.display.unit, "元");
+  assert.equal(harness.calls[1].rates.display.usdMultiplier, 7);
   assert.equal(harness.calls[0].rates.longContext.thresholdTokens, 272_000);
   assert.equal(harness.calls[1].rates.longContext.thresholdTokens, 300_000);
   assert.equal(harness.calls[1].rates.longContext.outputMultiplier, 2);

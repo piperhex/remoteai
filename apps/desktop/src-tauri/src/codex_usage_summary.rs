@@ -27,6 +27,7 @@ pub(crate) struct CodexUsageSummary {
     enabled: bool,
     total_tokens: u64,
     estimated_cost_usd: f64,
+    cost_display: rates::CostDisplaySettings,
     primary_remaining_percent: Option<f64>,
     primary_remaining_aggregated: bool,
     provider_estimated_cost: Option<ProviderEstimatedCost>,
@@ -44,6 +45,7 @@ pub(crate) fn load(
             enabled: false,
             total_tokens: 0,
             estimated_cost_usd: 0.0,
+            cost_display: rates::CostDisplaySettings::default(),
             primary_remaining_percent: None,
             primary_remaining_aggregated: false,
             provider_estimated_cost: None,
@@ -152,6 +154,7 @@ fn summarize(
             .map(entry_total_tokens)
             .fold(0, u64::saturating_add),
         estimated_cost_usd: sum_estimated_cost(entries, costs),
+        cost_display: costs.rates.display.clone(),
         primary_remaining_percent: primary_remaining.map(|(remaining, _)| remaining),
         primary_remaining_aggregated: primary_remaining.is_some_and(|(_, aggregated)| aggregated),
         provider_estimated_cost,

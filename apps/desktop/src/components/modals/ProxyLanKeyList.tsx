@@ -7,6 +7,8 @@ import type { LocalProxyLanApiKey } from "../../types";
 import { needsUsageReview, unconfirmedRequests, usageReviewThreshold } from "../../api/localProxyLanUsage";
 import { ProxyLanKeyEditor } from "./ProxyLanKeyEditor";
 import "./ProxyLanKeyList.css";
+import { useTokenCostDisplaySettings } from "../../hooks/useTokenCostDisplaySettings";
+import { formatEstimatedCost } from "../../utils/tokenCost";
 
 type KeyManager = ReturnType<typeof useLocalProxyLanKeys>;
 interface ProxyLanKeyListProps {
@@ -17,17 +19,15 @@ interface ProxyLanKeyListProps {
   t: Translate;
 }
 
-function formatCost(value: number | null, t: Translate): string {
-  return value === null ? t("providers.proxy.lanKeyUnlimited")
-    : `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`;
-}
-
 function KeyUsage({ entry, t }: { entry: LocalProxyLanApiKey; t: Translate }) {
+  const settings = useTokenCostDisplaySettings();
+  const formatCost = (value: number | null) => value === null ? t("providers.proxy.lanKeyUnlimited")
+    : formatEstimatedCost(value, settings);
   return <dl className="proxy-lan-key-usage">
-    <div><dt>{t("providers.proxy.lanKeyQuota")}</dt><dd>{formatCost(entry.quotaUsd, t)}</dd></div>
-    <div><dt>{t("providers.proxy.lanKeyRemaining")}</dt><dd>{formatCost(entry.remainingUsd, t)}</dd></div>
+    <div><dt>{t("providers.proxy.lanKeyQuota", { unit: settings.unit })}</dt><dd>{formatCost(entry.quotaUsd)}</dd></div>
+    <div><dt>{t("providers.proxy.lanKeyRemaining", { unit: settings.unit })}</dt><dd>{formatCost(entry.remainingUsd)}</dd></div>
     <div><dt>{t("providers.proxy.lanKeyUsedTokens")}</dt><dd>{entry.usedTokens.toLocaleString()}</dd></div>
-    <div><dt>{t("providers.proxy.lanKeyUsedCost")}</dt><dd>{formatCost(entry.usedCostUsd, t)}</dd></div>
+    <div><dt>{t("providers.proxy.lanKeyUsedCost", { unit: settings.unit })}</dt><dd>{formatCost(entry.usedCostUsd)}</dd></div>
     <div><dt>{t("providers.proxy.lanKeyUnconfirmedRequests")}</dt>
       <dd>{unconfirmedRequests(entry).toLocaleString()} / {usageReviewThreshold(entry).toLocaleString()}</dd></div>
   </dl>;

@@ -479,15 +479,6 @@ h1 { margin: 5px 0 0; font: 700 26px/1.1 Manrope, sans-serif; letter-spacing: -.
   .token-cost-burning::before,
   .token-cost-burning::after { animation: none; }
 }
-.token-cost-unit-settings {
-  width: min(290px, calc(100vw - 32px)); max-width: 400px; display: grid; gap: 7px;
-  padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel);
-  box-shadow: 0 12px 30px rgba(22,36,27,.14);
-}
-.token-cost-unit-settings strong { color: var(--ink); font-size: 11px; }
-.token-cost-unit-settings label { color: var(--muted); font-size: 10px; font-weight: 700; }
-.token-cost-unit-settings small { color: var(--muted); font-size: 10px; line-height: 1.45; }
-.token-cost-unit-settings .ant-input-number { width: 100%; }
 .custom-token-cost-backdrop { z-index: 80; }
 .modal.custom-token-cost-modal {
   width: 90vw; max-width: none; height: 80vh; padding: 24px; overflow: hidden;

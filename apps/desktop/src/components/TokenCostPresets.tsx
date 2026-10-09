@@ -2,6 +2,8 @@ import { useEffect, useReducer } from "react";
 import { Select } from "antd";
 import { ExternalLink } from "lucide-react";
 import type { Translate } from "../i18n";
+import { useTokenCostDisplaySettings } from "../hooks/useTokenCostDisplaySettings";
+import { formatTokenPrice } from "../utils/tokenCost";
 import { TokenCostFastModeSettings } from "./TokenCostFastModeSettings";
 import { TokenCostLongContextSettings } from "./TokenCostLongContextSettings";
 import {
@@ -27,6 +29,7 @@ function PriceSource({ model, url, t }: { model: string; url: string; t: Transla
 }
 
 export function TokenCostPresets({ referenceModel, onReferenceChange, t }: TokenCostPresetsProps) {
+  const display = useTokenCostDisplaySettings();
   const [, refresh] = useReducer((value: number) => value + 1, 0);
   useEffect(() => {
     window.addEventListener(TOKEN_COST_REFERENCE_MODEL_EVENT, refresh);
@@ -35,7 +38,7 @@ export function TokenCostPresets({ referenceModel, onReferenceChange, t }: Token
   return <section className="custom-token-cost-presets" aria-labelledby="token-cost-presets-title">
     <div className="custom-token-cost-section-heading">
       <h3 id="token-cost-presets-title">{t("tokenCost.customBilling.presetsTitle")}</h3>
-      <small>{t("tokenCost.customBilling.presetsHint", { date: TOKEN_COST_PRESETS_VERIFIED_AT })}</small>
+      <small>{t("tokenCost.customBilling.presetsHint", { date: TOKEN_COST_PRESETS_VERIFIED_AT, unit: display.unit })}</small>
     </div>
     <div className="custom-token-cost-table-scroll">
       <table className="custom-token-cost-preset-table">
@@ -50,7 +53,8 @@ export function TokenCostPresets({ referenceModel, onReferenceChange, t }: Token
         <tbody>
           {TOKEN_COST_PRESETS.map((preset) => <tr key={preset.model}>
             <th scope="row"><code>{preset.model}</code></th>
-            <td>{preset.input}</td><td>{preset.cachedInput}</td><td>{preset.output}</td>
+            <td>{formatTokenPrice(preset.input, display)}</td><td>{formatTokenPrice(preset.cachedInput, display)}</td>
+            <td>{formatTokenPrice(preset.output, display)}</td>
             <td><PriceSource model={preset.model} url={preset.sourceUrl} t={t} /></td>
             <td><TokenCostFastModeSettings model={preset.model} presetMultiplier={preset.fastModeMultiplier} t={t} /></td>
           </tr>)}

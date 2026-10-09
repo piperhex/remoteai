@@ -1,4 +1,5 @@
 import { copyText } from "../utils/clipboard";
+import { cacheDisplayCurrencyRates } from "../utils/currencyDisplay";
 import { invoke as invokeTauri } from "@tauri-apps/api/core";
 import { hasDirectChatInput } from "../../../../shared/remote-chat/uploadMode";
 import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -2853,13 +2854,15 @@ export async function fetchCloudCurrencyRates(): Promise<CloudCurrencyRates> {
 }
 
 function includeBaseCurrency(rates: CloudCurrencyRates): CloudCurrencyRates {
-  return {
+  const result = {
     ...rates,
     currencies: [
       BASE_CURRENCY_RATE,
       ...rates.currencies.filter((currency) => currency.code !== BASE_CURRENCY_RATE.code),
     ],
   };
+  cacheDisplayCurrencyRates(result.currencies);
+  return result;
 }
 
 export async function setAccountAutoSwitchThreshold(id: string, threshold: number): Promise<void> {

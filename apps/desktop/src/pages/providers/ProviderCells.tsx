@@ -7,36 +7,36 @@ import type { Provider, ProviderBalance, ProviderTokenUsageTotals } from "../../
 import { formatCompactTokenCount } from "../../utils/tokenContext";
 import { formatEstimatedCost, type TokenCostDisplaySettings } from "../../utils/tokenCost";
 import { modelOptions, normalizeModels } from "./providerUtils";
+import { useCurrencyFormatter } from "../../hooks/useTokenCostDisplaySettings";
+import type { CurrencyFormatter } from "../../utils/currencyDisplay";
 
 export function apiFormatTag(provider: Provider, t: Translate) {
   if (provider.kind === "openai") return <Tag color="blue">{t("providers.tag.openai")}</Tag>;
   return <Tag color="cyan">{t("providers.tag.autoApi")}</Tag>;
 }
 
-function apiBalanceValue(
-  balance: ProviderBalance | null,
-  provider: Provider,
-  error: string,
-  t: Translate,
-) {
+function apiBalanceValue({ balance, provider, error, t, formatAmount }: {
+  balance: ProviderBalance | null; provider: Provider; error: string; t: Translate; formatAmount: CurrencyFormatter;
+}) {
   if (error && provider.balancePlatform === "codexSwitch") return t("providers.balance.failed");
   if (balance?.apiUnlimited) {
     return provider.balancePlatform === "deepSeek"
       ? t("providers.balance.unavailable")
       : t("providers.balance.unlimited");
   }
-  if (balance?.apiAmount != null) return `${balance.apiAmount.toFixed(2)} ${balance.apiUnit}`;
+  if (balance?.apiAmount != null) return formatAmount(balance.apiAmount, balance.apiUnit);
   return error ? t("providers.balance.failed") : t("providers.balance.loading");
 }
 
-function buildDeepSeekBalanceValues(balance: ProviderBalance | null, apiValue: string) {
+function buildDeepSeekBalanceValues(balance: ProviderBalance | null, apiValue: string, formatAmount: CurrencyFormatter) {
   if (balance?.apiUnlimited || !balance?.balanceItems?.length) return [apiValue];
-  return balance.balanceItems.map((item) => `${item.amount.toFixed(2)} ${item.unit}`);
+  return balance.balanceItems.map((item) => formatAmount(item.amount, item.unit));
 }
 
-function walletBalanceValue(balance: ProviderBalance | null, provider: Provider, t: Translate) {
+function walletBalanceValue(balance: ProviderBalance | null, provider: Provider, t: Translate,
+  formatAmount: CurrencyFormatter) {
   if (balance?.walletAmount != null) {
-    return `${balance.walletAmount.toFixed(2)} ${balance.walletUnit}`;
+    return formatAmount(balance.walletAmount, balance.walletUnit);
   }
   if (balance?.walletError) return t("providers.balance.failed");
   if (provider.hasWalletQueryToken || provider.hasWalletLoginCredentials) {
@@ -70,6 +70,7 @@ function BalanceValues({ options }: { options: {
 }
 
 export function ProviderBalanceCell({ provider, t }: { provider: Provider; t: Translate }) {
+  const formatAmount = useCurrencyFormatter();
   const [balance, setBalance] = useState<ProviderBalance | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -118,11 +119,11 @@ export function ProviderBalanceCell({ provider, t }: { provider: Provider; t: Tr
   if (!provider.balancePlatform) {
     return <span className="provider-balance-disabled">{t("providers.balance.disabled")}</span>;
   }
-  const apiValue = apiBalanceValue(balance, provider, error, t);
+  const apiValue = apiBalanceValue({ balance, provider, error, t, formatAmount });
   const deepSeekBalanceValues = provider.balancePlatform === "deepSeek"
-    ? buildDeepSeekBalanceValues(balance, apiValue)
+    ? buildDeepSeekBalanceValues(balance, apiValue, formatAmount)
     : [];
-  const walletValue = walletBalanceValue(balance, provider, t);
+  const walletValue = walletBalanceValue(balance, provider, t, formatAmount);
   return (
     <div className="provider-balance">
       <Tooltip title={error || balance?.walletError || t("providers.balance.refresh")}

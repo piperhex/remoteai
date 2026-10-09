@@ -10,6 +10,7 @@ import { copyLocalProxyLanApiKey, deleteLocalProxyLanApiKey, loadLocalProxyLanAp
 import type { LocalProxyLanApiKey, LocalProxyStatus, ProxySession } from "../../types";
 import { ProxySessionManager } from "../ProxySessionManager";
 import { ProxySettingsModal } from "./ProxySettingsModal";
+import { saveTokenCostDisplaySettings } from "../../utils/tokenCost";
 
 vi.mock("../../api/proxyEndpoints", () => ({
   LOOPBACK_IPV4: "127.0.0.1",
@@ -128,8 +129,8 @@ it("adds a generated key with a spending limit and shows its usage beside the co
     apiKey: generated, enabled: true, quotaUsd: 10, usageReviewThreshold: 1000 });
   expect(keyInput()).toBeNull();
   expect(document.body.textContent).toContain("12,345");
-  expect(document.body.textContent).toContain("$2.50");
-  expect(document.body.textContent).toContain("$7.50");
+  expect(document.body.textContent).toContain("2.50 USD");
+  expect(document.body.textContent).toContain("7.50 USD");
   await act(async () => button("providers.proxy.listenLan").click());
   expect(onSave).toHaveBeenLastCalledWith(true);
   vi.mocked(loadLocalProxyLanApiKeys).mockResolvedValue([lanKey]);
@@ -139,6 +140,19 @@ it("adds a generated key with a spending limit and shows its usage beside the co
   expect(copyLocalProxyLanApiKey).toHaveBeenCalledWith(lanKey.id);
   expect(button(`providers.proxy.lanKeyEnabled: ${lanKey.name}`).disabled).toBe(true);
   expect(button(`providers.proxy.lanKeyDelete: ${lanKey.name}`).disabled).toBe(true);
+});
+
+it("converts displayed limits back to USD while preserving stored quotas", async () => {
+  saveTokenCostDisplaySettings({ unit: "元", usdMultiplier: 7, currencyCode: "CNY" });
+  vi.mocked(loadLocalProxyLanApiKeys).mockResolvedValue([lanKey]);
+  await render();
+  expect(document.body.textContent).toContain("17.50 元");
+  expect(document.body.textContent).toContain("52.50 元");
+  await act(async () => button(`providers.proxy.lanKeyEdit: ${lanKey.name}`).click());
+  expect(document.querySelector<HTMLInputElement>("#proxy-lan-key-quota")?.value).toBe("70");
+  await fillInput("#proxy-lan-key-quota", "140");
+  await act(async () => button("providers.proxy.saveApiKey").click());
+  expect(saveLocalProxyLanApiKey).toHaveBeenCalledWith(expect.objectContaining({ quotaUsd: 20 }));
 });
 
 it("retains the new key after a failed update and prevents overlapping saves", async () => {

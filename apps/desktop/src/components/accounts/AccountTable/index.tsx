@@ -778,8 +778,10 @@ export function AccountTable({
       },
     },
     {
-      title: officialUsageLabels(language).remaining, key: "availableQuota", width: 190, align: "center" as const,
-      render: (_: unknown, account: Account) => <AvailableQuota account={officialUsageById.get(account.id)} language={language} />,
+      title: officialUsageLabels(language, tokenCostDisplay.unit).remaining,
+      key: "availableQuota", width: 190, align: "center" as const,
+      render: (_: unknown, account: Account) => <AvailableQuota account={officialUsageById.get(account.id)}
+        language={language} settings={tokenCostDisplay} />,
     },
     ...(customPriorityActive ? [{
       title: t("table.autoSwitchPriority"), key: "autoSwitchPriority", width: 150,
@@ -946,7 +948,7 @@ export function AccountTable({
     { key: "credits", label: t("table.credits") },
     { key: "tokenTotals", label: t("table.tokenTotals") },
     { key: "estimatedCost", label: t("table.estimatedTokenCost") },
-    { key: "availableQuota", label: officialUsageLabels(language).remaining },
+    { key: "availableQuota", label: officialUsageLabels(language, tokenCostDisplay.unit).remaining },
     ...(customPriorityActive
       ? [{ key: "autoSwitchPriority" as const, label: t("table.autoSwitchPriority") }]
       : []),

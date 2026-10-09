@@ -6,7 +6,9 @@ import { ContextUsageButton } from "./ContextUsageButton";
 import { ContextSettingsDialog } from "./ContextSettingsDialog";
 import type { ThreadTokenUsage } from "./types";
 import styles from "./UsageStatus.module.less";
-import { formatTokens, formatCost, usageTrailing } from "../../../../../shared/remote-chat/usage";
+import { formatTokens, usageTrailing } from "../../../../../shared/remote-chat/usage";
+import { useTokenCostDisplaySettings } from "../../hooks/useTokenCostDisplaySettings";
+import { formatEstimatedCost } from "../../utils/tokenCost";
 
 const TOKEN_FRACTION_DIGITS = 2;
 const TOOLTIP_STYLES = {
@@ -32,9 +34,11 @@ export function UsageStatus({ active, threadId, tokenUsage }: {
   active: boolean; threadId?: string | null; tokenUsage?: ThreadTokenUsage;
 }) {
   const { usage, error } = useUsageStatus(active);
+  const display = useTokenCostDisplaySettings();
+  const formatCost = (value: number) => formatEstimatedCost(value, display);
   const [hint, setHint] = useState<UsageHint | null>(null);
   const [settingsThread, setSettingsThread] = useState<string | null>(null);
-  const trailing = usageTrailing(usage, guiText);
+  const trailing = usageTrailing(usage, guiText, formatCost);
   const tokens = usage ? formatTokens(usage.totalTokens, TOKEN_FRACTION_DIGITS) : "—";
   const pendingDescription = error || guiText("正在读取今日用量…");
   useEffect(() => {

@@ -17,6 +17,7 @@ import { NetworkProxySettingsCard } from "../settings/NetworkProxySettings";
 import { RemoteDesktopSettingsCard } from '../settings/RemoteDesktopSettingsCard';
 import { ChatGptEnhancementsCard } from "../settings/ChatGptEnhancementsCard";
 import styles from "./index.module.less";
+import { TokenCostSettingsCard } from "../../components/TokenCostUnitSettings";
 
 interface SettingsSectionProps {
   children: ReactNode;
@@ -77,6 +78,7 @@ export function SettingsPage(settings: SettingsPageProps) {
       <SettingsSection id="settings-usage" title={settings.t("settings.sections.usage.title")}
         description={settings.t("settings.sections.usage.description")}>
         <RefreshSettingsCards settings={settings} />
+        <TokenCostSettingsCard providers={settings.providers} t={settings.t} />
         <UsageSettingsCards settings={settings} />
       </SettingsSection>
       <SettingsSection id="settings-connection"

@@ -1,6 +1,8 @@
 import { AutoComplete, Button, Checkbox, Input, InputNumber, Select } from "antd";
 import { Plus, Trash2 } from "lucide-react";
 import type { Translate } from "../../i18n";
+import { useTokenCostDisplaySettings } from "../../hooks/useTokenCostDisplaySettings";
+import { TOKEN_PRICE_DISPLAY_PRECISION } from "../../utils/tokenCost";
 import type { ProviderApiFormat, ReasoningEffort } from "../../types";
 import {
   CONTEXT_WINDOW_OPTIONS,
@@ -34,6 +36,7 @@ export function ModelReasoningEditor({
   onChange,
   t,
 }: ModelReasoningEditorProps) {
+  const display = useTokenCostDisplaySettings();
   const updateModel = (index: number, model: string) => {
     onChange(value.map((config, rowIndex) => {
       if (rowIndex !== index) return config;
@@ -91,7 +94,7 @@ export function ModelReasoningEditor({
       <span>{t("providers.form.contextWindow")}</span>
       <span>{t("providers.form.apiProtocol")}</span>
       <span>{t("providers.form.imageInputModels")}</span>
-      <span>{t("providers.form.unitCostPerMillion")}</span>
+      <span>{t("providers.form.unitCostPerMillion", { unit: display.unit })}</span>
       <span />
     </div>
     {value.map((config, index) => <div className="provider-model-editor-row" key={index}>
@@ -110,8 +113,9 @@ export function ModelReasoningEditor({
       <Checkbox checked={config.supportsImageInput} disabled={disabled}
         aria-label={`${t("providers.form.imageInputModels")}: ${config.model}`}
         onChange={(event) => updateImageInput(index, event.target.checked)} />
-      <InputNumber min={0} precision={6} value={config.unitCost} disabled={disabled}
-        placeholder="Sol" onChange={(next) => updateUnitCost(index, next)} />
+      <InputNumber min={0} precision={TOKEN_PRICE_DISPLAY_PRECISION}
+        value={config.unitCost == null ? null : config.unitCost * display.usdMultiplier} disabled={disabled}
+        placeholder="Sol" onChange={(next) => updateUnitCost(index, next == null ? null : next / display.usdMultiplier)} />
       <Button type="text" danger icon={<Trash2 size={14} />} disabled={disabled || value.length === 1}
         aria-label={t("providers.form.removeModel")} onClick={() => remove(index)} />
     </div>)}

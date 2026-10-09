@@ -13,10 +13,12 @@ use crate::{
 };
 
 mod catalog;
+mod display;
 mod long_context;
 
 pub(crate) use catalog::RemoteCostPresetDocument;
 use catalog::{CostPreset, CostPresetCatalog};
+pub(crate) use display::CostDisplaySettings;
 
 use long_context::LongContextCostSettings;
 
@@ -37,6 +39,8 @@ static PRESET_CATALOG: LazyLock<CostPresetCatalog> = LazyLock::new(|| {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct CostRates {
+    #[serde(default)]
+    pub(crate) display: CostDisplaySettings,
     #[serde(default = "default_reference_model")]
     reference_model: String,
     #[serde(default)]
@@ -56,6 +60,7 @@ pub(crate) struct CostRates {
 impl Default for CostRates {
     fn default() -> Self {
         Self {
+            display: CostDisplaySettings::default(),
             reference_model: default_reference_model(),
             fast_mode_multiplier: None,
             model_fast_mode_multipliers: BTreeMap::new(),
@@ -237,6 +242,7 @@ impl CostRates {
             .as_ref()
             .is_none_or(CostPresetCatalog::is_valid);
         if reference_valid
+            && self.display.is_valid()
             && catalog_valid
             && multiplier_valid
             && self.long_context.is_valid()

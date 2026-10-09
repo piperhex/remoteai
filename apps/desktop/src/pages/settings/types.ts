@@ -8,9 +8,11 @@ import type {
   CodexHomeEntry,
   CodexHomePreset,
   NetworkProxySettings,
+  Provider,
 } from "../../types";
 
 export interface SettingsPageProps {
+  providers: Provider[];
   sseIdleTimeout: ReturnType<typeof import("../../hooks/useSseIdleTimeout").useSseIdleTimeout>;
   info: AppInfo | null;
   autoUpdateEnabled: boolean;

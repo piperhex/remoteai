@@ -4,7 +4,8 @@ import { costMultiplierForServiceTier } from "./tokenCostFastMode";
 import { longContextMultipliersForEntry } from "./tokenCostLongContext";
 
 const TOKENS_PER_MILLION = 1_000_000;
-const TOKEN_COST_DISPLAY_STORAGE_KEY = "codex-switch:token-cost-display";
+export const TOKEN_PRICE_DISPLAY_PRECISION = 12;
+export const TOKEN_COST_DISPLAY_STORAGE_KEY = "codex-switch:token-cost-display";
 export const TOKEN_COST_CUSTOM_RULES_STORAGE_KEY = "codex-switch:token-cost-custom-rules";
 export const TOKEN_COST_DISPLAY_EVENT = "codex-switch:token-cost-display-changed";
 export const TOKEN_COST_CUSTOM_RULES_EVENT = "codex-switch:token-cost-custom-rules-changed";
@@ -164,6 +165,12 @@ export function formatEstimatedCostValue(value: number, settings = DEFAULT_TOKEN
 
 export function formatEstimatedCost(value: number, settings = DEFAULT_TOKEN_COST_DISPLAY_SETTINGS) {
   return `${formatEstimatedCostValue(value, settings)} ${settings.unit}`;
+}
+
+export function formatTokenPrice(value: number, settings: TokenCostDisplaySettings) {
+  return (value * settings.usdMultiplier).toLocaleString("en-US", {
+    maximumFractionDigits: TOKEN_PRICE_DISPLAY_PRECISION,
+  });
 }
 
 export function refreshTokenCostCurrencyRate(

@@ -7,6 +7,8 @@ import type { Translate } from "../i18n";
 import { useCustomTokenCostEditor } from "../hooks/useCustomTokenCostEditor";
 import { loadTokenCostReferenceModel, saveTokenCostReferenceModel } from "../utils/tokenCostPresets";
 import { TokenCostPresets } from "./TokenCostPresets";
+import { useTokenCostDisplaySettings } from "../hooks/useTokenCostDisplaySettings";
+import { formatTokenPrice, TOKEN_PRICE_DISPLAY_PRECISION } from "../utils/tokenCost";
 
 interface CustomTokenCostModalProps {
   open: boolean;
@@ -16,6 +18,7 @@ interface CustomTokenCostModalProps {
 }
 
 export function CustomTokenCostModal({ open, providers, t, onClose }: CustomTokenCostModalProps) {
+  const display = useTokenCostDisplaySettings();
   const [referenceModel, setReferenceModel] = useState(loadTokenCostReferenceModel);
   const editor = useCustomTokenCostEditor({ open, providers, referenceModel });
   useEffect(() => {
@@ -49,7 +52,7 @@ export function CustomTokenCostModal({ open, providers, t, onClose }: CustomToke
             <div className="custom-token-cost-custom-header">
               <div className="custom-token-cost-section-heading">
                 <h3>{t("tokenCost.customBilling.customTitle")}</h3>
-                <small>{t("tokenCost.customBilling.customHint")}</small>
+                <small>{t("tokenCost.customBilling.customHint", { unit: display.unit })}</small>
               </div>
               <Button type="primary" disabled={!editor.valid} onClick={editor.save}>
                 {t("tokenCost.customBilling.save")}
@@ -76,8 +79,10 @@ export function CustomTokenCostModal({ open, providers, t, onClose }: CustomToke
                 {(["input", "cachedInput", "output"] as const).map((rate) => <div
                   className="custom-token-cost-field" key={rate}>
                   <label htmlFor={`custom-token-cost-${rate}`}>{t(`tokenCost.customBilling.${rate}`)}</label>
-                  <InputNumber id={`custom-token-cost-${rate}`} min={0} precision={6} value={editor.rates[rate]}
-                    onChange={(value) => editor.setRate(rate, value)} disabled={!editor.providerId} />
+                  <InputNumber id={`custom-token-cost-${rate}`} min={0} precision={TOKEN_PRICE_DISPLAY_PRECISION}
+                    value={editor.rates[rate] == null ? null : editor.rates[rate] * display.usdMultiplier}
+                    onChange={(value) => editor.setRate(rate, value == null ? null : value / display.usdMultiplier)}
+                    disabled={!editor.providerId} />
                 </div>)}
               </div>
               <small className="custom-token-cost-hint">
@@ -91,7 +96,8 @@ export function CustomTokenCostModal({ open, providers, t, onClose }: CustomToke
                 const provider = providers.find((item) => item.id === rule.providerId);
                 return <div className="custom-token-cost-saved-row" key={`${rule.providerId}:${rule.model}`}>
                   <span><b>{provider?.name ?? rule.providerId}</b><code>{rule.model}</code></span>
-                  <small>{rule.input} / {rule.cachedInput} / {rule.output}</small>
+                  <small>{[rule.input, rule.cachedInput, rule.output]
+                    .map((price) => formatTokenPrice(price, display)).join(" / ")} {display.unit}</small>
                   <Button type="text" danger size="small" aria-label={t("tokenCost.customBilling.remove")}
                     icon={<Trash2 size={14} />} onClick={() => editor.remove(rule)} />
                 </div>;

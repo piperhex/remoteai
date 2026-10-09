@@ -35,7 +35,7 @@ export function formatCost(value: number) {
   return `${value.toLocaleString('en-US', { maximumFractionDigits: value > 0 && value < 0.01 ? 4 : 2 })}USD`;
 }
 
-export function usageTrailing(usage: UsageSummary | null, translate = (text: string) => text) {
+export function usageTrailing(usage: UsageSummary | null, translate = (text: string) => text, cost = formatCost) {
   const remaining = usage?.primaryRemainingPercent;
   if (typeof remaining === 'number' && Number.isFinite(remaining)) {
     const label = usage?.primaryRemainingAggregated ? '并发账户剩余额度合计' : '当前账户剩余额度';
@@ -49,6 +49,6 @@ export function usageTrailing(usage: UsageSummary | null, translate = (text: str
   const estimate = usage?.providerEstimatedCost;
   if (!estimate) return null;
   const label = estimate.aggregated ? '聚合 API 今日预估费用' : '当前 API 今日预估费用';
-  return { text: `API ${formatCost(estimate.amountUsd)}`, label: '',
-    description: `${translate(label)}：${formatCost(estimate.amountUsd)}`, tone: 'cost' } as const;
+  return { text: `API ${cost(estimate.amountUsd)}`, label: '',
+    description: `${translate(label)}：${cost(estimate.amountUsd)}`, tone: 'cost' } as const;
 }

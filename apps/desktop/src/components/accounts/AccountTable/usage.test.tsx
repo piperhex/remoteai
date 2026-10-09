@@ -6,6 +6,7 @@ import * as backend from "../../../api/backend";
 import { DEMO_ACCOUNTS } from "../../../demo";
 import { AccountTable } from ".";
 import { loadOfficialUsage } from '../../../api/officialUsage';
+import { saveTokenCostDisplaySettings } from '../../../utils/tokenCost';
 
 vi.mock('../../../api/officialUsage', () => ({ loadOfficialUsage: vi.fn() }));
 
@@ -101,7 +102,7 @@ it("shows actual zeroes when no usage was recorded", async () => {
   expect(container.querySelector(".account-card-token-cost")?.textContent).toBe("0.00 USD");
 });
 
-it('shows the combined official quota estimate in the account table in USD', async () => {
+it('updates the quota unit and amount with cost display settings without reloading usage', async () => {
   const now = Math.floor(Date.now() / 1000);
   vi.mocked(loadOfficialUsage).mockResolvedValue({ status: 'ready', updatedAt: now,
     accounts: [{ accountId: account.id, accountLabel: account.email, tokens: 200, costUsd: 10,
@@ -109,7 +110,18 @@ it('shows the combined official quota estimate in the account table in USD', asy
   });
   await render({ displayMode: 'table' });
   expect(container.textContent).toContain('Estimated available (USD)');
-  expect(container.textContent).toContain('$30.00');
+  expect(container.textContent).toContain('30.00 USD');
+  await act(async () => saveTokenCostDisplaySettings({ unit: '元', usdMultiplier: 7, currencyCode: 'CNY' }));
+  expect(container.textContent).toContain('Estimated available (元)');
+  expect(container.textContent).toContain('210.00 元');
+  expect(container.textContent).not.toContain('Estimated available (USD)');
+  await act(async () => saveTokenCostDisplaySettings({ unit: '积分', usdMultiplier: 100, currencyCode: null }));
+  expect(container.textContent).toContain('Estimated available (积分)');
+  expect(container.textContent).toContain('3000.00 积分');
+  await act(async () => saveTokenCostDisplaySettings({ unit: 'USD', usdMultiplier: 1, currencyCode: null }));
+  expect(container.textContent).toContain('Estimated available (USD)');
+  expect(container.textContent).toContain('30.00 USD');
+  expect(loadOfficialUsage).toHaveBeenCalledTimes(1);
 });
 
 it("keeps actions responsive and polling single-flight while usage is pending", async () => {

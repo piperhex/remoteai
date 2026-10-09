@@ -90,7 +90,7 @@ function createHarness() {
     return dependencies[name];
   }, exports);
   const providers = [{ id: "relay", name: "Relay", kind: "custom" }];
-  exports.useProviderTokenUsage(2, providers);
+  exports.useProviderTokenUsage(2, providers, true);
   return {
     calls: state.calls, updates: state.updates, providers, intervals,
     emitSettings: () => window.dispatchEvent(new Event(LONG_CONTEXT_EVENT)),
