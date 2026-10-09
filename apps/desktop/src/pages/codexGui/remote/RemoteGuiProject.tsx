@@ -7,6 +7,7 @@ import type { ChatController, ChatState } from '../../../../../web/src/chat/type
 import { projectName } from '../projectCatalog';
 import { GuiHostPicker } from '../GuiHostPicker';
 import { WorkspacePicker } from '../WorkspacePicker';
+import { GuiToolbox } from '../GuiToolbox';
 import type { GuiComputerNavigation } from './types';
 import styles from '../styles.module.less';
 
@@ -27,6 +28,8 @@ export function RemoteGuiProject({ state, controller, computers, active }: {
         remote localLabel={guiText("工作树")} enabled={active && state.ready}
         request={controller.guiTools.workspace} onBusyChange={controller.setWorkspaceBusy}
         onChange={path => controller.chooseDraftProject({ cwd: path, label: projectName(path) })} />}
+      <GuiToolbox trigger="git" active={active} connected={state.ready && !state.workspaceBusy} cwd={cwd}
+        deviceName={computers.current?.name ?? guiText("远程电脑")} git={controller.guiTools.git} />
       <GuiHostPicker navigation={computers} active={active} />
     </div>
     {picking && canChoose && <ChatProjectPicker cwd={cwd} load={controller.loadProjectDirectories}

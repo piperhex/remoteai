@@ -45,7 +45,7 @@ export default function RemoteGuiWorkspace(props: {
       headerConnectionActions={<GuiRemoteDesktop client={chat.controller.guiTools.desktop} active={active}
         connected={chat.state.mode === 'direct' || chat.state.mode === 'relay'} />}
       headerActions={<><RemoteGuiTools controller={chat.controller} state={chat.state} active={active}
-        terminal={terminal} deviceName={device.name} />
+        terminal={terminal} />
         <span className="gui-remote-focus"><FocusModeButton {...props.focusMode} /></span></>}
       headerEnd={props.focusMode.focused && props.windowControls}
       conversationFooter={terminal.tabs.length > 0 && <Suspense fallback={null}>

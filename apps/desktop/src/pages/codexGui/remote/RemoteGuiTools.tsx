@@ -8,10 +8,9 @@ import type { TerminalPanelState } from '../terminal/useTerminalPanel';
 import { Installer } from '../Installer';
 import { CliUpdateIcon } from '../CliUpdateIcon';
 import { useRemoteCliInstaller } from './useRemoteCliInstaller';
-import { GuiToolbox } from '../GuiToolbox';
 
-export function RemoteGuiTools({ controller, state, active, terminal, deviceName }: {
-  controller: ChatController; state: ChatState; active: boolean; deviceName: string;
+export function RemoteGuiTools({ controller, state, active, terminal }: {
+  controller: ChatController; state: ChatState; active: boolean;
   terminal: TerminalPanelState & { error?: string; busy?: boolean };
 }) {
   const connected = state.mode === 'direct' || state.mode === 'relay';
@@ -29,8 +28,6 @@ export function RemoteGuiTools({ controller, state, active, terminal, deviceName
     finally { setReconnecting(false); }
   };
   return <div className="gui-remote-tools">
-    <GuiToolbox active={active} connected={connected} cwd={state.selected?.cwd ?? state.draftProject?.cwd ?? ''}
-      deviceName={deviceName} git={controller.guiTools.git} />
     <Tooltip title={guiText("重新连接远程 Codex")} styles={{ root: { maxWidth: 400 } }}>
       <Button type="text" icon={<RefreshCw size={16} />} aria-label={guiText("重新连接远程 Codex")}
         loading={reconnecting || state.connecting} disabled={running || installer.installing}

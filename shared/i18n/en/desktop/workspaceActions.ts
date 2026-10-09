@@ -77,6 +77,7 @@ export const workspaceActions = {
   "项目正在处理中，请稍后重试。": "The project is busy. Please try again shortly.",
   "操作无效，请重新选择。": "Invalid operation. Please choose again.",
   "Git 分支": "Git branch",
+  "打开 Git": "Open Git",
   "正在读取分支…": "Loading branches…",
   "分支": "Branch",
   "未提交：": "Uncommitted:",
