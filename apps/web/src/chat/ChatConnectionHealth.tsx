@@ -17,7 +17,7 @@ export function ChatConnectionHealth({ state, device, reconnect, close }: {
   const health = connectionHealth(state, device);
   const StatusIcon = statusIcons[health.status];
   return <AdaptiveSheet open title={t('连接体检')} subtitle={t('检测当前设备与电脑的连接状态')}
-    onClose={close} width={448} className="connection-health-sheet">
+    onClose={close} width={680} className="connection-health-sheet">
     <div className="connection-health">
       <div className={`connection-health-summary health-${health.status}`} aria-live="polite">
         <span className="connection-health-summary-icon"><StatusIcon size={22} aria-hidden="true" /></span>

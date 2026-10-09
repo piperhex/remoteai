@@ -113,16 +113,29 @@
 .connection-health-reconnect:focus-visible { outline: 2px solid #0b8065; outline-offset: 3px; }
 
 @media (min-width: 768px) {
-  .connection-health { gap: 16px; padding-bottom: 0; }
+  .connection-health { max-width: none; gap: 16px; padding-bottom: 0; }
+  .connection-health-summary .connection-health-copy,
+  .connection-health-note .connection-health-copy { max-width: 400px; }
   .connection-health-summary { gap: 12px; padding: 16px; border-radius: 12px; }
   .connection-health-summary-icon { width: 36px; height: 36px; }
-  .connection-health-steps { gap: 0; padding: 0 14px; border: 1px solid #e9eeeb; border-radius: 12px; }
-  .connection-health-step { gap: 12px; min-height: 66px; padding: 12px 0; border: 0; border-radius: 0; }
-  .connection-health-step + .connection-health-step { border-top: 1px solid #f0f3f1; }
+  .connection-health-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .connection-health-step {
+    display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-content: start;
+    gap: 6px 10px; min-width: 0; padding: 14px; border-color: #e9eeeb; border-radius: 12px;
+  }
+  .connection-health-step .connection-health-copy { display: contents; }
+  .connection-health-step .connection-health-copy strong { grid-column: 2; grid-row: 1; }
+  .connection-health-step .connection-health-copy p { grid-column: 2 / -1; grid-row: 2; }
   .connection-health-step-icon { width: 32px; height: 32px; border-radius: 10px; }
   .connection-health-step-icon svg { width: 18px; height: 18px; }
-  .connection-health-badge { flex-shrink: 0; gap: 4px; padding: 4px 0 4px 4px; background: transparent; }
+  .connection-health-step .connection-health-badge {
+    grid-column: 3; grid-row: 1; align-self: center; max-width: 100%; margin: 0;
+    gap: 4px; padding: 4px 0; background: transparent;
+  }
   .connection-health-addresses { padding: 14px 16px; border-color: #edf1ef; border-radius: 12px; background: #f8faf9; }
+  .connection-health-addresses dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .connection-health-addresses dl > div { min-width: 0; }
+  .connection-health-addresses p { max-width: 400px; }
   .connection-health-addresses dt { color: #637269; font-size: 12px; line-height: 18px; font-weight: 500; }
   .connection-health-addresses dd span {
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-variant-numeric: tabular-nums;

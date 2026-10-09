@@ -9,7 +9,7 @@ test('shows both public endpoints, wraps IPv6 and clears addresses on reconnect'
   await expect(endpoints.getByText('电脑公网 IP 和端口', { exact: true })).toBeVisible();
   await expect(endpoints).toContainText('203.0.113.8:42123 · UDP');
   await expect(endpoints).toContainText('[2001:db8:1234:5678:abcd:ef01:2345:6789]:65535 · TCP');
-  expect((await panel.boundingBox())!.width).toBeLessThanOrEqual(400);
+  expect((await panel.locator('.connection-health-step').first().boundingBox())!.width).toBeLessThanOrEqual(400);
   expect(await endpoints.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await endpoints.scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('public-endpoints.png') });
@@ -26,7 +26,7 @@ test('shows the selected P2P endpoints separately and hides them on relay', asyn
   await expect(direct).toContainText('[2001:db8:1234:5678:abcd:ef01:2345:6789]:65535 · UDP');
   await expect(direct).not.toContainText('203.0.113.8');
   await expect(page.locator('.connection-health-public')).toContainText('203.0.113.8:42123 · UDP');
-  expect((await direct.boundingBox())!.width).toBeLessThanOrEqual(400);
+  expect((await direct.locator('dl > div').first().boundingBox())!.width).toBeLessThanOrEqual(400);
   expect(await direct.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await direct.scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('p2p-endpoints.png') });
@@ -50,7 +50,7 @@ test('shows the peer-confirmed public mapping for the current P2P connection', a
   await expect(direct).toContainText('203.0.113.8:54321 · UDP');
   await expect(direct).not.toContainText('192.168.1.4');
   await expect(direct).not.toContainText('203.0.113.8:42123');
-  expect((await direct.boundingBox())!.width).toBeLessThanOrEqual(400);
+  expect((await direct.locator('dl > div').first().boundingBox())!.width).toBeLessThanOrEqual(400);
   expect(await direct.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
   await direct.scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('confirmed-public-endpoint.png') });
