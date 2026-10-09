@@ -347,7 +347,7 @@ async fn retaining_a_relay_invalidates_a_pending_backup_commit() {
             deadline: Instant::now() + Duration::from_secs(60),
             clipboard: None,
             display: stream.display.clone(),
-            input: crate::remote_desktop::windows_input::InputState::default(),
+            input: Default::default(),
         });
     let standby_signal = |action| {
         serde_json::from_value::<SignalRequest>(serde_json::json!({
