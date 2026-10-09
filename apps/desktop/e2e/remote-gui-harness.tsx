@@ -28,11 +28,11 @@ function Harness() {
           accounts={[{ ...DEMO_ACCOUNTS[0], active: true }]} providers={[]} aggregateApis={[]} proxyRunning
           busy={false} loading={false} onSwitchAccount={async () => true} onSwitchProvider={async () => true} />
       </aside><div className={styles.workspace} style={{ flex: 1 }}>
-        <div style={{ alignSelf: 'flex-end', margin: 12 }}><GuiToolbox active={!device} connected git={localGit}
-          cwd={project} deviceName="本机" /></div>
         <div className={styles.composerWrap} style={{ marginTop: 'auto' }}>
           <ProjectPicker value={project} projects={['/local/workspace']} disabled={false}
             onChange={setProject} onError={error => { throw error; }}
+            actions={<GuiToolbox trigger="git" active={!device} connected git={localGit}
+              cwd={project} deviceName="本机" />}
             hostPicker={<GuiHostPicker navigation={computers} active={!device} />} />
           <textarea aria-label="本机草稿" value={localDraft} onChange={event => setLocalDraft(event.target.value)} />
         </div>

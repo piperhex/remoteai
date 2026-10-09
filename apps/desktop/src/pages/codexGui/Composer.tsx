@@ -2,6 +2,7 @@ import { guiText } from "../../i18n/guiText";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { Target, X } from "lucide-react";
+import { isDesktopApp } from "../../api/backend";
 import { useGoalMode } from "../../../../../shared/remote-chat/client/useGoalMode";
 import { ComposerAddMenu } from "./ComposerAddMenu";
 import { ComposerFilesDialog } from "./ComposerFilesDialog";
@@ -20,6 +21,8 @@ import { IMAGE_TYPES, useComposerDraft } from "./useComposerDraft";
 import { ModelPicker } from "./ModelPicker";
 import { UsageStatus } from "./UsageStatus";
 import { ProjectPicker } from "./ProjectPicker";
+import { GuiToolbox } from "./GuiToolbox";
+import { localGitClient } from "./localGitClient";
 import { SkillInput, type SkillInputHandle } from "./SkillInput";
 import { compactCommand } from "./composerOptions";
 import { QueuedMessages } from "./QueuedMessages";
@@ -53,8 +56,9 @@ export const Composer = forwardRef<ComposerHandle, {
   // Creating a goal first creates its conversation; keep the form until the goal request succeeds.
   useEffect(() => { if (!controller.getSnapshot().goalBusy || !active) setDialog(null); }, [key, active, controller]);
   const current = state.selected ? state.conversations[state.selected] : undefined;
+  const thread = current?.thread ?? state.threads.find((entry) => entry.id === state.selected);
   const project = state.selected
-    ? state.projectOverrides[state.selected] ?? current?.thread.cwd ?? "" : state.settings.cwd;
+    ? state.projectOverrides[state.selected] ?? thread?.cwd ?? "" : state.settings.cwd;
   const running = Boolean(current?.activeTurn);
   const queuedMessages = state.selected ? state.queued[state.selected] ?? [] : [];
   const disabled = workspaceBusy || state.connection !== "ready" || state.sending || state.archived
@@ -83,9 +87,11 @@ export const Composer = forwardRef<ComposerHandle, {
   };
   return <div className={styles.composerWrap}>
     <RunningChangesSummary value={current} />
-    {running && hostPicker && <div className={styles.projectBar}>{hostPicker}</div>}
-    {!running && <ProjectPicker key={key} value={project} projects={state.projects} hostPicker={hostPicker}
-      disabled={state.sending || state.archived || workspaceBusy} gitEnabled={!state.selected}
+    {(!running || isDesktopApp || hostPicker) && <ProjectPicker key={key} value={project}
+      projects={state.projects} hostPicker={hostPicker} running={running}
+      actions={isDesktopApp && <GuiToolbox trigger="git" active={active} connected={!workspaceBusy}
+        cwd={project} deviceName={guiText("本机")} git={localGitClient} />}
+      disabled={running || state.sending || state.archived || workspaceBusy} gitEnabled={!state.selected}
       onBusyChange={controller.setWorkspaceBusy}
       onChange={controller.setProject} onError={controller.report} />}
     {state.selected && <QueuedMessages threadId={state.selected} messages={queuedMessages}

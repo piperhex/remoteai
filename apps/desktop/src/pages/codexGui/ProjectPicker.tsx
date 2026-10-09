@@ -11,10 +11,11 @@ interface ProjectPickerProps {
   value: string; projects: string[]; disabled: boolean;
   onChange: (cwd: string) => void; onError: (error: unknown) => void;
   gitEnabled?: boolean; onBusyChange?: (busy: boolean) => void; hostPicker?: ReactNode;
+  actions?: ReactNode; running?: boolean;
 }
 
 export function ProjectPicker({ value, projects, disabled, onChange, onError,
-  gitEnabled, onBusyChange, hostPicker }: ProjectPickerProps) {
+  gitEnabled, onBusyChange, hostPicker, actions, running = false }: ProjectPickerProps) {
   const [creating, setCreating] = useState(false);
   const [saved, setSaved] = useState(readProjects);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -27,14 +28,15 @@ export function ProjectPicker({ value, projects, disabled, onChange, onError,
     } catch { onError(new Error(guiText('项目未能保存，请重试。'))); }
   };
   return <div className={layout.projectBar}>
-    <ProjectFolderPicker value={value} disabled={disabled} triggerRef={trigger}
+    {!running && <ProjectFolderPicker value={value} disabled={disabled} triggerRef={trigger}
       projects={[...saved, ...projects.map(path => ({ path, name: folderName(path) }))]}
       onChange={onChange} onClear={() => onChange('')} onOpen={() => setSaved(readProjects())}
-      onAdd={() => setCreating(true)} addLabel={guiText('新建项目')} />
-    {gitEnabled && onBusyChange ? <WorkspacePicker key={value} cwd={value} disabled={disabled}
-      onChange={onChange} onBusyChange={onBusyChange} localLabel={hostPicker ? guiText('工作树') : undefined} />
-      : !hostPicker && <span className={layout.localLabel}>
-        {isDesktopApp ? guiText('本地') : guiText('Remote AI 主机')}</span>}
+      onAdd={() => setCreating(true)} addLabel={guiText('新建项目')} />}
+    {!running && gitEnabled && onBusyChange && <WorkspacePicker key={value} cwd={value} disabled={disabled}
+      onChange={onChange} onBusyChange={onBusyChange} localLabel={hostPicker ? guiText('工作树') : undefined} />}
+    {actions}
+    {!running && !(gitEnabled && onBusyChange) && !hostPicker && <span className={layout.localLabel}>
+      {isDesktopApp ? guiText('本地') : guiText('Remote AI 主机')}</span>}
     {hostPicker}
     {creating && <CreateProjectDialog disabled={disabled} onCreate={create} onError={onError}
       onClose={close} />}
