@@ -10,6 +10,7 @@ const migrations = [
   '20260928-chat-push.sql',
   '20260928-desktop-service.sql',
   '20261005-chat-bulk-leases.sql',
+  '20261009-official-usage.sql',
 ];
 
 // The frozen Nest schema lacks Go additions; upgrade only the fixed localhost fixture database.

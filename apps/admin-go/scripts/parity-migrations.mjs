@@ -12,7 +12,9 @@ const containerName = 'codex-admin-bootstrap-test';
 const projectName = 'codex-admin-parity';
 const goOnlyTables = ['token_cost_preset_settings', 'user_login_locks', 'chat_relay_user_limits',
   'chat_relay_user_months', 'chat_relay_user_hours', 'chat_relay_budgets', 'chat_relay_bulk_leases',
-  'chat_push_subscriptions', 'chat_push_deliveries', 'desktop_service_credentials'];
+  'chat_push_subscriptions', 'chat_push_deliveries', 'desktop_service_credentials',
+  'official_usage_devices', 'official_usage_accounts', 'official_usage_minutes',
+  'official_quota_observations', 'official_quota_declines'];
 
 function docker(...args) {
   return execFileSync('docker', args, { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }).trim();
