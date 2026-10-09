@@ -1,5 +1,5 @@
 import { t, useLanguage } from '../i18n';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ArrowDown, ChevronDown, ChevronRight, Terminal } from 'lucide-react';
 import type { ChatMessagesProps } from '../../../../shared/remote-chat/client/messageProps';
 import { useConversationEntries } from '../../../../shared/chat/useConversationEntries';
@@ -87,6 +87,7 @@ export function ChatMessages(props: ChatMessagesProps & { processing?: ReactNode
     ? { ...turn, status: 'cached' } : turn), [thread?.turns, offline]);
   const { entries, setInline } = useConversationEntries(turns);
   const timeline = useMemo(() => activityTimeline(desktop ? desktopTimeline(entries) : entries), [desktop, entries]);
+  const runningSummary = timeline.find(entry => entry.kind === 'summary' && entry.turn.status === 'inProgress');
   const scroll = useHistoryScroll(props);
   const [selection, setSelection] = useState<Selection | null>(null);
   // Dismiss the previous layout's sheets before switching to inline work and docked reviews.
@@ -110,11 +111,13 @@ export function ChatMessages(props: ChatMessagesProps & { processing?: ReactNode
               ? <span role="status" className="chat-processing"><span className="chat-spinner" />{t("正在加载聊天记录…")}</span>
               : <button type="button" className="chat-text-action" onClick={scroll.more}>{t("加载更早的消息")}</button>}
           </div>}
-          {timeline.map(entry => <div key={entry.id}
-            data-message-id={'item' in entry ? entry.item.id : entry.id} className={`chat-entry-${entry.kind}`}>
-            <TimelineEntry entry={entry} open={setSelection} inline={setInline} desktop={desktop} />
-          </div>)}
-          {props.processing}
+          {timeline.map(entry => <Fragment key={entry.id}>
+            {entry === runningSummary && props.processing}
+            <div data-message-id={'item' in entry ? entry.item.id : entry.id} className={`chat-entry-${entry.kind}`}>
+              <TimelineEntry entry={entry} open={setSelection} inline={setInline} desktop={desktop} />
+            </div>
+          </Fragment>)}
+          {!runningSummary && props.processing}
           {!entries.length && !loading && !props.processing && <div className="chat-empty">
             <Terminal size={28} className="chat-empty-glyph" />
             <h2>{t("想一起完成什么？")}</h2><p className="chat-muted">{t("直接提问，或选择一个项目开始任务。")}</p>

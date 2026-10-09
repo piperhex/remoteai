@@ -39,6 +39,14 @@
     color: var(--muted); font-size: calc(var(--gui-font-size, 14px) - 2px); }
   .chat-processing-status { width: 100%; padding: 8px 0; align-self: stretch;
     font-size: calc(var(--gui-font-size, 14px) - 2px); }
+  .chat-changes-pill {
+    justify-content: center; gap: 4px 8px; max-width: min(100%, 400px); padding: 7px 12px;
+    border-color: var(--gui-border); color: var(--gui-muted); line-height: 1.5;
+    background: color-mix(in srgb, var(--panel) 28%, transparent);
+    -webkit-backdrop-filter: var(--gui-chat-backdrop); backdrop-filter: var(--gui-chat-backdrop);
+    &:hover { background: color-mix(in srgb, var(--panel) 42%, transparent); }
+    &:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+  }
   .gui-remote-project { width: min(100%, 920px); padding: 0 28px; align-self: center; flex-shrink: 0;
     button:disabled { opacity: 1; color: var(--muted); cursor: default; }
   }
