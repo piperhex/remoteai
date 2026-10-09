@@ -38,5 +38,11 @@ features = ["core"]
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21"
 
+[target.'cfg(windows)'.dependencies]
+netdev = "0.31"
+hickory-proto = "0.25.2"
+socket2 = "0.6"
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_NetworkManagement_IpHelper", "Win32_NetworkManagement_Ndis", "Win32_Networking_WinSock"] }
+
 [patch."https://github.com/EasyTier/EasyTier"]
 easytier-core = { path = "vendor/easytier-core" }

@@ -1573,16 +1573,20 @@ dependencies = [
  "easytier",
  "easytier-core",
  "easytier-proto",
+ "hickory-proto",
  "jni 0.21.1",
+ "netdev",
  "network-interface",
  "rand 0.9.4",
  "serde",
  "serde_json",
+ "socket2 0.6.5",
  "thiserror 2.0.18",
  "tokio",
  "turn",
  "url",
  "webrtc-util",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

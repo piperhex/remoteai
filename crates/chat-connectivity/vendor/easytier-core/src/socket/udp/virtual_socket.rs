@@ -364,6 +364,11 @@ mod option_tests {
 pub trait VirtualUdpSocketFactory: Send + Sync + 'static {
     type Socket: VirtualUdpSocket;
 
+    /// Configure an instance-owned native socket adapter before starting any I/O.
+    fn set_outbound_interface(&self, _name: &str) -> anyhow::Result<()> {
+        anyhow::bail!("native interface selection is not supported by this socket host")
+    }
+
     async fn bind_udp(&self, options: UdpBindOptions) -> anyhow::Result<Arc<Self::Socket>>;
 }
 

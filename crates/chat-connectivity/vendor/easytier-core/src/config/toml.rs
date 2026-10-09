@@ -517,6 +517,9 @@ impl std::fmt::Debug for ManagedCredentialConfig {
 #[derive(Debug, Clone, PartialEq, Deserialize)]
 #[cfg_attr(feature = "config-write", derive(Serialize))]
 struct Config {
+    // Selected by the embedding application; never loaded from or written to user TOML.
+    #[serde(skip)]
+    outbound_interface: Option<String>,
     netns: Option<String>,
     hostname: Option<String>,
     instance_name: Option<String>,
@@ -615,6 +618,23 @@ impl Default for TomlConfig {
 }
 
 impl TomlConfig {
+    /// Select a native interface for this instance's IPv4 traversal sockets only.
+    pub fn set_outbound_interface(&self, name: Option<String>) {
+        self.config
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .outbound_interface = name;
+    }
+
+    /// Runtime-only interface selection supplied by the embedding application.
+    pub fn outbound_interface(&self) -> Option<String> {
+        self.config
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .outbound_interface
+            .clone()
+    }
+
     fn normalize_config_source(config: &mut Config) {
         if matches!(
             config.source.as_ref().map(|source| source.source),

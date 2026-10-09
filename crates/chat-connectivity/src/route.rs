@@ -33,6 +33,14 @@ pub struct RouteEndpoint {
 
 /// A private virtual address reachable through a rendezvous relay must never count as P2P.
 pub async fn status(instance: &NativeCoreInstance, remote_name: &str) -> RouteStatus {
+    status_with_source(instance, remote_name, None).await
+}
+
+pub(crate) async fn status_with_source(
+    instance: &NativeCoreInstance,
+    remote_name: &str,
+    source: Option<std::net::Ipv4Addr>,
+) -> RouteStatus {
     let routes = instance.route_snapshots().await;
     let peers = instance.peer_snapshots().await;
     let mut status = from_snapshots(&routes, &peers, remote_name);
@@ -40,7 +48,7 @@ pub async fn status(instance: &NativeCoreInstance, remote_name: &str) -> RouteSt
         if let Some(tunnel) = routed_connection(&routes, &peers, remote_name)
             .and_then(|connection| connection.tunnel.as_ref())
         {
-            status.local_endpoint = endpoints::resolve_udp_binding(tunnel).await;
+            status.local_endpoint = endpoints::resolve_udp_binding(tunnel, source).await;
         }
     }
     status

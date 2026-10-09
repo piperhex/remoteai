@@ -2,6 +2,7 @@ import type { Channel, IceServer, Peer, PeerConnectionState, PeerFactory, Signal
 import { getChatPolicy, type ChatPolicy } from './policy';
 import type { ConnectionDiagnostic } from './diagnostics';
 import { MultipathChannel } from './multipathChannel';
+import { NativePathRecovery } from './nativePathRecovery';
 
 const MILLISECONDS_PER_SECOND = 1000;
 export type RecoverySignal = Exclude<Signal, { kind: 'key' }> & { generation?: number };
@@ -16,7 +17,7 @@ export class HotPeer {
   private unhealthySince?: number;
   private closed = false;
   private readonly sessionPaths?: MultipathChannel;
-  private readonly nativePath?: import('./nativePath').NativeChannel;
+  private readonly nativePath?: NativePathRecovery;
   constructor(private readonly options: {
     bulkChannel?: import('./protocol').PeerOptions['bulkChannel'];
     desktop: boolean; iceServers: IceServer[]; createPeer: PeerFactory;
@@ -29,11 +30,9 @@ export class HotPeer {
     if (options.sessionId && options.nativeTraversal && options.createNativePath) {
       this.sessionPaths = new MultipathChannel({ disconnected: options.disconnected, diagnostic: options.diagnostic });
       options.channel(this.sessionPaths);
-      try {
-        this.nativePath = options.createNativePath({ sessionId: options.sessionId, desktop: options.desktop,
-          config: options.nativeTraversal, diagnostic: options.diagnostic, bulkChannel: options.bulkChannel });
-        this.sessionPaths.add(this.nativePath, 1, 'mesh');
-      } catch { options.diagnostic?.('path-state', { transport: 'mesh', state: 'failed' }); }
+      this.nativePath = new NativePathRecovery({ sessionId: options.sessionId, desktop: options.desktop,
+        config: options.nativeTraversal, diagnostic: options.diagnostic, bulkChannel: options.bulkChannel },
+      options.createNativePath, channel => this.sessionPaths!.add(channel, 1, 'mesh'));
     }
     this.create();
   }
@@ -117,6 +116,7 @@ export class HotPeer {
   }
 
   recover(healthy: boolean, signaling: boolean) {
+    this.nativePath?.recover(signaling);
     if (this.options.desktop || this.closed) return;
     if (healthy) { this.established = true; this.unhealthySince = undefined; return; }
     const now = Date.now();
@@ -150,5 +150,5 @@ export class HotPeer {
       && (now - this.unhealthySince) / MILLISECONDS_PER_SECOND >= policy.p2pDisconnectGraceSeconds;
   }
 
-  close() { this.closed = true; this.peer?.close(); this.sessionPaths?.close(); }
+  close() { this.closed = true; this.nativePath?.stop(); this.peer?.close(); this.sessionPaths?.close(); }
 }

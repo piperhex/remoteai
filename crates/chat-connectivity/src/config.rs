@@ -111,8 +111,8 @@ fn listeners() -> Result<Vec<Url>> {
 fn configure_flags(config: &TomlConfig) {
     let mut flags = config.get_flags();
     flags.no_tun = true;
-    // No OS routes are installed, so interface pinning cannot prevent overlay loops here.
-    // Let the OS route loopback, VPN and changing mobile interfaces without stale source bindings.
+    // No overlay routes are installed. Keep legacy global binding off; the per-instance
+    // network plan selectively pins Windows IPv4 traversal while preserving loopback/IPv6.
     flags.bind_device = false;
     flags.use_smoltcp = true;
     flags.enable_encryption = true;

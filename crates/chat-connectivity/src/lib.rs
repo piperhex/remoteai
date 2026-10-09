@@ -12,6 +12,7 @@ mod error;
 mod ffi;
 mod lease;
 mod media;
+mod network;
 mod route;
 #[cfg(test)]
 mod tests;

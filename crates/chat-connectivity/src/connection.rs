@@ -252,7 +252,7 @@ impl Drop for Connection {
 }
 
 async fn serve(
-    config: Config,
+    mut config: Config,
     incoming: mpsc::Receiver<String>,
     events: &mpsc::Sender<Event>,
     controls: EngineControls,
@@ -264,7 +264,13 @@ async fn serve(
         route: route_tx,
         bulk,
     } = controls;
+    let network = tokio::select! {
+        result = crate::network::prepare(&mut config) => result?,
+        _ = canceled.changed() => return Ok(()),
+        _ = crate::lease::expired(expiry.clone()) => return Ok(()),
+    };
     let core = config.core()?;
+    network.apply(&core);
     let engine = tokio::task::spawn_blocking(move || create_native_instance(core))
         .await
         .map_err(|_| Error::Unavailable)?
@@ -276,7 +282,8 @@ async fn serve(
         _ = crate::lease::expired(expiry) => Ok(()),
         result = run(&engine, &config, (incoming, events.clone()), (bulk.as_deref(), route_tx.subscribe())) => result,
         _ = diagnostics::monitor(&engine, config.remote_name(), events, punch_events) => Err(Error::Closed),
-        _ = monitor_route(&engine, config.remote_name(), &route_tx) => Err(Error::Closed),
+        _ = monitor_route(&engine, config.remote_name(), (&route_tx, &network)) => Err(Error::Closed),
+        _ = network.changed() => Err(Error::Unavailable),
     };
     engine_tx.send_replace(None);
     route_tx.send_replace(RouteStatus::default());
@@ -290,12 +297,13 @@ async fn serve(
 async fn monitor_route(
     engine: &NativeCoreInstance,
     remote: &str,
-    output: &watch::Sender<RouteStatus>,
+    output: (&watch::Sender<RouteStatus>, &crate::network::Plan),
 ) {
     let mut timer = tokio::time::interval(Duration::from_millis(500));
     loop {
         timer.tick().await;
-        output.send_replace(route::status(engine, remote).await);
+        let status = route::status_with_source(engine, remote, output.1.local_ipv4()).await;
+        output.0.send_replace(status);
     }
 }
 
@@ -310,20 +318,21 @@ async fn run(
     instance.start().await.map_err(|_| Error::Unavailable)?;
     if let Some(bulk) = files.0 {
         tokio::select! {
-            result = chat_streams(instance, config, incoming, events.clone()) => result,
+            result = chat_streams(instance, config, (incoming, events.clone()), files.1.clone()) => result,
             result = bulk.run(instance, config.desktop, (&files.1, &events)) => result,
         }
     } else {
-        chat_streams(instance, config, incoming, events).await
+        chat_streams(instance, config, (incoming, events), files.1).await
     }
 }
 
 async fn chat_streams(
     instance: &Arc<NativeCoreInstance>,
     config: &Config,
-    mut incoming: mpsc::Receiver<String>,
-    events: mpsc::Sender<Event>,
+    queues: (mpsc::Receiver<String>, mpsc::Sender<Event>),
+    route: watch::Receiver<RouteStatus>,
 ) -> Result<()> {
+    let (mut incoming, events) = queues;
     loop {
         diagnostics::report(&events, Stage::StreamConnect, Snapshot::default());
         let connected = connect(instance, config).await;
@@ -337,7 +346,7 @@ async fn chat_streams(
         }
         events.send(Event::Open).await.map_err(|_| Error::Closed)?;
         diagnostics::report(&events, Stage::StreamOpen, Snapshot::default());
-        let _disconnected = pump(instance, config, stream, (&mut incoming, &events)).await;
+        let _disconnected = pump(stream, (&mut incoming, &events), route.clone()).await;
         events
             .send(Event::Status {
                 route: RouteStatus::default(),
@@ -372,10 +381,9 @@ async fn connect(
 }
 
 async fn pump(
-    instance: &Arc<NativeCoreInstance>,
-    config: &Config,
     stream: DataPlaneTcpStream,
     queues: (&mut mpsc::Receiver<String>, &mpsc::Sender<Event>),
+    route: watch::Receiver<RouteStatus>,
 ) -> Result<()> {
     let (read, write) = tokio::io::split(stream);
     let (incoming, events) = queues;
@@ -383,21 +391,18 @@ async fn pump(
     tokio::try_join!(
         read_frames(read, events),
         write_frames(write, incoming),
-        monitor(instance, config.remote_name(), events)
+        monitor(route, events)
     )?;
     Ok(())
 }
 
 async fn monitor(
-    instance: &NativeCoreInstance,
-    remote: &str,
+    mut route: watch::Receiver<RouteStatus>,
     events: &mpsc::Sender<Event>,
 ) -> Result<()> {
-    let mut timer = tokio::time::interval(Duration::from_millis(500));
     let mut previous = RouteStatus::default();
     loop {
-        timer.tick().await;
-        let status = route::status(instance, remote).await;
+        let status = route.borrow_and_update().clone();
         if !status.direct {
             return Err(Error::Unavailable);
         }
@@ -410,6 +415,7 @@ async fn monitor(
                 .map_err(|_| Error::Closed)?;
             previous = status;
         }
+        route.changed().await.map_err(|_| Error::Closed)?;
     }
 }
 

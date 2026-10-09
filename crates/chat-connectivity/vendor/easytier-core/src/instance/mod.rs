@@ -487,6 +487,9 @@ where
         toml_config: TomlConfig,
         adapters: CoreHostAdapters<H>,
     ) -> anyhow::Result<Arc<Self>> {
+        if let Some(interface) = toml_config.outbound_interface() {
+            adapters.host.set_outbound_interface(&interface)?;
+        }
         let host_config = adapters.config.clone();
         let config = CoreInstanceConfig::from_toml_with_host(&toml_config, &host_config)?;
         Self::new_inner(config, Some(toml_config), host_config, adapters)

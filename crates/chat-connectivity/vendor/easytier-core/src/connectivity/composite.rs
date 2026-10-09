@@ -3,7 +3,7 @@
 use std::{
     future::Future,
     net::{IpAddr, Ipv6Addr, SocketAddr},
-    sync::Arc,
+    sync::{Arc, OnceLock},
     time::{Duration, Instant},
 };
 
@@ -27,6 +27,8 @@ use crate::{
 };
 
 const INTERFACE_ADDR_CACHE_TTL: Duration = Duration::from_secs(60);
+
+mod outbound;
 
 #[derive(Clone)]
 struct CachedInterfaceAddrs {
@@ -147,6 +149,7 @@ pub trait ConnectorEnvironment: Send + Sync + 'static {
 
 /// Deep adapter that combines one socket runtime with one instance environment.
 pub struct ConnectorHostAdapter<S, E> {
+    outbound_interface: OnceLock<String>,
     sockets: Arc<S>,
     environment: Arc<E>,
     interface_addrs: InterfaceAddrCache,
@@ -155,6 +158,7 @@ pub struct ConnectorHostAdapter<S, E> {
 impl<S, E> ConnectorHostAdapter<S, E> {
     pub fn new(sockets: Arc<S>, environment: Arc<E>) -> Self {
         Self {
+            outbound_interface: OnceLock::new(),
             sockets,
             environment,
             interface_addrs: InterfaceAddrCache::new(INTERFACE_ADDR_CACHE_TTL),
@@ -181,7 +185,10 @@ where
 {
     type Socket = S::Socket;
 
-    async fn connect_tcp(&self, options: TcpConnectOptions) -> anyhow::Result<Self::Socket> {
+    async fn connect_tcp(&self, mut options: TcpConnectOptions) -> anyhow::Result<Self::Socket> {
+        if options.remote_addr.is_ipv4() && !options.remote_addr.ip().is_loopback() {
+            outbound::tcp(&mut options.bind, self.outbound_interface.get());
+        }
         self.sockets.connect_tcp(options).await
     }
 }
@@ -194,7 +201,8 @@ where
 {
     type Listener = S::Listener;
 
-    async fn bind_tcp(&self, options: TcpListenOptions) -> anyhow::Result<Arc<Self::Listener>> {
+    async fn bind_tcp(&self, mut options: TcpListenOptions) -> anyhow::Result<Arc<Self::Listener>> {
+        outbound::tcp(&mut options.bind, self.outbound_interface.get());
         self.sockets.bind_tcp(options).await
     }
 }
@@ -207,7 +215,15 @@ where
 {
     type Socket = S::Socket;
 
-    async fn bind_udp(&self, options: UdpBindOptions) -> anyhow::Result<Arc<Self::Socket>> {
+    fn set_outbound_interface(&self, name: &str) -> anyhow::Result<()> {
+        if name.is_empty() || self.outbound_interface.set(name.to_owned()).is_err() {
+            anyhow::bail!("native interface must be selected once before socket creation");
+        }
+        Ok(())
+    }
+
+    async fn bind_udp(&self, mut options: UdpBindOptions) -> anyhow::Result<Arc<Self::Socket>> {
+        outbound::udp(&mut options, self.outbound_interface.get());
         self.sockets.bind_udp(options).await
     }
 }

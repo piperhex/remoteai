@@ -27,7 +27,10 @@ pub(super) fn endpoint(address: &Url) -> Option<RouteEndpoint> {
 }
 
 /// Resolve a wildcard UDP binding using the OS route to the selected physical peer.
-pub(super) async fn resolve_udp_binding(tunnel: &TunnelInfo) -> Option<RouteEndpoint> {
+pub(super) async fn resolve_udp_binding(
+    tunnel: &TunnelInfo,
+    source: Option<std::net::Ipv4Addr>,
+) -> Option<RouteEndpoint> {
     if tunnel.tunnel_type != "udp" {
         return None;
     }
@@ -44,7 +47,15 @@ pub(super) async fn resolve_udp_binding(tunnel: &TunnelInfo) -> Option<RouteEndp
     {
         return None;
     }
-    // Native chat disables device pinning. UDP connect asks the OS for the source IP
+    if binding.is_ipv4() {
+        if let Some(source) = source {
+            return Some(RouteEndpoint {
+                host: source.to_string(),
+                port: binding.port(),
+            });
+        }
+    }
+    // Without an interface override, UDP connect asks the OS for the source IP
     // without sending packets or changing the shared tunnel socket's peer filter.
     // The temporary socket's port is unrelated; retain the selected tunnel's port.
     // Lookup failures leave only this optional detail unavailable, not the chat route.
@@ -80,7 +91,7 @@ mod tests {
             url: format!("udp://{}", receiver.local_addr().unwrap()),
         });
         assert_eq!(
-            resolve_udp_binding(&info).await,
+            resolve_udp_binding(&info, None).await,
             Some(RouteEndpoint {
                 host: "127.0.0.1".into(),
                 port: 45678,
@@ -107,13 +118,36 @@ mod tests {
             ("udp://0.0.0.0:45678", "udp://[::1]:1234"),
             ("udp://[::]:45678", "udp://127.0.0.1:1234"),
         ] {
-            assert_eq!(resolve_udp_binding(&tunnel(local, remote)).await, None);
+            assert_eq!(
+                resolve_udp_binding(&tunnel(local, remote), None).await,
+                None
+            );
         }
         let mut info = tunnel("tcp://0.0.0.0:45678", "tcp://127.0.0.1:1234");
         info.tunnel_type = "tcp".into();
-        assert_eq!(resolve_udp_binding(&info).await, None);
+        assert_eq!(resolve_udp_binding(&info, None).await, None);
         info = tunnel("udp://0.0.0.0:45678", "udp://127.0.0.1:1234");
         info.local_addr = None;
-        assert_eq!(resolve_udp_binding(&info).await, None);
+        assert_eq!(resolve_udp_binding(&info, None).await, None);
+    }
+
+    #[tokio::test]
+    async fn selected_interface_only_fills_a_wildcard_ipv4_source() {
+        let source = Some("192.0.2.5".parse().unwrap());
+        let info = tunnel("udp://0.0.0.0:45678", "udp://192.0.2.9:1234");
+        assert_eq!(
+            resolve_udp_binding(&info, source).await,
+            Some(RouteEndpoint {
+                host: "192.0.2.5".into(),
+                port: 45678
+            })
+        );
+        let info = tunnel("udp://192.0.2.6:45678", "udp://192.0.2.9:1234");
+        assert_eq!(resolve_udp_binding(&info, source).await, None);
+        let info = tunnel("udp://[::]:45678", "udp://[::1]:1234");
+        assert_eq!(
+            resolve_udp_binding(&info, source).await.unwrap().host,
+            "::1"
+        );
     }
 }
