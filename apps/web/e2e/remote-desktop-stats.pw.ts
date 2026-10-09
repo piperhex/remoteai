@@ -41,7 +41,7 @@ test('keeps video and controls usable through null stats and automatic reconnect
   await expect(stats).toContainText(/[1-9]\d* × [1-9]\d*/);
   await expect(stats).toContainText('— ms 延迟');
   await expect(stats).toContainText('— Mbps');
-  await expect(stats).toContainText('DXGI · H265 · 硬编码 / 硬解码');
+  await expect(stats).toContainText(/DXGI · H265$/);
   expect(await stats.evaluate(element => element.getBoundingClientRect().width)).toBeLessThanOrEqual(400);
   const frames = await video.evaluate(element => element.getVideoPlaybackQuality().totalVideoFrames);
   await expect.poll(() => video.evaluate(element => element.getVideoPlaybackQuality().totalVideoFrames))

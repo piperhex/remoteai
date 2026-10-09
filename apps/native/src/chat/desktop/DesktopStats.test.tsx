@@ -21,11 +21,13 @@ it('keeps the native stats panel usable when reconnecting with a null route late
   vi.stubGlobal('React', React);
   const close = vi.fn();
   const stats: Stats = JSON.parse('{"fps":0,"bitrate":0,"width":1920,"height":1080,"rttMs":null}');
+  Object.assign(stats, { captureMethod: 'DXGI', videoCodec: 'h264', hardwareEncoding: true, hardwareDecoding: true });
   const render = () => nodes(DesktopStats({ stats, close }));
   const elements = render();
   const text = elements.find(node => node.props.accessibilityLabel === '连接状态')!.props.children;
   expect(text).toContain('— ms 延迟');
   expect(text).toContain('1920 × 1080');
+  expect(text).toMatch(/DXGI · H264$/);
   stats.rttMs = 24;
   expect(render().find(node => node.props.accessibilityLabel === '连接状态')!.props.children).toContain('24 ms 延迟');
   elements.find(node => node.props.accessibilityLabel === '关闭连接状态')!.props.onPress!();

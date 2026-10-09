@@ -124,8 +124,8 @@ video received on the native and Web viewers.
   quality changes, capture restarts, direct probes and relay recovery; SDP only offers the selected video codec.
   macOS hosting and native mobile receivers without this capability probe retain their existing H.264 path.
   Update both desktop clients and the installed unattended service/runtime to enable the new pipeline.
-- Connection statistics include actual helper capture/encoding information and the negotiated receive codec.
-  Hardware decoding is shown only when RTC statistics supply that measurement; unknown values remain unknown.
+- The connection statistics panel shows the capture method and negotiated receive codec.
+  Hardware/software encoding and decoding modes remain in the statistics payload but are not displayed.
 - A recovery frame is sent at most two seconds after the previous update, with periodic intra frames, so an
   idle desktop can recover from packet loss. Damage stays pending across FPS throttling. The helper outputs
   length-delimited access units with encoder buffering disabled; the final update does not wait for another
