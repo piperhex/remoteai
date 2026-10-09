@@ -52,6 +52,15 @@
 .rd-status > span { min-width: 0; max-width: 400px; overflow-wrap: anywhere; }
 .rd-status button { flex-shrink: 0; white-space: nowrap; }
 .rd-status button, .rd-settings button { background: #333d50; padding: 10px 12px; border-radius: 9px; }
+.rd-status-empty { top: 50%; transform: translate(-50%, -50%); flex-direction: column;
+  max-width: min(400px, calc(100% - 24px)); padding: 24px; text-align: center; line-height: 1.6; }
+.rd-fallback { align-items: center; justify-content: center; }
+.rd-fallback-card { width: min(400px, calc(100% - 32px)); padding: 24px; text-align: center;
+  overflow-wrap: anywhere; background: #202634; border-radius: 16px; }
+.rd-fallback-card h2 { font-size: 18px; margin: 16px 0 8px; }
+.rd-fallback-card p { margin: 0 0 20px; line-height: 1.6; color: #aebad0; }
+.rd-fallback-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.rd-fallback-actions button { padding: 10px 16px; border-radius: 9px; background: #333d50; }
 .rd-mouse { position: absolute; left: 0; top: 0; border: 2px solid #94a4be;
   border-radius: 40px; background: #dce9ffed; overflow: hidden; color: #526684; }
 .rd-mouse-top { display: flex; height: 64px; border-bottom: 2px solid #94a4be; }

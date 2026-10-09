@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ChatTools } from '../src/chat/ChatTools';
 import { GuiToolbox } from '../../desktop/src/pages/codexGui/GuiToolbox';
 import { GuiRemoteDesktop } from '../../desktop/src/pages/codexGui/GuiRemoteDesktop';
-import { client } from './remote-desktop-fixture';
+import { client, desktopTest } from './remote-desktop-fixture';
 import '../src/styles.css';
 import '../src/chat/chat.css';
 import '../../desktop/src/pages/codexGui/remote/remoteGui.less';
@@ -22,6 +22,8 @@ function Harness() {
   const [connected, setConnected] = useState(true);
   return <main style={{ padding: 24 }}><h1>电脑工具</h1>
     <button id="disconnect-chat" onClick={() => setConnected(false)}>模拟聊天连接中断</button>
+    <button id="disconnect-host" onClick={() => { setConnected(false); desktopTest.disconnect(); }}>模拟电脑离线</button>
+    <button id="reconnect-host" onClick={() => { desktopTest.reconnect(); setConnected(true); }}>模拟电脑上线</button>
     {new URLSearchParams(location.search).has('native-clipboard')
       ? <section className="gui-remote-workspace chat-page" style={{ display: 'block', height: 'auto' }}>
         <header className="chat-header">

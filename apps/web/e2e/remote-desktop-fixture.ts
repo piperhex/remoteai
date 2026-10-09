@@ -37,6 +37,8 @@ const displays: DesktopDisplay[] = [
 let selected = displays[0];
 const multiDisplay = new URLSearchParams(location.search).has('displays');
 export const desktopTest = { inputs: [] as DesktopInput[], settings: [] as DesktopSettings[],
+  disconnect: () => host.release('fixture'),
+  reconnect: () => host.register('fixture', window.desktopRelayFixture?.iceServers ?? []),
   clipboard: clipboardFixture,
   localClipboard: { content: { format: 'text', text: 'Local clipboard' } as ClipboardContent,
     calls: [] as string[], delay: 0 },

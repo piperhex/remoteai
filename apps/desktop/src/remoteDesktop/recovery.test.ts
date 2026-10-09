@@ -31,3 +31,30 @@ it('bounds retries when the host remains unavailable', () => {
   expect(status).toHaveBeenLastCalledWith('unavailable');
   recovery.stop();
 });
+
+it('waits for an offline host without exhausting retries and reconnects once it returns', () => {
+  vi.useFakeTimers();
+  const reconnect = vi.fn(); const status = vi.fn();
+  const recovery = new DesktopRecovery(reconnect, status);
+  recovery.failed('disconnected');
+  recovery.setAvailable(false);
+  vi.advanceTimersByTime(120_000);
+  expect(reconnect).not.toHaveBeenCalled();
+  expect(status).toHaveBeenLastCalledWith('远程电脑已断开，恢复在线后将自动重连。');
+  recovery.setAvailable(true);
+  expect(reconnect).toHaveBeenCalledOnce();
+  recovery.setAvailable(true);
+  expect(reconnect).toHaveBeenCalledOnce();
+  recovery.connected(); recovery.stop();
+  expect(vi.getTimerCount()).toBe(0);
+});
+
+it('leaves a healthy media connection alone when signaling disconnects and respects closing', () => {
+  vi.useFakeTimers();
+  const reconnect = vi.fn(); const status = vi.fn();
+  const recovery = new DesktopRecovery(reconnect, status);
+  recovery.connected(); recovery.setAvailable(false); recovery.setAvailable(true);
+  expect(reconnect).not.toHaveBeenCalled(); expect(status).not.toHaveBeenCalled();
+  recovery.setAvailable(false); recovery.failed('offline'); recovery.stop(); recovery.setAvailable(true);
+  vi.runAllTimers(); expect(reconnect).not.toHaveBeenCalled();
+});

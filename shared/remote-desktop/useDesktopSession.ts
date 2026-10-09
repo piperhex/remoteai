@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DesktopReceiver } from './receiver';
 import { DesktopPointer } from './input';
-import { DesktopRecovery } from './recovery';
+import { DesktopRecovery, DESKTOP_OFFLINE_STATUS } from './recovery';
 import { DesktopDirectRetry } from './directRetry';
 import type { ClipboardContent, ClipboardProgress } from './clipboard';
 import { DEFAULT_SETTINGS, validateSettings, type DesktopCapabilities, type DesktopClient, type DesktopDisplay,
@@ -11,9 +11,11 @@ import { DEFAULT_SETTINGS, validateSettings, type DesktopCapabilities, type Desk
 interface Options {
   client: DesktopClient;
   active: boolean;
+  connected?: boolean;
   createPeer: (configuration: RTCConfiguration) => RTCPeerConnection;
 }
-export function useDesktopSession({ client, active, createPeer }: Options) {
+export function useDesktopSession({ client, active, connected = true, createPeer }: Options) {
+  const available = useRef(connected); available.current = connected;
   const receiver = useRef<DesktopReceiver>();
   const settingsRef = useRef(DEFAULT_SETTINGS);
   const closing = useRef(Promise.resolve());
@@ -36,13 +38,17 @@ export function useDesktopSession({ client, active, createPeer }: Options) {
   useEffect(() => {
     if (!active) return;
     const controller = new DesktopRecovery(() => setAttempt(value => value + 1), setStatus);
+    controller.setAvailable(available.current);
     recovery.current = controller;
     return () => { recovery.current?.stop(); recovery.current = undefined; };
   }, [client, active, createPeer]);
 
+  useEffect(() => { recovery.current?.setAvailable(connected); }, [connected]);
+
   useEffect(() => {
     setStream(undefined); setStats(undefined); setHasAudio(false); setCapabilities({});
     if (!active) return;
+    if (!available.current) { recovery.current?.failed(DESKTOP_OFFLINE_STATUS); return; }
     const session = new DesktopReceiver({ client, createPeer, directRetry, stream: setStream, status: setStatus,
       connected: () => recovery.current?.connected(),
       failed: message => { pointer.release(); recovery.current?.failed(message); },
@@ -96,6 +102,7 @@ export function useDesktopSession({ client, active, createPeer }: Options) {
   return { stream, status, stats, settings, displays, update, saving, pointer, muted, mute, hasAudio, clipboard, capabilities,
     input: (input: Parameters<DesktopReceiver['input']>[0]) => receiver.current?.input(input),
     retry: () => {
+      if (!active || !available.current) return;
       recovery.current?.stop();
       recovery.current = new DesktopRecovery(() => setAttempt(value => value + 1), setStatus);
       setAttempt(value => value + 1);

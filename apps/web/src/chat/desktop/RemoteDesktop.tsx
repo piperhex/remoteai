@@ -26,20 +26,31 @@ import { DesktopClipboardPanel } from './DesktopClipboardPanel';
 import { DesktopInputSurface } from './DesktopInputSurface';
 import { DesktopKeyboard } from './DesktopKeyboard';
 import { useDesktopOrientation } from './useDesktopOrientation';
+import { DesktopErrorBoundary } from './DesktopErrorBoundary';
 import './desktop.css';
 
 const createPeer = (configuration: RTCConfiguration) => new RTCPeerConnection(configuration);
 
-export function RemoteDesktop({ client, active, close, localClipboard, nativeWindow = false, windowState }: {
+interface Props {
   client: DesktopClient; active: boolean; close: () => void; localClipboard?: LocalDesktopClipboard;
+  connected?: boolean;
   nativeWindow?: boolean;
   windowState?: DesktopWindowState;
-}) {
+}
+
+export function RemoteDesktop(props: Props) {
+  return <DesktopErrorBoundary active={props.active} close={props.close}>
+    <DesktopViewer {...props} />
+  </DesktopErrorBoundary>;
+}
+
+function DesktopViewer({ client, active, connected = true, close, localClipboard, nativeWindow = false,
+  windowState }: Props) {
   const root = useRef<HTMLDivElement>(null);
   const windowControls = useDesktopWindow(root, active, windowState);
   const shown = active && !windowControls.minimized;
   const visible = usePageVisibility();
-  const session = useDesktopSession({ client, active: active && visible, createPeer });
+  const session = useDesktopSession({ client, active: active && visible, connected, createPeer });
   const viewOnly = session.capabilities.control === false;
   const [display, setDisplay] = useState(false);
   const [keyboard, setKeyboard] = useState(false);
@@ -99,13 +110,14 @@ export function RemoteDesktop({ client, active, close, localClipboard, nativeWin
       <DesktopInputSurface key={direct ? 'direct' : 'trackpad'} pointer={session.pointer} viewport={viewport}
         input={session.input} trackpad={trackpad} hardware={hardware} active={!!session.stream && shown}
         clipboard={clipboard} wheel={wheel} />
-      {session.stats && statsVisible && !keyboard
+      {session.stream && session.stats && statsVisible && !keyboard
         && <DesktopStats stats={session.stats} close={() => setStatsVisible(false)} />}
       {session.stream && !hardware && <DesktopMouse pointer={session.pointer} viewport={viewport} panel={panel}
         visible={panelVisible} wheel={wheel}
         horizontal={!!session.capabilities.horizontalScroll} />}
-      {session.status && <div className="rd-status" role="status"><span>{t(session.status)}</span>
-        <button onClick={session.retry}>{t('重新连接')}</button></div>}
+      {session.status && <div className={`rd-status${session.stream ? '' : ' rd-status-empty'}`} role="status">
+        <span>{t(session.status)}</span>
+        <button disabled={!connected} onClick={session.retry}>{t('重新连接')}</button></div>}
       {windowControls.error && <div className="rd-clipboard-notice" role="alert">{t(windowControls.error)}</div>}
       {display && <DisplaySettings settings={session.settings} displays={session.displays} update={session.update}
         saving={session.saving || !session.stream}

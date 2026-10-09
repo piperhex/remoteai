@@ -62,7 +62,10 @@ test('shows live multiline stats with a close button on the right and can restor
     await expect.poll(() => stats.innerText()).toMatch(/\d+\.\d Mbps/);
     await expect.poll(() => stats.innerText()).toMatch(/\d+ ms 延迟/);
     await expect(stats).toContainText('丢包');
-    expect((await stats.innerText()).split('\n')).toHaveLength(9);
+    const lines = (await stats.innerText()).split('\n');
+    // Negotiated H.264/H.265 adds a codec and acceleration row below the nine connection metrics.
+    const pipeline = lines.at(-1)?.includes('H264') || lines.at(-1)?.includes('H265');
+    expect(lines).toHaveLength(pipeline ? 10 : 9);
     const text = (await stats.locator('span').boundingBox())!;
     const close = (await stats.getByRole('button', { name: '关闭连接状态' }).boundingBox())!;
     expect(close.x).toBeGreaterThanOrEqual(text.x + text.width - 1);

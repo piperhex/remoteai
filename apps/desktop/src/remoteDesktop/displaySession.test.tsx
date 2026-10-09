@@ -25,7 +25,9 @@ const client: DesktopClient = { open: vi.fn(), signal: vi.fn(), settings: vi.fn(
 const createPeer = vi.fn();
 let root: Root;
 let session: ReturnType<typeof useDesktopSession>;
-function Harness({ active = true }) { session = useDesktopSession({ client, active, createPeer }); return null; }
+function Harness({ active = true, connected = true }) {
+  session = useDesktopSession({ client, active, connected, createPeer }); return null;
+}
 beforeEach(async () => {
   runtime.sessions.length = 0; vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   root = createRoot(document.createElement('div'));
@@ -77,4 +79,32 @@ it('does not reopen a screen when the viewer closes during a pending switch', as
   await act(async () => root.render(<Harness active={false} />));
   await act(async () => { finishSwitch(); await switching; release(); });
   expect(runtime.sessions).toHaveLength(1);
+});
+
+it('preserves healthy media during a signaling outage and waits for the host after media fails', async () => {
+  vi.useFakeTimers();
+  const first = runtime.sessions[0];
+  await act(async () => root.render(<Harness connected={false} />));
+  expect(first.stop).not.toHaveBeenCalled(); expect(session.stream).toBeDefined();
+  await act(async () => {
+    first.options.stream(undefined); first.options.failed('offline');
+    await vi.advanceTimersByTimeAsync(120_000);
+  });
+  expect(runtime.sessions).toHaveLength(1);
+  expect(session.status).toBe('远程电脑已断开，恢复在线后将自动重连。');
+  await act(async () => session.retry());
+  expect(runtime.sessions).toHaveLength(1);
+  await act(async () => root.render(<Harness />));
+  expect(first.stop).toHaveBeenCalledOnce();
+  expect(runtime.sessions).toHaveLength(2); expect(session.stream).toBeDefined();
+});
+
+it('cancels pending offline recovery when the viewer closes', async () => {
+  vi.useFakeTimers();
+  await act(async () => root.render(<Harness connected={false} />));
+  await act(async () => runtime.sessions[0].options.failed('offline'));
+  await act(async () => root.render(<Harness active={false} connected={false} />));
+  await act(async () => root.render(<Harness active={false} />));
+  await act(async () => { session.retry(); await vi.runAllTimersAsync(); });
+  expect(runtime.sessions).toHaveLength(1); expect(vi.getTimerCount()).toBe(0);
 });

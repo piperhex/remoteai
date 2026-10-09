@@ -72,5 +72,10 @@ export function sendDesktopInput(channel: RTCDataChannel | undefined, input: Des
     // Never discard a button release: close the session, which releases held keys on the host.
     channel.close(); return;
   }
-  channel.send(JSON.stringify(input));
+  try { channel.send(JSON.stringify(input)); }
+  catch {
+    // A shutdown can invalidate an open channel before its close event reaches JS.
+    // Closing releases held input on the host and lets the viewer recover without crashing cleanup.
+    channel.close();
+  }
 }

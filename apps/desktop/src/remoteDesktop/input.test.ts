@@ -20,6 +20,16 @@ it('closes congested control channels so button releases cannot be silently lost
   sendDesktopInput(channel as unknown as RTCDataChannel, { kind: 'button', button: 'left', down: false });
   expect(channel.close).toHaveBeenCalled(); expect(channel.send).not.toHaveBeenCalled();
 });
+it('closes a failed channel without throwing during held input cleanup', () => {
+  const channel = { readyState: 'open', bufferedAmount: 0, close: vi.fn(),
+    send: vi.fn(() => { throw new Error('The peer went away'); }) };
+  const pointer = new DesktopPointer(input => sendDesktopInput(channel as unknown as RTCDataChannel, input));
+  expect(() => pointer.button('left', true)).not.toThrow();
+  expect(() => pointer.release()).not.toThrow();
+  expect(pointer.isHeld('left')).toBe(false);
+  expect(channel.close).toHaveBeenCalled();
+  pointer.dispose();
+});
 it('serializes native input, drops stale motion and preserves button ordering', async () => {
   let complete!: () => void;
   const input = vi.fn().mockImplementationOnce(() => new Promise<void>(resolve => { complete = resolve; }))
