@@ -67,9 +67,9 @@ export function DetailsWorkspace({ selected, active, children, enabled = true, c
         </div>}
         {preview && <div hidden={showingChanges} className={styles.preview}>
           {preview.kind === "file" ? <FilePreviewPanel key={preview.data.sessionId} data={preview.data}
-            active={visible && !showingChanges} />
+            active={visible && !showingChanges} navigation={panel.navigation} />
             : <WebsitePreview key={preview.url} url={preview.url} active={visible && !showingChanges}
-              resizing={resize.dragging} />}
+              resizing={resize.dragging} navigation={panel.navigation} />}
         </div>}
       </aside>}
       {(entry || preview) && panel.minimized && active && enabled &&

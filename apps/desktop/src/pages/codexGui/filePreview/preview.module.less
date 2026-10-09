@@ -13,6 +13,16 @@
   strong, span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   strong { font-size: 15px; } span { color: var(--muted); font-size: 12px; }
 }
+.navigation {
+  display: flex; flex-shrink: 0; gap: 4px;
+  button {
+    display: grid; place-items: center; width: 30px; height: 30px; padding: 0;
+    border: 0; border-radius: 6px; background: transparent; color: var(--ink); cursor: pointer;
+    &:hover:not(:disabled) { background: var(--green-soft); }
+    &:disabled { color: var(--muted); opacity: .4; cursor: default; }
+    &:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+  }
+}
 .menu, .modes button, .imageToggle, .feedback button {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px;
   border: 1px solid var(--line); border-radius: 7px; background: var(--panel); color: var(--ink); cursor: pointer;

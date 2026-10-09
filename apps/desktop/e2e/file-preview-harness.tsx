@@ -56,6 +56,8 @@ if (!native && !params.has("hosted")) {
   Object.defineProperty(globalThis, "isTauri", { value: !websiteOnly, configurable: true });
   filePreviewApi.open = async target => {
     document.body.dataset.opened = JSON.stringify(target);
+    if (target.path.endsWith("LICENSE")) return { ...data, ...target, sessionId: crypto.randomUUID(),
+      name: "LICENSE", kind: "text", text: "Apache License 2.0" };
     return target.path.endsWith("settings.yaml") ? { ...data, sessionId: crypto.randomUUID(), ...target,
       name: "settings.yaml", kind: "text", text: code.yaml } : { ...data, sessionId: crypto.randomUUID() };
   };

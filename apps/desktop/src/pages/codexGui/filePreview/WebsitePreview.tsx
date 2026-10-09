@@ -4,9 +4,12 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { message } from "antd";
 import { CopyButton } from "../CopyButton";
 import { useWebsitePreview } from "./useWebsitePreview";
+import { PreviewNavigation, type PreviewNavigationState } from "./PreviewNavigation";
 import styles from "./preview.module.less";
 
-export function WebsitePreview(props: { url: string; active: boolean; resizing: boolean }) {
+export function WebsitePreview(props: {
+  url: string; active: boolean; resizing: boolean; navigation: PreviewNavigationState;
+}) {
   const preview = useWebsitePreview(props);
   const openBrowser = () => {
     if (!preview.desktop) { window.open(props.url, "_blank", "noopener,noreferrer"); return; }
@@ -15,6 +18,7 @@ export function WebsitePreview(props: { url: string; active: boolean; resizing: 
   };
   return <section className={styles.window} aria-label={guiText("网页预览")}>
     <header className={styles.toolbar}>
+      <PreviewNavigation navigation={props.navigation} />
       <div className={styles.heading}><strong>{guiText("网页预览")}</strong><span>{props.url}</span></div>
       <CopyButton text={props.url} label={guiText("复制链接")} />
       <button type="button" className={styles.menu} aria-label={guiText("重新加载网页")} onClick={preview.retry}>

@@ -1,4 +1,5 @@
 export const workspaceActions = {
+  "预览未能打开，请稍后重试。": "Could not open the preview. Please try again shortly.",
   "选择技能": "Choose a skill",
   "选择命令或技能": "Choose a command or skill",
   "没有找到其他对话，试试输入对话名称": "No other conversations found. Try entering a conversation name.",

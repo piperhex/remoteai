@@ -4,6 +4,36 @@ test.beforeEach(async ({ page }) => {
   await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());
 });
 
+for (const width of [540, 1440]) {
+  test(`preview history goes back, forward and starts a new branch at width ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/e2e/file-preview-harness.html");
+    const back = page.getByRole("button", { name: "返回上一页", exact: true });
+    const forward = page.getByRole("button", { name: "前往下一页", exact: true });
+    const markdown = page.getByRole("heading", { name: "项目说明" });
+    await expect(back).toBeDisabled(); await expect(forward).toBeDisabled();
+    await page.getByRole("button", { name: "预览文件：C:/project/docs/settings.yaml" }).click();
+    await expect(page.getByLabel("文件内容", { exact: true })).toContainText("name: preview");
+    await back.click(); await expect(markdown).toBeVisible();
+    await expect(back).toBeDisabled(); await expect(forward).toBeEnabled();
+    await page.screenshot({ path: `../../.codex-tmp/preview-history-${width}.png` });
+    await forward.click();
+    await expect(page.getByLabel("文件内容", { exact: true })).toContainText("name: preview");
+    await expect(forward).toBeDisabled();
+    await back.click();
+    await page.getByRole("button", { name: "预览文件：C:/project/docs/LICENSE" }).click();
+    await expect(page.getByLabel("文件内容", { exact: true })).toContainText("Apache License");
+    await expect(forward).toBeDisabled();
+    await back.click(); await expect(markdown).toBeVisible();
+    await forward.click();
+    await expect(page.getByLabel("文件内容", { exact: true })).toContainText("Apache License");
+    const sidebar = await page.getByRole("complementary").boundingBox();
+    const bounds = await back.boundingBox();
+    expect(bounds!.x).toBeGreaterThanOrEqual(sidebar!.x);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+  });
+}
+
 test("renders Markdown with relative assets and keeps original actions in the top right", async ({ page }) => {
   await page.goto("/e2e/file-preview-harness.html");
   await expect(page.getByRole("heading", { name: "项目说明" })).toBeVisible();

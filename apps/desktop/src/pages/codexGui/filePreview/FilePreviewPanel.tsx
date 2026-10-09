@@ -5,9 +5,12 @@ import { FileMenu } from "../FileMenu";
 import { CopyButton } from "../CopyButton";
 import type { FilePreviewData } from "./api";
 import { PreviewContent } from "./PreviewContent";
+import { PreviewNavigation, type PreviewNavigationState } from "./PreviewNavigation";
 import styles from "./preview.module.less";
 
-export function FilePreviewPanel({ data, active }: { data: FilePreviewData; active: boolean }) {
+export function FilePreviewPanel({ data, active, navigation }: {
+  data: FilePreviewData; active: boolean; navigation: PreviewNavigationState;
+}) {
   const [source, setSource] = useState(Boolean(data.line));
   const host = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -17,6 +20,7 @@ export function FilePreviewPanel({ data, active }: { data: FilePreviewData; acti
   }, [active]);
   return <section ref={host} className={styles.window} aria-label={guiText("文件预览")}>
     <header className={styles.toolbar}>
+      <PreviewNavigation navigation={navigation} />
       <div className={styles.heading}><strong>{data.name}</strong><span>{data.path}</span></div>
       {(data.kind === "html" || data.kind === "markdown") && <div role="group" aria-label={guiText("显示方式")}
         className={styles.modes}>
