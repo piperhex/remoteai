@@ -16,6 +16,8 @@ pub(crate) struct CliUpdateState {
     startup: OnceLock<()>,
     scheduler: OnceLock<()>,
     pub(super) metadata: Mutex<()>,
+    // Copying a package must not block status reads or installation metadata updates.
+    pub(super) publication: Mutex<()>,
     // Serialize package writes without blocking other callers from discovering newer releases.
     download: tokio::sync::Mutex<()>,
 }

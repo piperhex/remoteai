@@ -234,6 +234,13 @@ SHA-256 digest, and extracts into a staging directory before marking it ready. T
 requires clicking **下载并开始** or restarting after the download finishes. Earlier version directories are retained.
 The app's network proxy settings also apply to downloads. Remote computer updates remain manually controlled.
 
+Verified packages are copied from staging into their version directory rather than moving the directory.
+On Windows, an open file handle inside staging can prevent the entire directory from being renamed even
+when the folder is writable. A `.codex-installing` marker keeps partial copies unavailable until all files
+have been copied successfully; interrupted copies can be retried. A separate publication guard serializes
+automatic downloads and manual imports without blocking installation status reads. Existing complete
+versions are reused, and metadata is updated only after copying finishes.
+
 Installation failures distinguish disk-full, permission, file-lock, extraction, missing-executable and
 installation-record errors. Original error chains and the failing step are saved under
 **日志诊断 → 错误日志 → Codex CLI**, with the existing credential and path redaction policy.

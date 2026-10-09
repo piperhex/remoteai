@@ -85,7 +85,13 @@ fn offline_import_keeps_helpers_and_activates_first_installation() {
         }
         let (temporary, candidate) = prepare_import(&fixture.0, &request).unwrap();
         assert!(store::installed(&fixture.0).unwrap().version.is_none());
-        commit_import(&fixture.0, &temporary.path().join("unpacked"), candidate).unwrap();
+        commit_import(
+            &fixture.0,
+            &temporary.path().join("unpacked"),
+            candidate,
+            &Mutex::new(()),
+        )
+        .unwrap();
         assert_eq!(
             store::installed(&fixture.0).unwrap().version.as_deref(),
             Some("0.161.0")
@@ -104,7 +110,13 @@ fn an_update_is_staged_without_replacing_an_active_installation() {
     store::activate(&fixture.0).unwrap();
     let request = package(&fixture, "0.161.0");
     let (temporary, candidate) = prepare_import(&fixture.0, &request).unwrap();
-    commit_import(&fixture.0, &temporary.path().join("unpacked"), candidate).unwrap();
+    commit_import(
+        &fixture.0,
+        &temporary.path().join("unpacked"),
+        candidate,
+        &Mutex::new(()),
+    )
+    .unwrap();
     assert_eq!(
         store::installed(&fixture.0).unwrap().version.as_deref(),
         Some("0.160.0")
@@ -167,7 +179,12 @@ fn stale_import_cannot_overwrite_a_newer_discovery_or_installed_version() {
     let (temporary, candidate) = prepare_import(&fixture.0, &request).unwrap();
     fixture.remember("0.162.0");
     assert!(matches!(
-        commit_import(&fixture.0, &temporary.path().join("unpacked"), candidate),
+        commit_import(
+            &fixture.0,
+            &temporary.path().join("unpacked"),
+            candidate,
+            &Mutex::new(())
+        ),
         Err(GuiError::ImportVersion)
     ));
     assert!(!fixture.0.join("0.161.0").exists());
@@ -189,7 +206,13 @@ fn import_reuses_a_package_published_by_a_concurrent_download() {
     let request = package(&fixture, "0.161.0");
     let (temporary, candidate) = prepare_import(&fixture.0, &request).unwrap();
     fixture.package("0.161.0");
-    commit_import(&fixture.0, &temporary.path().join("unpacked"), candidate).unwrap();
+    commit_import(
+        &fixture.0,
+        &temporary.path().join("unpacked"),
+        candidate,
+        &Mutex::new(()),
+    )
+    .unwrap();
     assert_eq!(
         fs::read(fixture.0.join("0.161.0").join(entrypoint())).unwrap(),
         b"verified test package"
@@ -221,7 +244,13 @@ fn package_only_import_reads_the_bundled_version_and_installs_offline() {
     request.package_path = renamed;
     let (temporary, candidate) = prepare_import(&fixture.0, &request).unwrap();
     assert_eq!(candidate.version, "0.161.0");
-    commit_import(&fixture.0, &temporary.path().join("unpacked"), candidate).unwrap();
+    commit_import(
+        &fixture.0,
+        &temporary.path().join("unpacked"),
+        candidate,
+        &Mutex::new(()),
+    )
+    .unwrap();
     assert_eq!(
         store::installed(&fixture.0).unwrap().version.as_deref(),
         Some("0.161.0")
@@ -311,7 +340,13 @@ fn official_package_only_import() {
     };
     let (temporary, candidate) = prepare_import(&fixture.0, &request).unwrap();
     let expected = candidate.version.clone();
-    commit_import(&fixture.0, &temporary.path().join("unpacked"), candidate).unwrap();
+    commit_import(
+        &fixture.0,
+        &temporary.path().join("unpacked"),
+        candidate,
+        &Mutex::new(()),
+    )
+    .unwrap();
     assert_eq!(
         store::installed(&fixture.0).unwrap().version,
         Some(expected)

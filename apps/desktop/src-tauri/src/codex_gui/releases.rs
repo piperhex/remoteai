@@ -3,6 +3,8 @@ use super::error::{GuiError, Result};
 mod errors;
 #[path = "release_import.rs"]
 pub(crate) mod manual;
+#[path = "release_publish.rs"]
+mod publish_package;
 #[path = "release_store.rs"]
 mod store;
 #[cfg(test)]
@@ -364,8 +366,8 @@ fn prepare_package(app: &AppHandle, version: &str, asset: &Asset, silent: bool) 
         })?;
         unpack(&archive, &staging)?;
         let state = app.state::<CliUpdateState>();
-        let _metadata = state.metadata.lock().map_err(|error| {
-            errors::failure("lock installation records", &error, GuiError::Install)
+        let _publication = state.publication.lock().map_err(|error| {
+            errors::failure("lock package publication", &error, GuiError::Install)
         })?;
         store::stage(&root, version, &staging)?;
         Ok(())

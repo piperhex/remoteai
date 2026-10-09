@@ -9,6 +9,7 @@ use std::{
     fs,
     io::{Read, Write},
     path::{Path, PathBuf},
+    sync::Mutex,
 };
 use tauri::{AppHandle, Manager};
 
@@ -302,9 +303,25 @@ fn prepare_import(
     ))
 }
 
-fn commit_import(root: &Path, staging: &Path, release: ReleaseInfo) -> Result<()> {
-    check_version(root, &release.version)?;
+fn commit_import(
+    root: &Path,
+    staging: &Path,
+    release: ReleaseInfo,
+    metadata: &Mutex<()>,
+) -> Result<()> {
+    let lock = || {
+        metadata.lock().map_err(|error| {
+            errors::failure("lock installation records", &error, GuiError::Install)
+        })
+    };
+    {
+        let _metadata = lock()?;
+        check_version(root, &release.version)?;
+    }
+    // Copying a complete package must not block installation status reads.
     store::stage(root, &release.version, staging)?;
+    let _metadata = lock()?;
+    check_version(root, &release.version)?;
     store::remember(root, release)?;
     // There cannot be an active managed CLI on first installation.
     if store::installed(root)?.version.is_none() {
@@ -319,10 +336,15 @@ fn import_package(app: &AppHandle, request: ImportRequest) -> Result<()> {
     let (temporary, release) = prepare_import(&root, &request)?;
     let state = app.state::<CliUpdateState>();
     let outcome = {
-        let _metadata = state.metadata.lock().map_err(|error| {
-            errors::failure("lock installation records", &error, GuiError::Install)
+        let _publication = state.publication.lock().map_err(|error| {
+            errors::failure("lock package publication", &error, GuiError::Install)
         })?;
-        commit_import(&root, &temporary.path().join("unpacked"), release)
+        commit_import(
+            &root,
+            &temporary.path().join("unpacked"),
+            release,
+            &state.metadata,
+        )
     };
     if let Err(error) = temporary.close() {
         // Cleanup must not replace the actual installation result.

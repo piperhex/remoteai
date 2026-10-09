@@ -44,18 +44,17 @@ pub(super) fn status(root: &Path) -> Result<CliStatus> {
 }
 
 pub(super) fn ready(root: &Path, version: &str) -> bool {
-    valid_version(version) && root.join(version).join(entrypoint()).is_file()
+    valid_version(version) && super::publish_package::ready(&root.join(version))
 }
 
-/// Publish only complete packages, with the metadata guard held by every writer.
+/// Publish under the package guard; copying must not hold the metadata guard.
 pub(super) fn stage(root: &Path, version: &str, staging: &Path) -> Result<()> {
     if !valid_version(version) || !staging.join(entrypoint()).is_file() {
         return Err(GuiError::Integrity);
     }
     let destination = root.join(version);
-    if !destination.exists() {
-        fs::rename(staging, destination)
-            .map_err(|error| errors::io("move installed package", error, GuiError::InstallWrite))?;
+    if !ready(root, version) {
+        super::publish_package::directory(staging, &destination)?;
     }
     if !ready(root, version) {
         return Err(errors::invalid(
