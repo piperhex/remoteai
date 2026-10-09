@@ -100,10 +100,10 @@ final class DesktopCapture: NSObject, SCStreamOutput, SCStreamDelegate {
                     buffer.removeFirst(Wire.controlBytes)
                     // Rebase Data indices after removeFirst before reading the next message.
                     buffer = Data(buffer)
-                    queue.async { [self] in
+                    self.queue.async { [self] in
                         do {
-                            try encoder?.control(bitrate: bitrate, fps: fps)
-                            if let image = latest { encode(image) }
+                            try self.encoder?.control(bitrate: bitrate, fps: fps)
+                            if let image = self.latest { self.encode(image) }
                         } catch { exit(1) }
                     }
                 } catch { exit(1) }
