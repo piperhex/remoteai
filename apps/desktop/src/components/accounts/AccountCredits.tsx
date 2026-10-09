@@ -29,7 +29,7 @@ export function AccountCredits({ credits, language, t }: {
     const balance = credits.balance?.trim();
     const amount = balance ? Number(balance) : NaN;
     if (Number.isFinite(amount) && amount >= 0) {
-      label = new Intl.NumberFormat(getLocale(language), { maximumFractionDigits: 8 }).format(amount);
+      label = new Intl.NumberFormat(getLocale(language), { maximumFractionDigits: 3 }).format(amount);
     } else if (!credits.hasCredits) label = "0";
   }
   return <Tooltip title={label === "—" ? t("table.creditsUnknown") : t("table.creditsHint")}
