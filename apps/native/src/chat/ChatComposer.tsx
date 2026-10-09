@@ -8,6 +8,7 @@ import { useGoalMode } from '../../../../shared/remote-chat/client/useGoalMode';
 import type { RemoteGoals } from '../../../../shared/remote-chat/client/goals';
 import type { ThreadGoal } from '../../../desktop/src/pages/codexGui/goalTypes';
 import type { ReadUsage } from '../../../../shared/remote-chat/usage';
+import type { ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
 import type { ContextSettingsApi } from '../../../../shared/remote-chat/contextSettings';
 import { ComposerActionButton } from './ComposerActionButton';
 import { ComposerModelButton } from './ComposerModelButton';
@@ -51,6 +52,7 @@ interface Props {
   contextSettings: ContextSettingsApi;
   tokenUsage?: ThreadTokenUsage;
   readUsage: ReadUsage;
+  readConversationMetrics: ReadConversationMetrics;
   usageActive: boolean;
   models: Model[];
   selection: ComposerSettings;
@@ -76,7 +78,7 @@ interface Props {
 }
 
 export function ChatComposer({ models, selection, settingsBusy, settingsError, updateSettings,
-  readUsage, usageActive, tokenUsage, contextSettings, connection, queue, goals, goal, goalBusy,
+  readUsage, readConversationMetrics, usageActive, tokenUsage, contextSettings, connection, queue, goals, goal, goalBusy,
   threadId, active, ready, sending, running, upload, reconnecting = false, interrupted = false, send, interrupt,
   catalog, cwd, compactReason, compacting, compact, loadCatalog, loadFiles, loadConversations }: Props) {
   useLanguage();
@@ -227,6 +229,7 @@ export function ChatComposer({ models, selection, settingsBusy, settingsError, u
     {settings && <ChatSettings models={models} selection={selection} connection={connection}
       threadId={threadId} contextSettings={contextSettings}
       readUsage={readUsage} usageActive={active && usageActive} tokenUsage={tokenUsage}
+      readConversationMetrics={readConversationMetrics}
       saving={settingsBusy} error={settingsError} ready={ready}
       updateSettings={updateSettings} onClose={() => setSettings(false)} />}
   </View></View>;

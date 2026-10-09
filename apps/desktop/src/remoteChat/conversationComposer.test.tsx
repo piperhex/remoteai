@@ -27,6 +27,7 @@ beforeEach(async () => {
     read: vi.fn(), select: vi.fn(), subscribe: vi.fn(() => vi.fn()),
   } }, models: [], selection: { model: 'astra', effort: 'high', access: 'workspace-write' },
     contextSettings: { read: vi.fn(), write: vi.fn() }, readUsage: vi.fn(),
+    readConversationMetrics: vi.fn(),
     goals: { load: vi.fn(), clear: vi.fn() }, goalBusy: false,
     catalog: { skills: [], loaded: true, loading: false, error: '', refresh: vi.fn() }, cwd: '/remote/project',
     compactReason: null, compacting: false, compact: vi.fn(), loadFiles: vi.fn(),

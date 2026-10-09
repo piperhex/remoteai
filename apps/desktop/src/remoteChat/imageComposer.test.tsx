@@ -31,6 +31,7 @@ beforeEach(() => {
       select: vi.fn(), subscribe: vi.fn(() => vi.fn()),
     } },
     readUsage: vi.fn(),
+    readConversationMetrics: vi.fn(),
     contextSettings: { read: vi.fn(), write: vi.fn() }, goals: { load: vi.fn(), clear: vi.fn() }, goalBusy: false,
     catalog: { skills: [], loaded: true, loading: false, error: '', refresh: vi.fn() }, cwd: '',
     compactReason: null, compacting: false, compact: vi.fn(), loadCatalog: vi.fn(), loadFiles: vi.fn(),

@@ -2,6 +2,7 @@ import type { Model, SendInput, ThreadTokenUsage } from './types';
 import type { ChatConnectionProps } from './ChatProfileMenu';
 import type { ComposerSettings } from '../../../../shared/remote-chat/composer';
 import type { ReadUsage } from '../../../../shared/remote-chat/usage';
+import type { ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
 import type { ContextSettingsApi } from '../../../../shared/remote-chat/contextSettings';
 import type { QueueProps } from '../../../../shared/remote-chat/client/queueProps';
 import type { UploadProgress } from '../../../../shared/remote-chat/uploadProgress';
@@ -19,6 +20,7 @@ export interface ComposerProps {
   queue?: QueueProps;
   tokenUsage?: ThreadTokenUsage;
   readUsage: ReadUsage;
+  readConversationMetrics: ReadConversationMetrics;
   contextSettings: ContextSettingsApi;
   models: Model[];
   selection: ComposerSettings;

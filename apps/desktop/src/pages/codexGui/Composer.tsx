@@ -20,6 +20,7 @@ import { ImageAttachments } from "./ImageAttachments";
 import { IMAGE_TYPES, useComposerDraft } from "./useComposerDraft";
 import { ModelPicker } from "./ModelPicker";
 import { UsageStatus } from "./UsageStatus";
+import { ConversationTokenStatus } from './ConversationTokenStatus';
 import { ProjectPicker } from "./ProjectPicker";
 import { GuiToolbox } from "./GuiToolbox";
 import { localGitClient } from "./localGitClient";
@@ -30,16 +31,6 @@ import { RunningChangesSummary } from "./RunningChangesSummary";
 import styles from "./styles.module.less";
 
 export interface ComposerHandle { addQuote: (quote: ReplyQuote) => boolean }
-
-const TOKENS_PER_THOUSAND = 1_000;
-const TOKENS_PER_MILLION = 1_000_000;
-const TOKEN_DECIMAL_PLACES = 2;
-
-function formatConversationTokens(value: number) {
-  if (value >= TOKENS_PER_MILLION) return `${(value / TOKENS_PER_MILLION).toFixed(TOKEN_DECIMAL_PLACES)}M`;
-  if (value >= TOKENS_PER_THOUSAND) return `${(value / TOKENS_PER_THOUSAND).toFixed(TOKEN_DECIMAL_PLACES)}k`;
-  return value.toLocaleString();
-}
 
 export const Composer = forwardRef<ComposerHandle, {
   state: GuiState; controller: GuiController; active: boolean; hostPicker?: ReactNode;
@@ -151,7 +142,8 @@ export const Composer = forwardRef<ComposerHandle, {
       </div>
     </div>
     <div className={styles.composerHint}><span>{guiText("Enter 发送 · Shift + Enter 换行")}</span>
-      {current && current.tokens > 0 && <span>{formatConversationTokens(current.tokens)} tokens</span>}</div>
+      <ConversationTokenStatus threadId={state.selected} tokens={current?.tokens ?? 0}
+        active={active && state.connection === 'ready'} /></div>
     {dialog === "files" && <ComposerFilesDialog onAdd={addAttachments} onImages={() => fileInput.current?.click()}
       onClose={() => setDialog(null)} onError={controller.report} />}
     {dialog === "goal" && <GoalDialog state={state} controller={controller} onClose={() => setDialog(null)} />}

@@ -33,6 +33,7 @@ import { createContextSettingsClient } from './contextSettings';
 import { createGuiToolsClient } from '../guiTools';
 import { canSelectProject } from '../projects';
 import type { UsageSummary } from '../usage';
+import { CONVERSATION_METRICS_OPERATION, type ReadConversationMetrics } from '../conversationMetrics';
 import { TOKEN_SUMMARY_OPERATION, type ReadTokenSummary } from '../tokenSummary';
 import { decodeTokenSummary, QUOTA_HISTORY_FORMAT, type TokenSummaryResponse } from '../tokenSummaryCodec';
 import { initialChatState, type ApprovalReply, type ChatProject, type ChatState, type GuiEvent,
@@ -123,6 +124,8 @@ export class ChatController {
   snapshot = () => this.state;
   setWorkspaceBusy = (workspaceBusy: boolean) => this.update({ workspaceBusy });
   readUsage = () => this.connection.request<UsageSummary>('request', { operation: 'usageSummary' });
+  readConversationMetrics: ReadConversationMetrics = (threadId) =>
+    this.connection.request('request', { operation: CONVERSATION_METRICS_OPERATION, threadId });
   readonly contextSettings = createContextSettingsClient(<T>(body: unknown) =>
     this.connection.request<T>('request', body));
   readTokenSummary: ReadTokenSummary = (weeks) =>

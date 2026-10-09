@@ -1,6 +1,48 @@
 use super::{ProxySessionLatencySummary, ProxySessionRequestState, ProxySessionState};
 
 const RECENT_SESSION_LIMIT: usize = 5;
+const MAX_THREAD_ID_BYTES: usize = 200;
+
+#[derive(Debug, thiserror::Error)]
+enum MetricsError {
+    #[error("请选择有效的对话后重试。")]
+    InvalidThread,
+    #[error("暂时无法读取对话速度，请稍后重试。")]
+    Unavailable,
+}
+
+/// Reads only the requested conversation on a worker, including for remote GUI clients.
+#[tauri::command]
+pub(crate) async fn get_proxy_session_metrics(
+    thread_id: String,
+) -> Result<ProxySessionLatencySummary, String> {
+    validate_thread_id(&thread_id).map_err(|error| error.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || read_session_metrics(&thread_id))
+        .await
+        .map_err(|_| MetricsError::Unavailable.to_string())?
+        .map_err(|error| error.to_string())
+}
+
+fn validate_thread_id(thread_id: &str) -> Result<(), MetricsError> {
+    if thread_id.is_empty()
+        || thread_id.len() > MAX_THREAD_ID_BYTES
+        || thread_id
+            .chars()
+            .any(|character| character.is_control() || character.is_whitespace())
+    {
+        return Err(MetricsError::InvalidThread);
+    }
+    Ok(())
+}
+
+fn read_session_metrics(thread_id: &str) -> Result<ProxySessionLatencySummary, MetricsError> {
+    let sessions = super::proxy_sessions()
+        .lock()
+        .map_err(|_| MetricsError::Unavailable)?;
+    Ok(summarize_recent_sessions(
+        sessions.get(thread_id).into_iter(),
+    ))
+}
 
 /// Summarizes retained requests from the most recently active conversations.
 pub(super) fn summarize_recent_sessions<'a>(

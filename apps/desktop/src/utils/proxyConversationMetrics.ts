@@ -1,4 +1,5 @@
 import type { ProxySessionLatencySummary, ProxySessionRequest } from "../types";
+import { formatConversationTps as formatTps } from '../../../../shared/remote-chat/conversationMetrics';
 
 export const EMPTY_PROXY_CONVERSATION_METRICS: ProxySessionLatencySummary = {
   totalFirstResponseTimeMs: 0,
@@ -25,6 +26,6 @@ export function summarizeProxyRequests(requests: ProxySessionRequest[]): ProxySe
 }
 
 export function formatConversationTps(summary: ProxySessionLatencySummary): string {
-  if (!summary.outputRequestCount || !(summary.totalOutputTimeMs > 0)) return "—";
-  return `${(summary.totalOutputTokens / summary.totalOutputTimeMs * 1_000).toFixed(1)} token/s`;
+  const speed = formatTps(summary);
+  return speed === '—' ? speed : `${speed} token/s`;
 }

@@ -6,6 +6,7 @@ import { ChatContextSettings } from './ChatContextSettings';
 import { ChatProfileMenu, type ChatConnectionProps } from './ChatProfileMenu';
 import type { ContextSettingsApi } from '../../../../shared/remote-chat/contextSettings';
 import type { ReadUsage } from '../../../../shared/remote-chat/usage';
+import type { ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
 import type { Model, ThreadTokenUsage } from './types';
 import type { ComposerSettings } from '../../../../shared/remote-chat/composer';
 import { SETTINGS_FIELDS, settingOptions, settingValue, settingsNotice, visibleSettingsFields,
@@ -17,6 +18,7 @@ interface Props {
   contextSettings: ContextSettingsApi;
   tokenUsage?: ThreadTokenUsage;
   readUsage: ReadUsage;
+  readConversationMetrics: ReadConversationMetrics;
   models: Model[];
   selection: ComposerSettings;
   saving: boolean;
@@ -27,7 +29,7 @@ interface Props {
 }
 
 export function ChatSettings({ models, selection, saving, ready, error, updateSettings, onClose,
-  readUsage, tokenUsage, threadId, contextSettings, connection }: Props) {
+  readUsage, readConversationMetrics, tokenUsage, threadId, contextSettings, connection }: Props) {
   useLanguage();
   const [field, setField] = useState<SettingField | null>(null);
   const [contextOpen, setContextOpen] = useState(false);
@@ -51,6 +53,7 @@ export function ChatSettings({ models, selection, saving, ready, error, updateSe
       {!!error && <button type="button" className="chat-button" onClick={() => { void updateSettings(selection); }}>
         {t("重新保存")}</button>}
       <ChatUsage read={readUsage} active={!field && !contextOpen} ready={ready} tokenUsage={tokenUsage}
+        readConversationMetrics={readConversationMetrics} threadId={threadId}
         onContextSettings={threadId ? () => setContextOpen(true) : undefined} />
     </div>
     {field && <AdaptiveSheet open title={t(SETTINGS_FIELDS.find((entry) => entry.field === field)!.title)} width={400}

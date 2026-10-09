@@ -11,6 +11,7 @@ import { ComposerAccess, ComposerDesktopStatus } from './ComposerDesktopControls
 import { ComposerModelPicker } from './ComposerModelPicker';
 import { ComposerSpeedIndicator } from './ComposerSpeedIndicator';
 import { ChatSettings } from './ChatSettings';
+import { ConversationTps } from './ConversationTps';
 import { ChatAttachmentPreviews } from './ChatAttachments';
 import { pickChatImages } from './pickChatImages';
 import { ChatImageEditor } from './ChatImageEditor';
@@ -182,7 +183,10 @@ export function ChatComposer(props: ComposerProps) {
       </div>
     </form>
     {desktop && <div className="chat-composer-hint"><span>{t('Enter 发送 · Shift + Enter 换行')}</span>
-      <span>{t('当前对话')} {formatThreadTokens(tokenUsage?.total.totalTokens)} Token</span>
+      <span className="chat-conversation-metrics">
+        <ConversationTps read={props.readConversationMetrics} threadId={threadId} active={active && ready} />
+        <span>{t('当前对话')} {formatThreadTokens(tokenUsage?.total.totalTokens)} Token</span>
+      </span>
     </div>}
     {active && !busy && editing && <ChatImageEditor key={editing.id} image={editing}
       save={url => draft.replaceImage(editing, url)} close={() => setEditingId(null)} />}
@@ -193,6 +197,7 @@ export function ChatComposer(props: ComposerProps) {
     {!desktop && settings && <ChatSettings models={models} selection={selection} threadId={threadId}
       connection={props.connection}
       contextSettings={props.contextSettings} readUsage={readUsage} tokenUsage={tokenUsage}
+      readConversationMetrics={props.readConversationMetrics}
       saving={settingsBusy} error={settingsError} ready={ready}
       updateSettings={updateSettings} onClose={() => setSettings(false)} />}
   </div>;

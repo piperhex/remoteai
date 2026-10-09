@@ -512,6 +512,7 @@ pub fn run() {
             local_proxy::get_proxy_session_unlimited_conversation,
             local_proxy::set_proxy_session_unlimited_conversation,
             local_proxy::get_recent_proxy_session_latency,
+            local_proxy::session_metrics::get_proxy_session_metrics,
             local_proxy::export_diagnostic_logs,
             local_proxy::list_token_usage_entries,
             local_proxy::list_token_usage_entries_since,

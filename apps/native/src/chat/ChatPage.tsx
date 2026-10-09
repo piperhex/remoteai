@@ -195,6 +195,7 @@ function ConnectedChat({ session, device, devices, active: pageActive, chooseDev
       threadId={state.selected?.id ?? null} models={state.models} selection={state.settings}
       contextSettings={controller.contextSettings}
       readUsage={controller.readUsage} usageActive={foreground && ready} tokenUsage={state.selected?.tokenUsage}
+      readConversationMetrics={controller.readConversationMetrics}
       loadCatalog={controller.loadComposerCatalog} loadFiles={controller.loadProjectFiles}
       loadConversations={controller.searchThreads}
       catalog={catalog} cwd={state.selected?.cwd ?? state.draftProject?.cwd ?? ''}

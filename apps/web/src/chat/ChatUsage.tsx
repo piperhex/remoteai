@@ -8,10 +8,14 @@ import { formatCost, formatThreadTokens, formatTokens, usageTrailing,
 import './chatUsage.css';
 import { contextUsageLabel } from './formatters';
 import type { ThreadTokenUsage } from './types';
+import type { ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
+import { ConversationTps } from './ConversationTps';
 
-export function ChatUsage({ read, active, ready, tokenUsage, onContextSettings, inline = false, contextControl }: {
+export function ChatUsage({ read, active, ready, tokenUsage, onContextSettings, inline = false, contextControl,
+  readConversationMetrics, threadId }: {
   read: ReadUsage; active: boolean; ready: boolean; tokenUsage?: ThreadTokenUsage;
   onContextSettings?: () => void; inline?: boolean; contextControl?: ReactNode;
+  readConversationMetrics?: ReadConversationMetrics; threadId?: string | null;
 }) {
   useLanguage();
   const [visible, setVisible] = useState(() => document.visibilityState !== 'hidden');
@@ -36,6 +40,8 @@ export function ChatUsage({ read, active, ready, tokenUsage, onContextSettings, 
     </> : <span>{notice}</span>}
     <span className="chat-usage-thread">{t("当前对话")}{' '}
       <strong className="chat-usage-tokens">{formatThreadTokens(tokenUsage?.total.totalTokens)} Token</strong>
+      {readConversationMetrics && <> · <ConversationTps read={readConversationMetrics} threadId={threadId ?? null}
+        active={active && ready && visible} /></>}
     </span>
   </div>;
 }

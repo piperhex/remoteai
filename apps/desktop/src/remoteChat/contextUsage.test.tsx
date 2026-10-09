@@ -80,6 +80,9 @@ it('shows and updates context in settings even while daily usage is still loadin
   const container = document.createElement('div');
   const root = createRoot(container);
   const readUsage = vi.fn(() => new Promise<never>(() => {}));
+  const readConversationMetrics = vi.fn().mockResolvedValue({
+    totalOutputTokens: 0, totalOutputTimeMs: 0, outputRequestCount: 0,
+  });
   const connection = { deviceName: '测试电脑', chooseDevice: vi.fn(), client: {
     read: vi.fn().mockResolvedValue({ selection: { kind: 'none' }, choices: [], running: false }),
     select: vi.fn(), subscribe: vi.fn(() => vi.fn()),
@@ -88,6 +91,7 @@ it('shows and updates context in settings even while daily usage is still loadin
     connection={connection}
     threadId="demo" contextSettings={{ read: vi.fn(), write: vi.fn() }}
     tokenUsage={tokenUsage} readUsage={readUsage} ready models={[]} saving={false} error=""
+    readConversationMetrics={readConversationMetrics}
     selection={{ model: 'astra', effort: 'low', access: 'workspace-write' }}
     updateSettings={async () => {}} onClose={() => {}} />));
   try {

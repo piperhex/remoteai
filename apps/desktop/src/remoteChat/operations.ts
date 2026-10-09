@@ -22,6 +22,7 @@ import { chatHandshake, validateChatHandshake } from '../../../../shared/remote-
 import { guiConnectionError } from '../../../../shared/remote-chat/connectionErrors';
 import { invoke } from '../api/backend';
 import type { UsageSummary } from '../../../../shared/remote-chat/usage';
+import { CONVERSATION_METRICS_OPERATION } from '../../../../shared/remote-chat/conversationMetrics';
 import { TOKEN_SUMMARY_OPERATION } from '../../../../shared/remote-chat/tokenSummary';
 import { encodeTokenSummary, QUOTA_HISTORY_FORMAT } from '../../../../shared/remote-chat/tokenSummaryCodec';
 import { readTokenSummary } from './tokenSummary';
@@ -58,6 +59,7 @@ const READ_OPERATIONS = new Set([
   CONTEXT_READ_OPERATION,
   TOKEN_SUMMARY_OPERATION,
   'usageSummary',
+  CONVERSATION_METRICS_OPERATION,
   'projectDirectories',
   'videoOpen', 'videoRead', 'videoClose',
   'textPreview',
@@ -145,6 +147,10 @@ export class ChatOperations {
     }
     if (request.method === 'request' && body.operation === 'usageSummary') {
       return invoke<UsageSummary>('codex_gui_usage_summary');
+    }
+    if (request.method === 'request' && body.operation === CONVERSATION_METRICS_OPERATION) {
+      if (typeof body.threadId !== 'string' || !body.threadId.trim()) throw new Error('请选择聊天后重试。');
+      return invoke('get_proxy_session_metrics', { threadId: body.threadId });
     }
     if (request.method === 'request' && body.operation === 'guiAccountsRead') return readGuiAccounts();
     if (request.method === 'request' && body.operation === 'guiAccountSelect') return selectGuiAccount(body.selection);

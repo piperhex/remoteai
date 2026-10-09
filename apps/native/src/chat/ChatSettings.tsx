@@ -10,6 +10,7 @@ import { SETTINGS_FIELDS, settingOptions, settingValue, settingsNotice, visibleS
 import { palette, styles } from './styles';
 import { ChatUsage } from './ChatUsage';
 import type { ReadUsage } from '../../../../shared/remote-chat/usage';
+import type { ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
 import type { ContextSettingsApi } from '../../../../shared/remote-chat/contextSettings';
 import { ChatContextSettings } from './ChatContextSettings';
 import { ChatProfileMenu, type ChatConnectionProps } from './ChatProfileMenu';
@@ -20,6 +21,7 @@ interface Props {
   contextSettings: ContextSettingsApi;
   tokenUsage?: ThreadTokenUsage;
   readUsage: ReadUsage;
+  readConversationMetrics: ReadConversationMetrics;
   usageActive: boolean;
   models: Model[];
   selection: ComposerSettings;
@@ -31,7 +33,7 @@ interface Props {
 }
 
 export function ChatSettings({ models, selection, saving, ready, error, updateSettings, onClose,
-  readUsage, usageActive, tokenUsage, threadId, contextSettings, connection }: Props) {
+  readUsage, readConversationMetrics, usageActive, tokenUsage, threadId, contextSettings, connection }: Props) {
   useLanguage();
   const [field, setField] = useState<SettingField | null>(null);
   const [contextOpen, setContextOpen] = useState(false);
@@ -60,6 +62,7 @@ export function ChatSettings({ models, selection, saving, ready, error, updateSe
       {!!error && <Pressable accessibilityRole="button" style={styles.button}
         onPress={() => { void updateSettings(selection); }}><Text style={styles.buttonText}>{t("重新保存")}</Text></Pressable>}
       <ChatUsage read={readUsage} active={usageActive && !nestedOpen} ready={ready} tokenUsage={tokenUsage}
+        readConversationMetrics={readConversationMetrics} threadId={threadId}
         onContextSettings={threadId && ready ? () => setContextOpen(true) : undefined} />
     </SheetScrollView>
     {contextOpen && threadId && ready && <ChatContextSettings key={threadId} threadId={threadId}

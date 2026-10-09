@@ -103,7 +103,10 @@ fn metrics_command_yields_while_active_requests_hold_the_registry_lock() {
         .recv_timeout(Duration::from_secs(5))
         .unwrap();
     let yielded = tauri::async_runtime::block_on(async {
-        let mut command = std::pin::pin!(super::super::get_recent_proxy_session_latency());
+        let mut command = std::pin::pin!(futures_util::future::try_join(
+            super::super::get_recent_proxy_session_latency(),
+            get_proxy_session_metrics("responsive-conversation".into()),
+        ));
         let first_poll = std::future::poll_fn(|cx| Poll::Ready(command.as_mut().poll(cx))).await;
         release_sender.send(()).unwrap();
         let yielded = first_poll.is_pending();
@@ -121,4 +124,42 @@ fn metrics_command_yields_while_active_requests_hold_the_registry_lock() {
         yielded,
         "polling must not block the async executor on the session lock"
     );
+}
+
+#[test]
+fn conversation_metrics_are_isolated_even_when_other_conversations_are_more_recent() {
+    let id = uuid::Uuid::new_v4().to_string();
+    let other_id = uuid::Uuid::new_v4().to_string();
+    let mut selected = session(1, vec![request(Some(200), Some(3_000))]);
+    selected.id = id.clone();
+    let mut other = session(10, vec![request(Some(90_000), Some(2_000))]);
+    other.id = other_id.clone();
+    {
+        let mut sessions = super::super::proxy_sessions().lock().unwrap();
+        sessions.insert(id.clone(), selected);
+        sessions.insert(other_id.clone(), other);
+    }
+    let summary = tauri::async_runtime::block_on(get_proxy_session_metrics(id.clone())).unwrap();
+    let unknown = read_session_metrics(&uuid::Uuid::new_v4().to_string()).unwrap();
+    {
+        let mut sessions = super::super::proxy_sessions().lock().unwrap();
+        sessions.remove(&id);
+        sessions.remove(&other_id);
+    }
+    assert_eq!(summary.total_output_tokens, 200);
+    assert_eq!(summary.total_output_time_ms, 2_000);
+    assert_eq!(summary.output_request_count, 1);
+    assert_eq!(unknown, ProxySessionLatencySummary::default());
+}
+
+#[test]
+fn conversation_metrics_reject_invalid_identifiers() {
+    for id in [
+        "".to_owned(),
+        " ".into(),
+        "thread\nother".into(),
+        "x".repeat(MAX_THREAD_ID_BYTES + 1),
+    ] {
+        assert!(tauri::async_runtime::block_on(get_proxy_session_metrics(id)).is_err());
+    }
 }
