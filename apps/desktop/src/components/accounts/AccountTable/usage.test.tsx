@@ -106,21 +106,22 @@ it('updates the quota unit and amount with cost display settings without reloadi
   const now = Math.floor(Date.now() / 1000);
   vi.mocked(loadOfficialUsage).mockResolvedValue({ status: 'ready', updatedAt: now,
     accounts: [{ accountId: account.id, accountLabel: account.email, tokens: 200, costUsd: 10,
-      remainingUsd: 30, primary: null, secondary: null, devices: [] }],
+      remainingUsd: 30, primary: { capacityUsd: 100, remainingUsd: 30, consumedUsd: 10, declinePercent: 10,
+        startPercent: 40, remainingPercent: 30, startTs: 0, endTs: 1 }, secondary: null, devices: [] }],
   });
   await render({ displayMode: 'table' });
   expect(container.textContent).toContain('Estimated available (USD)');
-  expect(container.textContent).toContain('30.00 USD');
+  expect(container.textContent).toContain('30/100USD');
   await act(async () => saveTokenCostDisplaySettings({ unit: '元', usdMultiplier: 7, currencyCode: 'CNY' }));
   expect(container.textContent).toContain('Estimated available (元)');
-  expect(container.textContent).toContain('210.00 元');
+  expect(container.textContent).toContain('210/700元');
   expect(container.textContent).not.toContain('Estimated available (USD)');
   await act(async () => saveTokenCostDisplaySettings({ unit: '积分', usdMultiplier: 100, currencyCode: null }));
   expect(container.textContent).toContain('Estimated available (积分)');
-  expect(container.textContent).toContain('3000.00 积分');
+  expect(container.textContent).toContain('3000/10000积分');
   await act(async () => saveTokenCostDisplaySettings({ unit: 'USD', usdMultiplier: 1, currencyCode: null }));
   expect(container.textContent).toContain('Estimated available (USD)');
-  expect(container.textContent).toContain('30.00 USD');
+  expect(container.textContent).toContain('30/100USD');
   expect(loadOfficialUsage).toHaveBeenCalledTimes(1);
 });
 

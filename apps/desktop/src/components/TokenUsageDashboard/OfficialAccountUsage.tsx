@@ -5,6 +5,7 @@ import { officialUsageLabels } from '../../../../../shared/officialUsageLabels';
 import { useOfficialUsage } from '../../hooks/useOfficialUsage';
 import { formatTokens } from './chartUtils';
 import { formatEstimatedCost, type TokenCostDisplaySettings } from '../../utils/tokenCost';
+import { formatAvailableQuota } from '../../utils/officialQuota';
 import { useTokenCostDisplaySettings } from '../../hooks/useTokenCostDisplaySettings';
 import styles from './index.module.less';
 
@@ -13,7 +14,7 @@ export function AvailableQuota({ account, language, settings }: {
 }) {
   const labels = officialUsageLabels(language);
   return <Tooltip title={labels.detail} styles={{ root: { maxWidth: 400 } }}>
-    <span>{account?.remainingUsd == null ? labels.unavailable : formatEstimatedCost(account.remainingUsd, settings)}</span>
+    <span>{formatAvailableQuota(account, settings) ?? labels.unavailable}</span>
   </Tooltip>;
 }
 

@@ -75,13 +75,14 @@ it("opens from Settings and updates all official costs and quotas after saving",
   await fill("#token-cost-unit", "元");
   await fill("#token-cost-multiplier", "7");
   expect(container.textContent).toContain("预估可用额度（USD）");
+  expect(container.textContent).toContain("30/100USD");
   await click(".ant-modal-footer .ant-btn-primary");
   expect(loadTokenCostDisplaySettings()).toEqual({ unit: "元", usdMultiplier: 7, currencyCode: null });
   expect(container.textContent).toContain("消耗金额（元）");
   expect(container.textContent).toContain("预估可用额度（元）");
   expect(container.textContent).toContain("100% 额度预估（元）");
   expect(container.textContent).toContain("70.00 元");
-  expect(container.textContent).toContain("210.00 元");
+  expect(container.textContent).toContain("210/700元");
   expect(container.textContent).toContain("700.00 元");
   await click(".ant-table-row-expand-icon");
   expect(container.querySelector(".ant-table-expanded-row")?.textContent).toContain("70.00 元");
