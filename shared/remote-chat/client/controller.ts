@@ -31,6 +31,7 @@ import { AsyncAnswers } from './asyncAnswers';
 import { createGuiAccountsClient } from './guiAccounts';
 import { createContextSettingsClient } from './contextSettings';
 import { createGuiToolsClient } from '../guiTools';
+import { canSelectProject } from '../projects';
 import type { UsageSummary } from '../usage';
 import { TOKEN_SUMMARY_OPERATION, type ReadTokenSummary } from '../tokenSummary';
 import { decodeTokenSummary, QUOTA_HISTORY_FORMAT, type TokenSummaryResponse } from '../tokenSummaryCodec';
@@ -671,6 +672,31 @@ export class ChatController {
     if ((!this.state.ready && !this.state.workspaceBusy)
       || this.state.selected || this.state.sending || !project.cwd.trim()) return;
     this.update({ draftProject: { cwd: project.cwd, label: project.label }, error: '' });
+  };
+
+  selectProject = async (project: ChatProject | null) => {
+    if (!canSelectProject(this.state) || (!project && this.state.selected)) return false;
+    if (!project) { this.update({ draftProject: null, error: '' }); return true; }
+    const threadId = this.state.selected?.id;
+    const before = this.state.draftProject;
+    this.update({ workspaceBusy: true, error: '' });
+    try {
+      const selected = await this.guiTools.projects.select({ cwd: project.cwd, threadId });
+      this.listGeneration += 1;
+      this.update({ loading: false });
+      // Invalidate reads started before this choice; they can still contain the previous directory.
+      if (this.state.selected?.id === threadId) {
+        this.readGeneration += 1; this.refreshThreadId = null;
+        if (this.state.selected) this.update({ selected: { ...this.state.selected, cwd: selected.cwd } });
+        else if (this.state.draftProject === before) this.update({ draftProject: selected });
+        this.update({ historyLoading: false, historyLoadingMore: false });
+        this.rememberHistory();
+      }
+      if (threadId) this.update({ threads: this.state.threads.map(thread =>
+        thread.id === threadId ? { ...thread, cwd: selected.cwd } : thread) });
+      return true;
+    } catch (error) { this.failure(error); return false; }
+    finally { this.update({ workspaceBusy: false }); }
   };
 
   compact = async () => {

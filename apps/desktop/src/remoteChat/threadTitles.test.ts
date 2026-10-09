@@ -23,7 +23,8 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(fetchCloudTitleSettings).mockResolvedValue({ model: 'configured-title-model', effort: 'medium' });
   const titles = new GuiThreadTitles({ active: () => true, currentName: () => undefined, receive });
-  vi.mocked(getGuiController).mockReturnValue({ titles } as ReturnType<typeof getGuiController>);
+  vi.mocked(getGuiController).mockReturnValue({ titles,
+    getSnapshot: () => ({ projectOverrides: {} }) } as ReturnType<typeof getGuiController>);
   vi.mocked(guiApi.connect).mockResolvedValue([]);
   vi.mocked(guiApi.request).mockImplementation(async (request) => {
     if (request.operation === 'start' || request.operation === 'resume') return { thread: structuredClone(thread) };

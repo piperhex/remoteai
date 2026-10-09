@@ -10,6 +10,8 @@ interface ProjectHost {
   report: (error: unknown) => void;
 }
 
+const RECENT_PROJECT_LIMIT = 20;
+
 async function listAllThreads(archived: boolean) {
   const threads: Thread[] = [];
   let cursor: string | undefined;
@@ -42,6 +44,22 @@ function removalPatch(state: GuiState, path: string, listed: Thread[]): Partial<
 
 export class GuiProjects {
   constructor(private host: ProjectHost) {}
+
+  /** Applies a validated remote folder without changing the desktop's selected conversation. */
+  selectRemote = (cwd: string, threadId?: string) => {
+    const state = this.host.getSnapshot();
+    const current = threadId ? state.conversations[threadId] : undefined;
+    if (state.sending || state.connection !== 'ready' || state.removingProject || state.goalBusy || (threadId
+      && (!current || current.activeTurn || state.queued[threadId]?.length || state.compacting === threadId
+        || state.deleting === threadId
+        || state.approvals.some(event => event.params.threadId === threadId)))) return false;
+    this.host.patch({ projects: [...new Set([cwd, ...state.projects])].slice(0, RECENT_PROJECT_LIMIT),
+      ...(threadId ? { projectOverrides: { ...state.projectOverrides, [threadId]: cwd },
+        threads: state.threads.map(thread => thread.id === threadId ? { ...thread, cwd } : thread),
+        ...(state.selected === threadId ? { settings: { ...state.settings, cwd } } : {}) } : {}) });
+    savePreferences(this.host.getSnapshot());
+    return true;
+  };
 
   pin = (path: string) => {
     if (!path) return;

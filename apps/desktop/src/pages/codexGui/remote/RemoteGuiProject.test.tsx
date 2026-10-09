@@ -8,6 +8,7 @@ import type { GitRequest, GitStatus } from '../../../../../../shared/remote-chat
 import { RemoteGuiProject } from './RemoteGuiProject';
 import type { GuiComputerNavigation } from './types';
 import { gitApi } from '../gitApi';
+import { saveProject } from '../projectCatalog';
 
 vi.mock('../gitApi', () => ({ gitApi: { request: vi.fn() } }));
 vi.mock('../GuiHostPicker', () => ({ GuiHostPicker: () => <span>测试电脑</span> }));
@@ -44,7 +45,14 @@ beforeEach(() => {
   const computedStyle = window.getComputedStyle;
   vi.spyOn(window, 'getComputedStyle').mockImplementation(element => computedStyle(element));
   status = original;
+  localStorage.clear();
   request.mockReset().mockImplementation(async (_method, body) => {
+    const fields = body as { operation: string; cwd: string; directory: string };
+    if (fields.operation === 'guiProjects') return [{ cwd: '/remote/app', label: '远程应用' }];
+    if (fields.operation === 'guiProjectSelect') return { cwd: fields.cwd, label: 'app' };
+    if (fields.operation === 'projectDirectories') return {
+      directory: fields.directory, parent: '/remote', entries: [{ name: 'child', path: '/remote/project/child' }],
+    };
     const input = (body as { request: GitRequest }).request;
     if (input.operation === 'switch') status = { ...status, branch: input.branch };
     if (input.operation === 'createWorktree') {
@@ -138,4 +146,43 @@ it('waits for an active connection and keeps workspace changes outside existing 
   await render(); expect(request).toHaveBeenCalledOnce();
   Object.assign(controller.snapshot(), { selected: { id: 'existing', cwd: original.cwd } });
   await render(); expect(button('切换 Git 分支')).toBeUndefined();
+});
+
+it('searches remote projects, ignores this computer’s saved names, and selects a folder', async () => {
+  saveProject({ path: '/remote/project', name: '本机名称' });
+  saveProject({ path: '/local/only', name: '仅在本机' });
+  await render(); await click('选择远程项目');
+  expect(document.body.textContent).toContain('远程应用');
+  expect(document.body.textContent).not.toContain('本机名称');
+  expect(document.body.textContent).not.toContain('仅在本机');
+  await act(async () => {
+    const input = document.querySelector<HTMLInputElement>('input[aria-label="搜索项目"]')!;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(input, '应用');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  expect(document.querySelectorAll('[role="menuitemradio"]')).toHaveLength(1);
+  await click('远程应用');
+  expect(controller.snapshot().draftProject?.cwd).toBe('/remote/app');
+  expect(request).toHaveBeenCalledWith('request', { operation: 'guiProjectSelect', cwd: '/remote/app' });
+});
+
+it('browses another remote folder for an idle existing conversation', async () => {
+  Object.assign(controller.snapshot(), { selected: { id: 'existing', cwd: original.cwd, turns: [] } });
+  await render(); expect(button('选择远程项目').disabled).toBe(false);
+  await click('选择远程项目'); await click('选择其他文件夹…'); await click('child');
+  await click('选择此文件夹');
+  expect(controller.snapshot().selected?.cwd).toBe('/remote/project/child');
+  expect(request).toHaveBeenCalledWith('request', {
+    operation: 'guiProjectSelect', cwd: '/remote/project/child', threadId: 'existing',
+  });
+});
+
+it('shows a compact load error and retries when the menu is reopened', async () => {
+  await render();
+  request.mockRejectedValueOnce(new Error('offline'));
+  await click('选择远程项目');
+  expect(document.body.textContent).toContain('项目列表未能加载，请重新打开重试。');
+  await click('选择远程项目'); await click('选择远程项目');
+  expect(document.body.textContent).toContain('远程应用');
+  expect(document.body.textContent).not.toContain('项目列表未能加载，请重新打开重试。');
 });

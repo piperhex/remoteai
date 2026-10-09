@@ -217,7 +217,7 @@ export type Request =
   | { operation: "goalSet"; threadId: string; objective?: string; status: "active" | "paused" }
   | { operation: "plugins"; cwd?: string }
   | { operation: "sendBatch"; threadId: string; messages: MessageInput[]; model?: string; effort?: string;
-      access: AccessMode }
+      access: AccessMode; cwd?: string }
   | { operation: "steer"; threadId: string; turnId: string; text: string; images: string[];
       skills: SkillReference[]; attachments?: AttachmentReference[]; transferMode?: 'direct' | 'relay' }
   | { operation: "skills"; cwd?: string }

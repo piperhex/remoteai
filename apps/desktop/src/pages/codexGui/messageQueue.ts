@@ -88,8 +88,9 @@ export class MessageQueue {
     });
   };
   private resume = async (threadId: string, message: QueuedMessage): Promise<boolean> => {
+    const cwd = this.host.getSnapshot().projectOverrides[threadId];
     const { thread } = await guiApi.request<{ thread: Thread }>({
-      operation: "resume", threadId, access: message.access });
+      operation: "resume", threadId, access: message.access, cwd });
     const state = this.host.getSnapshot();
     if (!this.host.active() || state.connection !== "ready" || state.conversations[threadId]?.activeTurn) return false;
     const current = conversation(thread, state.conversations[threadId]);
@@ -117,6 +118,7 @@ export class MessageQueue {
       const thread = this.host.getSnapshot().conversations[threadId]?.thread;
       dispatched = true;
       const { turn } = await guiApi.request<{ turn: Turn }>({ operation: "sendBatch", threadId,
+        cwd: this.host.getSnapshot().projectOverrides[threadId],
         messages: messages.map(({ text, images, skills, attachments, transferMode }) => ({ text, images, skills,
           ...(transferMode ? { transferMode } : {}),
           ...(attachments?.length ? { attachments: attachments } : {}) })),

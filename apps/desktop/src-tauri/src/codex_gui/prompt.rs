@@ -158,6 +158,10 @@ pub(super) fn batch_params(
     if let Some(access) = options.access {
         access.apply_to_turn(&mut params);
     }
+    if let Some(cwd) = options.cwd {
+        directory(&cwd)?;
+        params["cwd"] = json!(cwd);
+    }
     Ok(("turn/start", params))
 }
 

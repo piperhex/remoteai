@@ -2,6 +2,8 @@ import type { TerminalRead, TerminalInfo, TerminalSize } from '../terminal/types
 import { desktopClient } from '../remote-desktop/protocol';
 import { createReviewClient } from './taskReview';
 import type { GitRequest, GitStatus } from './gitWorkspace';
+import { PROJECT_LIST_OPERATION, PROJECT_SELECT_OPERATION, type ProjectSelection } from './projects';
+import type { ChatProject } from './client/types';
 import type { GitActionRequest, GitChanges, GitCommitFile, GitCommitRequest, GitDiff, GitHistory,
   GitRepository } from './gitTypes';
 
@@ -15,6 +17,7 @@ export interface RemoteCliStatus {
   error: string;
 }
 export const GUI_TOOL_OPERATIONS = new Set([
+  PROJECT_LIST_OPERATION, PROJECT_SELECT_OPERATION,
   'guiCliStatus', 'guiCliRelease', 'guiCliInstall', 'guiReconnect',
   'guiTerminalList', 'guiTerminalOpen', 'guiTerminalRead', 'guiTerminalWrite', 'guiTerminalResize', 'guiTerminalClose',
   'guiGitChanges', 'guiGitDiff', 'guiGitHistory', 'guiGitCommit', 'guiGitCommitFiles',
@@ -27,6 +30,10 @@ export function createGuiToolsClient(request: <T>(body: object) => Promise<T>,
   diagnostic?: import('./diagnostics').ConnectionDiagnostic,
   nativeMedia?: import('../remote-desktop/nativeMedia').NativeMediaFactory) {
   return {
+    projects: {
+      list: () => request<ChatProject[]>({ operation: PROJECT_LIST_OPERATION }),
+      select: (input: ProjectSelection) => request<ChatProject>({ ...input, operation: PROJECT_SELECT_OPERATION }),
+    },
     review: createReviewClient(request),
     desktop: desktopClient(request, diagnostic, nativeMedia),
     status: () => request<RemoteCliStatus>({ operation: 'guiCliStatus' }),

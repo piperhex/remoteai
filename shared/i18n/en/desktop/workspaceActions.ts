@@ -120,6 +120,12 @@ export const workspaceActions = {
   "等待连接电脑": "Waiting to connect to the computer",
   "代理未启动": "Proxy not started",
   "选择远程项目": "Choose a remote project",
+  "正在读取项目…": "Loading projects…",
+  "选择其他文件夹…": "Choose another folder…",
+  "项目列表未能加载，请重新打开重试。": "Could not load projects. Reopen the menu to retry.",
+  "请选择有效的项目文件夹。": "Choose a valid project folder.",
+  "请等待当前任务和待发送消息处理完成后，再切换项目。":
+    "Wait for the current task and queued messages to finish before switching projects.",
   "连接电脑后查看对话": "Connect to a computer to view conversations",
   "未能重新连接远程 Codex，请稍后重试。": "Could not reconnect remote Codex. Please try again shortly.",
   "重新连接远程 Codex": "Reconnect remote Codex",

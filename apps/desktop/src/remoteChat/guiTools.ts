@@ -4,6 +4,8 @@ import { getGuiController } from '../pages/codexGui/session';
 import { subscribeGuiEvent } from '../pages/codexGui/webEvents';
 import type { CliProgress, CliRelease, RemoteCliStatus } from '../../../../shared/remote-chat/guiTools';
 import { workspaceRequest } from './gitWorkspace';
+import { readRemoteProjects, selectRemoteProject } from './projects';
+import { PROJECT_LIST_OPERATION, PROJECT_SELECT_OPERATION } from '../../../../shared/remote-chat/projects';
 
 // A download continues when its requesting computer disconnects and is visible after reconnecting.
 let installing = false;
@@ -36,6 +38,8 @@ async function install(version: string) {
 
 export async function guiToolRequest(body: Record<string, unknown>) {
   switch (body.operation) {
+    case PROJECT_LIST_OPERATION: return readRemoteProjects();
+    case PROJECT_SELECT_OPERATION: return selectRemoteProject(body);
     case 'guiGitWorkspace': return workspaceRequest(body.request);
     case 'guiTaskReview': return invoke('codex_gui_git_tool', { request: { ...body, operation: 'review' } });
     case 'guiTaskRestore': {

@@ -131,6 +131,7 @@ pub(crate) enum GuiRequest {
         messages: Vec<PromptInput>,
         model: Option<String>,
         effort: Option<String>,
+        cwd: Option<String>,
     },
     Rename {
         thread_id: String,
@@ -388,13 +389,14 @@ impl GuiRequest {
                 messages,
                 model,
                 effort,
+                cwd,
             } => batch_params(
                 thread_id,
                 messages,
                 TurnOptions {
                     model,
                     effort,
-                    cwd: None,
+                    cwd,
                     access,
                 },
             ),

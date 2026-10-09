@@ -293,6 +293,25 @@ fn new_turns_override_cached_permissions_in_both_directions() {
 }
 
 #[test]
+fn queued_turns_apply_and_validate_the_selected_project_folder() {
+    let cwd = std::env::current_dir().unwrap();
+    let (method, params) = request(json!({"operation": "sendBatch", "threadId": "thread-1",
+        "messages": [{"text": "continue", "images": []}], "cwd": cwd}))
+    .into_rpc()
+    .unwrap();
+    assert_eq!(method, "turn/start");
+    assert_eq!(params["cwd"], cwd.to_string_lossy().as_ref());
+    for invalid in ["../relative", "folder\u{0000}name"] {
+        assert!(
+            request(json!({"operation": "sendBatch", "threadId": "thread-1",
+            "messages": [{"text": "continue", "images": []}], "cwd": invalid}))
+            .into_rpc()
+            .is_err()
+        );
+    }
+}
+
+#[test]
 fn omitted_turn_access_inherits_permissions_and_invalid_access_is_rejected() {
     for operation in ["send", "sendBatch", "steer"] {
         let mut value = json!({"operation": operation, "threadId": "thread-1", "turnId": "turn-1",

@@ -34,6 +34,8 @@ import { deleteRemoteThread } from './threadActions';
 import { RemoteDesktopHost } from '../remoteDesktop/host';
 import { DESKTOP_OPERATION } from '../../../../shared/remote-desktop/protocol';
 import { RemoteThreadTitles } from './threadTitles';
+import { applyProjectOverride, effectiveProjectThread } from './projects';
+import { PROJECT_LIST_OPERATION } from '../../../../shared/remote-chat/projects';
 
 const OPERATIONS = new Set([
   'downloadOpen', 'downloadBrowse', 'previewOpen',
@@ -48,6 +50,7 @@ interface Cached {
   fingerprint: string; result: Promise<RpcResponse>; expires: number; completed: boolean; readOnly: boolean;
 }
 const READ_OPERATIONS = new Set([
+  PROJECT_LIST_OPERATION,
   'downloadOpen', 'downloadBrowse', 'previewOpen',
   'guiCliStatus', 'guiCliRelease', 'guiTerminalRead', 'guiTerminalList',
   'guiGitChanges', 'guiGitDiff', 'guiGitHistory', 'guiGitRepository', 'guiGitCommitFiles',
@@ -156,7 +159,8 @@ export class ChatOperations {
       const known = parseHistoryVersion(body.known);
       const window = parseHistoryWindow(body.window);
       const { thread } = await guiApi.request<{ thread: Thread }>({ operation: 'read', threadId: body.threadId });
-      const sliced = sliceHistory(acknowledgedMessages.merge(this.liveHistory.merge(thread)), window);
+      const current = effectiveProjectThread(this.liveHistory.merge(thread));
+      const sliced = sliceHistory(acknowledgedMessages.merge(current), window);
       return { ...historyDelta(this.images.prepare(sliced.thread, thread.id), known), page: sliced.page };
     }
     if (request.method === 'request' && body.operation === 'composerSet') {
@@ -202,15 +206,20 @@ export class ChatOperations {
     if (body.operation === 'videoOpen' || body.operation === 'videoRead') {
       body.maxBytes = videoByteLimit(mode);
     }
+    applyProjectOverride(body);
     const result = await guiApi.request(body as unknown as Request);
     this.titles.completed(body, result);
     if (body.operation === 'skills') return composerCatalog(result as SkillsResponse, body);
     if (body.operation === 'list') {
       const list = result as ListResponse<Thread>;
-      return { ...list, data: list.data.map(({ turns: _turns, ...thread }) => thread),
+      return { ...list, data: list.data.map(({ turns: _turns, ...thread }) => effectiveProjectThread(thread)),
         sidebar: guiSidebar.observe(list.data, sidebarVersion) };
     }
     if (body.operation === 'resume' || body.operation === 'send' || body.operation === 'steer') return {};
+    if (body.operation === 'read') {
+      const response = result as { thread: Thread };
+      return this.images.prepare({ ...response, thread: effectiveProjectThread(response.thread) }, String(body.threadId));
+    }
     return this.images.prepare(result, String(body.threadId ?? ''));
   }
 
@@ -225,6 +234,9 @@ export class ChatOperations {
 
   prepareEvent(event: GuiEvent) {
     this.liveHistory.receive(event);
+    if (event.params.thread) {
+      event = { ...event, params: { ...event.params, thread: effectiveProjectThread(event.params.thread) } };
+    }
     return this.images.prepare(historyNotification(event), event.params.threadId ?? event.params.thread?.id ?? '');
   }
 

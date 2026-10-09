@@ -39,6 +39,19 @@ beforeEach(async () => {
 });
 afterEach(() => controller.dispose());
 
+it('uses a remotely switched folder for both resume and the next queued turn', async () => {
+  thread.turns = [];
+  await controller.loadRemoteThread('phone');
+  expect(controller.projectActions.selectRemote('/remote/changed', 'phone')).toBe(true);
+  await queue.request(input);
+  await vi.waitFor(() => expect(guiApi.request).toHaveBeenCalledWith(expect.objectContaining({
+    operation: 'sendBatch', threadId: 'phone', cwd: '/remote/changed',
+  })));
+  expect(guiApi.request).toHaveBeenCalledWith(expect.objectContaining({
+    operation: 'resume', threadId: 'phone', cwd: '/remote/changed',
+  }));
+});
+
 it('generates a title when the first successful phone message goes through the queue', async () => {
   thread.turns = [];
   await queue.request(input);
