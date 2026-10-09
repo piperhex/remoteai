@@ -3,10 +3,11 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { useConversationMetrics } from '../../../../shared/remote-chat/client/useConversationMetrics';
-import { formatConversationTps, type ConversationMetrics,
+import { formatConversationTps, formatConversationTtft, type ConversationMetrics,
   type ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
 
-const metrics: ConversationMetrics = { totalOutputTokens: 400, totalOutputTimeMs: 4_000, outputRequestCount: 2 };
+const metrics: ConversationMetrics = { totalOutputTokens: 400, totalOutputTimeMs: 4_000, outputRequestCount: 2,
+  totalFirstTokenTimeMs: 2_500, firstTokenRequestCount: 2 };
 let root: Root;
 let result: ReturnType<typeof useConversationMetrics>;
 function Probe({ read, threadId = 'first', active = true }: {
@@ -55,6 +56,18 @@ it('does not overlap slow requests, including while briefly hiding and reopening
   await act(async () => vi.advanceTimersByTimeAsync(6_000));
   expect(result).toBeNull();
   expect(read).toHaveBeenCalledTimes(2);
+});
+
+it('formats average TTFT in seconds and leaves missing, old or invalid measurements unknown', () => {
+  expect(formatConversationTtft(metrics)).toBe('1.25 s');
+  expect(formatConversationTtft({ ...metrics, totalFirstTokenTimeMs: 0 })).toBe('0.00 s');
+  const oldHost = { totalOutputTokens: 100, totalOutputTimeMs: 1_000, outputRequestCount: 1 };
+  for (const invalid of [null, oldHost, { ...metrics, firstTokenRequestCount: 0 },
+    { ...metrics, firstTokenRequestCount: Infinity }, { ...metrics, firstTokenRequestCount: 1.5 },
+    { ...metrics, totalFirstTokenTimeMs: Infinity }, { ...metrics, totalFirstTokenTimeMs: NaN },
+    { ...metrics, totalFirstTokenTimeMs: -1 }]) {
+    expect(formatConversationTtft(invalid)).toBe('—');
+  }
 });
 
 it('never displays a late result from a previous conversation or remote device', async () => {

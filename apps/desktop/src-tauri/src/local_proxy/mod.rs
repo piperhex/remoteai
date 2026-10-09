@@ -17,6 +17,7 @@ pub(crate) mod concurrent_quota;
 pub(crate) mod endpoints;
 mod error_capture;
 mod error_messages;
+mod first_token;
 mod gui_auto_switch;
 pub(crate) mod gui_context;
 mod gui_forwarding;

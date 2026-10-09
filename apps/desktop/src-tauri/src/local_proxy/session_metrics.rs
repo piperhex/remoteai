@@ -67,6 +67,12 @@ pub(super) fn summarize_recent_sessions<'a>(
 }
 
 fn add_request(summary: &mut ProxySessionLatencySummary, request: &ProxySessionRequestState) {
+    // A first token is measurable while streaming, even before final usage arrives.
+    if let Some(elapsed) = request.first_token_time_ms {
+        summary.total_first_token_time_ms =
+            summary.total_first_token_time_ms.saturating_add(elapsed);
+        summary.first_token_request_count = summary.first_token_request_count.saturating_add(1);
+    }
     let Some(first_response_time_ms) = request.first_response_time_ms else {
         return;
     };

@@ -48,6 +48,8 @@ struct ProxySessionRequestState {
     #[serde(default)]
     interrupted: bool,
     first_response_time_ms: Option<u64>,
+    #[serde(default)]
+    first_token_time_ms: Option<u64>,
     response_time_ms: Option<u64>,
     usage: Option<TokenUsageValues>,
 }

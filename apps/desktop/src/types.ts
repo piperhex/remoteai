@@ -328,6 +328,7 @@ export interface ProxySessionRequest {
     responseTruncated?: boolean;
     interrupted?: boolean;
     firstResponseTimeMs?: number | null;
+    firstTokenTimeMs?: number | null;
     responseTimeMs?: number | null;
     totalTokens?: number | null;
     inputTokens?: number | null;
@@ -337,6 +338,8 @@ export interface ProxySessionRequest {
 }
 
 export interface ProxySessionLatencySummary {
+  totalFirstTokenTimeMs: number;
+  firstTokenRequestCount: number;
   totalFirstResponseTimeMs: number;
   requestCount: number;
   totalOutputTokens: number;

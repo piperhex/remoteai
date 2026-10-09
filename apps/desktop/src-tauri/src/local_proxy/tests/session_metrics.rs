@@ -43,6 +43,26 @@ fn tps_uses_combined_output_time_without_first_response_wait() {
 }
 
 #[test]
+fn ttft_averages_observed_tokens_including_active_requests_without_using_first_bytes() {
+    let historical = request(Some(100), Some(2_000));
+    assert_eq!(
+        historical.first_token_time_ms, None,
+        "old history stays compatible"
+    );
+    let mut active = request(None, None);
+    active.first_token_time_ms = Some(2_500);
+    let mut completed = request(Some(100), Some(5_000));
+    completed.first_token_time_ms = Some(3_500);
+    let mut zero = request(None, None);
+    zero.first_token_time_ms = Some(0);
+    let sessions = [session(1, vec![historical, active, completed, zero])];
+    let summary = summarize_recent_sessions(sessions.iter());
+    assert_eq!(summary.total_first_token_time_ms, 6_000);
+    assert_eq!(summary.first_token_request_count, 3);
+    assert_eq!(summary.total_first_response_time_ms, 4_000);
+}
+
+#[test]
 fn tps_skips_incomplete_interrupted_and_invalid_timings_without_changing_latency() {
     let mut interrupted = request(Some(100), Some(2_000));
     interrupted.interrupted = true;
@@ -131,8 +151,10 @@ fn conversation_metrics_are_isolated_even_when_other_conversations_are_more_rece
     let id = uuid::Uuid::new_v4().to_string();
     let other_id = uuid::Uuid::new_v4().to_string();
     let mut selected = session(1, vec![request(Some(200), Some(3_000))]);
+    selected.requests[0].first_token_time_ms = Some(1_500);
     selected.id = id.clone();
     let mut other = session(10, vec![request(Some(90_000), Some(2_000))]);
+    other.requests[0].first_token_time_ms = Some(50);
     other.id = other_id.clone();
     {
         let mut sessions = super::super::proxy_sessions().lock().unwrap();
@@ -147,6 +169,8 @@ fn conversation_metrics_are_isolated_even_when_other_conversations_are_more_rece
         sessions.remove(&other_id);
     }
     assert_eq!(summary.total_output_tokens, 200);
+    assert_eq!(summary.total_first_token_time_ms, 1_500);
+    assert_eq!(summary.first_token_request_count, 1);
     assert_eq!(summary.total_output_time_ms, 2_000);
     assert_eq!(summary.output_request_count, 1);
     assert_eq!(unknown, ProxySessionLatencySummary::default());

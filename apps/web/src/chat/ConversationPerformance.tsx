@@ -2,10 +2,10 @@ import { Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
 import { t, useLanguage } from '../i18n';
 import { useConversationMetrics } from '../../../../shared/remote-chat/client/useConversationMetrics';
-import { CONVERSATION_TPS_DESCRIPTION, formatConversationTps,
+import { CONVERSATION_TPS_DESCRIPTION, CONVERSATION_TTFT_DESCRIPTION, formatConversationTps, formatConversationTtft,
   type ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
 
-export function ConversationTps({ read, threadId, active }: {
+export function ConversationPerformance({ read, threadId, active }: {
   read: ReadConversationMetrics; threadId: string | null; active: boolean;
 }) {
   useLanguage();
@@ -17,7 +17,14 @@ export function ConversationTps({ read, threadId, active }: {
   }, []);
   const metrics = useConversationMetrics(read, threadId, active && visible);
   const speed = `${formatConversationTps(metrics)} TPS`;
-  return <Tooltip title={t(CONVERSATION_TPS_DESCRIPTION)} styles={{ root: { maxWidth: 400 } }}>
-    <span className="chat-conversation-tps" aria-label={`${t('对话输出速度')} ${speed}`}>{speed}</span>
-  </Tooltip>;
+  const firstToken = `TTFT ${formatConversationTtft(metrics)}`;
+  return <>
+    <Tooltip title={t(CONVERSATION_TPS_DESCRIPTION)} styles={{ root: { maxWidth: 400 } }}>
+      <span className="chat-conversation-tps" aria-label={`${t('对话输出速度')} ${speed}`}>{speed}</span>
+    </Tooltip>
+    {' '}
+    <Tooltip title={t(CONVERSATION_TTFT_DESCRIPTION)} styles={{ root: { maxWidth: 400 } }}>
+      <span className="chat-conversation-ttft" aria-label={`${t('首 token 等待时间')} ${firstToken}`}>{firstToken}</span>
+    </Tooltip>
+  </>;
 }

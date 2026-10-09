@@ -8,8 +8,9 @@ import { CONVERSATION_METRICS_OPERATION } from '../../../../shared/remote-chat/c
 vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
 beforeEach(() => vi.clearAllMocks());
 
-it.each(['direct', 'relay'] as const)('reads TPS from the connected host for the exact thread over %s', async mode => {
-  const expected = { totalOutputTokens: 200, totalOutputTimeMs: 4_000, outputRequestCount: 1 };
+it.each(['direct', 'relay'] as const)('reads TPS and TTFT from the exact host and thread over %s', async mode => {
+  const expected = { totalOutputTokens: 200, totalOutputTimeMs: 4_000, outputRequestCount: 1,
+    totalFirstTokenTimeMs: 1_500, firstTokenRequestCount: 1 };
   vi.mocked(invoke).mockResolvedValue(expected);
   const host = new ChatOperations();
   let sequence = 0;

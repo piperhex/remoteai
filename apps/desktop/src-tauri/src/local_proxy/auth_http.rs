@@ -385,7 +385,7 @@ fn attach_first_response_capture(
             }))
         }
     };
-    payload
+    first_token::capture(payload, session)
 }
 
 fn respond_payload(request: Request, payload: UpstreamPayload) {

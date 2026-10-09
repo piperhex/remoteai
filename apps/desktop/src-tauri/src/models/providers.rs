@@ -169,6 +169,7 @@ pub(crate) struct ProxySessionRequestSummary {
     pub(crate) response_truncated: bool,
     pub(crate) interrupted: bool,
     pub(crate) first_response_time_ms: Option<u64>,
+    pub(crate) first_token_time_ms: Option<u64>,
     pub(crate) response_time_ms: Option<u64>,
     pub(crate) total_tokens: Option<u64>,
     pub(crate) input_tokens: Option<u64>,
@@ -180,6 +181,8 @@ pub(crate) struct ProxySessionRequestSummary {
 #[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ProxySessionLatencySummary {
+    pub(crate) total_first_token_time_ms: u64,
+    pub(crate) first_token_request_count: u64,
     pub(crate) total_first_response_time_ms: u64,
     pub(crate) request_count: u64,
     pub(crate) total_output_tokens: u64,

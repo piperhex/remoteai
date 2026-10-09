@@ -132,6 +132,7 @@ fn begin_proxy_session_request(
             response_truncated: false,
             interrupted: false,
             first_response_time_ms: None,
+            first_token_time_ms: None,
             response_time_ms: None,
             usage: None,
         });

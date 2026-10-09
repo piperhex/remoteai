@@ -9,7 +9,7 @@ import './chatUsage.css';
 import { contextUsageLabel } from './formatters';
 import type { ThreadTokenUsage } from './types';
 import type { ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
-import { ConversationTps } from './ConversationTps';
+import { ConversationPerformance } from './ConversationPerformance';
 
 export function ChatUsage({ read, active, ready, tokenUsage, onContextSettings, inline = false, contextControl,
   readConversationMetrics, threadId }: {
@@ -40,7 +40,7 @@ export function ChatUsage({ read, active, ready, tokenUsage, onContextSettings, 
     </> : <span>{notice}</span>}
     <span className="chat-usage-thread">{t("当前对话")}{' '}
       <strong className="chat-usage-tokens">{formatThreadTokens(tokenUsage?.total.totalTokens)} Token</strong>
-      {readConversationMetrics && <> · <ConversationTps read={readConversationMetrics} threadId={threadId ?? null}
+      {readConversationMetrics && <> · <ConversationPerformance read={readConversationMetrics} threadId={threadId ?? null}
         active={active && ready && visible} /></>}
     </span>
   </div>;

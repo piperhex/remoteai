@@ -39,6 +39,7 @@ fn history_test_request(id: u64) -> ProxySessionRequestState {
         response_truncated: false,
         interrupted: false,
         first_response_time_ms: Some(20),
+        first_token_time_ms: Some(30),
         response_time_ms: Some(50),
         usage: Some(TokenUsageValues {
             total_tokens: Some(30),
@@ -126,6 +127,7 @@ fn history_reopens_session_details_and_image_files_without_memory_cache() {
     let details = reopened.requests(&session.id).unwrap();
     assert_eq!(details[0].response.as_deref(), Some("已生成 🌞"));
     assert!(!details[0].interrupted);
+    assert_eq!(details[0].first_token_time_ms, Some(30));
     assert_eq!(details[0].service_tier, Some(ProxyServiceTier::Priority));
     assert_eq!(reopened.attachment(&id).unwrap().as_deref(), Some(source));
     let next = history_test_request(session.request_count + 1);

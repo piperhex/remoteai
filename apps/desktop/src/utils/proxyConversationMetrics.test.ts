@@ -19,6 +19,7 @@ describe("proxy conversation TPS", () => {
       request({ outputTokens: 600, responseTimeMs: 4_000 }),
     ]);
     expect(summary).toEqual({
+      totalFirstTokenTimeMs: 0, firstTokenRequestCount: 0,
       totalFirstResponseTimeMs: 2_000, requestCount: 2,
       totalOutputTokens: 700, totalOutputTimeMs: 4_000, outputRequestCount: 2,
     });
@@ -40,5 +41,14 @@ describe("proxy conversation TPS", () => {
   it("distinguishes a measured zero from absent measurements", () => {
     expect(formatConversationTps(summarizeProxyRequests([request({ outputTokens: 0 })]))).toBe("0.0 token/s");
     expect(formatConversationTps(summarizeProxyRequests([]))).toBe("—");
+  });
+
+  it("counts first tokens independently of final usage without mistaking first bytes for tokens", () => {
+    const summary = summarizeProxyRequests([
+      request(), request({ firstTokenTimeMs: 2_500, responseTimeMs: null }),
+      request({ firstTokenTimeMs: 3_500, responseTimeMs: 5_000 }), request({ firstTokenTimeMs: 0 }),
+    ]);
+    expect(summary.totalFirstTokenTimeMs).toBe(6_000);
+    expect(summary.firstTokenRequestCount).toBe(3);
   });
 });

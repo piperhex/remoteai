@@ -31,6 +31,7 @@ fn list_proxy_session_requests_blocking(
             response_truncated: request.response_truncated,
             interrupted: request.interrupted,
             first_response_time_ms: request.first_response_time_ms,
+            first_token_time_ms: request.first_token_time_ms,
             response_time_ms: request.response_time_ms,
             total_tokens: request.usage.as_ref().and_then(token_usage_total),
             input_tokens: request.usage.as_ref().and_then(|usage| usage.input_tokens),
