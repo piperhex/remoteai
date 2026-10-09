@@ -1,5 +1,8 @@
 use super::super::{DesktopError, Result};
-use super::{annex_b::AccessUnits, model::Profile, packets::Packets};
+use super::{annex_b::AccessUnits, codec::EncoderInfo, model::Profile, packets::Packets};
+#[path = "encoder_backend.rs"]
+mod backend;
+use backend::Backend;
 use std::{
     path::{Path, PathBuf},
     process::Stdio,
@@ -13,16 +16,6 @@ use tokio::{
 const START_TIMEOUT: Duration = Duration::from_secs(3);
 const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 const READ_BUFFER_BYTES: usize = 32 * 1024;
-
-#[derive(Clone, Copy)]
-enum Backend {
-    DirtyGpu,
-    DirtyGdi,
-    Nvenc,
-    MediaFoundation,
-    Software,
-    GdiSoftware,
-}
 
 #[derive(Clone, Copy)]
 struct Display {
@@ -45,6 +38,7 @@ pub(super) struct Encoder {
     pub height: u32,
     pub bitrate: u32,
     profile: Profile,
+    backend: Backend,
 }
 
 impl Encoder {
@@ -55,22 +49,27 @@ impl Encoder {
     ) -> Result<(Self, Vec<u8>)> {
         let dimensions = dimensions(profile.width, display)?;
         for backend in [
+            Backend::Dxgi,
             Backend::DirtyGpu,
             Backend::Nvenc,
             Backend::MediaFoundation,
+            Backend::DirtyGdiHardware,
             Backend::DirtyGdi,
             Backend::Software,
             Backend::GdiSoftware,
         ] {
-            // WGC does not capture Winlogon. The service helper binds GDI to the current input desktop.
-            if super::super::input_desktop::is_worker() && !matches!(backend, Backend::DirtyGdi) {
+            #[cfg(test)]
+            if std::env::var_os("CSW_NATIVE_TEST_REQUIRE_DXGI").is_some()
+                && !matches!(backend, Backend::Dxgi)
+            {
+                continue;
+            }
+            if !backend.supports(profile.codec, super::super::input_desktop::is_worker()) {
                 continue;
             }
             // Opt-in device tests must prove the new path rather than silently passing via compatibility capture.
             #[cfg(test)]
-            if std::env::var_os("CSW_NATIVE_TEST_REQUIRE_DAMAGE").is_some()
-                && !matches!(backend, Backend::DirtyGpu | Backend::DirtyGdi)
-            {
+            if std::env::var_os("CSW_NATIVE_TEST_REQUIRE_DAMAGE").is_some() && !backend.framed() {
                 continue;
             }
             let Ok(mut encoder) = Self::spawn(path, profile, dimensions, backend) else {
@@ -85,7 +84,7 @@ impl Encoder {
     }
 
     fn spawn(path: &Path, profile: Profile, size: Display, backend: Backend) -> Result<Self> {
-        let dirty = matches!(backend, Backend::DirtyGpu | Backend::DirtyGdi);
+        let dirty = backend.framed();
         let helper = path.with_file_name("desktop-video.exe");
         let mut command = Command::new(if dirty { &helper } else { path });
         command
@@ -109,6 +108,7 @@ impl Encoder {
             height: size.height,
             bitrate: profile.bitrate,
             profile,
+            backend,
         })
     }
 
@@ -119,6 +119,14 @@ impl Encoder {
                 None => self.units.next(),
             };
             if let Some(frame) = next {
+                if self
+                    .packets
+                    .as_ref()
+                    .and_then(|packets| packets.info)
+                    .is_some_and(|info| info.video_codec != self.profile.codec)
+                {
+                    return Err(DesktopError::Platform);
+                }
                 return Ok(frame);
             }
             let length = self
@@ -147,13 +155,27 @@ impl Encoder {
     }
 
     pub async fn update(&mut self, profile: Profile) -> Result<bool> {
-        if profile.width != self.profile.width || !self.controllable() {
+        if profile.codec != self.profile.codec
+            || profile.width != self.profile.width
+            || !self.controllable()
+        {
             return Ok(false);
         }
         self.control(profile.bitrate, profile.fps).await?;
         self.profile = profile;
         self.bitrate = profile.bitrate;
         Ok(true)
+    }
+
+    pub fn info(&self) -> EncoderInfo {
+        self.packets
+            .as_ref()
+            .and_then(|packets| packets.info)
+            .unwrap_or(EncoderInfo {
+                capture_method: Some(self.backend.capture()),
+                hardware_encoding: Some(self.backend.hardware()),
+                video_codec: self.profile.codec,
+            })
     }
 
     pub async fn request_keyframe(&mut self) -> Result<()> {
@@ -205,20 +227,20 @@ fn dimensions(limit: u32, display: &super::super::monitors::Monitor) -> Result<D
 }
 
 fn arguments(profile: Profile, size: Display, backend: Backend) -> Vec<String> {
-    if matches!(backend, Backend::DirtyGpu | Backend::DirtyGdi) {
-        return vec![
+    if let Some(name) = backend.helper() {
+        let mut arguments = vec![
             size.width.to_string(),
             size.height.to_string(),
             profile.fps.to_string(),
             profile.bitrate.to_string(),
             size.monitor.to_string(),
-            if matches!(backend, Backend::DirtyGdi) {
-                "gdi"
-            } else {
-                "gpu"
-            }
-            .into(),
+            name.into(),
         ];
+        // Preserve the old helper's H.264 invocation during partial installation recovery.
+        if profile.codec != super::codec::VideoCodec::H264 {
+            arguments.push(profile.codec.argument().into());
+        }
+        return arguments;
     }
     let (codec, options) = encoder_options(backend);
     let mut args: Vec<String> = ["-hide_banner", "-loglevel", "error", "-nostdin"]
@@ -329,7 +351,12 @@ fn encoder_options(backend: Backend) -> (&'static str, &'static [&'static str]) 
                 "baseline",
             ],
         ),
-        Backend::DirtyGpu | Backend::DirtyGdi | Backend::Software | Backend::GdiSoftware => (
+        Backend::Dxgi
+        | Backend::DirtyGpu
+        | Backend::DirtyGdiHardware
+        | Backend::DirtyGdi
+        | Backend::Software
+        | Backend::GdiSoftware => (
             "libopenh264",
             &[
                 "-rc_mode",
@@ -380,6 +407,7 @@ mod tests {
     #[test]
     fn every_capture_backend_excludes_the_host_cursor() {
         let profile = Profile {
+            codec: Default::default(),
             adaptive_fps: false,
             width: 1920,
             fps: 60,

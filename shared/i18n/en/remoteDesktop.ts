@@ -80,6 +80,8 @@ export const remoteDesktopMessages: Record<string, string> = {
   '连接状态': 'Connection stats', '关闭连接状态': 'Close connection stats',
   '隐藏连接状态': 'Hide connection stats', '显示连接状态': 'Show connection stats',
   '延迟': 'latency', '解码': 'decode', '丢包': 'loss', '网络': 'network',
+  '硬编码': 'Hardware encoding', '软编码': 'Software encoding',
+  '硬解码': 'Hardware decoding', '软解码': 'Software decoding',
   'Ethernet': 'Ethernet', 'Cellular': 'Cellular',
   '在鼠标面板外，双指张合缩放画面，双指滑动平移画面。':
     'Outside the mouse controls, pinch to zoom and swipe with two fingers to pan.',

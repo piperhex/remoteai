@@ -5,6 +5,14 @@ import { DEFAULT_SETTINGS } from '../../../../shared/remote-desktop/protocol';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 const call = vi.mocked(invoke);
+it('requests HEVC only for receivers that advertised it', async () => {
+  const session = new NativeDesktopSession({ ...DEFAULT_SETTINGS, videoCodecs: ['h265', 'h264'] }, []);
+  await session.open();
+  expect(call).toHaveBeenCalledWith('remote_desktop_stream_open', { request: expect.objectContaining({
+    profile: expect.objectContaining({ codec: 'h265' }),
+  }) });
+  await session.close();
+});
 beforeEach(() => {
   vi.useFakeTimers(); call.mockReset();
   call.mockImplementation(async command => {

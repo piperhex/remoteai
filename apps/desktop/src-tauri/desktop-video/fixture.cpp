@@ -104,7 +104,8 @@ void run(bool gdi, bool baseline, bool rate) {
                 std::chrono::duration<double>(Clock::now() - start).count());
         } catch (...) { ready.set_exception(std::current_exception()); }
     });
-    Config config{width, height, 60, 3'000'000, nullptr, gdi, handle.get()};
+    Config config{width, height, 60, 3'000'000, nullptr,
+        gdi ? CaptureBackend::Gdi : CaptureBackend::Wgc, handle.get(), VideoCodec::H264, gdi};
     Encoder encoder(config);
     std::unique_ptr<Capture> capture;
     std::unique_ptr<GdiCapture> software;

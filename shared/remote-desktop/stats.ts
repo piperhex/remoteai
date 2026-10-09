@@ -40,6 +40,10 @@ export class DesktopStatsSampler {
     const video = reports.find(report => report.type === 'inbound-rtp' && (report.kind ?? report.mediaType) === 'video');
     const result = routeStats(reports, this.nativeMedia);
     if (!video) return result;
+    const codec = reports.find(report => report.id === video.codecId);
+    const mime = String(codec?.mimeType ?? '').toLowerCase();
+    if (mime === 'video/h265' || mime === 'video/h264') result.videoCodec = mime === 'video/h265' ? 'h265' : 'h264';
+    if (typeof video.powerEfficientDecoder === 'boolean') result.hardwareDecoding = video.powerEfficientDecoder;
     const previous = this.previous?.id === video.id ? this.previous : undefined;
     this.previous = video;
     const milliseconds = delta(video, previous, 'timestamp');
@@ -69,10 +73,17 @@ export function desktopStatsLines(stats: DesktopStats, translate: (text: string)
   const bitrate = number(stats.receivedBitrate);
   const width = number(stats.width); const height = number(stats.height);
   const connection = stats.connection ? translate(stats.connection === 'relay' ? '中继' : '直连') : '—';
+  const encoding = typeof stats.hardwareEncoding !== 'boolean' ? '—'
+    : translate(stats.hardwareEncoding ? '硬编码' : '软编码');
+  const decoding = typeof stats.hardwareDecoding !== 'boolean' ? '—'
+    : translate(stats.hardwareDecoding ? '硬解码' : '软解码');
+  const pipeline = stats.videoCodec || stats.captureMethod ? [
+    [stats.captureMethod, stats.videoCodec?.toUpperCase(), `${encoding} / ${decoding}`].filter(Boolean).join(' · '),
+  ] : [];
   return [duration, `${stats.transport ?? '—'} ${connection}`, `${value(stats.receivedFps)} fps`,
     `${value(bitrate === undefined ? undefined : bitrate / 1_000_000, 1)} Mbps`,
     `${value(stats.rttMs)} ms ${translate('延迟')}`, `${value(stats.decodeMs)} ms ${translate('解码')}`,
     `${value(stats.lossPercent, 1)}% ${translate('丢包')}`,
     width && height ? `${width} × ${height}` : '—',
-    stats.network ? translate(stats.network) : `— ${translate('网络')}`];
+    stats.network ? translate(stats.network) : `— ${translate('网络')}`, ...pipeline];
 }

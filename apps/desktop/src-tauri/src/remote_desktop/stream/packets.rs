@@ -7,6 +7,7 @@ const MAX_PACKET: usize = 8 * 1024 * 1024;
 pub(super) struct Packets {
     buffer: Vec<u8>,
     pub controllable: bool,
+    pub info: Option<super::codec::EncoderInfo>,
 }
 
 impl Packets {
@@ -31,6 +32,14 @@ impl Packets {
         }
         let packet = self.buffer[4..length + 4].to_vec();
         self.buffer.drain(..length + 4);
+        if packet.starts_with(b"CSW3") {
+            if self.controllable {
+                return Err(DesktopError::Platform);
+            }
+            self.info = Some(super::codec::EncoderInfo::decode(&packet[4..])?);
+            self.controllable = true;
+            return self.next();
+        }
         if packet == b"CSW2" {
             if self.controllable {
                 return Err(DesktopError::Platform);
@@ -45,6 +54,27 @@ impl Packets {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn reports_actual_capture_and_codec_without_forwarding_metadata_as_video() {
+        let mut packets = Packets::default();
+        packets
+            .push(&[7, 0, 0, 0, b'C', b'S', b'W', b'3', 2, 1, 2, 1, 0, 0, 0, 9])
+            .unwrap();
+        assert_eq!(packets.next().unwrap().unwrap(), [9]);
+        let info = packets.info.unwrap();
+        assert!(matches!(
+            info.capture_method,
+            Some(super::super::codec::CaptureMethod::Dxgi)
+        ));
+        assert_eq!(info.hardware_encoding, Some(true));
+        assert_eq!(info.video_codec, super::super::codec::VideoCodec::H265);
+        assert!(packets.controllable);
+        let mut invalid = Packets::default();
+        invalid
+            .push(&[7, 0, 0, 0, b'C', b'S', b'W', b'3', 2, 3, 2])
+            .unwrap();
+        assert!(invalid.next().is_err());
+    }
     #[test]
     fn negotiates_live_control_without_delivering_capabilities_as_video() {
         let mut packets = Packets::default();

@@ -9,6 +9,7 @@ mod audio_packet;
 mod candidates;
 #[cfg(any(windows, target_os = "macos"))]
 mod capture_recovery;
+mod codec;
 #[cfg(any(windows, target_os = "macos"))]
 mod direct;
 #[cfg(windows)]
@@ -189,8 +190,10 @@ pub(crate) async fn remote_desktop_stream_update(
     }
     #[cfg(any(windows, target_os = "macos"))]
     {
-        let profile = profile.validate().map_err(safe_error)?;
+        let mut profile = profile.validate().map_err(safe_error)?;
         let stream = current(&id).await.map_err(safe_error)?;
+        // Settings changes cannot change an already negotiated RTP codec.
+        profile.codec = stream.profile.borrow().codec;
         if *stream.profile.borrow() != profile {
             stream.profile.send_replace(profile);
         }

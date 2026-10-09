@@ -121,6 +121,7 @@ mod tests {
     use super::*;
     fn profile() -> Profile {
         Profile {
+            codec: Default::default(),
             adaptive_fps: false,
             width: 1920,
             fps: 60,

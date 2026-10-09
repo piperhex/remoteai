@@ -2,6 +2,8 @@
 #include "damage.hpp"
 #include <windows.h>
 #include <d3d11.h>
+#include <d3d11_1.h>
+#include <dxgi1_2.h>
 #include <winrt/base.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
@@ -9,6 +11,7 @@
 #include <winrt/Windows.Graphics.DirectX.Direct3D11.h>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <vector>
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -20,7 +23,17 @@ extern "C" {
 
 namespace desktop {
 template<class T> using Com = winrt::com_ptr<T>;
-struct Config { int width, height, fps, bitrate; HMONITOR monitor; bool gdi; HWND window = nullptr; };
+enum class CaptureBackend : uint8_t { Wgc = 1, Dxgi = 2, Gdi = 3 };
+enum class VideoCodec : uint8_t { H264 = 1, H265 = 2 };
+enum class VideoEncoder : uint8_t { Nvenc = 1, MediaFoundation = 2, OpenH264 = 3 };
+struct Config {
+    int width, height, fps, bitrate;
+    HMONITOR monitor;
+    CaptureBackend capture;
+    HWND window = nullptr;
+    VideoCodec codec = VideoCodec::H264;
+    bool software = false;
+};
 inline void check(int result) { if (result < 0) throw std::runtime_error("video operation failed"); }
 struct FrameDelete { void operator()(AVFrame* frame) const { av_frame_free(&frame); } };
 struct BufferDelete { void operator()(AVBufferRef* buffer) const { av_buffer_unref(&buffer); } };
@@ -44,6 +57,7 @@ public:
     bool poll(DamageGate& gate);
     void frame_rate(int fps);
     Com<ID3D11Texture2D> texture() const;
+    DXGI_MODE_ROTATION rotation() const { return DXGI_MODE_ROTATION_IDENTITY; }
 };
 
 class GdiCapture {
@@ -66,6 +80,24 @@ public:
     int stride() const { return width * 4; }
 };
 
+// Desktop Duplication and its D3D device must belong to the selected monitor's adapter.
+std::string monitor_adapter(HMONITOR monitor);
+class DxgiCapture {
+    Com<ID3D11Device> device;
+    Com<ID3D11DeviceContext> context;
+    Com<IDXGIOutput1> output;
+    Com<IDXGIOutputDuplication> duplication;
+    Com<ID3D11Texture2D> latest;
+    DXGI_MODE_ROTATION orientation = DXGI_MODE_ROTATION_IDENTITY;
+    void copy(ID3D11Texture2D* source);
+public:
+    DxgiCapture(ID3D11Device* device, const Config& config);
+    bool poll(DamageGate& gate);
+    void frame_rate(int) {}
+    Com<ID3D11Texture2D> texture() const { return latest; }
+    DXGI_MODE_ROTATION rotation() const { return orientation; }
+};
+
 class Scaler {
     Com<ID3D11Device> device;
     Com<ID3D11VideoDevice> video;
@@ -77,7 +109,7 @@ class Scaler {
     void configure(ID3D11Texture2D* source);
 public:
     Scaler(ID3D11Device* device, const Config& config);
-    void convert(ID3D11Texture2D* source, AVFrame* destination);
+    void convert(ID3D11Texture2D* source, AVFrame* destination, DXGI_MODE_ROTATION rotation);
 };
 
 class Encoder {
@@ -89,6 +121,8 @@ class Encoder {
     Frame software;
     SwsContext* conversion = nullptr;
     std::unique_ptr<Scaler> scaler;
+    Com<ID3D11Texture2D> uploaded;
+    VideoEncoder implementation = VideoEncoder::OpenH264;
     Clock::time_point started = Clock::now(), keyframe{};
     void open_hardware();
     void open_codec(const char* name);
@@ -98,10 +132,11 @@ public:
     explicit Encoder(const Config& config);
     ~Encoder();
     ID3D11Device* gpu() const;
-    void submit(ID3D11Texture2D* texture);
+    void submit(ID3D11Texture2D* texture, DXGI_MODE_ROTATION rotation = DXGI_MODE_ROTATION_IDENTITY);
     void submit(const GdiCapture& capture);
     void receive();
     bool poll_controls();
     int fps() const { return config.fps; }
+    VideoEncoder backend() const { return implementation; }
 };
 }

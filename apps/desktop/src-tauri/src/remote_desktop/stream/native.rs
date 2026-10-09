@@ -34,7 +34,7 @@ pub(super) struct Stream {
 
 impl Stream {
     pub async fn open(path: PathBuf, request: OpenRequest) -> Result<(Arc<Self>, Offer)> {
-        let profile = request.profile.validate()?;
+        let mut profile = request.profile.validate()?;
         if request.ice_servers.len() > 8 {
             return Err(DesktopError::Invalid);
         }
@@ -42,9 +42,13 @@ impl Stream {
             server.validate()?;
         }
         let display = super::capture_recovery::display(&request.id).await?;
-        let (mut encoder, _) =
-            super::capture_recovery::open(&path, profile, &display, &request.id).await?;
-        let peer = match peer::create(request.ice_servers.clone(), request.clipboard_channel).await
+        let (mut encoder, _) = open_encoder(&path, &mut profile, &display, &request.id).await?;
+        let peer = match peer::create_codec(
+            request.ice_servers.clone(),
+            request.clipboard_channel,
+            profile.codec,
+        )
+        .await
         {
             Ok(peer) => peer,
             Err(error) => {
@@ -125,4 +129,20 @@ impl Stream {
             .await
             .map_err(|_| DesktopError::Platform)?
     }
+}
+
+async fn open_encoder(
+    path: &std::path::Path,
+    profile: &mut Profile,
+    display: &super::super::monitors::Monitor,
+    id: &str,
+) -> Result<(super::encoder::Encoder, Vec<u8>)> {
+    if profile.codec == super::codec::VideoCodec::H265 {
+        if let Ok(opened) = super::encoder::Encoder::open(path, *profile, display).await {
+            return Ok(opened);
+        }
+        // Select the compatible codec before creating any SDP or track; live peers keep one codec.
+        profile.codec = super::codec::VideoCodec::H264;
+    }
+    super::capture_recovery::open(path, *profile, display, id).await
 }

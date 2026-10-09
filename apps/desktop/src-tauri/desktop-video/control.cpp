@@ -34,7 +34,7 @@ void Encoder::reconfigure(int bitrate, int fps) {
     if (config.bitrate == bitrate && config.fps == fps) return;
     config.bitrate = bitrate; config.fps = fps;
     const char* name = codec->codec->name;
-    if (std::strcmp(name, "h264_nvenc") == 0) {
+    if (std::strcmp(name, "h264_nvenc") == 0 || std::strcmp(name, "hevc_nvenc") == 0) {
         // FFmpeg's NVENC wrapper reconfigures these public fields on the next submitted frame.
         codec->bit_rate = bitrate; codec->rc_max_rate = bitrate;
         codec->rc_buffer_size = bitrate / 2; codec->framerate = {fps, 1};

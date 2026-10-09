@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Profile {
     #[serde(default)]
+    pub codec: super::codec::VideoCodec,
+    #[serde(default)]
     pub adaptive_fps: bool,
     pub width: u32,
     pub fps: u32,
@@ -140,6 +142,8 @@ pub(crate) struct SignalReply {
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 pub(crate) struct StreamStats {
+    #[serde(default, flatten)]
+    pub encoder: super::codec::EncoderInfo,
     pub fps: f64,
     pub width: u32,
     pub height: u32,

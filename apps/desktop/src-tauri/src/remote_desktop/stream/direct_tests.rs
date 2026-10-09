@@ -99,6 +99,7 @@ async fn fixture_with_servers(relay_standby: bool, ice_servers: Vec<IceServer>) 
         inputs: mpsc::channel(1).0,
         clipboard_inputs: mpsc::channel(1).0,
         profile: watch::channel(Profile {
+            codec: Default::default(),
             adaptive_fps: false,
             width: 1280,
             fps: 30,

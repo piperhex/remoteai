@@ -13,7 +13,7 @@ void configure_codec(AVCodecContext* codec, const Config& config) {
     codec->bit_rate = config.bitrate; codec->rc_max_rate = config.bitrate;
     codec->rc_buffer_size = config.bitrate / 2;
     codec->gop_size = config.fps * 2; codec->max_b_frames = 0;
-    codec->profile = AV_PROFILE_H264_BASELINE;
+    codec->profile = config.codec == VideoCodec::H265 ? AV_PROFILE_HEVC_MAIN : AV_PROFILE_H264_BASELINE;
     codec->flags |= AV_CODEC_FLAG_LOW_DELAY;
     codec->color_range = AVCOL_RANGE_MPEG; codec->colorspace = AVCOL_SPC_BT709;
     codec->color_primaries = AVCOL_PRI_BT709; codec->color_trc = AVCOL_TRC_BT709;
@@ -21,12 +21,12 @@ void configure_codec(AVCodecContext* codec, const Config& config) {
 
 void options(AVCodecContext* codec, const char* name) {
     auto set = [&](const char* key, const char* value) { check(av_opt_set(codec->priv_data, key, value, 0)); };
-    if (std::strcmp(name, "h264_nvenc") == 0) {
+    if (std::strcmp(name, "h264_nvenc") == 0 || std::strcmp(name, "hevc_nvenc") == 0) {
         set("preset", "p1"); set("tune", "ull"); set("rc", "vbr");
-        set("zerolatency", "1"); set("profile", "baseline");
+        set("zerolatency", "1"); set("profile", std::strcmp(name, "hevc_nvenc") == 0 ? "main" : "baseline");
         // The default async output delay buffers several frames, which can mean seconds on idle desktops.
         set("delay", "0"); set("rc-lookahead", "0"); set("forced-idr", "1");
-    } else if (std::strcmp(name, "h264_mf") == 0) {
+    } else if (std::strcmp(name, "h264_mf") == 0 || std::strcmp(name, "hevc_mf") == 0) {
         set("hw_encoding", "1"); set("scenario", "display_remoting"); set("rate_control", "ld_vbr");
     } else {
         set("rc_mode", "bitrate"); set("allow_skip_frames", "0");
@@ -48,7 +48,8 @@ void write_packet(const AVPacket* packet) {
 
 Encoder::Encoder(const Config& settings) : config(settings), packet(av_packet_alloc()) {
     if (!packet) throw std::bad_alloc();
-    if (!config.gdi) { open_hardware(); return; }
+    if (!config.software) { open_hardware(); return; }
+    if (config.codec != VideoCodec::H264) throw std::runtime_error("hardware codec unavailable");
     open_codec("libopenh264");
     software.reset(av_frame_alloc());
     if (!software) throw std::bad_alloc();
@@ -71,7 +72,9 @@ ID3D11Device* Encoder::gpu() const {
 
 void Encoder::open_hardware() {
     AVBufferRef* reference = nullptr;
-    check(av_hwdevice_ctx_create(&reference, AV_HWDEVICE_TYPE_D3D11VA, nullptr, nullptr, 0));
+    const auto adapter = config.capture == CaptureBackend::Dxgi ? monitor_adapter(config.monitor) : std::string{};
+    check(av_hwdevice_ctx_create(&reference, AV_HWDEVICE_TYPE_D3D11VA,
+        adapter.empty() ? nullptr : adapter.c_str(), nullptr, 0));
     device.reset(reference);
     Com<ID3D10Multithread> multithread;
     winrt::check_hresult(gpu()->QueryInterface(multithread.put()));
@@ -86,37 +89,54 @@ void Encoder::open_hardware() {
     auto d3d = static_cast<AVD3D11VAFramesContext*>(context->hwctx);
     d3d->BindFlags = D3D11_BIND_RENDER_TARGET;
     check(av_hwframe_ctx_init(frames.get()));
-    try { open_codec("h264_nvenc"); }
-    catch (const std::exception&) { open_codec("h264_mf"); }
+    try { open_codec(config.codec == VideoCodec::H265 ? "hevc_nvenc" : "h264_nvenc"); }
+    catch (const std::exception&) { open_codec(config.codec == VideoCodec::H265 ? "hevc_mf" : "h264_mf"); }
     scaler = std::make_unique<Scaler>(gpu(), config);
 }
 
 void Encoder::open_codec(const char* name) {
-    const auto implementation = avcodec_find_encoder_by_name(name);
-    if (!implementation) throw std::runtime_error("encoder unavailable");
-    Codec next(avcodec_alloc_context3(implementation));
+    const auto encoder_codec = avcodec_find_encoder_by_name(name);
+    if (!encoder_codec) throw std::runtime_error("encoder unavailable");
+    Codec next(avcodec_alloc_context3(encoder_codec));
     if (!next) throw std::bad_alloc();
     configure_codec(next.get(), config);
-    next->pix_fmt = config.gdi ? AV_PIX_FMT_YUV420P : AV_PIX_FMT_D3D11;
+    next->pix_fmt = config.software ? AV_PIX_FMT_YUV420P : AV_PIX_FMT_D3D11;
     if (frames) {
         next->hw_frames_ctx = av_buffer_ref(frames.get());
         if (!next->hw_frames_ctx) throw std::bad_alloc();
     }
     options(next.get(), name);
-    check(avcodec_open2(next.get(), implementation, nullptr));
+    check(avcodec_open2(next.get(), encoder_codec, nullptr));
     codec = std::move(next);
+    implementation = std::strstr(name, "nvenc") ? VideoEncoder::Nvenc
+        : std::strstr(name, "_mf") ? VideoEncoder::MediaFoundation : VideoEncoder::OpenH264;
     std::fprintf(stderr, "desktop-video encoder=%s\n", name);
 }
 
-void Encoder::submit(ID3D11Texture2D* texture) {
+void Encoder::submit(ID3D11Texture2D* texture, DXGI_MODE_ROTATION rotation) {
     Frame frame(av_frame_alloc());
     if (!frame) throw std::bad_alloc();
     check(av_hwframe_get_buffer(frames.get(), frame.get(), 0));
-    scaler->convert(texture, frame.get());
+    scaler->convert(texture, frame.get(), rotation);
     emit(frame.get());
 }
 
 void Encoder::submit(const GdiCapture& capture) {
+    if (!config.software) {
+        if (!uploaded) {
+            D3D11_TEXTURE2D_DESC description{};
+            description.Width = config.width; description.Height = config.height;
+            description.MipLevels = 1; description.ArraySize = 1;
+            description.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+            description.SampleDesc.Count = 1; description.BindFlags = D3D11_BIND_RENDER_TARGET;
+            winrt::check_hresult(gpu()->CreateTexture2D(&description, nullptr, uploaded.put()));
+        }
+        Com<ID3D11DeviceContext> context;
+        gpu()->GetImmediateContext(context.put());
+        context->UpdateSubresource(uploaded.get(), 0, nullptr, capture.data(), capture.stride(), 0);
+        submit(uploaded.get());
+        return;
+    }
     check(av_frame_make_writable(software.get()));
     const uint8_t* input[] = {capture.data()};
     const int strides[] = {capture.stride()};

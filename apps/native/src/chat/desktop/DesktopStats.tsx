@@ -8,7 +8,7 @@ export function DesktopStats({ stats, close }: { stats: Stats; close: () => void
   useLanguage();
   return <View style={s.panel} pointerEvents="box-none">
     <View style={s.content} pointerEvents="none" collapsable={false}><Text style={s.text} accessibilityLabel={t("连接状态")}>
-      {desktopStatsLines(stats).join('\n')}</Text></View>
+      {desktopStatsLines(stats, t).join('\n')}</Text></View>
     <Pressable accessibilityRole="button" accessibilityLabel={t("关闭连接状态")} onPress={close} style={s.close}>
       <Ionicons name="close" size={18} color="#cbd5e1" />
     </Pressable>

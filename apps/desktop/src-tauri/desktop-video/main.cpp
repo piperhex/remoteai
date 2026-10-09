@@ -19,20 +19,25 @@ uint64_t number(std::string_view text) {
 }
 
 Config parse(int argc, char** argv) {
-    if (argc != 7) throw std::runtime_error("invalid arguments");
+    if (argc != 7 && argc != 8) throw std::runtime_error("invalid arguments");
     const auto width = number(argv[1]), height = number(argv[2]), fps = number(argv[3]);
     const auto bitrate = number(argv[4]), monitor = number(argv[5]);
     const std::string_view backend(argv[6]);
+    const std::string_view codec = argc == 8 ? argv[7] : "h264";
     if (width < 2 || height < 2 || width > 16384 || height > 16384
         || width * height > 16'777'216 || width % 2 || height % 2
         || fps < 1 || fps > 144 || bitrate < 200'000 || bitrate > 32'000'000 || monitor == 0
-        || (backend != "gpu" && backend != "gdi")) throw std::runtime_error("invalid settings");
+        || (backend != "gpu" && backend != "gdi" && backend != "dxgi" && backend != "gdi-gpu")
+        || (codec != "h264" && codec != "h265")) throw std::runtime_error("invalid settings");
+    const auto capture = backend == "dxgi" ? CaptureBackend::Dxgi
+        : backend == "gpu" ? CaptureBackend::Wgc : CaptureBackend::Gdi;
     return {static_cast<int>(width), static_cast<int>(height), static_cast<int>(fps),
-        static_cast<int>(bitrate), reinterpret_cast<HMONITOR>(monitor), backend == "gdi"};
+        static_cast<int>(bitrate), reinterpret_cast<HMONITOR>(monitor), capture, nullptr,
+        codec == "h265" ? VideoCodec::H265 : VideoCodec::H264, backend == "gdi"};
 }
 
-void stream_gpu(const Config& config, Encoder& encoder) {
-    Capture capture(encoder.gpu(), config);
+template<class Source> void stream_gpu(const Config& config, Encoder& encoder) {
+    Source capture(encoder.gpu(), config);
     DamageGate gate(config.fps);
     FrameWait wait;
     for (;;) {
@@ -42,7 +47,7 @@ void stream_gpu(const Config& config, Encoder& encoder) {
         const bool captured = capture.poll(gate);
         const auto now = Clock::now();
         if (captured && gate.due(now)) {
-            encoder.submit(capture.texture().get());
+            encoder.submit(capture.texture().get(), capture.rotation());
             gate.submitted(now);
         }
         encoder.receive();
@@ -84,11 +89,15 @@ int main(int argc, char** argv) {
         if (argc == 2 && std::string_view(argv[1]) == "audio") { desktop::audio::stream(); return 0; }
         const auto config = desktop::parse(argc, argv);
         desktop::Encoder encoder(config);
-        const unsigned char capabilities[] = {4, 0, 0, 0, 'C', 'S', 'W', '2'};
+        const unsigned char capabilities[] = {7, 0, 0, 0, 'C', 'S', 'W', '3',
+            static_cast<uint8_t>(config.capture), static_cast<uint8_t>(encoder.backend()),
+            static_cast<uint8_t>(config.codec)};
         if (std::fwrite(capabilities, 1, sizeof(capabilities), stdout) != sizeof(capabilities)
             || std::fflush(stdout) != 0) throw std::runtime_error("video output closed");
-        if (config.gdi) desktop::stream_gdi(config, encoder);
-        else desktop::stream_gpu(config, encoder);
+        if (config.capture == desktop::CaptureBackend::Gdi) desktop::stream_gdi(config, encoder);
+        else if (config.capture == desktop::CaptureBackend::Dxgi)
+            desktop::stream_gpu<desktop::DxgiCapture>(config, encoder);
+        else desktop::stream_gpu<desktop::Capture>(config, encoder);
         return 0;
     } catch (const winrt::hresult_error& error) {
         std::fprintf(stderr, "desktop-video Windows error=%08lx\n", static_cast<unsigned long>(error.code().value));

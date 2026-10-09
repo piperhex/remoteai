@@ -4,9 +4,11 @@ export const DESKTOP_OPERATION = 'remoteDesktop';
 export const MAX_FPS = 144;
 export const DEFAULT_SETTINGS: DesktopSettings = { fps: 'auto', quality: 'auto' };
 export type DesktopQuality = 'auto' | 'smooth' | 'clear' | 'original';
+export type DesktopVideoCodec = 'h264' | 'h265';
 export interface DesktopSettings {
   fps: 'auto' | number; quality: DesktopQuality; displayId?: string; clipboardChannel?: boolean;
   nativeMedia?: boolean; relayStandby?: boolean;
+  videoCodecs?: DesktopVideoCodec[];
 }
 export interface DesktopDisplay { id: string; name: string; width: number; height: number; primary: boolean }
 export interface DesktopPermissions {
@@ -32,6 +34,8 @@ export interface DesktopSignalReply {
   candidates: RTCIceCandidateInit[]; sdp?: string; generation?: number; committed?: boolean;
 }
 export interface DesktopStats {
+  videoCodec?: DesktopVideoCodec; captureMethod?: 'DXGI' | 'WGC' | 'GDI';
+  hardwareEncoding?: boolean; hardwareDecoding?: boolean;
   nativeMedia?: boolean;
   audio?: 'starting' | 'playing' | 'unavailable';
   fps: number; width: number; height: number; bitrate: number; connection?: 'direct' | 'relay';
@@ -81,7 +85,11 @@ export function validateSettings(value: unknown): DesktopSettings {
     || !input.displayId.length || input.displayId.length > 128)) {
     throw new Error('请选择有效的显示器。');
   }
+  if (input.videoCodecs !== undefined && (!Array.isArray(input.videoCodecs) || input.videoCodecs.length > 2
+    || input.videoCodecs.some(codec => codec !== 'h264' && codec !== 'h265')
+    || !input.videoCodecs.includes('h264'))) throw new Error('桌面连接信息无效，请重新连接。');
   return { fps: input.fps!, quality: input.quality!,
+    ...(input.videoCodecs ? { videoCodecs: [...new Set(input.videoCodecs)] } : {}),
     ...(input.nativeMedia === true ? { nativeMedia: true } : {}),
     ...(input.relayStandby === true ? { relayStandby: true } : {}),
     ...(input.clipboardChannel === true ? { clipboardChannel: true } : {}),

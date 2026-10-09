@@ -50,7 +50,8 @@ iOS device check of H.264 playback, local-network permission, rotation, keyboard
 ## Media and threading
 
 Windows hosts also capture the default playback device through WASAPI loopback. The bundled native helper
-encodes 48 kHz stereo Opus in 20 ms frames and sends it alongside H.264 in the same WebRTC media stream.
+encodes 48 kHz stereo Opus in 20 ms frames and sends it alongside negotiated H.264/H.265 video
+in the same WebRTC stream.
 Audio stays off the UI thread and outside JavaScript. Capture timestamps preserve spacing across pipe reads;
 bounded buffers discard stale sound. Silence keeps the media clock moving when the computer is quiet.
 The host retries audio after an output device change or failure without interrupting desktop video.
@@ -109,20 +110,28 @@ video received on the native and Web viewers.
   run on native WebRTC threads; `RTCView` renders through `SurfaceViewRenderer`. JavaScript receives only stream
   handles, low-frequency statistics and small control messages. It never receives video frames/base64 data.
   The sender prefers H.264 for Android's native hardware decoder and retains negotiated native software fallback.
-- Windows first uses the native `desktop-video` helper: Graphics Capture dirty rectangles gate GPU conversion
-  and H.264 encoding, preferring NVENC then Media Foundation. Complete `ReportOnly` surfaces preserve updates
-  when capture frames are coalesced. D3D11 scales/converts on the GPU without reading pixels through the CPU.
-  Hardware encoders use variable bitrate; unchanged frames do not enter conversion, encoding or transmission.
-- Native GDI/OpenH264 fallback uses exact BGRA row comparisons before color conversion/encoding. It still has
-  to capture/compare the desktop, but skips unchanged video frames without a perceptual threshold that could
-  miss tiny text edits. Machines without the new WGC API retain the existing FFmpeg hardware path before the
-  GDI fallback. Unsupported/missing helper runtimes retain the original compatibility backends.
+- Windows first uses DXGI Desktop Duplication in the native `desktop-video` helper, on the adapter belonging
+  to the selected monitor. Owned GPU textures survive frame release; D3D11 handles scaling, color conversion
+  and monitor rotation. NVENC is preferred, with Media Foundation hardware encoding as fallback. Unchanged
+  desktop frames skip encoding. WGC remains a user-session fallback, followed by compatible capture backends.
+- The unattended SYSTEM worker also tries DXGI first instead of forcing software capture. If duplication is
+  unavailable, it tries GDI capture with GPU upload/hardware encoding, then GDI/OpenH264 for H.264 sessions.
+  Desktop switches/access loss restart capture under the existing authorized lease, refreshing monitor dimensions.
+  GDI still pays for capture/comparison; enabling its hardware encoder does not remove that capture bottleneck.
+- Receivers advertise H.265 only when WebRTC lists it and MediaCapabilities reports power-efficient decoding.
+  Missing APIs, failed probes, unsupported devices and older clients retain H.264. The Windows host probes
+  hardware HEVC before creating its offer; if unavailable, it offers H.264. Codec identity stays fixed across
+  quality changes, capture restarts, direct probes and relay recovery; SDP only offers the selected video codec.
+  macOS hosting and native mobile receivers without this capability probe retain their existing H.264 path.
+  Update both desktop clients and the installed unattended service/runtime to enable the new pipeline.
+- Connection statistics include actual helper capture/encoding information and the negotiated receive codec.
+  Hardware decoding is shown only when RTC statistics supply that measurement; unknown values remain unknown.
 - A recovery frame is sent at most two seconds after the previous update, with periodic intra frames, so an
   idle desktop can recover from packet loss. Damage stays pending across FPS throttling. The helper outputs
   length-delimited access units with encoder buffering disabled; the final update does not wait for another
   captured frame. Rust buffers incomplete pipe reads across polling cancellation. RTP timestamps advance
   before a resumed frame, so idle time does not become playback delay on the following update.
-- This is capture-side damage gating plus standard H.264 inter-frame compression, not a rectangle-patch wire
+- This is capture-side damage gating plus standard H.264/H.265 inter-frame compression, not a rectangle-patch wire
   protocol. Partial changes still produce a complete decodable video frame. Android/iOS native WebRTC and Web
   viewers keep their existing receivers and hardware-decoder compatibility. FPS can fall close to zero when
   idle without indicating a stalled connection. Frames remain outside WebView/JavaScript IPC.
@@ -263,6 +272,26 @@ $env:CSW_NATIVE_TEST_REQUIRE_DAMAGE = '1'
 cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests native_capture_reaches_a_real_browser_decoder -- --ignored --nocapture
 Remove-Item Env:CSW_NATIVE_TEST_REQUIRE_DAMAGE
 ```
+
+To require the DXGI/H.265 path in the same real WebRTC test, use a receiver that reports hardware HEVC:
+
+```powershell
+$env:CSW_NATIVE_TEST_REQUIRE_DXGI = '1'
+$env:CSW_NATIVE_TEST_CODEC = 'h265'
+$env:CSW_NATIVE_TEST_BROWSER = 'chrome'
+$env:CSW_NATIVE_TEST_MOVING = '1'
+$env:CSW_NATIVE_TEST_MIN_FPS = '50'
+cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests `
+  native_capture_reaches_a_real_browser_decoder -- --ignored --nocapture
+Remove-Item Env:CSW_NATIVE_TEST_REQUIRE_DXGI, Env:CSW_NATIVE_TEST_CODEC, Env:CSW_NATIVE_TEST_BROWSER
+Remove-Item Env:CSW_NATIVE_TEST_MOVING, Env:CSW_NATIVE_TEST_MIN_FPS
+```
+
+The 2026-10-09 ZH development test decoded 299 frames in five seconds (59.8 FPS) at 1920×1080 through
+DXGI → NVENC H.265 → native WebRTC → Chrome, with system audio. This is a local browser test, not a
+measurement of WAN latency or the other PC's installed WebView. Chrome reported HEVC capability on this
+machine; Edge did not, so it must retain H.264. Secure desktop/UAC and rotated-monitor validation still
+require corresponding Windows sessions/displays; do not treat browser layout fixtures as those device tests.
 
 To exercise a particular Windows display, set `CSW_NATIVE_TEST_DISPLAY` to its device name (for example
 `\\.\DISPLAY2`) before the native decoder test. The test rejects a missing requested display and checks the

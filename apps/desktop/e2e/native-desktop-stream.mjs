@@ -25,7 +25,7 @@ audioFixture.on('error', error => { audioError = error; });
 audioFixture.on('exit', code => { audioError ??= new Error(`Audio fixture exited: ${code}`); });
 let browser;
 try {
-  browser = await chromium.launch({ channel: 'msedge', headless: true,
+  browser = await chromium.launch({ channel: process.env.CSW_NATIVE_TEST_BROWSER || 'msedge', headless: true,
     args: ['--autoplay-policy=no-user-gesture-required',
       ...(process.env.CSW_NATIVE_TEST_CA_BASE64 ? ['--ignore-certificate-errors'] : [])] });
   const page = await browser.newPage();
@@ -89,6 +89,12 @@ try {
       frames: video.getVideoPlaybackQuality().totalVideoFrames - first,
       fps: (video.getVideoPlaybackQuality().totalVideoFrames - first) * 1000 / (performance.now() - sampleStart) };
     const stats = await peer.getStats();
+    const inboundVideo = [...stats.values()].find(item => item.type === 'inbound-rtp' && item.kind === 'video');
+    sample.codec = stats.get(inboundVideo?.codecId)?.mimeType;
+    sample.hardwareDecoding = inboundVideo?.powerEfficientDecoder;
+    sample.decoder = inboundVideo?.decoderImplementation;
+    const host = await window.nativeRequest('/stats');
+    sample.capture = host.captureMethod; sample.hardwareEncoding = host.hardwareEncoding;
     const audio = [...stats.values()].find(item => item.type === 'inbound-rtp' && item.kind === 'audio');
     sample.audioPackets = audio?.packetsReceived ?? 0;
     sample.audioSamples = audio?.totalSamplesReceived ?? 0;
@@ -104,6 +110,12 @@ try {
     clearInterval(timer); peer.close(); await sound.close(); return sample;
   }, { iceServers, durationSeconds });
   console.log(JSON.stringify(result));
+  if (process.env.CSW_NATIVE_TEST_CODEC === 'h265' && result.codec !== 'video/H265') {
+    throw new Error('Native HEVC did not reach the browser decoder');
+  }
+  if (process.env.CSW_NATIVE_TEST_REQUIRE_DXGI && (result.capture !== 'DXGI' || !result.hardwareEncoding)) {
+    throw new Error('Native DXGI hardware pipeline was not selected');
+  }
   if (audioError) throw audioError;
   // Idle desktops only send periodic recovery frames; a high frame count requires a moving source.
   if (result.connected !== 'connected' || result.width === 0 || result.frames < 1) throw new Error('Native video failed');

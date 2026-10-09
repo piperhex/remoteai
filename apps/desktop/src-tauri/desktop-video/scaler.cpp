@@ -36,8 +36,15 @@ void Scaler::configure(ID3D11Texture2D* source) {
     context->VideoProcessorSetOutputColorSpace(processor.get(), &yuv);
 }
 
-void Scaler::convert(ID3D11Texture2D* source, AVFrame* destination) {
+void Scaler::convert(ID3D11Texture2D* source, AVFrame* destination, DXGI_MODE_ROTATION rotation) {
     configure(source);
+    // Duplication surfaces are unrotated; rotate on the GPU before presenting a portrait/flipped desktop.
+    const bool rotated = rotation >= DXGI_MODE_ROTATION_ROTATE90 && rotation <= DXGI_MODE_ROTATION_ROTATE270;
+    const auto rotating = context.try_as<ID3D11VideoContext1>();
+    if (rotated && !rotating) throw std::runtime_error("display rotation unavailable");
+    if (rotating) rotating->VideoProcessorSetStreamRotation(processor.get(), 0, rotated,
+        rotated ? static_cast<D3D11_VIDEO_PROCESSOR_ROTATION>(rotation - DXGI_MODE_ROTATION_IDENTITY)
+            : D3D11_VIDEO_PROCESSOR_ROTATION_IDENTITY);
     D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC input{};
     input.ViewDimension = D3D11_VPIV_DIMENSION_TEXTURE2D;
     Com<ID3D11VideoProcessorInputView> input_view;

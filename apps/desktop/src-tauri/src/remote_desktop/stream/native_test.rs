@@ -35,6 +35,11 @@ async fn native_capture_reaches_a_real_browser_decoder() {
         clipboard_channel: false,
         id: id.clone(),
         profile: Profile {
+            codec: if std::env::var("CSW_NATIVE_TEST_CODEC").as_deref() == Ok("h265") {
+                super::codec::VideoCodec::H265
+            } else {
+                super::codec::VideoCodec::H264
+            },
             adaptive_fps: false,
             width: 1920,
             fps: std::env::var("CSW_NATIVE_TEST_FPS")
@@ -49,6 +54,13 @@ async fn native_capture_reaches_a_real_browser_decoder() {
     let (stream, offer) = Stream::open(path, request)
         .await
         .expect("native capture and encoder");
+    if std::env::var("CSW_NATIVE_TEST_CODEC").as_deref() == Ok("h265") {
+        assert_eq!(
+            stream.profile.borrow().codec,
+            super::codec::VideoCodec::H265,
+            "HEVC encoder selected"
+        );
+    }
     let server = Arc::new(tiny_http::Server::http("127.0.0.1:0").expect("local test bridge"));
     let endpoint = format!("http://{}", server.server_addr());
     let token = uuid::Uuid::new_v4().to_string();

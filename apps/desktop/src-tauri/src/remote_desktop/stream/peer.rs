@@ -1,11 +1,9 @@
 use super::super::{DesktopError, Result};
-use super::{model::IceServer, native::Stream};
+use super::{codec::VideoCodec, model::IceServer, native::Stream};
 use std::sync::{Arc, Weak};
 use webrtc::{
     api::{
-        interceptor_registry::register_default_interceptors,
-        media_engine::{MediaEngine, MIME_TYPE_H264},
-        APIBuilder,
+        interceptor_registry::register_default_interceptors, media_engine::MediaEngine, APIBuilder,
     },
     data_channel::{data_channel_message::DataChannelMessage, RTCDataChannel},
     ice_transport::ice_server::RTCIceServer,
@@ -32,14 +30,24 @@ pub(super) struct Peer {
     pub signaling: tokio::sync::Mutex<()>,
 }
 
+#[cfg(test)]
 pub(super) async fn create(servers: Vec<IceServer>, separate_clipboard: bool) -> Result<Peer> {
-    create_with_policy(servers, separate_clipboard, false).await
+    create_codec(servers, separate_clipboard, VideoCodec::H264).await
+}
+
+pub(super) async fn create_codec(
+    servers: Vec<IceServer>,
+    separate_clipboard: bool,
+    codec: VideoCodec,
+) -> Result<Peer> {
+    create_with_policy(servers, separate_clipboard, false, codec).await
 }
 
 pub(super) async fn create_with_policy(
     mut servers: Vec<IceServer>,
     separate_clipboard: bool,
     relay_only: bool,
+    codec: VideoCodec,
 ) -> Result<Peer> {
     let native_media = servers
         .iter()
@@ -95,10 +103,9 @@ pub(super) async fn create_with_policy(
     );
     let video = Arc::new(TrackLocalStaticSample::new(
         RTCRtpCodecCapability {
-            mime_type: MIME_TYPE_H264.into(),
+            mime_type: codec.mime().into(),
             clock_rate: super::sample::VIDEO_CLOCK_RATE,
-            sdp_fmtp_line: "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f"
-                .into(),
+            sdp_fmtp_line: codec.fmtp().into(),
             ..Default::default()
         },
         "desktop-video".into(),
@@ -108,6 +115,7 @@ pub(super) async fn create_with_policy(
         .add_track(Arc::clone(&video) as Arc<dyn TrackLocal + Send + Sync>)
         .await
         .map_err(|_| DesktopError::Platform)?;
+    configure_video_codec(&connection, &sender, codec).await?;
     // Reading RTCP drives the default NACK/report interceptors. Periodic IDRs also bound recovery time.
     let feedback = super::feedback::listen(sender);
     let audio = super::audio::track(&connection).await?;
@@ -136,6 +144,33 @@ pub(super) async fn create_with_policy(
         ice: tokio::sync::Mutex::new(super::model::IceDiagnostics::default()),
         signaling: tokio::sync::Mutex::new(()),
     })
+}
+
+async fn configure_video_codec(
+    connection: &RTCPeerConnection,
+    sender: &Arc<webrtc::rtp_transceiver::rtp_sender::RTCRtpSender>,
+    codec: VideoCodec,
+) -> Result<()> {
+    let mut codecs = sender.get_parameters().await.rtp_parameters.codecs;
+    codecs.retain(|candidate| {
+        candidate
+            .capability
+            .mime_type
+            .eq_ignore_ascii_case(codec.mime())
+    });
+    codecs.truncate(1);
+    for candidate in &mut codecs {
+        candidate.capability.sdp_fmtp_line = codec.fmtp().into();
+    }
+    for transceiver in connection.get_transceivers().await {
+        if Arc::ptr_eq(&transceiver.sender().await, sender) {
+            return transceiver
+                .set_codec_preferences(codecs)
+                .await
+                .map_err(|_| DesktopError::Platform);
+        }
+    }
+    Err(DesktopError::Platform)
 }
 
 pub(super) fn bind(stream: &Arc<Stream>, peer: &Arc<Peer>) {

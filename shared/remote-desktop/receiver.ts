@@ -10,6 +10,7 @@ import { connectionDiagnostic, type ConnectionDiagnostic, type DiagnosticFields 
 import { DesktopDirectUpgrade, type DirectPeer } from './directUpgrade';
 import { DesktopRelayStandby } from './relayStandby';
 import { DesktopDirectRetry } from './directRetry';
+import { desktopVideoCodecs } from './codecs';
 import { closeNativeMedia, openNativeMedia, nativeMediaIceServers, type NativeMediaSession } from './nativeMedia';
 
 interface ReceiverOptions {
@@ -82,8 +83,10 @@ export class DesktopReceiver {
     try {
       this.nativeMedia = await openNativeMedia(this.options.client.nativeMedia, this.id, this.diagnostic);
       if (this.stopped) { await closeNativeMedia(this.nativeMedia); return; }
+      const videoCodecs = await desktopVideoCodecs();
+      if (this.stopped) { await closeNativeMedia(this.nativeMedia); return; }
       const offer = await this.options.client.open(this.id, {
-        ...settings, clipboardChannel: true, nativeMedia: Boolean(this.nativeMedia), relayStandby: true,
+        ...settings, videoCodecs, clipboardChannel: true, nativeMedia: Boolean(this.nativeMedia), relayStandby: true,
       });
       if (this.stopped) { await this.closeRemote(); return; }
       this.capabilities = offer.capabilities ?? {}; this.options.capabilities?.(this.capabilities);

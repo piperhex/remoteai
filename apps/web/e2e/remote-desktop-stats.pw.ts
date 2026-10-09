@@ -19,6 +19,7 @@ async function injectMissingStats(page: Page) {
           window.desktopStatsFixture.channel = this;
           const missing = window.desktopStatsFixture.missing;
           data = JSON.stringify({ ...message, rttMs: missing ? null : 24, decodeMs: missing ? null : 3,
+            captureMethod: 'DXGI', videoCodec: 'h265', hardwareEncoding: true, hardwareDecoding: true,
             lossPercent: missing ? null : 0, receivedFps: missing ? null : 30,
             receivedBitrate: missing ? null : 2_000_000 });
         }
@@ -40,6 +41,8 @@ test('keeps video and controls usable through null stats and automatic reconnect
   await expect(stats).toContainText(/[1-9]\d* × [1-9]\d*/);
   await expect(stats).toContainText('— ms 延迟');
   await expect(stats).toContainText('— Mbps');
+  await expect(stats).toContainText('DXGI · H265 · 硬编码 / 硬解码');
+  expect(await stats.evaluate(element => element.getBoundingClientRect().width)).toBeLessThanOrEqual(400);
   const frames = await video.evaluate(element => element.getVideoPlaybackQuality().totalVideoFrames);
   await expect.poll(() => video.evaluate(element => element.getVideoPlaybackQuality().totalVideoFrames))
     .toBeGreaterThan(frames + 5);

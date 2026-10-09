@@ -100,10 +100,12 @@ fn direct_servers(servers: &[IceServer]) -> Vec<IceServer> {
 }
 
 async fn prepare(stream: &Arc<Stream>) -> Result<(Arc<Peer>, Offer)> {
+    let codec = stream.profile.borrow().codec;
     let peer = Arc::new(
-        Box::pin(peer::create(
+        Box::pin(peer::create_codec(
             direct_servers(&stream.ice_servers),
             stream.separate_clipboard,
+            codec,
         ))
         .await?,
     );

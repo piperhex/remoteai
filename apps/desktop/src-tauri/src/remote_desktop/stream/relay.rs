@@ -121,11 +121,13 @@ async fn start(stream: &Arc<Stream>, generation: u32) -> Result<SignalReply> {
 }
 
 async fn prepare(stream: &Arc<Stream>, servers: Vec<IceServer>) -> Result<(Arc<Peer>, Offer)> {
+    let codec = stream.profile.borrow().codec;
     let peer = Arc::new(
         Box::pin(peer::create_with_policy(
             servers,
             stream.separate_clipboard,
             true,
+            codec,
         ))
         .await?,
     );

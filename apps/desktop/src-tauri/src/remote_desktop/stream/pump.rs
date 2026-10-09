@@ -219,6 +219,7 @@ async fn report(stream: &Stream, encoder: &Encoder, frames: u32, started: Instan
     let stats = {
         let mut current = stream.stats.lock().await;
         let stats = StreamStats {
+            encoder: encoder.info(),
             fps: (f64::from(frames) / started.elapsed().as_secs_f64()).round(),
             width: encoder.width,
             height: encoder.height,

@@ -27,6 +27,9 @@ pub(super) struct Encoder {
 
 impl Encoder {
     pub async fn open(path: &Path, profile: Profile, display: &Monitor) -> Result<(Self, Vec<u8>)> {
+        if profile.codec != super::codec::VideoCodec::H264 {
+            return Err(DesktopError::Unsupported);
+        }
         let display = display.clone();
         let display = tauri::async_runtime::spawn_blocking(move || display.refresh())
             .await
@@ -92,6 +95,10 @@ impl Encoder {
             }
             self.packets.push(&self.buffer[..length])?;
         }
+    }
+
+    pub fn info(&self) -> super::codec::EncoderInfo {
+        super::codec::EncoderInfo::default()
     }
 
     pub async fn stop(&mut self) {

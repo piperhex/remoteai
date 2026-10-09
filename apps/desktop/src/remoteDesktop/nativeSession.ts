@@ -12,6 +12,7 @@ function profile(settings: DesktopSettings) {
   const profiles = { auto: { width: 1920, bitrate: 6_000_000 }, smooth: { width: 854, bitrate: 1_500_000 },
     clear: { width: 1920, bitrate: 8_000_000 }, original: { width: 2560, bitrate: 12_000_000 } };
   return { ...profiles[settings.quality], fps: settings.fps === 'auto' ? 60 : settings.fps,
+    codec: settings.videoCodecs?.includes('h265') ? 'h265' : 'h264',
     adaptiveFps: settings.fps === 'auto' };
 }
 

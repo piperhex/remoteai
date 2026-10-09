@@ -60,6 +60,16 @@ it('preserves measured zero values instead of treating them as missing', () => {
 });
 
 afterEach(() => vi.useRealTimers());
+it('shows the negotiated codec and measured decoder capability separately from the host encoder', () => {
+  const input = new Map<string, Record<string, unknown>>(
+    reports({ ...first, codecId: 'hevc', powerEfficientDecoder: true }));
+  input.set('hevc', { id: 'hevc', type: 'codec', mimeType: 'video/H265' });
+  const stats = new DesktopStatsSampler().sample(input);
+  expect(stats).toMatchObject({ videoCodec: 'h265', hardwareDecoding: true });
+  expect(desktopStatsLines({ fps: 60, bitrate: 6_000_000, width: 1920, height: 1080,
+    captureMethod: 'DXGI', hardwareEncoding: true, ...stats }).at(-1))
+    .toBe('DXGI · H265 · 硬编码 / 硬解码');
+});
 it('keeps stats reads single-flight and ignores an in-flight result after closing', async () => {
   vi.useFakeTimers();
   let resolve!: (value: Map<string, Record<string, unknown>>) => void;
