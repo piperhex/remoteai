@@ -1,6 +1,7 @@
 import type { TerminalRead, TerminalInfo, TerminalSize } from '../terminal/types';
 import { desktopClient } from '../remote-desktop/protocol';
 import { createReviewClient } from './taskReview';
+import type { GitRequest, GitStatus } from './gitWorkspace';
 import type { GitActionRequest, GitChanges, GitCommitFile, GitCommitRequest, GitDiff, GitHistory,
   GitRepository } from './gitTypes';
 
@@ -17,7 +18,7 @@ export const GUI_TOOL_OPERATIONS = new Set([
   'guiCliStatus', 'guiCliRelease', 'guiCliInstall', 'guiReconnect',
   'guiTerminalList', 'guiTerminalOpen', 'guiTerminalRead', 'guiTerminalWrite', 'guiTerminalResize', 'guiTerminalClose',
   'guiGitChanges', 'guiGitDiff', 'guiGitHistory', 'guiGitCommit', 'guiGitCommitFiles',
-  'guiGitRepository', 'guiGitAction',
+  'guiGitRepository', 'guiGitAction', 'guiGitWorkspace',
   'guiTaskReview', 'guiTaskRestore',
 ]);
 
@@ -32,6 +33,7 @@ export function createGuiToolsClient(request: <T>(body: object) => Promise<T>,
     release: () => request<CliRelease>({ operation: 'guiCliRelease' }),
     install: (version: string) => request<RemoteCliStatus>({ operation: 'guiCliInstall', version }),
     reconnect: () => request<void>({ operation: 'guiReconnect' }),
+    workspace: (input: GitRequest) => request<GitStatus>({ operation: 'guiGitWorkspace', request: input }),
     git: {
       repository: (cwd: string) => request<GitRepository>({ operation: 'guiGitRepository', cwd }),
       action: (input: GitActionRequest) => request<void>({ ...input, operation: 'guiGitAction' }),

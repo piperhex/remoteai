@@ -4,24 +4,28 @@ import { Input, Modal, Popover, type InputRef } from "antd";
 import { Check, GitBranch, GitFork, Laptop, Plus, Search } from "lucide-react";
 import { isDesktopApp } from "../../api/backend";
 import { useGitWorkspace } from "./useGitWorkspace";
+import type { GitWorkspaceClient } from "./gitApi";
 import styles from "./WorkspacePicker.module.less";
 
 const MAX_BRANCH_LENGTH = 200;
 const MENU_ALIGN = { overflow: { adjustX: true, adjustY: true, shiftX: true } };
 
-export function WorkspacePicker({ cwd, disabled, onChange, onBusyChange,
+export function WorkspacePicker({ cwd, disabled, onChange, onBusyChange, request, enabled = true, remote = false,
   localLabel = isDesktopApp ? guiText("本地") : guiText("Remote AI 主机") }: {
   cwd: string; disabled: boolean; onChange: (cwd: string) => void; onBusyChange: (busy: boolean) => void;
-  localLabel?: string;
+  localLabel?: string; request?: GitWorkspaceClient; enabled?: boolean; remote?: boolean;
 }) {
-  const git = useGitWorkspace({ cwd, onChange, onBusyChange });
+  const git = useGitWorkspace({ cwd, onChange, onBusyChange, request, enabled });
   const [menu, setMenu] = useState<"branch" | "location" | null>(null);
   const [dialog, setDialog] = useState<"branch" | "worktree" | null>(null);
   const [query, setQuery] = useState("");
   const [branch, setBranch] = useState("");
   const search = useRef<InputRef>(null);
   const locked = disabled || git.busy || git.loading;
-  const locationLabel = git.status?.isWorktree ? guiText("本地工作树") : localLabel;
+  const worktreeLabel = remote ? guiText("远程工作树") : guiText("本地工作树");
+  const createWorktreeLabel = remote ? guiText("新建远程工作树") : guiText("新建本地工作树");
+  const locationLabel = git.status?.isWorktree ? worktreeLabel : localLabel;
+  const computerLabel = remote ? guiText("远程电脑") : guiText("本地");
   const branchLabel = git.status?.branch ?? (git.status ? guiText("分离的 HEAD") : guiText("Git 分支"));
   const branches = git.status?.branches.filter((item) => item.name.toLowerCase().includes(query.toLowerCase())) ?? [];
   const openDialog = (kind: "branch" | "worktree") => { setMenu(null); setBranch(""); setDialog(kind); };
@@ -63,10 +67,11 @@ export function WorkspacePicker({ cwd, disabled, onChange, onBusyChange,
     if (event.key === "Escape") { event.stopPropagation(); setMenu(null); }
   }}>
     <div className={styles.caption}>{guiText("工作位置")}</div>
-    <div className={styles.option}><Laptop size={18} /><span>{git.status?.isWorktree ? guiText("本地工作树") : guiText("本地")}</span>
+    <div className={styles.option}><Laptop size={18} />
+      <span>{git.status?.isWorktree ? worktreeLabel : computerLabel}</span>
       <Check size={17} /></div>
     <button type="button" className={styles.option} disabled={locked || !git.status}
-      onClick={() => openDialog("worktree")}><GitFork size={18} /><span>{guiText("新建本地工作树")}</span></button>
+      onClick={() => openDialog("worktree")}><GitFork size={18} /><span>{createWorktreeLabel}</span></button>
     <p className={styles.caption}>{guiText("从当前提交创建独立副本，方便并行工作。")}</p>{notice}
   </div>;
   return <>
@@ -89,7 +94,7 @@ export function WorkspacePicker({ cwd, disabled, onChange, onBusyChange,
         <GitBranch size={16} /><span>{branchLabel}</span>
       </button>
     </Popover>}
-    {dialog && <Modal open centered width={400} title={dialog === "worktree" ? guiText("新建本地工作树") : guiText("创建新分支")}
+    {dialog && <Modal open centered width={400} title={dialog === "worktree" ? createWorktreeLabel : guiText("创建新分支")}
       okText={dialog === "worktree" ? guiText("创建工作树") : guiText("创建并切换")} cancelText={guiText("取消")}
       confirmLoading={git.busy} okButtonProps={{ disabled: locked || !branch.trim() }}
       cancelButtonProps={{ disabled: git.busy }} closable={!git.busy} maskClosable={!git.busy} keyboard={!git.busy}

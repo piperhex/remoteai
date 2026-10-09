@@ -103,6 +103,7 @@ export class ChatOperations {
     const result = running.then((data) => response(request, data, mode))
       .catch((error: unknown): RpcResponse => ({ kind: 'response', id: request.id, error: operationError(error) }));
     const readOnly = request.method === 'request' && (READ_OPERATIONS.has(operation ?? '')
+      || (operation === 'guiGitWorkspace' && object(object(request.body).request).operation === 'status')
       || (operation === DESKTOP_OPERATION && object(request.body).action === 'signal'));
     const entry: Cached = { fingerprint, result, expires: Date.now() + CACHE_TTL_MS, completed: false, readOnly };
     this.cache.set(cacheKey, entry);

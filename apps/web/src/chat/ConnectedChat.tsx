@@ -141,7 +141,7 @@ export function ConnectedChat({ chat, device, devices, active, scope, email, cho
       uploadProgress={state.upload}
       threadId={state.selected?.id ?? null} models={state.models} selection={state.settings}
       readUsage={controller.readUsage} tokenUsage={state.selected?.tokenUsage}
-      settingsBusy={state.settingsBusy} settingsError={state.settingsError}
+      settingsBusy={state.settingsBusy || !!state.workspaceBusy} settingsError={state.settingsError}
       updateSettings={(settings) => controller.setSettings(settings)}
       active={active} ready={ready && !state.selectedArchived} sending={state.sending} running={running}
       interrupted={state.selected?.turns?.at(-1)?.status === 'interrupted'}

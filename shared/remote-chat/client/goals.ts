@@ -27,7 +27,8 @@ export class RemoteGoals {
   };
   private unavailable = () => {
     const state = this.host.snapshot();
-    return !state.ready || state.sending || state.settingsBusy || state.goalBusy || state.selectedArchived
+    return !state.ready || state.sending || state.workspaceBusy || state.settingsBusy
+      || state.goalBusy || state.selectedArchived
       || !!state.compacting || state.selected?.turns?.some((turn) => turn.status === 'inProgress')
       || state.approvals.some((event) => event.params.threadId === state.selected?.id);
   };

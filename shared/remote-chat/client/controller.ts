@@ -120,6 +120,7 @@ export class ChatController {
   }
 
   snapshot = () => this.state;
+  setWorkspaceBusy = (workspaceBusy: boolean) => this.update({ workspaceBusy });
   readUsage = () => this.connection.request<UsageSummary>('request', { operation: 'usageSummary' });
   readonly contextSettings = createContextSettingsClient(<T>(body: unknown) =>
     this.connection.request<T>('request', body));
@@ -548,7 +549,7 @@ export class ChatController {
 
   async send(input: SendInput) {
     if (this.state.desktopOnly) { this.update({ error: '请先登录电脑并打开聊天，再发送消息。' }); return false; }
-    if (this.state.threadActionBusy) return false;
+    if (this.state.threadActionBusy || this.state.workspaceBusy) return false;
     if (input.goalMode) return this.goals.start(input);
     const images = input.images ?? [];
     if (this.state.selectedArchived) { this.update({ error: '请先恢复聊天，再发送消息。' }); return false; }
@@ -666,7 +667,9 @@ export class ChatController {
     });
 
   chooseDraftProject = (project: ChatProject) => {
-    if (!this.state.ready || this.state.selected || this.state.sending || !project.cwd.trim()) return;
+    // A completed worktree request can arrive before chat synchronization finishes after reconnecting.
+    if ((!this.state.ready && !this.state.workspaceBusy)
+      || this.state.selected || this.state.sending || !project.cwd.trim()) return;
     this.update({ draftProject: { cwd: project.cwd, label: project.label }, error: '' });
   };
 

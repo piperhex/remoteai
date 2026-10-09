@@ -6,6 +6,7 @@ import { ChatProjectPicker } from '../../../../../web/src/chat/ChatProjectPicker
 import type { ChatController, ChatState } from '../../../../../web/src/chat/types';
 import { projectName } from '../projectCatalog';
 import { GuiHostPicker } from '../GuiHostPicker';
+import { WorkspacePicker } from '../WorkspacePicker';
 import type { GuiComputerNavigation } from './types';
 import styles from '../styles.module.less';
 
@@ -14,7 +15,7 @@ export function RemoteGuiProject({ state, controller, computers, active }: {
 }) {
   const [picking, setPicking] = useState(false);
   const cwd = state.selected?.cwd ?? state.draftProject?.cwd ?? '';
-  const canChoose = active && state.ready && !state.selected && !state.sending;
+  const canChoose = active && state.ready && !state.selected && !state.sending && !state.workspaceBusy;
   useEffect(() => { if (!canChoose) setPicking(false); }, [canChoose]);
   return <div className="gui-remote-project">
     <div className={styles.projectBar}>
@@ -22,6 +23,10 @@ export function RemoteGuiProject({ state, controller, computers, active }: {
         aria-label={guiText("选择远程项目")} title={cwd || undefined} onClick={() => setPicking(true)}>
         {cwd ? projectName(cwd) : guiText("选择项目")}
       </Button>
+      {!state.selected && <WorkspacePicker key={cwd} cwd={cwd} disabled={!canChoose}
+        remote localLabel={guiText("工作树")} enabled={active && state.ready}
+        request={controller.guiTools.workspace} onBusyChange={controller.setWorkspaceBusy}
+        onChange={path => controller.chooseDraftProject({ cwd: path, label: projectName(path) })} />}
       <GuiHostPicker navigation={computers} active={active} />
     </div>
     {picking && canChoose && <ChatProjectPicker cwd={cwd} load={controller.loadProjectDirectories}
