@@ -1191,6 +1191,20 @@ export function DashboardApp() {
     <ProxyTopbarActions manager={providerManager} showSessionManager={!sidebarNavigationEnabled}
       onOpenSessions={openProxySessions} t={t} />
   );
+  const accountToolbox = (
+    <AccountToolbox t={t}
+      onSystemPrompts={isAccountManagementPage(page) ? () => setPage("systemPrompts") : undefined}
+      navigation={sidebarNavigationEnabled ? undefined : { page, onPageChange: setPage }}>
+      {(page === "accounts" || page === "providers") && <>
+        {titlebarProxyRunning && <CloudRecycleBin t={t} disabled={!cloud.state.authenticated}
+          triggerClassName="refresh-all" />}
+        <CodexConfigRepairButton disabled={providerManager.proxyBusy} notify={notify} t={t} />
+        <AccountDisplayTabs displayMode={accountDisplayMode.displayMode}
+          onChange={accountDisplayMode.setDisplayMode} t={t} />
+        {usageSpeedPill}
+      </>}
+    </AccountToolbox>
+  );
   const officialAccountActions = (
     <>
       {managedAccountGroups.length > 0 && <AccountGroupManager accounts={manager.accounts}
@@ -1284,18 +1298,7 @@ export function DashboardApp() {
           {!sidebarNavigationEnabled && (
             <DashboardNavigation onPageChange={setPage} page={page} t={t} />
           )}
-          {(!sidebarNavigationEnabled || isAccountManagementPage(page)) && <AccountToolbox t={t}
-            onSystemPrompts={isAccountManagementPage(page) ? () => setPage("systemPrompts") : undefined}
-            navigation={sidebarNavigationEnabled ? undefined : { page, onPageChange: setPage }}>
-            {(page === "accounts" || page === "providers") && <>
-            <AccountDisplayTabs displayMode={accountDisplayMode.displayMode}
-              onChange={accountDisplayMode.setDisplayMode} t={t} />
-            {usageSpeedPill}
-            {titlebarProxyRunning && <CloudRecycleBin t={t} disabled={!cloud.state.authenticated}
-              triggerClassName="refresh-all announcement-recycle-bin-button" />}
-            <CodexConfigRepairButton disabled={providerManager.proxyBusy} notify={notify} t={t} />
-            </>}
-          </AccountToolbox>}
+          {!sidebarNavigationEnabled && !isAccountManagementPage(page) && accountToolbox}
         </header>
 
         <main className={page === "accounts" ? "accounts-main"
@@ -1316,7 +1319,10 @@ export function DashboardApp() {
                   refreshSeconds={tokenUsagePreferences.refreshSeconds} language={language} t={t}
                   providers={providerManager.providers} />
               )}
-              sharedActions={page !== "claudeCode" && <>{chatGptActionMenu}{proxyTopbarActions}</>}>
+              sharedActions={<>
+                {page !== "claudeCode" && <>{chatGptActionMenu}{proxyTopbarActions}</>}
+                {accountToolbox}
+              </>}>
               {page === "accounts" && <>
                 <button type="button" className="primary-button" onClick={openLogin}>
                   <Plus size={18} />{t("actions.addAccount")}

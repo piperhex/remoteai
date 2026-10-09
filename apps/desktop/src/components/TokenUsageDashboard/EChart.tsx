@@ -17,7 +17,7 @@ interface ChartZoomRange {
 }
 
 function readZoomRange(chart: EChartsType): ChartZoomRange | null {
-  const zoom = chart.getOption().dataZoom;
+  const zoom = chart.getOption()?.dataZoom;
   if (!Array.isArray(zoom) || !zoom[0] || typeof zoom[0] !== "object") return null;
   const { startValue, endValue } = zoom[0] as Partial<ChartZoomRange>;
   if (typeof startValue !== "number" || typeof endValue !== "number") return null;
@@ -34,7 +34,7 @@ function withZoomRange(option: EChartsOption, range: ChartZoomRange | null) {
 
 function withLegendSelection(option: EChartsOption, chart: EChartsType) {
   if (!option.legend || typeof option.legend !== "object" || Array.isArray(option.legend)) return option;
-  const legends = chart.getOption().legend;
+  const legends = chart.getOption()?.legend;
   const current = Array.isArray(legends) ? legends[0] : undefined;
   if (!current || typeof current !== "object" || !("selected" in current)) return option;
   return { ...option, legend: { ...option.legend, selected: current.selected } };
@@ -66,6 +66,9 @@ export function EChart({ option, label, className, preserveZoomKey, onZoomChange
       observer.disconnect();
       chart.dispose();
       chartRef.current = null;
+      // A recreated chart must not inherit the disposed instance's interaction scope.
+      zoomKeyRef.current = undefined;
+      zoomRef.current = null;
     };
   }, []);
 

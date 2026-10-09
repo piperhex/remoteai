@@ -1,9 +1,6 @@
-.trigger {
-  height: var(--announcement-height);
+.trigger:global(.refresh-all) {
   flex: 0 0 auto;
-  padding: 0 10px;
-  border-radius: var(--announcement-radius);
-  font-size: 12px;
+  border-radius: 0;
 
   svg { transition: transform .18s ease; }
 }
@@ -18,44 +15,78 @@
 .actions {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  width: max-content;
-  max-width: min(384px, calc(100vw - 160px));
+  width: 240px;
+  max-width: min(400px, calc(100vw - 24px));
   white-space: normal;
+
+  > * {
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  > :not(:last-child) { border-bottom: 1px solid var(--line); }
 
   :global(.toolbox-tabs) {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+  }
+
+  :global(.toolbox-tabs) button,
+  :global(.refresh-all) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
     width: 100%;
+    height: auto;
+    min-height: 36px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--ink);
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: left;
+    white-space: normal;
+    box-shadow: none;
+    cursor: pointer;
+
+    svg { flex-shrink: 0; }
+    &:hover:not(:disabled) { background: var(--green-soft); }
+    &:global(.selected) { background: var(--green-highlight); }
+    &:disabled { cursor: not-allowed; }
+  }
+
+  > :global(.account-display-tabs),
+  > [role="group"] {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    width: 100%;
+    height: auto;
+    min-height: 36px;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
 
     button {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 32px;
-      padding: 6px 10px;
-      border: 0;
-      border-radius: 6px;
-      background: transparent;
-      color: var(--ink);
+      flex: 1 1 0;
+      min-width: 0;
+      height: auto;
+      padding: 8px 12px;
+      border-radius: 0;
       font-size: 12px;
-      text-align: left;
-      cursor: pointer;
-
-      svg { flex-shrink: 0; }
-      &:hover { background: var(--green-soft); }
-      &:global(.selected) { background: var(--green-highlight); }
+      line-height: 1.5;
+      white-space: normal;
+      box-shadow: none;
     }
   }
 
-  :global(.refresh-all) {
-    height: var(--announcement-height);
-    padding: 0 10px;
-    border-radius: var(--announcement-radius);
-    font-size: 12px;
-    box-shadow: none;
+  button:focus-visible {
+    outline: 2px solid var(--green);
+    outline-offset: -2px;
   }
 }
 

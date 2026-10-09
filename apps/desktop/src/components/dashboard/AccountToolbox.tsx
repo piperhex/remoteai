@@ -1,6 +1,6 @@
 import { useId, useRef, useState, type ReactNode } from "react";
 import { Popover } from "antd";
-import { ChevronDown, ChevronLeft, BriefcaseBusiness, MessageSquareText } from "lucide-react";
+import { ChevronDown, BriefcaseBusiness, MessageSquareText } from "lucide-react";
 import type { Translate } from "../../i18n";
 import { DashboardNavigation, isToolboxPage, type DashboardPage } from "./DashboardNavigation";
 import styles from "./AccountToolbox.module.less";
@@ -16,13 +16,12 @@ export function AccountToolbox({ children, navigation, onSystemPrompts, t }: Acc
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
-  const Chevron = navigation ? ChevronDown : ChevronLeft;
   const selected = navigation && isToolboxPage(navigation.page);
 
   return (
-    <Popover open={open} onOpenChange={setOpen} placement={navigation ? "bottomRight" : "leftTop"} arrow={false}
-      trigger="hover" mouseLeaveDelay={0.2}
-      styles={{ root: { maxWidth: 400 }, body: { padding: 8 } }}
+    <Popover open={open} onOpenChange={setOpen} placement="bottomRight" arrow={false}
+      trigger={["hover", "click"]} mouseLeaveDelay={0.2}
+      styles={{ root: { maxWidth: 400 }, body: { padding: 0, borderRadius: 0 } }}
       content={(
         <div id={panelId} className={styles.actions} role="group" aria-label={t("actions.toolbox")}
           onKeyDown={(event) => {
@@ -49,9 +48,9 @@ export function AccountToolbox({ children, navigation, onSystemPrompts, t }: Acc
         onKeyDown={(event) => {
           if (event.key === "Escape") setOpen(false);
         }}>
-        <Chevron size={14} className={open ? styles.expanded : undefined} aria-hidden="true" />
         <BriefcaseBusiness size={15} aria-hidden="true" />
         <span>{t("actions.toolbox")}</span>
+        <ChevronDown size={14} className={open ? styles.expanded : undefined} aria-hidden="true" />
       </button>
     </Popover>
   );

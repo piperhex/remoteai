@@ -27,7 +27,7 @@ export function UsageSpeedPill({
     ? "usage.speedProxyRequired"
     : fastModeAvailable ? "usage.speedHint" : "usage.speedUnavailable");
 
-  return <Tooltip title={tooltip} styles={{ root: { maxWidth: 400 } }}>
+  return <Tooltip title={tooltip} styles={{ root: { maxWidth: 400, pointerEvents: "none" } }}>
     <span className={`${styles.pill}${loading ? ` ${styles.loading}` : ""}`}
       role="group" aria-label={t("usage.speedMode")} onClick={(event) => event.stopPropagation()}>
       <button type="button" className={fastModeEnabled ? undefined : styles.selected}

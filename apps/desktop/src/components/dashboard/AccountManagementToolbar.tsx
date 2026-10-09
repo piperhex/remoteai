@@ -36,7 +36,7 @@ export function AccountManagementToolbar({
   };
 
   return (
-    <header className={styles.toolbar}>
+    <header className={`${styles.toolbar}${summary ? "" : ` ${styles.compact}`}`}>
       <div className={styles.heading}>
         {summary && <div className={styles.summary}>{summary}</div>}
         <div className={styles.tabs} role="tablist" aria-label={t("nav.accounts")}>
