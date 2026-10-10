@@ -10,7 +10,9 @@ const MIN_AUTO_FPS: u32 = 15;
 const MIN_BITRATE: u32 = 200_000;
 const RESOLUTIONS: [u32; 4] = [854, 1280, 1920, 2560];
 const HEALTHY_SAMPLES: u8 = 3;
+const CONGESTED_SAMPLES: u8 = 3;
 const CHANGE_COOLDOWN: u8 = 2;
+const BUSY_BITRATE_PERCENT: u32 = 70;
 const MAX_FEEDBACK_AGE: Duration = Duration::from_secs(6);
 
 /// Preserve pixels and per-frame quality by lowering frame rate first, then automatic resolution.
@@ -18,6 +20,8 @@ pub(super) struct RateController {
     requested: Profile,
     current: Profile,
     healthy: u8,
+    congested_loss: u8,
+    congested_capacity: u8,
     cooldown: u8,
     last_loss: Option<Instant>,
     last_capacity: Option<Instant>,
@@ -29,6 +33,8 @@ impl RateController {
             requested: profile,
             current: profile,
             healthy: 0,
+            congested_loss: 0,
+            congested_capacity: 0,
             cooldown: 0,
             last_loss: None,
             last_capacity: None,
@@ -42,16 +48,21 @@ impl RateController {
         if loss.is_none() && capacity.is_none() {
             return None;
         }
-        // Sparse idle frames do not establish a bandwidth shortage, even if REMB is low.
-        let congested = loss.is_some_and(|loss| loss > 0.05)
-            || capacity.is_some_and(|capacity| {
-                sent_bitrate > MIN_BITRATE && capacity < sent_bitrate * 4 / 5
-            });
-        if congested {
+        self.track_congestion(loss, capacity, sent_bitrate);
+        let congested = self.congested_loss.max(self.congested_capacity);
+        if congested > 0 {
             self.healthy = 0;
-            return (self.cooldown == 0).then(|| self.lower()).flatten();
+            if self.cooldown > 0 || congested < CONGESTED_SAMPLES {
+                return None;
+            }
+            self.congested_loss = 0;
+            self.congested_capacity = 0;
+            return self.lower();
         }
-        self.healthy = if loss.is_some_and(|loss| loss < 0.01) {
+        // REMB and Receiver Reports have independent intervals. A capacity-only update must
+        // neither erase a healthy loss sample nor count as another one.
+        let loss = loss?;
+        self.healthy = if loss < 0.01 {
             self.healthy.saturating_add(1)
         } else {
             0
@@ -59,9 +70,54 @@ impl RateController {
         if self.healthy < HEALTHY_SAMPLES || self.cooldown > 0 {
             return None;
         }
-        // Probe recovery instead of requiring bandwidth that a capped sender cannot demonstrate.
         self.healthy = 0;
-        self.raise()
+        self.raise(recent(feedback.capacity), sent_bitrate)
+    }
+
+    pub fn reset_network(&mut self) {
+        self.healthy = 0;
+        self.congested_loss = 0;
+        self.congested_capacity = 0;
+        self.cooldown = 0;
+        self.last_loss = None;
+        self.last_capacity = None;
+    }
+
+    fn track_congestion(&mut self, loss: Option<f64>, capacity: Option<u32>, sent_bitrate: u32) {
+        // Independently timed reports must neither erase nor duplicate the other source's evidence.
+        if self
+            .last_loss
+            .is_some_and(|last| last.elapsed() > MAX_FEEDBACK_AGE)
+        {
+            self.congested_loss = 0;
+        }
+        if self
+            .last_capacity
+            .is_some_and(|last| last.elapsed() > MAX_FEEDBACK_AGE)
+        {
+            self.congested_capacity = 0;
+        }
+        if let Some(loss) = loss {
+            self.congested_loss = if loss > 0.05 {
+                self.congested_loss + 1
+            } else {
+                0
+            };
+        }
+        if let Some(capacity) = capacity {
+            // Idle traffic and periodic keyframes do not establish the link's bandwidth limit.
+            let shortage =
+                self.busy(sent_bitrate) && u64::from(capacity) * 5 < u64::from(sent_bitrate) * 4;
+            self.congested_capacity = if shortage {
+                self.congested_capacity + 1
+            } else {
+                0
+            };
+        }
+    }
+
+    fn busy(&self, sent_bitrate: u32) -> bool {
+        sent_bitrate >= self.current.bitrate * BUSY_BITRATE_PERCENT / 100
     }
 
     fn lower(&mut self) -> Option<Profile> {
@@ -84,12 +140,22 @@ impl RateController {
         self.change(next)
     }
 
-    fn raise(&mut self) -> Option<Profile> {
+    fn raise(&mut self, capacity: Option<u32>, sent_bitrate: u32) -> Option<Profile> {
+        let next = self.recovery_profile();
+        // Preserve headroom for a busy stream; quiet streams can still recover from estimates
+        // that are low precisely because little video data has been sent.
+        if self.busy(sent_bitrate) && capacity.is_some_and(|capacity| capacity < next.bitrate) {
+            return None;
+        }
+        self.change(next)
+    }
+
+    fn recovery_profile(&self) -> Profile {
         let mut next = self.current;
         let target = self.bitrate_for(next);
         if next.bitrate < target {
             next.bitrate = (next.bitrate * 5 / 4).min(target);
-            return self.change(next);
+            return next;
         }
         let floor = QUALITY_FPS_FLOOR.min(self.requested.fps);
         if next.fps < floor {
@@ -104,7 +170,7 @@ impl RateController {
             next.fps = (next.fps + FPS_STEP).min(self.requested.fps);
         }
         next.bitrate = self.bitrate_for(next);
-        self.change(next)
+        next
     }
 
     fn bitrate_for(&self, profile: Profile) -> u32 {
@@ -132,6 +198,12 @@ fn fresh<T: Copy>(report: Option<NetworkReport<T>>, previous: &mut Option<Instan
     }
     *previous = Some(report.received_at);
     Some(report.value)
+}
+
+fn recent<T: Copy>(report: Option<NetworkReport<T>>) -> Option<T> {
+    report
+        .filter(|report| report.received_at.elapsed() <= MAX_FEEDBACK_AGE)
+        .map(|report| report.value)
 }
 
 #[cfg(test)]

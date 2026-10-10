@@ -4,6 +4,7 @@ import { addIceCandidate } from '../../../../shared/remote-chat/iceCandidate';
 import { relayIceServers, STANDBY_ACTIVE, STANDBY_ACTIVATE, STANDBY_PING, STANDBY_PONG }
   from '../../../../shared/remote-desktop/standbyProtocol';
 import type { BrowserDesktopPeer } from './directHost';
+import { configureDesktopSender } from './videoSender';
 
 const PROBE_LIFETIME_MS = 35_000;
 const MIN_RETRY_MS = 5000;
@@ -124,7 +125,9 @@ export class BrowserDesktopRelayHost {
     try {
       const offer = await pc.createOffer();
       if (this.stopped || this.pending !== probe) throw new Error('桌面连接已结束。');
-      await pc.setLocalDescription(offer); await this.media(probe, false);
+      await pc.setLocalDescription(offer);
+      await configureDesktopSender(probe.sender);
+      await this.media(probe, false);
       if (this.stopped || this.pending !== probe) throw new Error('桌面连接已结束。');
       return { sdp: offer.sdp, generation, candidates: [] };
     } catch (error) { if (this.pending === probe) this.cancel(); throw error; }

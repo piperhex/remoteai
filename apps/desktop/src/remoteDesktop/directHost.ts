@@ -4,6 +4,7 @@ import { directIceServers } from '../../../../shared/remote-desktop/directUpgrad
 import { DesktopStatsSampler } from '../../../../shared/remote-desktop/stats';
 import { addIceCandidate } from '../../../../shared/remote-chat/iceCandidate';
 import { nativeMediaEndpoint } from '../../../../shared/remote-desktop/nativeMedia';
+import { configureDesktopSender } from './videoSender';
 
 const PROBE_LIFETIME = 35_000;
 const MIN_RETRY = 5000;
@@ -72,6 +73,8 @@ export class BrowserDesktopDirectHost {
       const offer = await pc.createOffer();
       if (this.stopped) throw new Error('桌面连接已结束。');
       await pc.setLocalDescription(offer);
+      await configureDesktopSender(probe.sender);
+      if (this.stopped || this.probe !== probe) throw new Error('桌面连接已结束。');
       return { sdp: offer.sdp, generation, candidates: [] };
     } catch (error) { this.cancel(); throw error; }
   }

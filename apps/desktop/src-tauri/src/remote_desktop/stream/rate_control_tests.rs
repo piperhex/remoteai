@@ -34,8 +34,10 @@ fn feedback(loss: f64) -> Feedback {
 }
 
 fn congest(rate: &mut RateController) -> Profile {
-    // A monitoring interval between changes expires the cooldown without fabricating new feedback.
-    rate.sample(Feedback::default(), 0);
+    // Each downgrade requires sustained, independently received congestion evidence.
+    for _ in 1..CONGESTED_SAMPLES {
+        assert!(rate.sample(feedback(0.1), rate.current.bitrate).is_none());
+    }
     rate.sample(feedback(0.1), rate.current.bitrate).unwrap()
 }
 
@@ -131,13 +133,16 @@ fn quiet_screens_do_not_trigger_downgrades() {
 #[test]
 fn reusing_one_report_or_requesting_keyframes_cannot_repeat_a_downgrade() {
     let mut rate = RateController::new(profile());
+    for _ in 1..CONGESTED_SAMPLES {
+        assert!(rate.sample(feedback(0.1), 12_000_000).is_none());
+    }
     let mut report = feedback(0.1);
     assert_eq!(rate.sample(report, 12_000_000).unwrap().fps, 50);
     for _ in 0..20 {
         report.keyframes += 1;
         assert!(rate.sample(report, 12_000_000).is_none());
     }
-    assert_eq!(rate.sample(feedback(0.1), 10_000_000).unwrap().fps, 40);
+    assert_eq!(congest(&mut rate).fps, 40);
 }
 
 #[test]
@@ -166,6 +171,7 @@ fn expired_feedback_and_missing_reports_cannot_change_quality() {
 #[test]
 fn fresh_capacity_does_not_refresh_an_old_loss_report() {
     let mut rate = RateController::new(profile());
+    congest(&mut rate);
     let mut feedback = feedback(0.1);
     rate.sample(feedback, 12_000_000);
     for _ in 0..10 {
@@ -196,7 +202,7 @@ fn recovery_handles_nonstandard_display_widths_and_extreme_frame_caps() {
             ..profile()
         };
         let mut rate = RateController::new(requested);
-        for _ in 0..40 {
+        for _ in 0..120 {
             rate.cooldown = 0;
             rate.sample(feedback(0.1), rate.current.bitrate);
         }
@@ -214,4 +220,112 @@ fn old_profiles_keep_fixed_resolution_when_the_new_flag_is_missing() {
     }))
     .unwrap();
     assert!(!profile.adaptive_resolution);
+}
+
+#[test]
+fn quiet_hd_does_not_collapse_bitrate_or_resolution_on_low_capacity_estimates() {
+    for automatic in [false, true] {
+        let requested = Profile {
+            adaptive_fps: automatic,
+            adaptive_resolution: automatic,
+            ..profile()
+        };
+        let mut rate = RateController::new(requested);
+        for _ in 0..60 {
+            let report = Feedback {
+                capacity: Some(report(300_000)),
+                ..feedback(0.0)
+            };
+            assert!(rate.sample(report, 600_000).is_none());
+        }
+        assert_eq!(rate.current, requested);
+    }
+}
+
+#[test]
+fn capacity_reports_do_not_erase_sustained_packet_loss() {
+    let mut rate = RateController::new(profile());
+    for _ in 0..2 {
+        assert!(rate.sample(feedback(0.1), 12_000_000).is_none());
+        let capacity = Feedback {
+            capacity: Some(report(20_000_000)),
+            ..Default::default()
+        };
+        assert!(rate.sample(capacity, 12_000_000).is_none());
+    }
+    assert_eq!(rate.sample(feedback(0.1), 12_000_000).unwrap().fps, 50);
+}
+
+#[test]
+fn loss_reports_do_not_erase_sustained_capacity_pressure() {
+    let mut rate = RateController::new(profile());
+    for index in 0..3 {
+        let capacity = Feedback {
+            capacity: Some(report(1_000_000)),
+            ..Default::default()
+        };
+        let next = rate.sample(capacity, 12_000_000);
+        if index < 2 {
+            assert!(next.is_none());
+            assert!(rate.sample(feedback(0.0), 12_000_000).is_none());
+        } else {
+            assert_eq!(next.unwrap().fps, 50);
+        }
+    }
+}
+
+#[test]
+fn capacity_only_reports_do_not_erase_independent_healthy_loss_reports() {
+    let mut rate = RateController::new(profile());
+    congest(&mut rate);
+    for _ in 0..2 {
+        assert!(rate.sample(feedback(0.0), 1_000_000).is_none());
+        let report = Feedback {
+            capacity: Some(report(12_000_000)),
+            ..Default::default()
+        };
+        assert!(rate.sample(report, 1_000_000).is_none());
+    }
+    assert_eq!(rate.sample(feedback(0.0), 1_000_000).unwrap(), profile());
+}
+
+#[test]
+fn one_transient_report_cannot_change_the_encoder() {
+    let mut rate = RateController::new(profile());
+    assert!(rate.sample(feedback(0.1), 12_000_000).is_none());
+    for _ in 0..10 {
+        assert!(rate.sample(feedback(0.0), 12_000_000).is_none());
+    }
+    assert_eq!(rate.current, profile());
+}
+
+#[test]
+fn busy_sender_does_not_probe_above_known_capacity_and_oscillate() {
+    let mut rate = RateController::new(profile());
+    for _ in 0..3 {
+        congest(&mut rate);
+    }
+    let stable = rate.current;
+    assert_eq!(stable.bitrate, 6_000_000);
+    for _ in 0..30 {
+        let report = Feedback {
+            capacity: Some(report(6_500_000)),
+            ..feedback(0.0)
+        };
+        assert!(rate.sample(report, 6_000_000).is_none());
+    }
+    assert_eq!(rate.current, stable);
+}
+
+#[test]
+fn expired_capacity_pressure_cannot_block_healthy_recovery() {
+    let mut rate = RateController::new(profile());
+    congest(&mut rate);
+    let pressure = Feedback {
+        capacity: Some(report(1_000_000)),
+        ..Default::default()
+    };
+    assert!(rate.sample(pressure, 10_000_000).is_none());
+    rate.last_capacity = Some(Instant::now() - MAX_FEEDBACK_AGE - Duration::from_secs(1));
+    assert_eq!(recover(&mut rate), profile());
 }

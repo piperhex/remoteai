@@ -10,6 +10,8 @@ import type { ConnectionDiagnostic } from '../../../../shared/remote-chat/diagno
 
 import { BrowserDesktopDirectHost, type BrowserDesktopPeer } from './directHost';
 import { BrowserDesktopRelayHost } from './relayHost';
+import { configureDesktopSender } from './videoSender';
+import { DesktopNetworkSampler } from './networkSample';
 
 const HEARTBEAT_TIMEOUT = 12_000;
 const SETUP_TIMEOUT = 30_000;
@@ -21,6 +23,7 @@ export class DesktopHostSession {
   private readonly initialPc: RTCPeerConnection;
   private readonly capture = new DesktopCapture();
   private readonly adaptation = new DesktopAdaptation();
+  private readonly network = new DesktopNetworkSampler();
   private readonly controls = new DesktopControls(this.capture, () => this.fail(), message => {
     if (this.channel.readyState === 'open') this.channel.send(JSON.stringify(message));
   });
@@ -156,6 +159,7 @@ export class DesktopHostSession {
     const previous = { pc: this.pc, channel: this.channel, clipboard: this.clipboardChannel, sender: this.sender };
     this.pc = peer.pc; this.channel = peer.channel; this.clipboardChannel = peer.clipboard;
     this.sender = peer.sender; this.candidates.length = 0; this.receivedCandidates = 0;
+    this.network.reset(); this.adaptation.resetNetwork();
     this.observer?.close();
     if (this.diagnostic) {
       this.observer = new RtcObserver(peer.pc, this.diagnostic); void this.observer.snapshot();
@@ -193,17 +197,23 @@ export class DesktopHostSession {
     let encodedWidth: number | undefined;
     let encodedHeight: number | undefined;
     let connection: 'direct' | 'relay' | undefined;
+    let selectedPair: string | undefined;
+    stats.forEach(report => { if (report.type === 'transport') selectedPair = report.selectedCandidatePairId; });
     stats.forEach(report => {
-      if (report.type === 'candidate-pair' && report.state === 'succeeded' && report.nominated) {
+      if (report.type === 'candidate-pair'
+        && (selectedPair ? report.id === selectedPair : report.state === 'succeeded' && report.nominated)) {
+        sample.routeId = report.id;
         sample.bitrate = report.availableOutgoingBitrate; sample.rtt = report.currentRoundTripTime;
         connection = [report.localCandidateId, report.remoteCandidateId]
           .some(id => stats.get(id)?.candidateType === 'relay') ? 'relay' : 'direct';
       }
-      if (report.type === 'remote-inbound-rtp' && report.kind === 'video') sample.loss = report.fractionLost;
+      if (report.type === 'remote-inbound-rtp' && report.kind === 'video') sample.loss = this.network.loss(report);
       if (report.type === 'outbound-rtp' && report.kind === 'video') {
         encodedFps = report.framesPerSecond;
         encodedWidth = report.frameWidth; encodedHeight = report.frameHeight;
-        sample.limited = report.qualityLimitationReason === 'bandwidth' || report.qualityLimitationReason === 'cpu';
+        sample.sentBitrate = this.network.sentBitrate(report);
+        sample.limited = ['bandwidth', 'cpu'].includes(report.qualityLimitationReason)
+          ? report.qualityLimitationReason : undefined;
       }
     });
     this.adaptation.sample(sample);
@@ -219,12 +229,7 @@ export class DesktopHostSession {
   }
 
   private async applyProfile(profile = this.adaptation.profile()) {
-    const parameters = this.sender?.getParameters();
-    if (!parameters?.encodings?.length) return;
-    parameters.degradationPreference = 'maintain-resolution';
-    parameters.encodings[0].maxBitrate = profile.bitrate;
-    parameters.encodings[0].maxFramerate = profile.fps;
-    await this.sender?.setParameters(parameters);
+    await configureDesktopSender(this.sender, profile);
   }
 
   private fail() {

@@ -145,13 +145,22 @@ video received on the native and Web viewers.
   capped to the source display without upscaling. Congestion lowers FPS in steps of 10 to 30 before reducing
   automatic resolution. Bitrate follows the pixel/frame budget to preserve per-frame quality. Manual FPS
   accepts integers from 1 to 144 and sets the recovery ceiling; manual quality keeps its resolution.
-  Three fresh healthy reports allow one recovery step, restoring resolution before FPS above 30.
-  Stale or already-consumed native network reports cannot trigger repeated adaptation.
+  Downgrades require three fresh congestion samples, with independent loss and capacity evidence counters.
+  A low bandwidth estimate only establishes a shortage
+  when actual video traffic approaches the current encoding budget; a quiet desktop's low traffic is not
+  evidence that its configured maximum is unsustainable. Three fresh healthy loss reports allow one recovery
+  step, restoring resolution before FPS above 30. Independent capacity reports do not erase this recovery
+  history, and busy streams do not repeatedly probe above a still-insufficient capacity estimate.
+  Stale or already-consumed network reports cannot trigger repeated adaptation.
   These are limits, not guarantees: source refresh, GPU/CPU, decoder and network
   capacity all matter. Hyper-V's enhanced display can limit genuine capture to approximately 30 FPS even on a fast LAN.
 - When the native runtime or capture is unavailable, the original GDI/JPEG → WebView canvas → browser WebRTC
   sender remains a compatibility fallback. It shares the same initial quality and frame-first adaptation policy,
-  and asks browser WebRTC to maintain resolution when adapting. Capture and input commands remain asynchronous
+  and configures browser WebRTC to maintain resolution before initial, direct-upgrade and standby connections
+  can transmit. Stable relay latency is learned as a baseline, rather than treated as congestion solely because
+  it exceeds a fixed threshold. Browser feedback uses measured outgoing traffic and fresh Receiver Reports;
+  CPU pressure alone cannot lower bitrate after manual frame/size limits have been reached.
+  Capture and input commands remain asynchronous
   and run off the UI thread.
 - webrtc-rs 0.17 implements TURN/UDP gathering. A private loopback transport adapter supplies TURN/TCP and TLS
   framing without changing its authentication/allocation logic. TLS validates normal trust roots and the server

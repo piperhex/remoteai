@@ -4,8 +4,7 @@ import { desktopProfile, lowerDesktopProfile, raiseDesktopProfile } from '../../
 import { DEFAULT_SETTINGS, validateSettings, type DesktopSettings } from '../../../../shared/remote-desktop/protocol';
 
 function congest(adaptation: DesktopAdaptation) {
-  adaptation.sample({});
-  adaptation.sample({ loss: 0.1 });
+  for (let index = 0; index < 3; index++) adaptation.sample({ loss: 0.1 });
   return adaptation.profile();
 }
 function recover(adaptation: DesktopAdaptation) {
@@ -69,6 +68,25 @@ describe('remote desktop display adaptation', () => {
     expect(adaptation.profile()).toEqual(desktopProfile(settings));
   });
 
+  it.each(['smooth', 'clear', 'original'] as const)('retains manual %s resolution through congestion', quality => {
+    for (const fps of ['auto', 60, 30] as const) {
+      const settings: DesktopSettings = { fps, quality };
+      const requested = desktopProfile(settings), adaptation = new DesktopAdaptation(settings);
+      for (let index = 0; index < 40; index++) expect(congest(adaptation).width).toBe(requested.width);
+      for (let index = 0; index < 80; index++) recover(adaptation);
+      expect(adaptation.profile()).toEqual(requested);
+    }
+  });
+
+  it('restores and locks manual resolution selected after automatic downscaling', () => {
+    const adaptation = new DesktopAdaptation();
+    for (let index = 0; index < 6; index++) congest(adaptation);
+    expect(adaptation.profile().width).toBe(854);
+    adaptation.update({ quality: 'original', fps: 'auto' });
+    expect(adaptation.profile().width).toBe(2560);
+    for (let index = 0; index < 40; index++) expect(congest(adaptation).width).toBe(2560);
+  });
+
   it.each([1, 24, 30])('preserves manual frame caps at %i FPS when reducing resolution', fps => {
     const adaptation = new DesktopAdaptation({ fps, quality: 'auto' });
     expect(congest(adaptation)).toMatchObject({ width: 1920, fps });
@@ -77,13 +95,13 @@ describe('remote desktop display adaptation', () => {
 
   it('does not change load without measurements, and waits between reductions', () => {
     const adaptation = new DesktopAdaptation();
-    adaptation.sample({ limited: true });
-    expect(adaptation.profile().fps).toBe(50);
-    adaptation.sample({ limited: true });
+    for (let index = 0; index < 3; index++) adaptation.sample({ limited: 'cpu' });
     expect(adaptation.profile().fps).toBe(50);
     for (let index = 0; index < 10; index++) adaptation.sample({});
     expect(adaptation.profile().fps).toBe(50);
-    adaptation.sample({ bitrate: 100_000 });
+    adaptation.sample({ bitrate: 100_000, sentBitrate: 10_000_000 });
+    expect(adaptation.profile().fps).toBe(50);
+    for (let index = 0; index < 2; index++) adaptation.sample({ bitrate: 100_000, sentBitrate: 10_000_000 });
     expect(adaptation.profile().fps).toBe(40);
   });
 

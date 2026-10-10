@@ -86,6 +86,7 @@ async fn video(stream: &Arc<Stream>, path: PathBuf, encoder: &mut Encoder) -> Re
             _ = cancel.changed() => return Ok(()),
             _ = peers.changed() => {
                 feedback = peers.borrow_and_update().feedback.clone();
+                progress.rate.reset_network(); progress.reset();
                 keyframe_version = 0;
                 encoder.request_keyframe().await?;
             },
