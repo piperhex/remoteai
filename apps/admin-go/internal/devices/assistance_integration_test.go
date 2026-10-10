@@ -165,7 +165,7 @@ func assertPrivatePendingResponse(t *testing.T, response *httptest.ResponseRecor
 	}
 	expected := platform.JSON{"id": invitation.ID, "hostDeviceId": invitation.HostDeviceID,
 		"hostName": invitation.HostName, "hostEmail": invitation.HostEmail, "helperEmail": email,
-		"state": "pending", "expiresAt": invitation.ExpiresAt.Format(time.RFC3339Nano)}
+		"state": "pending", "expiresAt": invitation.ExpiresAt.UTC().Format(platform.JavaScriptTimeLayout)}
 	if !reflect.DeepEqual(actual, expected) {
 		t.Fatal("response disclosed recipient information", actual)
 	}

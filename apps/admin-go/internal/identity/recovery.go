@@ -117,7 +117,7 @@ func (s *service) recoverRefresh(c *gin.Context, tx *gorm.DB, options refreshRec
 	if err != nil {
 		return nil, err
 	}
-	result, err := s.issueAccess(options.User)
+	result, err := s.issueAccess(tx, options.User)
 	if err != nil {
 		return nil, err
 	}

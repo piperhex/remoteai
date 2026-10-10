@@ -49,7 +49,12 @@ func LoadConfig() (Config, error) {
 }
 
 func OpenDependencies(config Config) (*Dependencies, error) {
-	db, err := gorm.Open(postgres.Open(postgresDSN(config)), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+	options, err := readDatabaseOptions(config)
+	if err != nil {
+		return nil, err
+	}
+	dsn := postgresDSN(config, options)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
 	if err != nil {
 		return nil, fmt.Errorf("connect PostgreSQL: %w", err)
 	}
@@ -57,9 +62,10 @@ func OpenDependencies(config Config) (*Dependencies, error) {
 	if err != nil {
 		return nil, err
 	}
-	sqlDB.SetMaxOpenConns(10)
-	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(options.maxOpen)
+	sqlDB.SetMaxIdleConns(options.maxIdle)
 	sqlDB.SetConnMaxLifetime(time.Hour)
+	sqlDB.SetConnMaxIdleTime(5 * time.Minute)
 	redisPort, err := strconv.Atoi(config.Get("REDIS_PORT", "6379"))
 	if err != nil {
 		sqlDB.Close()
@@ -78,7 +84,7 @@ func OpenDependencies(config Config) (*Dependencies, error) {
 	return &Dependencies{DB: db, Redis: client, Config: config}, nil
 }
 
-func postgresDSN(config Config) string {
+func postgresDSN(config Config, options databaseOptions) string {
 	dsn := url.URL{
 		Scheme: "postgres",
 		Host:   net.JoinHostPort(config.Get("POSTGRES_HOST", "127.0.0.1"), config.Get("POSTGRES_PORT", "5432")),
@@ -87,6 +93,9 @@ func postgresDSN(config Config) string {
 			config.Get("POSTGRES_PASSWORD", "codex_switch")),
 	}
 	query := url.Values{"sslmode": {config.Get("POSTGRES_SSLMODE", "disable")}, "TimeZone": {"UTC"}}
+	query.Set("statement_timeout", strconv.Itoa(options.statementTimeout))
+	query.Set("lock_timeout", strconv.Itoa(options.lockTimeout))
+	query.Set("connect_timeout", "10")
 	dsn.RawQuery = query.Encode()
 	return dsn.String()
 }

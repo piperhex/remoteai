@@ -68,14 +68,17 @@ func (s *service) authenticate(c *gin.Context) (*platform.Principal, error) {
 		return nil, platform.NewError(401, "User is disabled or no longer exists")
 	}
 	var u user
-	err = s.deps.DB.Where("id = ? AND disabled = ?", id, false).First(&u).Error
+	ctx, cancel := platform.DatabaseContext(c.Request.Context())
+	defer cancel()
+	db := s.deps.DB.WithContext(ctx)
+	err = db.Where("id = ? AND disabled = ?", id, false).First(&u).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, platform.NewError(401, "User is disabled or no longer exists")
 	}
 	if err != nil {
 		return nil, err
 	}
-	return s.principal(&u)
+	return principal(db, &u)
 }
 
 var lifetimePattern = regexp.MustCompile(
@@ -110,8 +113,8 @@ func accessLifetime(value string) (time.Duration, error) {
 	}
 	return time.Duration(amount * multiplier), nil
 }
-func (s *service) issueAccess(u *user) (gin.H, error) {
-	principal, err := s.principal(u)
+func (s *service) issueAccess(db *gorm.DB, u *user) (gin.H, error) {
+	principal, err := principal(db, u)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +132,7 @@ func (s *service) issueAccess(u *user) (gin.H, error) {
 	return gin.H{"accessToken": encoded, "user": principal}, err
 }
 func (s *service) issueTokens(db *gorm.DB, u *user) (gin.H, error) {
-	result, err := s.issueAccess(u)
+	result, err := s.issueAccess(db, u)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +164,9 @@ func (s *service) login(c *gin.Context) (interface{}, error) {
 		return nil, err
 	}
 	var outcome loginOutcome
-	err := s.deps.DB.WithContext(c.Request.Context()).Transaction(func(tx *gorm.DB) error {
+	ctx, cancel := platform.DatabaseContext(c.Request.Context())
+	defer cancel()
+	err := s.deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var err error
 		outcome, err = s.attemptLogin(tx, request)
 		return err
@@ -283,7 +288,9 @@ func (s *service) refresh(c *gin.Context) (interface{}, error) {
 		return nil, platform.NewError(401, "Refresh token is invalid")
 	}
 	var result gin.H
-	err = s.deps.DB.Transaction(func(tx *gorm.DB) error {
+	ctx, cancel := platform.DatabaseContext(c.Request.Context())
+	defer cancel()
+	err = s.deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var token refreshToken
 		e := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
 			Where(`id = ? AND "userId" = ? AND "tokenHash" = ?`, claims["tokenId"], claims["sub"], hash(request.RefreshToken)).

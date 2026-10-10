@@ -219,8 +219,12 @@ func (g *ControlGateway) online(owner, id string) bool {
 
 func (g *ControlGateway) broadcast(owner string, message platform.JSON) {
 	g.mu.Lock()
-	defer g.mu.Unlock()
+	clients := make([]*peer, 0, len(g.subscribers[owner]))
 	for client := range g.subscribers[owner] {
+		clients = append(clients, client)
+	}
+	g.mu.Unlock()
+	for _, client := range clients {
 		client.send(message, nil)
 	}
 }

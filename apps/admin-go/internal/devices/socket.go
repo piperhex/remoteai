@@ -214,16 +214,17 @@ func (p *peer) drainBulk() {
 
 func (p *peer) close(code int, reason string) {
 	p.closeOnce.Do(func() {
-		p.diagnostics.close(code, reason)
 		p.closed.Store(true)
-		// A failed close frame means the socket is already unusable; Close still releases it.
-		_ = p.conn.WriteControl(
-			websocket.CloseMessage,
-			websocket.FormatCloseMessage(code, reason),
-			time.Now().Add(time.Second),
-		)
-		_ = p.conn.Close()
 		close(p.done)
+		// Callers may own a gateway/session lock. Mark closed immediately and perform
+		// the bounded close handshake separately, at most once per connection.
+		go func() {
+			p.diagnostics.close(code, reason)
+			// A failed close frame still requires releasing the underlying socket.
+			_ = p.conn.WriteControl(websocket.CloseMessage,
+				websocket.FormatCloseMessage(code, reason), time.Now().Add(time.Second))
+			_ = p.conn.Close()
+		}()
 	})
 }
 

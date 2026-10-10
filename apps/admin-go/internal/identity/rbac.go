@@ -86,16 +86,20 @@ func (s *service) saveRole(r *role, codes []string) error {
 	})
 }
 func (s *service) getRole(code string) (*role, []string, error) {
+	return getRole(s.deps.DB, code)
+}
+
+func getRole(db *gorm.DB, code string) (*role, []string, error) {
 	r := &role{}
-	if err := s.deps.DB.First(r, "code = ?", code).Error; err != nil {
+	if err := db.First(r, "code = ?", code).Error; err != nil {
 		return nil, nil, dbNotFound(err, "Role not found")
 	}
 	codes := []string{}
-	err := s.deps.DB.Model(&rolePermission{}).Where(`"roleCode" = ?`, code).Pluck("permissionCode", &codes).Error
+	err := db.Model(&rolePermission{}).Where(`"roleCode" = ?`, code).Pluck("permissionCode", &codes).Error
 	return r, codes, err
 }
-func (s *service) principal(u *user) (*platform.Principal, error) {
-	r, codes, err := s.getRole(u.Role)
+func principal(db *gorm.DB, u *user) (*platform.Principal, error) {
+	r, codes, err := getRole(db, u.Role)
 	if err != nil {
 		var h *platform.HTTPError
 		if errors.As(err, &h) && h.Status == 404 {

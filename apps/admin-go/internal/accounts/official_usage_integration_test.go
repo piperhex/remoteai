@@ -52,7 +52,7 @@ func usageTestOwner(t *testing.T, db *gorm.DB) string {
 
 func readUsageTestSummary(t *testing.T, s *service, owner string, start int64) []officialAccountTotal {
 	t.Helper()
-	value, err := s.officialUsageSummary(owner, start, time.Now().Unix())
+	value, err := s.officialUsageSummary(t.Context(), owner, start, time.Now().Unix())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,15 +77,15 @@ func TestOfficialUsageReportAndPersistedDeclines(t *testing.T) {
 			Samples: [][3]float64{{20, 100, 2}}}},
 		Quotas: []quotaObservation{{Ts: base + 10, Primary: usagePtr(80.0)}, {Ts: base + 50, Primary: usagePtr(60.0)}},
 	}}}
-	if err := s.storeUsageReport(owner, "desktop", report); err != nil {
+	if err := s.storeUsageReport(t.Context(), owner, "desktop", report); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.storeUsageReport(owner, "desktop", report); err != nil {
+	if err := s.storeUsageReport(t.Context(), owner, "desktop", report); err != nil {
 		t.Fatal(err)
 	}
 	report.DeviceName = "Laptop"
 	report.Accounts[0].Minutes[0].Samples = [][3]float64{{30, 200, 4}}
-	if err := s.storeUsageReport(owner, "laptop", report); err != nil {
+	if err := s.storeUsageReport(t.Context(), owner, "laptop", report); err != nil {
 		t.Fatal(err)
 	}
 	totals := readUsageTestSummary(t, s, owner, base)
@@ -116,7 +116,7 @@ func testLateUsageAndRebound(t *testing.T, s *service, owner string, report offi
 	t.Helper()
 	base := report.Accounts[0].Minutes[0].Ts
 	report.Accounts[0].Minutes[0].Samples = [][3]float64{{30, 300, 7}, {55, 100, 1}}
-	if err := s.storeUsageReport(owner, "laptop", report); err != nil {
+	if err := s.storeUsageReport(t.Context(), owner, "laptop", report); err != nil {
 		t.Fatal(err)
 	}
 	total := readUsageTestSummary(t, s, owner, base)[0]
@@ -126,7 +126,7 @@ func testLateUsageAndRebound(t *testing.T, s *service, owner string, report offi
 	}
 	report.Accounts[0].Minutes = nil
 	report.Accounts[0].Quotas = []quotaObservation{{Ts: base + 80, Primary: usagePtr(90.0)}}
-	if err := s.storeUsageReport(owner, "laptop", report); err != nil {
+	if err := s.storeUsageReport(t.Context(), owner, "laptop", report); err != nil {
 		t.Fatal(err)
 	}
 	total = readUsageTestSummary(t, s, owner, base)[0]
@@ -170,14 +170,14 @@ func TestOfficialUsageV2IgnoresLegacyDataAndAccumulatesAcrossDevices(t *testing.
 			Samples: [][3]float64{{20, 100, 2}}}},
 		Quotas: []quotaObservation{{Ts: base + 10, Primary: usagePtr(80.0)}, {Ts: base + 30, Primary: usagePtr(60.0)}},
 	}}}
-	if err := s.storeUsageReport(owner, "desktop", report); err != nil {
+	if err := s.storeUsageReport(t.Context(), owner, "desktop", report); err != nil {
 		t.Fatal(err)
 	}
 	report.DeviceName = "Laptop"
 	report.Accounts[0].Quotas = nil
 	report.Accounts[0].Minutes[0].Samples = [][3]float64{{40, 200, 4}}
 	for range 2 {
-		if err := s.storeUsageReport(owner, "laptop", report); err != nil {
+		if err := s.storeUsageReport(t.Context(), owner, "laptop", report); err != nil {
 			t.Fatal(err)
 		}
 	}

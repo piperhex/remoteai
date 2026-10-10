@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/codex-switch/admin-go/internal/platform"
 )
@@ -51,17 +50,10 @@ func (s *service) request(options requestOptionsHTTP) (*responseHTTP, error) {
 	if err != nil {
 		return nil, err
 	}
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.Proxy = nil
-	if proxy := strings.TrimSpace(s.deps.Config.Get("CODEX_OUTBOUND_PROXY", "")); options.Proxy && proxy != "" {
-		parsed, e := url.Parse(proxy)
-		if e != nil {
-			return nil, e
-		}
-		transport.Proxy = http.ProxyURL(parsed)
+	client, err := s.outbound.client(s.deps.Config, options.Proxy)
+	if err != nil {
+		return nil, err
 	}
-	client := &http.Client{Timeout: 20 * time.Second, Transport: transport}
-	defer transport.CloseIdleConnections()
 	response, err := client.Do(request)
 	if err != nil {
 		return nil, err

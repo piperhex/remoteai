@@ -13,7 +13,10 @@ import (
 	"gorm.io/gorm"
 )
 
-type service struct{ deps *platform.Dependencies }
+type service struct {
+	deps     *platform.Dependencies
+	outbound outboundClients
+}
 
 const metadataPermission = "self.official-accounts.metadata.write"
 const epoch = "1970-01-01T00:00:00.000Z"

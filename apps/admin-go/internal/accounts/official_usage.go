@@ -55,7 +55,7 @@ func (s *service) reportOfficialUsage(c *gin.Context) (interface{}, error) {
 	if c.ShouldBindJSON(&report) != nil || !validUsageReport(report, device, now) {
 		return nil, usageInvalid()
 	}
-	return object{"ok": true}, s.storeUsageReport(platform.User(c).ID, device, report)
+	return object{"ok": true}, s.storeUsageReport(c.Request.Context(), platform.User(c).ID, device, report)
 }
 
 func (s *service) getOfficialUsageSummary(c *gin.Context) (interface{}, error) {
@@ -65,7 +65,7 @@ func (s *service) getOfficialUsageSummary(c *gin.Context) (interface{}, error) {
 		return nil, usageInvalid()
 	}
 	start = max(start, now-usageRetentionSeconds)
-	return s.officialUsageSummary(platform.User(c).ID, start, now)
+	return s.officialUsageSummary(c.Request.Context(), platform.User(c).ID, start, now)
 }
 
 func validUsageReport(report officialUsageReport, device string, now int64) bool {
