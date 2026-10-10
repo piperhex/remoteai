@@ -22,8 +22,13 @@ impl Progress {
     }
 }
 
-pub(super) async fn run(stream: Arc<Stream>, path: PathBuf, mut encoder: Encoder) {
-    let result = video(&stream, path, &mut encoder).await;
+pub(super) async fn run(
+    stream: Arc<Stream>,
+    path: PathBuf,
+    mut encoder: Encoder,
+    mut privacy: mpsc::Receiver<super::privacy::Change>,
+) {
+    let result = video(&stream, path, &mut encoder, &mut privacy).await;
     if let Err(error) = result {
         eprintln!("desktop video stopped: {error}");
     }
@@ -58,7 +63,12 @@ pub(super) async fn wait_connected(stream: &Stream) -> Result<()> {
     Ok(())
 }
 
-async fn video(stream: &Arc<Stream>, path: PathBuf, encoder: &mut Encoder) -> Result<()> {
+async fn video(
+    stream: &Arc<Stream>,
+    path: PathBuf,
+    encoder: &mut Encoder,
+    privacy: &mut mpsc::Receiver<super::privacy::Change>,
+) -> Result<()> {
     // ICE negotiation can take seconds. Discard the probe process so it cannot build a stale frame backlog.
     encoder.stop().await;
     wait_connected(stream).await?;
@@ -84,6 +94,10 @@ async fn video(stream: &Arc<Stream>, path: PathBuf, encoder: &mut Encoder) -> Re
         }
         tokio::select! {
             _ = cancel.changed() => return Ok(()),
+            Some(change) = privacy.recv() => {
+                super::privacy::apply(stream, &path, encoder, change).await?;
+                progress.reset();
+            },
             _ = peers.changed() => {
                 feedback = peers.borrow_and_update().feedback.clone();
                 progress.rate.reset_network(); progress.reset();
@@ -145,7 +159,8 @@ async fn reconfigure(
         _ => {}
     }
     encoder.stop().await;
-    let opened = Encoder::open(path, profile, &stream.display).await;
+    let display = stream.display.borrow().clone();
+    let opened = Encoder::open(path, profile, &display).await;
     let (next, first) = match opened {
         Ok(opened) => opened,
         Err(_) if super::capture_recovery::desktop_switch_recovery() => {
@@ -175,7 +190,7 @@ async fn monitor(
     Ok(())
 }
 
-async fn send_frame(stream: &Stream, data: Vec<u8>) -> Result<()> {
+pub(super) async fn send_frame(stream: &Stream, data: Vec<u8>) -> Result<()> {
     let duration = {
         let mut previous = stream.last_frame.lock().await;
         let now = Instant::now();

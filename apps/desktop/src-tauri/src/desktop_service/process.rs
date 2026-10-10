@@ -94,7 +94,7 @@ fn session_token(session: u32) -> Result<OwnedHandle> {
     Ok(duplicate)
 }
 
-fn job() -> Result<OwnedHandle> {
+fn job(allow_guardian: bool) -> Result<OwnedHandle> {
     // SAFETY: no named object or inherited handle is requested; this process owns the returned job.
     let raw = unsafe { CreateJobObjectW(ptr::null(), ptr::null()) };
     if raw.is_null() {
@@ -104,6 +104,11 @@ fn job() -> Result<OwnedHandle> {
     let handle = unsafe { OwnedHandle::from_raw_handle(raw) };
     let mut limits: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = Default::default();
     limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+    if allow_guardian {
+        // Only the interactive capture worker may explicitly launch a recovery guardian outside
+        // the job. All ordinary children remain contained; this is not SILENT_BREAKAWAY_OK.
+        limits.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_BREAKAWAY_OK;
+    }
     // SAFETY: limits is an initialized structure with the exact size required by this information class.
     if unsafe {
         SetInformationJobObject(
@@ -121,7 +126,7 @@ fn job() -> Result<OwnedHandle> {
 
 /// Keeps the connection host from surviving an abrupt supervisor exit with a live device credential.
 pub(super) fn contain(process: std::os::windows::io::RawHandle) -> Result<OwnedHandle> {
-    let job = job()?;
+    let job = job(false)?;
     // SAFETY: the caller retains its child process while this job owns its lifetime; the handle is borrowed.
     if unsafe { AssignProcessToJobObject(job.as_raw_handle(), process) } == 0 {
         return Err(ServiceError::Unavailable);
@@ -134,7 +139,7 @@ pub(super) fn spawn(session: u32, pipe: &str) -> Result<WorkerProcess> {
         return Err(ServiceError::Denied);
     }
     let token = session_token(session)?;
-    let job = job()?;
+    let job = job(true)?;
     let root = configuration::install_root()?;
     let executable = platform::wide(&root.join("csw.exe").to_string_lossy());
     let mut arguments = platform::wide(&format!(

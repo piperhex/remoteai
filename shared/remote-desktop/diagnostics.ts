@@ -7,6 +7,8 @@ type Reason = NonNullable<DiagnosticFields['reason']>;
 // Native IPC and older hosts return display-safe messages. Match complete, known messages only;
 // arbitrary error text, paths and credentials must never become diagnostic fields.
 const ERRORS: ReadonlyArray<readonly [DesktopErrorCode, Reason, readonly string[]]> = [
+  ['privacy-unavailable', 'unavailable', ['隐私屏未能切换，请重新连接后重试。',
+    '请先在电脑的远程设置中开启无人值守，再使用隐私屏。']],
   ['screen-permission', 'permission', ['请在 Mac 的远程设置中开启屏幕录制权限，然后重新连接。']],
   ['accessibility-permission', 'permission', ['请在 Mac 的远程设置中开启辅助功能权限，然后重新连接。']],
   ['desktop-disabled', 'permission', ['这台电脑未允许此远程操作，请在电脑的设置中调整。']],

@@ -12,7 +12,12 @@ const files = [
   'resources/desktop-service/node.exe',
   'resources/remote-desktop/runtime/desktop-video.exe',
   'resources/remote-desktop/runtime/ffmpeg.exe',
-];
+  'resources/remote-desktop/runtime/desktop-privacy.exe',
+  'resources/remote-desktop/runtime/privacy-driver/MttVDD.inf',
+  'resources/remote-desktop/runtime/privacy-driver/MttVDD.dll',
+  'resources/remote-desktop/runtime/privacy-driver/mttvdd.cat',
+  'resources/remote-desktop/runtime/privacy-driver/LICENSE.txt',
+].sort();
 
 function fixture(t) {
   const root = mkdtempSync(join(tmpdir(), 'csw-service-installer-'));
@@ -41,6 +46,12 @@ test('rejects an installer containing only the service README', t => {
 test('rejects missing or empty video helpers', t => {
   const root = fixture(t);
   writeFileSync(join(root, 'resources/remote-desktop/runtime/desktop-video.exe'), '');
+  assert.throws(() => verifyWindowsService(root), /Missing Windows unattended service asset/);
+});
+
+test('rejects a privacy helper without its signed driver catalog', t => {
+  const root = fixture(t);
+  rmSync(join(root, 'resources/remote-desktop/runtime/privacy-driver/mttvdd.cat'));
   assert.throws(() => verifyWindowsService(root), /Missing Windows unattended service asset/);
 });
 

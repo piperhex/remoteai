@@ -1,4 +1,11 @@
 export const remoteDesktopMessages: Record<string, string> = {
+  '隐私屏': 'Privacy screen',
+  '这台电脑暂不支持隐私屏。': 'Privacy screen is unavailable on this computer.',
+  '正在切换隐私屏，请稍候。': 'Switching privacy screen. Please wait.',
+  '隐私屏未能切换，请重试。': 'Could not switch privacy screen. Please try again.',
+  '隐私屏未能切换，请重新连接后重试。': 'Could not switch privacy screen. Reconnect and try again.',
+  '请先在电脑的远程设置中开启无人值守，再使用隐私屏。':
+    'Enable unattended access in the computer’s remote settings to use privacy screen.',
   '调整远程桌面的显示效果': 'Adjust how your remote desktop looks',
   '显示设置选项': 'Display settings options',
   '选择要使用的显示器': 'Choose the monitor to use',

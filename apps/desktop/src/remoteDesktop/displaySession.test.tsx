@@ -3,13 +3,16 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { useDesktopSession } from '../../../../shared/remote-desktop/useDesktopSession';
-import type { DesktopClient, DesktopDisplays, DesktopSettings } from '../../../../shared/remote-desktop/protocol';
+import type { DesktopCapabilities, DesktopClient, DesktopDisplays, DesktopSettings }
+  from '../../../../shared/remote-desktop/protocol';
 import type { DesktopDirectRetry } from '../../../../shared/remote-desktop/directRetry';
 
 interface FakeSession {
   options: { stream: (stream?: MediaStream) => void; displays: (value: DesktopDisplays) => void;
+    capabilities: (value: DesktopCapabilities) => void;
     failed: (message: string) => void; directRetry: DesktopDirectRetry };
   start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn>; input: ReturnType<typeof vi.fn>;
+  privacy: ReturnType<typeof vi.fn>;
 }
 const runtime = vi.hoisted(() => ({ sessions: [] as FakeSession[] }));
 vi.mock('../../../../shared/remote-desktop/receiver', () => ({ DesktopReceiver: class {
@@ -19,6 +22,9 @@ vi.mock('../../../../shared/remote-desktop/receiver', () => ({ DesktopReceiver: 
   });
   stop = vi.fn(async () => { this.options.stream(undefined); });
   input = vi.fn(); settings = vi.fn(); mute = vi.fn();
+  privacy = vi.fn(async (enabled: boolean) => {
+    this.options.displays({ displayId: enabled ? 'private' : 'first', privacyScreen: enabled });
+  });
   constructor(public options: FakeSession['options']) { runtime.sessions.push(this); }
 } }));
 const client: DesktopClient = { open: vi.fn(), signal: vi.fn(), settings: vi.fn(), close: vi.fn() };
@@ -34,6 +40,37 @@ beforeEach(async () => {
   await act(async () => root.render(<Harness />));
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); vi.useRealTimers(); });
+
+it('only toggles privacy with control capability, keeps the session and resets on reconnect', async () => {
+  const first = runtime.sessions[0];
+  expect(session.privacyScreen).toBe(false);
+  await act(async () => session.togglePrivacy());
+  expect(first.privacy).not.toHaveBeenCalled();
+  await act(async () => first.options.capabilities({ control: false, privacyScreen: true }));
+  await act(async () => session.togglePrivacy());
+  expect(first.privacy).not.toHaveBeenCalled();
+  await act(async () => first.options.capabilities({ control: true, privacyScreen: true }));
+  await act(async () => session.togglePrivacy());
+  expect(session.privacyScreen).toBe(true); expect(session.settings.displayId).toBe('private');
+  expect(first.stop).not.toHaveBeenCalled(); expect(runtime.sessions).toHaveLength(1);
+  await act(async () => session.update({ ...session.settings, displayId: 'physical' }));
+  expect(first.stop).not.toHaveBeenCalled();
+  await act(async () => session.togglePrivacy());
+  expect(session.privacyScreen).toBe(false); expect(session.settings.displayId).toBe('first');
+  await act(async () => session.togglePrivacy());
+  await act(async () => session.retry());
+  expect(session.privacyScreen).toBe(false);
+  expect(runtime.sessions[1].privacy).not.toHaveBeenCalled();
+});
+
+it('leaves privacy off after a rejected toggle and releases the saving state', async () => {
+  const first = runtime.sessions[0];
+  first.privacy.mockRejectedValueOnce(new Error('unavailable'));
+  await act(async () => first.options.capabilities({ control: true, privacyScreen: true }));
+  await act(async () => session.togglePrivacy());
+  expect(session.privacyScreen).toBe(false); expect(session.saving).toBe(false);
+  expect(session.status).toBe('unavailable'); expect(first.stop).not.toHaveBeenCalled();
+});
 
 it('keeps direct backoff across automatic reconnects and resets it after the viewer closes', async () => {
   vi.useFakeTimers();

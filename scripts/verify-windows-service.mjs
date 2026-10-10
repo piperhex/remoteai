@@ -10,6 +10,11 @@ const requiredFiles = [
   'resources/desktop-service/LICENSE.node',
   'resources/remote-desktop/runtime/desktop-video.exe',
   'resources/remote-desktop/runtime/ffmpeg.exe',
+  'resources/remote-desktop/runtime/desktop-privacy.exe',
+  'resources/remote-desktop/runtime/privacy-driver/MttVDD.inf',
+  'resources/remote-desktop/runtime/privacy-driver/MttVDD.dll',
+  'resources/remote-desktop/runtime/privacy-driver/mttvdd.cat',
+  'resources/remote-desktop/runtime/privacy-driver/LICENSE.txt',
 ];
 
 function collect(root, relative, entries) {

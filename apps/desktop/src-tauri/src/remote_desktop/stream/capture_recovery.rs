@@ -58,7 +58,8 @@ pub(super) async fn reopen(
     let (next, first) = retry(stream.cancel.subscribe(), RECOVERY_LIMIT, || async {
         stream.keep_alive().await?;
         // A fresh helper binds its main thread before COM, capture or encoder initialization.
-        Encoder::open(path, profile, &stream.display).await
+        let display = stream.display.borrow().clone();
+        Encoder::open(path, profile, &display).await
     })
     .await?;
     *encoder = next;

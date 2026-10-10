@@ -29,6 +29,8 @@ mod packets;
 #[cfg(any(windows, target_os = "macos"))]
 mod peer;
 #[cfg(any(windows, target_os = "macos"))]
+pub(crate) mod privacy;
+#[cfg(any(windows, target_os = "macos"))]
 mod pump;
 #[cfg(any(windows, target_os = "macos"))]
 mod rate_control;

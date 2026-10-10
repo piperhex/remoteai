@@ -275,6 +275,7 @@ pub(super) async fn desktop_call(call: Call) -> Result<Value> {
             | "remote_desktop_stream_signal"
             | "remote_desktop_stream_update"
             | "remote_desktop_stream_status"
+            | "remote_desktop_privacy"
             | "remote_desktop_stream_close"
             | "remote_desktop_close"
     ) {

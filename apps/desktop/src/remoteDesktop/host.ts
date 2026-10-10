@@ -1,5 +1,5 @@
 import { object, type IceServer } from '../../../../shared/remote-chat/protocol';
-import { validateSettings, type DesktopOffer, type DesktopSettings, type DesktopSignal, type DesktopSignalReply }
+import { validateSettings, type DesktopDisplays, type DesktopOffer, type DesktopSettings, type DesktopSignal, type DesktopSignalReply }
   from '../../../../shared/remote-desktop/protocol';
 import { HostSession } from './hostSession';
 import type { ConnectionDiagnostic } from '../../../../shared/remote-chat/diagnostics';
@@ -13,6 +13,7 @@ export interface DesktopHostSession {
   close(): unknown;
   signal(signal: DesktopSignal): Promise<DesktopSignalReply>;
   update(settings: DesktopSettings): Promise<void>;
+  privacy?(enabled: boolean): Promise<DesktopDisplays>;
   renew?(expiresAt: number): Promise<void>;
 }
 
@@ -59,6 +60,10 @@ export class RemoteDesktopHost {
       throw new Error('桌面连接已结束，请重新连接。');
     }
     switch (body.action) {
+      case 'privacy':
+        if (typeof body.enabled !== 'boolean') throw new Error('远程操作无效，请重试。');
+        if (!active.session.privacy) throw new Error('这台电脑暂不支持隐私屏。');
+        return active.session.privacy(body.enabled);
       case 'close':
         await active.session.close();
         if (this.active === active) this.active = undefined;

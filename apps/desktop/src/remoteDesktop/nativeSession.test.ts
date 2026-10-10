@@ -5,6 +5,62 @@ import { DEFAULT_SETTINGS } from '../../../../shared/remote-desktop/protocol';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 const call = vi.mocked(invoke);
+it('does not touch privacy during ordinary sessions and preserves the native lease when toggled', async () => {
+  const original = call.getMockImplementation()!;
+  call.mockImplementation(async (command, args) => {
+    if (command === 'remote_desktop_privacy') {
+      return { ticket: 'test', pending: false,
+        snapshot: { displayId: 'private', privacyScreen: (args as { enabled: boolean }).enabled, displays: [] } };
+    }
+    return original(command, args);
+  });
+  const session = new NativeDesktopSession(DEFAULT_SETTINGS, []);
+  await session.open(); await session.update(DEFAULT_SETTINGS);
+  expect(call.mock.calls.some(([command]) => command === 'remote_desktop_privacy')).toBe(false);
+  await expect(session.privacy(true)).resolves.toMatchObject({ privacyScreen: true });
+  await expect(session.privacy(false)).resolves.toMatchObject({ privacyScreen: false });
+  expect(call.mock.calls.filter(([command]) => command === 'remote_desktop_stream_open')).toHaveLength(1);
+  expect(call.mock.calls.some(([command]) => command === 'remote_desktop_stream_close')).toBe(false);
+  await session.close();
+});
+
+it('polls a pending privacy transition without a long-running IPC call', async () => {
+  const original = call.getMockImplementation()!;
+  call.mockImplementation(async (command, args) => {
+    if (command !== 'remote_desktop_privacy') return original(command, args);
+    if ((args as { ticket?: string }).ticket) return { ticket: 'test', pending: false,
+      snapshot: { privacyScreen: true, displayId: 'private', displays: [] } };
+    return { ticket: 'test', pending: true };
+  });
+  const session = new NativeDesktopSession(DEFAULT_SETTINGS, []);
+  await session.open();
+  const changing = session.privacy(true);
+  await vi.advanceTimersByTimeAsync(250);
+  await expect(changing).resolves.toMatchObject({ privacyScreen: true });
+  expect(call).toHaveBeenLastCalledWith('remote_desktop_privacy', { id: 'native-lease', ticket: 'test' });
+  expect(session.closed).toBe(false);
+  await session.close();
+});
+
+it('keeps normal sessions open on a privacy preflight refusal but closes an ambiguous accepted toggle', async () => {
+  const original = call.getMockImplementation()!;
+  let accepted = false;
+  call.mockImplementation(async (command, args) => {
+    if (command !== 'remote_desktop_privacy') return original(command, args);
+    if (!accepted) throw '请先在电脑的远程设置中开启无人值守，再使用隐私屏。';
+    if ((args as { ticket?: string }).ticket) throw new Error('lost reply');
+    return { ticket: 'test', pending: true };
+  });
+  const session = new NativeDesktopSession(DEFAULT_SETTINGS, []);
+  await session.open();
+  await expect(session.privacy(true)).rejects.toThrow('无人值守');
+  expect(session.closed).toBe(false);
+  accepted = true;
+  const changing = expect(session.privacy(true)).rejects.toThrow('隐私屏未能切换');
+  await vi.advanceTimersByTimeAsync(250); await changing;
+  expect(session.closed).toBe(true);
+  expect(call).toHaveBeenCalledWith('remote_desktop_stream_close', { id: 'native-lease' });
+});
 it('starts automatic native capture at maximum quality and restores it after manual settings', async () => {
   const session = new NativeDesktopSession(DEFAULT_SETTINGS, []);
   await session.open();

@@ -18,9 +18,11 @@ export type DesktopPlatform = 'windows' | 'macos';
 export type DesktopSystemPermission = 'screenRecording' | 'accessibility';
 export interface DesktopPermissionStatus { required: DesktopSystemPermission | null }
 export interface DesktopDisplays {
+  privacyScreen?: boolean;
   displays?: DesktopDisplay[]; displayId?: string; permissions?: DesktopPermissions; platform?: DesktopPlatform;
 }
 export interface DesktopCapabilities {
+  privacyScreen?: boolean;
   platform?: DesktopPlatform;
   keyboard?: boolean; clipboard?: boolean; horizontalScroll?: boolean; control?: boolean;
 }
@@ -59,6 +61,7 @@ export interface DesktopClient {
   open(id: string, settings: DesktopSettings): Promise<DesktopOffer>;
   signal(id: string, signal: DesktopSignal): Promise<DesktopSignalReply>;
   settings(id: string, settings: DesktopSettings): Promise<void>;
+  privacy?(id: string, enabled: boolean): Promise<DesktopDisplays>;
   close(id: string): Promise<void>;
 }
 
@@ -73,6 +76,7 @@ export function desktopClient(request: <T>(body: object) => Promise<T>,
     open: (id, settings) => call('open', { id, settings }),
     signal: (id, signal) => call('signal', { id, ...signal }),
     settings: (id, settings) => call('settings', { id, settings }),
+    privacy: (id, enabled) => call('privacy', { id, enabled }),
     close: id => call('close', { id }),
   };
 }

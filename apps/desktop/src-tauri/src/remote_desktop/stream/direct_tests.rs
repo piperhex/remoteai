@@ -73,7 +73,7 @@ async fn fixture_with_servers(relay_standby: bool, ice_servers: Vec<IceServer>) 
     let peer = Arc::new(peer::create(vec![], false).await.unwrap());
     let stream = Arc::new(Stream {
         id: "direct-upgrade-unit-test".into(),
-        display: Monitor {
+        display: watch::channel(Monitor {
             handle: 0,
             bounds: Bounds {
                 x: 0,
@@ -88,7 +88,10 @@ async fn fixture_with_servers(relay_standby: bool, ice_servers: Vec<IceServer>) 
                 height: 1,
                 primary: true,
             },
-        },
+        })
+        .0,
+        privacy: mpsc::channel(1).0,
+        privacy_pending: Mutex::new(None),
         peer: watch::channel(Arc::clone(&peer)).0,
         initial_peer: Arc::downgrade(&peer),
         upgrades: Mutex::new(Upgrades::default()),
@@ -348,7 +351,8 @@ async fn retaining_a_relay_invalidates_a_pending_backup_commit() {
             touched: Instant::now(),
             deadline: Instant::now() + Duration::from_secs(60),
             clipboard: None,
-            display: stream.display.clone(),
+            display: stream.display.borrow().clone(),
+            privacy: None,
             input: Default::default(),
         });
     let standby_signal = |action| {

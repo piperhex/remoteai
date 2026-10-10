@@ -23,6 +23,12 @@ struct Id {
     id: String,
 }
 #[derive(Deserialize)]
+struct Privacy {
+    id: String,
+    enabled: Option<bool>,
+    ticket: Option<String>,
+}
+#[derive(Deserialize)]
 struct Update {
     id: String,
     profile: super::stream::Profile,
@@ -97,6 +103,13 @@ async fn execute(call: Call, root: PathBuf) -> Result<Value, String> {
         "remote_desktop_stream_status" => {
             let args: Id = decode(call.args)?;
             encode(super::stream::remote_desktop_stream_status(args.id).await?)
+        }
+        "remote_desktop_privacy" => {
+            let args: Privacy = decode(call.args)?;
+            encode(
+                super::stream::privacy::remote_desktop_privacy(args.id, args.enabled, args.ticket)
+                    .await?,
+            )
         }
         "remote_desktop_stream_close" | "remote_desktop_close" => {
             let args: Id = decode(call.args)?;

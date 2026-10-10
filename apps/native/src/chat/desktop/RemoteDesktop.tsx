@@ -70,6 +70,9 @@ export function RemoteDesktop({ client, active, close }: {
       run: () => session.mute(!session.muted), selected: !session.muted && !audioUnavailable, disabled: audioUnavailable },
     { label: t("显示桌面"), icon: 'desktop-outline', run: () => session.input({ kind: 'key', key: 'desktop' }), disabled: viewOnly },
     { label: t("所有窗口"), icon: 'grid-outline', run: () => session.input({ kind: 'key', key: 'windows' }), disabled: viewOnly },
+    { label: t("隐私屏"), icon: 'shield-checkmark-outline', run: () => { void session.togglePrivacy(); },
+      selected: session.privacyScreen,
+      disabled: viewOnly || session.saving || !session.stream || !session.capabilities.privacyScreen },
     { label: t("显示"), icon: 'options-outline', run: () => { setDisplay(!display); setKeyboard(false); }, selected: display },
     { label: t("旋转"), icon: 'phone-landscape-outline', run: orientation.rotate },
     { label: t("关闭"), icon: 'close', run: close },
@@ -77,7 +80,7 @@ export function RemoteDesktop({ client, active, close }: {
   const buttons = tools.map(tool =>
     <Pressable key={tool.label} accessibilityRole="button" accessibilityLabel={tool.action ?? tool.label}
       disabled={tool.disabled} accessibilityState={{ disabled: tool.disabled, selected: tool.selected }}
-      style={[s.tool, orientation.landscape && s.railTool, tool.selected && s.selected]} onPress={tool.run}>
+      style={[s.tool, orientation.landscape ? s.railTool : s.portraitTool, tool.selected && s.selected]} onPress={tool.run}>
       {tool.icon === 'mouse' ? <MaterialCommunityIcons name="mouse" size={22} color="#e7edf8" />
         : <Ionicons name={tool.icon} size={22} color="#e7edf8" />}<Text style={s.label}>{tool.label}</Text>
     </Pressable>);
@@ -124,7 +127,8 @@ export function RemoteDesktop({ client, active, close }: {
           {orientation.landscape
             ? <ScrollView style={s.rail} contentContainerStyle={[s.toolbar, s.railContent]}
               keyboardShouldPersistTaps="handled" indicatorStyle="white">{buttons}</ScrollView>
-            : <View style={s.toolbar}>{buttons}</View>}
+            : <ScrollView horizontal style={s.portraitBar} contentContainerStyle={s.toolbar}
+              keyboardShouldPersistTaps="handled" indicatorStyle="white">{buttons}</ScrollView>}
         </View>
         {active && keyboard && <DesktopKeyboard input={session.input} compact={orientation.landscape}
           platform={session.capabilities.platform}

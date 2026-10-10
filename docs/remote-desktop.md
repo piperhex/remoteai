@@ -24,6 +24,52 @@ The native and Web keyboard panels use Cmd/Option and Mac shortcuts when connect
 do not report their platform retain the existing Windows keyboard layout.
 The viewer works on Android/iOS through `react-native-webrtc` and on Web through the browser's WebRTC engine.
 
+## Privacy screen (opt-in)
+
+Native and Web viewers expose **隐私屏 / Privacy screen** in the desktop toolbar. It is off for
+every new connection and is never stored in display settings or re-enabled by reconnect recovery.
+Normal desktop sessions do not launch a guardian, install/enable a virtual display, or lock the host.
+The existing authentication, video, audio, quality and clipboard paths remain in use.
+The privacy transition runs in the media worker. Native IPC returns a ticket immediately, and the host
+queries its result with short requests so the service can continue processing transport traffic.
+
+An explicit toggle creates our virtual display, verifies its first captured frame, then selects it
+as the only active output. Capture is restarted within the existing WebRTC session. Control permission
+is required; view-only sessions and compatibility capture do not expose an enabled switch. Switching
+physical displays is unavailable while privacy is active. Turning the switch off restores the previous
+layout and continues the same connection without locking.
+An uncertain or failed accepted transition ends that connection and rolls back through the guardian;
+the UI never reports privacy enabled until both topology and capture have succeeded. A preflight refusal
+(for example, unattended service not enabled) leaves the ordinary session running.
+
+Windows x64 uses the pinned MIT VirtualDrivers driver, independent of UU. The existing unattended desktop
+service must be enabled because installing and enabling/disabling the app-owned PnP device requires privilege.
+Installation is attempted only on the first explicit toggle. The helper refuses an existing MttVDD device
+owned by another application, preserves other virtual-display drivers, and never changes signing policy or
+imports certificates. Windows may refuse the signed third-party package under its driver policy; this is
+a feature failure, not a reason to bypass system checks. Subsequent toggles enable/disable our device.
+
+macOS 13+ uses DeskPad's MIT virtual-display declarations and dynamically checked private CoreGraphics/login
+APIs. Intel and Apple Silicon helper binaries are built together. API availability is checked before changes;
+this is not an App Store implementation or a guarantee that physical-display disabling works on every Mac.
+Packaging runs `scripts/prepare-desktop-privacy.mjs`; component licenses and the driver checksum are in
+`apps/desktop/src-tauri/resources/remote-desktop/NOTICE.md`.
+
+After privacy has committed, close, lost viewer heartbeat, authorization expiry and parent-process exit
+release the guardian pipe. The separate guardian confirms the OS session is locked **before** restoring the
+saved display layout and disabling/removing our virtual display. Lock/restoration failures are retried while
+retaining display ownership. The guardian checks that only its virtual screen remains active on each heartbeat;
+unexpected topology changes terminate privacy with locking and restoration. Windows explicitly allows this
+guardian to leave the capture worker's job; ordinary child processes remain contained.
+
+The recovery protocol is tested against a fake platform (no display/lock calls), and the viewer tests cover
+default-off behavior, owner isolation, capability checks, same-session toggles, reconnect resets and phone/desktop
+layouts. Local Windows compilation, Rust checks, and viewer tests do not validate actual driver installation or
+physical blackout. Before a release, validate signed-driver installation with Secure Boot, two physical monitors,
+manual disable, abrupt network loss, worker termination and hot-plug on Windows; validate the same scenarios on
+macOS Intel/Apple Silicon, including the built-in display and mirrored displays. A forced crash of the guardian
+itself is outside the pipe-watchdog guarantee; there is no persistent display recovery journal.
+
 ## iPhone and iPad
 
 Open the connected computer's chat toolbox and choose remote desktop in an installed native iOS build.

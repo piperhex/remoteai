@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Clipboard, Grid2X2, Hand, Keyboard, Maximize, Monitor, Mouse, Settings2, Volume2, VolumeX, X } from 'lucide-react';
+import { Clipboard, Grid2X2, Hand, Keyboard, Maximize, Monitor, Mouse, Settings2, Shield, Volume2, VolumeX, X } from 'lucide-react';
 import type { DesktopClient } from '../../../../../shared/remote-desktop/protocol';
 import type { LocalDesktopClipboard } from '../../../../../shared/remote-desktop/clipboard';
 import { useDesktopSession } from '../../../../../shared/remote-desktop/useDesktopSession';
@@ -149,6 +149,10 @@ function DesktopViewer({ client, active, connected = true, close, localClipboard
         <Monitor /><span>{t('显示桌面')}</span></button>
       <button disabled={viewOnly} onClick={() => session.input({ kind: 'key', key: 'windows' })}>
         <Grid2X2 /><span>{t('所有窗口')}</span></button>
+      <button aria-pressed={session.privacyScreen}
+        disabled={viewOnly || session.saving || !session.stream || !session.capabilities.privacyScreen}
+        onClick={() => { void session.togglePrivacy(); }}>
+        <Shield /><span>{t('隐私屏')}</span></button>
       <button aria-pressed={display} onClick={() => {
         setDisplay(!display); setKeyboard(false); clipboard.setOpen(false);
       }}>

@@ -15,6 +15,8 @@ export const desktopStyles = StyleSheet.create({
   tool: { flex: 1, paddingHorizontal: 2, paddingVertical: 5, alignItems: 'center', justifyContent: 'center',
     gap: 4, borderRadius: 10 },
   railTool: { flex: 0, minHeight: 56, paddingVertical: 8 },
+  portraitBar: { flexGrow: 0, flexShrink: 0 },
+  portraitTool: { flex: 0, minWidth: 48 },
   selected: { backgroundColor: '#304b78' },
   label: { alignSelf: 'stretch', textAlign: 'center', color: '#e7edf8', fontSize: 10, lineHeight: 16 },
   messageLayer: { position: 'absolute', top: 12, left: 12, right: 12, alignItems: 'center' },

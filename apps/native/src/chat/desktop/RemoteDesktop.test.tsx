@@ -7,7 +7,7 @@ import { RemoteDesktop } from './RemoteDesktop';
 import type { DesktopClient } from '../../../../../shared/remote-desktop/protocol';
 
 const runtime = vi.hoisted(() => ({ landscape: false, viewOnly: false, input: vi.fn(), rotate: vi.fn(),
-  status: '', waitingForPermission: false, retry: vi.fn(),
+  status: '', waitingForPermission: false, retry: vi.fn(), privacy: false, privacyAvailable: true, togglePrivacy: vi.fn(),
   orientation: vi.fn(), onShow: vi.fn(),
   session: vi.fn(), dimensions: vi.fn(), createPeer: vi.fn(), immersive: vi.fn(), mute: vi.fn(),
   stream: { toURL: vi.fn(() => 'native-ios-stream') } }));
@@ -37,7 +37,8 @@ vi.mock('../../../../../shared/remote-desktop/useDesktopSession', () => ({ useDe
   runtime.session(options);
   return { stream: runtime.stream, pointer: {}, input: runtime.input, hasAudio: true, muted: false, mute: runtime.mute,
     status: runtime.status, waitingForPermission: runtime.waitingForPermission, retry: runtime.retry,
-    capabilities: { control: !runtime.viewOnly, keyboard: !runtime.viewOnly } };
+    privacyScreen: runtime.privacy, togglePrivacy: runtime.togglePrivacy,
+    capabilities: { control: !runtime.viewOnly, keyboard: !runtime.viewOnly, privacyScreen: runtime.privacyAvailable } };
 } }));
 vi.mock('../../../../../shared/remote-desktop/useMousePanel', () => ({ useMousePanel: () => ({ expanded: true }) }));
 vi.mock('../../../../../shared/remote-desktop/useMouseViewport', () => ({
@@ -55,6 +56,7 @@ vi.mock('./DesktopKeyboard', () => ({ DesktopKeyboard: 'DesktopKeyboard' }));
 interface Props {
   style?: unknown[]; accessibilityRole?: string;
   disabled?: boolean;
+  accessibilityState?: { selected?: boolean };
   children?: ReactNode; edges?: string[]; streamURL?: string;
   presentationStyle?: string; supportedOrientations?: string[];
   visible?: boolean; onRequestClose?: () => void; onShow?: () => void; accessibilityLabel?: string; onPress?: () => void;
@@ -69,6 +71,7 @@ const render = (active = true, close = vi.fn()) => nodes(RemoteDesktop({ client,
 beforeEach(() => {
   vi.clearAllMocks(); vi.stubGlobal('React', React); runtime.landscape = false; runtime.viewOnly = false; Platform.OS = 'ios';
   runtime.status = ''; runtime.waitingForPermission = false;
+  runtime.privacy = false; runtime.privacyAvailable = true;
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -95,10 +98,22 @@ it.each(['ios', 'android'] as const)('coordinates automatic landscape with modal
   expect(runtime.onShow).toHaveBeenCalledOnce();
 });
 
+it.each(['ios', 'android'] as const)('shows the opt-in privacy switch with capability gating on %s', platform => {
+  Platform.OS = platform;
+  let button = render().find(node => node.props.accessibilityLabel === '隐私屏')!;
+  expect(button.props.accessibilityState?.selected).toBe(false);
+  button.props.onPress!(); expect(runtime.togglePrivacy).toHaveBeenCalledOnce();
+  runtime.privacy = true;
+  expect(render().find(node => node.props.accessibilityLabel === '隐私屏')!.props.accessibilityState?.selected).toBe(true);
+  runtime.privacyAvailable = false;
+  button = render().find(node => node.props.accessibilityLabel === '隐私屏')!;
+  expect(button.props.disabled).toBe(true);
+});
+
 it('keeps display controls available but disables remote input in view-only mode', () => {
   runtime.viewOnly = true;
   const elements = render();
-  for (const label of ['键盘', '显示桌面', '所有窗口']) {
+  for (const label of ['键盘', '显示桌面', '所有窗口', '隐私屏']) {
     expect(elements.find(node => node.props.accessibilityLabel === label)?.props.disabled).toBe(true);
   }
   expect(elements.find(node => node.props.accessibilityLabel === '显示')?.props.disabled).not.toBe(true);

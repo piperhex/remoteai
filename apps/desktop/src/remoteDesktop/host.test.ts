@@ -8,10 +8,27 @@ vi.mock('./hostSession', () => ({ HostSession: vi.fn(class {
   open = vi.fn(async () => ({ sdp: 'offer', iceServers: [] }));
   signal = vi.fn(async () => ({ candidates: [] }));
   update = vi.fn();
+  privacy = vi.fn(async (enabled: boolean) => ({ privacyScreen: enabled, displayId: 'private' }));
   close = vi.fn(() => { this.closed = true; });
 }) }));
 beforeEach(() => vi.clearAllMocks());
 const opening = { action: 'open', id: 'desktop-1', settings: DEFAULT_SETTINGS };
+
+it('privacy is explicit, owner-bound and requires a boolean switch', async () => {
+  const host = new RemoteDesktopHost();
+  host.register('alice', []); host.register('bob', []);
+  await host.request(opening, 'alice');
+  const session = vi.mocked(DesktopHostSession).mock.results[0].value;
+  expect(session.privacy).not.toHaveBeenCalled();
+  const change = { action: 'privacy', id: 'desktop-1', enabled: true };
+  await expect(host.request(change, 'bob')).rejects.toThrow('连接已结束');
+  await expect(host.request({ ...change, id: 'wrong' }, 'alice')).rejects.toThrow('连接已结束');
+  await expect(host.request({ ...change, enabled: 'true' }, 'alice')).rejects.toThrow('无效');
+  expect(session.privacy).not.toHaveBeenCalled();
+  await expect(host.request(change, 'alice')).resolves.toMatchObject({ privacyScreen: true });
+  expect(session.close).not.toHaveBeenCalled();
+  host.release();
+});
 
 it('requires a registered chat session and derives ICE servers from its authenticated configuration', async () => {
   const host = new RemoteDesktopHost();

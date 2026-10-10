@@ -39,6 +39,10 @@ export class NativeMediaHostSession implements DesktopHostSession {
     return this.session.signal(signal);
   }
   async update(settings: DesktopSettings) { await this.session?.update(settings); }
+  async privacy(enabled: boolean) {
+    if (!this.session?.privacy || this.stopped) throw new Error('这台电脑暂不支持隐私屏。');
+    return this.session.privacy(enabled);
+  }
   async renew(expiresAt: number) { await this.session?.renew?.(expiresAt); }
   get closed() { return this.stopped || this.session?.closed === true; }
   close() {

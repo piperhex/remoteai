@@ -301,6 +301,8 @@ pub fn run() {
             remote_desktop::stream::remote_desktop_stream_available,
             remote_desktop::stream::remote_desktop_stream_signal,
             remote_desktop::stream::remote_desktop_stream_update,
+            #[cfg(any(windows, target_os = "macos"))]
+            remote_desktop::stream::privacy::remote_desktop_privacy,
             remote_desktop::stream::remote_desktop_stream_status,
             remote_desktop::stream::remote_desktop_stream_close,
             #[cfg(windows)]

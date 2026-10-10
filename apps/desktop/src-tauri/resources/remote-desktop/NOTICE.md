@@ -20,3 +20,21 @@ license. Rebuild it with the preparation script using Visual Studio 2022 C++, CM
 No third-party implementation source is copied into the helper. The original FFmpeg executable remains
 available as a compatibility fallback. The helper uses a static MSVC runtime; no separate VC runtime
 installation is required. `scripts/test-desktop-damage.mjs` runs the opt-in interactive video comparison.
+
+## Optional privacy display
+
+`desktop-privacy` is a separate helper, launched only by an explicit privacy-screen request.
+`scripts/prepare-desktop-privacy.mjs` builds it and verifies the pinned Windows driver archive.
+It does not install drivers or change displays at build time.
+
+- Windows: [VirtualDrivers/Virtual-Display-Driver 25.7.23](https://github.com/VirtualDrivers/Virtual-Display-Driver/tree/25.7.23),
+  MIT. SHA-256: `e24210692b442b39af763536330ce78b423f19342b7a7792c26de3944e418b3a`.
+  Original signed DLL, CAT and INF are distributed unmodified in `runtime/privacy-driver`, with its MIT license.
+  Despite the archive name, this driver is for Windows x64. No UU components are used.
+- macOS: private virtual-display declarations from [Stengo/DeskPad](https://github.com/Stengo/DeskPad), MIT.
+  The original header and license are in `desktop-privacy/CGVirtualDisplayPrivate.h` and `LICENSE-DeskPad`;
+  the license is also included in the runtime. Display management and recovery are our own implementation.
+
+The driver DLL/catalog are checked with Windows Authenticode before installation. Installation remains
+subject to Windows driver-signing policy; the application does not import certificates, enable test signing,
+or change Secure Boot. macOS private API availability is checked before creating a virtual display.

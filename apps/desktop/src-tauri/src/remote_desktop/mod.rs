@@ -25,6 +25,8 @@ mod monitors;
 #[cfg(any(target_os = "macos", test))]
 mod permission_prompt;
 pub(crate) mod permissions;
+#[cfg(any(windows, target_os = "macos"))]
+pub(crate) mod privacy;
 #[cfg(windows)]
 pub(crate) mod service_worker;
 pub(crate) mod stream;
@@ -37,6 +39,12 @@ mod windows_input;
 
 #[derive(Debug, thiserror::Error)]
 pub(super) enum DesktopError {
+    #[cfg(any(windows, target_os = "macos"))]
+    #[error("privacy display unavailable")]
+    Privacy,
+    #[cfg(windows)]
+    #[error("privacy display requires the desktop service")]
+    PrivacyService,
     #[cfg(any(windows, target_os = "macos"))]
     #[error("desktop session already active")]
     Busy,
@@ -87,6 +95,8 @@ pub(super) enum DesktopError {
 type Result<T> = std::result::Result<T, DesktopError>;
 const LEASE: Duration = Duration::from_secs(15);
 struct Session {
+    #[cfg(any(windows, target_os = "macos"))]
+    privacy: Option<privacy::Guardian>,
     permissions: permissions::Permissions,
     id: String,
     touched: Instant,
@@ -153,6 +163,10 @@ pub(crate) enum Key {
 
 fn safe_error(error: DesktopError) -> String {
     match error {
+        #[cfg(any(windows, target_os = "macos"))]
+        DesktopError::Privacy => "隐私屏未能切换，请重新连接后重试。",
+        #[cfg(windows)]
+        DesktopError::PrivacyService => "请先在电脑的远程设置中开启无人值守，再使用隐私屏。",
         #[cfg(any(windows, target_os = "macos"))]
         DesktopError::Busy => "已有远程桌面连接，请先关闭后再试。",
         DesktopError::Denied => "这台电脑未允许此远程操作，请在电脑的设置中调整。",
@@ -275,6 +289,7 @@ fn begin_session(
     }
     let id = uuid::Uuid::new_v4().to_string();
     *guard = Some(Session {
+        privacy: None,
         permissions,
         id: id.clone(),
         touched: Instant::now(),
@@ -318,31 +333,34 @@ fn expire(id: String) {
 }
 
 fn revoke() -> Result<()> {
-    #[cfg(windows)]
-    let _desktop = input_desktop::InputDesktop::enter()?;
     let mut guard = SESSION
         .get_or_init(|| Mutex::new(None))
         .lock()
         .map_err(|_| DesktopError::Platform)?;
+    let _session = guard.take();
+    // Drop privacy ownership even if the input desktop is unavailable during disconnect.
     #[cfg(any(windows, target_os = "macos"))]
-    if let Some(session) = guard.as_mut() {
+    if let Some(mut session) = _session {
+        #[cfg(windows)]
+        let _desktop = input_desktop::InputDesktop::enter()?;
         session.input.release()?;
     }
-    *guard = None;
     Ok(())
 }
 
 fn close(id: &str) -> Result<()> {
-    #[cfg(windows)]
-    let _desktop = input_desktop::InputDesktop::enter()?;
     let mut guard = SESSION
         .get_or_init(|| Mutex::new(None))
         .lock()
         .map_err(|_| DesktopError::Platform)?;
-    if let Some(_session) = guard.as_mut().filter(|session| session.id == id) {
+    if guard.as_ref().is_some_and(|session| session.id == id) {
+        let _session = guard.take();
         #[cfg(any(windows, target_os = "macos"))]
-        _session.input.release()?;
-        *guard = None;
+        if let Some(mut session) = _session {
+            #[cfg(windows)]
+            let _desktop = input_desktop::InputDesktop::enter()?;
+            session.input.release()?;
+        }
     }
     Ok(())
 }

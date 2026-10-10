@@ -8,6 +8,9 @@ import type { ConnectionDiagnostic, DiagnosticFields } from '../../../../shared/
 import { desktopProfile } from '../../../../shared/remote-desktop/profiles';
 
 const STATUS_INTERVAL = 2000;
+const PRIVACY_POLL_INTERVAL = 250;
+const PRIVACY_TIMEOUT = 50_000;
+interface PrivacyProgress { ticket: string; pending: boolean; snapshot?: DesktopDisplays }
 
 function profile(settings: DesktopSettings, displays: DesktopDisplays) {
   return { ...desktopProfile(settings, displays),
@@ -24,6 +27,7 @@ export class NativeDesktopSession {
   private timer?: ReturnType<typeof setTimeout>;
   private lastDiagnostic = '';
   private nativeOnly = false;
+  private changingPrivacy = false;
   get allowsCaptureFallback() { return !this.nativeOnly; }
   constructor(private settings: DesktopSettings, private readonly iceServers: IceServer[], private expiresAt?: number,
     private readonly diagnostic?: ConnectionDiagnostic) {}
@@ -87,6 +91,36 @@ export class NativeDesktopSession {
     await invoke('remote_desktop_stream_update', { id: this.id, profile: profile(settings, this.displays) });
     this.settings = settings;
   }
+  async privacy(enabled: boolean): Promise<DesktopDisplays> {
+    if (!this.id || this.stopped) throw new Error('桌面连接已结束。');
+    if (this.changingPrivacy) throw new Error('正在切换隐私屏，请稍候。');
+    this.changingPrivacy = true;
+    let accepted = false;
+    try {
+      let progress = await invoke<PrivacyProgress>('remote_desktop_privacy', { id: this.id, enabled });
+      accepted = true;
+      const until = Date.now() + PRIVACY_TIMEOUT;
+      while (progress.pending) {
+        if (this.stopped || Date.now() >= until) throw new Error('隐私屏未能切换，请重新连接后重试。');
+        await new Promise(resolve => setTimeout(resolve, PRIVACY_POLL_INTERVAL));
+        if (this.stopped) throw new Error('桌面连接已结束。');
+        progress = await invoke<PrivacyProgress>('remote_desktop_privacy', { id: this.id, ticket: progress.ticket });
+      }
+      if (this.stopped) throw new Error('桌面连接已结束。');
+      const snapshot = progress.snapshot;
+      if (!snapshot || snapshot.privacyScreen !== enabled) throw new Error('隐私屏未能切换，请重新连接后重试。');
+      this.displays = { ...this.displays, ...snapshot };
+      this.settings = { ...this.settings, displayId: snapshot.displayId };
+      return snapshot;
+    } catch (error) {
+      // Once accepted, an ambiguous result cannot leave a hidden privacy session running.
+      if (accepted) await this.close();
+      if (desktopFailure(error).desktopError === 'unknown') {
+        throw new Error('隐私屏未能切换，请重新连接后重试。');
+      }
+      throw typeof error === 'string' ? new Error(error) : error;
+    } finally { this.changingPrivacy = false; }
+  }
   async renew(expiresAt: number) {
     this.expiresAt = expiresAt;
     if (this.id && !this.stopped) await invoke('remote_desktop_renew', { id: this.id, expiresAt });
@@ -98,6 +132,9 @@ export class NativeDesktopSession {
 
   private async refresh() {
     if (this.stopped) return;
+    // The native transaction retains the lease and heartbeat. Avoid queuing status RPCs
+    // behind a first-time driver installation in the service worker.
+    if (this.changingPrivacy) { this.schedule(); return; }
     let stage: DiagnosticFields['stage'] = 'lease-renew';
     try {
       if (this.expiresAt !== undefined) await this.renew(this.expiresAt);

@@ -28,6 +28,7 @@ export function useDesktopSession({ client, active, connected = true, createPeer
   const [stats, setStats] = useState<DesktopStats>();
   const [attempt, setAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [privacyScreen, setPrivacyScreen] = useState(false);
   const [muted, setMuted] = useState(false);
   const mutedRef = useRef(false);
   const [hasAudio, setHasAudio] = useState(false);
@@ -47,13 +48,14 @@ export function useDesktopSession({ client, active, connected = true, createPeer
   useEffect(() => { recovery.current?.setAvailable(connected); }, [connected]);
 
   useEffect(() => {
-    setStream(undefined); setStats(undefined); setHasAudio(false); setCapabilities({});
+    setStream(undefined); setStats(undefined); setHasAudio(false); setCapabilities({}); setPrivacyScreen(false);
     if (!active) return;
     if (!available.current) { recovery.current?.failed(DESKTOP_OFFLINE_STATUS); return; }
     const session = new DesktopReceiver({ client, createPeer, directRetry, stream: setStream, status: setStatus,
       connected: () => recovery.current?.connected(),
       failed: message => { pointer.release(); recovery.current?.failed(message); },
       stats: setStats, audio: setHasAudio, capabilities: setCapabilities, displays: value => {
+        setPrivacyScreen(value.privacyScreen === true);
         setDisplays(value.displays ?? []);
         settingsRef.current = { ...settingsRef.current, displayId: value.displayId };
         setSettings(settingsRef.current);
@@ -70,6 +72,7 @@ export function useDesktopSession({ client, active, connected = true, createPeer
     if (updating.current) return;
     const current = receiver.current;
     if (!current) return;
+    if (privacyScreen && next.displayId !== settingsRef.current.displayId) return;
     try {
       validateSettings(next); updating.current = true; setSaving(true);
       if (next.displayId !== settingsRef.current.displayId) {
@@ -88,6 +91,17 @@ export function useDesktopSession({ client, active, connected = true, createPeer
   const mute = (value: boolean) => {
     mutedRef.current = value; setMuted(value); receiver.current?.mute(value);
   };
+  const togglePrivacy = async () => {
+    const current = receiver.current;
+    if (!current || updating.current || !capabilities.privacyScreen || capabilities.control === false) return;
+    updating.current = true; setSaving(true); pointer.release(); setStatus('正在切换隐私屏，请稍候。');
+    try {
+      await current.privacy(!privacyScreen);
+      if (receiver.current === current) setStatus('');
+    } catch (error) {
+      if (receiver.current === current) setStatus(error instanceof Error ? error.message : '隐私屏未能切换，请重试。');
+    } finally { updating.current = false; setSaving(false); }
+  };
   const currentClipboard = () => {
     if (!capabilities.clipboard) throw new Error(capabilities.control === undefined
       ? '请更新远程电脑上的应用，启用实体键盘和剪贴板。' : '电脑未允许剪贴板操作，请在电脑的设置中调整。');
@@ -101,6 +115,7 @@ export function useDesktopSession({ client, active, connected = true, createPeer
       currentClipboard().write(content, paste, progress),
   };
   return { stream, status, stats, settings, displays, update, saving, pointer, muted, mute, hasAudio, clipboard, capabilities,
+    privacyScreen, togglePrivacy,
     waitingForPermission: waitingForDesktopPermission(status),
     input: (input: Parameters<DesktopReceiver['input']>[0]) => receiver.current?.input(input),
     retry: () => {

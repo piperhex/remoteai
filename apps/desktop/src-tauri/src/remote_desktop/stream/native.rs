@@ -13,7 +13,9 @@ use tokio::sync::{mpsc, watch, Mutex};
 
 pub(super) struct Stream {
     pub id: String,
-    pub display: super::super::monitors::Monitor,
+    pub display: watch::Sender<super::super::monitors::Monitor>,
+    pub privacy: mpsc::Sender<super::privacy::Change>,
+    pub privacy_pending: Mutex<Option<super::privacy::Pending>>,
     pub peer: watch::Sender<Arc<Peer>>,
     pub initial_peer: std::sync::Weak<Peer>,
     pub upgrades: Mutex<super::direct::Upgrades>,
@@ -57,11 +59,14 @@ impl Stream {
             }
         };
         let (inputs, receiver) = mpsc::channel(64);
+        let (privacy, changes) = super::privacy::channel();
         let (clipboard, clipboard_receiver) = mpsc::channel(8);
         let peer = Arc::new(peer);
         let stream = Arc::new(Self {
             id: request.id,
-            display,
+            display: watch::channel(display).0,
+            privacy,
+            privacy_pending: Mutex::new(None),
             peer: watch::channel(Arc::clone(&peer)).0,
             initial_peer: Arc::downgrade(&peer),
             upgrades: Mutex::new(super::direct::Upgrades::default()),
@@ -88,7 +93,7 @@ impl Stream {
         let mut offer = offer?;
         offer.relay_standby = stream.relay_standby;
         tokio::spawn(super::audio::run(Arc::clone(&stream), path.clone()));
-        tokio::spawn(pump::run(Arc::clone(&stream), path, encoder));
+        tokio::spawn(pump::run(Arc::clone(&stream), path, encoder, changes));
         tokio::spawn(pump::inputs(Arc::clone(&stream), receiver, false));
         tokio::spawn(pump::inputs(Arc::clone(&stream), clipboard_receiver, true));
         Ok((stream, offer))
@@ -125,9 +130,16 @@ impl Stream {
             return Err(DesktopError::Expired);
         }
         let id = self.id.clone();
-        tauri::async_runtime::spawn_blocking(move || super::super::with_lease(&id, |_| Ok(())))
-            .await
-            .map_err(|_| DesktopError::Platform)?
+        tauri::async_runtime::spawn_blocking(move || {
+            super::super::with_lease(&id, |session| {
+                if let Some(guardian) = session.privacy.as_mut() {
+                    guardian.send("ping")?;
+                }
+                Ok(())
+            })
+        })
+        .await
+        .map_err(|_| DesktopError::Platform)?
     }
 }
 

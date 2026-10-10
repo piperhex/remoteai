@@ -1,6 +1,7 @@
 import type { DesktopDisplay, DesktopInput, DesktopSettings, DesktopSystemPermission }
   from '../../../shared/remote-desktop/protocol';
 import { RemoteDesktopHost } from '../../desktop/src/remoteDesktop/host';
+import { HostSession } from '../../desktop/src/remoteDesktop/hostSession';
 import { createGuiToolsClient } from '../../../shared/remote-chat/guiTools';
 import type { IceServer } from '../../../shared/remote-chat/protocol';
 import { clipboardFixture, desktopClipboard } from './remote-desktop-clipboard-fixture';
@@ -38,6 +39,7 @@ const displays: DesktopDisplay[] = [
 let selected = displays[0];
 const multiDisplay = new URLSearchParams(location.search).has('displays');
 export const desktopTest = { inputs: [] as DesktopInput[], settings: [] as DesktopSettings[],
+  privacyChanges: [] as boolean[],
   permissionRequired: (new URLSearchParams(location.search).has('permissions')
     ? 'screenRecording' : null) as DesktopSystemPermission | null,
   permissionChecks: 0, captureAttempts: 0,
@@ -161,7 +163,25 @@ if (window.desktopRelayFixture) {
     desktopTest.peers.push(peer); return peer;
   } });
 }
-const host = new RemoteDesktopHost(); host.register('fixture', window.desktopRelayFixture?.iceServers ?? []);
+// The privacy fixture substitutes display management only; media still uses the production peer.
+const privacyFixture = new URLSearchParams(location.search).has('privacy');
+const host = new RemoteDesktopHost(privacyFixture ? (settings, ice, expiry, diagnostic) => {
+  const session = new HostSession(settings, ice, expiry, diagnostic);
+  return {
+    get closed() { return session.closed; },
+    open: async () => {
+      const offer = await session.open();
+      return { ...offer, capabilities: { ...offer.capabilities, privacyScreen: true } };
+    },
+    signal: signal => session.signal(signal), update: settings => session.update(settings), close: () => session.close(),
+    privacy: async enabled => {
+      desktopTest.privacyChanges.push(enabled);
+      selected = enabled ? { ...displays[0], id: 'private', name: 'Privacy' } : displays[0];
+      return { displays: enabled ? [selected] : displays, displayId: selected.id, privacyScreen: enabled };
+    },
+  };
+} : undefined);
+host.register('fixture', window.desktopRelayFixture?.iceServers ?? []);
 export async function desktopRequest<T>(body: object): Promise<T> {
   const request = body as { action: string; settings?: DesktopSettings; directUpgrade?: { action: string } };
   // Windows WebKit has no WebRTC. Its layout tests hold signaling while Chromium tests real media separately.

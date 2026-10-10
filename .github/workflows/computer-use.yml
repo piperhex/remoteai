@@ -8,6 +8,8 @@ on:
       - "apps/desktop/src-tauri/Info.plist"
       - "apps/desktop/src-tauri/desktop-video-macos/**"
       - "scripts/build-desktop-video-macos.mjs"
+      - "apps/desktop/src-tauri/desktop-privacy/**"
+      - "scripts/*desktop-privacy.mjs"
       - "apps/desktop/src-tauri/resources/codex-switch-computer-use/**"
       - ".github/workflows/computer-use.yml"
   pull_request:
@@ -17,6 +19,8 @@ on:
       - "apps/desktop/src-tauri/Info.plist"
       - "apps/desktop/src-tauri/desktop-video-macos/**"
       - "scripts/build-desktop-video-macos.mjs"
+      - "apps/desktop/src-tauri/desktop-privacy/**"
+      - "scripts/*desktop-privacy.mjs"
       - "apps/desktop/src-tauri/resources/codex-switch-computer-use/**"
       - ".github/workflows/computer-use.yml"
   workflow_dispatch:
@@ -55,6 +59,8 @@ jobs:
       - run: brew install protobuf
       - name: Build and test the universal macOS desktop video helper
         run: node scripts/build-desktop-video-macos.mjs
+      - name: Build the universal privacy helper and test recovery protocol without changing displays
+        run: node scripts/prepare-desktop-privacy.mjs
       - run: npm run build:desktop
       - run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
       - run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
