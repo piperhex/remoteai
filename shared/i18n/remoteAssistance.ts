@@ -1,5 +1,6 @@
 export const assistanceEnglish = {
   '远程协助': 'Remote assistance',
+  '登录后使用': 'Sign in to continue',
   '邀请对方远程控制本机': 'Invite someone to control this computer',
   '邀请对方查看并操作本机。你可以随时结束协助。':
     'Invite someone to view and control this computer. You can end assistance at any time.',
@@ -38,6 +39,7 @@ export const assistanceEnglish = {
 
 export const assistanceRussian: Record<keyof typeof assistanceEnglish, string> = {
   '远程协助': 'Удалённая помощь',
+  '登录后使用': 'Войти, чтобы продолжить',
   '邀请对方远程控制本机': 'Пригласить другого пользователя управлять этим компьютером',
   '邀请对方查看并操作本机。你可以随时结束协助。':
     'Пригласите другого пользователя просматривать экран и управлять компьютером. '
