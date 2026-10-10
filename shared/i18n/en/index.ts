@@ -7,6 +7,7 @@ import { reliabilityEnglish } from '../chatReliability';
 import { reviewEnglish } from '../taskReview';
 import { cliImportEnglish } from '../cliImport';
 import { desktop } from './desktop';
+import { assistanceEnglish } from '../remoteAssistance';
 
 export const english: Readonly<Record<string, string>> = {
   ...messages, ...terminalMessages, ...gitMessages, ...remoteDesktopMessages, ...mobile,
@@ -14,4 +15,5 @@ export const english: Readonly<Record<string, string>> = {
   ...reviewEnglish,
   ...cliImportEnglish,
   ...desktop,
+  ...assistanceEnglish,
 };

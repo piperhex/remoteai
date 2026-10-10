@@ -11,7 +11,8 @@ import (
 func (g *ChatGateway) renewAuthentication(client *peer, state *chatConnection, message platform.JSON) error {
 	previous := state.identity
 	identity, err := g.authenticate(platform.JSON{"type": "authenticate", "role": previous.role,
-		"deviceId": previous.device, "accessToken": message["accessToken"]})
+		"deviceId": previous.device, "accessToken": message["accessToken"],
+		"assistanceId": optionalAssistanceID(state.assistanceID), "assistingDeviceId": state.assistingDeviceID})
 	if err != nil {
 		return err
 	}

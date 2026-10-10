@@ -11,8 +11,10 @@ import { reliabilityRussian } from '../chatReliability';
 import { reviewRussian } from '../taskReview';
 import { downloads } from './downloads';
 import { cliImportRussian } from '../cliImport';
+import { assistanceRussian } from '../remoteAssistance';
 
 export const russian = {
+  ...assistanceRussian,
   ...downloads,
   ...cliImportRussian,
   ...reliabilityRussian,

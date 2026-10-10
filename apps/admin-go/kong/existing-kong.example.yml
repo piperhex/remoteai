@@ -42,6 +42,7 @@ services:
           - /official-usage
           - /admin/api
           - /devices
+          - /remote-assistance
           - /chat-push
         strip_path: false
         plugins:

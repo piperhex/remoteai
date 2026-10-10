@@ -6,8 +6,8 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(), Channel: class { onmes
 const identity = { baseUrl: 'https://cloud.example/api', userId: 'owner' };
 const sockets: NativeGuiSocket[] = [];
 const flush = async () => { for (let count = 0; count < 12; count++) await Promise.resolve(); };
-async function connect() {
-  const socket = new NativeGuiSocket(identity);
+async function connect(assistanceId?: string) {
+  const socket = new NativeGuiSocket(identity, assistanceId);
   sockets.push(socket);
   socket.onopen = () => socket.send(JSON.stringify({ type: 'authenticate', deviceId: 'other', publicKey: 'ab'.repeat(32),
     role: 'mobile', accessToken: 'must-not-cross-ipc', resume: { sessionId: 'session', resumeToken: 'resume' } }));
@@ -17,6 +17,14 @@ async function connect() {
 
 beforeEach(() => { vi.mocked(invoke).mockReset().mockResolvedValue(undefined); });
 afterEach(async () => { sockets.splice(0).forEach(socket => socket.close()); await flush(); });
+
+it('binds an assistance connection to its invitation without forwarding cloud credentials', async () => {
+  await connect('invitation-id');
+  expect(invoke).toHaveBeenCalledWith('gui_remote_open', expect.objectContaining({
+    request: expect.objectContaining({ assistanceId: 'invitation-id', deviceId: 'other', identity }),
+  }));
+  expect(JSON.stringify(vi.mocked(invoke).mock.calls)).not.toContain('must-not-cross-ipc');
+});
 
 it('passes public peer identity to native authentication without forwarding credentials', async () => {
   const socket = await connect();

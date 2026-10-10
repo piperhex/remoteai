@@ -19,6 +19,7 @@ type hotSession struct {
 	expires                  time.Time
 	tcp                      bool
 	native                   bool
+	assistanceID             string
 }
 type closedSession struct {
 	sockets []*peer
@@ -173,9 +174,13 @@ func (s *hotSessions) join(input hotJoin) error {
 	session := &hotSession{id: uuid.NewString(), token: hex.EncodeToString(proof), owner: input.identity.owner,
 		device: input.identity.device, desktop: input.desktop,
 		mobile: &chatEndpoint{input.client, input.identity.expires}, expires: expires}
+	session.assistanceID, _ = input.message["assistanceId"].(string)
 	s.sessions[session.id] = session
 	common := platform.JSON{"sessionId": session.id, "resumeToken": session.token, "transportVersion": 2,
 		"iceServers": input.ice, "expiresAt": expires.UnixMilli(), "type": "peer-open", "publicKey": key}
+	if session.assistanceID != "" {
+		common["assistanceId"] = session.assistanceID
+	}
 	session.native = s.nativeConfig != nil && input.native && input.message["nativeTraversal"] == true
 	if native := s.nativeTraversal(session); native != nil {
 		common["nativeTraversal"] = native
@@ -204,6 +209,10 @@ func (s *hotSessions) resume(input hotJoin, value interface{}) error {
 		return err
 	}
 	session := s.sessions[claim.id]
+	assistanceID, _ := input.message["assistanceId"].(string)
+	if session != nil && session.assistanceID != assistanceID {
+		return errors.New("invalid assistance session")
+	}
 	if session == nil || session.desktop.socket != input.desktop.socket {
 		input.client.close(4004, "Waiting for PC session")
 		return nil

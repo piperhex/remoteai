@@ -25,6 +25,7 @@ fn request() -> OpenRequest {
         },
         public_key: "ab".repeat(32),
         resume: None,
+        assistance_id: None,
         bulk_events: None,
     }
 }
@@ -128,6 +129,10 @@ fn native_remote_gui_is_bound_to_the_logged_in_owner_and_server() {
 #[test]
 fn native_remote_gui_validates_peer_keys_and_resume_limits() {
     let mut request = request();
+    assert!(request.validate());
+    request.assistance_id = Some("../invalid".into());
+    assert!(!request.validate());
+    request.assistance_id = Some(uuid::Uuid::new_v4().to_string());
     assert!(request.validate());
     request.public_key = "z".repeat(64);
     assert!(!request.validate());

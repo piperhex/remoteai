@@ -361,6 +361,7 @@ pub fn run() {
             remote_chat::gui_remote_ack,
             remote_chat::gui_remote_close,
             cloud::codex_gui_devices,
+            cloud::remote_assistance,
             codex_gui::releases::codex_gui_cli_status,
             codex_gui::releases::codex_gui_cli_release,
             codex_gui::releases::updates::codex_gui_cli_check,

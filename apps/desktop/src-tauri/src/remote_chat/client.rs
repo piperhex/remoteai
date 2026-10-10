@@ -22,6 +22,7 @@ pub(crate) struct OpenRequest {
     pub(super) identity: crate::cloud::GuiCloudIdentity,
     pub(super) public_key: String,
     pub(super) resume: Option<ResumeRequest>,
+    pub(super) assistance_id: Option<String>,
     pub(super) bulk_events: Option<tauri::ipc::JavaScriptChannelId>,
 }
 
@@ -61,6 +62,10 @@ impl OpenRequest {
             && self.device_id.len() <= 160
             && self.public_key.len() == 64
             && self.public_key.bytes().all(|b| b.is_ascii_hexdigit())
+            && self
+                .assistance_id
+                .as_ref()
+                .is_none_or(|id| uuid::Uuid::parse_str(id).is_ok())
             && self.resume.as_ref().is_none_or(|resume| {
                 !resume.session_id.is_empty()
                     && resume.session_id.len() <= 160

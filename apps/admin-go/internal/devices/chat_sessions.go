@@ -10,10 +10,11 @@ import (
 )
 
 type desktopInfo struct {
-	expires time.Time
-	version float64
-	tcp     bool
-	native  bool
+	expires    time.Time
+	version    float64
+	tcp        bool
+	native     bool
+	assistance bool
 }
 type chatSessions struct {
 	mu         sync.Mutex
@@ -24,11 +25,13 @@ type chatSessions struct {
 	onRelay    func(int)
 	deliver    func(relayDelivery, platform.JSON)
 	desktopICE func(string, time.Time) []platform.JSON
+	assistance map[string]*assistanceRequest
 }
 
 func newChatSessions(relay func(int)) *chatSessions {
 	return &chatSessions{desktops: map[string]*peer{}, info: map[*peer]desktopInfo{},
-		sessions: map[string]*chatSession{}, hot: newHotSessions(relay), onRelay: relay}
+		sessions: map[string]*chatSession{}, hot: newHotSessions(relay), onRelay: relay,
+		assistance: map[string]*assistanceRequest{}}
 }
 
 func (s *chatSessions) setLimit(limit float64) {
@@ -61,7 +64,7 @@ func (s *chatSessions) join(client *peer, identity chatIdentity, message platfor
 			return err
 		}
 		s.info[client] = desktopInfo{identity.expires, version,
-			message["tcpPunch"] == true, message["nativeTraversal"] == true}
+			message["tcpPunch"] == true, message["nativeTraversal"] == true, message["remoteAssistance"] == true}
 		if previous := s.desktops[key]; previous != nil && previous != client {
 			s.disconnectLocked(previous, false)
 			previous.close(4000, "Replaced by a newer connection")
@@ -96,6 +99,9 @@ func (s *chatSessions) joinMobile(
 		return nil
 	}
 	info := s.info[desktop]
+	if err := s.validateAssistanceJoin(identity, message); err != nil {
+		return err
+	}
 	if message["transportVersion"] == float64(2) && info.version == 2 {
 		return s.hot.join(hotJoin{client, identity, message,
 			chatEndpoint{desktop, info.expires}, ice, info.tcp, info.native})
@@ -226,4 +232,9 @@ func (s *chatSessions) disconnectLocked(client *peer, revoke bool) {
 	}
 }
 
-func (s *chatSessions) prune() { s.mu.Lock(); defer s.mu.Unlock(); s.hot.prune() }
+func (s *chatSessions) prune() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.hot.prune()
+	s.pruneAssistance()
+}

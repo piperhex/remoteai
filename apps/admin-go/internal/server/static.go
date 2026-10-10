@@ -25,6 +25,7 @@ var apiPrefixes = []string{
 	"/feedback",
 	"/telemetry",
 	"/devices",
+	"/remote-assistance",
 	"/device-switch",
 	"/device-chat",
 	"/skills",

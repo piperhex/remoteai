@@ -315,6 +315,7 @@ impl Runtime {
             "binaryRelay": true, "fileBulkV1": true,
             "tcpPunch": true,
             "nativeTraversal": true,
+            "remoteAssistance": cfg!(any(windows, target_os = "macos")),
             "accessToken": config.access_token, "deviceId": config.device_id,
             "sessions": self.sessions.authentication() });
         socket

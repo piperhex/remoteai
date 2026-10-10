@@ -31,6 +31,7 @@ import { FocusModeButton, type GuiFocusMode } from "./codexGui/FocusModeButton";
 import { useTerminalPanel } from "./codexGui/terminal/useTerminalPanel";
 import { terminalApi } from "./codexGui/terminal/api";
 import { MobileConnectionStatus } from "./codexGui/MobileConnectionStatus";
+import { AssistanceButton } from '../remoteAssistance/AssistanceButton';
 import { GUI_VIEW_TITLES, type GuiView } from "./codexGui/GuiNavigation";
 import type { SkillsMarketPageProps } from "./skillsMarket/types";
 import paneStyles from "./codexGui/workspacePanes.module.less";
@@ -121,6 +122,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
           </strong>
         </div>
         <div className={styles.headerActions} data-tauri-drag-region={isDesktopApp || undefined}>
+          {isDesktopApp && <AssistanceButton />}
           {isDesktopApp && <MobileConnectionStatus />}
           {installer.version && <Button type="text" icon={<RefreshCw size={16} />} aria-label={guiText("重新连接 Codex")}
             disabled={Boolean(running)} loading={state.connection === "connecting"}

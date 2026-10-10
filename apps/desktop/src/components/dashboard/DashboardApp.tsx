@@ -114,6 +114,7 @@ import { WindowControls } from "../WindowControls";
 import { GuiWorkspace } from "../../pages/codexGui/GuiWorkspace";
 import { useNotificationNavigation } from "../../pages/codexGui/useNotificationNavigation";
 import { useGuiTheme } from "../../pages/codexGui/guiTheme";
+import { RemoteAssistance } from '../../remoteAssistance/RemoteAssistance';
 import codexGuiStyles from "../../pages/codexGui/styles.module.less";
 import { CODEX_CONFIG_TOPBAR_ID, CodexConfigPage } from "../../pages/CodexConfigPage";
 import codexConfigStyles from "../../pages/codexConfig/pageStyles.module.less";
@@ -1682,6 +1683,7 @@ export function DashboardApp() {
           hintKey="providers.proxy.stopProgressHint" t={t} />
         {toast && <div className="toast"><Check size={17} />{toast}</div>}
       </div>
+      {isDesktopApp && <RemoteAssistance auth={cloud.state} onLogin={openCloudLogin} />}
     </ConfigProvider>
   );
 }

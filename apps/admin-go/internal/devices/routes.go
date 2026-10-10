@@ -42,6 +42,7 @@ func Register(router *gin.Engine, deps *platform.Dependencies) (*Runtime, error)
 	runtime.stopPush = chatpush.Register(router, deps)
 	router.GET("/device-switch", gateway.serve)
 	router.GET("/device-chat", chat.serve)
+	chat.registerAssistance(router)
 	router.POST("/desktop-service/revoke", gateway.selfRevokeServiceCredential)
 	group := router.Group("/devices", deps.RequireAuth())
 	group.GET("", func(c *gin.Context) {

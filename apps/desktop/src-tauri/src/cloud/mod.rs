@@ -45,6 +45,7 @@ use crate::{
 };
 
 mod accounts;
+mod assistance;
 mod auth;
 mod common;
 mod content;
@@ -67,6 +68,7 @@ mod types;
 mod tests;
 
 use accounts::*;
+pub(crate) use assistance::*;
 pub(super) use auth::*;
 pub(super) use common::*;
 pub(super) use content::*;

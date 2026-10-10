@@ -16,10 +16,12 @@ import (
 )
 
 type chatConnection struct {
-	identity      *chatIdentity
-	bytes, frames int
-	windowStart   time.Time
-	timer         *time.Timer
+	identity          *chatIdentity
+	bytes, frames     int
+	windowStart       time.Time
+	timer             *time.Timer
+	assistanceID      string
+	assistingDeviceID string
 }
 type ChatGateway struct {
 	bulkMeter   *chattraffic.BulkMeter
@@ -169,6 +171,8 @@ func (g *ChatGateway) receive(client *peer, state *chatConnection, message platf
 	}
 	g.policy = policy
 	g.setAuthentication(client, state, identity)
+	state.assistanceID, _ = message["assistanceId"].(string)
+	state.assistingDeviceID, _ = message["assistingDeviceId"].(string)
 	g.mu.Unlock()
 	sendChatPolicy(client, policy)
 	g.sessions.setLimit(policy["chatSessionLimit"].(float64))
@@ -197,7 +201,13 @@ func (g *ChatGateway) authenticate(message platform.JSON) (chatIdentity, error) 
 		return identity, errors.New("expired token")
 	}
 	if _, err := g.service.owned(owner, id); err != nil {
+		if role == "mobile" && message["assistanceId"] != nil {
+			return g.sessions.authenticateAssistance(owner, id, expires, message)
+		}
 		return identity, err
+	}
+	if message["assistanceId"] != nil {
+		return identity, errors.New("assistance requires a different account")
 	}
 	return chatIdentity{owner, id, role, expires}, nil
 }

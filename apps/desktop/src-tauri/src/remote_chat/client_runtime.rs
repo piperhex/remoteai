@@ -21,6 +21,9 @@ use super::{
 };
 
 type Socket = WebSocket<MaybeTlsStream<TcpStream>>;
+#[cfg(test)]
+#[path = "client_assistance_tests.rs"]
+mod assistance_tests;
 pub(super) struct Lifecycle {
     pub configs: watch::Receiver<Option<Config>>,
     pub cancelled: Arc<AtomicBool>,
@@ -116,6 +119,10 @@ fn authentication_message(request: &OpenRequest, config: &Config, bulk: bool) ->
     // Both backends treat the presence of resume as a recovery attempt, including null.
     if let Some(resume) = &request.resume {
         message["resume"] = serde_json::json!(resume);
+    }
+    if let Some(id) = &request.assistance_id {
+        message["assistanceId"] = serde_json::json!(id);
+        message["assistingDeviceId"] = serde_json::json!(config.device_id);
     }
     message
 }

@@ -23,8 +23,10 @@ import { connectionDetails } from './connectionDetails';
 import { RelayQuota } from '../../../../shared/remote-chat/relayUsage';
 import { BulkSource } from './bulkSource';
 import { BULK_OPERATION } from '../../../../shared/remote-chat/bulkControl';
+import { AssistanceHostAccess } from '../remoteAssistance/hostAccess';
 
 export class ChatHost {
+  private readonly assistance = new AssistanceHostAccess(id => this.drop(id));
   private quota = new RelayQuota();
   private readonly transport: NativeChatTransport;
   private generation = 0;
@@ -92,6 +94,7 @@ export class ChatHost {
   }
 
   private resetSessions() {
+    this.assistance.reset();
     for (const source of this.bulkSources.values()) source.close();
     this.bulkSources.clear();
     connectionDetails.reset();
@@ -116,7 +119,9 @@ export class ChatHost {
     this.leases.set(sessionId, setTimeout(() => this.drop(sessionId), Math.max(0, expiresAt - Date.now())));
   }
   private broadcast(event: unknown) {
-    for (const link of this.links.values()) void link.send({ kind: 'event', event }).catch(() => link.close());
+    for (const [id, link] of this.links) {
+      if (!this.assistance.restricted(id)) void link.send({ kind: 'event', event }).catch(() => link.close());
+    }
   }
 
   private send(message: object) {
@@ -169,6 +174,7 @@ export class ChatHost {
   private open(sessionId: string, message: Record<string, unknown>) {
     // The authenticated coordinator applies the configured limit before sending peer-open.
     if (this.links.has(sessionId)) return;
+    if (!this.assistance.admit(sessionId, message.assistanceId)) { this.endSession(sessionId); return; }
     this.operations.desktop.register(sessionId, (message.desktopIceServers ?? message.iceServers) as IceServer[],
       typeof message.expiresAt === 'number' ? message.expiresAt : undefined);
     const keys = keyPair((size) => crypto.getRandomValues(new Uint8Array(size)));
@@ -189,7 +195,9 @@ export class ChatHost {
       mode: (mode) => this.updateConnection(sessionId, mode),
       error: () => this.drop(sessionId),
       message: (request) => {
-        if (request.kind !== 'request') return;
+        if (request.kind !== 'request' || this.closed || this.links.get(sessionId) !== link) return;
+        const denied = this.assistance.denied(sessionId, request);
+        if (denied) { void link.send(denied).catch(() => link.close()); return; }
         // This namespace is added by Rust from its cloud identity, never from a mobile request.
         const terminalOwner = typeof message.terminalOwner === 'string' ? message.terminalOwner : sessionId;
         const bulk = request.method === 'request'
@@ -226,6 +234,7 @@ export class ChatHost {
   }
 
   private drop(sessionId: string) {
+    this.assistance.release(sessionId);
     this.bulkSources.get(sessionId)?.close(); this.bulkSources.delete(sessionId);
     this.operations.release(sessionId);
     connectionDetails.remove(sessionId);
@@ -241,6 +250,7 @@ export class ChatHost {
 
   close() {
     if (this.closed) return;
+    this.assistance.close();
     for (const sessionId of this.links.keys()) this.endSession(sessionId);
     this.closed = true;
     for (const source of this.bulkSources.values()) source.close();

@@ -25,7 +25,7 @@ export class NativeGuiSocket implements ChatSocket {
   private readonly channel = new Channel<Batch>();
   private readonly bulkChannel = new Channel<ArrayBuffer>();
 
-  constructor(private readonly identity: GuiCloudIdentity) {
+  constructor(private readonly identity: GuiCloudIdentity, private readonly assistanceId?: string) {
     this.channel.onmessage = (batch) => this.deliver(batch);
     this.bulkChannel.onmessage = (batch) => this.deliverBulk(batch);
     queueMicrotask(() => {
@@ -76,6 +76,7 @@ export class NativeGuiSocket implements ChatSocket {
       this.started = lifecycle.then(async () => {
         if (this.readyState === 1) await invoke('gui_remote_open', { request: { clientId: this.clientId,
           deviceId: frame.deviceId, publicKey: frame.publicKey, resume: frame.resume, identity: this.identity,
+          ...(this.assistanceId ? { assistanceId: this.assistanceId } : {}),
           bulkEvents: this.bulkChannel },
           events: this.channel });
       });
