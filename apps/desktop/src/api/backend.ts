@@ -3266,6 +3266,7 @@ export async function downloadAvailableUpdate(onProgress?: (progress: number | n
     let totalBytes: number | undefined;
     const reportProgress = (event: DownloadEvent) => {
       if (event.event === "Started") {
+        downloadedBytes = 0;
         totalBytes = event.data.contentLength;
         onProgress?.(totalBytes ? 0 : null);
       } else if (event.event === "Progress") {

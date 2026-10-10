@@ -8,7 +8,7 @@ pub(crate) const CHAT_PORT: u16 = 47777;
 pub(crate) const HOST_NAME: &str = "csw-host";
 pub(crate) const CLIENT_NAME: &str = "csw-client";
 
-/// Created only from an authenticated chat grant, never an arbitrary frontend network config.
+/// Created only from an authenticated session grant, never an arbitrary frontend network config.
 #[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {

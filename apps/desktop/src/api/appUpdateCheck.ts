@@ -1,5 +1,6 @@
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { AppUpdateCheckTimeoutError } from "./appUpdateErrors";
+import { enablePeerDownload } from "./appUpdateDownload";
 
 const UPDATE_CHECK_REQUEST_TIMEOUT_MS = 10_000;
 export const UPDATE_CHECK_DEADLINE_MS = 30_000;
@@ -17,7 +18,7 @@ async function checkWithRetries(isExpired: () => boolean): Promise<Update | null
   for (let attempt = 0; ; attempt += 1) {
     try {
       const update = await check({ timeout: UPDATE_CHECK_REQUEST_TIMEOUT_MS });
-      if (!isExpired()) return update;
+      if (!isExpired()) return update ? enablePeerDownload(update) : null;
       // A timed-out IPC call can still return a resource; never let it replace the pending download.
       await update?.close();
       throw new AppUpdateCheckTimeoutError();

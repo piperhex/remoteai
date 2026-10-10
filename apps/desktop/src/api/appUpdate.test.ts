@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { DownloadEvent } from "@tauri-apps/plugin-updater";
 
 const updater = vi.hoisted(() => ({ check: vi.fn(), relaunch: vi.fn() }));
 
 vi.mock("@tauri-apps/plugin-updater", () => ({ check: updater.check }));
+vi.mock("./appUpdateDownload", () => ({ enablePeerDownload: (update: unknown) => update }));
 vi.mock("@tauri-apps/plugin-process", () => ({ exit: vi.fn(), relaunch: updater.relaunch }));
 
 const PENDING_VERSION_KEY = "codex-switch:pending-app-update-version";
@@ -20,7 +22,7 @@ function createUpdate() {
     version: UPDATE_VERSION,
     currentVersion: "1.4.4",
     body: "Update notes",
-    download: vi.fn(async () => undefined),
+    download: vi.fn(async (_onEvent?: (event: DownloadEvent) => void) => undefined),
     install: vi.fn(async () => undefined),
     close: vi.fn(async () => undefined),
   };
@@ -56,6 +58,20 @@ describe("automatic app updates", () => {
   });
 
   afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+
+  it("resets progress when a partial peer download falls back to GitHub", async () => {
+    update.download.mockImplementation(async (report) => {
+      report?.({ event: "Started", data: { contentLength: 100 } });
+      report?.({ event: "Progress", data: { chunkLength: 60 } });
+      report?.({ event: "Started", data: { contentLength: 100 } });
+      report?.({ event: "Progress", data: { chunkLength: 20 } });
+      report?.({ event: "Finished" });
+    });
+    const { backend } = await loadApp();
+    const progress = vi.fn();
+    await backend.downloadAvailableUpdate(progress);
+    expect(progress.mock.calls.map(([value]) => value)).toEqual([0, 60, 0, 20, 100]);
+  });
 
   it("refuses a remote install when the downloaded version differs from the confirmation", async () => {
     const { backend } = await loadApp();

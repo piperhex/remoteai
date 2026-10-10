@@ -24,6 +24,10 @@ const MAX_FRAME: usize = 128 * 1024;
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(8);
 const MAX_MEDIA_VIEWS: usize = 2;
 
+#[cfg(test)]
+#[path = "connection_tests.rs"]
+mod tests;
+
 struct EngineControls {
     canceled: watch::Receiver<bool>,
     expiry: watch::Receiver<u64>,
@@ -341,7 +345,9 @@ async fn chat_streams(
             tokio::time::sleep(Duration::from_secs(1)).await;
             continue;
         };
-        if !route::status(instance, config.remote_name()).await.direct {
+        if !route::status(instance, config.remote_name()).await.direct
+            || !wait_for_direct_route(route.clone()).await
+        {
             continue;
         }
         events.send(Event::Open).await.map_err(|_| Error::Closed)?;
@@ -357,6 +363,21 @@ async fn chat_streams(
             return Ok(());
         }
     }
+}
+
+async fn wait_for_direct_route(mut route: watch::Receiver<RouteStatus>) -> bool {
+    // The stream monitor consumes this watch, which can lag the engine's fresh route snapshot.
+    // Announcing Open before it catches up makes the monitor immediately discard a healthy socket.
+    matches!(
+        tokio::time::timeout(CONNECT_TIMEOUT, async {
+            while !route.borrow_and_update().direct {
+                route.changed().await.map_err(|_| Error::Closed)?;
+            }
+            Ok::<_, Error>(())
+        })
+        .await,
+        Ok(Ok(()))
+    )
 }
 
 async fn connect(

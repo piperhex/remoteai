@@ -42,6 +42,7 @@ image = { version = "0.25", default-features = false, features = ["jpeg", "png",
 json5 = "0.4"
 md-5 = "0.10"
 mime_guess = "2"
+minisign-verify = "0.2"
 keyring = "4.1.5"
 portable-pty = "0.9"
 rand = "0.9"
@@ -81,6 +82,11 @@ sysinfo = "0.37"
 [dev-dependencies]
 qrcode = "0.14.1"
 tauri = { version = "2", features = ["test"] }
+
+[dev-dependencies.easytier]
+git = "https://github.com/EasyTier/EasyTier"
+rev = "ed73d318bb3bf19601e227ab83dd61d66ce4b9f8"
+default-features = false
 
 # hyper-util 0.1.20 writes two USERID terminators and breaks SOCKS4/4a tunnels.
 # See vendor/hyper-util/CODEX_SWITCH_PATCH.md for the narrow patch and removal criteria.

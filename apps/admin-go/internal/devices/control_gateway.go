@@ -30,12 +30,14 @@ type ControlGateway struct {
 	pending              map[string]pendingCommand
 	updates              map[string]pendingAppUpdate
 	commands             map[string]pendingRemoteCommand
+	updatePeers          *updatePeerTracker
 }
 
 func newControlGateway(service *Service) *ControlGateway {
 	return &ControlGateway{service: service, sessions: map[*peer]controlSession{}, sockets: map[string]*peer{},
 		subscribers: map[string]map[*peer]bool{}, pending: map[string]pendingCommand{},
-		updates: map[string]pendingAppUpdate{}, commands: map[string]pendingRemoteCommand{}}
+		updates: map[string]pendingAppUpdate{}, commands: map[string]pendingRemoteCommand{},
+		updatePeers: newUpdatePeerTracker(service)}
 }
 
 func (g *ControlGateway) serve(c *gin.Context) {
@@ -83,6 +85,11 @@ func (g *ControlGateway) receive(client *peer, message platform.JSON, timer *tim
 			return errors.New("authentication expired")
 		}
 		g.requestAppUpdate(client, session, message)
+		return nil
+	}
+	if message["type"] == "update-peer-advertise" || message["type"] == "update-peer-find" ||
+		message["type"] == "update-peer-done" {
+		g.receiveUpdatePeer(client, session, message)
 		return nil
 	}
 	if session.kind == "device" && message["type"] == "app-update-result" {
@@ -257,6 +264,7 @@ func (g *ControlGateway) disconnect(client *peer) {
 	g.mu.Lock()
 	g.disconnectAppUpdates(client)
 	g.disconnectRemoteCommands(client)
+	g.updatePeers.disconnect(client)
 	session, exists := g.sessions[client]
 	delete(g.sessions, client)
 	if !exists {

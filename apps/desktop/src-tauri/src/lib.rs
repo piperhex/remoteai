@@ -71,6 +71,7 @@ mod system_proxy;
 mod system_tray;
 mod third_party_apps;
 mod totp_qr;
+mod update_peers;
 mod web_server;
 mod web_session_login;
 mod webview_windows;
@@ -232,6 +233,7 @@ pub fn run() {
                 eprintln!("failed to restore web version server: {error}");
             }
             codex_gui::scheduled_tasks::start(app.handle());
+            update_peers::setup(app.handle())?;
             remote_control::start(app.handle().clone());
             remote_command::start(app.handle().clone());
             cloud::start_official_usage_reporting(app.handle().clone());
@@ -281,6 +283,8 @@ pub fn run() {
             system_tray::quick_menu::handle_window_event(window, event);
         })
         .invoke_handler(tauri::generate_handler![
+            update_peers::commands::download_shared_app_update,
+            update_peers::commands::install_shared_app_update,
             remote_desktop::remote_desktop_open,
             remote_desktop::remote_desktop_renew,
             #[cfg(windows)]

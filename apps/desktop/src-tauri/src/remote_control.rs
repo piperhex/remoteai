@@ -19,6 +19,15 @@ mod app_update;
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 enum ServerMessage {
+    UpdatePeerOffer(crate::update_peers::Offer),
+    UpdatePeerUnavailable {
+        #[serde(rename = "requestId")]
+        request_id: String,
+    },
+    UpdatePeerCancel {
+        #[serde(rename = "sessionId")]
+        session_id: String,
+    },
     RemoteCommand {
         #[serde(rename = "commandId")]
         command_id: String,
@@ -141,8 +150,14 @@ fn run_connection<R: Runtime>(
     let mut last_ping = Instant::now();
     let mut updates = app_update::UpdateBridge::new(app);
     let mut commands = crate::remote_command::host::CommandHost::new();
+    let mut update_peers = crate::update_peers::Bridge::new(app);
     loop {
-        for response in updates.responses().into_iter().chain(commands.responses()) {
+        for response in updates
+            .responses()
+            .into_iter()
+            .chain(commands.responses())
+            .chain(update_peers.responses())
+        {
             socket
                 .send(Message::Text(response.to_string().into()))
                 .map_err(|error| format!("Could not send update status: {error}"))?;
@@ -152,6 +167,13 @@ fn run_connection<R: Runtime>(
                 let message = serde_json::from_str::<ServerMessage>(&text)
                     .map_err(|error| format!("Invalid remote control message: {error}"))?;
                 match message {
+                    ServerMessage::UpdatePeerOffer(offer) => update_peers.offer(offer),
+                    ServerMessage::UpdatePeerUnavailable { request_id } => {
+                        update_peers.unavailable(&request_id)
+                    }
+                    ServerMessage::UpdatePeerCancel { session_id } => {
+                        update_peers.cancel(&session_id)
+                    }
                     ServerMessage::RemoteCommand {
                         command_id,
                         request,
