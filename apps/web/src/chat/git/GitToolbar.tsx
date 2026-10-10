@@ -44,13 +44,14 @@ export function GitToolbar({ panel, connected }: { panel: RemoteGit; connected: 
         <p>{t(GIT_ACTIONS.find(item => item.action === action)!.hint)}</p>
         <p>{t('当前分支')}：{panel.changes?.branch ?? 'HEAD'}<br />
           {t('跟踪分支')}：{repository?.upstream ?? t('未设置')}</p>
-        {(action === 'pull' || action === 'update') && <>
+        {action === 'pull' && <>
           <label className="git-strategy">{t('整合方式')}<select aria-label={t('整合方式')} value={panel.strategy}
             onChange={event => panel.setStrategy(event.target.value === 'rebase' ? 'rebase' : 'merge')}>
             <option value="merge">{t('合并 Merge')}</option><option value="rebase">{t('变基 Rebase')}</option>
           </select></label>
-          {!!panel.changes?.files.length && <p>{t('请先提交本地改动，再拉取或更新项目。')}</p>}
         </>}
+        {(action === 'pull' || action === 'update') && !!panel.changes?.files.length
+          && <p>{t('请先提交本地改动，再拉取或更新项目。')}</p>}
         {!repository?.remotes.length && <p>{t('项目还没有远程仓库，请先在电脑上添加。')}</p>}
         <button type="button" className="git-submit" disabled={disabled || !repository?.remotes.length
           || (action !== 'fetch' && !repository.upstream)

@@ -184,3 +184,97 @@ fn missing_remote_or_upstream_fail_without_mutating_repository() {
     ));
     assert!(changes::read(&local.0).unwrap().files.is_empty());
 }
+
+fn commit_hook(repo: &Repo, script: &str) {
+    let path = repo.0.join(".git/hooks/commit-msg");
+    std::fs::write(&path, script).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).unwrap();
+    }
+}
+
+#[test]
+fn update_always_merges_with_the_tracking_branch_message_and_runs_hooks() {
+    let (remote, local) = remote_pair();
+    remote_commit(&remote, "remote.txt");
+    local.write("local.txt", "local\n");
+    local.git(&["add", "local.txt"]);
+    local.git(&["commit", "-m", "local"]);
+    let local_head = changes::head(&local.0).unwrap();
+    let remote_head = changes::head(&remote.0).unwrap();
+    commit_hook(
+        &local,
+        "#!/bin/sh\nprintf 'checked' > .git/message-checked\n\
+         test \"$(cat \"$1\")\" = \"Merge remote-tracking branch 'origin/published'\"\n",
+    );
+    action(&local, "update", None, "rebase").unwrap();
+    assert_eq!(
+        output(&local.0, &["log", "-1", "--format=%s"]).unwrap(),
+        "Merge remote-tracking branch 'origin/published'"
+    );
+    assert_eq!(
+        output(&local.0, &["log", "-1", "--format=%P"]).unwrap(),
+        format!("{local_head} {remote_head}")
+    );
+    assert!(local.0.join(".git/message-checked").exists());
+    assert!(changes::read(&local.0).unwrap().files.is_empty());
+    assert!(!local.0.join(".git/MERGE_HEAD").exists());
+}
+
+#[test]
+fn update_completes_merge_despite_branch_defaults_that_stop_before_committing() {
+    for options in ["--no-commit", "--squash", "--ff-only"] {
+        let (remote, local) = remote_pair();
+        remote_commit(&remote, "remote.txt");
+        local.write("local.txt", "local\n");
+        local.git(&["add", "local.txt"]);
+        local.git(&["commit", "-m", "local"]);
+        local.git(&["config", "branch.work.mergeOptions", options]);
+        action(&local, "update", None, "merge").unwrap();
+        assert_eq!(
+            output(&local.0, &["log", "-1", "--format=%P"])
+                .unwrap()
+                .split_whitespace()
+                .count(),
+            2
+        );
+        assert!(changes::read(&local.0).unwrap().files.is_empty());
+        assert!(!local.0.join(".git/MERGE_HEAD").exists());
+    }
+}
+
+#[test]
+fn update_fast_forwards_and_repeated_updates_do_not_add_commits() {
+    let (remote, local) = remote_pair();
+    remote_commit(&remote, "remote.txt");
+    let expected = changes::head(&remote.0);
+    action(&local, "update", None, "merge").unwrap();
+    assert_eq!(changes::head(&local.0), expected);
+    action(&local, "update", None, "merge").unwrap();
+    assert_eq!(changes::head(&local.0), expected);
+    assert!(changes::read(&local.0).unwrap().files.is_empty());
+    assert!(!local.0.join(".git/MERGE_HEAD").exists());
+}
+
+#[test]
+fn update_does_not_bypass_a_rejecting_commit_hook() {
+    let (remote, local) = remote_pair();
+    remote_commit(&remote, "remote.txt");
+    local.write("local.txt", "local\n");
+    local.git(&["add", "local.txt"]);
+    local.git(&["commit", "-m", "local"]);
+    let head = changes::head(&local.0);
+    commit_hook(&local, "#!/bin/sh\nexit 1\n");
+    assert!(matches!(
+        action(&local, "update", None, "merge"),
+        Err(GitError::Integrate)
+    ));
+    assert_eq!(changes::head(&local.0), head);
+    assert!(local.0.join(".git/MERGE_HEAD").exists());
+    assert_eq!(
+        output(&local.0, &["show", ":remote.txt"]).unwrap(),
+        "remote change"
+    );
+}

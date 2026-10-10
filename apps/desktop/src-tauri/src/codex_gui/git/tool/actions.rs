@@ -120,15 +120,38 @@ fn integrate(root: &Path, request: &ActionRequest) -> Result<()> {
     }
     let target = output(root, &["rev-parse", "--verify", &upstream.tracking])
         .map_err(|_| GitError::Upstream)?;
-    let args = match request.strategy {
-        Strategy::Merge => vec!["merge", "--no-edit", "--no-autostash", &target],
-        Strategy::Rebase => vec!["rebase", "--no-autostash", &target],
+    let success = match (&request.action, &request.strategy) {
+        (Action::Update, _) => update_merge(root, &upstream.tracking, &target)?,
+        (_, Strategy::Merge) => run(root, &["merge", "--no-edit", "--no-autostash", &target])?,
+        (_, Strategy::Rebase) => run(root, &["rebase", "--no-autostash", &target])?,
     };
-    if run(root, &args)? {
+    if success {
         Ok(())
     } else {
         Err(GitError::Integrate)
     }
+}
+
+fn update_merge(root: &Path, tracking: &str, target: &str) -> Result<bool> {
+    let branch = tracking
+        .strip_prefix("refs/remotes/")
+        .ok_or(GitError::Upstream)?;
+    // Keep the fetched commit pinned, but use the branch message accepted by commit-message hooks.
+    let message = format!("Merge remote-tracking branch '{branch}'");
+    run(
+        root,
+        &[
+            "merge",
+            "--ff",
+            "--commit",
+            "--no-squash",
+            "--no-edit",
+            "--no-autostash",
+            "-m",
+            &message,
+            target,
+        ],
+    )
 }
 
 fn check_current(root: &Path, request: &ActionRequest) -> Result<()> {

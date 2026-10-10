@@ -77,7 +77,8 @@ export function useRemoteGit({ client, cwd, active, connected }: {
     if (!changes) return;
     let failure: unknown;
     try {
-      await client.action({ cwd, action, target, strategy, head: changes.head, branch: changes.branch });
+      await client.action({ cwd, action, target, strategy: action === 'update' ? 'merge' : strategy,
+        head: changes.head, branch: changes.branch });
       if (current.current !== scope) return;
       setDetail(null); setNotice(GIT_ACTION_NOTICE[action]);
     } catch (error) { failure = error; }

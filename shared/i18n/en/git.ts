@@ -14,8 +14,8 @@ export const gitMessages: Record<string, string> = {
   '获取 Fetch': 'Fetch', '拉取 Pull': 'Pull', '更新项目': 'Update project', '推送 Push': 'Push',
   '获取所有远程分支的最新记录，不修改本地文件。': 'Fetch all remotes without changing local files.',
   '拉取当前跟踪分支，并整合到当前分支。': 'Fetch the tracked branch and integrate it into the current branch.',
-  '获取当前项目的所有远程分支，再整合当前跟踪分支。':
-    'Fetch all remotes for this project, then integrate the current tracked branch.',
+  '获取远程更新，无冲突时自动合并并提交。':
+    'Fetch remote updates, then automatically merge and commit if there are no conflicts.',
   '将当前分支的提交推送到跟踪分支。': 'Push commits from the current branch to its tracked branch.',
   '当前分支': 'Current branch', '跟踪分支': 'Tracked branch', '未设置': 'Not set', '整合方式': 'Update method',
   '合并 Merge': 'Merge', '变基 Rebase': 'Rebase', '执行 {action}': 'Run {action}',

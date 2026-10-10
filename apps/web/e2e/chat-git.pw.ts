@@ -84,7 +84,8 @@ test('tools open Git changes, commit only checked files and draw merge history',
   await branches.getByRole('button', { name: 'feature/git 本地', exact: true }).click();
   await expect(drawer.getByRole('button', { name: '切换分支', exact: true })).toContainText('feature/git');
   await drawer.getByRole('button', { name: '同步', exact: true }).click();
-  await expect(drawer.getByLabel('整合方式', { exact: true })).toHaveValue('merge');
+  await expect(drawer.getByLabel('整合方式', { exact: true })).toHaveCount(0);
+  await expect(drawer).toContainText('获取远程更新，无冲突时自动合并并提交。');
   await expect(drawer.getByRole('button', { name: '执行 更新项目', exact: true })).toBeDisabled();
   await drawer.getByRole('button', { name: '获取 Fetch', exact: true }).click();
   await drawer.getByRole('button', { name: '执行 获取 Fetch', exact: true }).click();
@@ -95,7 +96,11 @@ test('tools open Git changes, commit only checked files and draw merge history',
   await drawer.getByRole('button', { name: '提交 5 个文件', exact: true }).click();
   await expect(drawer).toContainText('工作区没有未提交的改动。');
   await drawer.getByRole('button', { name: '同步', exact: true }).click();
+  await drawer.getByRole('button', { name: '拉取 Pull', exact: true }).click();
+  await drawer.getByLabel('整合方式', { exact: true }).selectOption('rebase');
   await drawer.getByRole('button', { name: '更新项目', exact: true }).click();
+  await expect(drawer.getByLabel('整合方式', { exact: true })).toHaveCount(0);
+  expect((await drawer.locator('.git-menu').boundingBox())!.width).toBeLessThanOrEqual(400);
   await screenshot(page, info, 'git-update');
   await drawer.getByRole('button', { name: '执行 更新项目', exact: true }).click();
   await expect(drawer.getByRole('status')).toHaveText('项目已更新');

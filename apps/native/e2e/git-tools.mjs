@@ -78,7 +78,8 @@ try {
   await tap('切换到 feature/git');
   await waitText('已切换分支');
   await tap('同步');
-  await waitText('合并 Merge');
+  await waitText('获取远程更新，无冲突时自动合并并提交。');
+  assert.ok(!(await nodes()).some(node => node.text === '变基 Rebase'));
   await screenshot('git-update');
   await tap('获取 Fetch');
   await tap('执行 获取 Fetch');
@@ -91,7 +92,11 @@ try {
   await tap('提交 5 个文件');
   await waitText('工作区没有未提交的改动。');
   await tap('同步');
+  await tap('拉取 Pull');
+  await tap('变基 Rebase');
   await tap('更新项目');
+  await waitText('获取远程更新，无冲突时自动合并并提交。');
+  assert.ok(!(await nodes()).some(node => node.text === '变基 Rebase'));
   await screenshot('git-update-ready');
   await tap('执行 更新项目');
   await waitText('项目已更新');

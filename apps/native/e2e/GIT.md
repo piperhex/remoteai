@@ -15,7 +15,7 @@ node ../e2e/git-tools.mjs
 The script requires `emulator-5580` (or set `ANDROID_SERIAL` to another emulator).
 Set `ANDROID_GIT_APK` to a saved fixture APK when another build shares the Android output directory.
 It checks the tools menu, folder selection, flat/tree views, diff navigation, committing,
-merge history, branch switching, Fetch/Pull/Push and Update Project with merge/rebase.
+merge history, branch switching, Fetch/Pull/Push and Update Project with automatic merge.
 Opening a commit must show its file list first; selecting a file opens only that diff.
 Both back steps are checked, with screenshots of the list and selected file diff.
 Screenshots, including the open keyboard, are saved in
@@ -28,7 +28,10 @@ Remote-action Rust tests use local repositories to check dirty-worktree protecti
 merge/rebase, conflict retention, branch tracking, and refusal to force-push.
 Web coverage is `apps/web/e2e/chat-git.pw.ts` at phone and desktop widths.
 
-Update Project fetches all remotes in the current repository and integrates its tracked
-branch; Pull fetches only the tracked remote. Both require a clean worktree and default to
-merge. No automatic stash, submodule update or multi-root project update is performed.
+Update Project fetches all remotes in the current repository and automatically merges its
+tracked branch, using `Merge remote-tracking branch 'origin/master'` with the actual tracking
+branch name when a merge commit is needed. Fast-forward updates do not create an extra commit.
+Pull fetches only the tracked remote and still supports choosing merge or rebase.
+Both require a clean worktree and retain commit hooks. No automatic stash, submodule update
+or multi-root project update is performed.
 Resolve integration conflicts on the computer or through the terminal before retrying.

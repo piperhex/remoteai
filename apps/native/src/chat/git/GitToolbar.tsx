@@ -58,25 +58,25 @@ export function GitToolbar({ panel, connected }: { panel: RemoteGit; connected: 
             accessibilityRole="button" accessibilityState={{ selected: action === item.action }}
             style={[styles.actionButton, action === item.action && styles.activeMode]}
             onPress={() => setAction(item.action)}>
-            <Text style={styles.buttonText}>{item.label}</Text></Pressable>)}</View>
-          <Text style={styles.menuHint}>{GIT_ACTIONS.find(item => item.action === action)!.hint}</Text>
+            <Text style={styles.buttonText}>{t(item.label)}</Text></Pressable>)}</View>
+          <Text style={styles.menuHint}>{t(GIT_ACTIONS.find(item => item.action === action)!.hint)}</Text>
           <Text style={styles.menuHint}>{t("当前分支：")}{panel.changes?.branch ?? 'HEAD'}{'\n'}
             {t("跟踪分支：")}{repository?.upstream ?? t("未设置")}</Text>
-          {(action === 'pull' || action === 'update') && <>
+          {action === 'pull' && <>
             <View style={styles.actionOptions}>{(['merge', 'rebase'] as const).map(strategy =>
               <Pressable key={strategy} accessibilityRole="button"
                 accessibilityState={{ selected: panel.strategy === strategy }}
                 style={[styles.actionButton, panel.strategy === strategy && styles.activeMode]}
                 onPress={() => panel.setStrategy(strategy)}><Text style={styles.buttonText}>
                   {strategy === 'merge' ? t("合并 Merge") : t("变基 Rebase")}</Text></Pressable>)}</View>
-            {!!panel.changes?.files.length && <Text style={styles.menuHint}>
-              {t("请先提交本地改动，再拉取或更新项目。")}</Text>}
           </>}
+          {(action === 'pull' || action === 'update') && !!panel.changes?.files.length
+            && <Text style={styles.menuHint}>{t("请先提交本地改动，再拉取或更新项目。")}</Text>}
           {!repository?.remotes.length && <Text style={styles.menuHint}>{t("项目还没有远程仓库，请先在电脑上添加。")}</Text>}
           <Pressable accessibilityRole="button" disabled={actionDisabled}
             style={[styles.submit, { marginTop: 10 }, actionDisabled && styles.disabled]}
             onPress={() => { setMenu(null); void panel.action(action); }}>
-            <Text style={styles.submitText}>{t("执行")}{' '}{GIT_ACTIONS.find(item => item.action === action)!.label}</Text>
+            <Text style={styles.submitText}>{t("执行")}{' '}{t(GIT_ACTIONS.find(item => item.action === action)!.label)}</Text>
           </Pressable>
         </>}
       </ScrollView>

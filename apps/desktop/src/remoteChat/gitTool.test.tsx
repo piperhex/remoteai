@@ -105,3 +105,20 @@ it('defaults to merge, switches branches and refreshes conflicts after a failed 
       action: 'update', strategy: 'merge' }));
   } finally { await test.dispose(); }
 });
+
+it('always updates by merge without changing the strategy selected for pull', async () => {
+  const test = fixture();
+  try {
+    await test.render();
+    vi.mocked(test.client.action).mockResolvedValue(undefined);
+    await act(async () => test.panel().setStrategy('rebase'));
+    await act(async () => test.panel().action('update'));
+    expect(test.client.action).toHaveBeenLastCalledWith(expect.objectContaining({
+      action: 'update', strategy: 'merge' }));
+    expect(test.panel().notice).toBe('项目已更新');
+    expect(test.panel().strategy).toBe('rebase');
+    await act(async () => test.panel().action('pull'));
+    expect(test.client.action).toHaveBeenLastCalledWith(expect.objectContaining({
+      action: 'pull', strategy: 'rebase' }));
+  } finally { await test.dispose(); }
+});
