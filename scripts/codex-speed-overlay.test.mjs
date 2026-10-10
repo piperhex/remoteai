@@ -35,6 +35,30 @@ async function setup(page, dark = false) {
   }));
 }
 
+test("keeps one usage and speed control when React moves the picker or stale overlays remain", async () => {
+  const page = await browser.newPage();
+  try {
+    await setup(page);
+    await page.evaluate(() => {
+      window.originalSelector = document.querySelector("[data-codex-switch-speed-selector]");
+      const toolbar = document.getElementById("toolbar");
+      const wrapper = document.createElement("div");
+      const model = document.querySelector('[data-composer-navigation-target="reasoning"]').parentElement.parentElement;
+      toolbar.append(wrapper);
+      wrapper.append(model);
+      toolbar.prepend(window.originalSelector.cloneNode(true));
+    });
+    await expect(page.locator("[data-codex-switch-speed-selector]")).toHaveCount(1);
+    assert.equal(await page.evaluate(() => document.querySelector("[data-codex-switch-speed-selector]")
+      === window.originalSelector), true);
+    await page.evaluate(expression());
+    await page.getByRole("button", { name: /切换|Fast|加速/ }).click();
+    assert.equal(await page.evaluate(() => window.speedCalls.length), 1);
+    await page.evaluate(() => document.querySelector('[data-composer-navigation-target="reasoning"]').remove());
+    await expect(page.locator("[data-codex-switch-speed-selector]")).toHaveCount(0);
+  } finally { await page.close(); }
+});
+
 test("renders the GUI lightning states and stays responsive during pending speed and usage requests", async () => {
   const page = await browser.newPage({ viewport: { width: 720, height: 400 } });
   try {

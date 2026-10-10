@@ -164,6 +164,7 @@ fn codex_model_refresh_expression(
         CODEX_SPEED_SELECTOR_OVERLAY.replace("__CODEX_SWITCH_SERVICE_TIER__", &service_tier);
     let composer_status_allowed_global = CODEX_COMPOSER_STATUS_ALLOWED_GLOBAL;
     let composer_status_observer_global = CODEX_COMPOSER_STATUS_OBSERVER_GLOBAL;
+    let context_usage_overlay = context_usage_overlay_expression(crate::local_proxy::is_running());
     Ok(format!(
         r#"(async () => {{
   // A timed-out CDP call leaves its renderer promise alive, so newer refreshes must supersede it here.
@@ -178,6 +179,7 @@ fn codex_model_refresh_expression(
   const selectedModel = {selected_model};
   const supportedReasoningEffortsByModel = {reasoning_efforts};
   const defaultReasoningEffortsByModel = {default_reasoning_efforts};
+{context_usage_overlay}
   const root = window.__codexRoot;
   if (!root || !Array.isArray(expectedModels)) {{
     return {{ refreshed: false, reason: "unavailable" }};

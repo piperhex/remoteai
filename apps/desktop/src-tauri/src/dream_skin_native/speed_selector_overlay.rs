@@ -1,7 +1,7 @@
 const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
   window.__CODEX_SWITCH_REFRESH_SPEED_SELECTOR__ = () => {
     const stateKey = "__CODEX_SWITCH_SPEED_SELECTOR__";
-    const overlayVersion = 20;
+    const overlayVersion = 21;
     const usageRefreshMs = 5000;
     const usageRequestTimeoutMs = 15000;
     const initialTier = __CODEX_SWITCH_SERVICE_TIER__;
@@ -387,13 +387,19 @@ const CODEX_SPEED_SELECTOR_OVERLAY: &str = r#"
         removeSelectors(state);
         return;
       }
-      const anchor = document.querySelector('[data-composer-navigation-target="reasoning"]');
-      if (!anchor) return;
-      const modelWrapper = anchor.parentElement?.parentElement;
+      if (!state.installed || window[stateKey] !== state) return;
+      const anchors = document.querySelectorAll('[data-composer-navigation-target="reasoning"]');
+      const anchor = [...anchors].find(node => node.getClientRects().length > 0);
+      const modelWrapper = anchor?.parentElement?.parentElement;
       const parent = modelWrapper?.parentElement;
-      let container = parent?.querySelector(":scope > [data-codex-switch-speed-selector]");
-      if (!container) {
-        container = createSelector();
+      // React can move the model picker to another wrapper without removing our old sibling.
+      // Own one node for the active composer and move it; clear leftovers from older injections.
+      const selectors = [...document.querySelectorAll("[data-codex-switch-speed-selector]")];
+      const container = state.container ?? selectors[0] ?? createSelector();
+      for (const other of selectors) if (other !== container) other.remove();
+      state.container = container;
+      if (!parent) { container.remove(); return; }
+      if (container.parentElement !== parent || container.nextElementSibling !== modelWrapper) {
         modelWrapper.before(container);
       }
     };

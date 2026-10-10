@@ -4,6 +4,7 @@ include!("paths_and_images.rs");
 include!("themes.rs");
 include!("payload.rs");
 include!("speed_selector_overlay.rs");
+include!("context_usage_overlay.rs");
 include!("model_refresh.rs");
 include!("cdp.rs");
 mod connection;

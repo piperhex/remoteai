@@ -1,0 +1,56 @@
+[data-csw-context-native], [data-csw-context-tooltip] { display: none !important; }
+.csw-context-button {
+  display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 22px; height: 22px; padding: 0; border: 0; border-radius: 6px;
+  background: transparent; color: var(--text-tertiary, #718078); cursor: pointer;
+}
+.csw-context-button:hover, .csw-context-button[aria-expanded="true"] {
+  background: var(--background-primary-ghost, var(--csw-context-hover, #e8f2eb));
+  color: var(--text-primary, inherit);
+}
+.csw-context-button:focus-visible { outline: 2px solid #3984ed; outline-offset: 2px; }
+.csw-context-popover {
+  position: fixed; z-index: 2147483646; box-sizing: border-box;
+  width: max-content; max-width: min(400px, calc(100vw - 24px)); padding: 6px 10px; border-radius: 12px;
+  background: #fff; color: #222; box-shadow: 0 6px 24px #0003;
+  font: 12px/20px system-ui, sans-serif; text-align: center; overflow-wrap: anywhere; white-space: normal;
+}
+.csw-context-popover[data-dark="true"] { background: #242827; color: #eee; }
+.csw-context-popover[hidden] { display: none; }
+.csw-context-heading { display: inline; color: #718078; }
+.csw-context-popover[data-dark="true"] .csw-context-heading { color: #abb8b0; }
+.csw-context-gear {
+  display: inline-flex; align-items: center; vertical-align: middle; margin-left: 4px;
+  padding: 2px; border: 0; background: none; color: inherit; cursor: pointer;
+}
+.csw-context-gear:disabled { opacity: .4; cursor: default; }
+.csw-context-hint { color: #718078; font-size: 12px; line-height: 1.6; white-space: pre-line; }
+.csw-context-popover .csw-context-hint { max-width: 320px; }
+.csw-context-settings {
+  box-sizing: border-box; width: 360px; max-width: calc(100vw - 24px); max-height: calc(100vh - 24px);
+  margin: auto; padding: 20px; border: 0; border-radius: 12px; overflow: auto;
+  background: #fff; color: #222; box-shadow: 0 12px 40px #0004; font: 14px/1.5 system-ui, sans-serif;
+}
+.csw-context-settings::backdrop { background: #0006; }
+.csw-context-settings h3 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+.csw-context-fields { display: grid; gap: 8px; }
+.csw-context-settings input {
+  box-sizing: border-box; width: 100%; min-width: 0; padding: 6px 10px;
+  border: 1px solid #ccc; border-radius: 6px; background: transparent; color: inherit; font: inherit;
+}
+.csw-context-settings button {
+  border: 1px solid #ccc; border-radius: 6px; padding: 4px 12px;
+  background: transparent; color: inherit; cursor: pointer; font: inherit;
+}
+.csw-context-settings button:disabled { opacity: .5; cursor: wait; }
+.csw-context-settings button:focus-visible, .csw-context-settings input:focus-visible,
+.csw-context-gear:focus-visible { outline: 2px solid #3984ed; outline-offset: 2px; }
+.csw-context-help { display: flex; align-items: start; gap: 8px; }
+.csw-context-settings .csw-context-link { padding: 0; border: 0; color: #1677ff; white-space: nowrap; }
+.csw-context-settings .csw-context-primary { background: #1677ff; border-color: #1677ff; color: #fff; }
+.csw-context-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.csw-context-error { color: #d43838; font-size: 12px; overflow-wrap: anywhere; }
+.csw-context-error button { margin-left: 6px; }
+.csw-context-settings[data-dark="true"] { background: #242827; color: #eee; }
+[data-dark="true"] .csw-context-hint { color: #abb8b0; }
+.csw-context-settings[data-dark="true"] :is(input, button) { border-color: #59615c; }

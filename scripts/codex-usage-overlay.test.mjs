@@ -25,6 +25,10 @@ class Element {
   }
 
   get firstElementChild() { return this.children[0]; }
+  get nextElementSibling() {
+    return this.parentElement?.children[this.parentElement.children.indexOf(this) + 1] ?? null;
+  }
+  getClientRects() { return this.hidden ? [] : [{}]; }
   setAttribute(name, value) { this.attributes[name] = value; }
   addEventListener(name, callback) {
     if (!this.listeners.has(name)) this.listeners.set(name, new Set());
@@ -44,6 +48,7 @@ class Element {
 
   before(element) {
     const parent = this.parentElement;
+    element.remove();
     element.parentElement = parent;
     parent.children.splice(parent.children.indexOf(this), 0, element);
   }
