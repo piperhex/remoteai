@@ -17,7 +17,7 @@ export function AccountAvatar({
 }: AccountAvatarProps) {
   const className = `${variant === "table" ? "table-avatar" : "avatar"}${disabled ? " disabled-avatar" : ""}`;
   if (!officialAuthActive) {
-    return <div className={className}>{disabled ? t("table.disabled") : initials(email)}</div>;
+    return <div className={className}>{disabled && variant === "table" ? t("table.disabled") : initials(email)}</div>;
   }
 
   return (

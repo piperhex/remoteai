@@ -36,7 +36,7 @@ const props: ComponentProps<typeof AccountTable> = {
   openaiAuthAccountId: null, openaiAuthBusy: false, onOpenaiAuthAccountChange: vi.fn(),
   privacyMode: false, privacyModeLoading: false, onPrivacyModeChange: vi.fn(), hideAccountNotes: false,
   showUsageNetworkErrors: true, displayMode: "cards", tokenUsageRefreshSeconds: 2, language: "en",
-  t: (key, values) => key === "tokenUsage.dayTotal" ? `Tokens: ${values?.tokens}` : key,
+  t: (key) => key,
 };
 let root: Root;
 let container: HTMLDivElement;
@@ -89,7 +89,7 @@ it("shows credits in a separate column and reuses usage refresh without overlapp
 
 it.each([true, false])("shows recorded tokens and cost regardless of proxy running=%s", async (hotSwitchEnabled) => {
   await render({ hotSwitchEnabled });
-  expect(container.querySelector(".account-card-token-summary")?.textContent).toBe("Tokens: 1.2K");
+  expect(container.querySelector(".account-card-token-summary")?.textContent).toBe("Today 1.2K Tokens");
   expect(container.querySelector(".account-card-token-cost")?.textContent).toBe("0.25 USD");
   await render({ hotSwitchEnabled: !hotSwitchEnabled });
   expect(container.querySelector(".account-card-token-cost")?.textContent).toBe("0.25 USD");
@@ -98,8 +98,26 @@ it.each([true, false])("shows recorded tokens and cost regardless of proxy runni
 it("shows actual zeroes when no usage was recorded", async () => {
   vi.mocked(backend.loadAccountTokenUsage).mockResolvedValue([]);
   await render();
-  expect(container.querySelector(".account-card-token-summary")?.textContent).toBe("Tokens: 0");
+  expect(container.querySelector(".account-card-token-summary")?.textContent).toBe("Today 0 Tokens");
   expect(container.querySelector(".account-card-token-cost")?.textContent).toBe("0.00 USD");
+});
+
+it("keeps missing quotas visible and opens details without switching the account", async () => {
+  const inactive = { ...account, active: false, autoSwitchEnabled: false,
+    usage: { ...account.usage, secondary: null } };
+  await render({ accounts: [inactive] });
+  const meters = container.querySelectorAll(".card-usage-meter");
+  expect(meters).toHaveLength(2);
+  expect(meters[1].textContent).toContain("No data yet");
+  expect(meters[1].querySelector('[role="progressbar"]')).toBeNull();
+  expect(container.querySelector(".account-card-avatar .avatar")?.textContent).toBe("AL");
+  expect(container.querySelector(".account-card-disabled-label")?.textContent).toBe("Disabled");
+  const details = meters[0].querySelector<HTMLButtonElement>(".card-usage-details-button");
+  await act(async () => details?.click());
+  const popover = document.querySelector<HTMLElement>(".card-usage-details");
+  expect(popover?.textContent).toContain("Remaining quota: 72%");
+  await act(async () => popover?.click());
+  expect(props.onSwitch).not.toHaveBeenCalled();
 });
 
 it('updates the quota unit and amount with cost display settings without reloading usage', async () => {

@@ -54,7 +54,6 @@ import type {
 } from "../../../types";
 import { accountExpirationDate } from "../../../utils/expiration";
 import { maskAccountEmail } from "../../../utils/accountPrivacy";
-import { formatCompactTokenCount } from "../../../utils/tokenContext";
 import { shouldShowUsageError } from "../../../utils/usageErrors";
 import {
   formatEstimatedCost,
@@ -67,11 +66,12 @@ import {
   FAST_MODE_COST_MULTIPLIER_STORAGE_KEY,
 } from "../../../utils/tokenCostFastMode";
 import { LONG_CONTEXT_COST_EVENT, LONG_CONTEXT_COST_STORAGE_KEY } from "../../../utils/tokenCostLongContext";
-import { DailyTokenUsageTooltip } from "../../DailyTokenUsageTooltip";
 import { TokenCostColumnTitle, useTokenCostDisplaySettings } from "../../TokenCostUnitSettings";
 import { AccountNoteModal } from "../../modals/AccountNoteModal";
 import { AccountExpandedPanel } from "../AccountExpandedPanel";
 import { AccountAvatar } from "../AccountAvatar";
+import { AccountCardFooter } from "../AccountCardFooter";
+import { accountCardLabels } from "../accountCardLabels";
 import { AccountCredits, AccountCreditsTitle } from "../AccountCredits";
 import { AccountCardAutoSwitchSettings } from "../AccountCardAutoSwitchSettings";
 import { AccountGroupCell, ConcurrentRoutingControl } from "../AccountGroupControls";
@@ -1293,11 +1293,15 @@ export function AccountTable({
                   : ACCOUNT_CONTEXT_MENU_HEIGHT.directSwitch),
               });
             }}>
-            <div className="card-topline" />
             <header className="account-head">
-              <AccountAvatar email={account.email} disabled={isDisabled}
-                officialAuthActive={openaiAuthAccountId === account.id} busy={openaiAuthBusy} variant="card"
-                onClearOfficialAuth={() => requestOpenaiAuthAccountChange(null)} t={t} />
+              <div className="account-card-avatar">
+                <AccountAvatar email={account.email} disabled={isDisabled}
+                  officialAuthActive={openaiAuthAccountId === account.id} busy={openaiAuthBusy} variant="card"
+                  onClearOfficialAuth={() => requestOpenaiAuthAccountChange(null)} t={t} />
+                {isDisabled && <span className="account-card-disabled-label">
+                  {accountCardLabels(language).disabled}
+                </span>}
+              </div>
               <div className="identity">
                 <div className="identity-line">
                   <CopyableAccountEmail email={account.email}
@@ -1305,7 +1309,9 @@ export function AccountTable({
                   <AccountResetCreditCount count={resetCreditsCount(resetCredits[account.id])}
                     language={language} />
                   <Tooltip title={account.accountId ? t("table.workspace", { id: account.accountId }) : t("table.personal")}>
-                    <Tag className="plan-tag">{account.plan || "ChatGPT"}</Tag>
+                    <Tag className={`plan-tag${account.plan?.toLowerCase() === "free" ? " free-plan" : ""}`}>
+                      {account.plan || "ChatGPT"}
+                    </Tag>
                   </Tooltip>
                   {account.official && <Tag className="official-account-tag">{t("table.official")}</Tag>}
                 </div>
@@ -1325,18 +1331,18 @@ export function AccountTable({
                     </Tooltip>}
                 </div>
               </div>
-              <div className={`card-header-actions${customPriorityActive || customThresholdActive
-                ? " has-auto-switch-settings" : ""}`}>
+              <div className="card-header-actions">
                 <Tooltip title={t("table.refreshUsage")}><Button size="small" className="table-icon-button" loading={waiting}
-                  icon={<RefreshCw size={14} />} onClick={() => onRefresh(account.id)} /></Tooltip>
+                  aria-label={t("table.refreshUsage")}
+                  icon={<RefreshCw size={19} />} onClick={() => onRefresh(account.id)} /></Tooltip>
                 <UsageRefreshAge fetchedAt={account.usage.fetchedAt} t={t} />
-                <AccountCardAutoSwitchSettings account={account} t={t}
-                  priorityEnabled={customPriorityActive} thresholdEnabled={customThresholdActive}
-                  priorityBusy={autoSwitchPriorityBusyAccountId !== null}
-                  thresholdBusy={autoSwitchThresholdBusyAccountId !== null}
-                  onPrioritySave={onAutoSwitchPriorityChange} onThresholdSave={onAutoSwitchThresholdChange} />
               </div>
             </header>
+            <AccountCardAutoSwitchSettings account={account} t={t}
+              priorityEnabled={customPriorityActive} thresholdEnabled={customThresholdActive}
+              priorityBusy={autoSwitchPriorityBusyAccountId !== null}
+              thresholdBusy={autoSwitchThresholdBusyAccountId !== null}
+              onPrioritySave={onAutoSwitchPriorityChange} onThresholdSave={onAutoSwitchThresholdChange} />
             <div className="account-card-usage">
               <section>
                 <UsageMeter window={account.usage.primary} resetWindow="oneWeek"
@@ -1350,24 +1356,7 @@ export function AccountTable({
                   language={language} t={t} />
               </section>
             </div>
-            {cardTokenUsage && (
-              <footer className="account-card-token-footer">
-                <Tooltip title={<DailyTokenUsageTooltip totals={cardTokenUsage.totals} language={language} />}
-                  placement="topLeft" styles={{ root: { maxWidth: 400 } }}>
-                  <span className="account-card-token-summary" aria-label={t("table.tokenTotals")}>
-                    {t("tokenUsage.dayTotal", {
-                      tokens: formatCompactTokenCount(cardTokenUsage.totals.total, language),
-                    })}
-                  </span>
-                </Tooltip>
-                <Tooltip title={t("table.estimatedTokenCostHint", { unit: tokenCostDisplay.unit })}
-                  styles={{ root: { maxWidth: 400 } }}>
-                  <span className="account-card-token-cost">
-                    {formatEstimatedCost(cardTokenUsage.estimatedCost, tokenCostDisplay)}
-                  </span>
-                </Tooltip>
-              </footer>
-            )}
+            <AccountCardFooter usage={cardTokenUsage} display={tokenCostDisplay} language={language} t={t} />
           </article>
         );
       })}

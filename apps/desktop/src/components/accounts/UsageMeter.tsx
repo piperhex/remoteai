@@ -3,6 +3,7 @@ import { Progress } from "antd";
 import { useEffect, useState } from "react";
 import type { Language, Translate } from "../../i18n";
 import type { UsageWindow } from "../../types";
+import { AccountUsageCard } from "./AccountUsageCard";
 import { remainingTone, resetCountdownTime, resetCountdownWithDays, resetLabel, type UsageResetWindow } from "../../utils/format";
 
 function usageStroke(value: number) {
@@ -79,27 +80,13 @@ export function UsageMeter({
     return () => window.clearInterval(timer);
   }, [tickerActive, usageWindow?.resetsAt, fetchedAt]);
 
+  if (variant === "card") return (
+    <AccountUsageCard usage={usageWindow} language={language} now={now}
+      label={[cardLabel, cardLabelSuffix].filter(Boolean).join(language === "zh" ? "" : " ")} />
+  );
   if (!usageWindow) return <span className="usage-missing">--</span>;
   const remaining = Math.round(usageWindow.remainingPercent);
   const tone = remainingTone(remaining);
-  if (variant === "card") return (
-    <div className={`table-usage card-usage-meter table-usage-${resetWindow}`}>
-      <div className="card-usage-head">
-        <span className="card-usage-value">
-          <strong className={tone}>{remaining}%</strong>
-          <span className="card-usage-label">
-            {cardLabel && <span className="card-usage-name">{cardLabel}</span>}
-            {cardLabelSuffix && <span>{cardLabelSuffix}</span>}
-            <span className="card-usage-remaining">{t("usage.remaining")}</span>
-          </span>
-          <span className="card-usage-inline-reset">
-            {tableResetLabel(usageWindow.resetsAt, language, resetWindow, now)}
-          </span>
-        </span>
-      </div>
-      <Progress percent={remaining} showInfo={false} size="small" strokeColor={usageStroke(remaining)} />
-    </div>
-  );
   return (
     <div className={`table-usage table-usage-${resetWindow}`}>
       <div className="table-usage-head">

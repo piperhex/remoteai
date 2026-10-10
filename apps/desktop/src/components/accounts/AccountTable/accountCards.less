@@ -1,0 +1,205 @@
+.account-card-grid {
+  width: calc(100% - 32px);
+  margin: 0 16px;
+  padding: 3px 3px 18px;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, max(350px, calc((100% - 32px) / 3))), 1fr));
+  align-content: start;
+  gap: 16px;
+}
+
+.account-card {
+  --card-muted: #778292;
+  --card-ink: #293342;
+  --card-accent: #087f91;
+  --card-fill: #30b2c2;
+  --card-line: rgba(127, 145, 165, .16);
+  --card-inset: rgba(231, 236, 242, .4);
+  --card-track: rgba(151, 163, 179, .19);
+  --card-sheen: rgba(255, 255, 255, .85);
+  --card-shadow: rgba(34, 54, 76, .06);
+  --card-danger: #dc4940;
+  --card-warning: #a97415;
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--card-line);
+  border-radius: 16px;
+  color: var(--card-ink);
+  background: linear-gradient(135deg, rgba(255, 255, 255, .84), rgba(249, 251, 254, .7));
+  box-shadow: inset 0 1px 0 var(--card-sheen), 0 6px 20px var(--card-shadow);
+  backdrop-filter: blur(18px) saturate(115%);
+  -webkit-backdrop-filter: blur(18px) saturate(115%);
+  cursor: pointer;
+  transition: border-color .18s ease, box-shadow .18s ease;
+
+  // A faint grain keeps flat backgrounds matte without reducing text clarity.
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: .025;
+    background-image: url("../accountCardGrain.svg");
+  }
+
+  &:hover { border-color: rgba(127, 145, 165, .32); }
+  &.active {
+    border-color: rgba(48, 178, 194, .62);
+    box-shadow: inset 0 1px 0 var(--card-sheen), 0 6px 20px rgba(25, 143, 159, .1);
+  }
+
+  .account-head { min-height: 120px; display: flex; align-items: flex-start; gap: 16px; padding: 22px 22px 16px; }
+  .account-card-avatar { display: grid; flex: 0 0 auto; justify-items: center; gap: 4px; }
+  .avatar { width: 54px; height: 54px; border-radius: 16px; font-size: 18px; }
+  .avatar:not(button) { color: var(--card-accent); background: rgba(48, 178, 194, .12); }
+  .avatar.disabled-avatar:not(button) { color: var(--card-danger); background: rgba(246, 101, 108, .14); }
+  .account-card-disabled-label {
+    max-width: 90px;
+    padding: 2px 9px;
+    border-radius: 5px;
+    color: var(--card-danger);
+    background: rgba(246, 101, 108, .13);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: center;
+  }
+  .identity { padding-top: 3px; }
+  .identity-line { flex-wrap: wrap; gap: 5px 9px; }
+  .account-email-copy { max-width: 100%; gap: 0; position: relative; }
+  .account-email-copy > svg { position: absolute; left: -13px; width: 10px; opacity: 0; }
+  .account-email-copy:hover > svg, .account-email-copy:focus-visible > svg { opacity: 1; }
+  .account-email { max-width: 100%; font: 700 15px/1.45 Manrope, sans-serif; }
+  .account-note-edit { max-width: 100%; margin-top: 7px; gap: 7px; color: var(--card-muted); font-size: 11px; }
+  .account-note-edit.empty { font-style: normal; }
+  .account-note-edit svg { width: 12px; height: 12px; }
+  .plan-line { min-height: 16px; margin-top: 8px; color: var(--card-muted); font-size: 11px; }
+  .plan-line:empty { display: none; }
+  .plan-tag {
+    padding: 1px 10px;
+    border: 0;
+    border-radius: 6px;
+    color: var(--card-accent);
+    background: rgba(48, 178, 194, .12);
+  }
+  .plan-tag.free-plan { color: var(--card-ink); background: var(--card-inset); }
+  .plan-line .ant-tag { margin: 0; }
+  button { cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--card-fill); outline-offset: 3px; }
+  .card-header-actions { flex: 0 0 auto; display: grid; justify-items: end; gap: 4px; }
+  .card-header-actions .table-icon-button {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--card-line);
+    border-radius: 10px;
+    color: var(--card-ink);
+    background: transparent;
+    box-shadow: inset 0 1px 0 var(--card-sheen);
+  }
+  .account-card-refresh-age { max-width: 72px; color: var(--card-muted); font-size: 10px; overflow-wrap: anywhere; }
+  &.active .account-card-refresh-age { color: var(--card-accent); }
+}
+
+.account-card-usage {
+  display: grid;
+  gap: 8px;
+  margin: 0 20px 14px;
+  section { min-width: 0; padding: 13px 15px; border-radius: 13px; background: var(--card-inset); }
+}
+.card-usage-meter { min-width: 0; display: grid; gap: 9px; }
+.card-usage-head { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
+.card-usage-label { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 650; }
+.card-usage-value { margin-left: auto; color: var(--card-accent); font: 700 16px/1.2 Manrope, sans-serif; }
+.card-usage-meter.danger .card-usage-value { color: var(--card-danger); }
+.card-usage-meter.warning .card-usage-value { color: var(--card-warning); }
+.card-usage-meter.missing .card-usage-value { color: var(--card-muted); }
+.card-usage-countdown {
+  color: var(--card-muted);
+  font-size: 10px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.card-usage-info, .card-usage-details-button {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--card-muted);
+  background: transparent;
+}
+.card-usage-details-button { width: 18px; height: 20px; }
+.card-usage-info:hover, .card-usage-details-button:hover { color: var(--card-accent); }
+.card-usage-track { height: 9px; overflow: hidden; border-radius: 99px; background: var(--card-track); }
+.card-usage-track > span { display: block; height: 100%; border-radius: inherit; background: var(--card-fill); }
+.card-usage-meter.danger .card-usage-track > span { background: var(--card-danger); }
+.card-usage-meter.warning .card-usage-track > span { background: var(--card-warning); }
+.card-usage-reset { color: var(--card-muted); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+.card-usage-details { display: grid; gap: 6px; max-width: min(350px, calc(100vw - 48px)); overflow-wrap: anywhere; }
+
+.account-card-token-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+  padding: 17px 22px;
+  border-top: 1px solid var(--card-line);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.account-card-token-summary, .account-card-token-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  cursor: help;
+}
+.account-card-token-summary { color: var(--card-muted); }
+.account-card-token-summary strong { color: var(--card-accent); font-weight: 600; }
+.account-card-token-cost { color: var(--card-accent); font-weight: 700; }
+.account-card-token-footer svg { flex: 0 0 auto; }
+
+:root[data-theme="dark"] .account-card {
+  --card-muted: #a1adbd;
+  --card-ink: #e2e8f0;
+  --card-accent: #68c8d4;
+  --card-fill: #42acba;
+  --card-line: rgba(165, 186, 211, .13);
+  --card-inset: rgba(160, 184, 215, .06);
+  --card-track: rgba(158, 178, 204, .14);
+  --card-sheen: rgba(211, 229, 250, .04);
+  --card-shadow: rgba(0, 0, 0, .16);
+  --card-danger: #f27f77;
+  --card-warning: #dcb96b;
+  background: linear-gradient(135deg, rgba(35, 42, 52, .88), rgba(26, 32, 41, .8));
+
+  &::before { opacity: .04; }
+  &:hover { border-color: rgba(165, 186, 211, .25); }
+  &.active {
+    border-color: rgba(86, 176, 190, .52);
+    box-shadow: inset 0 1px 0 var(--card-sheen), 0 6px 22px rgba(0, 0, 0, .2);
+  }
+}
+
+@media (max-width: 600px) {
+  .account-card-grid { width: calc(100% - 20px); margin: 0 10px; }
+  .account-card .account-head { gap: 10px; padding: 18px 16px 14px; }
+  .account-card .avatar { width: 46px; height: 46px; border-radius: 13px; font-size: 16px; }
+  .account-card .account-email { font-size: 13px; }
+  .account-card-usage { margin-right: 12px; margin-left: 12px; }
+  .account-card-usage section { padding: 12px; }
+  .account-card-token-footer { padding: 14px 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-card { transition: none; }
+}
