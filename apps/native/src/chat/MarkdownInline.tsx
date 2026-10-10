@@ -23,13 +23,32 @@ function openLink(url: string) {
   if (/^https?:\/\//i.test(url)) void Linking.openURL(url).catch(() => undefined);
 }
 
+function inlineRuns(nodes: MarkdownNode[]): (MarkdownNode | string)[] {
+  const runs: (MarkdownNode | string)[] = [];
+  let plain = '';
+  for (const node of nodes) {
+    const type = node.token.type;
+    if (type === 'text' || type === 'softbreak' || type === 'hardbreak') {
+      plain += type === 'text' ? node.token.content : '\n';
+      continue;
+    }
+    if (plain) runs.push(plain);
+    plain = '';
+    runs.push(node);
+  }
+  if (plain) runs.push(plain);
+  return runs;
+}
+
 function Inline({ nodes, muted = false }: {
   nodes: MarkdownNode[]; muted?: boolean;
 }) {
   useLanguage();
   const openFile = useContext(ChatFileContext);
-  return <>{nodes.map(({ token, children }, index) => {
-    if (token.type === 'softbreak' || token.type === 'hardbreak') return '\n';
+  // Plain runs inherit their enclosing Text style without consuming a native span for every line.
+  return <>{inlineRuns(nodes).map((run, index) => {
+    if (typeof run === 'string') return run;
+    const { token, children } = run;
     const style = INLINE_STYLES[token.type as keyof typeof INLINE_STYLES];
     if (token.type === 'link_open') return <Text key={index} accessibilityRole="link" style={markdownStyles.link}
       onPress={() => {
