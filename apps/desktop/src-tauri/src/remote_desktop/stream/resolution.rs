@@ -29,7 +29,7 @@ pub(super) async fn apply(id: &str, size: Resolution) -> Result<privacy::Snapsho
             #[cfg(not(windows))]
             {
                 let _ = size;
-                return Err(DesktopError::Resolution);
+                Err(DesktopError::Resolution)
             }
             #[cfg(windows)]
             {
