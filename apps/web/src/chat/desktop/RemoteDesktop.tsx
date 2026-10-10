@@ -93,6 +93,9 @@ function DesktopViewer({ client, active, connected = true, close, localClipboard
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
     else void document.documentElement.requestFullscreen?.().catch(() => undefined);
   };
+  const frameRendered = () => {
+    if ((video.current?.videoWidth ?? 0) > 0) session.frameRendered();
+  };
   if (!active) return null;
   return createPortal(<><div ref={root} tabIndex={-1} className="rd-root" style={keyboardViewport}
     hidden={windowControls.minimized}
@@ -104,7 +107,8 @@ function DesktopViewer({ client, active, connected = true, close, localClipboard
       select={displayId => { void session.update({ ...session.settings, displayId }); }} />}
     <div className="rd-workspace">
     <div ref={stage} className="rd-stage">
-      <video ref={video} autoPlay playsInline onLoadedData={session.frameRendered} className="rd-video" style={{
+      <video ref={video} autoPlay playsInline onLoadedData={frameRendered} onResize={frameRendered}
+        className="rd-video" style={{
         left: viewport.content.x, top: viewport.content.y,
         width: viewport.content.width, height: viewport.content.height }} />
       <DesktopInputSurface key={direct ? 'direct' : 'trackpad'} pointer={session.pointer} viewport={viewport}

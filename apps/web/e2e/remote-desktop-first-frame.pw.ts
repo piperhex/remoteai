@@ -21,12 +21,15 @@ test('keeps the loading message until the connected peer delivers a picture', as
       },
     });
   });
-  await page.goto('e2e/remote-desktop-harness.html');
+  await page.goto('e2e/remote-desktop-harness.html?audio=1');
   await page.getByRole('button', { name: '打开工具' }).click();
   await page.getByRole('button', { name: '远程桌面', exact: true }).click();
   const loading = page.getByText('正在加载桌面画面…', { exact: true });
   await expect(loading).toBeVisible();
   expect(await page.locator('video').evaluate(video => video.videoWidth)).toBe(0);
+  // Audio can load before the first video frame; that event must not dismiss picture loading.
+  await page.locator('video').dispatchEvent('loadeddata');
+  await expect(loading).toBeVisible();
   expect(await loading.evaluate(element => element.getBoundingClientRect().width)).toBeLessThanOrEqual(400);
   await page.screenshot({ path: info.outputPath('waiting-for-first-frame.png') });
   await page.evaluate(async () => {
