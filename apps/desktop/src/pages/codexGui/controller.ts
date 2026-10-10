@@ -1,7 +1,7 @@
 import { guiApi } from "./api";
 import { CapacityRetry } from "./capacityRetry";
 import { CONTINUE_MESSAGE } from "./continuation";
-import { canForkConversation } from "./forkConversation";
+import { forkGuiConversation } from "./forkConversation";
 import { GuiMessageEditor } from "./editMessage";
 import { GuiGoals } from "./goals";
 import { GuiProjects } from "./projectActions";
@@ -277,30 +277,10 @@ export class GuiController {
     } catch (error) { if (generation === this.selectionGeneration) this.report(error); }
   };
 
-  forkConversation = async (threadId: string, turnId: string): Promise<boolean> => {
-    const state = this.state;
-    const turn = state.conversations[threadId]?.turns.find((entry) => entry.id === turnId);
-    if (!canForkConversation(state) || state.selected !== threadId || !turn || turn.status === "inProgress") {
-      return false;
-    }
-    const generation = this.selectionGeneration;
-    const { model, effort, access } = state.settings;
-    this.patch({ forking: threadId, error: "" });
-    try {
-      const { thread } = await guiApi.request<{ thread: Thread }>({ operation: "fork", threadId, turnId,
-        access, cwd: state.projectOverrides[threadId] });
-      this.patch({ conversations: { ...this.state.conversations, [thread.id]: conversation(thread) },
-        threads: [thread, ...this.state.threads.filter((entry) => entry.id !== thread.id)] });
-      this.modelSettings.created(thread.id, { model, effort });
-      if (generation === this.selectionGeneration) {
-        this.patch({ archived: false, search: "" });
-        await this.select(thread.id);
-      }
-      void this.refresh();
-      return true;
-    } catch (error) { this.report(error); return false; }
-    finally { this.patch({ forking: undefined }); }
-  };
+  forkConversation = (threadId: string, turnId?: string): Promise<boolean> => forkGuiConversation({
+    getSnapshot: this.getSnapshot, patch: this.patch, report: this.report, modelSettings: this.modelSettings,
+    selectionGeneration: () => this.selectionGeneration, select: this.select, refresh: this.refresh,
+  }, threadId, turnId);
 
   /** Load the phone's conversation without changing the conversation selected on the PC. */
   loadRemoteThread = (threadId: string): Promise<void> => {

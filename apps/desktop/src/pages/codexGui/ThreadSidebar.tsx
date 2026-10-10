@@ -2,7 +2,7 @@ import { guiText } from "../../i18n/guiText";
 import { useGuiLanguage } from '../../i18n/useGuiLanguage';
 import { useMemo, useState, type ReactNode } from "react";
 import { App, Button, Dropdown, Input, Modal, Segmented, Spin } from "antd";
-import { Archive, Pencil, Pin, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Archive, Pencil, Pin, RefreshCw, Search, Split, Trash2 } from "lucide-react";
 import type { GuiController } from "./controller";
 import type { GuiState, Thread } from "./types";
 import { ThreadGroup } from "./ThreadGroup";
@@ -10,6 +10,7 @@ import { ThreadSearch } from "./ThreadSearch";
 import { useThreadGroupViews } from "./useThreadGroupViews";
 import { threadGroups } from "./threadGroups";
 import { isThreadRunning } from "./threadRunning";
+import { canForkLatestConversation } from "./forkConversation";
 import { ProjectGroupMenu } from "./ProjectGroupMenu";
 import { ThreadStatus } from "./ThreadStatus";
 import { ThreadPagination } from "./ThreadPagination";
@@ -48,6 +49,8 @@ export function ThreadSidebar({ state, controller, accountPicker, focused, onTog
     const items = [
       { key: "pin", label: state.pins.includes(thread.id) ? guiText("取消置顶") : guiText("置顶"), icon: <Pin size={14} /> },
       { key: "rename", label: guiText("重命名"), icon: <Pencil size={14} />, disabled: running },
+      { key: "fork", label: guiText("创建分支"), icon: <Split size={14} />,
+        disabled: !canForkLatestConversation(state, thread) },
       { key: "archive", label: state.archived ? guiText("恢复对话") : guiText("归档"), icon: <Archive size={14} />, disabled: running },
       { key: "delete", label: guiText("删除"), icon: <Trash2 size={14} />, danger: true,
         disabled: running || busy || needsInput || Boolean(state.queued[thread.id]?.length)
@@ -57,6 +60,7 @@ export function ThreadSidebar({ state, controller, accountPicker, focused, onTog
       menu={{ items, onClick: ({ key }) => {
         if (key === "pin") controller.pin(thread.id);
         if (key === "rename") { setRenaming(thread); setName(threadTitle(thread)); }
+        if (key === "fork") { onNavigate("conversation"); void controller.forkConversation(thread.id); }
         if (key === "archive") void controller.manage(state.archived ? "unarchive" : "archive", thread.id);
         if (key === "delete") setDeleting(thread);
       } }}>

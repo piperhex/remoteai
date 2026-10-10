@@ -85,3 +85,57 @@ it("rejects missing turns and turns that are still running", async () => {
   expect(guiApi.request).not.toHaveBeenCalledWith(expect.objectContaining({ operation: "fork" }));
   controller.dispose();
 });
+
+it("branches an unopened conversation at its latest turn using its own model choice", async () => {
+  const controller = new GuiController();
+  await controller.connect();
+  controller.settings({ model: "draft-model", effort: "low" });
+  controller.modelSettings.created(source.id, { model: "source-model", effort: "high" });
+  expect(controller.getSnapshot().conversations.source).toBeUndefined();
+  expect(await controller.forkConversation(source.id)).toBe(true);
+  expect(guiApi.request).toHaveBeenCalledWith({ operation: "read", threadId: source.id });
+  expect(guiApi.request).toHaveBeenCalledWith(expect.objectContaining({ operation: "fork",
+    threadId: source.id, turnId: "last" }));
+  expect(controller.getSnapshot()).toMatchObject({ selected: fork.id,
+    settings: { model: "source-model", effort: "high" } });
+  expect(controller.getSnapshot().conversations.source).toBeUndefined();
+  controller.dispose();
+});
+
+it("refreshes cached history before choosing the latest branch point", async () => {
+  const controller = await setup();
+  const cached = controller.getSnapshot().conversations.source;
+  vi.mocked(guiApi.request).mockResolvedValueOnce({ thread: { ...source,
+    turns: [...source.turns!, { id: "newer", status: "completed", items: [] }] } });
+  expect(await controller.forkConversation(source.id)).toBe(true);
+  expect(guiApi.request).toHaveBeenCalledWith(expect.objectContaining({ operation: "fork", turnId: "newer" }));
+  expect(controller.getSnapshot().conversations.source).toBe(cached);
+  controller.dispose();
+});
+
+it("prevents duplicate forks while reading history and preserves a later navigation", async () => {
+  const controller = await setup();
+  let finish!: (response: { thread: Thread }) => void;
+  vi.mocked(guiApi.request).mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+  const pending = controller.forkConversation(source.id);
+  expect(controller.getSnapshot().forking).toBe(source.id);
+  expect(await controller.forkConversation(source.id)).toBe(false);
+  controller.newConversation();
+  finish({ thread: source });
+  expect(await pending).toBe(true);
+  expect(controller.getSnapshot().selected).toBeNull();
+  expect(controller.getSnapshot().conversations.fork.thread.id).toBe(fork.id);
+  controller.dispose();
+});
+
+it.each([
+  { turns: [], error: "这条对话还没有可用于创建分支的消息。" },
+  { turns: [{ id: "active", status: "inProgress", items: [] }], error: "请等待当前回复完成后，再创建分支。" },
+])("leaves the source intact when the latest history cannot be branched: $error", async ({ turns, error }) => {
+  const controller = await setup();
+  vi.mocked(guiApi.request).mockResolvedValueOnce({ thread: { ...source, turns } });
+  expect(await controller.forkConversation(source.id)).toBe(false);
+  expect(guiApi.request).not.toHaveBeenCalledWith(expect.objectContaining({ operation: "fork" }));
+  expect(controller.getSnapshot()).toMatchObject({ selected: source.id, error, forking: undefined });
+  controller.dispose();
+});

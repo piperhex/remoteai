@@ -70,6 +70,34 @@ it("disables deletion while Codex reports an active reply", async () => {
   expect(controller.deleteThread).not.toHaveBeenCalled();
 });
 
+it("places create branch above archive and branches the right-clicked conversation", async () => {
+  const fork = vi.spyOn(controller, "forkConversation").mockResolvedValue(true);
+  const select = vi.spyOn(controller, "select").mockResolvedValue();
+  await render();
+  await openThreadMenu();
+  const items = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+  expect(items.map((entry) => entry.textContent)).toEqual(["置顶", "重命名", "创建分支", "归档", "删除"]);
+  await act(async () => items.find((entry) => entry.textContent === "创建分支")!.click());
+  expect(fork).toHaveBeenCalledExactlyOnceWith("one");
+  expect(select).not.toHaveBeenCalled();
+});
+
+it.each<Partial<GuiState>>([
+  { connection: "offline" }, { forking: "other" }, { sending: true }, { archived: true },
+  { compacting: "one" }, { pendingRequest: { threadId: "one", startedAtMs: 1 } },
+  { threads: [{ id: "one", cwd: "D:/project", preview: "会话示例", updatedAt: 1, status: { type: "active" } }] },
+])("disables branching while the conversation is unavailable: %j", async (patch) => {
+  const fork = vi.spyOn(controller, "forkConversation").mockResolvedValue(true);
+  state = { ...state, ...patch };
+  await render();
+  await openThreadMenu();
+  const item = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+    .find((entry) => entry.textContent === "创建分支")!;
+  expect(item.getAttribute("aria-disabled")).toBe("true");
+  await act(async () => item.click());
+  expect(fork).not.toHaveBeenCalled();
+});
+
 it("selects on left click and opens management actions only on right click", async () => {
   const select = vi.spyOn(controller, "select").mockResolvedValue();
   const pin = vi.spyOn(controller, "pin");
