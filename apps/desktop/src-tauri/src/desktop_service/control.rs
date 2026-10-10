@@ -1,6 +1,6 @@
 //! Local owner controls: status, permission changes, and the fixed desktop RPCs. Credentials are never returned.
 use super::{
-    configuration, control_listener::Listener, installer, supervisor, Result, ServiceError,
+    assets, configuration, control_listener::Listener, installer, supervisor, Result, ServiceError,
 };
 use crate::remote_desktop::{permissions::Permissions, service_worker::Call};
 use serde::{Deserialize, Serialize};
@@ -29,6 +29,9 @@ pub(crate) struct Snapshot {
     // Older services omit this field and receive one compatibility update on the next app start.
     #[serde(default)]
     pub version: Option<String>,
+    // The semantic version alone cannot distinguish local rebuilds or missing new components.
+    #[serde(default)]
+    pub executable_fingerprint: Option<String>,
 }
 #[derive(Deserialize, Serialize)]
 struct Response {
@@ -36,12 +39,13 @@ struct Response {
     error: Option<String>,
 }
 
-fn snapshot(config: configuration::Configuration) -> Snapshot {
+fn snapshot(config: configuration::Configuration, fingerprint: String) -> Snapshot {
     Snapshot {
         permissions: config.permissions,
         base_url: config.base_url,
         name: config.name,
         version: Some(config.version),
+        executable_fingerprint: Some(fingerprint),
     }
 }
 pub(super) async fn serve() -> Result<()> {
@@ -119,22 +123,28 @@ async fn handle(request: Request) -> Result<Value> {
     match request {
         Request::Desktop { call } => supervisor::desktop_call(call).await,
         Request::Status => {
-            let config = tauri::async_runtime::spawn_blocking(configuration::read)
-                .await
-                .map_err(|_| ServiceError::Unavailable)??;
-            serde_json::to_value(snapshot(config)).map_err(|_| ServiceError::Invalid)
+            let status = tauri::async_runtime::spawn_blocking(|| {
+                Ok::<_, ServiceError>(snapshot(
+                    configuration::read()?,
+                    assets::executable_fingerprint()?,
+                ))
+            })
+            .await
+            .map_err(|_| ServiceError::Unavailable)??;
+            serde_json::to_value(status).map_err(|_| ServiceError::Invalid)
         }
         Request::Permissions { permissions } => {
-            let config = tauri::async_runtime::spawn_blocking(move || {
+            let status = tauri::async_runtime::spawn_blocking(move || {
+                let fingerprint = assets::executable_fingerprint()?;
                 let mut config = configuration::read()?;
                 config.permissions = permissions;
                 configuration::write(&config)?;
-                Ok(config)
+                Ok::<_, ServiceError>(snapshot(config, fingerprint))
             })
             .await
             .map_err(|_| ServiceError::Unavailable)??;
             supervisor::reset_worker().await;
-            serde_json::to_value(snapshot(config)).map_err(|_| ServiceError::Invalid)
+            serde_json::to_value(status).map_err(|_| ServiceError::Invalid)
         }
     }
 }

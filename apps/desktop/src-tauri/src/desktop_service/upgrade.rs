@@ -51,7 +51,7 @@ fn update_staged(replacement: &mut Replacement, target: &Version) -> Result<()> 
 
 fn can_replace(installed: &str, target: &Version) -> Result<bool> {
     let installed = Version::parse(installed).map_err(|_| ServiceError::Invalid)?;
-    // Same-version replacement migrates services that predate version reporting.
+    // Same-version replacement also refreshes rebuilt applications with new runtime components.
     Ok(target.cmp_precedence(&installed).is_ge())
 }
 
