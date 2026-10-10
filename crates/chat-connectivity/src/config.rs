@@ -75,9 +75,7 @@ impl Config {
                 })
                 .collect::<Result<_>>()?,
         );
-        config.set_stun_servers(Some(self.stun_servers.clone()));
-        config.set_tcp_stun_servers(Some(self.stun_servers.clone()));
-        config.set_stun_servers_v6(Some(self.stun_servers.clone()));
+        configure_stun(&config, &self.stun_servers);
         configure_flags(&config);
         Ok(config)
     }
@@ -94,6 +92,25 @@ impl Config {
         let last = if self.desktop { 2 } else { 1 };
         std::net::SocketAddr::from(([10, 253, 0, last], CHAT_PORT))
     }
+}
+
+fn configure_stun(config: &TomlConfig, servers: &[String]) {
+    let for_family = |ipv6| {
+        servers
+            .iter()
+            // Keep unresolved names in both probes on platforms without pre-resolution.
+            .filter(|server| {
+                !server
+                    .parse::<std::net::SocketAddr>()
+                    .is_ok_and(|address| address.is_ipv6() != ipv6)
+            })
+            .cloned()
+            .collect::<Vec<_>>()
+    };
+    let ipv4 = for_family(false);
+    config.set_stun_servers(Some(ipv4.clone()));
+    config.set_tcp_stun_servers(Some(ipv4));
+    config.set_stun_servers_v6(Some(for_family(true)));
 }
 
 fn listeners() -> Result<Vec<Url>> {

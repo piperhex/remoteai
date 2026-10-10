@@ -6,17 +6,23 @@ final class VideoEncoder {
     private var forceKeyframe = true
     private let output: (Data) throws -> Void
 
+    static let outputCallback: VTCompressionOutputCallback = { context, _, status, flags, sample in
+        guard status == noErr else { exit(1) }
+        // VideoToolbox may successfully drop a frame and provide no sample buffer.
+        if flags.contains(.frameDropped) { return }
+        guard let context, let sample else { exit(1) }
+        let encoder = Unmanaged<VideoEncoder>.fromOpaque(context).takeUnretainedValue()
+        do { try encoder.emit(sample) } catch { exit(1) }
+    }
+
     init(options: CaptureOptions, output: @escaping (Data) throws -> Void) throws {
         self.output = output
         let result = VTCompressionSessionCreate(
             allocator: nil, width: Int32(options.width), height: Int32(options.height),
             codecType: kCMVideoCodecType_H264, encoderSpecification: nil,
             imageBufferAttributes: nil, compressedDataAllocator: nil,
-            outputCallback: { context, _, status, _, sample in
-                guard status == noErr, let context, let sample else { exit(1) }
-                let encoder = Unmanaged<VideoEncoder>.fromOpaque(context).takeUnretainedValue()
-                do { try encoder.emit(sample) } catch { exit(1) }
-            }, refcon: Unmanaged.passUnretained(self).toOpaque(), compressionSessionOut: &session
+            outputCallback: Self.outputCallback,
+            refcon: Unmanaged.passUnretained(self).toOpaque(), compressionSessionOut: &session
         )
         guard result == noErr, session != nil else { throw DesktopVideoError.encoding }
         try set(kVTCompressionPropertyKey_RealTime, kCFBooleanTrue)

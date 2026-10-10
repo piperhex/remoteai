@@ -1,6 +1,6 @@
 import { getGuiController } from '../pages/codexGui/session';
 import { composerPatch } from '../../../../shared/remote-chat/composer';
-import { queueTextPreview, type QueueSnapshot } from '../../../../shared/remote-chat/queue';
+import { queueTextPreview, type QueueSnapshot, type QueueEnqueueResult } from '../../../../shared/remote-chat/queue';
 import type { GuiController } from '../pages/codexGui/controller';
 import type { GuiState, SkillReference } from '../pages/codexGui/types';
 import { remoteAttachments } from '../../../../shared/remote-chat/composerAttachments';
@@ -62,6 +62,7 @@ export class RemoteQueue {
     if (source === this.source) return this.snapshot;
     this.source = source;
     this.snapshot = { revision: this.snapshot.revision + 1,
+      cancelledIds: [...this.controller().queue.cancelledMessages()],
       threads: Object.fromEntries(Object.entries(source).filter(([, messages]) => messages.length)
         .map(([id, messages]) => [id, messages.map((item) => ({
           id: item.id, text: queueTextPreview(item.text || item.attachments?.map((file) => file.name).join('、') || ''),
@@ -122,7 +123,7 @@ export class RemoteQueue {
   }
 
   private async enqueue(controller: GuiController, threadId: string,
-    body: Record<string, unknown>, mode: ConnectionMode) {
+    body: Record<string, unknown>, mode: ConnectionMode): Promise<QueueEnqueueResult> {
     const input = messageInput(body, mode);
     const patch = composerPatch(Object.fromEntries(['model', 'effort', 'access']
       .filter((key) => body[key] !== undefined).map((key) => [key, body[key]])));
@@ -134,13 +135,14 @@ export class RemoteQueue {
     }
     const settings = { ...controller.getSnapshot().settings, ...patch, ...selected };
     if (!controller.queue.enqueue(threadId, input, settings)) throw new Error('待发送消息已满，请稍后再添加。');
+    const enqueuedId = controller.getSnapshot().queued[threadId].at(-1)?.id;
     try { await controller.queueJournal.saved(); }
     catch {
       controller.queue.hold(threadId);
       throw new Error('保存结果尚未确认，请先检查电脑上的待发送消息。');
     }
     void controller.queue.flush(threadId);
-    return this.read();
+    return { ...this.read(), enqueuedId };
   }
 }
 

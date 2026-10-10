@@ -1,6 +1,7 @@
 //! Resolve only authenticated rendezvous/STUN hosts over the selected adapter's DNS path.
 use std::{
     collections::BTreeSet,
+    future::Future,
     net::{IpAddr, Ipv4Addr, SocketAddr},
     time::Duration,
 };
@@ -22,25 +23,40 @@ const DNS_TIMEOUT: Duration = Duration::from_secs(2);
 const MAX_STUN_ENDPOINTS: usize = 8;
 
 pub(super) async fn resolve_config(config: &mut Config, interface: &Interface) -> Result<()> {
-    config.stun_servers = resolve_stun(&config.stun_servers, interface).await?;
-    for server in &mut config.servers {
-        let mut url = url::Url::parse(server).map_err(|_| Error::Invalid)?;
-        let host = url
-            .host_str()
-            .ok_or(Error::Invalid)?
-            .trim_matches(['[', ']']);
-        if host.parse::<IpAddr>().is_ok() {
-            continue;
+    let stun_servers = resolve_stun(&config.stun_servers, interface).await?;
+    let mut servers = Vec::new();
+    for server in &config.servers {
+        match resolve_server(server, interface).await {
+            Ok(server) => servers.push(server),
+            // Coordinators are alternatives: a DNS outage must not discard another usable one.
+            Err(Error::Unavailable) => continue,
+            Err(error) => return Err(error),
         }
-        let address = resolve(host, interface)
-            .await?
-            .into_iter()
-            .next()
-            .ok_or(Error::Unavailable)?;
-        url.set_ip_host(address).map_err(|_| Error::Invalid)?;
-        *server = url.to_string();
     }
+    if servers.is_empty() {
+        return Err(Error::Unavailable);
+    }
+    config.stun_servers = stun_servers;
+    config.servers = servers;
     Ok(())
+}
+
+async fn resolve_server(server: &str, interface: &Interface) -> Result<String> {
+    let mut url = url::Url::parse(server).map_err(|_| Error::Invalid)?;
+    let host = url
+        .host_str()
+        .ok_or(Error::Invalid)?
+        .trim_matches(['[', ']']);
+    if host.parse::<IpAddr>().is_ok() {
+        return Ok(server.to_owned());
+    }
+    let address = resolve(host, interface)
+        .await?
+        .into_iter()
+        .next()
+        .ok_or(Error::Unavailable)?;
+    url.set_ip_host(address).map_err(|_| Error::Invalid)?;
+    Ok(url.to_string())
 }
 
 async fn resolve_stun(servers: &[String], interface: &Interface) -> Result<Vec<String>> {
@@ -57,7 +73,7 @@ async fn resolve_stun(servers: &[String], interface: &Interface) -> Result<Vec<S
             resolved.push(
                 addresses
                     .into_iter()
-                    .map(|address| SocketAddr::new(address, port).to_string())
+                    .map(|address| SocketAddr::new(address, port))
                     .collect(),
             );
         }
@@ -69,25 +85,65 @@ async fn resolve_stun(servers: &[String], interface: &Interface) -> Result<Vec<S
     Ok(endpoints)
 }
 
-fn sample_endpoints(resolved: &[Vec<String>]) -> Vec<String> {
+fn sample_endpoints(resolved: &[Vec<SocketAddr>]) -> Vec<String> {
+    let ipv4 = sample_family(resolved, false);
+    let ipv6 = sample_family(resolved, true);
+    // Reserve opportunities for both probes even when one family has many DNS answers.
+    (0..MAX_STUN_ENDPOINTS)
+        .flat_map(|index| [ipv4.get(index), ipv6.get(index)].into_iter().flatten())
+        .take(MAX_STUN_ENDPOINTS)
+        .map(ToString::to_string)
+        .collect()
+}
+
+fn sample_family(resolved: &[Vec<SocketAddr>], ipv6: bool) -> Vec<SocketAddr> {
+    let resolved: Vec<Vec<_>> = resolved
+        .iter()
+        .map(|server| {
+            server
+                .iter()
+                .filter(|address| address.is_ipv6() == ipv6)
+                .collect()
+        })
+        .collect();
     // Sample every configured server before adding its alternative addresses.
     let mut seen = BTreeSet::new();
     (0..MAX_STUN_ENDPOINTS)
         .flat_map(|index| resolved.iter().filter_map(move |server| server.get(index)))
-        .filter(|endpoint| seen.insert(*endpoint))
+        .filter(|endpoint| seen.insert(**endpoint))
         .take(MAX_STUN_ENDPOINTS)
-        .cloned()
+        .map(|address| **address)
         .collect()
 }
 
 async fn resolve(host: &str, interface: &Interface) -> Result<Vec<IpAddr>> {
+    resolve_records(host, |query| lookup(query, interface)).await
+}
+
+async fn resolve_records<F, Fut>(host: &str, lookup: F) -> Result<Vec<IpAddr>>
+where
+    F: Fn(Query) -> Fut,
+    Fut: Future<Output = Result<Vec<IpAddr>>>,
+{
     if let Ok(address) = host.parse::<IpAddr>() {
         if matches!(address, IpAddr::V4(ip) if !super::windows::usable(ip)) {
             return Err(Error::Unavailable);
         }
         return Ok(vec![address]);
     }
-    let query = dns_query(host)?;
+    // Missing A or AAAA records must not suppress the usable family or serialize its DNS wait.
+    let (ipv4, ipv6) = tokio::join!(
+        lookup(dns_query(host, RecordType::A)?),
+        lookup(dns_query(host, RecordType::AAAA)?),
+    );
+    let addresses: Vec<_> = ipv4.into_iter().chain(ipv6).flatten().collect();
+    if addresses.is_empty() {
+        return Err(Error::Unavailable);
+    }
+    Ok(addresses)
+}
+
+async fn lookup(query: Query, interface: &Interface) -> Result<Vec<IpAddr>> {
     for server in interface.dns.iter().take(3) {
         let response =
             tokio::time::timeout(DNS_TIMEOUT, query_server(&query, *server, interface)).await;
@@ -98,11 +154,11 @@ async fn resolve(host: &str, interface: &Interface) -> Result<Vec<IpAddr>> {
     Err(Error::Unavailable)
 }
 
-fn dns_query(host: &str) -> Result<Query> {
+fn dns_query(host: &str, record_type: RecordType) -> Result<Query> {
     let mut name = Name::from_ascii(host).map_err(|_| Error::Invalid)?;
     // Wire-decoded DNS names always include the root label; equality also checks this flag.
     name.set_fqdn(true);
-    Ok(Query::query(name, RecordType::A))
+    Ok(Query::query(name, record_type))
 }
 
 async fn query_server(
@@ -143,12 +199,20 @@ fn addresses(request: &Message, response: &Message) -> Result<Vec<IpAddr>> {
         return Err(Error::Unavailable);
     }
     let names = answer_names(request, response);
+    let record_type = request
+        .queries()
+        .first()
+        .ok_or(Error::Invalid)?
+        .query_type();
     let addresses: BTreeSet<_> = response
         .answers()
         .iter()
         .filter(|record| names.contains(record.name()))
-        .filter_map(|record| match record.data() {
-            RData::A(address) if super::windows::usable(address.0) => Some(IpAddr::V4(address.0)),
+        .filter_map(|record| match (record_type, record.data()) {
+            (RecordType::A, RData::A(address)) if super::windows::usable(address.0) => {
+                Some(IpAddr::V4(address.0))
+            }
+            (RecordType::AAAA, RData::AAAA(address)) => Some(IpAddr::V6(address.0)),
             _ => None,
         })
         .collect();
@@ -206,109 +270,5 @@ fn dns_socket(interface: &Interface) -> std::io::Result<UdpSocket> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use hickory_proto::rr::{rdata::A, Record};
-
-    #[tokio::test]
-    async fn supplemental_dns_failures_preserve_reachable_configured_stun_servers() {
-        let interface = Interface {
-            name: "test".into(),
-            index: 1,
-            ipv4: Ipv4Addr::new(192, 0, 2, 1),
-            dns: Vec::new(),
-        };
-        let servers = vec!["192.0.2.2:3478".into(), "unavailable.example:3478".into()];
-        assert_eq!(
-            resolve_stun(&servers, &interface).await.unwrap(),
-            ["192.0.2.2:3478"]
-        );
-        assert!(resolve_stun(&servers[1..], &interface).await.is_err());
-        assert!(resolve_stun(&["198.18.0.2:3478".into()], &interface)
-            .await
-            .is_err());
-    }
-
-    #[test]
-    fn accepts_wire_decoded_responses_for_hosts_without_a_trailing_dot() {
-        let mut request = Message::new();
-        request
-            .set_id(42)
-            .add_query(dns_query("stun.example").unwrap());
-        let mut response = Message::from_vec(&request.to_vec().unwrap()).unwrap();
-        response.set_message_type(MessageType::Response);
-        response.add_answer(Record::from_rdata(
-            Name::from_ascii("stun.example.").unwrap(),
-            30,
-            RData::A(A(Ipv4Addr::new(192, 0, 2, 3))),
-        ));
-        let response = Message::from_vec(&response.to_vec().unwrap()).unwrap();
-        assert_eq!(
-            addresses(&request, &response).unwrap(),
-            [IpAddr::V4(Ipv4Addr::new(192, 0, 2, 3))]
-        );
-    }
-
-    #[test]
-    fn samples_each_server_before_alternatives_and_deduplicates() {
-        let servers = vec![
-            vec!["a".into(), "b".into(), "c".into()],
-            vec!["d".into(), "a".into()],
-            vec![],
-            vec!["e".into()],
-        ];
-        assert_eq!(sample_endpoints(&servers), ["a", "d", "e", "b", "c"]);
-        let many = vec![(0..20).map(|index| index.to_string()).collect()];
-        assert_eq!(sample_endpoints(&many).len(), MAX_STUN_ENDPOINTS);
-    }
-
-    #[test]
-    fn ignores_unrelated_answers_and_follows_cname_chains() {
-        use hickory_proto::rr::rdata::CNAME;
-        let name = Name::from_ascii("stun.example").unwrap();
-        let alias = Name::from_ascii("alias.example").unwrap();
-        let mut request = Message::new();
-        request
-            .set_id(42)
-            .add_query(Query::query(name.clone(), RecordType::A));
-        let mut response = request.clone();
-        response.set_message_type(MessageType::Response);
-        response.add_answer(Record::from_rdata(
-            alias.clone(),
-            30,
-            RData::A(A(Ipv4Addr::new(192, 0, 2, 3))),
-        ));
-        assert!(addresses(&request, &response).is_err());
-        response.add_answer(Record::from_rdata(name, 30, RData::CNAME(CNAME(alias))));
-        assert_eq!(
-            addresses(&request, &response).unwrap(),
-            [IpAddr::V4(Ipv4Addr::new(192, 0, 2, 3))]
-        );
-    }
-
-    #[test]
-    fn validates_dns_transaction_and_rejects_synthetic_answers() {
-        let query = Query::query(Name::from_ascii("stun.example").unwrap(), RecordType::A);
-        let mut request = Message::new();
-        request.set_id(42).add_query(query);
-        let mut response = request.clone();
-        response.set_message_type(MessageType::Response);
-        response.add_answer(Record::from_rdata(
-            Name::from_ascii("stun.example").unwrap(),
-            30,
-            RData::A(A(Ipv4Addr::new(198, 18, 0, 2))),
-        ));
-        assert!(addresses(&request, &response).is_err());
-        response.add_answer(Record::from_rdata(
-            Name::from_ascii("stun.example").unwrap(),
-            30,
-            RData::A(A(Ipv4Addr::new(192, 0, 2, 3))),
-        ));
-        assert_eq!(
-            addresses(&request, &response).unwrap(),
-            [IpAddr::V4(Ipv4Addr::new(192, 0, 2, 3))]
-        );
-        response.set_id(43);
-        assert!(addresses(&request, &response).is_err());
-    }
-}
+#[path = "dns_tests.rs"]
+mod tests;

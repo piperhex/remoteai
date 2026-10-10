@@ -5,6 +5,7 @@ import { withSentMessage } from "./sentMessages";
 import type { GuiState, MessageInput, QueuedMessage, Settings, Thread, Turn } from "./types";
 
 const MAX_QUEUED_MESSAGES = 100;
+const MAX_RECORDED_CANCELLATIONS = 1000;
 interface QueueHost {
   saved: () => Promise<void>;
   active: () => boolean;
@@ -19,7 +20,10 @@ interface QueueHost {
 
 export class MessageQueue {
   private pending = new Set<string>();
+  private cancelledIds: string[] = [];
   constructor(private host: QueueHost) {}
+  /** Bounded receipts survive snapshot coalescing, without retaining message contents. */
+  cancelledMessages = (): readonly string[] => this.cancelledIds;
   private list = (threadId: string) => this.host.getSnapshot().queued[threadId] ?? [];
   private update = (threadId: string, messages: QueuedMessage[]) => {
     this.host.patch({ queued: { ...this.host.getSnapshot().queued, [threadId]: messages } });
@@ -35,6 +39,10 @@ export class MessageQueue {
     return true;
   };
   remove = (threadId: string, id: string) => {
+    const item = this.list(threadId).find(message => message.id === id);
+    if (item && !item.busy && !item.needsReview) {
+      this.cancelledIds = [...this.cancelledIds, id].slice(-MAX_RECORDED_CANCELLATIONS);
+    }
     this.update(threadId, this.list(threadId).filter((item) => item.id !== id || item.busy));
     void this.flush(threadId);
   };

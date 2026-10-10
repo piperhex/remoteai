@@ -15,7 +15,13 @@ export interface QueueMessage {
   busy: boolean;
   error?: string;
 }
-export interface QueueSnapshot { revision: number; threads: Record<string, QueueMessage[]> }
+export interface QueueSnapshot {
+  revision: number;
+  threads: Record<string, QueueMessage[]>;
+  /** Recent explicit removals of messages that were never dispatched. */
+  cancelledIds?: string[];
+}
+export interface QueueEnqueueResult extends QueueSnapshot { enqueuedId?: string }
 export const emptyQueue = (): QueueSnapshot => ({ revision: -1, threads: {} });
 export type QueueAction = 'queueSendNow' | 'queueRemove' | 'queueFlush' | 'queueMoveUp' | 'queueMoveDown';
 

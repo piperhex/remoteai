@@ -557,7 +557,7 @@ export class ChatController {
     void this.list();
   }
 
-  async send(input: SendInput) {
+  async send(input: SendInput, onQueued?: (id: string) => void) {
     if (this.state.desktopOnly) { this.update({ error: '请先登录电脑并打开聊天，再发送消息。' }); return false; }
     if (this.state.threadActionBusy || this.state.workspaceBusy) return false;
     if (input.goalMode) return this.goals.start(input);
@@ -591,6 +591,7 @@ export class ChatController {
       this.ensureCurrent(generation);
       if (!created) {
         const queue = await this.queueConnection.enqueue(thread, { ...message, images });
+        if (queue?.enqueuedId) onQueued?.(queue.enqueuedId);
         if (queue && generation === this.synchronization) this.applyQueue(queue);
       } else {
         await this.request({ operation: 'send', threadId: thread.id, ...message, images });

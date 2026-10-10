@@ -83,3 +83,32 @@ it('offers one manual retry after the last capacity failure, outside the details
   expect([...container.querySelectorAll('button')].filter(button => button.textContent === '重试')).toHaveLength(1);
   expect(container.querySelector('details button')).toBeNull();
 });
+
+it('unlocks only the acknowledged retry item after a definitive queue outcome', async () => {
+  const send = vi.fn().mockResolvedValueOnce({ queueItemId: 'retry-item' })
+    .mockResolvedValue({ queueItemId: 'next-retry-item' });
+  const render = (releasedQueueItemIds: string[]) => act(async () => root.render(
+    <TurnRetryProvider target={failedTurnTarget('thread', [failed])} disabled={false} onRetry={send}
+      releasedQueueItemIds={releasedQueueItemIds}>
+      <ChatTurnSummary turn={failed} onOpen={() => {}} />
+    </TurnRetryProvider>));
+  const button = () => [...container.querySelectorAll('button')].find(entry => /^(重试|正在重试…)$/.test(
+    entry.textContent ?? ''))!;
+  await render([]);
+  await act(async () => button().click());
+  await render(['unrelated-item']);
+  expect(button().disabled).toBe(true);
+  await act(async () => button().click());
+  expect(send).toHaveBeenCalledOnce();
+  await render(['retry-item']);
+  expect(button().disabled).toBe(false);
+  await render([]);
+  expect(button().disabled).toBe(false);
+  await act(async () => { button().click(); button().click(); });
+  expect(send).toHaveBeenCalledTimes(2);
+  expect(button().disabled).toBe(true);
+  await render(['retry-item']);
+  expect(button().disabled).toBe(true);
+  await render([]);
+  expect(button().disabled).toBe(true);
+});

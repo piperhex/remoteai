@@ -23,7 +23,9 @@ async fn native_download_batches_preserve_bytes_and_leave_excess_records_for_the
         batch.len(),
         BATCH_HEADER_BYTES + 16 * (4 + MAX_RECORD_BYTES)
     );
-    for (index, frame) in batch[5..].chunks_exact(4 + MAX_RECORD_BYTES).enumerate() {
+    let (frames, remainder) = batch[BATCH_HEADER_BYTES..].as_chunks::<{ 4 + MAX_RECORD_BYTES }>();
+    assert!(remainder.is_empty());
+    for (index, frame) in frames.iter().enumerate() {
         assert_eq!(&frame[..4], &(MAX_RECORD_BYTES as u32).to_be_bytes());
         assert_eq!(&frame[4..], vec![index as u8; MAX_RECORD_BYTES]);
     }
