@@ -1,3 +1,14 @@
+/* Scope to the active account page so portaled menus and dialogs follow the same selection rules. */
+body:has(.accounts-page) {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+body:has(.accounts-page)
+  :where(input, textarea, [contenteditable]:not([contenteditable="false"])) {
+  -webkit-user-select: text;
+  user-select: text;
+}
 .accounts-page { background: #f5fcfa; }
 .accounts-overview { padding: 24px; border-radius: 20px; background: linear-gradient(110deg, #e1fcf3, #78efd2); }
 .accounts-overview header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }

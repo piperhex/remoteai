@@ -316,6 +316,22 @@ main { width: 100%; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y:
 }
 .sessions-main { overflow: hidden; display: flex; flex-direction: column; padding-bottom: 0; }
 .sessions-page-panel { min-height: 0; flex: 1; display: flex; flex-direction: column; }
+/* Scope to the active account page so portaled menus and dialogs follow the same selection rules. */
+body:has(main:is(.accounts-main, .providers-main, .claude-code-main)) {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
+body:has(main:is(.accounts-main, .providers-main, .claude-code-main))
+  :where(input, textarea, [contenteditable]:not([contenteditable="false"])) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+body:has(main:is(.accounts-main, .providers-main, .claude-code-main))
+  .ant-select-show-search:not(.ant-select-disabled):not(.ant-select-open)
+  :is(.ant-select-selector, .ant-select-selection-search-input) {
+  cursor: pointer;
+}
 main.accounts-main,
 main.providers-main { overflow: hidden; display: flex; flex-direction: column; padding-bottom: 0; }
 main.accounts-main,
