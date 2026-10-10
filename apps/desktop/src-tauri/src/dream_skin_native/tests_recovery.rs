@@ -26,7 +26,7 @@ fn sustained_outage_allows_only_one_automatic_recovery() {
 }
 
 #[test]
-fn frequent_wakes_and_changed_installations_do_not_bypass_grace() {
+fn frequent_wakes_do_not_bypass_grace_and_changed_installations_never_recover() {
     let state = active_recovery_session();
     let mut recovery = RendererRecovery::default();
     let install = Path::new("test/ChatGPT.exe");
@@ -37,7 +37,28 @@ fn frequent_wakes_and_changed_installations_do_not_bypass_grace() {
     assert!(!recovery.outage_ready(&state, install, now + RENDERER_RECOVERY_GRACE / 2));
     let updated = Path::new("updated/ChatGPT.exe");
     assert!(!recovery.outage_ready(&state, updated, now + RENDERER_RECOVERY_GRACE));
-    assert!(recovery.outage_ready(&state, updated, now + RENDERER_RECOVERY_GRACE * 2));
+    assert!(!recovery.outage_ready(&state, updated, now + RENDERER_RECOVERY_GRACE * 2));
+    assert!(recovery.observed.is_none());
+    assert!(!recovery.outage_ready(&state, install, now + RENDERER_RECOVERY_GRACE * 3));
+    assert!(recovery.outage_ready(&state, install, now + RENDERER_RECOVERY_GRACE * 4));
+}
+
+#[test]
+fn recovery_requires_the_recorded_installation() {
+    let mut state = active_recovery_session();
+    let executable = Path::new("test/ChatGPT.exe");
+    assert!(state.allows_recovery_for(executable));
+    assert!(!state.allows_recovery_for(Path::new("updated/ChatGPT.exe")));
+    state.codex_executable = None;
+    assert!(!state.allows_recovery_for(executable));
+}
+
+#[cfg(target_os = "windows")]
+#[test]
+fn recovery_accepts_equivalent_windows_installation_paths() {
+    let mut state = active_recovery_session();
+    state.codex_executable = Some(r"C:\Apps\ChatGPT.exe".to_string());
+    assert!(state.allows_recovery_for(Path::new(r"\\?\C:\APPS\chatgpt.exe")));
 }
 
 #[test]

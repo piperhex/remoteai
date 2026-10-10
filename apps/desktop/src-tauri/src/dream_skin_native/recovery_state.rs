@@ -43,6 +43,14 @@ impl NativeSessionState {
             )
     }
 
+    fn allows_recovery_for(&self, executable: &Path) -> bool {
+        self.allows_recovery()
+            && self
+                .codex_executable
+                .as_deref()
+                .is_some_and(|recorded| path_eq(Path::new(recorded), executable))
+    }
+
     fn same_launch(&self, other: &Self) -> bool {
         self.launch_id == other.launch_id
             && self.port == other.port
@@ -62,7 +70,9 @@ impl RendererRecovery {
     }
 
     fn outage_ready(&mut self, state: &NativeSessionState, install: &Path, now: Instant) -> bool {
-        if !state.allows_recovery() {
+        // A replacement installed by an updater does not belong to the old CDP
+        // session. Waiting longer must never authorize stopping that version.
+        if !state.allows_recovery_for(install) {
             self.reset();
             return false;
         }

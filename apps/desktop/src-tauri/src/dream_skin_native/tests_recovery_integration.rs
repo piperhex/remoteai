@@ -251,6 +251,29 @@ fn conditions_are_rechecked_after_the_original_outage_observation() {
 }
 
 #[test]
+fn an_updated_installation_cannot_be_restarted_by_the_previous_session() {
+    let _suite = TEST_SUITE_LOCK.lock().unwrap();
+    reset_simulation();
+    let observed = read_session();
+    let updated = CodexInstall {
+        executable: PathBuf::from("updated/ChatGPT.exe"),
+        app_user_model_id: None,
+    };
+    with_simulation(|simulation| simulation.running_executable = Some(updated.executable.clone()));
+    // Both the initial observation and final process check can see the new
+    // version. Matching those two checks alone does not establish ownership.
+    recover_running_codex(&runtime_paths(), &observed, &updated).unwrap();
+    assert_no_start_or_write();
+
+    let mut recovery = RendererRecovery::default();
+    for _ in 0..3 {
+        recover_after_outage(&runtime_paths(), &observed, &mut recovery).unwrap();
+        assert!(recovery.observed.is_none());
+    }
+    assert_no_start_or_write();
+}
+
+#[test]
 fn success_and_failure_both_spend_the_budget_before_starting_and_never_retry() {
     let _suite = TEST_SUITE_LOCK.lock().unwrap();
     for launch_fails in [false, true] {
