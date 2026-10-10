@@ -8,6 +8,7 @@
 #include <wintrust.h>
 #include <softpub.h>
 #include <array>
+#include <cstring>
 #include <filesystem>
 #include <stdexcept>
 #include <vector>
@@ -15,6 +16,8 @@
 namespace {
 constexpr wchar_t registry[] = L"SOFTWARE\\RemoteAI\\PrivacyDisplay";
 constexpr wchar_t hardware[] = L"Root\\MttVDD";
+constexpr DWORD driver_missing = 2;
+constexpr DWORD desktop_locked = 3;
 std::filesystem::path executable() {
     std::array<wchar_t, 32768> path{};
     const DWORD length = GetModuleFileNameW(nullptr, path.data(), static_cast<DWORD>(path.size()));
@@ -78,7 +81,7 @@ void install() {
         registered = true;
         BOOL reboot = FALSE;
         if (!UpdateDriverForPlugAndPlayDevicesW(nullptr, hardware, (root / "MttVDD.inf").c_str(),
-            INSTALLFLAG_NONINTERACTIVE, &reboot))
+            0, &reboot))
             throw std::runtime_error("driver install failed");
         if (reboot) throw std::runtime_error("driver needs restart");
         record_device(devices, device);
@@ -96,8 +99,9 @@ std::wstring privacy_device_instance() {
     return value.data();
 }
 void ensure_privacy_driver() {
-    auto devices = driver_devices();
-    if (devices.empty()) { install(); devices = driver_devices(); }
+    const auto devices = driver_devices();
+    // Installation belongs to the separate, interactive setup process, never a capture transaction.
+    if (devices.empty()) throw std::runtime_error("privacy driver installation required");
     if (devices.size() != 1 || _wcsicmp(devices[0].c_str(), privacy_device_instance().c_str()))
         throw std::runtime_error("virtual driver owned by another application");
 }
@@ -118,11 +122,58 @@ void set_privacy_device_enabled(bool enabled) {
     if (!success) throw std::runtime_error("privacy device switch failed");
 }
 
-bool platform_command(int argc, char** argv) {
-    (void)argc; (void)argv;
-    // The service launches us in the interactive session. Bind before querying its desktop.
+namespace {
+bool bind_desktop(bool interactive) {
     const auto desktop = OpenInputDesktop(0, FALSE, GENERIC_ALL);
-    if (!desktop || !SetThreadDesktop(desktop)) ExitProcess(1);
-    // Retain the desktop handle for the process lifetime.
+    if (!desktop) return false;
+    std::array<wchar_t, 256> name{}; DWORD bytes = 0;
+    const bool usable = !interactive || (GetUserObjectInformationW(desktop, UOI_NAME,
+        name.data(), sizeof(name), &bytes) && !_wcsicmp(name.data(), L"Default"));
+    if (!usable || !SetThreadDesktop(desktop)) { CloseDesktop(desktop); return false; }
+    // Retain the bound desktop handle for the process lifetime.
+    return true;
+}
+DWORD check_driver() {
+    const auto devices = driver_devices();
+    if (!devices.empty()) { ensure_privacy_driver(); return 0; }
+    // Do not place an installation prompt on the lock/sign-in/secure desktop.
+    return bind_desktop(true) ? driver_missing : desktop_locked;
+}
+void interactive_install() {
+    const auto exclusive = CreateMutexW(nullptr, TRUE, L"Global\\RemoteAI.PrivacyDisplay");
+    if (!exclusive) throw std::runtime_error("privacy setup unavailable");
+    const bool already_open = GetLastError() == ERROR_ALREADY_EXISTS;
+    // The same mutex excludes other setup windows and active privacy guardians.
+    auto guard = std::unique_ptr<void, decltype(&CloseHandle)>(exclusive, CloseHandle);
+    if (already_open || !driver_devices().empty()) return;
+    const auto answer = MessageBoxW(nullptr,
+        L"首次使用隐私屏需要安装显示组件。\n是否现在安装？", L"Remote AI · 隐私屏",
+        MB_YESNO | MB_DEFBUTTON2 | MB_ICONQUESTION | MB_SETFOREGROUND);
+    if (answer != IDYES) return;
+    // Windows owns publisher confirmation. Never import certificates or weaken signature policy.
+    install();
+    set_privacy_device_enabled(false);
+    guard.reset();
+    MessageBoxW(nullptr, L"安装完成。\n请重新开启隐私屏。", L"Remote AI · 隐私屏",
+        MB_OK | MB_ICONINFORMATION | MB_SETFOREGROUND);
+}
+}
+
+bool platform_command(int argc, char** argv) {
+    if (argc == 2) {
+        const bool setup = std::strcmp(argv[1], "--install-driver") == 0;
+        if (setup && !bind_desktop(true)) ExitProcess(desktop_locked);
+        try {
+            if (std::strcmp(argv[1], "--check-driver") == 0) ExitProcess(check_driver());
+            if (setup) { interactive_install(); return true; }
+        } catch (const std::exception&) {
+            if (setup) MessageBoxW(nullptr, L"安装未完成。\n可以稍后重新开启隐私屏再试。",
+                L"Remote AI · 隐私屏", MB_OK | MB_ICONINFORMATION | MB_SETFOREGROUND);
+            ExitProcess(1);
+        }
+        ExitProcess(1);
+    }
+    // The service launches us in the interactive session. Bind before querying its desktop.
+    if (!bind_desktop(false)) ExitProcess(1);
     return false;
 }

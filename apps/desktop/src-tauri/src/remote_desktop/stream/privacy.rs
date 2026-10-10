@@ -55,21 +55,7 @@ async fn request(id: &str, enabled: Option<bool>, ticket: Option<&str>) -> Resul
         _ => return Err(DesktopError::Invalid),
     }
     let enabled = enabled.ok_or(DesktopError::Invalid)?;
-    let session_id = id.to_owned();
-    tauri::async_runtime::spawn_blocking(move || {
-        crate::remote_desktop::with_lease(&session_id, |session| {
-            if !session.permissions.control {
-                return Err(DesktopError::Denied);
-            }
-            #[cfg(windows)]
-            if !crate::remote_desktop::input_desktop::is_worker() {
-                return Err(DesktopError::PrivacyService);
-            }
-            Ok(())
-        })
-    })
-    .await
-    .map_err(|_| DesktopError::Privacy)??;
+    authorize(&stream, enabled).await?;
     let (reply, result) = oneshot::channel();
     stream
         .privacy
@@ -85,6 +71,34 @@ async fn request(id: &str, enabled: Option<bool>, ticket: Option<&str>) -> Resul
         pending: true,
         snapshot: None,
     })
+}
+
+async fn authorize(stream: &Arc<Stream>, _enabled: bool) -> Result<()> {
+    let id = &stream.id;
+    let session_id = id.to_owned();
+    #[cfg(windows)]
+    let runtime = stream.runtime.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::remote_desktop::with_lease(&session_id, |session| {
+            if !session.permissions.control {
+                return Err(DesktopError::Denied);
+            }
+            #[cfg(windows)]
+            if !crate::remote_desktop::input_desktop::is_worker() {
+                return Err(DesktopError::PrivacyService);
+            }
+            Ok(())
+        })?;
+        // Release the session lock before checking/installing. A confirmation request returns
+        // before queueing a display change, so capture and the ordinary desktop remain usable.
+        #[cfg(windows)]
+        if _enabled {
+            crate::remote_desktop::privacy_setup::prepare(&runtime)?;
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|_| DesktopError::Privacy)?
 }
 
 fn poll(pending: &mut Option<Pending>, ticket: &str) -> Result<Progress> {

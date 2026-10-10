@@ -34,6 +34,11 @@ export const remoteDesktopMessages: Record<string, string> = {
     'Allow Accessibility on the Mac and restart Remote AI if needed to connect automatically. '
     + 'Already enabled? Repair permissions in Remote settings on the Mac.',
   '隐私屏': 'Privacy screen',
+  '重试隐私屏': 'Retry privacy screen',
+  '请在电脑上确认安装，完成后再点一次隐私屏。':
+    'Confirm installation on the computer, then tap Privacy screen again.',
+  '请先解锁电脑，再点隐私屏确认安装。':
+    'Unlock the computer, then tap Privacy screen to confirm installation.',
   '这台电脑暂不支持隐私屏。': 'Privacy screen is unavailable on this computer.',
   '正在切换隐私屏，请稍候。': 'Switching privacy screen. Please wait.',
   '隐私屏未能切换，请重试。': 'Could not switch privacy screen. Please try again.',

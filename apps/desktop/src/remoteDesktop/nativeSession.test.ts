@@ -42,18 +42,22 @@ it('polls a pending privacy transition without a long-running IPC call', async (
   await session.close();
 });
 
-it('keeps normal sessions open on a privacy preflight refusal but closes an ambiguous accepted toggle', async () => {
+it.each([
+  '请先在电脑的远程设置中开启无人值守，再使用隐私屏。',
+  '请在电脑上确认安装，完成后再点一次隐私屏。',
+  '请先解锁电脑，再点隐私屏确认安装。',
+])('preserves capture on preflight refusal (%s) but closes an ambiguous accepted toggle', async message => {
   const original = call.getMockImplementation()!;
   let accepted = false;
   call.mockImplementation(async (command, args) => {
     if (command !== 'remote_desktop_privacy') return original(command, args);
-    if (!accepted) throw '请先在电脑的远程设置中开启无人值守，再使用隐私屏。';
+    if (!accepted) throw message;
     if ((args as { ticket?: string }).ticket) throw new Error('lost reply');
     return { ticket: 'test', pending: true };
   });
   const session = new NativeDesktopSession(DEFAULT_SETTINGS, []);
   await session.open();
-  await expect(session.privacy(true)).rejects.toThrow('无人值守');
+  await expect(session.privacy(true)).rejects.toThrow(message);
   expect(session.closed).toBe(false);
   accepted = true;
   const changing = expect(session.privacy(true)).rejects.toThrow('隐私屏未能切换');

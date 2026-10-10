@@ -110,6 +110,27 @@ it.each(['ios', 'android'] as const)('shows the opt-in privacy switch with capab
   expect(button.props.disabled).toBe(true);
 });
 
+it.each(['ios', 'android'] as const)('keeps video and privacy retry available while installation awaits approval on %s',
+  platform => {
+    Platform.OS = platform;
+    runtime.status = '请在电脑上确认安装，完成后再点一次隐私屏。';
+    const elements = render();
+    const alert = elements.find(node => node.props.accessibilityRole === 'alert')!;
+    expect(alert.props.children).toBe(runtime.status);
+    expect(StyleSheet.flatten(alert.props.style)).toMatchObject({ maxWidth: 400, flexShrink: 1 });
+    expect(elements.some(node => node.type === RTCView)).toBe(true);
+    const button = elements.find(node => node.props.accessibilityLabel === '隐私屏')!;
+    expect(button.props.disabled).toBeFalsy();
+    expect(button.props.accessibilityState?.selected).toBe(false);
+    button.props.onPress!();
+    expect(runtime.togglePrivacy).toHaveBeenCalledOnce();
+    const retry = elements.find(node => node.type === Pressable && nodes(node.props.children)
+      .some(child => child.type === Text && child.props.children === '重试隐私屏'))!;
+    retry.props.onPress!();
+    expect(runtime.togglePrivacy).toHaveBeenCalledTimes(2);
+    expect(runtime.retry).not.toHaveBeenCalled();
+  });
+
 it('keeps display controls available but disables remote input in view-only mode', () => {
   runtime.viewOnly = true;
   const elements = render();

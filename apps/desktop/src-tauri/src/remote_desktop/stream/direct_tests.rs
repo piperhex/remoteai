@@ -73,6 +73,8 @@ async fn fixture_with_servers(relay_standby: bool, ice_servers: Vec<IceServer>) 
     let peer = Arc::new(peer::create(vec![], false).await.unwrap());
     let stream = Arc::new(Stream {
         id: "direct-upgrade-unit-test".into(),
+        #[cfg(windows)]
+        runtime: std::path::PathBuf::from("fixture"),
         display: watch::channel(Monitor {
             handle: 0,
             bounds: Bounds {

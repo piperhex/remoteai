@@ -13,6 +13,8 @@ use tokio::sync::{mpsc, watch, Mutex};
 
 pub(super) struct Stream {
     pub id: String,
+    #[cfg(windows)]
+    pub runtime: PathBuf,
     pub display: watch::Sender<super::super::monitors::Monitor>,
     pub privacy: mpsc::Sender<super::privacy::Change>,
     pub privacy_pending: Mutex<Option<super::privacy::Pending>>,
@@ -64,6 +66,8 @@ impl Stream {
         let peer = Arc::new(peer);
         let stream = Arc::new(Self {
             id: request.id,
+            #[cfg(windows)]
+            runtime: path.clone(),
             display: watch::channel(display).0,
             privacy,
             privacy_pending: Mutex::new(None),

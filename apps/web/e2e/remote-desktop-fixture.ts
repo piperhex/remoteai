@@ -40,6 +40,7 @@ let selected = displays[0];
 const multiDisplay = new URLSearchParams(location.search).has('displays');
 export const desktopTest = { inputs: [] as DesktopInput[], settings: [] as DesktopSettings[],
   privacyChanges: [] as boolean[],
+  privacyInstallationRequired: new URLSearchParams(location.search).has('privacy-install'),
   permissionRequired: (new URLSearchParams(location.search).has('permissions')
     ? 'screenRecording' : null) as DesktopSystemPermission | null,
   permissionChecks: 0, captureAttempts: 0,
@@ -175,6 +176,9 @@ const host = new RemoteDesktopHost(privacyFixture ? (settings, ice, expiry, diag
     },
     signal: signal => session.signal(signal), update: settings => session.update(settings), close: () => session.close(),
     privacy: async enabled => {
+      if (enabled && desktopTest.privacyInstallationRequired) {
+        throw new Error('请在电脑上确认安装，完成后再点一次隐私屏。');
+      }
       desktopTest.privacyChanges.push(enabled);
       selected = enabled ? { ...displays[0], id: 'private', name: 'Privacy' } : displays[0];
       return { displays: enabled ? [selected] : displays, displayId: selected.id, privacyScreen: enabled };

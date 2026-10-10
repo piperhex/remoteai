@@ -72,6 +72,23 @@ it('leaves privacy off after a rejected toggle and releases the saving state', a
   expect(session.status).toBe('unavailable'); expect(first.stop).not.toHaveBeenCalled();
 });
 
+it('keeps the ordinary desktop while setup awaits a local decision and allows retry after installation', async () => {
+  const current = runtime.sessions[0];
+  const message = '请在电脑上确认安装，完成后再点一次隐私屏。';
+  current.privacy.mockRejectedValueOnce(new Error(message));
+  await act(async () => current.options.capabilities({ control: true, privacyScreen: true }));
+  await act(async () => session.togglePrivacy());
+  expect(session.status).toBe(message);
+  expect(session.privacyScreen).toBe(false);
+  expect(session.saving).toBe(false);
+  expect(session.stream).toBeDefined();
+  expect(current.stop).not.toHaveBeenCalled();
+  await act(async () => session.togglePrivacy());
+  expect(session.privacyScreen).toBe(true);
+  expect(session.status).toBe('');
+  expect(runtime.sessions).toHaveLength(1);
+});
+
 it('keeps direct backoff across automatic reconnects and resets it after the viewer closes', async () => {
   vi.useFakeTimers();
   const first = runtime.sessions[0]; first.options.directRetry.failed();

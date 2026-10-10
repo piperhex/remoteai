@@ -7,6 +7,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import type { DesktopClient } from '../../../../../shared/remote-desktop/protocol';
 import { useDesktopSession } from '../../../../../shared/remote-desktop/useDesktopSession';
+import { desktopStatusAction } from '../../../../../shared/remote-desktop/statusAction';
 import { useTerminalOrientation } from '../terminal/useTerminalOrientation';
 import { DesktopMouse } from './MousePad';
 import { useTrackpad } from './useTrackpad';
@@ -33,6 +34,7 @@ export function RemoteDesktop({ client, active, close }: {
 }) {
   useLanguage();
   const session = useDesktopSession({ client, active, createPeer });
+  const statusAction = desktopStatusAction(session);
   const viewOnly = session.capabilities.control === false;
   const audioUnavailable = !session.hasAudio || session.stats?.audio === 'unavailable';
   const orientation = useTerminalOrientation(active, { initialLandscape: true, waitForShow: Platform.OS === 'ios' });
@@ -116,8 +118,8 @@ export function RemoteDesktop({ client, active, close }: {
               <View style={s.message}>
                 <Text accessibilityRole="alert" style={[s.text, s.messageText]}>
                   {t(session.status || orientation.error)}</Text>
-                <Pressable accessibilityRole="button" style={s.retry} onPress={session.retry}>
-                  <Text style={s.text}>{t(session.waitingForPermission ? '检查授权' : '重新连接')}</Text></Pressable>
+                <Pressable accessibilityRole="button" style={s.retry} disabled={session.saving} onPress={statusAction.run}>
+                  <Text style={s.text}>{t(statusAction.label)}</Text></Pressable>
               </View></View>}
             {viewOnly && !session.status && <View pointerEvents="none" style={s.messageLayer}>
               <View style={s.message}><Text style={s.text}>{t("仅观看")}</Text></View></View>}

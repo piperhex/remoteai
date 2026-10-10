@@ -14,6 +14,7 @@ import { useVideoViewport } from './useVideoViewport';
 import { useMousePanel } from '../../../../../shared/remote-desktop/useMousePanel';
 import { useMouseViewport } from '../../../../../shared/remote-desktop/useMouseViewport';
 import { useDesktopZoom } from '../../../../../shared/remote-desktop/useDesktopZoom';
+import { desktopStatusAction } from '../../../../../shared/remote-desktop/statusAction';
 import { useInputViewport } from '../../../../../shared/remote-desktop/useInputViewport';
 import { MOUSE_PANEL_SIZE, MOUSE_ICON_SIZE } from '../../../../../shared/remote-desktop/geometry';
 import { t } from '../../i18n';
@@ -51,6 +52,7 @@ function DesktopViewer({ client, active, connected = true, close, localClipboard
   const shown = active && !windowControls.minimized;
   const visible = usePageVisibility();
   const session = useDesktopSession({ client, active: active && visible, connected, createPeer });
+  const statusAction = desktopStatusAction(session);
   const viewOnly = session.capabilities.control === false;
   const [display, setDisplay] = useState(false);
   const [keyboard, setKeyboard] = useState(false);
@@ -121,8 +123,8 @@ function DesktopViewer({ client, active, connected = true, close, localClipboard
         horizontal={!!session.capabilities.horizontalScroll} />}
       {session.status && <div className={`rd-status${session.stream ? '' : ' rd-status-empty'}`} role="status">
         <span>{t(session.status)}</span>
-        <button disabled={!connected} onClick={session.retry}>
-          {t(session.waitingForPermission ? '检查授权' : '重新连接')}</button></div>}
+        <button disabled={!connected || session.saving} onClick={statusAction.run}>
+          {t(statusAction.label)}</button></div>}
       {windowControls.error && <div className="rd-clipboard-notice" role="alert">{t(windowControls.error)}</div>}
       {display && <DisplaySettings settings={session.settings} displays={session.displays} update={session.update}
         saving={session.saving || !session.stream}

@@ -28,6 +28,8 @@ pub(crate) mod permissions;
 #[cfg(any(windows, target_os = "macos"))]
 pub(crate) mod privacy;
 #[cfg(windows)]
+mod privacy_setup;
+#[cfg(windows)]
 pub(crate) mod service_worker;
 pub(crate) mod stream;
 pub(crate) mod system_permissions;
@@ -45,6 +47,12 @@ pub(super) enum DesktopError {
     #[cfg(windows)]
     #[error("privacy display requires the desktop service")]
     PrivacyService,
+    #[cfg(windows)]
+    #[error("privacy display installation awaiting local confirmation")]
+    PrivacySetup,
+    #[cfg(windows)]
+    #[error("privacy display installation requires an unlocked desktop")]
+    PrivacySetupLocked,
     #[cfg(any(windows, target_os = "macos"))]
     #[error("desktop session already active")]
     Busy,
@@ -167,6 +175,10 @@ fn safe_error(error: DesktopError) -> String {
         DesktopError::Privacy => "隐私屏未能切换，请重新连接后重试。",
         #[cfg(windows)]
         DesktopError::PrivacyService => "请先在电脑的远程设置中开启无人值守，再使用隐私屏。",
+        #[cfg(windows)]
+        DesktopError::PrivacySetup => "请在电脑上确认安装，完成后再点一次隐私屏。",
+        #[cfg(windows)]
+        DesktopError::PrivacySetupLocked => "请先解锁电脑，再点隐私屏确认安装。",
         #[cfg(any(windows, target_os = "macos"))]
         DesktopError::Busy => "已有远程桌面连接，请先关闭后再试。",
         DesktopError::Denied => "这台电脑未允许此远程操作，请在电脑的设置中调整。",

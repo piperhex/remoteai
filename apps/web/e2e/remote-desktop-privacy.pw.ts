@@ -33,3 +33,27 @@ test('hosts without privacy support retain the ordinary desktop', async ({ page 
   await expect(page.getByRole('button', { name: '隐私屏', exact: true })).toBeDisabled();
   expect(await page.evaluate(() => window.desktopTest.privacyChanges)).toEqual([]);
 });
+
+test('installation guidance keeps video running and privacy can be retried after local approval', async ({ page }, info) => {
+  await page.goto('e2e/remote-desktop-harness.html?privacy&privacy-install');
+  await page.getByRole('button', { name: '打开工具' }).click();
+  await page.getByRole('button', { name: '远程桌面', exact: true }).click();
+  await expect.poll(() => page.locator('video').evaluate(video => video.videoWidth)).toBeGreaterThan(0);
+  const button = page.getByRole('button', { name: '隐私屏', exact: true });
+  const before = await page.evaluate(() => ({ closed: window.desktopTest.closed, captures: window.desktopTest.captures }));
+  await button.click();
+  const guidance = page.getByText('请在电脑上确认安装，完成后再点一次隐私屏。', { exact: true });
+  await expect(guidance).toBeVisible();
+  expect((await guidance.boundingBox())!.width).toBeLessThanOrEqual(400);
+  await expect(button).toHaveAttribute('aria-pressed', 'false');
+  await expect(button).toBeEnabled();
+  const frames = await page.evaluate(() => window.desktopTest.frames);
+  await expect.poll(() => page.evaluate(() => window.desktopTest.frames)).toBeGreaterThan(frames);
+  await page.screenshot({ path: info.outputPath('privacy-install-confirmation.png') });
+  await page.evaluate(() => { window.desktopTest.privacyInstallationRequired = false; });
+  await page.getByRole('button', { name: '重试隐私屏', exact: true }).click();
+  await expect(button).toHaveAttribute('aria-pressed', 'true');
+  await expect(guidance).not.toBeVisible();
+  expect(await page.evaluate(() => ({ closed: window.desktopTest.closed, captures: window.desktopTest.captures })))
+    .toEqual(before);
+});

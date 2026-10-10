@@ -1,4 +1,5 @@
 import { diagnosticError } from '../remote-chat/iceCandidate';
+import { PRIVACY_SETUP_MESSAGES } from './statusAction';
 import type { DiagnosticFields } from '../remote-chat/diagnostics';
 
 type DesktopErrorCode = NonNullable<DiagnosticFields['desktopError']>;
@@ -8,6 +9,7 @@ type Reason = NonNullable<DiagnosticFields['reason']>;
 // arbitrary error text, paths and credentials must never become diagnostic fields.
 const ERRORS: ReadonlyArray<readonly [DesktopErrorCode, Reason, readonly string[]]> = [
   ['privacy-unavailable', 'unavailable', ['隐私屏未能切换，请重新连接后重试。',
+    ...PRIVACY_SETUP_MESSAGES,
     '请先在电脑的远程设置中开启无人值守，再使用隐私屏。']],
   ['screen-permission', 'permission', ['请在 Mac 的远程设置中开启屏幕录制权限，然后重新连接。']],
   ['accessibility-permission', 'permission', ['请在 Mac 的远程设置中开启辅助功能权限，然后重新连接。']],
