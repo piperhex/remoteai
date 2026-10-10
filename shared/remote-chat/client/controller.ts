@@ -307,6 +307,7 @@ export class ChatController {
     clearTimeout(this.syncTimer);
     const generation = ++this.synchronization;
     this.synchronizing = generation;
+    this.composer.reset();
     this.update({ connecting: true, retryAt: null, connectionStage: 'chat' });
     try {
       const response = await this.connection.request<unknown>('connect', chatHandshake);
@@ -327,7 +328,8 @@ export class ChatController {
         this.readGeneration += 1;
         this.refreshThreadId = null;
       }
-      await Promise.all([this.list({ background: true }), this.composer.load(),
+      void this.composer.load().catch(() => undefined);
+      await Promise.all([this.list({ background: true }),
         this.refreshSelected(), this.loadQueue(generation)]);
       if (this.active && generation === this.synchronization) {
         this.update({ ready: true, connecting: false, retryAt: null, connectionStage: 'ready', connectionIssue: '' });

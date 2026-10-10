@@ -30,7 +30,8 @@ export class GuiModelCatalog {
   guard() { const generation = this.generation; return () => !this.invalid && generation === this.generation; }
 
   async ready() {
-    if (this.pending) await this.pending;
+    // A refresh of the same source must not hide an already usable catalog.
+    if (this.pending && (this.invalid || !this.fingerprint)) await this.pending;
     if (this.invalid || this.switching) throw new Error(guiText("模型正在同步，请稍后重试。"));
   }
 

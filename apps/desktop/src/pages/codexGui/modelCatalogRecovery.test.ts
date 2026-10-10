@@ -180,3 +180,17 @@ it("rejects endless pagination even when each page responds immediately", async 
   expect(accept).not.toHaveBeenCalled();
   expect(vi.getTimerCount()).toBe(0);
 });
+
+it("keeps a valid catalog readable while an ordinary refresh stalls", async () => {
+  vi.mocked(guiApi.request).mockResolvedValue(page([current]));
+  const catalog = new GuiModelCatalog({ ready: () => true, accept: vi.fn() });
+  await catalog.refresh();
+  const stalled = deferred<unknown>();
+  vi.mocked(guiApi.request).mockReturnValue(stalled.promise);
+  const refreshing = catalog.refresh().catch(() => {});
+  await expect(catalog.ready()).resolves.toBeUndefined();
+  await vi.advanceTimersByTimeAsync(MODEL_CATALOG_TIMEOUT_MS);
+  await refreshing;
+  await expect(catalog.ready()).resolves.toBeUndefined();
+  expect(catalog.guard()()).toBe(true);
+});

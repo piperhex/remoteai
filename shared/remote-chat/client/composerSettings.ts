@@ -15,14 +15,17 @@ interface Entry {
   saving?: Promise<void>;
   reading?: Promise<void>;
   failed: string;
+  readFailed: boolean;
   catalogUnavailable: boolean;
 }
+const MODEL_RETRY_MS = 3000;
 const SAVE_ERROR = '设置尚未保存，请重试。';
 const errorMessage = (error: unknown) => error instanceof Error ? error.message : SAVE_ERROR;
 
 /** Retains edits in their original conversation, including across navigation and reconnects. */
 export class RemoteComposerSettings {
   private scoped = false;
+  private retryTimer?: ReturnType<typeof setTimeout>;
   private generation = 0;
   private entries = new Map<string | null, Entry>();
   constructor(private readonly host: Host) {}
@@ -31,7 +34,7 @@ export class RemoteComposerSettings {
   private entry(threadId: string | null) {
     let entry = this.entries.get(threadId);
     if (!entry) {
-      entry = { pending: {}, failed: '', catalogUnavailable: false };
+      entry = { pending: {}, failed: '', readFailed: false, catalogUnavailable: false };
       this.entries.set(threadId, entry);
     }
     return entry;
@@ -39,6 +42,8 @@ export class RemoteComposerSettings {
 
   reset() {
     this.generation++;
+    clearTimeout(this.retryTimer);
+    this.retryTimer = undefined;
     for (const entry of this.entries.values()) {
       if (entry.remote) entry.remote = { ...entry.remote, revision: -1 };
       entry.reading = undefined;
@@ -49,7 +54,7 @@ export class RemoteComposerSettings {
     const entry = this.entry(this.scope());
     this.host.update({ ...(entry.remote ? { models: entry.remote.models } : {}),
       settings: { ...(entry.remote?.settings ?? DEFAULT_COMPOSER), ...entry.pending },
-      settingsBusy: Boolean(entry.remote?.syncing || entry.reading || entry.saving || entry.failed
+      settingsBusy: Boolean(entry.remote?.syncing || entry.reading || entry.saving || entry.failed || entry.readFailed
         || entry.catalogUnavailable || Object.keys(entry.pending).length || (this.scoped && !entry.remote)),
       settingsError: entry.failed || (entry.catalogUnavailable ? MODEL_CATALOG_ERROR : '') });
   }
@@ -67,6 +72,10 @@ export class RemoteComposerSettings {
     // Older hosts may publish empty results as success. Keep the display, but wait for a valid catalog before saving.
     entry.remote = entry.catalogUnavailable && entry.remote?.models.length
       ? { ...snapshot, models: entry.remote.models, settings: entry.remote.settings } : snapshot;
+    if (!entry.catalogUnavailable && !snapshot.syncing && entry.readFailed) {
+      entry.failed = '';
+      entry.readFailed = false;
+    }
     if (id === this.scope()) this.show();
     if (!entry.catalogUnavailable && (wasSyncing || Object.keys(entry.pending).length)) {
       queueMicrotask(() => this.flush());
@@ -79,7 +88,11 @@ export class RemoteComposerSettings {
     if (entry.reading) return entry.reading;
     const generation = this.generation;
     const reading = this.read(threadId, generation).catch((error: unknown) => {
-      if (generation === this.generation) entry.failed = errorMessage(error);
+      if (generation === this.generation) {
+        entry.failed = errorMessage(error);
+        entry.readFailed = true;
+        this.scheduleReadRetry();
+      }
       throw error;
     }).finally(() => {
       if (entry.reading === reading) entry.reading = undefined;
@@ -105,7 +118,10 @@ export class RemoteComposerSettings {
       this.receive({ models: result.data, revision: 0,
         settings: { ...this.host.snapshot().settings, ...selection } });
     }
-    this.entry(this.scoped ? threadId : null).failed = '';
+    const entry = this.entry(this.scoped ? threadId : null);
+    entry.failed = '';
+    entry.readFailed = false;
+    if (entry.catalogUnavailable) this.scheduleReadRetry();
     // Navigation can finish before the initial host-capability response arrives.
     if (!wasScoped && this.scoped && threadId !== (this.host.snapshot().selected?.id ?? null)) void this.select();
   }
@@ -137,7 +153,7 @@ export class RemoteComposerSettings {
 
   flush() {
     for (const [id, entry] of this.entries) {
-      if (!entry.failed) void this.save(id);
+      if (!entry.failed && !entry.readFailed) void this.save(id);
     }
   }
 
@@ -186,8 +202,25 @@ export class RemoteComposerSettings {
     if (Object.keys(entry.pending).length) throw new Error(entry.failed || SAVE_ERROR);
   }
 
+  private scheduleReadRetry() {
+    if (this.retryTimer) return;
+    this.retryTimer = setTimeout(() => {
+      this.retryTimer = undefined;
+      const entry = this.entry(this.scope());
+      if (!this.host.ready() || (!entry.readFailed && !entry.catalogUnavailable)) return;
+      void this.load().catch(() => undefined);
+    }, MODEL_RETRY_MS);
+  }
+
   retry() {
-    for (const entry of this.entries.values()) entry.failed = '';
+    const entry = this.entry(this.scope());
+    if (entry.readFailed || entry.catalogUnavailable) {
+      this.scheduleReadRetry();
+      return;
+    }
+    for (const item of this.entries.values()) {
+      if (!item.readFailed) item.failed = '';
+    }
     this.flush();
   }
 }
