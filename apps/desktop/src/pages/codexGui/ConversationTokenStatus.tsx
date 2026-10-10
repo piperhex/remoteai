@@ -4,17 +4,8 @@ import { guiText } from '../../i18n/guiText';
 import { useConversationMetrics } from '../../../../../shared/remote-chat/client/useConversationMetrics';
 import { CONVERSATION_TPS_DESCRIPTION, CONVERSATION_TTFT_DESCRIPTION, formatConversationTps, formatConversationTtft }
   from '../../../../../shared/remote-chat/conversationMetrics';
+import { formatConversationTokens } from '../../../../../shared/remote-chat/usage';
 import styles from './ConversationTokenStatus.module.less';
-
-const TOKENS_PER_THOUSAND = 1_000;
-const TOKENS_PER_MILLION = 1_000_000;
-const TOKEN_DECIMAL_PLACES = 2;
-
-function formatConversationTokens(value: number) {
-  if (value >= TOKENS_PER_MILLION) return `${(value / TOKENS_PER_MILLION).toFixed(TOKEN_DECIMAL_PLACES)}M`;
-  if (value >= TOKENS_PER_THOUSAND) return `${(value / TOKENS_PER_THOUSAND).toFixed(TOKEN_DECIMAL_PLACES)}k`;
-  return value.toLocaleString();
-}
 
 export function ConversationTokenStatus({ threadId, tokens, active }: {
   threadId: string | null; tokens: number; active: boolean;
@@ -31,6 +22,9 @@ export function ConversationTokenStatus({ threadId, tokens, active }: {
     <Tooltip title={guiText(CONVERSATION_TTFT_DESCRIPTION)} styles={{ root: { maxWidth: 400 } }}>
       <span aria-label={`${guiText('首 token 等待时间')} ${firstToken}`}>{firstToken}</span>
     </Tooltip>
-    {tokens > 0 && <span>{formatConversationTokens(tokens)} tokens</span>}
+    {tokens > 0 && <>
+      <span aria-hidden="true"> · </span>
+      <span>{formatConversationTokens(tokens)} tokens</span>
+    </>}
   </span>;
 }

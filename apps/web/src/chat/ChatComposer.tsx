@@ -5,7 +5,7 @@ import { ArrowUp, ChevronDown, File, MessageSquare, Pause, Play, Plus,
 import { COMPOSER_ACTION_LABELS } from '../../../../shared/remote-chat/composerAction';
 import { composerLabel } from '../../../../shared/remote-chat/composer';
 import { requestSpeedSuffix } from '../../../../shared/remote-chat/requestSpeed';
-import { formatThreadTokens } from '../../../../shared/remote-chat/usage';
+import { formatConversationTokens } from '../../../../shared/remote-chat/usage';
 import { useDesktopLayout } from '../useDesktopLayout';
 import { ComposerAccess, ComposerDesktopStatus } from './ComposerDesktopControls';
 import { ComposerModelPicker } from './ComposerModelPicker';
@@ -185,7 +185,8 @@ export function ChatComposer(props: ComposerProps) {
     {desktop && <div className="chat-composer-hint"><span>{t('Enter 发送 · Shift + Enter 换行')}</span>
       <span className="chat-conversation-metrics">
         <ConversationPerformance read={props.readConversationMetrics} threadId={threadId} active={active && ready} />
-        <span>{t('当前对话')} {formatThreadTokens(tokenUsage?.total.totalTokens)} Token</span>
+        <span aria-hidden="true"> · </span>
+        <span>{formatConversationTokens(tokenUsage?.total.totalTokens)} tokens</span>
       </span>
     </div>}
     {active && !busy && editing && <ChatImageEditor key={editing.id} image={editing}

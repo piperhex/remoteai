@@ -14,6 +14,13 @@ const LOW_QUOTA_PERCENT = 20;
 const WARNING_QUOTA_PERCENT = 50;
 const THREAD_TOKEN_FRACTION_DIGITS = 2;
 
+export function formatConversationTokens(value?: number) {
+  if (value === undefined || !Number.isFinite(value) || value < 0) return '—';
+  if (value >= MILLION) return `${(value / MILLION).toFixed(THREAD_TOKEN_FRACTION_DIGITS)}M`;
+  if (value >= THOUSAND) return `${(value / THOUSAND).toFixed(THREAD_TOKEN_FRACTION_DIGITS)}k`;
+  return value.toLocaleString();
+}
+
 export function formatThreadTokens(value?: number) {
   if (value === undefined || !Number.isFinite(value) || value < 0) return '—';
   const divisor = value >= MILLION ? MILLION : THOUSAND;

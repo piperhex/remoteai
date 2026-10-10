@@ -21,10 +21,10 @@ afterEach(async () => { await act(async () => root.unmount()); vi.clearAllMocks(
 
 it('places local GUI TPS and TTFT before conversation tokens and clears them when disconnected', async () => {
   await act(async () => root.render(<ConversationTokenStatus threadId="local-thread" tokens={2_500} active />));
-  expect(container.textContent).toBe('150.0 TPS · 1.25 TTFT2.50k tokens');
+  expect(container.textContent).toBe('150.0 TPS · 1.25 TTFT · 2.50k tokens');
   expect(loadConversationMetrics).toHaveBeenCalledWith('local-thread');
   await act(async () => root.render(<ConversationTokenStatus threadId="local-thread" tokens={2_500} active={false} />));
-  expect(container.textContent).toBe('— TPS · — TTFT2.50k tokens');
+  expect(container.textContent).toBe('— TPS · — TTFT · 2.50k tokens');
   await act(async () => root.render(<ConversationTokenStatus threadId={null} tokens={0} active />));
   expect(container.textContent).toBe('');
 });
