@@ -38,6 +38,7 @@ test('keeps video and controls usable through null stats and automatic reconnect
   const video = page.locator('video');
   const stats = page.getByLabel('连接状态', { exact: true });
   await expect.poll(() => video.evaluate(element => element.videoWidth)).toBeGreaterThan(0);
+  await expect(page.locator('.rd-status')).not.toBeVisible();
   await expect(stats).toContainText(/[1-9]\d* × [1-9]\d*/);
   await expect(stats).toContainText('— ms 延迟');
   await expect(stats).toContainText('— Mbps');
@@ -50,6 +51,7 @@ test('keeps video and controls usable through null stats and automatic reconnect
   await expect.poll(() => page.evaluate(() => window.desktopTest.captures), { timeout: 15_000 }).toBe(2);
   await expect.poll(() => video.evaluate(element => element.getVideoPlaybackQuality().totalVideoFrames))
     .toBeGreaterThan(5);
+  await expect(page.locator('.rd-status')).not.toBeVisible();
   await expect(stats).toContainText(/[1-9]\d* × [1-9]\d*/);
   await expect(stats).toContainText('— ms 延迟');
   await page.screenshot({ path: info.outputPath('reconnected-missing-stats.png') });

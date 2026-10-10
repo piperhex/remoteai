@@ -44,6 +44,7 @@ export interface DesktopStats {
   audio?: 'starting' | 'playing' | 'unavailable';
   fps: number; width: number; height: number; bitrate: number; connection?: 'direct' | 'relay';
   receivedFps?: number; receivedBitrate?: number; elapsedSeconds?: number;
+  decodedFrames?: number;
   rttMs?: number; decodeMs?: number; lossPercent?: number;
   transport?: 'UDP' | 'TCP' | 'TLS'; network?: 'Wi-Fi' | 'Ethernet' | 'Cellular';
 }

@@ -115,7 +115,7 @@ export function useDesktopSession({ client, active, connected = true, createPeer
       currentClipboard().write(content, paste, progress),
   };
   return { stream, status, stats, settings, displays, update, saving, pointer, muted, mute, hasAudio, clipboard, capabilities,
-    privacyScreen, togglePrivacy,
+    privacyScreen, togglePrivacy, frameRendered: () => receiver.current?.frameRendered(stream),
     waitingForPermission: waitingForDesktopPermission(status),
     input: (input: Parameters<DesktopReceiver['input']>[0]) => receiver.current?.input(input),
     retry: () => {

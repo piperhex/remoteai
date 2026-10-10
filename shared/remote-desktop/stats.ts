@@ -46,6 +46,7 @@ export class DesktopStatsSampler {
     if (typeof video.powerEfficientDecoder === 'boolean') result.hardwareDecoding = video.powerEfficientDecoder;
     const previous = this.previous?.id === video.id ? this.previous : undefined;
     this.previous = video;
+    result.decodedFrames = number(video.framesDecoded);
     const milliseconds = delta(video, previous, 'timestamp');
     const frames = delta(video, previous, 'framesDecoded');
     const bytes = delta(video, previous, 'bytesReceived');

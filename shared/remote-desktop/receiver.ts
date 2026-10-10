@@ -62,6 +62,7 @@ export class DesktopReceiver {
   private lastActivePong = 0;
   private nativeMedia?: NativeMediaSession;
   private nativeSelected = false;
+  private videoReady = false;
   private capabilities: DesktopCapabilities = {};
   private audioTracks = new Set<MediaStreamTrack>();
   readonly clipboard = new DesktopClipboard(message => {
@@ -81,7 +82,8 @@ export class DesktopReceiver {
     let stage: DiagnosticFields['stage'] = 'request-open';
     this.options.status('正在连接桌面…');
     this.diagnostic('desktop-start');
-    this.timeout = setTimeout(() => this.fail('桌面连接超时，请检查两端网络后重试。', 'timeout'), CONNECT_TIMEOUT);
+    this.timeout = setTimeout(() => this.fail(this.pc?.connectionState === 'connected'
+      ? '获取屏幕画面超时，请重新连接。' : '桌面连接超时，请检查两端网络后重试。', 'timeout'), CONNECT_TIMEOUT);
     try {
       this.nativeMedia = await openNativeMedia(this.options.client.nativeMedia, this.id, this.diagnostic);
       if (this.stopped) { await closeNativeMedia(this.nativeMedia); return; }
@@ -149,9 +151,9 @@ export class DesktopReceiver {
     pc.addEventListener('connectionstatechange', () => {
       if (this.stopped || this.pc !== pc) return;
       if (pc.connectionState === 'connected') {
-        clearTimeout(this.timeout); clearTimeout(this.recoveryTimeout);
+        clearTimeout(this.recoveryTimeout);
         this.recoveryTimeout = undefined;
-        this.options.status(''); this.options.connected?.();
+        this.options.status(this.videoReady ? '' : '正在加载桌面画面…');
         this.startStats(pc);
       } else if (['failed', 'closed'].includes(pc.connectionState) && !this.stopped) {
         this.recover();
@@ -165,6 +167,9 @@ export class DesktopReceiver {
 
   private startStats(pc: RTCPeerConnection) {
     this.stopStats ??= monitorDesktopStats(pc, stats => {
+      if (!this.videoReady && ((stats.decodedFrames ?? 0) > 0 || (stats.receivedFps ?? 0) > 0)) {
+        this.pictureReady();
+      }
       const selected = stats.nativeMedia === true && stats.connection === 'direct';
       if (selected && !this.nativeSelected) this.diagnostic('path-selected', { transport: 'mesh', rttMs: stats.rttMs });
       this.nativeSelected = selected;
@@ -172,6 +177,17 @@ export class DesktopReceiver {
       this.standby?.update(stats.connection === 'direct');
       if (stats.nativeMedia && stats.connection !== 'direct' && this.standby?.fallback()) this.waitForFallback();
     }, this.nativeMedia);
+  }
+
+  /** Rendering remains authoritative when a browser or native runtime omits decode statistics. */
+  frameRendered(stream: MediaStream | undefined) {
+    if (stream && stream === this.media) this.pictureReady();
+  }
+
+  private pictureReady() {
+    if (this.stopped || this.videoReady) return;
+    this.videoReady = true; clearTimeout(this.timeout);
+    this.options.status(''); this.options.connected?.();
   }
 
   private activate(peer: DirectPeer) {
@@ -193,7 +209,7 @@ export class DesktopReceiver {
     void this.observer.snapshot();
     this.options.stream(peer.stream); this.options.audio?.(this.audioTracks.size > 0);
     this.measured = {}; this.hostStats = { width: 0, height: 0, fps: 0, bitrate: 0 };
-    this.options.status(''); this.startStats(peer.pc);
+    this.options.status(this.videoReady ? '' : '正在加载桌面画面…'); this.startStats(peer.pc);
     if (backup && this.standby) this.standby.retain(backup);
     else if (previous !== peer.pc) previous?.close();
   }

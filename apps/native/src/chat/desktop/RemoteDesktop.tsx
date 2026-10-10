@@ -101,7 +101,9 @@ export function RemoteDesktop({ client, active, close }: {
                 { scale: viewport.content.width / fitted.content.width }] }} objectFit="contain" zOrder={0}
               streamURL={(session.stream as unknown as NativeMediaStream).toURL()}
               onDimensionsChange={({ nativeEvent }) => {
-                if (nativeEvent.width > 0 && nativeEvent.height > 0) setSource(nativeEvent);
+                if (nativeEvent.width > 0 && nativeEvent.height > 0) {
+                  setSource(nativeEvent); session.frameRendered();
+                }
               }} />}
             <View key={direct ? 'direct' : 'trackpad'} style={s.fill} {...trackpad.panHandlers}
               accessibilityLabel={t("远程桌面触控区域")} />

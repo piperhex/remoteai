@@ -8,7 +8,7 @@ import type { DesktopClient } from '../../../../../shared/remote-desktop/protoco
 
 const runtime = vi.hoisted(() => ({ landscape: false, viewOnly: false, input: vi.fn(), rotate: vi.fn(),
   status: '', waitingForPermission: false, retry: vi.fn(), privacy: false, privacyAvailable: true, togglePrivacy: vi.fn(),
-  orientation: vi.fn(), onShow: vi.fn(),
+  orientation: vi.fn(), onShow: vi.fn(), frameRendered: vi.fn(),
   session: vi.fn(), dimensions: vi.fn(), createPeer: vi.fn(), immersive: vi.fn(), mute: vi.fn(),
   stream: { toURL: vi.fn(() => 'native-ios-stream') } }));
 vi.mock('react', async () => ({ ...await vi.importActual<typeof import('react')>('react'),
@@ -37,7 +37,7 @@ vi.mock('../../../../../shared/remote-desktop/useDesktopSession', () => ({ useDe
   runtime.session(options);
   return { stream: runtime.stream, pointer: {}, input: runtime.input, hasAudio: true, muted: false, mute: runtime.mute,
     status: runtime.status, waitingForPermission: runtime.waitingForPermission, retry: runtime.retry,
-    privacyScreen: runtime.privacy, togglePrivacy: runtime.togglePrivacy,
+    privacyScreen: runtime.privacy, togglePrivacy: runtime.togglePrivacy, frameRendered: runtime.frameRendered,
     capabilities: { control: !runtime.viewOnly, keyboard: !runtime.viewOnly, privacyScreen: runtime.privacyAvailable } };
 } }));
 vi.mock('../../../../../shared/remote-desktop/useMousePanel', () => ({ useMousePanel: () => ({ expanded: true }) }));
@@ -134,6 +134,7 @@ it('uses native iOS video, forwards ICE configuration and keeps control actions 
   });
   video.props.onDimensionsChange!({ nativeEvent: { width: 1920, height: 1080 } });
   expect(runtime.dimensions).toHaveBeenCalledWith({ width: 1920, height: 1080 });
+  expect(runtime.frameRendered).toHaveBeenCalledOnce();
   for (const label of ['显示桌面', '所有窗口', '旋转']) {
     elements.find(node => node.type === Pressable && node.props.accessibilityLabel === label)!.props.onPress!();
   }
@@ -142,6 +143,18 @@ it('uses native iOS video, forwards ICE configuration and keeps control actions 
   elements.find(node => node.type === Pressable && node.props.accessibilityLabel === '静音')!.props.onPress!();
   expect(runtime.mute).toHaveBeenCalledWith(true);
   expect(runtime.immersive).not.toHaveBeenCalled();
+});
+
+it.each(['ios', 'android'] as const)('waits for positive video dimensions before reporting a picture on %s', platform => {
+  Platform.OS = platform;
+  runtime.status = '正在加载桌面画面…';
+  const elements = render();
+  expect(elements.some(node => node.type === Text && node.props.children === runtime.status)).toBe(true);
+  const video = elements.find(node => node.type === RTCView)!;
+  video.props.onDimensionsChange!({ nativeEvent: { width: 0, height: 0 } });
+  expect(runtime.frameRendered).not.toHaveBeenCalled();
+  video.props.onDimensionsChange!({ nativeEvent: { width: 1920, height: 1080 } });
+  expect(runtime.frameRendered).toHaveBeenCalledOnce();
 });
 
 it.each([false, true])('fits the video and keeps the iPhone/iPad home indicator clear in landscape=%s', landscape => {

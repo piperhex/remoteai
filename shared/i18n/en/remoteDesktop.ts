@@ -165,6 +165,7 @@ export const remoteDesktopMessages: Record<string, string> = {
       + 'to stop. Hold it still to lock dragging; tap it again to release. Hold and drag the center arrows to scroll; '
       + 'release to return to the mouse panel. Use the center grip to reposition the panel.',
   '正在连接桌面…': 'Connecting to the desktop…',
+  '正在加载桌面画面…': 'Loading the desktop…',
   '桌面连接超时，请检查两端网络后重试。': 'Connection timed out. Check both devices’ networks and try again.',
   '桌面连接已断开，请重新连接。': 'The desktop disconnected. Please reconnect.',
   '网络中断，正在等待恢复…': 'Connection interrupted. Waiting to reconnect…',

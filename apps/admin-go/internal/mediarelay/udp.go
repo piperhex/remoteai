@@ -1,6 +1,7 @@
 package mediarelay
 
 import (
+	"context"
 	"net"
 	"time"
 )
@@ -20,12 +21,8 @@ func (p *Proxy) readUDP() {
 		if c == nil {
 			continue
 		}
-		packet := append([]byte(nil), buffer[:n]...)
-		select {
-		case c.queue <- packet:
-		case <-c.done:
-		default: /* Bound memory under congestion. */
-		}
+		// A full queue drops this datagram, but never stalls other clients or grows without bounds.
+		c.upload.push(buffer[:n])
 	}
 }
 
@@ -48,36 +45,51 @@ func (p *Proxy) udpConnection(address net.Addr) *connection {
 	if err != nil {
 		return nil
 	}
-	c := &connection{backend: backend, queue: make(chan []byte, udpQueueSize), done: make(chan struct{}), ip: ip}
+	c := &connection{backend: backend, upload: newUDPQueue(&p.udpBudget),
+		download: newUDPQueue(&p.udpBudget), done: make(chan struct{}), ip: ip}
 	p.connections[key] = c
-	p.workers.Add(2)
-	go p.sendUDP(key, c)
-	go p.receiveUDP(key, c, address)
+	p.workers.Add(3)
+	go p.forwardUDP(key, c, nil)
+	go p.forwardUDP(key, c, address)
+	go p.receiveUDP(key, c)
 	return c
 }
 
-func (p *Proxy) sendUDP(key string, c *connection) {
+func (p *Proxy) forwardUDP(key string, c *connection, address net.Addr) {
 	defer p.workers.Done()
 	defer p.remove(key, c)
+	queue := c.upload
+	if address != nil {
+		queue = c.download
+	}
 	for {
-		select {
-		case <-c.done:
+		packet := queue.pop(c.done)
+		if packet == nil {
 			return
-		case packet := <-c.queue:
-			err := p.forward(&c.gate, packet, true, func() error {
-				if err := c.backend.SetWriteDeadline(time.Now().Add(connectTimeout)); err != nil {
-					return err
-				}
-				return writeFrame(c.backend, packet)
-			})
-			if err != nil {
-				return
+		}
+		err := p.forward(&c.gate, packet, address == nil, func() error {
+			select {
+			case <-c.done:
+				return context.Canceled
+			default:
 			}
+			if address != nil {
+				_, err := p.udp.WriteTo(packet, address)
+				return err
+			}
+			if err := c.backend.SetWriteDeadline(time.Now().Add(connectTimeout)); err != nil {
+				return err
+			}
+			return writeFrame(c.backend, packet)
+		})
+		queue.release(len(packet))
+		if err != nil {
+			return
 		}
 	}
 }
 
-func (p *Proxy) receiveUDP(key string, c *connection, address net.Addr) {
+func (p *Proxy) receiveUDP(key string, c *connection) {
 	defer p.workers.Done()
 	defer p.remove(key, c)
 	buffer := make([]byte, maxFrameBytes)
@@ -89,12 +101,7 @@ func (p *Proxy) receiveUDP(key string, c *connection, address net.Addr) {
 		if err != nil {
 			return
 		}
-		err = p.forward(&c.gate, buffer[:n], false, func() error {
-			_, err := p.udp.WriteTo(buffer[:n], address)
-			return err
-		})
-		if err != nil {
-			return
-		}
+		// Keep draining the backend while quota checks are in flight for earlier packets.
+		c.download.push(buffer[:n])
 	}
 }

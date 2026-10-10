@@ -104,7 +104,7 @@ function DesktopViewer({ client, active, connected = true, close, localClipboard
       select={displayId => { void session.update({ ...session.settings, displayId }); }} />}
     <div className="rd-workspace">
     <div ref={stage} className="rd-stage">
-      <video ref={video} autoPlay playsInline className="rd-video" style={{
+      <video ref={video} autoPlay playsInline onLoadedData={session.frameRendered} className="rd-video" style={{
         left: viewport.content.x, top: viewport.content.y,
         width: viewport.content.width, height: viewport.content.height }} />
       <DesktopInputSurface key={direct ? 'direct' : 'trackpad'} pointer={session.pointer} viewport={viewport}

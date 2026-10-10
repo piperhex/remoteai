@@ -303,6 +303,13 @@ overlapping reads. Configured sender limits are not displayed as measured rates.
 withhold the local network type. The close button on the overlay's right hides only the statistics. Display settings can
 show them again, without reconnecting the desktop.
 
+The initial connection remains in “正在加载桌面画面…” after ICE connects until a video frame is decoded or
+rendered. Cumulative decoded-frame counts also recognize a static desktop; Web video `loadeddata` and native
+renderer dimensions provide a fallback when decode statistics are missing. The initial 25-second connection
+deadline stays active until the first picture, and closing cancels it. Native, Web and desktop viewers share this
+state. `firstFrame.test.ts`, native viewer tests and `remote-desktop-first-frame.pw.ts` cover waiting, cancellation,
+timeouts and picture arrival; the browser fixture completes real ICE while pausing video transmission.
+
 A transient chat-connection interruption keeps the viewer open and preserves its orientation. Desktop media has
 its own connection state and retry action; chat reconnection does not dismiss the viewer or restore portrait.
 

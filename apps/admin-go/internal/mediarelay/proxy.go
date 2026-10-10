@@ -13,7 +13,6 @@ const idleTimeout = 2 * time.Minute
 const connectTimeout = 5 * time.Second
 const maxConnections = 1024
 const maxConnectionsPerIP = 32
-const udpQueueSize = 64
 
 type Config struct {
 	Listen, Backend, Realm, Secret string
@@ -35,16 +34,18 @@ type Proxy struct {
 	context      context.Context
 	cancel       context.CancelFunc
 	certificates *certificates
+	udpBudget    udpBudget
 }
 
 type connection struct {
-	gate    gate
-	backend net.Conn
-	client  net.Conn
-	queue   chan []byte
-	done    chan struct{}
-	ip      string
-	once    sync.Once
+	gate     gate
+	backend  net.Conn
+	client   net.Conn
+	upload   *udpQueue
+	download *udpQueue
+	done     chan struct{}
+	ip       string
+	once     sync.Once
 }
 
 func Start(config Config, transmit Transmit) (*Proxy, error) {
@@ -114,6 +115,10 @@ func (p *Proxy) allowed(ip string) bool {
 func (p *Proxy) remove(key string, c *connection) {
 	c.once.Do(func() {
 		close(c.done)
+		if c.upload != nil {
+			c.upload.close()
+			c.download.close()
+		}
 		// Closing an already failed socket is intentional during cleanup.
 		_ = c.backend.Close()
 		if c.client != nil {
