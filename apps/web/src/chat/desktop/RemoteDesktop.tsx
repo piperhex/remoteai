@@ -117,7 +117,8 @@ function DesktopViewer({ client, active, connected = true, close, localClipboard
         horizontal={!!session.capabilities.horizontalScroll} />}
       {session.status && <div className={`rd-status${session.stream ? '' : ' rd-status-empty'}`} role="status">
         <span>{t(session.status)}</span>
-        <button disabled={!connected} onClick={session.retry}>{t('重新连接')}</button></div>}
+        <button disabled={!connected} onClick={session.retry}>
+          {t(session.waitingForPermission ? '检查授权' : '重新连接')}</button></div>}
       {windowControls.error && <div className="rd-clipboard-notice" role="alert">{t(windowControls.error)}</div>}
       {display && <DisplaySettings settings={session.settings} displays={session.displays} update={session.update}
         saving={session.saving || !session.stream}

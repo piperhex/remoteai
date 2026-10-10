@@ -49,6 +49,17 @@ it('retains Windows compatibility fallback without opening an extra lease', asyn
   expect(call.mock.calls.some(([command]) => command === 'remote_desktop_open')).toBe(false);
 });
 
+it.each(['屏幕录制', '辅助功能'])('does not retry %s refusals through capture fallback', async permission => {
+  const message = `请在 Mac 的远程设置中开启${permission}权限，然后重新连接。`;
+  call.mockImplementation(async command => {
+    if (command === 'remote_desktop_open') throw message;
+    return command === 'remote_desktop_stream_available';
+  });
+  await expect(new HostSession(DEFAULT_SETTINGS, []).open()).rejects.toBe(message);
+  expect(fallback.open).not.toHaveBeenCalled();
+  expect(call.mock.calls.filter(([command]) => command === 'remote_desktop_open')).toHaveLength(1);
+});
+
 it('retains both the original startup failure and a different fallback failure', async () => {
   call.mockImplementation(async () => false);
   fallback.open.mockRejectedValue('请在 Mac 的远程设置中开启辅助功能权限，然后重新连接。');

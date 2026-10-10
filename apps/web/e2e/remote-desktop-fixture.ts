@@ -1,4 +1,5 @@
-import type { DesktopDisplay, DesktopInput, DesktopSettings } from '../../../shared/remote-desktop/protocol';
+import type { DesktopDisplay, DesktopInput, DesktopSettings, DesktopSystemPermission }
+  from '../../../shared/remote-desktop/protocol';
 import { RemoteDesktopHost } from '../../desktop/src/remoteDesktop/host';
 import { createGuiToolsClient } from '../../../shared/remote-chat/guiTools';
 import type { IceServer } from '../../../shared/remote-chat/protocol';
@@ -37,6 +38,9 @@ const displays: DesktopDisplay[] = [
 let selected = displays[0];
 const multiDisplay = new URLSearchParams(location.search).has('displays');
 export const desktopTest = { inputs: [] as DesktopInput[], settings: [] as DesktopSettings[],
+  permissionRequired: (new URLSearchParams(location.search).has('permissions')
+    ? 'screenRecording' : null) as DesktopSystemPermission | null,
+  permissionChecks: 0, captureAttempts: 0,
   disconnect: () => host.release('fixture'),
   reconnect: () => host.register('fixture', window.desktopRelayFixture?.iceServers ?? []),
   clipboard: clipboardFixture,
@@ -92,7 +96,18 @@ Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {
       desktopTest.localClipboard.content = structuredClone(args.content!); return;
     }
     if (command === 'remote_desktop_clipboard') return desktopClipboard(args.message!);
+    if (command === 'remote_desktop_permissions') return { enabled: true, control: true };
+    if (command === 'remote_desktop_system_permissions') {
+      desktopTest.permissionChecks += 1;
+      return { screenRecording: desktopTest.permissionRequired !== 'screenRecording',
+        accessibility: desktopTest.permissionRequired === null };
+    }
     if (command === 'remote_desktop_open') {
+      desktopTest.captureAttempts += 1;
+      if (desktopTest.permissionRequired) {
+        const permission = desktopTest.permissionRequired === 'screenRecording' ? '屏幕录制' : '辅助功能';
+        throw new Error(`请在 Mac 的远程设置中开启${permission}权限，然后重新连接。`);
+      }
       desktopTest.captures += 1;
       selected = desktopTest.displays.find(item => item.id === args.displayId) ?? desktopTest.displays[0];
       desktopTest.selectedDisplays.push(selected.id);

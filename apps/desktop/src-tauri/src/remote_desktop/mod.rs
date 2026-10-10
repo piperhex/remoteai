@@ -22,6 +22,8 @@ use windows_input as platform_input;
 pub(crate) mod local_clipboard;
 #[cfg(windows)]
 mod monitors;
+#[cfg(any(target_os = "macos", test))]
+mod permission_prompt;
 pub(crate) mod permissions;
 #[cfg(windows)]
 pub(crate) mod service_worker;
@@ -219,8 +221,15 @@ fn open(
     if !permissions.enabled {
         return Err(DesktopError::Denied);
     }
+    if display_id
+        .as_ref()
+        .is_some_and(|id| id.is_empty() || id.len() > 128)
+    {
+        return Err(DesktopError::Invalid);
+    }
+    lease::deadline(expires_at)?;
     #[cfg(target_os = "macos")]
-    macos::authorize(permissions.control)?;
+    macos::authorize_open(permissions.control)?;
     #[cfg(not(any(windows, target_os = "macos")))]
     {
         let _ = (display_id, expires_at);
@@ -228,12 +237,6 @@ fn open(
     }
     #[cfg(any(windows, target_os = "macos"))]
     {
-        if display_id
-            .as_ref()
-            .is_some_and(|id| id.is_empty() || id.len() > 128)
-        {
-            return Err(DesktopError::Invalid);
-        }
         let monitors = monitors::list()?;
         let display = monitors::select(&monitors, display_id.as_deref())?;
         let display_id = display.info.id.clone();

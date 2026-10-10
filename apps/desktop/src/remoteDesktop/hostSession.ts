@@ -21,7 +21,7 @@ export class HostSession {
       const fallback = !(this.session instanceof NativeDesktopSession) || this.session.allowsCaptureFallback;
       await this.session.close();
       if (this.stopped) throw new Error('桌面连接已结束。');
-      if (!fallback) throw error;
+      if (!fallback || desktopFailure(error).reason === 'permission') throw error;
       this.diagnostic?.('desktop-stage', { stage: 'fallback-open', state: 'connecting' });
       try {
         this.session = new DesktopHostSession(this.settings, this.iceServers, this.expiresAt, this.diagnostic);

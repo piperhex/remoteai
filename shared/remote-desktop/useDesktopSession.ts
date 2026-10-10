@@ -3,6 +3,7 @@ import { DesktopReceiver } from './receiver';
 import { DesktopPointer } from './input';
 import { DesktopRecovery, DESKTOP_OFFLINE_STATUS } from './recovery';
 import { DesktopDirectRetry } from './directRetry';
+import { waitingForDesktopPermission } from './permissionWait';
 import type { ClipboardContent, ClipboardProgress } from './clipboard';
 import { DEFAULT_SETTINGS, validateSettings, type DesktopCapabilities, type DesktopClient, type DesktopDisplay,
   type DesktopSettings, type DesktopStats }
@@ -37,7 +38,7 @@ export function useDesktopSession({ client, active, connected = true, createPeer
 
   useEffect(() => {
     if (!active) return;
-    const controller = new DesktopRecovery(() => setAttempt(value => value + 1), setStatus);
+    const controller = new DesktopRecovery(() => setAttempt(value => value + 1), setStatus, client.permissionStatus);
     controller.setAvailable(available.current);
     recovery.current = controller;
     return () => { recovery.current?.stop(); recovery.current = undefined; };
@@ -100,11 +101,12 @@ export function useDesktopSession({ client, active, connected = true, createPeer
       currentClipboard().write(content, paste, progress),
   };
   return { stream, status, stats, settings, displays, update, saving, pointer, muted, mute, hasAudio, clipboard, capabilities,
+    waitingForPermission: waitingForDesktopPermission(status),
     input: (input: Parameters<DesktopReceiver['input']>[0]) => receiver.current?.input(input),
     retry: () => {
       if (!active || !available.current) return;
       recovery.current?.stop();
-      recovery.current = new DesktopRecovery(() => setAttempt(value => value + 1), setStatus);
+      recovery.current = new DesktopRecovery(() => setAttempt(value => value + 1), setStatus, client.permissionStatus);
       setAttempt(value => value + 1);
     } };
 }

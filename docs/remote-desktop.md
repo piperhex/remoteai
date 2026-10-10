@@ -14,9 +14,11 @@ Older hosts without display discovery keep their existing single-screen controls
 macOS 13 and later hosts also support video, display selection, mouse/keyboard control and clipboard
 copy/cut/paste (including files and images). Open **Remote settings → Mac access permissions** on the Mac
 and grant Screen Recording to Remote AI; grant Accessibility when mouse/keyboard control is enabled.
-These grants are shared with Computer Use, but that plugin does not need to be installed. Reading permission
-status never prompts; only clicking a permission button opens System Settings. Reconnect after granting access,
-and restart Remote AI if macOS requests it. Keep the app running in a logged-in desktop session.
+These grants are shared with Computer Use, but that plugin does not need to be installed. Capture startup
+requests a missing grant once per permission per app run; reading permission status never prompts.
+Native and Web viewers wait for grants without reopening capture, then connect automatically when access is available.
+The local permission buttons remain available; restart Remote AI if macOS requests it.
+See [Mac permission requests](remote-desktop-permissions.md). Keep the app running in a logged-in desktop session.
 Linux hosting remains unsupported.
 The native and Web keyboard panels use Cmd/Option and Mac shortcuts when connected to a Mac; hosts that
 do not report their platform retain the existing Windows keyboard layout.

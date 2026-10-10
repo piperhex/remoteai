@@ -5,6 +5,7 @@ import { HostSession } from './hostSession';
 import type { ConnectionDiagnostic } from '../../../../shared/remote-chat/diagnostics';
 import type { NativeMediaFactory } from '../../../../shared/remote-desktop/nativeMedia';
 import { NativeMediaHostSession } from './nativeMediaSession';
+import { desktopPermissionStatus } from './permissions';
 
 export interface DesktopHostSession {
   readonly closed: boolean;
@@ -42,11 +43,15 @@ export class RemoteDesktopHost {
   }
   async request(value: unknown, owner: string) {
     const body = object(value);
+    const peer = this.peers.get(owner);
+    if (!peer) throw new Error('请先连接电脑。');
+    if (body.action === 'permissions') {
+      if (peer.expiresAt !== undefined && peer.expiresAt <= Date.now()) throw new Error('桌面连接已结束。');
+      return desktopPermissionStatus();
+    }
     if (typeof body.id !== 'string' || !/^[a-zA-Z0-9-]{1,100}$/.test(body.id)) {
       throw new Error('桌面连接信息无效，请重新连接。');
     }
-    const peer = this.peers.get(owner);
-    if (!peer) throw new Error('请先连接电脑。');
     if (body.action === 'open') return this.open({ owner, id: body.id, settings: body.settings, iceServers: peer.ice });
     const active = this.active;
     if (!active || active.owner !== owner || active.id !== body.id) {

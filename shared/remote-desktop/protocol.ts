@@ -15,6 +15,8 @@ export interface DesktopPermissions {
   enabled: boolean; control: boolean; clipboardRead: boolean; clipboardWrite: boolean; files: boolean; audio: boolean;
 }
 export type DesktopPlatform = 'windows' | 'macos';
+export type DesktopSystemPermission = 'screenRecording' | 'accessibility';
+export interface DesktopPermissionStatus { required: DesktopSystemPermission | null }
 export interface DesktopDisplays {
   displays?: DesktopDisplay[]; displayId?: string; permissions?: DesktopPermissions; platform?: DesktopPlatform;
 }
@@ -51,6 +53,7 @@ export type DesktopInput =
   | { kind: 'keyboard'; code: string; down: boolean }
   | { kind: 'key'; key: 'enter' | 'backspace' | 'escape' | 'tab' | 'desktop' | 'windows' };
 export interface DesktopClient {
+  permissionStatus?(): Promise<DesktopPermissionStatus>;
   nativeMedia?: import('./nativeMedia').NativeMediaFactory;
   diagnostic?: import('../remote-chat/diagnostics').ConnectionDiagnostic;
   open(id: string, settings: DesktopSettings): Promise<DesktopOffer>;
@@ -66,6 +69,7 @@ export function desktopClient(request: <T>(body: object) => Promise<T>,
   return {
     diagnostic,
     nativeMedia,
+    permissionStatus: () => call('permissions', {}),
     open: (id, settings) => call('open', { id, settings }),
     signal: (id, signal) => call('signal', { id, ...signal }),
     settings: (id, settings) => call('settings', { id, settings }),

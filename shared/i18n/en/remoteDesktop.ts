@@ -1,4 +1,9 @@
 export const remoteDesktopMessages: Record<string, string> = {
+  '检查授权': 'Check permissions',
+  '请在 Mac 上允许屏幕录制，授权后将自动连接。若系统要求，请重启 Remote AI。':
+    'Allow Screen Recording on the Mac to connect automatically. Restart Remote AI if macOS asks you to.',
+  '请在 Mac 上允许辅助功能，授权后将自动连接。若系统要求，请重启 Remote AI。':
+    'Allow Accessibility on the Mac to connect automatically. Restart Remote AI if macOS asks you to.',
   '正在启用无人值守，请在弹出的窗口中确认管理员权限。':
     'Enabling unattended access. Approve the administrator prompt when it appears.',
   '无人值守未能启用。你可以继续对话，稍后到远程设置中重试。':

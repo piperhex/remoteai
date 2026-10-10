@@ -1,12 +1,13 @@
 import React, { Children, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { Modal, Platform, Pressable } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RTCView } from 'react-native-webrtc';
 import { RemoteDesktop } from './RemoteDesktop';
 import type { DesktopClient } from '../../../../../shared/remote-desktop/protocol';
 
 const runtime = vi.hoisted(() => ({ landscape: false, viewOnly: false, input: vi.fn(), rotate: vi.fn(),
+  status: '', waitingForPermission: false, retry: vi.fn(),
   orientation: vi.fn(), onShow: vi.fn(),
   session: vi.fn(), dimensions: vi.fn(), createPeer: vi.fn(), immersive: vi.fn(), mute: vi.fn(),
   stream: { toURL: vi.fn(() => 'native-ios-stream') } }));
@@ -18,7 +19,8 @@ vi.mock('react', async () => ({ ...await vi.importActual<typeof import('react')>
 vi.mock('react-native', () => ({ Modal: 'Modal', View: 'View', Pressable: 'Pressable', Text: 'Text',
   ScrollView: 'ScrollView', KeyboardAvoidingView: 'KeyboardAvoidingView', Platform: { OS: 'ios' },
   NativeModules: { DesktopWindow: { setImmersive: runtime.immersive } }, findNodeHandle: vi.fn(),
-  StyleSheet: { create: <T,>(styles: T) => styles, absoluteFillObject: {} } }));
+  StyleSheet: { create: <T,>(styles: T) => styles, absoluteFillObject: {},
+    flatten: (styles: unknown[]) => Object.assign({}, ...styles) } }));
 vi.mock('react-native-safe-area-context', () => ({
   SafeAreaView: 'SafeAreaView', SafeAreaProvider: 'SafeAreaProvider',
 }));
@@ -34,6 +36,7 @@ vi.mock('../terminal/useTerminalOrientation', () => ({ useTerminalOrientation: (
 vi.mock('../../../../../shared/remote-desktop/useDesktopSession', () => ({ useDesktopSession: (options: unknown) => {
   runtime.session(options);
   return { stream: runtime.stream, pointer: {}, input: runtime.input, hasAudio: true, muted: false, mute: runtime.mute,
+    status: runtime.status, waitingForPermission: runtime.waitingForPermission, retry: runtime.retry,
     capabilities: { control: !runtime.viewOnly, keyboard: !runtime.viewOnly } };
 } }));
 vi.mock('../../../../../shared/remote-desktop/useMousePanel', () => ({ useMousePanel: () => ({ expanded: true }) }));
@@ -50,6 +53,7 @@ vi.mock('./DisplaySettings', () => ({ DisplaySettings: 'DisplaySettings' }));
 vi.mock('./DesktopKeyboard', () => ({ DesktopKeyboard: 'DesktopKeyboard' }));
 
 interface Props {
+  style?: unknown[]; accessibilityRole?: string;
   disabled?: boolean;
   children?: ReactNode; edges?: string[]; streamURL?: string;
   presentationStyle?: string; supportedOrientations?: string[];
@@ -64,8 +68,23 @@ const client: DesktopClient = { open: vi.fn(), signal: vi.fn(), settings: vi.fn(
 const render = (active = true, close = vi.fn()) => nodes(RemoteDesktop({ client, active, close }));
 beforeEach(() => {
   vi.clearAllMocks(); vi.stubGlobal('React', React); runtime.landscape = false; runtime.viewOnly = false; Platform.OS = 'ios';
+  runtime.status = ''; runtime.waitingForPermission = false;
 });
 afterEach(() => vi.unstubAllGlobals());
+
+it.each(['ios', 'android'] as const)('shows compact permission guidance and a check action on %s', platform => {
+  Platform.OS = platform;
+  runtime.status = '请在 Mac 上允许屏幕录制，授权后将自动连接。若系统要求，请重启 Remote AI。';
+  runtime.waitingForPermission = true;
+  const elements = render();
+  const alert = elements.find(node => node.props.accessibilityRole === 'alert')!;
+  expect(alert.props.children).toBe(runtime.status);
+  expect(StyleSheet.flatten(alert.props.style)).toMatchObject({ maxWidth: 400, flexShrink: 1 });
+  const check = elements.find(node => node.type === Pressable && nodes(node.props.children)
+    .some(child => child.type === Text && child.props.children === '检查授权'))!;
+  check.props.onPress!(); expect(runtime.retry).toHaveBeenCalledOnce();
+  expect(elements.some(node => node.type === Text && node.props.children === '重新连接')).toBe(false);
+});
 
 it.each(['ios', 'android'] as const)('coordinates automatic landscape with modal presentation on %s', platform => {
   Platform.OS = platform;

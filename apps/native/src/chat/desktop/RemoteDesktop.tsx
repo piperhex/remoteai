@@ -112,7 +112,7 @@ export function RemoteDesktop({ client, active, close }: {
                 <Text accessibilityRole="alert" style={[s.text, s.messageText]}>
                   {t(session.status || orientation.error)}</Text>
                 <Pressable accessibilityRole="button" style={s.retry} onPress={session.retry}>
-                  <Text style={s.text}>{t("重新连接")}</Text></Pressable>
+                  <Text style={s.text}>{t(session.waitingForPermission ? '检查授权' : '重新连接')}</Text></Pressable>
               </View></View>}
             {viewOnly && !session.status && <View pointerEvents="none" style={s.messageLayer}>
               <View style={s.message}><Text style={s.text}>{t("仅观看")}</Text></View></View>}
