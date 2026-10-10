@@ -80,3 +80,32 @@ test('shows the update choices in English', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Skip this version' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Update now' })).toBeVisible();
 });
+
+for (const network of ['wifi', 'cellular', 'unknown']) {
+  test(`idle preparation respects the ${network} network without reloading`, async ({ page }) => {
+    await page.clock.install();
+    await page.addInitScript(type => {
+      Object.defineProperty(navigator, 'connection', { configurable: true, value: { type, saveData: false } });
+    }, network);
+    await page.route(MANIFEST, route => route.fulfill({ json: { version: '99.0.0' } }));
+    let fetched = 0;
+    await page.route('**/web/', async route => {
+      if (route.request().resourceType() !== 'fetch') { await route.continue(); return; }
+      await route.fulfill({ contentType: 'text/html', body:
+        '<script type="module" src="/web/assets/idle-update.js"></script>'
+        + '<script type="module" src="https://untrusted.example/external.js"></script>' });
+    });
+    await page.route('**/assets/idle-update.js', route => {
+      fetched += 1;
+      return route.fulfill({ contentType: 'text/javascript', body: 'window.updateMustNotExecute = true;' });
+    });
+    await page.goto('./');
+    await expect(page.getByText('发现新版本', { exact: true })).toBeVisible();
+    await page.clock.fastForward(90_000);
+    if (network === 'wifi') await expect.poll(() => fetched).toBe(1);
+    else expect(fetched).toBe(0);
+    await expect(page.getByText('发现新版本', { exact: true })).toBeVisible();
+    expect(await page.evaluate(() => 'updateMustNotExecute' in window)).toBe(false);
+    expect(new URL(page.url()).searchParams.has('_update')).toBe(false);
+  });
+}

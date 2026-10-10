@@ -16,7 +16,8 @@ module.exports = function withAppUpdate(config) {
   return withDangerousMod(config, ['android', async (result) => {
     const target = path.join(result.modRequest.platformProjectRoot, 'app/src/main/java/com/codexswitch/update');
     await fs.mkdir(target, { recursive: true });
-    for (const name of ['AppUpdatePackage.kt', 'AppUpdateModule.kt']) {
+    for (const name of ['AppUpdatePackage.kt', 'AppUpdateModule.kt', 'UpdateFiles.kt',
+      'UpdatePeerDownload.kt', 'UpdateOfficialDownload.kt']) {
       await fs.copyFile(path.join(__dirname, 'appUpdate', name), path.join(target, name));
     }
     return result;

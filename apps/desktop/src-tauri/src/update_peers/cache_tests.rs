@@ -88,3 +88,28 @@ async fn cache_evicts_old_packages_and_never_publishes_invalid_bytes() {
     cache.restore().await.unwrap();
     assert!(cache.artifacts().is_empty());
 }
+
+#[tokio::test]
+async fn android_cache_keeps_desktop_signatures_and_eviction_independent() {
+    let directory = tempfile::tempdir().unwrap();
+    let (desktop, key) = fixture("1.0.0");
+    let cache = Arc::new(Cache::new(directory.path().into(), key.clone()));
+    cache
+        .save(desktop.clone(), Arc::new(b"signed installer".to_vec()))
+        .await
+        .unwrap();
+    let digest = format!("sha256:{:x}", Sha256::digest(b"apk"));
+    let url = "https://github.com/piperhex/remoteai/releases/download/v1/android.apk";
+    for version in ["1.0.0", "2.0.0", "3.0.0"] {
+        let apk = Artifact::android(version.into(), url.into(), digest.clone(), 3).unwrap();
+        cache.save(apk, Arc::new(b"apk".to_vec())).await.unwrap();
+    }
+    assert_eq!(cache.artifacts().len(), 2);
+    assert!(cache.read(&desktop.id).await.is_ok());
+    let mut forged = desktop;
+    forged.signature = digest;
+    assert!(forged.verify(b"apk", &key).is_err());
+    let restarted = Arc::new(Cache::new(directory.path().into(), key));
+    restarted.restore().await.unwrap();
+    assert_eq!(restarted.artifacts().len(), 2);
+}

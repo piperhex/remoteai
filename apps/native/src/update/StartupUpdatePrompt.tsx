@@ -4,13 +4,15 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useStartupUpdate } from '../../../../shared/app-update/useStartupUpdate';
 import { startupUpdateOptions } from './startupUpdate';
 import { beginAppUpdateDownload } from './updateActions';
+import { useAndroidUpdateDownloadState } from './useAndroidUpdateDownloadState';
 
 export function StartupUpdatePrompt() {
   useLanguage();
   const update = useStartupUpdate(startupUpdateOptions);
+  const download = useAndroidUpdateDownloadState();
   const [error, setError] = useState('');
   const release = update.release;
-  if (!release) return null;
+  if (!release || download.status === 'downloading' || download.status === 'downloaded') return null;
 
   const ignore = () => {
     setError('');

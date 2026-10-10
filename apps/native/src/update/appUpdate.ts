@@ -4,6 +4,8 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import appConfig from '../../app.json';
 import { getAndroidDownloadStatus } from './androidDownloadStatus';
+import { downloadSharedAndroidUpdate, downloadOfficialAndroidUpdate,
+  nativeUpdatePath, verifyAndroidPackage } from './androidSharedDownload';
 import { compareAppVersions, versionFromReleaseMetadata } from '../../../../shared/app-update/version';
 
 export { compareAppVersions } from '../../../../shared/app-update/version';
@@ -24,6 +26,7 @@ export interface AndroidReleaseAsset {
   name: string;
   downloadUrl: string;
   size: number;
+  sha256?: string;
 }
 
 export interface AppRelease {
@@ -52,6 +55,7 @@ interface StoredAndroidUpdate {
   version: string;
   path: string;
   expectedSize: number;
+  sha256?: string;
 }
 
 interface GitHubReleaseAsset {
@@ -59,6 +63,7 @@ interface GitHubReleaseAsset {
   browser_download_url?: unknown;
   size?: unknown;
   content_type?: unknown;
+  digest?: unknown;
 }
 
 interface GitHubRelease {
@@ -97,22 +102,32 @@ function androidAssetFrom(value: unknown): AndroidReleaseAsset | null {
   const name = textValue(asset.name);
   const downloadUrl = textValue(asset.browser_download_url);
   if (!name || !downloadUrl) return null;
-  return { name, downloadUrl, size: numberValue(asset.size) };
+  const digest = textValue(asset.digest);
+  const sha256 = /^sha256:[0-9a-f]{64}$/.test(digest) ? digest.slice(7) : undefined;
+  return { name, downloadUrl, size: numberValue(asset.size), ...(sha256 ? { sha256 } : {}) };
+}
+
+async function fetchLatestRelease(): Promise<GitHubRelease> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const response = await fetch(`${RELEASE_API_URL}?t=${Date.now()}`, {
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/vnd.github+json',
+        'Cache-Control': 'no-cache',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    });
+    if (!response.ok) {
+      throw new Error(t("检查更新服务返回 HTTP {value1}", { value1: response.status }));
+    }
+    return await response.json() as GitHubRelease;
+  } finally { clearTimeout(timer); }
 }
 
 export async function checkForAppUpdate(): Promise<AppUpdateCheck> {
-  const response = await fetch(`${RELEASE_API_URL}?t=${Date.now()}`, {
-    headers: {
-      Accept: 'application/vnd.github+json',
-      'Cache-Control': 'no-cache',
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
-  });
-  if (!response.ok) {
-    throw new Error(t("检查更新服务返回 HTTP {value1}", { value1: response.status }));
-  }
-
-  const payload = await response.json() as GitHubRelease;
+  const payload = await fetchLatestRelease();
   const tagName = textValue(payload.tag_name);
   const assets = Array.isArray(payload.assets) ? payload.assets as GitHubReleaseAsset[] : [];
   const assetNames = assets.map((asset) => asset.name);
@@ -184,8 +199,8 @@ async function storedUpdateIsComplete(stored: StoredAndroidUpdate, successful = 
   if (!await util.fs.exists(stored.path)) return false;
   const stat = await util.fs.stat(stored.path);
   const size = Number(stat.size);
-  if (stored.expectedSize <= 0) return successful && size > 0;
-  return size === stored.expectedSize;
+  if (stored.expectedSize <= 0 ? !successful || size <= 0 : size !== stored.expectedSize) return false;
+  return verifyAndroidPackage({ path: stored.path, size: stored.expectedSize, sha256: stored.sha256 });
 }
 
 async function restoreAndroidUpdateDownloadState(): Promise<AndroidUpdateDownloadState> {
@@ -223,7 +238,7 @@ export function refreshAndroidUpdateDownloadState(): Promise<AndroidUpdateDownlo
   return stateRefresh;
 }
 
-export async function startAndroidUpdateDownload(release: AppRelease) {
+export async function startAndroidUpdateDownload(release: AppRelease, options: { wifiOnly?: boolean } = {}) {
   if (Platform.OS !== 'android') throw new Error(t("应用内安装目前仅支持 Android"));
   if (!release.androidAsset) throw new Error(t("该版本没有可用的 Android 安装包"));
   if (activeDownload) return activeDownload;
@@ -236,31 +251,25 @@ export async function startAndroidUpdateDownload(release: AppRelease) {
       await stateRefresh;
       const util = await blobUtil();
       const safeVersion = release.version.replace(/[^0-9A-Za-z.-]/g, '-');
-      const path = `${util.fs.dirs.DownloadDir}/CodexSwitch-update-${safeVersion}-${Date.now()}.apk`;
+      const path = await nativeUpdatePath(safeVersion)
+        ?? `${util.fs.dirs.DownloadDir}/CodexSwitch-update-${safeVersion}-${Date.now()}.apk`;
       const stored: StoredAndroidUpdate = {
         version: release.version,
         path,
         expectedSize: androidAsset.size,
+        sha256: androidAsset.sha256,
       };
       await SecureStore.setItemAsync(UPDATE_METADATA_KEY, JSON.stringify(stored));
-      const response = await util.config({
-        addAndroidDownloads: {
-          useDownloadManager: true,
-          notification: true,
-          mediaScannable: true,
-          path,
-          title: `Remote AI ${release.version}`,
-          description: t("下载完成后可安装更新"),
-          mime: APK_MIME_TYPE,
-        },
-      }).fetch('GET', androidAsset.downloadUrl);
-      const downloadedPath = response.path() || path;
+      const downloadedPath = await downloadAndroidPackage({ release, path, wifiOnly: options.wifiOnly === true });
+      if (!await verifyAndroidPackage({ path: downloadedPath, size: androidAsset.size, sha256: androidAsset.sha256 })) {
+        throw new Error(t("下载未完成，请重新下载。"));
+      }
       const completed = { ...stored, path: downloadedPath };
       await SecureStore.setItemAsync(UPDATE_METADATA_KEY, JSON.stringify(completed));
       publishDownloadState({ status: 'downloaded', version: release.version, path: downloadedPath });
       return downloadedPath;
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = t("下载未完成，请重新下载。");
       await SecureStore.deleteItemAsync(UPDATE_METADATA_KEY).catch(() => undefined);
       publishDownloadState({ status: 'failed', version: release.version, message });
       throw error;
@@ -271,8 +280,28 @@ export async function startAndroidUpdateDownload(release: AppRelease) {
   return activeDownload;
 }
 
+async function downloadAndroidPackage(options: { release: AppRelease; path: string; wifiOnly: boolean }) {
+  const peerPath = await downloadSharedAndroidUpdate(options);
+  if (peerPath) return peerPath;
+  const official = downloadOfficialAndroidUpdate(options);
+  if (official) return official;
+  // Older native binaries cannot enforce Wi-Fi on DownloadManager jobs: never auto-start those jobs.
+  if (options.wifiOnly) throw new Error(t("下载未完成，请重新下载。"));
+  const util = await blobUtil();
+  const response = await util.config({ addAndroidDownloads: {
+    useDownloadManager: true, notification: true, mediaScannable: true, path: options.path,
+    title: `Remote AI ${options.release.version}`, description: t("下载完成后可安装更新"), mime: APK_MIME_TYPE,
+  } }).fetch('GET', options.release.androidAsset!.downloadUrl);
+  return response.path() || options.path;
+}
+
 export async function installDownloadedAndroidUpdate(path: string) {
   if (Platform.OS !== 'android') throw new Error(t("应用内安装目前仅支持 Android"));
   const util = await blobUtil();
+  const stored = await readStoredAndroidUpdate();
+  if (!stored || stored.path !== path
+    || !await verifyAndroidPackage({ path, size: stored.expectedSize, sha256: stored.sha256 })) {
+    throw new Error(t("下载未完成，请重新下载。"));
+  }
   await util.android.actionViewIntent(path, APK_MIME_TYPE);
 }

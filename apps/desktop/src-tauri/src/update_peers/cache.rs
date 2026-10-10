@@ -33,6 +33,33 @@ pub(super) struct Artifact {
 }
 
 impl Artifact {
+    pub(super) fn android(
+        version: String,
+        url: String,
+        digest: String,
+        size: usize,
+    ) -> Result<Self> {
+        let hash = digest.strip_prefix("sha256:").ok_or(Error::Invalid)?;
+        if !valid_id(hash)
+            || !super::android::official_url(&url)
+            || size == 0
+            || size > MAX_PACKAGE_BYTES
+        {
+            return Err(Error::Invalid);
+        }
+        let mut artifact = Self {
+            id: String::new(),
+            signature: digest,
+            version,
+            target: "android".into(),
+            url,
+            size,
+            saved_at: 0,
+        };
+        artifact.id = artifact.identity();
+        Ok(artifact)
+    }
+
     pub fn from_update(update: &tauri_plugin_updater::Update) -> Self {
         let mut artifact = Self {
             id: String::new(),
@@ -68,6 +95,20 @@ impl Artifact {
     pub fn verify(&self, bytes: &[u8], key: &str) -> Result<()> {
         if bytes.is_empty() || bytes.len() > MAX_PACKAGE_BYTES {
             return Err(Error::Invalid);
+        }
+        if self.target == "android" {
+            let hash = self
+                .signature
+                .strip_prefix("sha256:")
+                .ok_or(Error::Invalid)?;
+            if !super::android::official_url(&self.url)
+                || bytes.len() != self.size
+                || !valid_id(hash)
+                || format!("{:x}", Sha256::digest(bytes)) != hash
+            {
+                return Err(Error::Invalid);
+            }
+            return Ok(());
         }
         let decode = |value: &str| {
             String::from_utf8(STANDARD.decode(value).map_err(|_| Error::Invalid)?)
@@ -137,7 +178,7 @@ impl Cache {
             let records: Vec<_> = records
                 .into_iter()
                 .filter(|record| record.valid())
-                .take(MAX_CACHED_PACKAGES)
+                .take(MAX_CACHED_PACKAGES + 1)
                 .filter(|record| cache.read_verified(record).is_ok())
                 .collect();
             cache.remove_unused(&records)?;
@@ -197,7 +238,16 @@ impl Cache {
             let mut records = cache.artifacts();
             records.retain(|record| record.id != artifact.id);
             records.insert(0, artifact.clone());
-            records.truncate(MAX_CACHED_PACKAGES);
+            let (mut desktop, mut android) = (0, 0);
+            records.retain(|record| {
+                if record.target == "android" {
+                    android += 1;
+                    android <= 1
+                } else {
+                    desktop += 1;
+                    desktop <= MAX_CACHED_PACKAGES
+                }
+            });
             // Evict older releases before publishing a replacement; temporary writes are never advertised.
             cache.remove_unused(&records)?;
             cache.atomic_write(&format!("{}.pkg", artifact.id), &bytes)?;

@@ -128,6 +128,17 @@ describe('Android update recovery after restarting the app', () => {
 });
 
 describe('Android update refresh and retry races', () => {
+  it('does not restore or install an APK when native integrity or signing checks fail', async () => {
+    const verify = vi.fn().mockResolvedValue(false);
+    native.modules.AppUpdate = { getDownloadStatus: native.status, verifyPackage: verify };
+    native.exists.mockResolvedValue(true);
+    native.status.mockResolvedValue('successful');
+    const update = await import('./appUpdate');
+    expect((await update.refreshAndroidUpdateDownloadState()).status).toBe('failed');
+    await expect(update.installDownloadedAndroidUpdate(stored.path)).rejects.toThrow();
+    expect(verify).toHaveBeenCalledTimes(2);
+  });
+
   it('shares one recovery query across the about page and global install prompt', async () => {
     const query = deferred<string>();
     native.status.mockReturnValue(query.promise);

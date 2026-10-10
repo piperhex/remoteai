@@ -4,6 +4,8 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use tauri_plugin_updater::UpdaterExt;
 use tokio::sync::{mpsc, watch, Semaphore};
 
+#[path = "parallel_tests.rs"]
+mod parallel_tests;
 #[path = "peer_download_tests.rs"]
 mod peer_tests;
 

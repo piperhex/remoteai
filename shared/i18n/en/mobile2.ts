@@ -1,4 +1,5 @@
 export const mobile2: Readonly<Record<string, string>> = {
+  "正在下载更新，可继续使用。": "Downloading the update. You can keep using the app.",
   "允许使用相机":
     "Allow camera access",
   "允许使用相机后，即可扫描服务提供的 2FA 二维码。":

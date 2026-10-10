@@ -10,7 +10,9 @@ use serde_json::{json, Value};
 use tauri::{Manager, Runtime};
 use tokio::sync::{mpsc, oneshot};
 
-use super::{cache, transfer, Error, Result, Service, MAX_UPLOADS, TRANSFER_LIFETIME};
+use super::{
+    cache, transfer, Error, Result, Service, MAX_DOWNLOAD_PEERS, MAX_UPLOADS, TRANSFER_LIFETIME,
+};
 
 const LOOKUP_TIMEOUT: Duration = Duration::from_secs(6);
 const ADVERTISE_INTERVAL: Duration = Duration::from_secs(20);
@@ -23,17 +25,25 @@ pub(crate) struct Offer {
     config: Config,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct Offers {
+    request_id: String,
+    artifact: String,
+    configs: Vec<Config>,
+}
+
 pub(super) enum Request {
     Find {
         artifact: String,
-        reply: oneshot::Sender<Result<Lease>>,
+        reply: oneshot::Sender<Result<Vec<Lease>>>,
     },
     Finish(String),
 }
 
 struct Pending {
     artifact: String,
-    reply: oneshot::Sender<Result<Lease>>,
+    reply: oneshot::Sender<Result<Vec<Lease>>>,
     started: Instant,
 }
 
@@ -64,7 +74,7 @@ impl Drop for Lease {
 }
 
 impl Service {
-    pub(super) async fn find_peer(&self, artifact: &str) -> Result<Lease> {
+    pub(super) async fn find_peers(&self, artifact: &str) -> Result<Vec<Lease>> {
         let sender = self.broker.borrow().clone().ok_or(Error::Unavailable)?;
         let (reply, response) = oneshot::channel();
         sender
@@ -138,7 +148,9 @@ impl Bridge {
                 .last_advertise
                 .is_none_or(|last| last.elapsed() >= ADVERTISE_INTERVAL)
         {
-            messages.push(json!({"type":"update-peer-advertise", "artifacts":artifacts}));
+            messages.push(
+                json!({"type":"update-peer-advertise", "artifacts":artifacts, "ranges":true}),
+            );
             self.last_artifacts = artifacts;
             self.last_advertise = Some(Instant::now());
         }
@@ -149,8 +161,8 @@ impl Bridge {
         match request {
             Request::Find { artifact, reply } if !reply.is_closed() && self.pending.is_empty() => {
                 let id = uuid::Uuid::new_v4().to_string();
-                let message =
-                    json!({"type":"update-peer-find", "requestId":id, "artifact":artifact});
+                let message = json!({"type":"update-peer-find", "requestId":id,
+                    "artifact":artifact, "maxPeers":MAX_DOWNLOAD_PEERS});
                 self.pending.insert(
                     id,
                     Pending {
@@ -190,6 +202,47 @@ impl Bridge {
         }
     }
 
+    pub fn offers(&mut self, offers: Offers) {
+        let result = tauri::async_runtime::block_on(async { self.accept_many(&offers) });
+        if result.is_err() {
+            for config in offers.configs {
+                let _queued = self.sender.try_send(Request::Finish(config.session_id));
+            }
+        }
+    }
+
+    fn accept_many(&mut self, offers: &Offers) -> Result<()> {
+        let pending = self
+            .pending
+            .remove(&offers.request_id)
+            .ok_or(Error::Unavailable)?;
+        if pending.artifact != offers.artifact
+            || pending.reply.is_closed()
+            || offers.configs.is_empty()
+            || offers.configs.len() > MAX_DOWNLOAD_PEERS
+        {
+            return Err(Error::Invalid);
+        }
+        let mut leases = Vec::new();
+        for config in &offers.configs {
+            config.validate()?;
+            if config.desktop
+                || !config.session_id.starts_with("update-")
+                || self.active.contains_key(&config.session_id)
+            {
+                return Err(Error::Invalid);
+            }
+            let lease = Lease::new(config.clone(), self.sender.clone())?;
+            self.active
+                .insert(config.session_id.clone(), lease.connection.clone());
+            leases.push(lease);
+        }
+        pending
+            .reply
+            .send(Ok(leases))
+            .map_err(|_| Error::Unavailable)
+    }
+
     fn accept(&mut self, offer: Offer) -> Result<()> {
         if !cache::valid_id(&offer.artifact)
             || !offer.config.session_id.starts_with("update-")
@@ -214,7 +267,7 @@ impl Bridge {
         self.active.insert(id, lease.connection.clone());
         pending
             .reply
-            .send(Ok(lease))
+            .send(Ok(vec![lease]))
             .map_err(|_| Error::Unavailable)
     }
 

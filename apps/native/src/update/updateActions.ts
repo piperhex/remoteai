@@ -12,6 +12,6 @@ export function beginAppUpdateDownload(release: AppRelease) {
     openReleasePage(release.releaseUrl);
     return;
   }
-  Toast.success(t("已开始下载，可在通知栏查看进度"));
+  Toast.success(t("正在下载更新，可继续使用。"));
   void startAndroidUpdateDownload(release).catch(() => Toast.fail(t("下载失败，请稍后重试")));
 }

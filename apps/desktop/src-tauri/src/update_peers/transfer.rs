@@ -4,7 +4,7 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use csw_chat_connectivity::{Connection, Event};
 use serde::{Deserialize, Serialize};
 
-use super::{cache::Cache, Error, Result, MAX_PACKAGE_BYTES};
+use super::{cache::Cache, Error, Result, MAX_DOWNLOAD_PEERS, MAX_PACKAGE_BYTES};
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(12);
 const IDLE_TIMEOUT: Duration = Duration::from_secs(8);
@@ -38,12 +38,51 @@ impl DownloadRate {
 
 #[derive(Deserialize, Serialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
-enum Frame {
-    Get { artifact: String },
-    Header { size: usize },
-    Chunk { offset: usize, data: String },
+pub(super) enum Frame {
+    Get {
+        artifact: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        part: Option<Part>,
+    },
+    Header {
+        size: usize,
+        #[serde(default)]
+        offset: usize,
+        #[serde(default)]
+        length: Option<usize>,
+    },
+    Chunk {
+        offset: usize,
+        data: String,
+    },
     Complete,
     Received,
+}
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+pub(super) struct Part {
+    pub index: usize,
+    pub count: usize,
+}
+
+impl Part {
+    pub(super) fn range(self, size: usize) -> Result<std::ops::Range<usize>> {
+        if self.count == 0
+            || self.count > MAX_DOWNLOAD_PEERS
+            || self.index >= self.count
+            || size < self.count
+            || size > MAX_PACKAGE_BYTES
+        {
+            return Err(Error::Invalid);
+        }
+        Ok(size * self.index / self.count..size * (self.index + 1) / self.count)
+    }
+}
+
+pub(super) struct Piece {
+    pub total: usize,
+    pub offset: usize,
+    pub bytes: Vec<u8>,
 }
 
 async fn send(connection: &Connection, frame: &Frame) -> Result<()> {
@@ -116,8 +155,21 @@ async fn receive(connection: &Connection) -> Result<Frame> {
 pub(super) async fn download(
     connection: &Connection,
     artifact: &str,
-    mut progress: impl FnMut(usize, Option<u64>),
+    progress: impl FnMut(usize, Option<u64>),
 ) -> Result<Vec<u8>> {
+    Ok(
+        download_part(connection, artifact, Part { index: 0, count: 1 }, progress)
+            .await?
+            .bytes,
+    )
+}
+
+pub(super) async fn download_part(
+    connection: &Connection,
+    artifact: &str,
+    part: Part,
+    progress: impl FnMut(usize, Option<u64>),
+) -> Result<Piece> {
     if opened(connection).await?.is_some() {
         return Err(Error::Invalid);
     }
@@ -125,15 +177,33 @@ pub(super) async fn download(
         connection,
         &Frame::Get {
             artifact: artifact.into(),
+            part: (part.count > 1).then_some(part),
         },
     )
     .await?;
-    let Frame::Header { size } = receive(connection).await? else {
+    let Frame::Header {
+        size,
+        offset,
+        length,
+    } = receive(connection).await?
+    else {
         return Err(Error::Invalid);
     };
     if size == 0 || size > MAX_PACKAGE_BYTES {
         return Err(Error::Invalid);
     }
+    let range = part.range(size)?;
+    if offset != range.start || length.unwrap_or(size) != range.len() {
+        return Err(Error::Invalid);
+    }
+    receive_part(connection, (size, range), progress).await
+}
+
+async fn receive_part(
+    connection: &Connection,
+    (size, range): (usize, std::ops::Range<usize>),
+    mut progress: impl FnMut(usize, Option<u64>),
+) -> Result<Piece> {
     progress(0, Some(size as u64));
     let mut bytes = Vec::new();
     let mut rate = DownloadRate {
@@ -143,14 +213,18 @@ pub(super) async fn download(
     loop {
         match receive(connection).await? {
             Frame::Chunk { offset, data } => {
-                let chunk = decode_chunk(bytes.len(), size, offset, &data)?;
+                let chunk = decode_chunk(range.start + bytes.len(), range.end, offset, &data)?;
                 progress(chunk.len(), Some(size as u64));
                 bytes.extend_from_slice(&chunk);
                 rate.check(bytes.len())?;
             }
-            Frame::Complete if bytes.len() == size => {
+            Frame::Complete if bytes.len() == range.len() => {
                 send(connection, &Frame::Received).await?;
-                return Ok(bytes);
+                return Ok(Piece {
+                    total: size,
+                    offset: range.start,
+                    bytes,
+                });
             }
             _ => return Err(Error::Invalid),
         }
@@ -180,6 +254,7 @@ pub(super) async fn seed(
     };
     let Frame::Get {
         artifact: requested,
+        part,
     } = first
     else {
         return Err(Error::Invalid);
@@ -188,20 +263,34 @@ pub(super) async fn seed(
         return Err(Error::Invalid);
     }
     let bytes = cache.read(artifact).await?;
-    send(connection, &Frame::Header { size: bytes.len() }).await?;
+    let range = part
+        .unwrap_or(Part { index: 0, count: 1 })
+        .range(bytes.len())?;
+    send(
+        connection,
+        &Frame::Header {
+            size: bytes.len(),
+            offset: range.start,
+            length: Some(range.len()),
+        },
+    )
+    .await?;
     // Keep consuming route events while sending, so the bounded event queue cannot stall the engine.
-    tokio::try_join!(upload(connection, &bytes), wait_for_receipt(connection))?;
+    tokio::try_join!(
+        upload(connection, &bytes[range.clone()], range.start),
+        wait_for_receipt(connection)
+    )?;
     Ok(())
 }
 
-async fn upload(connection: &Connection, bytes: &[u8]) -> Result<()> {
+async fn upload(connection: &Connection, bytes: &[u8], start: usize) -> Result<()> {
     let started = tokio::time::Instant::now();
     for (index, chunk) in bytes.chunks(CHUNK_BYTES).enumerate() {
         let offset = index * CHUNK_BYTES;
         send(
             connection,
             &Frame::Chunk {
-                offset,
+                offset: start + offset,
                 data: STANDARD.encode(chunk),
             },
         )

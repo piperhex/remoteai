@@ -90,6 +90,7 @@ import {
 import { installDownloadedAndroidUpdate } from './src/update/appUpdate';
 import { useAndroidUpdateDownloadState } from './src/update/useAndroidUpdateDownloadState';
 import { StartupUpdatePrompt } from './src/update/StartupUpdatePrompt';
+import { useIdleAppUpdate } from './src/update/useIdleAppUpdate';
 import { AboutPage } from './src/about/AboutPage';
 import { AgreementConsent } from './src/auth/AgreementConsent';
 import { useAgreementConsent } from '../../shared/legal/useAgreementConsent';
@@ -1313,16 +1314,19 @@ function AppContent() {
 
 export default function App() {
   useLanguage();
+  const updateActivity = useIdleAppUpdate();
   const [languageReady, setLanguageReady] = useState(false);
   useEffect(() => { void loadLanguage().finally(() => setLanguageReady(true)); }, []);
   if (!languageReady) return null;
   return <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+    <View style={{ flex: 1 }} onTouchStart={updateActivity}>
     <StartupErrorBoundary>
       <AndroidUpdateInstallPrompt />
       <StartupUpdatePrompt />
       <AppContent />
     </StartupErrorBoundary>
     <AppToastHost />
+    </View>
   </SafeAreaProvider>;
 }
 

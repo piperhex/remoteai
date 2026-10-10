@@ -20,6 +20,7 @@ mod app_update;
 #[serde(tag = "type", rename_all = "kebab-case")]
 enum ServerMessage {
     UpdatePeerOffer(crate::update_peers::Offer),
+    UpdatePeerOffers(crate::update_peers::Offers),
     UpdatePeerUnavailable {
         #[serde(rename = "requestId")]
         request_id: String,
@@ -168,6 +169,7 @@ fn run_connection<R: Runtime>(
                     .map_err(|error| format!("Invalid remote control message: {error}"))?;
                 match message {
                     ServerMessage::UpdatePeerOffer(offer) => update_peers.offer(offer),
+                    ServerMessage::UpdatePeerOffers(offers) => update_peers.offers(offers),
                     ServerMessage::UpdatePeerUnavailable { request_id } => {
                         update_peers.unavailable(&request_id)
                     }

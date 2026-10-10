@@ -4,7 +4,9 @@ use serde::Serialize;
 use tauri::{ipc::Channel, Manager, Resource, ResourceId, Runtime, State, Webview};
 use tauri_plugin_updater::Update;
 
-use super::{cache::Artifact, transfer, Error, Result, Service, TRANSFER_LIFETIME};
+#[cfg(test)]
+use super::transfer;
+use super::{cache::Artifact, parallel, Error, Result, Service, TRANSFER_LIFETIME};
 
 struct VerifiedPackage {
     artifact: String,
@@ -133,10 +135,10 @@ async fn download_peer(
     artifact: &Artifact,
     progress: &mut Progress,
 ) -> Result<Arc<Vec<u8>>> {
-    let lease = service.find_peer(&artifact.id).await?;
+    let leases = service.find_peers(&artifact.id).await?;
     let bytes = tokio::time::timeout(
         TRANSFER_LIFETIME,
-        transfer::download(&lease.connection, &artifact.id, |length, total| {
+        parallel::download(&leases, &artifact.id, |length, total| {
             progress.chunk(length, total)
         }),
     )

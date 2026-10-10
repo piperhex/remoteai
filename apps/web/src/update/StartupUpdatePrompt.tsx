@@ -2,10 +2,12 @@ import { Dialog, Toast } from 'antd-mobile';
 import { useStartupUpdate } from '../../../../shared/app-update/useStartupUpdate';
 import { t, useLanguage } from '../i18n';
 import { reloadForUpdate, startupUpdateOptions } from './startupUpdate';
+import { useIdleWebUpdate } from './useIdleWebUpdate';
 
 export function StartupUpdatePrompt() {
   useLanguage();
   const update = useStartupUpdate(startupUpdateOptions);
+  useIdleWebUpdate(update.release?.version);
   if (!update.release) return null;
   const ignore = async () => {
     try {

@@ -68,7 +68,9 @@ async fn exercise_peer(behavior: &'static str) {
         let Some(Request::Find { reply, .. }) = receiver.recv().await else {
             panic!("expected lookup")
         };
-        assert!(reply.send(Lease::new(config, sender)).is_ok());
+        assert!(reply
+            .send(Lease::new(config, sender).map(|lease| vec![lease]))
+            .is_ok());
         receiver.recv().await;
     });
     let seed = tokio::spawn(async move {

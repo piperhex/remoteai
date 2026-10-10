@@ -139,3 +139,57 @@ func TestUpdatePeersNoTraversalConfigurationFallsBack(t *testing.T) {
 		t.Fatal("unconfigured traversal did not immediately decline")
 	}
 }
+
+func TestMobileUpdatePeersReceiveThreeDistinctSeedsAndPreferOwnAccount(t *testing.T) {
+	g, seed, receiver := updatePeersFixture()
+	artifact := strings.Repeat("a", 64)
+	g.sessions[receiver] = controlSession{owner: "bob", kind: "subscriber", expires: time.Now().Add(time.Hour)}
+	for _, owner := range []string{"alice", "bob", "carol", "dave"} {
+		client := queuedPeer()
+		g.sessions[client] = controlSession{owner: owner, device: owner, kind: "device"}
+		g.sockets[owner+":"+owner] = client
+		g.receiveUpdatePeer(client, g.sessions[client], platform.JSON{"type": "update-peer-advertise",
+			"artifacts": []interface{}{artifact}, "ranges": true})
+	}
+	// A legacy seed cannot honor range requests and must not receive a multi-source offer.
+	advertiseUpdate(g, seed, artifact)
+	g.receiveUpdatePeer(receiver, g.sessions[receiver], platform.JSON{"type": "update-peer-find",
+		"requestId": "multi", "artifact": artifact, "maxPeers": float64(3)})
+	message := updateFrame(t, receiver)
+	configs := message["configs"].([]interface{})
+	if message["type"] != "update-peer-offers" || len(configs) != 3 || len(seed.queue) != 0 {
+		t.Fatal("expected three compatible PC sources")
+	}
+	seen := map[string]bool{}
+	for index, value := range configs {
+		id := value.(map[string]interface{})["sessionId"].(string)
+		if seen[id] {
+			t.Fatal("duplicate session grant")
+		}
+		seen[id] = true
+		transfer := g.updatePeers.transfers[id]
+		if index == 0 && g.sessions[transfer.seed].owner != "bob" {
+			t.Fatal("own PC was not preferred")
+		}
+	}
+	advertiseUpdate(g, receiver, artifact)
+	if _, published := g.updatePeers.seeds[receiver]; published {
+		t.Fatal("mobile published a seed")
+	}
+	g.disconnect(receiver)
+	if len(g.updatePeers.transfers) != 0 {
+		t.Fatal("mobile disconnect left reservations")
+	}
+}
+
+func TestExpiredMobileSessionCannotDownloadOrAdvertise(t *testing.T) {
+	g, seed, receiver := updatePeersFixture()
+	artifact := strings.Repeat("a", 64)
+	advertiseUpdate(g, seed, artifact)
+	g.sessions[receiver] = controlSession{owner: "bob", kind: "subscriber", expires: time.Now().Add(-time.Second)}
+	findUpdate(g, receiver, artifact)
+	advertiseUpdate(g, receiver, artifact)
+	if len(receiver.queue) != 0 || len(g.updatePeers.transfers) != 0 {
+		t.Fatal("expired session participated")
+	}
+}
