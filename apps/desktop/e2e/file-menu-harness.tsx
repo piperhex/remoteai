@@ -19,7 +19,13 @@ const applications: FileApplication[] = [
 ];
 const delay = Number(new URLSearchParams(location.search).get("delay") ?? 0);
 Object.defineProperty(globalThis, "isTauri", { value: true, configurable: true });
-fileApi.applications = () => new Promise((resolve) => setTimeout(() => resolve(applications), delay));
+fileApi.applications = async () => {
+  await new Promise(resolve => setTimeout(resolve, delay));
+  if (new URLSearchParams(location.search).has("icons")) {
+    return (await fetch("/e2e/file-menu-icons.json")).json() as Promise<FileApplication[]>;
+  }
+  return applications;
+};
 const dark = new URLSearchParams(location.search).has("dark");
 const files = parseDiff("diff --git a/src/report.ts b/src/report.ts\n--- a/src/report.ts\n"
   + "+++ b/src/report.ts\n@@ -1 +1 @@\n-old\n+new\n");
@@ -50,6 +56,7 @@ function Harness() {
   </App></ConfigProvider>;
 }
 document.body.style.background = dark ? "#19211d" : "#f4f7f5";
+document.documentElement.dataset.theme = dark ? "dark" : "light";
 document.body.style.fontFamily = '"Microsoft YaHei", sans-serif';
 document.documentElement.style.cssText = dark
   ? "--ink:#eee;--panel:#242c28;--gui-border:#48544c;--gui-muted:#acb9b0;--green:#79c496;--green-soft:#30463a"

@@ -139,8 +139,13 @@ pub(super) fn executable(id: ApplicationId) -> Option<PathBuf> {
         ApplicationId::Webstorm => jetbrains("WebStorm", "webstorm64.exe"),
         ApplicationId::Phpstorm => jetbrains("PhpStorm", "phpstorm64.exe"),
         ApplicationId::Other => under("SystemRoot", "System32/rundll32.exe"),
-        ApplicationId::Default | ApplicationId::Explorer => None,
+        ApplicationId::Explorer => under("SystemRoot", "explorer.exe"),
+        ApplicationId::Default => None,
     }
+}
+
+pub(super) fn icon(executable: &Path) -> Option<String> {
+    super::icons_windows::read(executable)
 }
 
 pub(super) fn command(

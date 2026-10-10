@@ -1,5 +1,7 @@
 //! Desktop-only file actions. Paths come from an explicit click; never expose these commands to web clients.
 mod apps;
+#[cfg(windows)]
+mod icons_windows;
 mod paths;
 mod save;
 #[cfg(test)]
@@ -29,6 +31,8 @@ pub(super) enum FileError {
     Open,
     #[error("无法复制此文件，请选择不超过 2 MB 的纯文本文件。")]
     Text,
+    #[error("文件未能复制，请稍后重试。")]
+    Copy,
     #[error("文件未能保存，请检查保存位置后重试。")]
     Save,
 }
@@ -48,6 +52,7 @@ pub(crate) struct FileTarget {
 enum FileAction {
     Open { application: apps::ApplicationId },
     Reveal {},
+    CopyFile {},
     CopyPath {},
     CopyContents {},
     SaveAs {},
@@ -145,11 +150,22 @@ fn perform(
         FileAction::Reveal {} => {
             tauri_plugin_opener::reveal_item_in_dir(&path).map_err(|_| FileError::Open)?
         }
+        FileAction::CopyFile {} => copy_file(&path)?,
         FileAction::CopyPath {} => {}
         FileAction::CopyContents {} => response.text = Some(read_text(&path)?),
         FileAction::SaveAs {} => response.saved = save_as(app, &path)?,
     }
     Ok(response)
+}
+
+fn copy_file(path: &std::path::Path) -> Result<()> {
+    // Publish a native file reference (CF_HDROP on Windows) without reading the contents,
+    // so installers and other large binary files are copyable too.
+    arboard::Clipboard::new()
+        .map_err(|_| FileError::Copy)?
+        .set()
+        .file_list(&[path])
+        .map_err(|_| FileError::Copy)
 }
 
 fn read_text(path: &std::path::Path) -> Result<String> {

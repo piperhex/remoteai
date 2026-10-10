@@ -33,6 +33,8 @@ pub(crate) struct Application {
     id: ApplicationId,
     name: &'static str,
     kind: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    icon: Option<String>,
 }
 
 pub(super) const APPLICATIONS: &[(ApplicationId, &str, &str)] = &[
@@ -53,8 +55,22 @@ pub(super) const APPLICATIONS: &[(ApplicationId, &str, &str)] = &[
 pub(super) fn available() -> Vec<Application> {
     APPLICATIONS
         .iter()
-        .filter(|(id, _, _)| *id == ApplicationId::Explorer || platform::executable(*id).is_some())
-        .map(|&(id, name, kind)| Application { id, name, kind })
+        .filter_map(|&(id, name, kind)| {
+            let executable = platform::executable(id);
+            if id != ApplicationId::Explorer && executable.is_none() {
+                return None;
+            }
+            let icon = match id {
+                ApplicationId::Other => None,
+                _ => executable.as_deref().and_then(platform::icon),
+            };
+            Some(Application {
+                id,
+                name,
+                kind,
+                icon,
+            })
+        })
         .collect()
 }
 

@@ -83,6 +83,15 @@ fn copies_empty_and_utf8_text_but_rejects_binary_directories_and_large_files() {
 
 #[test]
 fn only_known_applications_and_actions_cross_ipc() {
+    let copy: FileRequest = serde_json::from_value(serde_json::json!({
+        "target": {"path": "installer.msi"}, "action": {"type": "copyFile"}
+    }))
+    .unwrap();
+    assert!(matches!(copy.action, FileAction::CopyFile {}));
+    assert!(serde_json::from_value::<FileRequest>(serde_json::json!({
+        "target": {"path": "installer.msi"}, "action": {"type": "copyFile", "destination": "anything"}
+    }))
+    .is_err());
     assert!(serde_json::from_value::<FileRequest>(serde_json::json!({
         "target": {"path": "file.txt"}, "action": {"type": "open", "application": "powershell -Command bad"}
     })).is_err());
@@ -90,6 +99,63 @@ fn only_known_applications_and_actions_cross_ipc() {
         "target": {"path": "file.txt"}, "action": {"type": "saveAs", "destination": "anything"}
     }))
     .is_err());
+}
+
+#[test]
+#[ignore = "writes to the system clipboard; run explicitly in a desktop session"]
+fn copies_binary_file_references_to_the_native_clipboard() {
+    let fixture = Fixture::new();
+    let source = fixture.0.join("安装包 space & test.msi");
+    let file = File::create(&source).unwrap();
+    file.set_len(3 * 1024 * 1024).unwrap();
+    drop(file);
+    let path = paths::resolve(&source, Path::new(""), false).unwrap();
+    assert!(read_text(&path).is_err());
+    copy_file(&path).unwrap();
+    // Read after the writer is dropped, as Explorer/Finder does when the user pastes.
+    let mut clipboard = arboard::Clipboard::new().unwrap();
+    let files = clipboard.get().file_list().unwrap();
+    assert_eq!(files, vec![source.clone()]);
+    assert_eq!(fs::metadata(&files[0]).unwrap().len(), 3 * 1024 * 1024);
+    #[cfg(windows)]
+    assert_shell_pastes_file(&source, &fixture.0.join("pasted"));
+    assert!(source.exists());
+    clipboard.clear().unwrap();
+}
+
+#[cfg(windows)]
+fn assert_shell_pastes_file(source: &Path, destination: &Path) {
+    use std::os::windows::process::CommandExt;
+    fs::create_dir(destination).unwrap();
+    // Exercise Explorer's paste verb in another process, without opening a window.
+    let script = r#"
+        $ErrorActionPreference = 'Stop'
+        $shell = New-Object -ComObject Shell.Application
+        $shell.Namespace($env:CSW_COPY_TEST_DESTINATION).Self.InvokeVerb('paste')
+        $name = [IO.Path]::GetFileName($env:CSW_COPY_TEST_SOURCE)
+        $pasted = Join-Path $env:CSW_COPY_TEST_DESTINATION $name
+        $deadline = [DateTime]::UtcNow.AddSeconds(10)
+        while ([DateTime]::UtcNow -lt $deadline) {
+            if (Test-Path -LiteralPath $pasted) { exit 0 }
+            Start-Sleep -Milliseconds 50
+        }
+        throw 'Explorer did not paste the copied file.'
+    "#;
+    const CREATE_NO_WINDOW: u32 = 0x08000000;
+    let output = std::process::Command::new("powershell.exe")
+        .args(["-NoProfile", "-NonInteractive", "-STA", "-Command", script])
+        .env("CSW_COPY_TEST_SOURCE", source)
+        .env("CSW_COPY_TEST_DESTINATION", destination)
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let pasted = destination.join(source.file_name().unwrap());
+    assert_eq!(fs::read(pasted).unwrap(), fs::read(source).unwrap());
 }
 
 #[test]

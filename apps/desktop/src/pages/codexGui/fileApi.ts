@@ -3,9 +3,9 @@ import { invoke } from "@tauri-apps/api/core";
 import type { FileReference } from "./fileReference";
 
 export const FileThreadContext = createContext<string | null>(null);
-export interface FileApplication { id: string; name: string; kind: "editor" | "terminal" | "system" }
+export interface FileApplication { id: string; name: string; kind: "editor" | "terminal" | "system"; icon?: string }
 export type FileAction = { type: "open"; application: string }
-  | { type: "copyPath" | "copyContents" | "saveAs" | "reveal" };
+  | { type: "copyFile" | "copyPath" | "copyContents" | "saveAs" | "reveal" };
 export interface FileActionResult { path: string; text?: string; saved: boolean }
 
 // These local actions deliberately use desktop IPC; a remote browser cannot launch host applications.

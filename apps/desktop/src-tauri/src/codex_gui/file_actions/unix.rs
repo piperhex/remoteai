@@ -46,6 +46,10 @@ pub(super) fn executable(id: ApplicationId) -> Option<PathBuf> {
     paths.iter().map(PathBuf::from).find(|path| path.exists())
 }
 
+pub(super) fn icon(_: &Path) -> Option<String> {
+    None
+}
+
 pub(super) fn command(
     id: ApplicationId,
     executable: &Path,

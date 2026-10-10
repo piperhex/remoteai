@@ -83,6 +83,8 @@ export const composer = {
   "查看差异": "View changes",
   "另存为…": "Save as…",
   "复制路径": "Copy path",
+  "复制文件": "Copy file",
+  "文件已复制，可粘贴到文件夹。": "File copied. You can paste it into a folder.",
   "在文件管理器中显示": "Show in file manager",
   "查看 {value1} 的差异": "View changes to {value1}",
   "退出专注模式": "Exit focus mode",

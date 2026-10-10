@@ -37,6 +37,9 @@ export function useFileMenu(target: FileReference) {
     try {
       const result = desktop ? await fileApi.perform({ ...target, threadId }, action)
         : { path: target.path, text: undefined, saved: false };
+      if (action.type === "copyFile" && desktop) {
+        void message.success({ content: guiText("文件已复制，可粘贴到文件夹。"), style: FEEDBACK_STYLE });
+      }
       if (action.type === "copyPath" || action.type === "copyContents") {
         await navigator.clipboard.writeText(action.type === "copyPath" ? result.path : result.text ?? "");
         void message.success({ content: guiText("已复制"), style: FEEDBACK_STYLE });

@@ -59,6 +59,21 @@ it("opens a file menu without launching anything and passes the chosen editor an
   expect(trigger().getAttribute("aria-expanded")).toBe("false");
 });
 
+it("uses the installed application icon in the VS Code shortcut and falls back if it cannot load", async () => {
+  const icon = "data:image/png;base64,aWNvbg==";
+  vi.mocked(fileApi.applications).mockResolvedValue([{ ...applications[0], icon }]);
+  await click(trigger());
+  const shortcut = item("在 VS Code 中打开");
+  const image = shortcut.querySelector("img")!;
+  expect(image.getAttribute("src")).toBe(icon);
+  expect(image.getAttribute("width")).toBe("16");
+  await act(async () => image.dispatchEvent(new Event("error")));
+  expect(shortcut.querySelector("img")).toBeNull();
+  expect(shortcut.querySelector("svg")).not.toBeNull();
+  await click(shortcut);
+  expect(fileApi.perform).toHaveBeenCalledWith(expect.anything(), { type: "open", application: "vscode" });
+});
+
 it.each([true, false])("opens available diffs directly without loading a menu (desktop: %s)", async (desktop) => {
   vi.mocked(isTauri).mockReturnValue(desktop);
   const onReview = vi.fn();
@@ -87,6 +102,35 @@ it("does not report success when the save dialog is cancelled", async () => {
   expect(message.success).not.toHaveBeenCalled();
 });
 
+it("copies the file through the desktop without overwriting it with clipboard text", async () => {
+  await render("C:/project/安装包.msi");
+  let complete!: () => void;
+  vi.mocked(fileApi.perform).mockReturnValue(new Promise((resolve) => {
+    complete = () => resolve({ path: "C:/project/安装包.msi", saved: false });
+  }));
+  await click(trigger()); await click(item("复制文件"));
+  expect(fileApi.perform).toHaveBeenCalledWith(expect.objectContaining({ path: "C:/project/安装包.msi" }),
+    { type: "copyFile" });
+  expect(trigger().disabled).toBe(true);
+  expect(message.success).not.toHaveBeenCalled();
+  await act(async () => complete());
+  expect(clipboard).not.toHaveBeenCalled();
+  expect(message.success).toHaveBeenCalledWith({ content: "文件已复制，可粘贴到文件夹。",
+    style: { maxWidth: 400, marginInline: "auto" } });
+  expect(trigger().disabled).toBe(false);
+});
+
+it("reports a failed file copy without claiming success and allows retry", async () => {
+  vi.mocked(fileApi.perform).mockRejectedValueOnce("文件未能复制，请稍后重试。");
+  await click(trigger()); await click(item("复制文件"));
+  expect(message.error).toHaveBeenCalledWith(expect.objectContaining({ content: "文件未能复制，请稍后重试。" }));
+  expect(message.success).not.toHaveBeenCalled();
+  expect(clipboard).not.toHaveBeenCalled();
+  expect(trigger().disabled).toBe(false);
+  await click(trigger()); await click(item("复制文件"));
+  expect(message.success).toHaveBeenCalledOnce();
+});
+
 it("keeps the menu dismissible while app discovery is pending and ignores stale responses", async () => {
   let resolve!: (value: typeof applications) => void;
   vi.mocked(fileApi.applications).mockReturnValue(new Promise((done) => { resolve = done; }));
@@ -108,6 +152,7 @@ it("does not invoke host actions in a browser and still copies a file path", asy
   vi.mocked(isTauri).mockReturnValue(false);
   await render(); await click(trigger());
   expect(item("打开文件").getAttribute("aria-disabled")).toBe("true");
+  expect(item("复制文件").getAttribute("aria-disabled")).toBe("true");
   expect(fileApi.applications).not.toHaveBeenCalled();
   await click(item("复制路径"));
   expect(clipboard).toHaveBeenCalledWith("C:/project/report.txt");

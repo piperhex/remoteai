@@ -1,9 +1,10 @@
 import { guiText } from "../../i18n/guiText";
 import type { ReactNode } from "react";
 import { Dropdown, type MenuProps } from "antd";
-import { ChevronRight, Code2, Copy, File, FileDiff, FolderOpen, Save, Terminal } from "lucide-react";
+import { ChevronRight, Copy, File, FileDiff, FolderOpen, Save } from "lucide-react";
 import type { FileReference } from "./fileReference";
 import { useFileMenu } from "./useFileMenu";
+import { FileApplicationIcon } from "./FileApplicationIcon";
 import styles from "./FileMenu.module.less";
 
 // Submenus may overlap the parent when two columns cannot fit in a narrow window.
@@ -19,16 +20,17 @@ export function FileMenu({ path, line, column, children, className, onReview, pr
   const menu = useFileMenu(target);
   const previewsFile = preview && menu.canPreview && !onReview;
   const openApplication = (application: string) => { void menu.perform({ type: "open", application }); };
+  const vscode = menu.applications.find((application) => application.id === "vscode");
   const applications: MenuProps["items"] = menu.applications.map((app) => ({
     key: app.id, label: app.name,
-    icon: app.kind === "terminal" ? <Terminal size={16} /> : <Code2 size={16} />,
+    icon: <FileApplicationIcon application={app} />,
     onClick: () => openApplication(app.id),
   }));
   const items: MenuProps["items"] = [
     { key: "open", label: guiText("打开文件"), icon: <File size={16} />, disabled: !menu.desktop,
       onClick: () => openApplication("default") },
-    ...(menu.applications.some((app) => app.id === "vscode") ? [{ key: "vscode", label: guiText("在 VS Code 中打开"),
-      icon: <Code2 size={16} />, onClick: () => openApplication("vscode") }] : []),
+    ...(vscode ? [{ key: "vscode", label: guiText("在 VS Code 中打开"),
+      icon: <FileApplicationIcon application={vscode} />, onClick: () => openApplication("vscode") }] : []),
     { key: "openWith", label: guiText("打开方式"), icon: <FolderOpen size={16} />, disabled: !menu.desktop,
       popupClassName: styles.popup, children: [
         { key: "default", label: guiText("默认应用"), icon: <File size={16} />, onClick: () => openApplication("default") },
@@ -40,6 +42,8 @@ export function FileMenu({ path, line, column, children, className, onReview, pr
     ...(onReview ? [{ key: "review", label: guiText("查看差异"), icon: <FileDiff size={16} />, onClick: onReview }] : []),
     { key: "saveAs", label: guiText("另存为…"), icon: <Save size={16} />, disabled: !menu.desktop,
       onClick: () => { void menu.perform({ type: "saveAs" }); } },
+    { key: "copyFile", label: guiText("复制文件"), icon: <Copy size={16} />, disabled: !menu.desktop,
+      onClick: () => { void menu.perform({ type: "copyFile" }); } },
     { key: "copyPath", label: guiText("复制路径"), icon: <Copy size={16} />,
       onClick: () => { void menu.perform({ type: "copyPath" }); } },
     { key: "copyContents", label: guiText("复制文件内容"), icon: <Copy size={16} />, disabled: !menu.desktop,
