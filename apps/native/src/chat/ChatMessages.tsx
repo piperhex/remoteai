@@ -29,8 +29,9 @@ function MessageSeparator({ leadingItem }: { leadingItem?: Entry }) {
   return <View style={process ? PROCESS_SEPARATOR_STYLE : styles.messageSeparator} />;
 }
 
-const TimelineEntry = memo(function TimelineEntry({ entry, open, onInline }: {
+const TimelineEntry = memo(function TimelineEntry({ entry, open, onInline, processing }: {
   entry: Entry; open: (selection: Selection) => void; onInline: (turnId: string, inline: boolean) => void;
+  processing?: ReactNode;
 }) {
   useLanguage();
   const openItem = useCallback((id: string) => {
@@ -38,8 +39,8 @@ const TimelineEntry = memo(function TimelineEntry({ entry, open, onInline }: {
     open({ type: 'item', id });
   }, [open, onInline, entry.kind, entry.turn.id]);
   if (entry.kind === 'duration') return <ChatTurnDuration turn={entry.turn} />;
-  if (entry.kind === 'summary') return <ChatTurnSummary turn={entry.turn}
-    onOpen={(id, panel) => open({ type: 'turn', id, panel })} />;
+  if (entry.kind === 'summary') return <>{processing}{processing && <View style={styles.messageSeparator} />}
+    <ChatTurnSummary turn={entry.turn} onOpen={(id, panel) => open({ type: 'turn', id, panel })} /></>;
   if (entry.kind === 'work') return <ChatProcessSummary entry={entry} onInline={onInline}
     onOpen={() => open({ type: 'work', id: entry.id })} />;
   if (entry.kind === 'activities') {
@@ -62,6 +63,7 @@ export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder,
     ? { ...turn, status: 'cached' } : turn), [thread?.turns, offline]);
   const { entries, hasObservedLiveTurn, setInline } = useConversationEntries(turns);
   const timeline = useMemo(() => activityTimeline(entries), [entries]);
+  const runningSummary = timeline.find(entry => entry.kind === 'summary' && entry.turn.status === 'inProgress');
   const { list, more, preservePosition, historyBottomSpace, initializing, onItemLayout, onFooterLayout,
     showScrollToBottom, scrollToBottom, ...scrollHandlers }
     = useChatScroll<Entry>({ hasMore, loading, loadingMore, loadOlder,
@@ -88,7 +90,8 @@ export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder,
     importantForAccessibility={showInitialLoading ? 'no-hide-descendants' : 'auto'}
     contentContainerStyle={entries.length || processing ? styles.messages : styles.empty}
     renderItem={({ item: entry }) => <View collapsable={false} onLayout={() => onItemLayout(entry.id)}>
-      <TimelineEntry entry={entry} open={open} onInline={setInline} />
+      <TimelineEntry entry={entry} open={open} onInline={setInline}
+        processing={entry === runningSummary ? processing : undefined} />
     </View>}
     ItemSeparatorComponent={MessageSeparator}
     keyboardShouldPersistTaps="handled" initialNumToRender={10}
@@ -114,7 +117,7 @@ export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder,
       <Text style={[styles.subtitle, styles.centerText]}>{t("直接提问，或选择一个项目开始任务。")}</Text>
     </View>}
     ListFooterComponent={<View style={[styles.messageFooter, { paddingBottom: historyBottomSpace }]}
-      onLayout={onFooterLayout}>{processing}</View>} />
+      onLayout={onFooterLayout}>{runningSummary ? null : processing}</View>} />
     {showScrollToBottom && !showInitialLoading && entries.length > 0 && <Pressable
       accessibilityRole="button" accessibilityLabel={t("回到底部")} onPress={scrollToBottom}
       style={({ pressed }) => [styles.scrollToBottom, pressed && styles.scrollToBottomPressed]}>
