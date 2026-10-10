@@ -74,7 +74,7 @@ test('keeps resolution while reducing FPS, then restores clarity before high FPS
   await panel.getByText('自动模式优先使用最高画质和 60 帧', { exact: false }).scrollIntoViewIfNeeded();
   expect(await panel.evaluate(node => node.getBoundingClientRect().width)).toBeLessThanOrEqual(400);
   await page.screenshot({ path: info.outputPath('frame-first-settings.png') });
-  await page.getByRole('button', { name: '完成', exact: true }).click();
+  await page.getByRole('button', { name: '关闭显示设置', exact: true }).click();
   await page.getByRole('button', { name: '关闭', exact: true }).click();
   await expect.poll(() => page.evaluate(() => window.desktopTest.closed)).toBe(1);
   expect(await page.evaluate(() => window.desktopTest.maxConcurrent)).toBe(1);
@@ -95,7 +95,7 @@ test(`retains ${quality} resolution and bitrate with zero loss and a low bandwid
   await panel.getByRole('button', { name: '60 帧', exact: true }).click();
   await expect.poll(() => page.evaluate(() => window.desktopTest.settings.at(-1)?.fps)).toBe(60);
   await expect.poll(() => page.evaluate(() => window.desktopTest.settings.at(-1)?.quality)).toBe(quality);
-  await page.getByRole('button', { name: '完成', exact: true }).click();
+  await page.getByRole('button', { name: '关闭显示设置', exact: true }).click();
   const start = await page.evaluate(() => {
     window.desktopAdaptationFixture.capacity = 300_000;
     return window.desktopAdaptationFixture.parameters.length;

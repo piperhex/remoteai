@@ -27,7 +27,7 @@ test('switches landscape and portrait displays, preserves settings, and recovers
   expect(await page.evaluate(() => window.desktopTest.closed)).toBe(1);
   expect(await panel.evaluate(node => node.scrollWidth <= node.clientWidth && node.clientWidth <= 400)).toBe(true);
   await page.screenshot({ path: info.outputPath('multi-display-settings.png') });
-  await page.getByRole('button', { name: '完成', exact: true }).click();
+  await page.getByRole('button', { name: '关闭显示设置', exact: true }).click();
   await page.locator('.rd-touch').click();
   await expect.poll(() => page.evaluate(() => window.desktopTest.inputDisplays.at(-1))).toBe('display-2');
   await page.getByRole('button', { name: '显示', exact: true }).click();
@@ -37,7 +37,7 @@ test('switches landscape and portrait displays, preserves settings, and recovers
   await secondary.click(); await expect(secondary).toBeEnabled();
   // The next open re-enumerates screens, as happens after unplugging the chosen display.
   await page.evaluate(() => { window.desktopTest.displays.splice(1); });
-  await page.getByRole('button', { name: '完成', exact: true }).click();
+  await page.getByRole('button', { name: '关闭显示设置', exact: true }).click();
   await page.getByRole('button', { name: '关闭', exact: true }).click();
   await page.getByRole('button', { name: '打开工具' }).click();
   await page.getByRole('button', { name: '远程桌面', exact: true }).click();

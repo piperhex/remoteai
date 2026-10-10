@@ -74,7 +74,7 @@ test('shows live multiline stats with a close button on the right and can restor
     await expect(stats).toHaveCount(0); await expect(page.locator('video')).toBeVisible();
     await page.getByRole('button', { name: '显示', exact: true }).click();
     await page.getByRole('switch', { name: '连接状态' }).click();
-    await page.getByRole('button', { name: '完成', exact: true }).click();
+    await page.getByRole('button', { name: '关闭显示设置', exact: true }).click();
     await expect(stats).toBeVisible();
   });
 

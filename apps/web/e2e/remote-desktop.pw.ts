@@ -103,7 +103,7 @@ test('streams video, controls mouse and keyboard, applies display settings and c
   const panelWidth = await page.getByRole('complementary', { name: '显示设置' }).evaluate(node => node.clientWidth);
   expect(panelWidth).toBeLessThanOrEqual(400);
   await page.screenshot({ path: info.outputPath('remote-desktop-display.png') });
-  await page.getByRole('button', { name: '完成', exact: true }).click();
+  await page.getByRole('button', { name: '关闭显示设置', exact: true }).click();
   await page.getByRole('button', { name: '键盘', exact: true }).click();
   await page.getByRole('textbox', { name: '发送到电脑的文字' }).fill('你好，远程桌面');
   await expect.poll(() => page.evaluate(() => window.desktopTest.inputs.at(-1)))

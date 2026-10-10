@@ -1,4 +1,19 @@
 export const remoteDesktopMessages: Record<string, string> = {
+  '调整远程桌面的显示效果': 'Adjust how your remote desktop looks',
+  '显示设置选项': 'Display settings options',
+  '选择要使用的显示器': 'Choose the monitor to use',
+  '连接后不在屏幕上显示状态信息': 'Keep connection stats off the screen',
+  '更高的帧率让画面更流畅，也会占用更多带宽':
+    'Higher frame rates make motion smoother and use more bandwidth',
+  '在画质、流畅度和带宽之间取得平衡': 'Balance clarity, smoothness and bandwidth',
+  '在远程桌面中使用鼠标的操作方式': 'How to use the mouse on your remote desktop',
+  '滑动画面或鼠标下半部可移动指针，轻点即可单击。':
+    'Swipe the screen or lower mouse pad to move the pointer; tap to click.',
+  '按住左键滑动可拖拽，松手结束；长按不动可锁定拖拽，再点左键结束。':
+    'Slide while holding the left button to drag; release to stop. Hold still to lock dragging; tap again to release.',
+  '按住中央箭头并拖动可滚动，松手返回鼠标面板。':
+    'Hold and drag the center arrows to scroll; release to return to the mouse panel.',
+  '拖动横线把手可移动鼠标面板。': 'Drag the horizontal grip to move the mouse panel.',
   '检查授权': 'Check permissions',
   '请在 Mac 上允许屏幕录制，授权后将自动连接。若系统要求，请重启 Remote AI。':
     'Allow Screen Recording on the Mac to connect automatically. Restart Remote AI if macOS asks you to.',

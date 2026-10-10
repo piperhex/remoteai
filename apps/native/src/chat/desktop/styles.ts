@@ -44,12 +44,4 @@ export const desktopStyles = StyleSheet.create({
     borderWidth: 2, borderColor: '#8496b0', backgroundColor: '#e5eeff' },
   grip: { position: 'absolute', left: 42, top: 52, width: 32, height: 28, alignItems: 'center',
     justifyContent: 'center', borderRadius: 12, borderWidth: 2, borderColor: '#8496b0', backgroundColor: '#e5eeff' },
-  panel: { position: 'absolute', right: 8, top: 8, bottom: 8, width: '94%', maxWidth: 400,
-    backgroundColor: '#202634f5', borderRadius: 16, padding: 16 },
-  panelContent: { gap: 14, paddingBottom: 20 },
-  heading: { fontSize: 18, color: '#fff', fontWeight: '600' },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  choice: { backgroundColor: '#333d50', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 9 },
-  input: { color: '#fff', borderColor: '#5a6981', borderWidth: 1, borderRadius: 9,
-    padding: 10, minWidth: 78 },
 });

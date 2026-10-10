@@ -31,7 +31,7 @@ for (const native of [false, true]) {
     await page.getByRole('button', { name: '显示', exact: true }).click();
     await page.getByRole('button', { name: '高清', exact: true }).click();
     await page.getByRole('button', { name: '60 帧', exact: true }).click();
-    await page.getByRole('button', { name: '完成', exact: true }).click();
+    await page.getByRole('button', { name: '关闭显示设置', exact: true }).click();
     await secondary.focus();
     await page.keyboard.press('Enter');
     await expect(secondary).toHaveAttribute('aria-pressed', 'true');
@@ -85,7 +85,7 @@ test('scrolls to the display selected in settings in a narrow PC window', async 
   expect(bounds.x).toBeGreaterThanOrEqual(0);
   expect(bounds.x + bounds.width).toBeLessThanOrEqual(560);
   expect(await page.locator('.rd-root').evaluate(node => node.scrollWidth === node.clientWidth)).toBe(true);
-  await page.getByRole('button', { name: '完成', exact: true }).click();
+  await page.getByRole('button', { name: '关闭显示设置', exact: true }).click();
   await page.screenshot({ path: info.outputPath('display-bar-narrow.png') });
 });
 

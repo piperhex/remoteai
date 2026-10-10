@@ -5,17 +5,25 @@ import { DEFAULT_SETTINGS, type DesktopDisplay } from '../../../../../shared/rem
 
 vi.mock('react', async () => ({ ...await vi.importActual<typeof import('react')>('react'),
   useState: (value: unknown) => [value, vi.fn()] ,
+  useEffect: vi.fn(),
   useSyncExternalStore: (_subscribe: unknown, snapshot: () => unknown) => snapshot(),
 }));
 vi.mock('react-native', () => ({ View: 'View', Pressable: 'Pressable', Text: 'Text',
   ScrollView: 'ScrollView', TextInput: 'TextInput', StyleSheet: { create: <T,>(value: T) => value } }));
+vi.mock('@expo/vector-icons', () => ({ MaterialCommunityIcons: 'Icon' }));
 interface Props {
   children?: ReactNode; accessibilityRole?: string; accessibilityLabel?: string;
   accessibilityState?: { checked?: boolean; disabled?: boolean }; onPress?: () => void; disabled?: boolean;
 }
 function nodes(tree: ReactNode): ReactElement<Props>[] {
-  return Children.toArray(tree).flatMap(child => isValidElement<Props>(child)
-    ? [child, ...nodes(child.props.children)] : []);
+  return Children.toArray(tree).flatMap(child => {
+    if (!isValidElement<Props>(child)) return [];
+    if (typeof child.type === 'function') {
+      const render = child.type as (props: Props) => ReactNode;
+      return nodes(render(child.props));
+    }
+    return [child, ...nodes(child.props.children)];
+  });
 }
 const displays: DesktopDisplay[] = [
   { id: 'first', name: 'DISPLAY1', primary: true, width: 1920, height: 1080 },
@@ -37,4 +45,29 @@ it.each([false, true])('shows selected display, wraps labels and prevents repeat
     second.props.onPress!();
     expect(update).toHaveBeenCalledWith({ ...DEFAULT_SETTINGS, displayId: 'second' });
   }
+});
+
+it.each([false, true])('keeps the hide-stats switch consistent with visible=%s', visible => {
+  vi.stubGlobal('React', React);
+  const toggle = vi.fn();
+  const tree = nodes(DisplaySettings({ settings: DEFAULT_SETTINGS, displays, update: vi.fn(),
+    saving: false, close: vi.fn(), stats: { visible, toggle } }));
+  const control = tree.find(node => node.props.accessibilityRole === 'switch')!;
+  expect(control.props.accessibilityLabel).toBe('隐藏连接状态');
+  expect(control.props.accessibilityState?.checked).toBe(!visible);
+  control.props.onPress!();
+  expect(toggle).toHaveBeenCalledOnce();
+});
+
+it('keeps close outside the scrollable settings and available while saving', () => {
+  vi.stubGlobal('React', React);
+  const close = vi.fn();
+  const tree = nodes(DisplaySettings({ settings: DEFAULT_SETTINGS, displays, update: vi.fn(),
+    saving: true, close, stats: { visible: true, toggle: vi.fn() } }));
+  const scroller = tree.find(node => node.props.accessibilityLabel === '显示设置选项')!;
+  expect(nodes(scroller.props.children).some(node => node.props.accessibilityLabel === '关闭显示设置')).toBe(false);
+  const button = tree.find(node => node.props.accessibilityLabel === '关闭显示设置')!;
+  expect(button.props.disabled).not.toBe(true);
+  button.props.onPress!();
+  expect(close).toHaveBeenCalledOnce();
 });

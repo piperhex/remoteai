@@ -76,14 +76,11 @@
 .rd-settings { position: absolute; top: 8px; right: 8px; bottom: 8px; width: min(400px, calc(100% - 16px));
   background: #202634f5; padding: 20px; border-radius: 16px; overflow-y: auto; }
 .rd-settings header { display: flex; align-items: center; justify-content: space-between; font-size: 18px; }
-.rd-options, .rd-custom { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.rd-options { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
 .rd-settings p { margin: 20px 0 12px; }
 .rd-settings small { display: block; color: #aebad0; line-height: 1.7; }
 .rd-root input { background: #111827; border: 1px solid #5a6981; border-radius: 9px; padding: 10px; color: white;
   min-width: 0; font-size: 16px; }
-.rd-custom input { width: 80px; }
-.rd-displays { flex-direction: column; }
-.rd-displays button { text-align: left; overflow-wrap: anywhere; }
 @media (orientation: portrait) and (max-width: 700px) {
   .rd-workspace { flex-direction: column; }
   .rd-toolbar { width: auto; flex-direction: row; gap: 2px; padding: 8px 4px; overflow: visible; touch-action: auto; }
