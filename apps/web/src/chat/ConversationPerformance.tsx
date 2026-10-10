@@ -17,12 +17,12 @@ export function ConversationPerformance({ read, threadId, active }: {
   }, []);
   const metrics = useConversationMetrics(read, threadId, active && visible);
   const speed = `${formatConversationTps(metrics)} TPS`;
-  const firstToken = `TTFT ${formatConversationTtft(metrics)}`;
+  const firstToken = `${formatConversationTtft(metrics)} TTFT`;
   return <>
     <Tooltip title={t(CONVERSATION_TPS_DESCRIPTION)} styles={{ root: { maxWidth: 400 } }}>
       <span className="chat-conversation-tps" aria-label={`${t('对话输出速度')} ${speed}`}>{speed}</span>
     </Tooltip>
-    {' '}
+    {' · '}
     <Tooltip title={t(CONVERSATION_TTFT_DESCRIPTION)} styles={{ root: { maxWidth: 400 } }}>
       <span className="chat-conversation-ttft" aria-label={`${t('首 token 等待时间')} ${firstToken}`}>{firstToken}</span>
     </Tooltip>

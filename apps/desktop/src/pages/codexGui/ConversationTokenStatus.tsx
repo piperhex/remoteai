@@ -21,12 +21,13 @@ export function ConversationTokenStatus({ threadId, tokens, active }: {
 }) {
   const metrics = useConversationMetrics(loadConversationMetrics, threadId, active);
   const speed = `${formatConversationTps(metrics)} TPS`;
-  const firstToken = `TTFT ${formatConversationTtft(metrics)}`;
+  const firstToken = `${formatConversationTtft(metrics)} TTFT`;
   if (!threadId) return null;
   return <span className={styles.status}>
     <Tooltip title={guiText(CONVERSATION_TPS_DESCRIPTION)} styles={{ root: { maxWidth: 400 } }}>
       <span aria-label={`${guiText('对话输出速度')} ${speed}`}>{speed}</span>
     </Tooltip>
+    <span aria-hidden="true"> · </span>
     <Tooltip title={guiText(CONVERSATION_TTFT_DESCRIPTION)} styles={{ root: { maxWidth: 400 } }}>
       <span aria-label={`${guiText('首 token 等待时间')} ${firstToken}`}>{firstToken}</span>
     </Tooltip>

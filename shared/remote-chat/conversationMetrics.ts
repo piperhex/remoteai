@@ -24,13 +24,13 @@ export function formatConversationTps(metrics?: ConversationMetrics | null): str
 export const CONVERSATION_TPS_DESCRIPTION =
   '当前对话的平均输出速度：已完成请求的输出 token 数 ÷ 输出耗时，不含首次响应前的等待和中断请求。';
 
-/** Average wait for the first observed output token, in seconds. */
+/** Average wait for the first observed output token, in seconds without a unit suffix. */
 export function formatConversationTtft(metrics?: ConversationMetrics | null): string {
   const total = metrics?.totalFirstTokenTimeMs;
   const count = metrics?.firstTokenRequestCount;
   if (typeof total !== 'number' || !Number.isFinite(total) || total < 0
     || typeof count !== 'number' || !Number.isSafeInteger(count) || count <= 0) return '—';
-  return `${(total / count / 1_000).toFixed(2)} s`;
+  return (total / count / 1_000).toFixed(2);
 }
 
 export const CONVERSATION_TTFT_DESCRIPTION =

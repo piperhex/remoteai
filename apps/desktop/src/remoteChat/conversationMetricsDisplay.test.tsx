@@ -21,10 +21,10 @@ afterEach(async () => { await act(async () => root.unmount()); vi.clearAllMocks(
 
 it('places local GUI TPS and TTFT before conversation tokens and clears them when disconnected', async () => {
   await act(async () => root.render(<ConversationTokenStatus threadId="local-thread" tokens={2_500} active />));
-  expect(container.textContent).toBe('150.0 TPSTTFT 1.25 s2.50k tokens');
+  expect(container.textContent).toBe('150.0 TPS · 1.25 TTFT2.50k tokens');
   expect(loadConversationMetrics).toHaveBeenCalledWith('local-thread');
   await act(async () => root.render(<ConversationTokenStatus threadId="local-thread" tokens={2_500} active={false} />));
-  expect(container.textContent).toBe('— TPSTTFT —2.50k tokens');
+  expect(container.textContent).toBe('— TPS · — TTFT2.50k tokens');
   await act(async () => root.render(<ConversationTokenStatus threadId={null} tokens={0} active />));
   expect(container.textContent).toBe('');
 });
@@ -35,7 +35,7 @@ it('shows remote TPS and TTFT to the right of tokens independently of daily usag
     active ready tokenUsage={{ total: { totalTokens: 2_500 }, last: { totalTokens: 500 } }}
     threadId="remote-thread" readConversationMetrics={read} />));
   const thread = container.querySelector('.chat-usage-thread');
-  expect(thread?.textContent).toBe('当前对话 2.50K Token · 150.0 TPS TTFT 1.25 s');
+  expect(thread?.textContent).toBe('当前对话 2.50K Token · 150.0 TPS · 1.25 TTFT');
   expect(read).toHaveBeenCalledWith('remote-thread');
   expect(read).toHaveBeenCalledTimes(1);
 });
@@ -43,13 +43,13 @@ it('shows remote TPS and TTFT to the right of tokens independently of daily usag
 it('stops remote TPS reads when the page is hidden and refreshes when visible again', async () => {
   const read = vi.fn().mockResolvedValue(metrics);
   await act(async () => root.render(<ConversationPerformance read={read} threadId="remote-thread" active />));
-  expect(container.textContent).toBe('150.0 TPS TTFT 1.25 s');
+  expect(container.textContent).toBe('150.0 TPS · 1.25 TTFT');
   const hidden = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
   await act(async () => document.dispatchEvent(new Event('visibilitychange')));
-  expect(container.textContent).toBe('— TPS TTFT —');
+  expect(container.textContent).toBe('— TPS · — TTFT');
   hidden.mockReturnValue('visible');
   await act(async () => document.dispatchEvent(new Event('visibilitychange')));
-  expect(container.textContent).toBe('150.0 TPS TTFT 1.25 s');
+  expect(container.textContent).toBe('150.0 TPS · 1.25 TTFT');
   expect(read).toHaveBeenCalledTimes(2);
   hidden.mockRestore();
 });

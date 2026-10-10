@@ -58,9 +58,9 @@ it('does not overlap slow requests, including while briefly hiding and reopening
   expect(read).toHaveBeenCalledTimes(2);
 });
 
-it('formats average TTFT in seconds and leaves missing, old or invalid measurements unknown', () => {
-  expect(formatConversationTtft(metrics)).toBe('1.25 s');
-  expect(formatConversationTtft({ ...metrics, totalFirstTokenTimeMs: 0 })).toBe('0.00 s');
+it('formats average TTFT without a unit and leaves missing, old or invalid measurements unknown', () => {
+  expect(formatConversationTtft(metrics)).toBe('1.25');
+  expect(formatConversationTtft({ ...metrics, totalFirstTokenTimeMs: 0 })).toBe('0.00');
   const oldHost = { totalOutputTokens: 100, totalOutputTimeMs: 1_000, outputRequestCount: 1 };
   for (const invalid of [null, oldHost, { ...metrics, firstTokenRequestCount: 0 },
     { ...metrics, firstTokenRequestCount: Infinity }, { ...metrics, firstTokenRequestCount: 1.5 },
