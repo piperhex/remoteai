@@ -10,6 +10,19 @@ import { projectThreadGroups } from '../../../../../shared/remote-chat/sidebar';
 const thread: Thread = { id: 'one', cwd: 'F:/project', name: '第一项任务', preview: '', updatedAt: 1 };
 beforeEach(() => localStorage.clear());
 
+it('shares tool-resumed conversations and subsequent running status while the chat page is closed', () => {
+  const bridge = new SidebarBridge();
+  bridge.receive({ method: 'thread/resumed', params: { thread } });
+  expect(bridge.snapshot().threads.one.title).toBe(thread.name);
+  bridge.receive({ method: 'turn/started', params: { threadId: thread.id,
+    turn: { id: 'tool-turn', status: 'inProgress', items: [] } } });
+  expect(bridge.snapshot().threads.one.running).toBe(true);
+  bridge.receive({ method: 'turn/completed', params: { threadId: thread.id,
+    turn: { id: 'tool-turn', status: 'completed', items: [] } } });
+  expect(bridge.snapshot().threads.one.running).toBe(false);
+  expect(bridge.snapshot().readState.one.unread).toBe(true);
+});
+
 it('shares project overrides, running state and read receipts with the desktop in both directions', () => {
   let state = initialState();
   state.threads = [thread];

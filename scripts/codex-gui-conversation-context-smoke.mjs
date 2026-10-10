@@ -54,9 +54,7 @@ try {
   const { thread } = await client.rpc("thread/start", { cwd: root, approvalPolicy: "never", sandbox: "read-only" });
   const input = [text("参考这个对话的方案"), context({ kind: "reference", id: "source", name: "设计方案",
     messages: [{ role: "user", text: "使用蓝色按钮" }, { role: "assistant", text: "确定使用蓝色" }],
-    truncated: false, note: "仅供参考，以当前用户消息为准。" }), context({ kind: "awareness", current: thread.id,
-    running: [{ id: "running-source", name: "后台构建", status: "running", cwd: root }], total: 1,
-    note: "这是发送时的运行概览，状态可能改变。" })];
+    truncated: false, note: "仅供参考，以当前用户消息为准。" })];
   const { turn } = await client.rpc("turn/start", { threadId: thread.id, input });
   await client.waitFor((event) => event.method === "turn/completed" && event.params.turn.id === turn.id);
   const event = client.events.find((event) => event.method === "item/completed"
@@ -71,7 +69,7 @@ try {
   assert.ok(history.thread.preview.includes("<codex_gui_conversation_context>"));
   const modelInput = JSON.stringify(requests[0].input);
   assert.ok(modelInput.includes("使用蓝色按钮"));
-  assert.ok(modelInput.includes("running-source"));
+  assert.ok(!modelInput.includes('"kind":"awareness"'));
   console.log("PASS: CLI forwards conversation snapshots and preserves context boundaries in events and history.");
 } finally {
   await client.close();

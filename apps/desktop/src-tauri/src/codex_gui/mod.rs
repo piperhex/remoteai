@@ -15,6 +15,7 @@ mod computer_use_setup;
 mod connection;
 pub(crate) mod context_settings;
 mod conversation_context;
+mod conversation_tools;
 pub(crate) mod deletion;
 mod downloads;
 mod error;
@@ -85,6 +86,7 @@ pub(crate) struct GuiState {
     activity: Arc<tokio::sync::RwLock<()>>,
     videos: Arc<file_stream::FileStreams>,
     downloads: DownloadStreams,
+    conversation_tools: conversation_tools::Runtime,
 }
 
 struct DownloadStreams(Arc<file_stream::FileStreams>);
@@ -260,6 +262,7 @@ pub(crate) fn shutdown(app: &AppHandle) {
             client.stop().await;
         }
         if tauri::async_runtime::spawn_blocking(move || {
+            conversation_tools::shutdown(&app);
             crate::local_proxy::gui_runtime::shutdown(&app)
         })
         .await

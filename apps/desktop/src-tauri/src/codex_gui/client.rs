@@ -81,8 +81,10 @@ impl Client {
         projectless_root: PathBuf,
     ) -> Result<Arc<Self>> {
         let mut command = Command::new(executable.path);
+        // Keep every override in the app-server argument scope; subcommand overrides replace root ones.
+        command.arg("app-server");
+        super::conversation_tools::configure(app.clone(), &mut command).await?;
         command
-            .arg("app-server")
             .arg("-c")
             .arg("features.step_model_switching=true")
             .arg("-c")

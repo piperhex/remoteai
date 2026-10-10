@@ -37,13 +37,7 @@ fn params() -> Value {
 #[test]
 fn snapshots_round_trip_to_visible_references_without_internal_context() {
     let mut params = params();
-    append(
-        &mut params,
-        vec![reference(&thread(), 1).unwrap()],
-        vec![summary("source", &thread())],
-        1,
-    )
-    .unwrap();
+    append(&mut params, vec![reference(&thread(), 1).unwrap()]).unwrap();
     let mut result = json!({"thread": {"turns": [{"items": [
         {"type": "userMessage", "content": params["input"]}
     ]}]}});
@@ -119,14 +113,21 @@ fn references_are_validated_deduplicated_and_self_reference_is_rejected() {
 }
 
 #[test]
-fn awareness_includes_zero_and_total_without_erasing_user_text_or_tool_results() {
+fn ordinary_messages_do_not_attach_activity_and_legacy_snapshots_still_hide() {
     let mut params =
         json!({"threadId": "current", "input": [{"type": "text", "text": "普通消息"}]});
-    append(&mut params, vec![], vec![], 0).unwrap();
-    assert!(matches!(
-        parse(&params["input"][1]),
-        Some(Context::Awareness { total: 0, .. })
-    ));
+    let original = params.clone();
+    append(&mut params, vec![]).unwrap();
+    assert_eq!(params, original);
+    params["input"].as_array_mut().unwrap().push(
+        input(Context::Awareness {
+            current: "current".into(),
+            running: vec![],
+            total: 0,
+            note: "旧版概览".into(),
+        })
+        .unwrap(),
+    );
     let mut event = json!({"item": {"type": "userMessage", "content": params["input"]}});
     display(&mut event);
     assert_eq!(

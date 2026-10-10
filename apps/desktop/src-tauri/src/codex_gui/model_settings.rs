@@ -172,6 +172,17 @@ pub(crate) async fn codex_gui_model_settings(
         .map_err(|error| error.to_string())
 }
 
+/// Read saved defaults for a host-created conversation without changing the visible draft.
+pub(super) async fn saved_selection(
+    app: AppHandle,
+    thread_id: Option<String>,
+) -> super::Result<Option<ModelSelection>> {
+    access(app, thread_id, None)
+        .await
+        .map(|snapshot| snapshot.selection)
+        .map_err(|_| super::GuiError::Rpc)
+}
+
 #[tauri::command]
 pub(crate) async fn codex_gui_set_model_settings(
     app: AppHandle,

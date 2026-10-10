@@ -5,9 +5,10 @@ import { join } from "node:path";
 
 const TIMEOUT_MS = 30000;
 
-export function connectAppServer({ executable, home, cwd }) {
+export function connectAppServer({ executable, home, cwd, overrides = [] }) {
   const quotePath = (path) => JSON.stringify(path.replaceAll("\\", "/"));
-  const child = spawn(executable, ["app-server", "-c", "features.step_model_switching=true",
+  const child = spawn(executable, ["app-server", ...overrides.flatMap((value) => ["-c", value]),
+    "-c", "features.step_model_switching=true",
     "-c", `sqlite_home=${quotePath(home)}`, "-c", `log_dir=${quotePath(join(home, "log"))}`], {
     cwd, env: { ...process.env, CODEX_HOME: home, CODEX_INTERNAL_ORIGINATOR_OVERRIDE: "codex-tui" },
     windowsHide: true, stdio: ["pipe", "pipe", "pipe"],

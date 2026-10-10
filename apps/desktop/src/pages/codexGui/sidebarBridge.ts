@@ -78,7 +78,7 @@ export class SidebarBridge {
 
   receive(event: GuiEvent) {
     const { threadId, thread, turn } = event.params;
-    if (event.method === 'thread/started' && thread) this.known.set(thread.id, thread);
+    if (['thread/started', 'thread/resumed'].includes(event.method) && thread) this.known.set(thread.id, thread);
     else if (event.method === 'thread/deleted' && threadId) this.known.delete(threadId);
     else if (event.method === 'thread/name/updated' && threadId && event.params.threadName !== undefined) {
       const known = this.known.get(threadId);
