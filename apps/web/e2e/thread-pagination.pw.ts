@@ -89,3 +89,42 @@ test('pauses automatic loading after failure and retries the same page on reques
   await expect(page.getByRole('button', { name: '加载失败，点击重试' })).toHaveCount(0);
   expect(attempts).toBe(2);
 });
+
+test('coalesces background list updates while keeping chats visible and shows progress on manual refresh',
+  async ({ page }) => {
+    let requests = 0;
+    let finish = () => {};
+    const pending = new Promise<void>(resolve => { finish = resolve; });
+    await page.route('**/thread-page?*', async route => {
+      requests++;
+      if (requests === 2) await pending;
+      await route.fulfill({ json: { data: threads(0, 6, true), nextCursor: null } });
+    });
+    await page.goto('./e2e/thread-pagination-harness.html');
+    await expect(page.locator('.chat-thread')).toHaveCount(5);
+    const refresh = page.getByRole('button', { name: '刷新聊天', exact: true });
+    await expect(refresh).toBeEnabled();
+    await page.evaluate(() => {
+      for (let index = 0; index < 50; index++) window.dispatchEvent(new CustomEvent('test-chat-event', {
+        detail: { method: 'remote-chat/history-changed', params: { threadId: 'chat-0', reason: 'thread/resumed' } },
+      }));
+    });
+    await expect.poll(() => requests).toBe(2);
+    await expect(page.locator('.chat-thread-list')).toHaveAttribute('aria-busy', 'true');
+    await expect(refresh.locator('.chat-spinner')).toHaveCount(0);
+    await expect(page.locator('.chat-thread')).toHaveCount(5);
+    finish();
+    await expect(refresh).toBeEnabled();
+    let finishManual = () => {};
+    const manual = new Promise<void>(resolve => { finishManual = resolve; });
+    await page.route('**/thread-page?*', async route => {
+      await manual;
+      await route.fulfill({ json: { data: threads(0, 6, true), nextCursor: null } });
+    });
+    await refresh.click();
+    await expect(refresh.locator('.chat-spinner')).toHaveCount(1);
+    await expect(page.locator('.chat-thread')).toHaveCount(5);
+    finishManual();
+    await expect(refresh).toBeEnabled();
+    await expect(refresh.locator('.chat-spinner')).toHaveCount(0);
+  });

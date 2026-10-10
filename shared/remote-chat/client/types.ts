@@ -57,6 +57,7 @@ export interface ChatState {
   search: string;
   archived: boolean;
   loading: boolean;
+  listRefreshing?: boolean;
   historyLoading: boolean;
   historyLoadingMore: boolean;
   historyHasMore: boolean;

@@ -13,6 +13,7 @@ import type { HistoryVersionSource } from './historyPreparation';
 import { HistoryCache } from './historyCache';
 import { ImageCache } from './imageCache';
 import { ThreadActions, threadMutationPatch, type ThreadMutation } from './threadActions';
+import { ThreadListRequests } from './threadListRequests';
 import { forkConversation } from './forkConversation';
 import { OfflineWriter, type OfflineHistoryStore } from './offline';
 import { offlineImage } from './offlineImages';
@@ -47,7 +48,7 @@ export class ChatController {
     request: body => this.connection.request('request', body),
     complete: (body, result) => body.operation === 'threadPin'
       ? this.applySidebar(result as SidebarSnapshot) : this.completeThreadMutation(body),
-    refresh: () => this.list() });
+    refresh: () => this.list({ background: true }) });
   readonly goals = new RemoteGoals({ snapshot: () => this.state, update: (patch) => this.update(patch),
     request: (body) => this.request(body), created: (id, settings) => this.composer.created(id, settings),
     generation: () => this.synchronization });
@@ -67,7 +68,9 @@ export class ChatController {
   readonly guiTools = createGuiToolsClient(<T>(body: object) => this.connection.request<T>('request', body),
     (event, fields) => this.connection.reportDiagnostic?.(event, fields),
     viewId => this.connection.openNativeMedia?.(viewId) ?? Promise.resolve(undefined));
-  private listGeneration = 0;
+  private readonly listRequests = new ThreadListRequests(async () => {
+    if (this.active && this.transportConnected) await this.list({ background: true });
+  });
   private readGeneration = 0;
   private selectionGeneration = 0;
   private refreshThreadId: string | null = null;
@@ -177,7 +180,7 @@ export class ChatController {
       this.update({ queue: { ...this.state.queue, revision: -1 } });
     }
     this.synchronization += 1;
-    this.listGeneration += 1;
+    this.listRequests.reset();
     this.readGeneration += 1;
     this.refreshThreadId = null;
     this.olderQueued = false;
@@ -186,7 +189,7 @@ export class ChatController {
     this.historyTimer = undefined;
     this.update({ mode, ready: false, connecting: mode !== 'offline', retryAt: null,
       historyOffline: this.offline && this.state.selected ? true : this.state.historyOffline,
-      loading: false, historyLoading: false, historyLoadingMore: false, compacting: undefined });
+      loading: false, listRefreshing: false, historyLoading: false, historyLoadingMore: false, compacting: undefined });
     if (this.offline) void this.flushCache().then(() => this.listOffline());
   }
 
@@ -199,7 +202,7 @@ export class ChatController {
     if (event?.method === HISTORY_CHANGED) {
       if (event.params.threadId === this.state.selected?.id) this.scheduleHistory();
       if (event.params.reason?.startsWith('thread/')
-        || !this.state.threads.some((thread) => thread.id === event.params.threadId)) void this.list();
+        || !this.state.threads.some((thread) => thread.id === event.params.threadId)) this.listRequests.schedule();
       return;
     }
     if (event?.method === COMPOSER_EVENT) { this.composer.receive(event.params as unknown as ComposerSnapshot); return; }
@@ -212,7 +215,7 @@ export class ChatController {
       this.scheduleHistory();
     }
     if (['thread/name/updated', 'thread/archived', 'thread/unarchived', 'thread/deleted'].includes(event?.method)) {
-      void this.list();
+      this.listRequests.schedule();
       if (event.params.threadId === this.state.selected?.id) this.scheduleHistory();
     }
     if (event?.method === 'connection/closed' || event?.method === 'codex/disconnected') {
@@ -250,10 +253,10 @@ export class ChatController {
 
   private async listOffline() {
     if (!this.offline) return;
-    const generation = this.listGeneration;
+    const generation = this.listRequests.generation;
     try {
       const cached = await this.offline.list();
-      if (!this.active || generation !== this.listGeneration || this.state.ready) return;
+      if (!this.active || generation !== this.listRequests.generation || this.state.ready) return;
       const { archived, search } = this.state;
       const threads = cached.filter((value) => value.archived === archived
         && `${value.thread.name ?? ''} ${value.thread.preview}`.toLowerCase().includes(search.toLowerCase()))
@@ -291,10 +294,10 @@ export class ChatController {
     clearTimeout(this.historyTimer);
     this.historyTimer = undefined;
     this.synchronization += 1;
-    this.listGeneration += 1;
+    this.listRequests.reset();
     this.readGeneration += 1;
     this.refreshThreadId = null;
-    this.update({ ready: false, connecting: false, retryAt: null,
+    this.update({ ready: false, connecting: false, retryAt: null, loading: false, listRefreshing: false,
       historyLoading: false, historyLoadingMore: false, compacting: undefined });
     this.connection.stop();
   }
@@ -324,7 +327,8 @@ export class ChatController {
         this.readGeneration += 1;
         this.refreshThreadId = null;
       }
-      await Promise.all([this.list(), this.composer.load(), this.refreshSelected(), this.loadQueue(generation)]);
+      await Promise.all([this.list({ background: true }), this.composer.load(),
+        this.refreshSelected(), this.loadQueue(generation)]);
       if (this.active && generation === this.synchronization) {
         this.update({ ready: true, connecting: false, retryAt: null, connectionStage: 'ready', connectionIssue: '' });
         this.composer.retry();
@@ -413,29 +417,41 @@ export class ChatController {
   searchThreads = (options: { search: string; archived: boolean; cursor?: string }) =>
     this.request<ListResponse<Thread>>({ operation: 'list', ...options });
 
-  async list(options: { search?: string; archived?: boolean; more?: boolean } = {}) {
-    const generation = ++this.listGeneration;
+  list(options: { search?: string; archived?: boolean; more?: boolean; background?: boolean } = {}) {
     const search = options.search ?? this.state.search;
     const archived = options.archived ?? this.state.archived;
     const cursor = options.more ? this.state.cursor ?? undefined : undefined;
-    this.update({ search, archived, loading: true });
+    // Joining an automatic request still gives a manual pull its own progress indicator.
+    if (!options.background && !options.more) this.update({ listRefreshing: true });
+    const key = JSON.stringify([search, archived, cursor, Boolean(options.more)]);
+    return this.listRequests.run(key, async generation => {
+      this.update({ search, archived, loading: true });
+      await this.loadList({ search, archived, cursor, more: options.more }, generation);
+    });
+  }
+
+  private async loadList(options: { search: string; archived: boolean; cursor?: string; more?: boolean },
+    generation: number) {
+    const { search, archived, cursor, more } = options;
     if (this.offline && !this.state.ready && this.synchronizing !== this.synchronization) {
       await this.listOffline();
-      if (generation === this.listGeneration) this.update({ loading: false });
+      if (generation === this.listRequests.generation) this.update({ loading: false, listRefreshing: false });
       return;
     }
     try {
       const result = await this.request<ListResponse<Thread> & { sidebar?: SidebarSnapshot }>({
         operation: 'list', search, archived, cursor,
       });
-      if (generation !== this.listGeneration) return;
+      if (generation !== this.listRequests.generation) return;
       this.applySidebar(result.sidebar);
       void this.offline?.updateSummaries?.(result.data, archived).catch(this.cacheFailure);
-      const threads = options.more ? [...this.state.threads, ...result.data] : result.data;
+      const threads = more ? [...this.state.threads, ...result.data] : result.data;
       this.update({ threads: [...new Map(threads.map((thread) => [thread.id, thread])).values()],
         cursor: result.nextCursor });
-    } catch (error) { if (generation === this.listGeneration) this.failure(error); }
-    finally { if (generation === this.listGeneration) this.update({ loading: false }); }
+    } catch (error) { if (generation === this.listRequests.generation) this.failure(error); }
+    finally {
+      if (generation === this.listRequests.generation) this.update({ loading: false, listRefreshing: false });
+    }
   }
 
   async select(thread: Thread) {
@@ -554,7 +570,7 @@ export class ChatController {
       selectedArchived: false, error: '', historyHasMore: false, historyLoading: false, historyLoadingMore: false });
     void this.flushCache();
     if (!this.offline || this.transportConnected) void this.composer.select(inherit);
-    void this.list();
+    void this.list({ background: true });
   }
 
   async send(input: SendInput, onQueued?: (id: string) => void) {
@@ -692,8 +708,8 @@ export class ChatController {
     this.update({ workspaceBusy: true, error: '' });
     try {
       const selected = await this.guiTools.projects.select({ cwd: project.cwd, threadId });
-      this.listGeneration += 1;
-      this.update({ loading: false });
+      this.listRequests.reset();
+      this.update({ loading: false, listRefreshing: false });
       // Invalidate reads started before this choice; they can still contain the previous directory.
       if (this.state.selected?.id === threadId) {
         this.readGeneration += 1; this.refreshThreadId = null;
@@ -759,7 +775,7 @@ export class ChatController {
 
   private completeThreadMutation(body: ThreadMutation) {
     const { threadId, operation } = body;
-    this.listGeneration += 1;
+    this.listRequests.reset();
     if (operation !== 'rename' && this.state.selected?.id === threadId) {
       this.readGeneration += 1; this.refreshThreadId = null; this.loadedThreadId = null;
       this.olderQueued = false;
@@ -777,7 +793,7 @@ export class ChatController {
         operation === 'rename' ? { ...thread, name: body.name } : thread,
       ], archived)).catch(this.cacheFailure);
     }
-    this.update(threadMutationPatch(this.state, body));
+    this.update({ ...threadMutationPatch(this.state, body), listRefreshing: false });
   }
 
   forkConversation = (thread: Thread) => {
@@ -789,7 +805,7 @@ export class ChatController {
       isCurrent: () => generation === this.synchronization && this.state.ready,
       canOpen: () => selection === this.selectionGeneration && selectedId === this.state.selected?.id
         && !this.state.sending,
-      select: fork => this.select(fork), refresh: () => this.list() }, thread);
+      select: fork => this.select(fork), refresh: () => this.list({ background: true }) }, thread);
   };
 
   async archive() {

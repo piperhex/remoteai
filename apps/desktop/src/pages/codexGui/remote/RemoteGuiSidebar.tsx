@@ -33,7 +33,8 @@ export function RemoteGuiSidebar({ state, controller, actions, accountPicker, fo
       <div className={styles.sidebarActions}>
         <FocusModeButton {...focusMode} />
         <Button type="text" size="small" icon={<RefreshCw size={15} />} aria-label={guiText("刷新对话")}
-          loading={state.loading} disabled={!state.ready} onClick={() => void controller.list()} />
+          loading={Boolean(state.listRefreshing)} disabled={!state.ready || state.loading}
+          onClick={() => void controller.list()} />
         <Button type="text" size="small" icon={<Search size={15} />} aria-label={guiText("搜索对话")}
           disabled={!state.ready} onClick={actions.openSearch} />
       </div>

@@ -60,6 +60,30 @@ afterEach(async () => {
   controller.stop(); container.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals();
 });
 
+it('keeps remote chats usable during background sync and joins a manual refresh to the same request', async () => {
+  let finish!: (value: unknown) => void;
+  request.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  await render();
+  let background!: Promise<void>;
+  await act(async () => { background = controller.list({ background: true }); });
+  const refresh = container.querySelector<HTMLButtonElement>('[aria-label="刷新对话"]')!;
+  expect(refresh.classList.contains('ant-btn-loading')).toBe(false);
+  expect(container.querySelector<HTMLButtonElement>('[aria-label="已有对话"]')!.disabled).toBe(false);
+  expect(list().getAttribute('aria-busy')).toBe('true');
+  let manual!: Promise<void>;
+  await act(async () => { manual = controller.list(); });
+  expect(manual).toBe(background);
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(refresh.classList.contains('ant-btn-loading')).toBe(true);
+  await act(async () => {
+    finish({ data: [older], nextCursor: null });
+    await manual;
+  });
+  expect(refresh.classList.contains('ant-btn-loading')).toBe(false);
+  expect(refresh.disabled).toBe(false);
+  expect(list().textContent).toContain('更早的对话');
+});
+
 it('retries the failed remote page on downward scrolling with the local hint and no overlapping requests', async () => {
   request.mockRejectedValueOnce(new Error('连接暂时中断'));
   await render(); dimensions();

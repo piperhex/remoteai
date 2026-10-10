@@ -29,7 +29,7 @@ export function ChatThreadList({ state, newChat, select, controller, bottomInset
       ({ ...group, label: group.cwd ? group.label : t('最近') }))} keyExtractor={(thread) => thread.id}
       contentContainerStyle={[listStyles.content, { paddingBottom: bottomInset + LIST_BOTTOM_SPACING }]}
       stickySectionHeadersEnabled={false} keyboardShouldPersistTaps="handled"
-      refreshing={state.loading && !pagination.loadingMore} onRefresh={() => { void controller.list(); }}
+      refreshing={Boolean(state.listRefreshing)} onRefresh={() => { void controller.list(); }}
       onLayout={pagination.onLayout} onContentSizeChange={pagination.onContentSizeChange}
       onScroll={pagination.onScroll} scrollEventThrottle={16}
       renderSectionHeader={({ section }) => <View style={styles.row}>

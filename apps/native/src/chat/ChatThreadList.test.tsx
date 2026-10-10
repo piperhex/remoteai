@@ -32,6 +32,13 @@ function render(state: ChatState) {
 }
 const ids = (group: { data: Thread[] }) => group.data.map(thread => thread.id);
 
+it('shows pull-to-refresh progress only for an explicit refresh', () => {
+  const state = { ...initialChatState(), ready: true, loading: true };
+  expect(render(state).refreshing).toBe(false);
+  expect(render({ ...state, listRefreshing: true }).refreshing).toBe(true);
+  expect(render({ ...state, loading: false, listRefreshing: false }).refreshing).toBe(false);
+});
+
 it.each(['/project', ''])('moves running native rows to the front of %j and restores their positions', (cwd) => {
   const state = { ...initialChatState(), ready: true, threads: Array.from({ length: 7 }, (_, index) => ({
     id: `chat-${index}`, name: `聊天 ${index}`, preview: '', updatedAt: 7 - index, cwd,
