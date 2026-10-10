@@ -64,6 +64,16 @@ Run the hole-punch tests from the parent workspace with `--no-default-features` 
 The simulator validates packet filtering and socket reuse; it is not a real carrier-network success-rate test.
 Replace this patch when upstream provides an equivalent bounded mixed-NAT strategy, retaining its regression tests.
 
+## Connection selection during discovery
+
+`peers/conn/peer.rs` treats zero RTT as unmeasured for both ordinary discovery and punched sockets.
+A newly admitted socket cannot displace a path with a completed round trip merely because its RTT is zero.
+Route snapshots use the same connection selection as packet sending, including after periodic cache invalidation;
+readiness no longer waits for an application packet that is itself waiting for readiness. A cached unmeasured
+socket is reconsidered when a proven alternative appears. One-hop routing, authentication and the consumer's
+positive-RTT requirement remain unchanged. `peer_selection_tests.rs` exercises handshaken memory tunnels,
+selection before application traffic, cache invalidation, and concurrent admission of an unmeasured socket.
+
 ## STUN proxy isolation
 
 The shared STUN resolver excludes the `198.18.0.0/15` benchmark range commonly used for proxy Fake-IP DNS,

@@ -26,8 +26,8 @@ use tokio_util::task::AbortOnDropHandle;
 type ArcPeerConn = Arc<PeerConn>;
 type ConnMap = Arc<DashMap<PeerConnId, ArcPeerConn>>;
 
-fn conn_latency_sort_key(latency_us: u64, is_hole_punched: bool) -> (bool, u64) {
-    (is_hole_punched && latency_us == 0, latency_us)
+fn conn_latency_sort_key(latency_us: u64) -> (bool, u64) {
+    (latency_us == 0, latency_us)
 }
 
 pub struct Peer {
@@ -212,22 +212,21 @@ impl Peer {
 
     fn select_conn(&self) -> Option<ArcPeerConn> {
         let _update_guard = self.default_conn_update_lock.lock();
-        if let Some(conn) = self.default_conn.load_full() {
+        if let Some(conn) = self
+            .default_conn
+            .load_full()
+            .filter(|conn| !conn.is_closed() && conn.get_stats().latency_us > 0)
+        {
             return Some(conn);
         }
 
-        // A zero latency on a hole-punched connection means the ping loop has not
-        // confirmed liveness yet. Prefer any other connection, so a freshly admitted
-        // hole-punched path cannot steal traffic before its first successful ping.
+        // Zero means no round trip has been measured, including ordinary discovery
+        // sockets. Prefer proven paths, but allow initial traffic when all are new.
         let selected = self
             .conns
             .iter()
-            .min_by_key(|conn| {
-                conn_latency_sort_key(
-                    conn.value().get_stats().latency_us,
-                    conn.value().is_hole_punched(),
-                )
-            })
+            .filter(|conn| !conn.value().is_closed())
+            .min_by_key(|conn| conn_latency_sort_key(conn.value().get_stats().latency_us))
             .map(|conn| conn.value().clone());
 
         if let Some(conn) = selected.as_ref() {
@@ -307,9 +306,9 @@ impl Peer {
     }
 
     pub fn get_default_conn_id(&self) -> PeerConnId {
-        self.default_conn
-            .load()
-            .as_ref()
+        // Route readiness gates the first application packet. Refill an invalidated
+        // cache here instead of waiting for that packet to select the connection.
+        self.select_conn()
             .map(|conn| conn.get_conn_id())
             .unwrap_or_default()
     }
@@ -337,21 +336,20 @@ impl Drop for Peer {
 }
 
 #[cfg(test)]
+#[path = "peer_selection_tests.rs"]
+mod selection_tests;
+
+#[cfg(test)]
 mod tests {
     use super::conn_latency_sort_key;
 
     #[test]
-    fn measured_relay_precedes_unverified_hole_punch_path() {
-        assert!(conn_latency_sort_key(20_000, false) < conn_latency_sort_key(0, true));
-    }
-
-    #[test]
-    fn unmeasured_regular_connection_keeps_existing_priority() {
-        assert!(conn_latency_sort_key(0, false) < conn_latency_sort_key(20_000, false));
+    fn measured_connection_precedes_every_unverified_path() {
+        assert!(conn_latency_sort_key(20_000) < conn_latency_sort_key(0));
     }
 
     #[test]
     fn verified_lower_latency_path_can_be_preferred() {
-        assert!(conn_latency_sort_key(5_000, true) < conn_latency_sort_key(20_000, false));
+        assert!(conn_latency_sort_key(5_000) < conn_latency_sort_key(20_000));
     }
 }

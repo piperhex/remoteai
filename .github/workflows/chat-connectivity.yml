@@ -59,6 +59,11 @@ jobs:
           cargo test --locked --manifest-path crates/chat-connectivity/Cargo.toml
           -p easytier-core --no-default-features --features aes-gcm,proxy-smoltcp-stack,tcp-hole-punch
           connectivity::hole_punch --lib
+      - name: Verify peer connection selection and liveness
+        run: >-
+          cargo test --locked --manifest-path crates/chat-connectivity/Cargo.toml
+          -p easytier-core --no-default-features --features aes-gcm,proxy-smoltcp-stack,tcp-hole-punch
+          peers::conn --lib
       - run: cargo test --locked --manifest-path crates/chat-connectivity/Cargo.toml
       - run: cargo clippy --locked --manifest-path crates/chat-connectivity/Cargo.toml --all-targets -- -D warnings
       - if: runner.os == 'macOS'
