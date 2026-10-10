@@ -5,9 +5,10 @@ import type { DraftImage } from '../src/pages/codexGui/draftImages';
 import '../src/styles.css';
 
 function initialImages(): DraftImage[] {
+  const params = new URLSearchParams(location.search);
   const canvas = document.createElement('canvas');
-  canvas.width = 800;
-  canvas.height = 600;
+  canvas.width = params.has('wide') ? 1600 : 800;
+  canvas.height = params.has('tall') ? 1600 : 600;
   const context = canvas.getContext('2d')!;
   context.fillStyle = '#b6d8ce';
   context.fillRect(0, 0, canvas.width, canvas.height);

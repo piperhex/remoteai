@@ -6,6 +6,10 @@ const { app: { security: { csp } } } = JSON.parse(
   readFileSync(new URL('../../desktop/src-tauri/tauri.conf.json', import.meta.url), 'utf8'),
 ) as { app: { security: { csp: string } } };
 
+test.beforeEach(async ({ page }) => {
+  await page.route('https://fonts.googleapis.com/**', route => route.abort());
+});
+
 async function desktopPolicy(page: Page) {
   await page.route('**/image-editor-harness.html', async route => {
     const response = await route.fetch();

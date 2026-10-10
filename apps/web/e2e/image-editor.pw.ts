@@ -14,6 +14,7 @@ async function stroke(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
+  await page.route('https://fonts.googleapis.com/**', route => route.abort());
   await page.goto('e2e/image-editor-harness.html');
   await expect(editor(page).getByRole('button', { name: '完成', exact: true })).toBeEnabled();
 });
@@ -55,7 +56,9 @@ test('adds text, custom colors and mosaic to the saved photo', async ({ page }) 
   const text = await snapshot(page);
   expect(text).not.toBe(clean);
   await editor(page).getByRole('button', { name: '马赛克', exact: true }).click();
-  await editor(page).getByRole('button', { name: '很粗', exact: true }).click();
+  const width = editor(page).getByRole('slider', { name: '画笔粗细' });
+  if (await width.isVisible()) { await width.focus(); await width.press('End'); }
+  else await editor(page).getByRole('button', { name: '很粗', exact: true }).click();
   await stroke(page);
   const mosaic = await snapshot(page);
   expect(mosaic).not.toBe(text);
@@ -125,9 +128,11 @@ async function expectLayoutFits(page: Page) {
   expect(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height + 1);
   const clipped = await editor(page).locator('body').evaluate(body => {
     const view = body.ownerDocument.defaultView!;
-    return [...body.querySelectorAll('header button, footer button, canvas, #notice')].filter(element => {
+    return [...body.querySelectorAll('button, input[type="range"], canvas, #notice')].filter(element => {
       const rect = element.getBoundingClientRect();
       if (!rect.width || !rect.height) return false;
+      const panel = element.closest('.editor-panel')?.getBoundingClientRect();
+      if (panel && (rect.top < panel.top || rect.bottom > panel.bottom + 1)) return true;
       return rect.left < 0 || rect.top < 0 || rect.right > view.innerWidth + 1 || rect.bottom > view.innerHeight + 1;
     }).map(element => element.id || element.getAttribute('aria-label') || element.textContent);
   });
@@ -135,6 +140,11 @@ async function expectLayoutFits(page: Page) {
   const canvas = (await editor(page).locator('canvas').boundingBox())!;
   expect(canvas.width).toBeGreaterThan(50);
   expect(canvas.height).toBeGreaterThan(50);
+  const stage = (await editor(page).locator('#stage').boundingBox())!;
+  expect(canvas.x).toBeGreaterThanOrEqual(stage.x);
+  expect(canvas.y).toBeGreaterThanOrEqual(stage.y);
+  expect(canvas.x + canvas.width).toBeLessThanOrEqual(stage.x + stage.width + 1);
+  expect(canvas.y + canvas.height).toBeLessThanOrEqual(stage.y + stage.height + 1);
 }
 
 test('keeps the photo and every control visible on phones, landscape and short PC windows', async ({ page }, info) => {
@@ -159,4 +169,30 @@ test('fits English controls in a narrow phone viewport', async ({ page }) => {
   await expect(editor(page).getByRole('button', { name: 'Done', exact: true })).toBeEnabled();
   await expectLayoutFits(page);
   await expect(editor(page).getByRole('button', { name: 'Reset', exact: true })).toBeVisible();
+});
+
+test('preserves annotations and settings when switching between PC and phone layouts', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop', 'Run the resize regression once');
+  const tools = editor(page);
+  await expect(tools.getByRole('button', { name: '圆形', exact: true })).toBeVisible();
+  const panel = (await tools.locator('.editor-panel').boundingBox())!;
+  const stage = (await tools.locator('#stage').boundingBox())!;
+  expect(panel.x).toBeGreaterThan(stage.x + stage.width);
+  await tools.getByRole('slider', { name: '画笔粗细' }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(tools.locator('#stroke-width-value')).toHaveText('5 px');
+  await stroke(page);
+  const marked = await snapshot(page);
+  await tools.getByRole('button', { name: '放大图片' }).click();
+  await tools.getByRole('button', { name: '拖动图片' }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(tools.getByRole('button', { name: '画笔', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expectLayoutFits(page);
+  expect(await snapshot(page)).toBe(marked);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(tools.getByRole('slider', { name: '画笔粗细' })).toHaveValue('5');
+  await expect(tools.locator('#zoom-value')).toHaveText('100%');
+  expect(await snapshot(page)).toBe(marked);
+  await tools.getByRole('button', { name: '撤销', exact: true }).click();
+  expect(await snapshot(page)).not.toBe(marked);
 });

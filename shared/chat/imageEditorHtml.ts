@@ -5,6 +5,8 @@ import { imageEditorControls, imageEditorDialogs } from './imageEditorControls';
 import { imageEditorIcon } from './imageEditorIcons';
 import { imageEditorScript } from './imageEditorScript';
 import { imageEditorStyles } from './imageEditorStyles';
+import { imageEditorDesktop } from './imageEditorDesktop';
+import { imageEditorDesktopStyles } from './imageEditorDesktopStyles';
 
 function escapeHtml(text: string) {
   return text.replace(/[&<>"']/g, character => `&#${character.charCodeAt(0)};`);
@@ -18,7 +20,7 @@ export function imageEditorHtml(dataUrl: string, translate = (text: string) => t
   validateChatImages([dataUrl], mode);
   const policy = getChatPolicy(mode);
   const label = (text: string) => escapeHtml(translate(text));
-  const config = JSON.stringify({ dataUrl, targetBytes: policy.imageTargetKb * KIB,
+  const config = JSON.stringify({ dataUrl, desktop: !!scriptUrl, targetBytes: policy.imageTargetKb * KIB,
     maxEdge: policy.imageMaxEdge, labels: {
       saving: translate('正在保存…'),
       saveFailed: translate('图片保存失败，请撤销部分标注后重试。'),
@@ -26,6 +28,7 @@ export function imageEditorHtml(dataUrl: string, translate = (text: string) => t
       hint: translate('在图片上拖动标注，完成后点「完成」。'),
       textHint: translate('点一下图片，添加文字。'),
       eraserHint: translate('拖动擦除标注，原图不受影响。'),
+      panHint: translate('拖动查看图片，选择标注工具继续编辑。'),
       readFailed: translate('图片无法读取，请重新选择。'),
     } }).replace(/</g, '\\u003c');
   const locale = /^ru(?:-|$)/i.test(language) ? 'ru' : /^en(?:-|$)/i.test(language) ? 'en' : 'zh-CN';
@@ -34,12 +37,13 @@ export function imageEditorHtml(dataUrl: string, translate = (text: string) => t
   content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:;
   script-src ${scriptUrl ? "'self'" : "'unsafe-inline'"}; style-src 'unsafe-inline'">
-<style>${imageEditorStyles}</style></head><body${scriptUrl ? ' data-browser-editor' : ''}>
-<header><button id="cancel">${imageEditorIcon('cancel')}${label('取消')}</button>
+<style>${imageEditorStyles}${scriptUrl ? imageEditorDesktopStyles : ''}</style></head>
+<body${scriptUrl ? ' data-browser-editor data-desktop-editor' : ''}>
+${scriptUrl ? imageEditorDesktop(label) : `<header><button id="cancel">${imageEditorIcon('cancel')}${label('取消')}</button>
 <div class="heading"><h1>${label('图片标注')}</h1><p>${label('在图片上画出重点')}</p></div>
 <button id="done" disabled>${imageEditorIcon('done')}${label('完成')}</button></header>
 <main id="stage"><canvas id="canvas" aria-label="${label('图片标注画布')}"></canvas></main>
-${imageEditorControls(label)}${imageEditorDialogs(label)}
+${imageEditorControls(label)}`}${imageEditorDialogs(label)}
 ${scriptUrl
     ? `<script type="application/json" id="image-editor-config">${config}</script>
 <script src="${escapeHtml(scriptUrl)}"></script>`

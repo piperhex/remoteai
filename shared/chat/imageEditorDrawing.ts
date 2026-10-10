@@ -74,6 +74,12 @@ function drawText(stroke) {
   const y = Math.max(padding, Math.min(stroke.points[0].y, canvas.height - lines.length * fontSize * 1.25));
   lines.forEach((line, index) => drawing.fillText(line, x, y + index * fontSize * 1.25));
 }
+function drawEllipse(start, end) {
+  drawing.beginPath();
+  drawing.ellipse((start.x + end.x) / 2, (start.y + end.y) / 2,
+    Math.abs(end.x - start.x) / 2, Math.abs(end.y - start.y) / 2, 0, 0, Math.PI * 2);
+  drawing.stroke();
+}
 function drawStroke(stroke) {
   drawing.save();
   drawing.strokeStyle = drawing.fillStyle = stroke.color;
@@ -90,6 +96,7 @@ function drawStroke(stroke) {
       drawPath(drawing, stroke);
       break;
     case 'rectangle': drawing.strokeRect(start.x, start.y, end.x - start.x, end.y - start.y); break;
+    case 'circle': drawEllipse(start, end); break;
     default:
       drawPath(drawing, stroke);
       if (stroke.tool === 'arrow') drawArrowHead(start, end, stroke.width);

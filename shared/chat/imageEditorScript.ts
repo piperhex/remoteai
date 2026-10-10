@@ -1,5 +1,6 @@
 import { imageEditorDrawing } from './imageEditorDrawing';
 import { imageEditorDialogScript } from './imageEditorDialogScript';
+import { imageEditorViewport } from './imageEditorViewport';
 
 // Kept as a self-contained script so it runs identically in the native WebView and sandboxed iframe.
 export const imageEditorScript = String.raw`
@@ -18,7 +19,7 @@ let current = null;
 let pointer = null;
 let tool = 'pen';
 let color = '#ef4444';
-let width = 6;
+let width = config.desktop ? 4 : 6;
 let ready = false;
 let saving = false;
 const FREEHAND_TOOLS = new Set(['pen', 'mosaic', 'eraser']);
@@ -26,6 +27,7 @@ const STROKE_REFERENCE_EDGE = 600;
 
 ${imageEditorDrawing}
 ${imageEditorDialogScript}
+${imageEditorViewport}
 
 function send(message) {
   const payload = JSON.stringify(message);
@@ -45,18 +47,9 @@ function render() {
   const busy = !!current || saving;
   undo.disabled = !strokes.length || busy;
   redo.disabled = !undone.length || busy;
-  redo.hidden = !undone.length;
+  redo.hidden = !config.desktop && !undone.length;
   reset.disabled = strokes.length === lastReset + 1 || busy;
   done.disabled = busy;
-}
-function fit() {
-  if (!ready) return;
-  const style = getComputedStyle(stage);
-  const availableWidth = stage.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-  const availableHeight = stage.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
-  const scale = Math.min(availableWidth / canvas.width, availableHeight / canvas.height);
-  canvas.style.width = Math.max(1, canvas.width * scale) + 'px';
-  canvas.style.height = Math.max(1, canvas.height * scale) + 'px';
 }
 function point(event) {
   const bounds = canvas.getBoundingClientRect();
@@ -64,11 +57,12 @@ function point(event) {
     y: Math.max(0, Math.min(canvas.height, (event.clientY - bounds.top) * canvas.height / bounds.height)) };
 }
 canvas.addEventListener('pointerdown', (event) => {
-  if (!ready || saving || pointer !== null || !event.isPrimary || event.button !== 0) return;
+  if (!ready || saving || viewport.panning || pointer !== null || !event.isPrimary || event.button !== 0) return;
   event.preventDefault();
   pointer = event.pointerId;
   canvas.setPointerCapture(pointer);
-  current = { tool, color, width: width * Math.max(canvas.width, canvas.height) / STROKE_REFERENCE_EDGE,
+  current = { tool, color, width: config.desktop ? width
+    : width * Math.max(canvas.width, canvas.height) / STROKE_REFERENCE_EDGE,
     points: [point(event)] };
   render();
 });
@@ -100,11 +94,15 @@ canvas.addEventListener('lostpointercapture', finish);
 function selectButton(selector, button) {
   document.querySelectorAll(selector).forEach(item => item.setAttribute('aria-pressed', String(item === button)));
 }
-document.querySelectorAll('[data-tool]').forEach((button) => button.addEventListener('click', () => {
-  tool = button.dataset.tool;
-  selectButton('[data-tool]', button);
+function updateToolHint() {
   const hints = { text: config.labels.textHint, eraser: config.labels.eraserHint };
   if (ready) notice.textContent = hints[tool] || config.labels.hint;
+}
+document.querySelectorAll('[data-tool]').forEach((button) => button.addEventListener('click', () => {
+  tool = button.dataset.tool;
+  setPanning(false);
+  selectButton('[data-tool]', button);
+  updateToolHint();
 }));
 document.querySelectorAll('[data-color]').forEach((button) => button.addEventListener('click', () => {
   color = button.dataset.color;
@@ -113,6 +111,7 @@ document.querySelectorAll('[data-color]').forEach((button) => button.addEventLis
 document.querySelectorAll('[data-width]').forEach((button) => button.addEventListener('click', () => {
   width = Number(button.dataset.width);
   selectButton('[data-width]', button);
+  syncWidth();
 }));
 undo.addEventListener('click', () => { if (strokes.length) undone.push(strokes.pop()); render(); });
 redo.addEventListener('click', () => { if (undone.length) strokes.push(undone.pop()); render(); });

@@ -36,7 +36,7 @@ export function ImageEditor({ dataUrl, save, close, translate: t, language, mode
     }
   };
   return <Modal open centered footer={null} title={null} closable={{ 'aria-label': t('关闭图片') }} maskClosable={false}
-    onCancel={close} width={1120} className="chat-image-editor" wrapClassName="chat-image-editor-wrap" destroyOnClose
+    onCancel={close} width={1480} className="chat-image-editor" wrapClassName="chat-image-editor-wrap" destroyOnClose
     transitionName="" maskTransitionName="">
     {/* Only our own editor and validated image data are embedded. Keeping the local origin lets
         Chromium deliver pointer gestures reliably; the document CSP only permits local images and scripts. */}

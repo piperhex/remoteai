@@ -7,20 +7,35 @@ const COLORS = [['#ef4444', '红色'], ['#facc15', '黄色'], ['#22c55e', '绿�
   ['#3b82f6', '蓝色'], ['#ffffff', '白色'], ['#111111', '黑色']];
 const WIDTHS = [[3, 4, '很细'], [6, 8, '细'], [10, 12, '中'], [16, 17, '粗'], [24, 23, '很粗']] as const;
 
-export function imageEditorControls(label: (text: string) => string) {
-  return `<footer><div id="tools" role="group" aria-label="${label('标注工具')}">
-${TOOLS.map(([tool, name]) => `<button class="tool" data-tool="${tool}" aria-pressed="${tool === 'pen'}">
+export function imageEditorTools(label: (text: string) => string, desktop = false) {
+  const tools: [ImageEditorIcon, string][] = desktop
+    ? [['pen', '画笔'], ['arrow', '箭头'], ['rectangle', '矩形'], ['circle', '圆形'], ...TOOLS.slice(3)] : TOOLS;
+  return `<div id="tools" role="group" aria-label="${label('标注工具')}">
+${tools.map(([tool, name]) => `<button class="tool" data-tool="${tool}" aria-pressed="${tool === 'pen'}">
   ${imageEditorIcon(tool)}<span>${label(name)}</span></button>`).join('')}
-</div><div id="colors" role="group" aria-label="${label('标注颜色')}">
+</div>`;
+}
+
+export function imageEditorColors(label: (text: string) => string) {
+  return `<div id="colors" role="group" aria-label="${label('标注颜色')}">
 ${COLORS.map(([color, name], index) => `<button class="color" data-color="${color}" aria-label="${label(name)}"
   aria-pressed="${index === 0}"><span class="swatch" style="background:${color}"></span></button>`).join('')}
 <button class="color" id="custom-color" aria-label="${label('自定义颜色')}" aria-pressed="false">
   <span class="swatch rainbow"></span></button>
-</div><div class="width-row"><span class="width-label" id="width-label">${label('画笔粗细')}</span>
-<div id="widths" role="group" aria-labelledby="width-label">
-${WIDTHS.map(([width, dot, name]) => `<button class="width" data-width="${width}" aria-label="${label(name)}"
-  aria-pressed="${width === 6}"><span><i style="--dot:${dot}px"></i></span></button>`).join('')}
-</div></div><div class="bottom">
+</div>`;
+}
+
+export function imageEditorWidths(label: (text: string) => string, desktop = false) {
+  return `<div id="widths" role="group" aria-labelledby="width-label">
+${WIDTHS.map(([width, dot, name]) => `<button class="width" data-width="${desktop && width === 6 ? 4 : width}"
+  aria-label="${label(name)}" aria-pressed="${width === 6}">
+  <span><i style="--dot:${dot}px"></i></span></button>`).join('')}</div>`;
+}
+
+export function imageEditorControls(label: (text: string) => string) {
+  return `<footer>${imageEditorTools(label)}${imageEditorColors(label)}
+<div class="width-row"><span class="width-label" id="width-label">${label('画笔粗细')}</span>
+${imageEditorWidths(label)}</div><div class="bottom">
 <button id="reset" disabled>${imageEditorIcon('reset')}${label('重置')}</button>
 <p id="notice" role="status">${label('正在加载图片…')}</p>
 <div class="history"><button id="redo" aria-label="${label('重做')}" hidden>${imageEditorIcon('redo')}</button>
