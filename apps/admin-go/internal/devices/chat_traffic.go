@@ -1,9 +1,6 @@
 package devices
 
 import (
-	"context"
-	"errors"
-	"log/slog"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -12,8 +9,6 @@ import (
 	"github.com/codex-switch/admin-go/internal/chattraffic"
 	"github.com/codex-switch/admin-go/internal/platform"
 )
-
-var errRelaySkipped = errors.New("relay frame skipped")
 
 type relayDelivery struct {
 	owner, sessionID string
@@ -70,25 +65,7 @@ func (g *ChatGateway) deliverRelay(delivery relayDelivery, frame platform.JSON) 
 			delivery.traffic.download.Add(int64(bytes))
 		}
 	}
-	guard := func(bytes int, write func() error) error {
-		ctx, cancel := context.WithTimeout(context.Background(), 2*heartbeatInterval)
-		defer cancel()
-		err := g.meter.Transmit(ctx, delivery.owner, bytes, write)
-		if err == nil {
-			return nil
-		}
-		if !errors.Is(err, chattraffic.ErrQuota) {
-			slog.Warn("relay accounting unavailable", "error", err)
-		}
-		message := platform.JSON{"type": "relay-quota", "sessionId": delivery.sessionID, "blocked": true,
-			"reason": "quota"}
-		if !errors.Is(err, chattraffic.ErrQuota) {
-			message["reason"] = "unavailable"
-		}
-		delivery.source.send(message, nil)
-		delivery.target.send(message, nil)
-		return errRelaySkipped
-	}
+	guard := delivery.guard(g.meter)
 	if frame["type"] == "bulk" {
 		data, err := encodeBulkRelay(frame)
 		if err != nil {
