@@ -25,6 +25,10 @@ it('shares project overrides, running state and read receipts with the desktop i
   const detach = bridge.attach({ ...host, readState,
     subscribe: (listener) => { listeners.add(listener); return () => listeners.delete(listener); } });
   expect(bridge.snapshot().threads.one).toMatchObject({ projectName: '我的项目', cwd: 'F:/renamed', running: false });
+  host.patch({ pins: ['one'] });
+  expect(bridge.snapshot().pins).toEqual(['one']);
+  host.patch({ pins: [] });
+  expect(bridge.snapshot().pins).toEqual([]);
   bridge.markRead({ threadId: 'one', turnId: 'turn' });
   expect(state.threadReadState.one.unread).toBe(false);
   host.patch({ threadReadState: { one: { turnId: 'next', unread: true } } });

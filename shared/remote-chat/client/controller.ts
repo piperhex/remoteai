@@ -13,6 +13,7 @@ import type { HistoryVersionSource } from './historyPreparation';
 import { HistoryCache } from './historyCache';
 import { ImageCache } from './imageCache';
 import { ThreadActions, threadMutationPatch, type ThreadMutation } from './threadActions';
+import { forkConversation } from './forkConversation';
 import { OfflineWriter, type OfflineHistoryStore } from './offline';
 import { offlineImage } from './offlineImages';
 import { validateChatImages } from '../attachments';
@@ -43,7 +44,9 @@ const SYNCHRONIZATION_RETRY_MS = 3000;
 
 export class ChatController {
   readonly threadActions = new ThreadActions({ snapshot: () => this.state, update: patch => this.update(patch),
-    request: body => this.connection.request('request', body), complete: body => this.completeThreadMutation(body),
+    request: body => this.connection.request('request', body),
+    complete: (body, result) => body.operation === 'threadPin'
+      ? this.applySidebar(result as SidebarSnapshot) : this.completeThreadMutation(body),
     refresh: () => this.list() });
   readonly goals = new RemoteGoals({ snapshot: () => this.state, update: (patch) => this.update(patch),
     request: (body) => this.request(body), created: (id, settings) => this.composer.created(id, settings),
@@ -66,6 +69,7 @@ export class ChatController {
     viewId => this.connection.openNativeMedia?.(viewId) ?? Promise.resolve(undefined));
   private listGeneration = 0;
   private readGeneration = 0;
+  private selectionGeneration = 0;
   private refreshThreadId: string | null = null;
   private synchronization = 0;
   private synchronizing?: number;
@@ -435,6 +439,7 @@ export class ChatController {
   }
 
   async select(thread: Thread) {
+    this.selectionGeneration += 1;
     this.rememberHistory();
     void this.flushCache();
     this.readGeneration += 1;
@@ -536,6 +541,7 @@ export class ChatController {
 
   back(project: ChatProject | null = null) {
     if (this.state.sending) return;
+    this.selectionGeneration += 1;
     const inherit = this.state.selected && this.state.ready && !this.state.settingsBusy
       ? { model: this.state.settings.model, effort: this.state.settings.effort, access: this.state.settings.access }
       : undefined;
@@ -772,6 +778,18 @@ export class ChatController {
     }
     this.update(threadMutationPatch(this.state, body));
   }
+
+  forkConversation = (thread: Thread) => {
+    const generation = this.synchronization;
+    const selection = this.selectionGeneration;
+    const selectedId = this.state.selected?.id;
+    return forkConversation({ snapshot: this.snapshot, update: patch => this.update(patch),
+      request: () => this.connection.request('request', { operation: 'forkLatest', threadId: thread.id }),
+      isCurrent: () => generation === this.synchronization && this.state.ready,
+      canOpen: () => selection === this.selectionGeneration && selectedId === this.state.selected?.id
+        && !this.state.sending,
+      select: fork => this.select(fork), refresh: () => this.list() }, thread);
+  };
 
   async archive() {
     const thread = this.state.selected;

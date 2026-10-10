@@ -1,7 +1,8 @@
 import type { ChatState, Thread } from './types';
 
-export type ThreadAction = 'rename' | 'archive' | 'unarchive' | 'delete';
+export type ThreadAction = 'rename' | 'archive' | 'unarchive' | 'delete' | 'pin' | 'unpin';
 export type ThreadMutation = { operation: 'rename'; threadId: string; name: string }
+  | { operation: 'threadPin'; threadId: string; pinned: boolean }
   | { operation: 'archive' | 'unarchive' | 'delete'; threadId: string };
 // Match the desktop editor and stay below the host's UTF-8 byte limit for Chinese names.
 export const THREAD_NAME_LIMIT = 120;
@@ -10,6 +11,7 @@ export const THREAD_LONG_PRESS_MS = 500;
 export function threadActionReason(state: ChatState, thread: Thread, action: ThreadAction): string {
   if (!state.ready) return '连接电脑后即可管理对话。';
   if (state.threadActionBusy || state.sending) return '请等待当前操作完成。';
+  if (action === 'pin' || action === 'unpin') return '';
   const current = state.selected?.id === thread.id ? state.selected
     : state.threads.find(item => item.id === thread.id) ?? thread;
   if (state.compacting === thread.id || state.sidebar.threads[thread.id]?.running
@@ -27,7 +29,7 @@ interface Context {
   snapshot: () => ChatState;
   update: (patch: Partial<ChatState>) => void;
   request: (body: ThreadMutation) => Promise<unknown>;
-  complete: (body: ThreadMutation) => void;
+  complete: (body: ThreadMutation, result?: unknown) => void;
   refresh: () => Promise<void>;
 }
 
@@ -42,12 +44,14 @@ export class ThreadActions {
     if (action === 'rename' && (!trimmed || trimmed.length > THREAD_NAME_LIMIT)) {
       throw new Error('请输入 1 至 120 个字符的对话名称。');
     }
-    const body: ThreadMutation = action === 'rename'
+    const body: ThreadMutation = action === 'pin' || action === 'unpin'
+      ? { operation: 'threadPin', threadId: thread.id, pinned: action === 'pin' } : action === 'rename'
       ? { operation: action, threadId: thread.id, name: trimmed } : { operation: action, threadId: thread.id };
     this.context.update({ threadActionBusy: thread.id, error: '' });
     try {
-      await this.context.request(body);
-      this.context.complete(body);
+      const result = await this.context.request(body);
+      if (body.operation === 'threadPin') this.context.complete(body, result);
+      else this.context.complete(body);
       await this.context.refresh();
     } finally { this.context.update({ threadActionBusy: undefined }); }
   }
@@ -55,6 +59,7 @@ export class ThreadActions {
 
 export function threadMutationPatch(state: ChatState, body: ThreadMutation): Partial<ChatState> {
   const { threadId, operation } = body;
+  if (operation === 'threadPin') return {};
   const sidebar = { ...state.sidebar, threads: { ...state.sidebar.threads }, readState: { ...state.sidebar.readState } };
   if (operation === 'rename') {
     if (sidebar.threads[threadId]) sidebar.threads[threadId] = { ...sidebar.threads[threadId], title: body.name };

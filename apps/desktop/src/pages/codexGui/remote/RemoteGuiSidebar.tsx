@@ -5,11 +5,13 @@ import { ChevronRight, Folder, RefreshCw, Search, SquarePen } from 'lucide-react
 import type { ChatSidebarActions } from '../../../../../web/src/chat/ConnectedChat';
 import type { ChatController, ChatState } from '../../../../../web/src/chat/types';
 import { useThreadGroups } from '../../../../../../shared/remote-chat/client/useThreadGroups';
+import { useThreadActions } from '../../../../../../shared/remote-chat/client/useThreadActions';
 import { threadPresentation } from '../../../../../../shared/remote-chat/sidebar';
 import { FocusModeButton, type GuiFocusMode } from '../FocusModeButton';
 import { ThreadStatus } from '../ThreadStatus';
 import { ThreadPagination } from '../ThreadPagination';
 import { useThreadScrollPagination } from '../useThreadPagination';
+import { RemoteThreadDialogs, RemoteThreadMenu } from './RemoteThreadMenu';
 import styles from '../styles.module.less';
 import groupsStyle from '../ThreadGroup.module.less';
 import navigationStyle from '../GuiNavigation.module.less';
@@ -19,6 +21,7 @@ export function RemoteGuiSidebar({ state, controller, actions, accountPicker, fo
   accountPicker: ReactNode; focusMode: GuiFocusMode;
 }) {
   const { groups, toggle, toggleCollapse } = useThreadGroups(state);
+  const threadActions = useThreadActions(state, controller);
   const pagination = useThreadScrollPagination({
     enabled: state.ready && Boolean(state.cursor),
     loading: state.loading,
@@ -62,15 +65,18 @@ export function RemoteGuiSidebar({ state, controller, actions, accountPicker, fo
           {group.data.map(thread => {
             const view = threadPresentation(thread, state.sidebar);
             const selected = state.selected?.id === thread.id;
-            return <div key={thread.id} className={`${styles.thread} ${selected ? styles.selected : ''}`}>
-              <button type="button" className={styles.threadSelect} aria-label={view.title}
-                aria-current={selected ? 'page' : undefined} disabled={!state.ready || state.sending}
-                onClick={() => { void controller.select(thread); actions.onClose(); }}>
-                <span className={styles.threadTitle}>{view.title}</span>
-                <ThreadStatus running={view.running} unread={view.unread}
-                  needsInput={state.approvals.some(event => event.params.threadId === thread.id)} />
-              </button>
-            </div>;
+            return <RemoteThreadMenu key={thread.id} thread={thread} state={state} controller={controller}
+              actions={threadActions} onClose={actions.onClose}>
+              <div className={`${styles.thread} ${selected ? styles.selected : ''}`}>
+                <button type="button" className={styles.threadSelect} aria-label={view.title}
+                  aria-current={selected ? 'page' : undefined} disabled={!state.ready || state.sending}
+                  onClick={() => { void controller.select(thread); actions.onClose(); }}>
+                  <span className={styles.threadTitle}>{view.title}</span>
+                  <ThreadStatus running={view.running} unread={view.unread}
+                    needsInput={state.approvals.some(event => event.params.threadId === thread.id)} />
+                </button>
+              </div>
+            </RemoteThreadMenu>;
           })}
           {group.canToggle && <button type="button" className={groupsStyle.more}
             aria-expanded={group.expanded} onClick={() => toggle(group.cwd)}>
@@ -81,5 +87,6 @@ export function RemoteGuiSidebar({ state, controller, actions, accountPicker, fo
       {state.cursor && <ThreadPagination loading={state.loading} />}
     </div>
     {accountPicker}
+    <RemoteThreadDialogs actions={threadActions} />
   </div>;
 }

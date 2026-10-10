@@ -31,7 +31,8 @@ import { contextSettingsRequest } from './contextSettings';
 import { GUI_TOOL_OPERATIONS } from '../../../../shared/remote-chat/guiTools';
 import { guiToolRequest } from './guiTools';
 import { remoteTerminals, type RemoteTerminals } from './terminals';
-import { deleteRemoteThread } from './threadActions';
+import { deleteRemoteThread, pinRemoteThread } from './threadActions';
+import { forkRemoteConversation } from './forkConversation';
 import { RemoteDesktopHost } from '../remoteDesktop/host';
 import { DESKTOP_OPERATION } from '../../../../shared/remote-desktop/protocol';
 import { RemoteThreadTitles } from './threadTitles';
@@ -133,6 +134,8 @@ export class ChatOperations {
     if (request.method === 'connect') return this.connect(request.body);
     const body = { ...object(request.body) };
     if (request.method === 'request' && body.operation === 'delete') return deleteRemoteThread(body.threadId);
+    if (request.method === 'request' && body.operation === 'threadPin') return pinRemoteThread(body);
+    if (request.method === 'request' && body.operation === 'forkLatest') return forkRemoteConversation(body.threadId);
     if (request.method === 'request' && GUI_TOOL_OPERATIONS.has(String(body.operation))) {
       return String(body.operation).startsWith('guiTerminal')
         ? this.terminals.request(body, owner) : guiToolRequest(body);

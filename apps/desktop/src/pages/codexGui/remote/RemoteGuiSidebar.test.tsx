@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, useSyncExternalStore } from 'react';
+import { App, ConfigProvider } from 'antd';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ChatController } from '../../../../../../shared/remote-chat/client/controller';
@@ -7,6 +8,7 @@ import type { ChatConnection } from '../../../../../../shared/remote-chat/client
 import type { ChatState } from '../../../../../../shared/remote-chat/client/types';
 import { RemoteGuiSidebar } from './RemoteGuiSidebar';
 import styles from '../styles.module.less';
+import { historyDelta } from '../../../../../../shared/remote-chat/historySync';
 
 let root: Root;
 let container: HTMLDivElement;
@@ -21,7 +23,8 @@ function Harness() {
   return <RemoteGuiSidebar state={state} controller={controller} actions={actions} accountPicker={null}
     focusMode={{ focused: false, onToggleFocus: vi.fn() }} />;
 }
-const render = () => act(async () => root.render(<Harness />));
+const render = () => act(async () => root.render(<ConfigProvider theme={{ token: { motion: false } }}>
+  <App><Harness /></App></ConfigProvider>));
 const list = () => container.querySelector<HTMLDivElement>(`.${styles.threadList}`)!;
 const footer = () => container.querySelector('[role="status"]');
 const wheel = (deltaY = 50) => act(async () => {
@@ -39,8 +42,10 @@ function dimensions(height = 1000) {
 }
 
 beforeEach(() => {
+  vi.clearAllMocks();
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.stubGlobal('matchMedia', () => ({ matches: false, addListener() {}, removeListener() {} }));
+  vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
   const original = window.getComputedStyle;
   vi.spyOn(window, 'getComputedStyle').mockImplementation(element => original(element));
   request.mockReset().mockResolvedValue({ data: [older], nextCursor: null });
@@ -111,5 +116,64 @@ it('ignores upward gestures and downward gestures away from the bottom', async (
   await wheel();
   list().scrollTop = 600;
   await wheel(-50);
+  expect(request).not.toHaveBeenCalled();
+});
+
+const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>('button')]
+  .find(entry => entry.textContent?.replace(/\s/g, '') === label)!;
+const menuItem = (label: string) => [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')]
+  .find(entry => entry.textContent === label)!;
+const openMenu = () => act(async () => {
+  button('已有对话').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }));
+});
+
+it('opens a compact context menu without selecting the source and creates the remote branch', async () => {
+  const fork = { ...thread, id: 'fork', name: '新分支', turns: [] };
+  request.mockImplementation(async (_method, body) => {
+    const input = body as { operation: string };
+    if (input.operation === 'forkLatest') return { thread: fork };
+    if (input.operation === 'syncHistory') return historyDelta(fork);
+    return { data: [thread, fork], nextCursor: null };
+  });
+  await render(); await openMenu();
+  expect(controller.snapshot().selected).toBeNull();
+  expect(request).not.toHaveBeenCalled();
+  expect([...document.querySelectorAll('[role="menuitem"]')].map(entry => entry.textContent))
+    .toEqual(['置顶', '重命名', '创建分支', '归档', '删除']);
+  expect(document.querySelector<HTMLElement>('.ant-dropdown')!.style.maxWidth).toBe('400px');
+  await act(async () => menuItem('创建分支').click());
+  expect(request).toHaveBeenCalledWith('request', { operation: 'forkLatest', threadId: thread.id });
+  expect(controller.snapshot().selected?.id).toBe('fork');
+  expect(actions.onClose).toHaveBeenCalledOnce();
+});
+
+it.each(['rename', 'delete'] as const)('confirms %s in a compact dialog and sends the clicked id', async action => {
+  const run = vi.spyOn(controller.threadActions, 'run').mockResolvedValue();
+  await render(); await openMenu();
+  await act(async () => menuItem(action === 'rename' ? '重命名' : '删除').click());
+  expect(run).not.toHaveBeenCalled();
+  expect(document.querySelector<HTMLElement>('[role="dialog"]')!.style.width).toBe('400px');
+  if (action === 'rename') expect(document.querySelector<HTMLInputElement>('input[aria-label="对话名称"]')!.value)
+    .toBe('已有对话');
+  await act(async () => button(action === 'rename' ? '保存' : '移入回收站').click());
+  expect(run).toHaveBeenCalledWith(thread, action, '已有对话');
+});
+
+it.each(['pin', 'unpin', 'archive', 'unarchive'] as const)('runs %s from the remote context menu', async action => {
+  const run = vi.spyOn(controller.threadActions, 'run').mockResolvedValue();
+  Object.assign(controller.snapshot(), { archived: action === 'unarchive' });
+  if (action === 'unpin') controller.snapshot().sidebar.pins = [thread.id];
+  const labels = { pin: '置顶', unpin: '取消置顶', archive: '归档', unarchive: '恢复对话' };
+  await render(); await openMenu();
+  await act(async () => menuItem(labels[action]).click());
+  expect(run).toHaveBeenCalledExactlyOnceWith(thread, action);
+});
+
+it.each<Partial<ChatState>>([{ ready: false }, { threadActionBusy: 'other' }, { archived: true },
+  { threads: [{ ...thread, status: { type: 'active' } }] }])('blocks unavailable branches: %j', async patch => {
+  Object.assign(controller.snapshot(), patch);
+  await render(); await openMenu();
+  expect(menuItem('创建分支').getAttribute('aria-disabled')).toBe('true');
+  await act(async () => menuItem('创建分支').click());
   expect(request).not.toHaveBeenCalled();
 });
