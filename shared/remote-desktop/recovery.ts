@@ -1,9 +1,18 @@
 import { desktopPermission, DesktopPermissionWait } from './permissionWait';
+import { desktopFailure } from './diagnostics';
 import type { DesktopPermissionStatus } from './protocol';
 
 const RETRY_DELAYS = [1000, 2000, 4000, 8000, 15_000, 15_000];
 const STABLE_CONNECTION_MS = 30_000;
 export const DESKTOP_OFFLINE_STATUS = '远程电脑已断开，恢复在线后将自动重连。';
+
+function recoveryMessage(message: string): string {
+  const code = desktopFailure(message).desktopError;
+  if (code === 'encoder-first-frame' || code === 'encoder-timeout') {
+    return '未能获取 Mac 的屏幕画面。请确认电脑已登录；若已开启屏幕录制仍无效，请在 Mac 的远程设置中修复权限。';
+  }
+  return message;
+}
 
 /** Retry a failed desktop without retaining timers after the viewer closes. */
 export class DesktopRecovery {
@@ -47,7 +56,7 @@ export class DesktopRecovery {
     this.pendingFailure = message;
     if (!this.available) { this.status(DESKTOP_OFFLINE_STATUS); return; }
     const delay = RETRY_DELAYS[this.failures++];
-    if (delay === undefined) { this.status(message); return; }
+    if (delay === undefined) { this.status(recoveryMessage(message)); return; }
     this.status('连接已断开，正在重连…');
     this.retryTimer = setTimeout(() => {
       this.retryTimer = undefined;

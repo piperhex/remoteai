@@ -3,9 +3,10 @@ import { invoke } from "./backend";
 export interface ComputerUsePermissions {
   accessibility: boolean;
   screenRecording: boolean;
+  restartRequired?: ComputerUsePermission[];
 }
 
-export type ComputerUsePermission = keyof ComputerUsePermissions;
+export type ComputerUsePermission = 'accessibility' | 'screenRecording';
 
 export interface ComputerUseStatus {
   installed: boolean;

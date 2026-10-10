@@ -90,3 +90,14 @@ it('cancels a scheduled network retry when the host reports missing permissions'
   await vi.advanceTimersByTimeAsync(5000);
   expect(reconnect).not.toHaveBeenCalled(); expect(check).toHaveBeenCalledOnce();
 });
+
+it.each(['未能获取屏幕画面，请确认电脑已登录桌面后重试。', '获取屏幕画面超时，请重新连接。'])(
+  'guides a Mac user to repair stale grants when capture retries fail: %s', async message => {
+    for (let attempt = 0; attempt < 7; attempt++) {
+      recovery.failed(message);
+      await vi.advanceTimersByTimeAsync(15000);
+    }
+    expect(status).toHaveBeenLastCalledWith(expect.stringContaining('请在 Mac 的远程设置中修复权限'));
+    expect(check).not.toHaveBeenCalled();
+    expect(reconnect).toHaveBeenCalledTimes(6);
+  });

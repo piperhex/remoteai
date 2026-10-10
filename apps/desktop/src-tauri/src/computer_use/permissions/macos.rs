@@ -1,4 +1,7 @@
-use super::{Permission, Permissions};
+use super::{
+    repair::{reset_command, RepairState},
+    Permission, Permissions, RepairResult,
+};
 use crate::computer_use::{ComputerError, Result};
 use core_foundation::{
     base::TCFType,
@@ -10,6 +13,7 @@ use core_foundation::{
 use std::{ffi::c_void, process::Command, sync::OnceLock};
 
 const MINIMUM_MACOS_MAJOR: u32 = 13;
+static REPAIRS: RepairState = RepairState::new();
 const ACCESSIBILITY_SETTINGS: &str =
     "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility";
 const SCREEN_RECORDING_SETTINGS: &str =
@@ -35,11 +39,28 @@ pub(in crate::computer_use) fn supported() -> bool {
 }
 
 pub(super) fn status() -> Permissions {
-    Permissions {
+    let mut permissions = Permissions {
         // SAFETY: Apple's AX preflight API takes no pointers and is available on all supported hosts.
         accessibility: unsafe { AXIsProcessTrusted() },
         screen_recording: screen_capture_access(false),
+        restart_required: Vec::new(),
+    };
+    REPAIRS.apply(&mut permissions);
+    permissions
+}
+
+pub(super) fn repair(permission: Permission) -> Result<RepairResult> {
+    REPAIRS.repair(permission, || reset(permission), || request(permission))
+}
+
+fn reset(permission: Permission) -> Result<()> {
+    let result = reset_command(permission)
+        .output()
+        .map_err(|_| ComputerError::PermissionReset)?;
+    if !result.status.success() {
+        return Err(ComputerError::PermissionReset);
     }
+    Ok(())
 }
 
 pub(super) fn request(permission: Permission) -> Result<()> {

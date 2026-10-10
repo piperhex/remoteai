@@ -1,4 +1,38 @@
 export const remoteDesktopMessages: Record<string, string> = {
+  '未能获取 Mac 的屏幕画面。请确认电脑已登录；若已开启屏幕录制仍无效，请在 Mac 的远程设置中修复权限。':
+    'Could not capture the Mac screen. Make sure you are signed in. '
+    + 'If Screen Recording is already allowed, repair permissions in Remote settings on the Mac.',
+  '已开启仍无法使用？修复权限': 'Enabled but not working? Repair permissions',
+  '修复屏幕录制权限？': 'Repair Screen Recording permission?',
+  '修复辅助功能权限？': 'Repair Accessibility permission?',
+  '修复屏幕录制权限': 'Repair Screen Recording permission',
+  '修复辅助功能权限': 'Repair Accessibility permission',
+  '将清除 Remote AI 的屏幕录制授权，相关远程操作可能中断。请重新授权后重启应用。':
+    'This clears Remote AI’s Screen Recording permission and may interrupt remote access. '
+    + 'Allow access again, then restart the app.',
+  '将清除 Remote AI 的辅助功能授权，相关远程操作可能中断。请重新授权后重启应用。':
+    'This clears Remote AI’s Accessibility permission and may interrupt remote control. '
+    + 'Allow access again, then restart the app.',
+  '重置并去授权': 'Reset and allow access',
+  '重新授权后请重启应用': 'Allow access again, then restart the app',
+  '权限已重置，请重新授权': 'Permission reset. Allow access again',
+  '请在系统设置中为 Remote AI 重新开启对应权限。完成后保存工作并重启应用，再连接远程桌面。':
+    'Allow the selected permission for Remote AI in System Settings. Save your work, restart the app, then reconnect.',
+  '完成授权后重启': 'Restart after allowing access',
+  '更新或改名后无法连接，可尝试修复权限；若系统仍显示旧名称，请移除旧条目并重新添加当前应用。':
+    'If an update or rename prevents connection, try repairing permissions. '
+    + 'If Settings still shows the old name, remove that entry and add the current app.',
+  '权限已重置，请手动打开系统设置，在“隐私与安全性”中重新开启。':
+    'Permission was reset. Open System Settings manually and allow access under Privacy & Security.',
+  '未能重置权限，请在系统设置的“隐私与安全性”中移除旧应用，再重新添加 Remote AI。':
+    'Could not reset permission. Remove the old app from Privacy & Security in System Settings, then add Remote AI again.',
+  '未能重启，请完全退出 Remote AI 后重新打开。': 'Could not restart. Quit Remote AI completely, then open it again.',
+  '请在 Mac 上允许屏幕录制，必要时重启 Remote AI，随后将自动连接。已开启仍无效？请在 Mac 的远程设置中修复权限。':
+    'Allow Screen Recording on the Mac and restart Remote AI if needed to connect automatically. '
+    + 'Already enabled? Repair permissions in Remote settings on the Mac.',
+  '请在 Mac 上允许辅助功能，必要时重启 Remote AI，随后将自动连接。已开启仍无效？请在 Mac 的远程设置中修复权限。':
+    'Allow Accessibility on the Mac and restart Remote AI if needed to connect automatically. '
+    + 'Already enabled? Repair permissions in Remote settings on the Mac.',
   '隐私屏': 'Privacy screen',
   '这台电脑暂不支持隐私屏。': 'Privacy screen is unavailable on this computer.',
   '正在切换隐私屏，请稍候。': 'Switching privacy screen. Please wait.',

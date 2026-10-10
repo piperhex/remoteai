@@ -5,6 +5,7 @@ test('waits for Mac grants without repeated capture and connects after consent',
   await page.getByRole('button', { name: '打开工具', exact: true }).click();
   await page.getByRole('button', { name: '远程桌面', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('请在 Mac 上允许屏幕录制');
+  await expect(page.getByRole('status')).toContainText('请在 Mac 的远程设置中修复权限');
   await expect(page.getByRole('button', { name: '检查授权', exact: true })).toBeEnabled();
   await expect.poll(() => page.evaluate(() => window.desktopTest.permissionChecks), { timeout: 10_000 })
     .toBeGreaterThanOrEqual(2);

@@ -77,7 +77,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 it.each(['ios', 'android'] as const)('shows compact permission guidance and a check action on %s', platform => {
   Platform.OS = platform;
-  runtime.status = '请在 Mac 上允许屏幕录制，授权后将自动连接。若系统要求，请重启 Remote AI。';
+  runtime.status = '请在 Mac 上允许屏幕录制，必要时重启 Remote AI，随后将自动连接。已开启仍无效？请在 Mac 的远程设置中修复权限。';
   runtime.waitingForPermission = true;
   const elements = render();
   const alert = elements.find(node => node.props.accessibilityRole === 'alert')!;

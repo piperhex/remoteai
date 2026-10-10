@@ -27,6 +27,12 @@ pub(crate) enum ComputerError {
     Unsupported,
     #[error("未能打开权限设置，请前往系统设置中的“隐私与安全性”重试。")]
     Permissions,
+    #[cfg(any(target_os = "macos", test))]
+    #[error("未能重置权限，请在系统设置的“隐私与安全性”中移除旧应用，再重新添加 Remote AI。")]
+    PermissionReset,
+    #[cfg(any(target_os = "macos", test))]
+    #[error("正在修复权限，请稍候再试。")]
+    PermissionRepairBusy,
     #[error("下载未完成，请检查网络后重试。")]
     Download,
     #[error("电脑助手文件校验失败，请重新安装。")]
