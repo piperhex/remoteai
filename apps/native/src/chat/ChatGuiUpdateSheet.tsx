@@ -1,13 +1,16 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { BottomSheet } from '../components/BottomSheet';
 import { SHEET_READABLE_WIDTH } from '../components/SheetScrollView';
 import { useGuiUpdate, type GuiUpdateOptions } from '../../../../shared/remote-chat/useGuiUpdate';
-import { styles } from './styles';
+import { useStyles } from './styles';
 
 export function ChatGuiUpdateSheet({ deviceName, onClose, onBack, ...options }: GuiUpdateOptions & {
   deviceName?: string; onClose: () => void; onBack: () => void;
 }) {
+  const localStyles = useLocalStyles();
+  const styles = useStyles();
   useLanguage();
   const update = useGuiUpdate(options);
   return <BottomSheet visible title={update.confirmation ? t("安装 Codex GUI 更新") : t("更新 Codex GUI")}
@@ -39,6 +42,6 @@ export function ChatGuiUpdateSheet({ deviceName, onClose, onBack, ...options }: 
   </BottomSheet>;
 }
 
-const localStyles = StyleSheet.create({
+const useLocalStyles = createThemedStyles(() => ({
   body: { width: '100%', maxWidth: 400, alignSelf: 'center', gap: 12, paddingBottom: 16 },
-});
+}));

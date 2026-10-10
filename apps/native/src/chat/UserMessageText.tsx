@@ -1,12 +1,14 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import {  View } from 'react-native';
 import { QuoteChip, QuoteDetails } from './ChatQuoteView';
 import { useChatQuotes } from './ChatQuotes';
 import { ChatMarkdown } from './Markdown';
 import { quotedMessage } from './quotedMessage';
 
 export function UserMessageText({ text, copy = false }: { text: string; copy?: boolean }) {
+  const messageStyles = useMessageStyles();
   useLanguage();
   const message = useMemo(() => quotedMessage(text), [text]);
   const [selected, setSelected] = useState<number | null>(null);
@@ -24,7 +26,7 @@ export function UserMessageText({ text, copy = false }: { text: string; copy?: b
   </View>;
 }
 
-const messageStyles = StyleSheet.create({
+const useMessageStyles = createThemedStyles(() => ({
   content: { gap: 10 },
   quotes: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-});
+}));

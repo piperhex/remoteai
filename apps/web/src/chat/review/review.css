@@ -4,9 +4,9 @@
 .chat-review-section h3 { font-size: 15px; margin: 0 0 12px; }
 .chat-review-check { padding-block: 12px; }
 .chat-review-output { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 260px; overflow: auto;
-  font-size: 12px; padding: 10px; background: #f4f6f5; border-radius: 8px; }
+  font-size: 12px; padding: 10px; background: var(--app-canvas, #f4f6f5); border-radius: 8px; }
 .chat-review-notice, .chat-review-confirm, .chat-review-form { max-width: 400px; overflow-wrap: anywhere; }
-.chat-review-confirm { padding: 12px; background: #f4f6f5; border-radius: 10px; margin-block: 12px; }
+.chat-review-confirm { padding: 12px; background: var(--app-canvas, #f4f6f5); border-radius: 10px; margin-block: 12px; }
 .chat-review-path { font-size: 12px; overflow-wrap: anywhere; }
 .chat-review-form { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
 .chat-review-form label { display: flex; flex-direction: column; gap: 6px; }
@@ -14,5 +14,5 @@
   padding: 10px; border: 1px solid var(--chat-border); border-radius: 8px; font: inherit; }
 .chat-diff-comment { border: 0; background: transparent; color: var(--chat-green); cursor: pointer;
   flex: 0 0 44px; font: inherit; }
-.chat-review-panel [data-check-status="passed"] { color: #168348; }
-.chat-review-panel [data-check-status="failed"], .chat-review-panel [data-check-status="stale"] { color: #a55324; }
+.chat-review-panel [data-check-status="passed"] { color: var(--app-accent, #168348); }
+.chat-review-panel [data-check-status="failed"], .chat-review-panel [data-check-status="stale"] { color: var(--app-warning, #a55324); }

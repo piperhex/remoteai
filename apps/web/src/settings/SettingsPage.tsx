@@ -15,16 +15,21 @@ import { RefreshIntervalSheet } from './RefreshIntervalSheet';
 import { PasswordSheet } from './PasswordSheet';
 import { AboutPage } from './AboutPage';
 import { LanguageSheet } from './LanguageSheet';
+import { ThemeSheet } from './ThemeSheet';
+import { useThemeMode } from '../theme/preference';
+import { Contrast } from 'lucide-react';
 import { getLanguage, languageLabel } from '../i18n';
 import { profileRole } from '../i18n/profile';
 import './styles.css';
 import { DownloadManagerPage } from '../downloads/DownloadManagerPage';
 import { downloadOwner } from '../downloads/manager';
 
-type Panel = 'profile' | 'identity' | 'refresh' | 'totp' | 'password' | 'about' | 'language' | 'downloads' | 'desktop' | null;
+type Panel = 'profile' | 'identity' | 'refresh' | 'totp' | 'password' | 'about'
+  | 'language' | 'downloads' | 'desktop' | 'theme' | null;
 
 export function SettingsPage({ totpManager }: { totpManager: ReturnType<typeof useTotpVault> }) {
   useLanguage();
+  const mode = useThemeMode();
   const dispatch = useAppDispatch();
   const session = useAppSelector(state => state.auth.session);
   const profile = useAppSelector(state => state.data.profile) ?? session?.profile;
@@ -51,6 +56,8 @@ export function SettingsPage({ totpManager }: { totpManager: ReturnType<typeof u
       </section>
       <div className="settings-preferences">
         <section className="settings-group">
+          <SettingsRow label={t('外观')} value={t(mode === 'dark' ? '暗黑' : '明亮')} icon={Contrast}
+            onClick={() => setPanel('theme')} />
           <SettingsRow label={t('下载管理')} icon={Download} onClick={() => setPanel('downloads')} />
           <SettingsRow label={t("语言")} value={languageLabel(getLanguage())} icon={Languages}
             onClick={() => setPanel('language')} />
@@ -86,6 +93,7 @@ export function SettingsPage({ totpManager }: { totpManager: ReturnType<typeof u
     {panel === 'refresh' && <RefreshIntervalSheet minutes={minutes} onSaved={setMinutes} onClose={close} />}
     {panel === 'password' && <PasswordSheet onClose={close} />}
     {panel === 'language' && <LanguageSheet onClose={close} />}
+    {panel === 'theme' && <ThemeSheet onClose={close} />}
     {panel === 'desktop' && <DesktopVersionSheet onClose={close} />}
   </>;
 }

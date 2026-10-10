@@ -1,14 +1,17 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { createContext, useContext } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useChatImage, type ImagePreviewOptions } from '../../../../shared/remote-chat/client/useChatImage';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 import { useChatImagePreview } from './ChatImagePreview';
 
 export const ChatImageContext = createContext<ImagePreviewOptions | null>(null);
 const PREVIEW_ASPECT_RATIO = 4 / 3;
 
 export function ChatImage({ source, description = t("图片") }: { source?: string; description?: string }) {
+  const imageStyles = useImageStyles();
+  const styles = useStyles();
   useLanguage();
   const context = useContext(ChatImageContext);
   const image = useChatImage(source, context);
@@ -34,10 +37,10 @@ export function ChatImage({ source, description = t("图片") }: { source?: stri
   </View>;
 }
 
-const imageStyles = StyleSheet.create({
+const useImageStyles = createThemedStyles((color) => ({
   container: { width: '100%', aspectRatio: PREVIEW_ASPECT_RATIO, maxHeight: 420, marginVertical: 8,
-    borderRadius: 12, backgroundColor: palette.pale, alignItems: 'center', justifyContent: 'center',
+    borderRadius: 12, backgroundColor: color(palette.pale, 'accentSoft'), alignItems: 'center', justifyContent: 'center',
     overflow: 'hidden' },
   thumbnail: { width: '100%', height: '100%' },
   notice: { maxWidth: 400, gap: 8, paddingVertical: 10 },
-});
+}));

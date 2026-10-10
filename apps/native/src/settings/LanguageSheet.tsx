@@ -1,11 +1,14 @@
+import { createThemedStyles } from '../theme/styles';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { BottomSheet } from '../components/BottomSheet';
 import { LANGUAGE_OPTIONS, languageLabel, t, useLanguage, type Language } from '../i18n';
 import { setLanguage } from '../i18n/preference';
-import { settingsColors, styles } from './styles';
+import { settingsColors, useStyles } from './styles';
 
 export function LanguageSheet({ onClose }: { onClose: () => void }) {
+  const styles = useStyles();
+  const localStyles = useLocalStyles();
   const language = useLanguage();
   const [error, setError] = useState(false);
   const choose = async (next: Language) => {
@@ -28,6 +31,7 @@ export function LanguageSheet({ onClose }: { onClose: () => void }) {
 }
 
 export function LoginLanguagePicker() {
+  const localStyles = useLocalStyles();
   const language = useLanguage();
   const [open, setOpen] = useState(false);
   return <>
@@ -39,9 +43,9 @@ export function LoginLanguagePicker() {
   </>;
 }
 
-const localStyles = StyleSheet.create({
+const useLocalStyles = createThemedStyles((color) => ({
   option: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
-  check: { color: settingsColors.green, fontSize: 20 },
+  check: { color: color(settingsColors.green, 'accent'), fontSize: 20 },
   login: { alignSelf: 'center', padding: 12, marginBottom: 8 },
-  link: { color: settingsColors.blue, fontSize: 15 },
-});
+  link: { color: color(settingsColors.blue, 'info'), fontSize: 15 },
+}));

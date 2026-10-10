@@ -1,3 +1,4 @@
+import { useThemeColor } from '../../theme/store';
 import { t, useLanguage } from '../../i18n';
 import { Keyboard, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,12 +7,15 @@ import { desktopShortcuts, desktopModifiers, INPUT_TABS, KEYBOARD_PAGES }
   from '../../../../../shared/remote-desktop/softKeyboard';
 import { useSoftKeyboard } from '../../../../../shared/remote-desktop/useSoftKeyboard';
 import { DesktopIme } from './DesktopIme';
-import { keyboardStyles as s } from './keyboardStyles';
+import { useKeyboardStyles as useS } from './keyboardStyles';
 
 export function DesktopKeyboard({ input, close, compact, supported, platform }: {
   input: (input: DesktopInput) => void; close: () => void; compact: boolean; supported: boolean;
   platform?: DesktopPlatform;
 }) {
+  const resolveThemeColor = useThemeColor();
+  const s = useS();
+  const color = useThemeColor();
   useLanguage();
   const keyboard = useSoftKeyboard(input);
   const dismiss = () => { Keyboard.dismiss(); close(); };
@@ -24,7 +28,7 @@ export function DesktopKeyboard({ input, close, compact, supported, platform }: 
           keyboard.selectTab(tab.id);
         }}><Text style={[s.tabLabel, keyboard.tab === tab.id && s.activeText]}>{t(tab.label)}</Text></Pressable>)}
       <Pressable accessibilityRole="button" accessibilityLabel={t("收起键盘")} style={s.close} onPress={dismiss}>
-        <Ionicons name="close-circle" size={24} color="#ddd" /></Pressable>
+        <Ionicons name="close-circle" size={24} color={color("#ddd", 'faint')} /></Pressable>
     </View>
     {keyboard.tab === 'ime' ? <DesktopIme input={input} />
       : <ScrollView style={{ maxHeight: compact ? 238 : 320 }}
@@ -44,7 +48,7 @@ export function DesktopKeyboard({ input, close, compact, supported, platform }: 
               accessibilityState={{ checked: keyboard.combination }} style={s.combination}
               onPress={keyboard.toggleCombination}>
               <Ionicons name={keyboard.combination ? 'checkbox-outline' : 'square-outline'} size={20}
-                color={keyboard.combination ? '#568aff' : '#ddd'} />
+                color={keyboard.combination ? resolveThemeColor('#568aff', 'info') : resolveThemeColor('#ddd', 'faint')} />
               <Text style={s.description}>{t("组合键模式")}</Text></Pressable>
             {desktopModifiers(platform).map(key => <Pressable key={key.code} accessibilityRole="button"
               accessibilityLabel={key.label}

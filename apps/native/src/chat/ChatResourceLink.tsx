@@ -1,10 +1,13 @@
+import { useThemeColor } from '../theme/store';
 import { useContext } from 'react';
 import { Linking, Pressable, Text } from 'react-native';
 import { parseFileReference } from '../../../../shared/chat/fileReference';
 import { ChatFileContext } from './ChatFilePreview';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 
 export function ChatResourceLink({ uri, name }: { uri: string; name?: string }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   const openFile = useContext(ChatFileContext);
   const file = parseFileReference(uri);
   const web = /^https?:\/\//i.test(uri);
@@ -12,6 +15,6 @@ export function ChatResourceLink({ uri, name }: { uri: string; name?: string }) 
   return <Pressable accessibilityRole="link" onPress={() => {
     if (file && openFile) openFile(file);
     else void Linking.openURL(uri).catch(() => undefined);
-  }}><Text style={[styles.messageText, { color: palette.green, textDecorationLine: 'underline' }]}>
+  }}><Text style={[styles.messageText, { color: color(palette.green, 'accent'), textDecorationLine: 'underline' }]}>
     {name || uri}</Text></Pressable>;
 }

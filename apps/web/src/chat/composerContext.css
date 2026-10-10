@@ -1,11 +1,11 @@
 .composer-context-button { display: inline-flex; align-items: center; justify-content: center; width: 22px;
-  height: 22px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: #718078; cursor: pointer; }
-.composer-context-button:hover, .composer-context-button[aria-expanded="true"] { background: #f4f7f5; color: #13231c; }
-.composer-context-button:focus-visible { outline: 2px solid #35ada7; outline-offset: 2px; }
+  height: 22px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--app-muted, #718078); cursor: pointer; }
+.composer-context-button:hover, .composer-context-button[aria-expanded="true"] { background: var(--app-canvas, #f4f7f5); color: var(--app-ink, #13231c); }
+.composer-context-button:focus-visible { outline: 2px solid var(--app-accent, #35ada7); outline-offset: 2px; }
 .composer-context-button:disabled { opacity: .4; cursor: default; }
 .composer-context-content { max-width: 100%; text-align: center; font-size: 12px; line-height: 20px;
   overflow-wrap: anywhere; }
-.composer-context-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #718078; }
-.composer-context-hint { margin: 0; color: #718078; font-size: 12px; }
+.composer-context-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--app-muted, #718078); }
+.composer-context-hint { margin: 0; color: var(--app-muted, #718078); font-size: 12px; }
 .composer-context-settings { display: grid; gap: 8px; max-width: 400px; overflow-wrap: anywhere; }
 .composer-context-help { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }

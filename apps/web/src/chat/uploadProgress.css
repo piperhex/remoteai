@@ -5,14 +5,14 @@
 .chat-upload-label { max-width: 100%; font-size: 10px; line-height: 14px; text-align: center; overflow-wrap: anywhere; }
 .chat-upload-track { position: absolute; bottom: 6px; left: 8px; right: 8px; height: 3px;
   overflow: hidden; border-radius: 2px; background: rgb(255 255 255 / 25%); }
-.chat-upload-track i { display: block; height: 100%; border-radius: inherit; background: #fff; }
+.chat-upload-track i { display: block; height: 100%; border-radius: inherit; background: var(--app-surface, #fff); }
 .chat-attachment-preview.is-uploading button { visibility: hidden; }
-.chat-upload-inline { display: inline-flex; flex-shrink: 0; align-items: center; gap: 4px; color: #28766c; }
+.chat-upload-inline { display: inline-flex; flex-shrink: 0; align-items: center; gap: 4px; color: var(--app-accent, #28766c); }
 .chat-upload-inline .chat-upload-percent { font-size: 12px; line-height: 18px; }
 .chat-upload-inline .chat-upload-label { font-size: 11px; line-height: 18px; }
 .chat-connection-info.is-reconnecting { align-items: flex-start; }
 .chat-connection-info.is-reconnecting > .chat-ellipsis { max-width: 40%; }
 .chat-connection-info .chat-reconnect {
-  flex: 1; margin: 4px 0 0 6px; color: #238578; font-size: 11px; line-height: 1.6;
+  flex: 1; margin: 4px 0 0 6px; color: var(--app-accent, #238578); font-size: 11px; line-height: 1.6;
   white-space: normal; overflow-wrap: anywhere;
 }

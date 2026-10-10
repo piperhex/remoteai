@@ -1,3 +1,4 @@
+import { useThemeColor } from '../../theme/store';
 import { t, useLanguage } from '../../i18n';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -5,7 +6,7 @@ import type { GitCommit, GitCommitFile } from '../../../../../shared/remote-chat
 import type { CommitFilesState } from '../../../../../shared/remote-chat/useGitCommitFiles';
 import { commitFileStatus } from '../../../../../shared/remote-chat/gitCommitFiles';
 import { GitTreeIcon } from './GitTreeIcon';
-import { gitStyles as styles } from './styles';
+import { useGitStyles as useStyles } from './styles';
 import { palette } from '../styles';
 
 interface Props {
@@ -13,6 +14,8 @@ interface Props {
 }
 
 export function GitCommitFiles({ commit, state, connected, onSelect }: Props) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   return <>
     <View style={styles.commitHeading}>
@@ -26,7 +29,7 @@ export function GitCommitFiles({ commit, state, connected, onSelect }: Props) {
       <Pressable accessibilityRole="button" disabled={!connected} style={styles.button} onPress={state.retry}>
         <Text style={styles.buttonText}>{t("重试")}</Text></Pressable>
     </View>}
-    {!state.files && !state.error && connected && <ActivityIndicator style={styles.loading} color={palette.green} />}
+    {!state.files && !state.error && connected && <ActivityIndicator style={styles.loading} color={color(palette.green, 'accent')} />}
     {state.files && <>
       <Text style={styles.detailTitle}>{t("变更文件")}{' '}{state.files.length}</Text>
       <ScrollView style={styles.fill}>
@@ -39,18 +42,23 @@ export function GitCommitFiles({ commit, state, connected, onSelect }: Props) {
 }
 
 function CommitFile({ file, disabled, onPress }: { file: GitCommitFile; disabled: boolean; onPress: () => void }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const status = commitFileStatus(file.status);
+  const role = file.status === 'D' ? 'danger' : file.status === 'A' ? 'accent' : 'info';
+  const textColor = color(status.color, role);
+  const background = color(status.background, `${role}Soft`);
   return <Pressable accessibilityRole="button" accessibilityLabel={t("查看 {value1}", { value1: file.path })}
     disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.commitFile, pressed && styles.activeMode]}>
     <GitTreeIcon folder={false} />
     <View style={styles.fill}>
-      <Text style={[styles.path, { color: status.color }]}>{file.path.split('/').pop()}</Text>
+      <Text style={[styles.path, { color: textColor }]}>{file.path.split('/').pop()}</Text>
       {file.path.includes('/') && <Text style={styles.meta}>{file.path}</Text>}
       {file.originalPath && <Text style={styles.meta}>{file.originalPath} → {file.path}</Text>}
     </View>
-    <Text style={[styles.commitStatus, { color: status.color, backgroundColor: status.background }]}>
+    <Text style={[styles.commitStatus, { color: textColor, backgroundColor: background }]}>
       {status.label}</Text>
-    <Ionicons name="chevron-forward" size={14} color={palette.muted} />
+    <Ionicons name="chevron-forward" size={14} color={color(palette.muted, 'muted')} />
   </Pressable>;
 }

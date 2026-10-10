@@ -1,3 +1,4 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
@@ -10,11 +11,13 @@ import { ConsumptionPanels } from './ConsumptionPanels';
 import { UsageHeatmap } from './UsageHeatmap';
 import { QuotaPanel } from './QuotaPanel';
 import { OfficialUsagePanel } from './OfficialUsagePanel';
-import { summaryStyles as s } from './styles';
+import { useSummaryStyles as useS } from './styles';
 
 interface Props { read: ReadTokenSummary; ready: boolean; foreground: boolean; deviceName?: string; onBack: () => void }
 
 export function TokenSummaryPage({ read, ready, foreground, deviceName, onBack }: Props) {
+  const s = useS();
+  const color = useThemeColor();
   useLanguage();
   const summary = useTokenSummary({ read, active: ready && foreground });
   const { data, loading, error } = summary;
@@ -30,16 +33,16 @@ export function TokenSummaryPage({ read, ready, foreground, deviceName, onBack }
   return <View style={s.page}>
     <View style={s.header}>
       <Pressable accessibilityRole="button" accessibilityLabel={t("返回聊天")} style={s.button} onPress={onBack}>
-        <Feather name="arrow-left" size={24} color="#17211b" />
+        <Feather name="arrow-left" size={24} color={color("#17211b", 'ink')} />
       </Pressable><Text accessibilityRole="header" style={[s.title, s.fill]}>{t("Token 汇总")}</Text>
       <Pressable accessibilityRole="button" accessibilityLabel={t("刷新 Token 汇总")} style={s.button}
         disabled={!ready || loading} onPress={summary.refresh}>
-        {loading ? <ActivityIndicator color="#0b8065" /> : <Feather name="refresh-cw" size={20} color="#0b8065" />}
+        {loading ? <ActivityIndicator color={color("#0b8065", 'accent')} /> : <Feather name="refresh-cw" size={20} color={color("#0b8065", 'accent')} />}
       </Pressable>
     </View>
     <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={loading} onRefresh={summary.refresh} enabled={ready}
-        tintColor="#0b8065" colors={['#0b8065']} />}>
+        tintColor={color("#0b8065", 'accent')} colors={['#0b8065']} />}>
       <View style={{ gap: 8 }}><Text style={s.hint}>{deviceName || t("尚未选择电脑")}{' '}{t("· 仅统计代理模式的 Token 消耗")}</Text>
         <View style={s.row}><Text style={s.hint}>{t("最近")}</Text>
           <TextInput accessibilityLabel={t("统计周数，1 至 52 周")} style={s.input} value={draftWeeks}

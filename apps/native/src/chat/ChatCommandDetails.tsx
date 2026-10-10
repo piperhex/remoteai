@@ -1,14 +1,17 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { formatTurnDuration } from '../../../desktop/src/pages/codexGui/turnTiming';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 import type { Item } from './types';
 import { SelectableChatText } from './SelectableChatText';
 
 const OUTPUT_PAGE_CHARACTERS = 8_000;
 
 function CommandText({ text, command = false, empty = '' }: { text: string; command?: boolean; empty?: string }) {
+  const commandStyles = useCommandStyles();
+  const styles = useStyles();
   useLanguage();
   const [requestedPage, setPage] = useState(0);
   const pages = Math.max(1, Math.ceil(text.length / OUTPUT_PAGE_CHARACTERS));
@@ -33,6 +36,8 @@ function CommandText({ text, command = false, empty = '' }: { text: string; comm
 }
 
 export function ChatCommandDetails({ item }: { item: Item }) {
+  const commandStyles = useCommandStyles();
+  const styles = useStyles();
   useLanguage();
   return <View style={{ gap: 8 }}>
     <View style={commandStyles.toolbar}>
@@ -49,12 +54,12 @@ export function ChatCommandDetails({ item }: { item: Item }) {
   </View>;
 }
 
-const commandStyles = StyleSheet.create({
+const useCommandStyles = createThemedStyles((color) => ({
   toolbar: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12 },
-  command: { backgroundColor: '#f4f6f5', borderRadius: 5, maxHeight: 340 },
+  command: { backgroundColor: color('#f4f6f5', 'canvas'), borderRadius: 5, maxHeight: 340 },
   commandContent: { paddingVertical: 8, paddingHorizontal: 10 },
   output: { maxHeight: 340 },
   outputContent: { paddingVertical: 8 },
   paging: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, maxWidth: 400 },
-  failed: { color: palette.danger },
-});
+  failed: { color: color(palette.danger, 'danger') },
+}));

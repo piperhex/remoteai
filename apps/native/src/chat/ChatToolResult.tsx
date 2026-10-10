@@ -9,7 +9,7 @@ import { ChatImage } from './ChatImage';
 import { ChatResourceLink } from './ChatResourceLink';
 import { ChatAudio } from './ChatAudio';
 import { toolOutputText } from './toolOutput';
-import { styles } from './styles';
+import { useStyles } from './styles';
 import type { Item } from './types';
 
 export function toolRecord(value: unknown): Record<string, unknown> | null {
@@ -41,6 +41,7 @@ function OutputPart({ value }: { value: unknown }) {
 
 /** Inputs and structured payloads use a drawer, like other expandable mobile content. */
 function Payload({ title, value }: { title: string; value: unknown }) {
+  const styles = useStyles();
   useLanguage();
   const [open, setOpen] = useState(false);
   return <>
@@ -56,6 +57,7 @@ function Payload({ title, value }: { title: string; value: unknown }) {
 }
 
 export function ChatToolResult({ item }: { item: Item }) {
+  const styles = useStyles();
   useLanguage();
   const result = toolRecord(item.result);
   const content = item.contentItems ?? (Array.isArray(result?.content) ? result.content : undefined);

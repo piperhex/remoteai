@@ -6,8 +6,8 @@ import { ChatFileContext } from './ChatFilePreview';
 import { ChatImage } from './ChatImage';
 import { ChatMath } from './ChatMath';
 import { hasMarkdownImage, hasMarkdownMath, renderMathParagraph, type MarkdownNode } from './markdownTree';
-import { headingStyles, markdownStyles } from './Markdown.styles';
-import { styles } from './styles';
+import { headingStyles, useMarkdownStyles } from './Markdown.styles';
+import { useStyles } from './styles';
 import { SelectableChatText } from './SelectableChatText';
 import type { CopyAction } from './CopyTextButton';
 
@@ -16,8 +16,6 @@ export interface MarkdownContext {
   tone?: 'default' | 'process';
   copy?: CopyAction;
 }
-const INLINE_STYLES = { strong_open: markdownStyles.bold, em_open: markdownStyles.italic,
-  s_open: markdownStyles.strike, code_inline: [styles.code, markdownStyles.inlineCode] };
 
 function openLink(url: string) {
   if (/^https?:\/\//i.test(url)) void Linking.openURL(url).catch(() => undefined);
@@ -43,7 +41,11 @@ function inlineRuns(nodes: MarkdownNode[]): (MarkdownNode | string)[] {
 function Inline({ nodes, muted = false }: {
   nodes: MarkdownNode[]; muted?: boolean;
 }) {
+  const markdownStyles = useMarkdownStyles();
   useLanguage();
+  const styles = useStyles();
+  const INLINE_STYLES = { strong_open: markdownStyles.bold, em_open: markdownStyles.italic,
+  s_open: markdownStyles.strike, code_inline: [styles.code, markdownStyles.inlineCode] };
   const openFile = useContext(ChatFileContext);
   // Plain runs inherit their enclosing Text style without consuming a native span for every line.
   return <>{inlineRuns(nodes).map((run, index) => {
@@ -75,6 +77,8 @@ function paragraphParts(nodes: MarkdownNode[]): MarkdownNode[][] {
 export function MarkdownParagraph({ nodes, heading, context = {} }: {
   nodes: MarkdownNode[]; heading?: string; context?: MarkdownContext;
 }) {
+  const styles = useStyles();
+  const markdownStyles = useMarkdownStyles();
   useLanguage();
   const parts = paragraphParts(nodes).filter((part) => part.length);
   return <View>{parts.map((part, index) => {

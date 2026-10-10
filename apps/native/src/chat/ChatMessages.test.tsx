@@ -4,7 +4,8 @@ import { ChatMessages } from './ChatMessages';
 import { conversationEntries } from './turnPresentation';
 import type { TimelineEntry } from './activityTimeline';
 import type { Item, Turn } from './types';
-import { styles } from './styles';
+import { useStyles } from './styles';
+const styles = useStyles();
 
 const state = vi.hoisted(() => ({ selection: null as unknown, inline: new Map<string, boolean>(),
   scroll: vi.fn(), dismiss: vi.fn(), footerLayout: vi.fn() }));

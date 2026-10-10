@@ -1,13 +1,14 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { BottomSheet } from '../components/BottomSheet';
 import { SheetScrollView, SHEET_READABLE_WIDTH } from '../components/SheetScrollView';
 import type { Model, ThreadTokenUsage } from './types';
 import type { ComposerSettings } from '../../../../shared/remote-chat/composer';
 import { SETTINGS_FIELDS, settingOptions, settingValue, settingsNotice, visibleSettingsFields,
   type SettingField } from '../../../../shared/remote-chat/settingsMenu';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 import { ChatUsage } from './ChatUsage';
 import type { ReadUsage } from '../../../../shared/remote-chat/usage';
 import type { ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
@@ -34,6 +35,8 @@ interface Props {
 
 export function ChatSettings({ models, selection, saving, ready, error, updateSettings, onClose,
   readUsage, readConversationMetrics, usageActive, tokenUsage, threadId, contextSettings, connection }: Props) {
+  const styles = useStyles();
+  const menuStyles = useMenuStyles();
   useLanguage();
   const [field, setField] = useState<SettingField | null>(null);
   const [contextOpen, setContextOpen] = useState(false);
@@ -87,11 +90,11 @@ export function ChatSettings({ models, selection, saving, ready, error, updateSe
   </BottomSheet>;
 }
 
-const menuStyles = StyleSheet.create({
+const useMenuStyles = createThemedStyles((color) => ({
   content: { paddingBottom: 18 },
   options: { maxWidth: SHEET_READABLE_WIDTH },
   entry: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, padding: 14,
-    borderWidth: 1, borderColor: palette.border, borderRadius: 12 },
-  value: { flex: 1, textAlign: 'right', color: palette.green, fontSize: 13, lineHeight: 20 },
-  arrow: { color: palette.muted, fontSize: 22 },
-});
+    borderWidth: 1, borderColor: color(palette.border, 'border'), borderRadius: 12 },
+  value: { flex: 1, textAlign: 'right', color: color(palette.green, 'accent'), fontSize: 13, lineHeight: 20 },
+  arrow: { color: color(palette.muted, 'muted'), fontSize: 22 },
+}));

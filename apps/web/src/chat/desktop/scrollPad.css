@@ -1,19 +1,19 @@
 .rd-scroll-layer { position: absolute; inset: 0; z-index: 3; touch-action: none; user-select: none; }
 .rd-scroll-pad { position: absolute; touch-action: none; }
-.rd-scroll-cross { position: absolute; background: #6a6f77; border: 2px solid #edf2f7; border-radius: 14px;
+.rd-scroll-cross { position: absolute; background: var(--app-elevated, #6a6f77); border: 2px solid var(--app-border, #edf2f7); border-radius: 14px;
   pointer-events: none; }
 .rd-scroll-vertical { left: 33.333%; top: 0; width: 33.333%; height: 100%; }
 .rd-scroll-horizontal { left: 0; top: 33.333%; width: 100%; height: 33.333%; }
 .rd-scroll-center { position: absolute; left: 33.333%; top: 33.333%; width: 33.333%; height: 33.333%;
-  background: #6a6f77; pointer-events: none; }
-.rd-scroll-arrow { position: absolute; width: 20px; height: 20px; color: #dce3ec; pointer-events: none;
+  background: var(--app-elevated, #6a6f77); pointer-events: none; }
+.rd-scroll-arrow { position: absolute; width: 20px; height: 20px; color: var(--app-faint, #dce3ec); pointer-events: none;
   transform: translate(-50%, -50%); }
 .rd-scroll-up { left: 50%; top: 15%; }
 .rd-scroll-down { left: 50%; top: 85%; }
 .rd-scroll-left { left: 15%; top: 50%; }
 .rd-scroll-right { left: 85%; top: 50%; }
-.rd-scroll-knob { position: absolute; width: 27%; height: 27%; border: 4px solid #fff; border-radius: 50%;
+.rd-scroll-knob { position: absolute; width: 27%; height: 27%; border: 4px solid var(--app-border, #fff); border-radius: 50%;
   background: #8bb8ff; box-shadow: 0 1px 4px #18233340; transform: translate(-50%, -50%); pointer-events: none; }
 .rd-scroll-hint { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
   max-width: min(400px, calc(100% - 16px)); border-radius: 8px; padding: 8px 12px; background: #202634ed;
-  color: #e7edf8; font-size: 13px; pointer-events: none; }
+  color: var(--app-faint, #e7edf8); font-size: 13px; pointer-events: none; }

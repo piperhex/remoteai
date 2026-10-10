@@ -1,7 +1,8 @@
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './e2e', testMatch: ['**/management.pw.ts', '**/i18n.pw.ts', '**/agreement.pw.ts'], workers: 1, timeout: 45_000,
+  testDir: './e2e', testMatch: ['**/management.pw.ts', '**/i18n.pw.ts', '**/agreement.pw.ts', '**/theme.pw.ts'],
+  workers: 1, timeout: 45_000,
   outputDir: '../../.codex-tmp/web-management-playwright',
   reporter: [['list'], ['html', { outputFolder: '../../.codex-tmp/web-management-report', open: 'never' }]],
   use: { baseURL: 'http://127.0.0.1:1423/web/', channel: process.env.CHAT_TEST_BROWSER ?? 'msedge',

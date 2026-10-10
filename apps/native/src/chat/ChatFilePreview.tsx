@@ -11,7 +11,7 @@ import { ChatImageFilePreview } from './ChatImageFilePreview';
 import { ChatHtmlPreview, isHtmlPath } from './ChatHtmlPreview';
 import { ChatMarkdownPreview } from './ChatMarkdownPreview';
 import { fileLanguage } from './ChatCodeHighlight';
-import { styles } from './styles';
+import { useStyles } from './styles';
 
 import { isVideoPath, type VideoClient } from '../../../../shared/remote-chat/video';
 import { VideoViewer } from './video/VideoViewer';
@@ -37,6 +37,7 @@ type PreviewProps = Omit<Props, 'children'> & {
 };
 
 function FilePreview({ file, threadId, ready, load, files, close }: PreviewProps) {
+  const styles = useStyles();
   useLanguage();
   const [result, setResult] = useState<TextPreview>();
   const [error, setError] = useState('');

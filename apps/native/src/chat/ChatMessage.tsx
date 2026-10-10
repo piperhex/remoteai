@@ -1,6 +1,8 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { memo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ChatMarkdown } from './Markdown';
 import { ChatImage } from './ChatImage';
@@ -16,7 +18,7 @@ import {
 } from '../../../desktop/src/pages/codexGui/collaborationActivity';
 import { formatTurnDuration } from '../../../desktop/src/pages/codexGui/turnTiming';
 import type { Item } from './types';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 const PREVIEW_LENGTH = 160;
@@ -78,6 +80,8 @@ function activitySummary(item: Item): { preview: string; icon: IconName } {
 export function ChatActivityRow({ item, onOpen, running = false, count }: {
   item: Item; onOpen: (id: string) => void; running?: boolean; count?: number;
 }) {
+  const messageStyles = useMessageStyles();
+  const color = useThemeColor();
   useLanguage();
   const summary = activitySummary(item);
   if (item.type === 'reasoning' && !summary.preview.trim()) return null;
@@ -87,7 +91,7 @@ export function ChatActivityRow({ item, onOpen, running = false, count }: {
     style={messageStyles.activity} onPress={() => onOpen(item.id)}>
     <ChatActivityLabel icon={summary.icon} text={preview} active={running && item.status === 'inProgress'}
       failed={item.status === 'failed'} />
-    <Ionicons name="chevron-forward" size={15} color={palette.muted} />
+    <Ionicons name="chevron-forward" size={15} color={color(palette.muted, 'muted')} />
   </Pressable>;
 }
 
@@ -104,6 +108,8 @@ export const ChatMessage = memo(function ChatMessage(props: MessageProps) {
 });
 
 function MessageBody({ item, onOpen, running = false, process = false }: MessageProps) {
+  const messageStyles = useMessageStyles();
+  const styles = useStyles();
   useLanguage();
   const images = itemImageSources(item);
   const text = questionMessageText(item);
@@ -121,9 +127,9 @@ function MessageBody({ item, onOpen, running = false, process = false }: Message
   </View>;
 }
 
-const messageStyles = StyleSheet.create({
+const useMessageStyles = createThemedStyles(() => ({
   activity: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 5 },
   user: { alignItems: 'flex-end' },
   bubble: { borderRadius: 16, borderBottomRightRadius: 4, paddingHorizontal: 19, paddingVertical: 15 },
   imageBubble: { width: '92%' },
-});
+}));

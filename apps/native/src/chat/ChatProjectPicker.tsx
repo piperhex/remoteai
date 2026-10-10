@@ -1,12 +1,16 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import Feather from '@expo/vector-icons/Feather';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { BottomSheet } from '../components/BottomSheet';
 import { SheetFlatList, SheetInset, SHEET_READABLE_WIDTH } from '../components/SheetScrollView';
 import { directoryProject, type ProjectPickerProps } from '../../../../shared/remote-chat/projectDirectories';
 import { useProjectDirectories } from '../../../../shared/remote-chat/client/useProjectDirectories';
 
 export function ChatProjectPicker(props: ProjectPickerProps) {
+  const pickerStyles = usePickerStyles();
+  const color = useThemeColor();
   useLanguage();
   const { result, loading, error, browse, retry } = useProjectDirectories(props);
   return <BottomSheet fullWidthContent visible title={t("选择项目")} onClose={props.close} dragFromHeaderOnly
@@ -31,9 +35,9 @@ export function ChatProjectPicker(props: ProjectPickerProps) {
         keyboardShouldPersistTaps="handled" nestedScrollEnabled
         renderItem={({ item }) => <Pressable accessibilityRole="button" accessibilityLabel={item.name}
           disabled={loading} onPress={() => browse(item.path)} style={pickerStyles.row}>
-          <Feather name="folder" size={21} color="#6f8177" />
+          <Feather name="folder" size={21} color={color("#6f8177", 'muted')} />
           <Text numberOfLines={1} style={pickerStyles.name}>{item.name}</Text>
-          <Feather name="chevron-right" size={18} color="#6f8177" />
+          <Feather name="chevron-right" size={18} color={color("#6f8177", 'muted')} />
         </Pressable>}
         ListEmptyComponent={!loading && !error ? <Text style={pickerStyles.message}>{t("此处没有子文件夹")}</Text> : null}
         ListFooterComponent={result?.truncated
@@ -42,15 +46,15 @@ export function ChatProjectPicker(props: ProjectPickerProps) {
   </BottomSheet>;
 }
 
-const pickerStyles = StyleSheet.create({
+const usePickerStyles = createThemedStyles((color) => ({
   root: { flexShrink: 1 },
   readable: { width: '100%', maxWidth: SHEET_READABLE_WIDTH, alignSelf: 'center' },
   list: { maxHeight: 340, flexGrow: 0 },
   navigation: { flexDirection: 'row', gap: 16 },
   row: { flexDirection: 'row', gap: 12, alignItems: 'center', padding: 12, minHeight: 48 },
   // Leave room for Android font metrics and descenders when truncating to one line.
-  name: { flex: 1, color: '#13231c', fontSize: 15, lineHeight: 22,
+  name: { flex: 1, color: color('#13231c', 'ink'), fontSize: 15, lineHeight: 22,
     includeFontPadding: true, paddingVertical: 2 },
-  message: { color: '#6f8177', fontSize: 13, lineHeight: 20, padding: 12 },
-  link: { color: '#14806f', fontSize: 13, lineHeight: 20, includeFontPadding: true, padding: 12 },
-});
+  message: { color: color('#6f8177', 'muted'), fontSize: 13, lineHeight: 20, padding: 12 },
+  link: { color: color('#14806f', 'accent'), fontSize: 13, lineHeight: 20, includeFontPadding: true, padding: 12 },
+}));

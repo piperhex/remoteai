@@ -1,16 +1,22 @@
+import { useThemeMode } from '../theme/store';
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { TokenSummary } from '../../../../shared/remote-chat/tokenSummary';
 import { chartPalette, formatTokens } from '../../../desktop/src/components/TokenUsageDashboard/chartUtils';
 import { TOKEN_FIELDS } from './UsagePanels';
-import { summaryStyles as s } from './styles';
+import { useSummaryStyles as useS } from './styles';
 
 const DAYS_PER_WEEK = 7;
 const HEAT_STEP = 25_000_000;
-const heat = chartPalette('#0b8065', false).heat;
+
 
 export function UsageHeatmap({ data }: { data: TokenSummary }) {
+  const mode = useThemeMode();
+  const heat = chartPalette(mode === 'dark' ? '#61d6ad' : '#0b8065', mode === 'dark').heat;
+  const s = useS();
+  const h = useH();
   const language = useLanguage();
   const [selected, setSelected] = useState<string>();
   const daily = new Map(data.dailyUsage.map((day) => [day.date, day]));
@@ -39,9 +45,9 @@ export function UsageHeatmap({ data }: { data: TokenSummary }) {
   </View>;
 }
 
-const h = StyleSheet.create({
-  weekday: { height: 27, lineHeight: 24, fontSize: 11, color: '#718078' },
+const useH = createThemedStyles((color) => ({
+  weekday: { height: 27, lineHeight: 24, fontSize: 11, color: color('#718078', 'muted') },
   cell: { width: 24, height: 24, borderRadius: 4 },
-  selected: { borderWidth: 2, borderColor: '#17211b' },
+  selected: { borderWidth: 2, borderColor: color('#17211b', 'border') },
   legend: { width: 12, height: 12, borderRadius: 2 },
-});
+}));

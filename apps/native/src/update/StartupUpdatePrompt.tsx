@@ -1,12 +1,14 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { useStartupUpdate } from '../../../../shared/app-update/useStartupUpdate';
 import { startupUpdateOptions } from './startupUpdate';
 import { beginAppUpdateDownload } from './updateActions';
 import { useAndroidUpdateDownloadState } from './useAndroidUpdateDownloadState';
 
 export function StartupUpdatePrompt() {
+  const styles = useStyles();
   useLanguage();
   const update = useStartupUpdate(startupUpdateOptions);
   const download = useAndroidUpdateDownloadState();
@@ -42,17 +44,17 @@ export function StartupUpdatePrompt() {
   </Modal>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   backdrop: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24,
     backgroundColor: 'rgba(0, 0, 0, 0.4)' },
-  dialog: { width: '100%', maxWidth: 400, padding: 24, borderRadius: 20, backgroundColor: '#fff' },
-  title: { fontSize: 20, fontWeight: '700', color: '#1c3028' },
-  message: { marginTop: 12, fontSize: 15, lineHeight: 23, color: '#60746a' },
-  error: { marginTop: 12, fontSize: 14, color: '#b74740' },
+  dialog: { width: '100%', maxWidth: 400, padding: 24, borderRadius: 20, backgroundColor: color('#fff', 'surface') },
+  title: { fontSize: 20, fontWeight: '700', color: color('#1c3028', 'ink') },
+  message: { marginTop: 12, fontSize: 15, lineHeight: 23, color: color('#60746a', 'muted') },
+  error: { marginTop: 12, fontSize: 14, color: color('#b74740', 'danger') },
   actions: { marginTop: 24, flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   button: { flexGrow: 1, minHeight: 44, paddingVertical: 12, paddingHorizontal: 8,
-    alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: '#f0f4f2' },
+    alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: color('#f0f4f2', 'canvas') },
   primary: { backgroundColor: '#079c70' },
-  ignore: { fontSize: 15, fontWeight: '600', color: '#52645b' },
+  ignore: { fontSize: 15, fontWeight: '600', color: color('#52645b', 'ink') },
   install: { fontSize: 15, fontWeight: '600', color: '#fff' },
-});
+}));

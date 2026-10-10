@@ -1,13 +1,17 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { ApprovalReply, GuiEvent } from './types';
 import type { Question } from '../../../desktop/src/pages/codexGui/types';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 import { useApprovalResponse } from './useApprovalResponse';
 
 function ApprovalCode({ text }: { text: string }) {
+  const approvalStyles = useApprovalStyles();
+  const styles = useStyles();
   useLanguage();
   return <ScrollView nestedScrollEnabled style={approvalStyles.codeBox}>
     <Text selectable style={[styles.code, approvalStyles.codeText]}>{text}</Text>
@@ -15,6 +19,7 @@ function ApprovalCode({ text }: { text: string }) {
 }
 
 function PermissionDetails({ event }: { event: GuiEvent }) {
+  const approvalStyles = useApprovalStyles();
   useLanguage();
   if (event.method !== 'item/permissions/requestApproval') return null;
   const permissions = event.params.permissions;
@@ -33,6 +38,10 @@ interface QuestionProps { question: Question; value: string; busy: boolean;
   update: (value: string) => void; submit: () => void }
 
 function ApprovalQuestion({ question, value, busy, update, submit }: QuestionProps) {
+  const resolveThemeColor = useThemeColor();
+  const approvalStyles = useApprovalStyles();
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   return <View style={approvalStyles.question}>
     <Text style={styles.messageText}>{question.question}</Text>
@@ -40,12 +49,12 @@ function ApprovalQuestion({ question, value, busy, update, submit }: QuestionPro
       accessibilityState={{ checked: value === option.label, disabled: busy }}
       style={[approvalStyles.option, busy && styles.disabled]} onPress={() => update(option.label)}>
       <Ionicons name={value === option.label ? 'radio-button-on' : 'radio-button-off'} size={18}
-        color={value === option.label ? palette.green : palette.muted} />
+        color={value === option.label ? resolveThemeColor(palette.green, 'accent') : resolveThemeColor(palette.muted, 'muted')} />
       <View style={styles.fill}><Text style={approvalStyles.body}>{option.label}</Text>
         {!!option.description && <Text style={styles.subtitle}>{option.description}</Text>}</View>
     </Pressable>)}
     <TextInput accessibilityLabel={question.question} style={[styles.questionInput, busy && styles.disabled]}
-      placeholder={t("输入你的回答")} placeholderTextColor={palette.muted} editable={!busy}
+      placeholder={t("输入你的回答")} placeholderTextColor={color(palette.muted, 'muted')} editable={!busy}
       secureTextEntry={question.isSecret} value={value} onChangeText={update} returnKeyType="send"
       onSubmitEditing={submit} />
   </View>;
@@ -54,6 +63,9 @@ function ApprovalQuestion({ question, value, busy, update, submit }: QuestionPro
 interface ApprovalProps { event: GuiEvent; respond: (reply: ApprovalReply) => Promise<void> }
 
 export function ChatApproval({ event, respond }: ApprovalProps) {
+  const styles = useStyles();
+  const approvalStyles = useApprovalStyles();
+  const color = useThemeColor();
   useLanguage();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const { busy, error, send } = useApprovalResponse({ event, answers, respond });
@@ -64,7 +76,7 @@ export function ChatApproval({ event, respond }: ApprovalProps) {
   const incomplete = isQuestion && questions.some((question) => !answers[question.id]?.trim());
   const submit = () => { void send('accept'); };
   return <View style={[styles.approval, approvalStyles.card]} accessibilityState={{ busy }}>
-    <View style={styles.row}><Ionicons name="shield-outline" size={17} color={palette.ink} />
+    <View style={styles.row}><Ionicons name="shield-outline" size={17} color={color(palette.ink, 'ink')} />
       <Text style={approvalStyles.title}>{isQuestion ? t("需要你的补充") : t("需要你的确认")}</Text></View>
     {!!params.reason && <Text style={approvalStyles.body}>{params.reason}</Text>}
     {!!params.command && <ApprovalCode text={params.command} />}
@@ -92,16 +104,16 @@ export function ChatApproval({ event, respond }: ApprovalProps) {
   </View>;
 }
 
-const approvalStyles = StyleSheet.create({
-  card: { backgroundColor: '#fff', borderColor: '#e4c993', borderRadius: 12, padding: 16 },
-  title: { color: palette.ink, fontWeight: '700', fontSize: 13, lineHeight: 20 },
-  body: { color: palette.ink, fontSize: 12, lineHeight: 20 },
-  codeBox: { maxHeight: 180, padding: 10, borderRadius: 8, backgroundColor: '#f5f7f6' },
+const useApprovalStyles = createThemedStyles((color) => ({
+  card: { backgroundColor: color('#fff', 'surface'), borderColor: color('#e4c993', 'border'), borderRadius: 12, padding: 16 },
+  title: { color: color(palette.ink, 'ink'), fontWeight: '700', fontSize: 13, lineHeight: 20 },
+  body: { color: color(palette.ink, 'ink'), fontSize: 12, lineHeight: 20 },
+  codeBox: { maxHeight: 180, padding: 10, borderRadius: 8, backgroundColor: color('#f5f7f6', 'canvas') },
   codeText: { fontSize: 11, lineHeight: 18 },
   question: { gap: 10, paddingTop: 4 },
   option: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   permissions: { gap: 8 },
   action: { flexDirection: 'row', gap: 6 },
-  decline: { borderWidth: 1, borderColor: palette.border, backgroundColor: '#fff' },
-  error: { maxWidth: 400, color: palette.danger, fontSize: 12, lineHeight: 20 },
-});
+  decline: { borderWidth: 1, borderColor: color(palette.border, 'border'), backgroundColor: color('#fff', 'surface') },
+  error: { maxWidth: 400, color: color(palette.danger, 'danger'), fontSize: 12, lineHeight: 20 },
+}));

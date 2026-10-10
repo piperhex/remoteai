@@ -2,19 +2,19 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  border-top: 1px solid #dfe5df;
+  border-top: 1px solid var(--app-border, #dfe5df);
   padding-top: 14px;
-  color: #718078;
+  color: var(--app-muted, #718078);
   font-size: 12px;
   line-height: 20px;
   overflow-wrap: anywhere;
 }
-.chat-usage-tokens { color: #0b8065; }
+.chat-usage-tokens { color: var(--app-accent, #0b8065); }
 .chat-usage-context { flex-basis: 100%; }
 .chat-usage-thread { flex-basis: 100%; }
 .chat-conversation-tps, .chat-conversation-ttft { white-space: nowrap; }
 .chat-conversation-metrics { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 .chat-conversation-metrics > span { white-space: nowrap; }
-.chat-usage-cost { color: #b45d00; }
-.chat-usage-quota { color: #16874e; }
-.chat-usage-low { color: #c74e47; }
+.chat-usage-cost { color: var(--app-warning, #b45d00); }
+.chat-usage-quota { color: var(--app-accent, #16874e); }
+.chat-usage-low { color: var(--app-danger, #c74e47); }

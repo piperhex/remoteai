@@ -1,12 +1,13 @@
 import { getLocale, t, useLanguage } from '../i18n';
 import { Text, View } from 'react-native';
 import type { useAppUpdate } from './useAppUpdate';
-import { styles } from './styles';
+import { useStyles } from './styles';
 import { ReleaseNotes } from './ReleaseNotes';
 
 type UpdateState = ReturnType<typeof useAppUpdate>;
 
 function DownloadStatus({ update }: { update: UpdateState }) {
+  const styles = useStyles();
   useLanguage();
   const state = update.downloadState;
   if (state.status === 'idle') return null;
@@ -25,6 +26,7 @@ function DownloadStatus({ update }: { update: UpdateState }) {
 }
 
 function ReleaseDetails({ update }: { update: UpdateState }) {
+  const styles = useStyles();
   useLanguage();
   const result = update.updateCheck;
   if (!result) return null;
@@ -42,6 +44,7 @@ function ReleaseDetails({ update }: { update: UpdateState }) {
 }
 
 export function UpdateDetails({ update }: { update: UpdateState }) {
+  const styles = useStyles();
   useLanguage();
   if (update.error) return <View style={styles.updateDetails}>
     <Text accessibilityRole="alert" style={[styles.detail, styles.error]}>{update.error}</Text>

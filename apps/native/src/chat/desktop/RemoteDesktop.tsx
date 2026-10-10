@@ -1,3 +1,4 @@
+import { useThemeColor } from '../../theme/store';
 import { t, useLanguage } from '../../i18n';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
@@ -20,7 +21,7 @@ import { DisplaySettings } from './DisplaySettings';
 import { DesktopKeyboard } from './DesktopKeyboard';
 import { DesktopStats } from './DesktopStats';
 import { useDesktopWindow } from './useDesktopWindow';
-import { desktopStyles as s } from './styles';
+import { useDesktopStyles as useS } from './styles';
 
 // Native WebRTC owns decryption and decoding; Android uses SurfaceView and iOS uses Metal rendering.
 // No video frames, image strings or media ciphertext cross the React Native JavaScript bridge.
@@ -32,6 +33,8 @@ const createPeer = (configuration: RTCConfiguration) =>
 export function RemoteDesktop({ client, active, close }: {
   client: DesktopClient; active: boolean; close: () => void;
 }) {
+  const s = useS();
+  const color = useThemeColor();
   useLanguage();
   const session = useDesktopSession({ client, active, createPeer });
   const statusAction = desktopStatusAction(session);
@@ -83,8 +86,8 @@ export function RemoteDesktop({ client, active, close }: {
     <Pressable key={tool.label} accessibilityRole="button" accessibilityLabel={tool.action ?? tool.label}
       disabled={tool.disabled} accessibilityState={{ disabled: tool.disabled, selected: tool.selected }}
       style={[s.tool, orientation.landscape ? s.railTool : s.portraitTool, tool.selected && s.selected]} onPress={tool.run}>
-      {tool.icon === 'mouse' ? <MaterialCommunityIcons name="mouse" size={22} color="#e7edf8" />
-        : <Ionicons name={tool.icon} size={22} color="#e7edf8" />}<Text style={s.label}>{tool.label}</Text>
+      {tool.icon === 'mouse' ? <MaterialCommunityIcons name="mouse" size={22} color={color("#e7edf8", 'faint')} />
+        : <Ionicons name={tool.icon} size={22} color={color("#e7edf8", 'faint')} />}<Text style={s.label}>{tool.label}</Text>
     </Pressable>);
   return <Modal visible={active} onRequestClose={close} hardwareAccelerated statusBarTranslucent navigationBarTranslucent
     onShow={orientation.onShow} presentationStyle="fullScreen"

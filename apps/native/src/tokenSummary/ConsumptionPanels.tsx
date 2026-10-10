@@ -4,7 +4,7 @@ import type { TokenSummary } from '../../../../shared/remote-chat/tokenSummary';
 import { formatTokens } from '../../../desktop/src/components/TokenUsageDashboard/chartUtils';
 import type { DailyTokenUsageBreakdown } from '../../../desktop/src/types/tokenUsageAnalytics';
 import { TimeBars } from './TimeBars';
-import { summaryStyles as s } from './styles';
+import { useSummaryStyles as useS } from './styles';
 
 type Field = Exclude<keyof DailyTokenUsageBreakdown, 'date'>;
 const CONTEXT: Array<[string, Field]> = [
@@ -17,6 +17,7 @@ const MODE: Array<[string, Field]> = [
 function ConsumptionPanel({ data, title, fields, hint }: {
   data: TokenSummary; title: string; fields: Array<[string, Field]>; hint: string;
 }) {
+  const s = useS();
   const language = useLanguage();
   const totals = fields.map(([, field]) => data.breakdown.reduce((sum, day) => sum + day[field], 0));
   const total = totals.reduce((sum, tokens) => sum + tokens, 0);

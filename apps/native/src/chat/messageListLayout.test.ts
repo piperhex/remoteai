@@ -2,7 +2,10 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { transformSync } from '@babel/core';
 import { expect, it, vi } from 'vitest';
-import { styles } from './styles';
+import { useStyles } from './styles';
+const styles = useStyles();
+
+vi.mock('../theme/store', () => ({ useThemeMode: () => 'light' }));
 
 vi.mock('react-native', () => ({ StyleSheet: { create: <T>(value: T) => value } }));
 

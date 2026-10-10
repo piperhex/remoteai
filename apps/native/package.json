@@ -35,6 +35,7 @@
     "expo-image-manipulator": "~13.1.7",
     "expo-image-picker": "~16.1.4",
     "expo-media-library": "~17.1.7",
+    "expo-navigation-bar": "~4.2.8",
     "expo-notifications": "^0.31.5",
     "expo-screen-orientation": "~8.1.7",
     "expo-secure-store": "~14.2.0",

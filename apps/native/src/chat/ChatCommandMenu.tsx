@@ -1,8 +1,9 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { Skill } from './types';
 import { skillDescription, skillLabel, type SkillCatalogState } from './skillCatalog';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 
 interface Props {
   catalog: SkillCatalogState;
@@ -16,6 +17,8 @@ interface Props {
 }
 
 export function ChatCommandMenu({ catalog, query, skillsOnly, compactReason, choose, compact, goal, close }: Props) {
+  const menuStyles = useMenuStyles();
+  const styles = useStyles();
   useLanguage();
   const search = query.toLocaleLowerCase();
   const skills = catalog.skills.filter((skill) =>
@@ -58,12 +61,12 @@ export function ChatCommandMenu({ catalog, query, skillsOnly, compactReason, cho
   </View>;
 }
 
-const menuStyles = StyleSheet.create({
+const useMenuStyles = createThemedStyles((color) => ({
   panel: { width: '100%', maxWidth: 400, alignSelf: 'center', borderWidth: 1,
-    borderColor: palette.border, borderRadius: 14, overflow: 'hidden', backgroundColor: '#fff' },
+    borderColor: color(palette.border, 'border'), borderRadius: 14, overflow: 'hidden', backgroundColor: color('#fff', 'surface') },
   heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 },
   list: { maxHeight: 220, flexGrow: 0 },
   option: { paddingHorizontal: 12, paddingVertical: 10, gap: 4, borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: palette.border },
-  message: { color: palette.muted, padding: 12, fontSize: 12, lineHeight: 18 },
-});
+    borderTopColor: color(palette.border, 'border') },
+  message: { color: color(palette.muted, 'muted'), padding: 12, fontSize: 12, lineHeight: 18 },
+}));

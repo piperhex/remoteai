@@ -4,11 +4,13 @@ import { t, useLanguage } from '../../i18n';
 import type { TaskReviewModel } from '../../../../../shared/remote-chat/useTaskReview';
 import { resultSummary } from '../../../../../shared/remote-chat/taskReview';
 import type { Turn } from '../types';
-import { styles } from '../styles';
-import { reviewStyles as css } from './styles';
+import { useStyles } from '../styles';
+import { useReviewStyles as useCss } from './styles';
 import { ReviewButton } from './ReviewButton';
 
 export function TaskReviewDelivery({ model, turn }: { model: TaskReviewModel; turn: Turn }) {
+  const css = useCss();
+  const styles = useStyles();
   useLanguage();
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState(resultSummary(turn).slice(0, 80));
@@ -54,6 +56,8 @@ export function TaskReviewDelivery({ model, turn }: { model: TaskReviewModel; tu
 }
 
 export function TaskReviewRestore({ model }: { model: TaskReviewModel }) {
+  const css = useCss();
+  const styles = useStyles();
   useLanguage();
   return <View style={css.section}>
     <Text style={styles.title}>{t('恢复本轮修改')}</Text>

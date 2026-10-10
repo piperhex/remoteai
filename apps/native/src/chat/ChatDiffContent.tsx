@@ -1,12 +1,13 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useContext, useMemo, useState } from 'react';
 import { SelectableChatText } from './SelectableChatText';
-import { Pressable, ScrollView, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { pairDiffLines, type DiffFile, type DiffLine, type DiffPair } from '../../../../shared/chat/diff';
 import { INLINE_COPY_WIDTH, type CopyAction } from './CopyTextButton';
 import { ChatFileContext } from './ChatFilePreview';
 import { HighlightedCode, fileLanguage } from './ChatCodeHighlight';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 
 const PAGE_LINES = 200;
 const NUMBER_COLUMN_WIDTH = 34;
@@ -17,6 +18,8 @@ const REDUNDANT_HEADER = /^(diff --git |index |--- |\+\+\+ |new file mode |delet
 function UnifiedRow({ line, language, wrap, copy, onComment }: {
   line: DiffLine; language: string; wrap: boolean; copy?: CopyAction; onComment?: (line: DiffLine) => void;
 }) {
+  const diffStyles = useDiffStyles();
+  const styles = useStyles();
   useLanguage();
   const marker = line.kind === 'add' ? '+' : line.kind === 'remove' ? '−' : ' ';
   const heading = line.kind === 'hunk' || line.kind === 'meta';
@@ -37,6 +40,8 @@ function SplitCell({ line, side, language, column, wrap, copy }: {
   line?: DiffLine; side: 'left' | 'right'; language: string; column: StyleProp<ViewStyle>; wrap: boolean;
   copy?: CopyAction;
 }) {
+  const diffStyles = useDiffStyles();
+  const styles = useStyles();
   useLanguage();
   return <View style={[diffStyles.cell, column, line && diffStyles[line.kind]]}>
     <Text style={[styles.code, diffStyles.number]}>{side === 'left' ? line?.oldLine : line?.newLine}</Text>
@@ -47,6 +52,8 @@ function SplitCell({ line, side, language, column, wrap, copy }: {
 
 /** Measure with the native font in an unconstrained scroller; character counts miss CJK, tabs and font scaling. */
 function MeasureCode({ text, onMeasure }: { text: string; onMeasure: (width: number) => void }) {
+  const diffStyles = useDiffStyles();
+  const styles = useStyles();
   useLanguage();
   return <ScrollView horizontal scrollEnabled={false} style={diffStyles.measure} pointerEvents="none"
     accessibilityElementsHidden importantForAccessibility="no-hide-descendants"
@@ -58,6 +65,8 @@ function MeasureCode({ text, onMeasure }: { text: string; onMeasure: (width: num
 function SplitRows({ pairs, language, wrap, copy }: {
   pairs: DiffPair[]; language: string; wrap: boolean; copy: CopyAction;
 }) {
+  const diffStyles = useDiffStyles();
+  const styles = useStyles();
   useLanguage();
   const [widths, setWidths] = useState({ left: 0, right: 0 });
   const text = useMemo(() => ({ left: pairs.map((pair) => pair.left?.text || ' ').join('\n'),
@@ -92,6 +101,8 @@ function SplitRows({ pairs, language, wrap, copy }: {
 }
 
 export function ChatDiffContent({ file, onComment }: { file: DiffFile; onComment?: (line: DiffLine) => void }) {
+  const styles = useStyles();
+  const diffStyles = useDiffStyles();
   useLanguage();
   const [limit, setLimit] = useState(PAGE_LINES);
   const [wrap, setWrap] = useState(false);
@@ -127,21 +138,21 @@ export function ChatDiffContent({ file, onComment }: { file: DiffFile; onComment
   </View>;
 }
 
-const diffStyles = StyleSheet.create({
+const useDiffStyles = createThemedStyles((color) => ({
   comment: { width: 44, minHeight: 32, justifyContent: 'center', alignItems: 'center' },
   toolbar: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   action: { minHeight: 36, paddingHorizontal: 6, justifyContent: 'center' },
-  actionText: { color: palette.muted, fontSize: 12, lineHeight: 20 },
+  actionText: { color: color(palette.muted, 'muted'), fontSize: 12, lineHeight: 20 },
   line: { flexDirection: 'row', minHeight: 23 },
-  number: { width: NUMBER_COLUMN_WIDTH, flexShrink: 0, color: palette.muted, textAlign: 'right', paddingRight: 6,
-    borderRightWidth: 1, borderColor: palette.border },
+  number: { width: NUMBER_COLUMN_WIDTH, flexShrink: 0, color: color(palette.muted, 'muted'), textAlign: 'right', paddingRight: 6,
+    borderRightWidth: 1, borderColor: color(palette.border, 'border') },
   sign: { width: 20, flexShrink: 0, textAlign: 'center' },
-  cell: { flexDirection: 'row', borderRightWidth: CELL_BORDER_WIDTH, borderColor: palette.border },
+  cell: { flexDirection: 'row', borderRightWidth: CELL_BORDER_WIDTH, borderColor: color(palette.border, 'border') },
   wrappedCell: { flex: 1, minWidth: 0 },
   wrappedText: { flex: 1, minWidth: 0 },
   unwrappedText: { flexShrink: 0 },
   measure: { position: 'absolute', left: 0, top: 0, width: 1, height: 1, opacity: 0 },
-  columnLabel: { padding: 8, color: palette.muted, backgroundColor: '#f4f6f5' },
-  add: { backgroundColor: '#e0f2e7' }, remove: { backgroundColor: '#fbe5e5' },
-  hunk: { backgroundColor: '#f4f6f5', paddingVertical: 2 }, meta: { backgroundColor: '#f4f6f5' }, context: {},
-});
+  columnLabel: { padding: 8, color: color(palette.muted, 'muted'), backgroundColor: color('#f4f6f5', 'canvas') },
+  add: { backgroundColor: color('#e0f2e7', 'elevated') }, remove: { backgroundColor: color('#fbe5e5', 'canvas') },
+  hunk: { backgroundColor: color('#f4f6f5', 'canvas'), paddingVertical: 2 }, meta: { backgroundColor: color('#f4f6f5', 'canvas') }, context: {},
+}));

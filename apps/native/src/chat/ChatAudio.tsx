@@ -1,7 +1,7 @@
 import { t, useLanguage } from '../i18n';
 import { Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { styles } from './styles';
+import { useStyles } from './styles';
 
 const AUDIO_SOURCE = /^(https?:\/\/|data:audio\/(?:mp3|mpeg|wav|ogg);base64,)/i;
 function attribute(value: string) {
@@ -10,6 +10,7 @@ function attribute(value: string) {
 
 /** Use the system media controls without exposing tool markup or allowing page navigation. */
 export function ChatAudio({ source }: { source: string }) {
+  const styles = useStyles();
   useLanguage();
   if (!AUDIO_SOURCE.test(source)) return <Text style={styles.subtitle}>{t("此音频暂时无法播放。")}</Text>;
   const html = `<meta name="viewport" content="width=device-width,initial-scale=1">`

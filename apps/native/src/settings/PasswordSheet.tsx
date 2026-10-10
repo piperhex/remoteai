@@ -5,9 +5,10 @@ import { changePassword } from '../api/client';
 import { Toast } from '../components/AppToast';
 import { BottomSheet } from '../components/BottomSheet';
 import type { AuthSession } from '../types';
-import { styles } from './styles';
+import { useStyles } from './styles';
 
 export function PasswordSheet({ session, onClose }: { session: AuthSession; onClose: () => void }) {
+  const styles = useStyles();
   useLanguage();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');

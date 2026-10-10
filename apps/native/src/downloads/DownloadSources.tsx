@@ -1,13 +1,17 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 import { downloadConnectionLabel } from '../../../../shared/remote-chat/downloadConnection';
 import type { DownloadConnection } from './types';
-import { colors, styles } from './styles';
+import { colors, useStyles } from './styles';
 
 function SourceCard({ scope, disabled, onPress }: {
   scope: 'project' | 'computer'; disabled: boolean; onPress: () => void;
 }) {
+  const resolveThemeColor = useThemeColor();
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const project = scope === 'project';
   return <Pressable accessibilityRole="button" accessibilityLabel={project ? t("当前项目") : t("此电脑")}
@@ -15,19 +19,21 @@ function SourceCard({ scope, disabled, onPress }: {
     style={({ pressed }) => [styles.sourceCard, disabled && styles.disabled, pressed && styles.pressed]}>
     <View style={[styles.sourceIcon, !project && styles.computerIcon]}>
       <Ionicons name={project ? 'folder-outline' : 'desktop-outline'} size={23}
-        color={project ? colors.green : colors.blue} />
+        color={project ? resolveThemeColor(colors.green, 'accent') : resolveThemeColor(colors.blue, 'info')} />
     </View>
     <View style={styles.sourceCopy}>
       <Text style={styles.sourceTitle}>{project ? t("当前项目") : t("此电脑")}</Text>
       <Text style={styles.caption}>{project ? t("浏览项目文件") : t("浏览电脑文件")}</Text>
     </View>
-    <Ionicons name="chevron-forward" size={16} color={colors.muted} style={styles.sourceChevron} />
+    <Ionicons name="chevron-forward" size={16} color={color(colors.muted, 'muted')} style={styles.sourceChevron} />
   </Pressable>;
 }
 
 export function DownloadSources({ connection, browse }: {
   connection?: DownloadConnection; browse: (scope: 'project' | 'computer') => void;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const ready = !!connection?.ready;
   const canBrowseProject = ready && !!(connection.cwd || connection.threadId);
@@ -46,7 +52,7 @@ export function DownloadSources({ connection, browse }: {
       <SourceCard scope="computer" disabled={!ready} onPress={() => browse('computer')} />
     </View>
     <View style={styles.hint}>
-      <Ionicons name="information-circle-outline" size={15} color={colors.muted} />
+      <Ionicons name="information-circle-outline" size={15} color={color(colors.muted, 'muted')} />
       <Text style={styles.hintText}>{hint}</Text>
     </View>
   </View>;

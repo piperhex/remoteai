@@ -9,9 +9,10 @@ import { DownloadEmptyState } from './DownloadEmptyState';
 import { DownloadPageHeader } from './DownloadPageHeader';
 import { DownloadSources } from './DownloadSources';
 import { useDownloadTasks } from './useDownloadTasks';
-import { styles } from './styles';
+import { useStyles } from './styles';
 
 export function DownloadManagerPage({ session, onBack }: { session: AuthSession; onBack: () => void }) {
+  const styles = useStyles();
   useLanguage();
   const state = useDownloadTasks(session);
   const [view, setView] = useState<'tasks' | 'project' | 'computer'>('tasks');

@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import type { TokenSummary, UsageRanking } from '../../../../shared/remote-chat/tokenSummary';
 import { formatTokens } from '../../../desktop/src/components/TokenUsageDashboard/chartUtils';
 import { TimeBars } from './TimeBars';
-import { summaryStyles as s } from './styles';
+import { useSummaryStyles as useS } from './styles';
 
 export const TOKEN_FIELDS = [
   ['总计', 'totalTokens'], ['输入', 'inputTokens'], ['输出', 'outputTokens'],
@@ -11,6 +11,7 @@ export const TOKEN_FIELDS = [
 ] as const;
 
 export function UsageTotals({ data }: { data: TokenSummary }) {
+  const s = useS();
   const language = useLanguage();
   return <View style={s.card}>
     <Text style={s.hint}>{t("最近")}{' '}{data.weeks}{' '}{t("周 · Token 总消耗")}</Text>
@@ -25,6 +26,7 @@ export function UsageTotals({ data }: { data: TokenSummary }) {
 }
 
 export function UsageTrend({ data }: { data: TokenSummary }) {
+  const s = useS();
   const language = useLanguage();
   const daily = new Map(data.dailyUsage.map((day) => [day.date, day]));
   return <View style={s.card}><Text style={s.sectionTitle}>{t("每日 Token 趋势")}</Text>
@@ -35,6 +37,7 @@ export function UsageTrend({ data }: { data: TokenSummary }) {
 }
 
 export function RankingPanel({ title, ranking, count }: { title: string; ranking: UsageRanking; count: number }) {
+  const s = useS();
   const language = useLanguage();
   const total = ranking.reduce((sum, [, tokens]) => sum + tokens, 0);
   const maximum = Math.max(1, ...ranking.map(([, tokens]) => tokens));

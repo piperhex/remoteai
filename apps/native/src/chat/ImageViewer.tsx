@@ -1,3 +1,4 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function ImageViewer({ thumbnail, description, load, close, save }: Props) {
+  const styles = useStyles();
   useLanguage();
   const image = useImageViewer(load);
   const orientation = useImageOrientation();
@@ -71,7 +73,7 @@ export function ImageViewer({ thumbnail, description, load, close, save }: Props
   </Modal>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   overlay: { flex: 1, backgroundColor: '#000' },
   stage: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
   image: { width: '100%', height: '100%' },
@@ -85,6 +87,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center' },
   disabled: { opacity: 0.4 },
   notices: { position: 'absolute', bottom: 96, left: 16, right: 16, alignItems: 'center', gap: 8 },
-  status: { color: '#ddd', fontSize: 14, textAlign: 'center', maxWidth: 400 },
+  status: { color: color('#ddd', 'faint'), fontSize: 14, textAlign: 'center', maxWidth: 400 },
   error: { maxWidth: 400, alignItems: 'center', backgroundColor: '#222', borderRadius: 12, padding: 8 },
-});
+}));

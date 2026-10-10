@@ -5,8 +5,8 @@ import type { useAppUpdate } from './useAppUpdate';
 
 vi.mock('@expo/vector-icons', () => ({ Ionicons: 'Icon' }));
 vi.mock('react-native', () => ({ ActivityIndicator: 'Spinner', Pressable: 'Button', Text: 'Text' }));
-vi.mock('./styles', () => ({ styles: {} }));
-vi.mock('../settings/styles', () => ({ styles: {} }));
+vi.mock('./styles', () => ({ useStyles: () => ({}) }));
+vi.mock('../settings/styles', () => ({ useStyles: () => ({}) }));
 
 afterEach(() => vi.unstubAllGlobals());
 

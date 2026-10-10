@@ -4,9 +4,10 @@ import { useLanguage } from '../i18n';
 import type { TokenSummary } from '../../../../shared/remote-chat/tokenSummary';
 import { officialUsageLabels } from '../../../../shared/officialUsageLabels';
 import { formatTokens } from '../../../../shared/remote-chat/usage';
-import { summaryStyles as s } from './styles';
+import { useSummaryStyles as useS } from './styles';
 
 export function OfficialUsagePanel({ data }: { data: TokenSummary }) {
+  const s = useS();
   const labels = officialUsageLabels(useLanguage());
   const [expanded, setExpanded] = useState<string | null>(null);
   const usage = data.officialUsage;

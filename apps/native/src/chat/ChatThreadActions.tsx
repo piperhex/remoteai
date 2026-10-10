@@ -1,12 +1,15 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import { BottomSheet } from '../components/BottomSheet';
 import { THREAD_NAME_LIMIT, type ThreadAction } from '../../../../shared/remote-chat/client/threadActions';
 import type { ThreadActionsModel } from '../../../../shared/remote-chat/client/useThreadActions';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 
 export function ChatThreadActions({ actions }: { actions: ThreadActionsModel }) {
+  const actionStyles = useActionStyles();
+  const styles = useStyles();
   useLanguage();
   if (!actions.target) return null;
   const { view, busy, error, name, reason } = actions;
@@ -44,6 +47,8 @@ export function ChatThreadActions({ actions }: { actions: ThreadActionsModel }) 
 function Action({ label, icon, disabled, danger, onPress }: {
   label: string; icon: 'edit-2' | 'archive' | 'trash-2'; disabled: boolean; danger?: boolean; onPress: () => void;
 }) {
+  const actionStyles = useActionStyles();
+  const styles = useStyles();
   useLanguage();
   const color = danger ? palette.danger : palette.ink;
   return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress}
@@ -52,12 +57,12 @@ function Action({ label, icon, disabled, danger, onPress }: {
   </Pressable>;
 }
 
-const actionStyles = StyleSheet.create({
+const useActionStyles = createThemedStyles((color) => ({
   content: { gap: 8, paddingBottom: 12 },
   action: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 10 },
   // Leave room for Android's Chinese fallback font instead of using its exact measured bounds.
   label: { flex: 1, minWidth: 0, fontSize: 16, lineHeight: 24, paddingVertical: 2,
     includeFontPadding: true, textAlignVertical: 'center' },
-  copy: { color: palette.ink, fontSize: 15, lineHeight: 24 },
-  input: { borderWidth: 1, borderColor: palette.border, borderRadius: 12, padding: 12, color: palette.ink, fontSize: 16 },
-});
+  copy: { color: color(palette.ink, 'ink'), fontSize: 15, lineHeight: 24 },
+  input: { borderWidth: 1, borderColor: color(palette.border, 'border'), borderRadius: 12, padding: 12, color: color(palette.ink, 'ink'), fontSize: 16 },
+}));

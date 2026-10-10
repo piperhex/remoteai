@@ -1,15 +1,18 @@
+import { createThemedStyles } from '../theme/styles';
 import Feather from '@expo/vector-icons/Feather';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { composerLabel, type ComposerSettings } from '../../../../shared/remote-chat/composer';
 import { requestSpeedSuffix, speedBoltCount } from '../../../../shared/remote-chat/requestSpeed';
 import { t } from '../i18n';
 import { modelLabelTail } from './modelLabel';
-import { styles } from './styles';
+import { useStyles } from './styles';
 import type { Model } from './types';
 
 export function ComposerModelButton({ models, selection, compact, onPress }: {
   models: Model[]; selection: ComposerSettings; compact: boolean; onPress: () => void;
 }) {
+  const styles = useStyles();
+  const indicatorStyles = useIndicatorStyles();
   const label = composerLabel(models, selection, t);
   const bolts = speedBoltCount(selection.speed ?? 'normal');
   const { color, fontSize } = styles.composerModelText;
@@ -29,7 +32,7 @@ export function ComposerModelButton({ models, selection, compact, onPress }: {
   </Pressable>;
 }
 
-const indicatorStyles = StyleSheet.create({
+const useIndicatorStyles = createThemedStyles(() => ({
   row: { flexDirection: 'row', alignItems: 'center', flexShrink: 0 },
   separator: { marginRight: 4, flexShrink: 0 },
-});
+}));

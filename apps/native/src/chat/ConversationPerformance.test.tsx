@@ -4,6 +4,9 @@ import { ChatUsage } from './ChatUsage';
 import { useConversationMetrics } from '../../../../shared/remote-chat/client/useConversationMetrics';
 
 vi.mock('../i18n', () => ({ t: (value: string) => value, useLanguage: () => 'zh' }));
+vi.mock('react', async () => ({ ...await vi.importActual<typeof import('react')>('react'),
+  useSyncExternalStore: (_subscribe: unknown, snapshot: () => unknown) => snapshot(),
+}));
 vi.mock('react-native', () => ({ Text: 'Text', View: 'View', Pressable: 'Pressable',
   StyleSheet: { create: <T,>(value: T) => value, hairlineWidth: 1 },
 }));

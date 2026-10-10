@@ -5,6 +5,9 @@ import { ChatConnectionHealth } from './ChatConnectionHealth';
 import { initialChatState, type ChatState } from './types';
 
 vi.mock('../i18n', () => ({ t: (value: string) => value, useLanguage() {} }));
+vi.mock('react', async () => ({ ...await vi.importActual<typeof import('react')>('react'),
+  useSyncExternalStore: (_subscribe: unknown, snapshot: () => unknown) => snapshot(),
+}));
 vi.mock('react-native', () => ({ Pressable: 'Pressable', View: 'View', Text: 'Text',
   StyleSheet: { create: <T,>(value: T) => value } }));
 vi.mock('../components/BottomSheet', () => ({ BottomSheet: 'BottomSheet' }));

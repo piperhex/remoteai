@@ -3,14 +3,16 @@ import { ScrollView, Text, View } from 'react-native';
 import { t, useLanguage } from '../../i18n';
 import { checkStatus, type CheckKind } from '../../../../../shared/remote-chat/taskReview';
 import type { TaskReviewModel } from '../../../../../shared/remote-chat/useTaskReview';
-import { styles } from '../styles';
-import { reviewStyles as css } from './styles';
+import { useStyles } from '../styles';
+import { useReviewStyles as useCss } from './styles';
 import { ReviewButton } from './ReviewButton';
 
 const LABELS = { notRun: '未运行', running: '运行中', passed: '通过', failed: '失败',
   stale: '结果已过期', interrupted: '验证已中断' };
 
 export function TaskReviewChecks({ model }: { model: TaskReviewModel }) {
+  const css = useCss();
+  const styles = useStyles();
   useLanguage();
   const [confirm, setConfirm] = useState<CheckKind | null>(null);
   const [output, setOutput] = useState<CheckKind | null>(null);

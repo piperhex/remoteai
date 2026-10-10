@@ -1,3 +1,4 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { memo, useCallback, useMemo, useState, type ReactNode } from 'react';
 import { ActivityIndicator, FlatList, Keyboard, Pressable, RefreshControl, Text, View } from 'react-native';
@@ -14,7 +15,7 @@ import { findWorkEntry } from './turnPresentation';
 import { activityTimeline, findActivityEntry, latestActivity, type TimelineEntry as Entry } from './activityTimeline';
 import { useConversationEntries } from './useConversationEntries';
 import type { ChatMessagesProps } from '../../../../shared/remote-chat/client/messageProps';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 
 type ProcessSelection = { type: 'work' | 'activities'; id: string };
 type Selection = ProcessSelection | { type: 'item'; id: string; parent?: ProcessSelection }
@@ -23,6 +24,7 @@ type Selection = ProcessSelection | { type: 'item'; id: string; parent?: Process
 const PROCESS_SEPARATOR_STYLE = { height: 14 };
 
 function MessageSeparator({ leadingItem }: { leadingItem?: Entry }) {
+  const styles = useStyles();
   useLanguage();
   const process = leadingItem?.kind === 'process' || leadingItem?.kind === 'activities'
     || (leadingItem?.kind === 'work' && leadingItem.inline);
@@ -33,6 +35,7 @@ const TimelineEntry = memo(function TimelineEntry({ entry, open, onInline, proce
   entry: Entry; open: (selection: Selection) => void; onInline: (turnId: string, inline: boolean) => void;
   processing?: ReactNode;
 }) {
+  const styles = useStyles();
   useLanguage();
   const openItem = useCallback((id: string) => {
     if (entry.kind === 'process') onInline(entry.turn.id, true);
@@ -58,6 +61,8 @@ const TimelineEntry = memo(function TimelineEntry({ entry, open, onInline, proce
 
 export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder, offline, processing }:
   ChatMessagesProps & { processing?: ReactNode }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const turns = useMemo(() => (thread?.turns ?? []).map((turn) => offline && turn.status === 'inProgress'
     ? { ...turn, status: 'cached' } : turn), [thread?.turns, offline]);
@@ -98,7 +103,7 @@ export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder,
     // Keep message views attached while the keyboard changes the native clipping bounds.
     removeClippedSubviews={false}
     alwaysBounceVertical
-    refreshControl={<RefreshControl {...refresh} colors={[palette.green]} tintColor={palette.green}
+    refreshControl={<RefreshControl {...refresh} colors={[palette.green]} tintColor={color(palette.green, 'accent')}
       progressBackgroundColor={palette.background} />}
     // FlatList accounts for the list header itself, including in one-message conversations.
     maintainVisibleContentPosition={preservePosition ? { minIndexForVisible: firstMessageIndex } : undefined}
@@ -112,7 +117,7 @@ export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder,
       </Pressable>)}
     </View>}
     ListEmptyComponent={showInitialLoading || processing ? null : <View style={styles.empty}>
-      <Ionicons name="terminal-outline" size={28} color={palette.green} />
+      <Ionicons name="terminal-outline" size={28} color={color(palette.green, 'accent')} />
       <Text style={styles.title}>{t("想一起完成什么？")}</Text>
       <Text style={[styles.subtitle, styles.centerText]}>{t("直接提问，或选择一个项目开始任务。")}</Text>
     </View>}
@@ -121,7 +126,7 @@ export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder,
     {showScrollToBottom && !showInitialLoading && entries.length > 0 && <Pressable
       accessibilityRole="button" accessibilityLabel={t("回到底部")} onPress={scrollToBottom}
       style={({ pressed }) => [styles.scrollToBottom, pressed && styles.scrollToBottomPressed]}>
-      <Ionicons name="arrow-down" size={18} color={palette.ink} />
+      <Ionicons name="arrow-down" size={18} color={color(palette.ink, 'ink')} />
       <Text style={styles.scrollToBottomText}>{t("回到底部")}</Text>
     </Pressable>}
     {showInitialLoading && <View style={styles.messageLoadingOverlay}>

@@ -1,8 +1,9 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 import { formatTokens } from '../../../desktop/src/components/TokenUsageDashboard/chartUtils';
-import { chartColors, summaryStyles as s } from './styles';
+import { chartColors, useSummaryStyles as useS } from './styles';
 
 export interface TimeBarPoint { key?: string; label: string; values: Array<number | null> }
 interface Props { points: TimeBarPoint[]; labels: string[]; unit?: '%' | 'points' }
@@ -12,6 +13,8 @@ const VISIBLE_COLUMNS = 6;
 
 /** Virtualized columns keep long hourly histories responsive on phones. */
 export function TimeBars({ points, labels, unit }: Props) {
+  const s = useS();
+  const bars = useBars();
   const language = useLanguage();
   const [selected, setSelected] = useState<number | null>(null);
   const [series, setSeries] = useState(0);
@@ -45,10 +48,10 @@ export function TimeBars({ points, labels, unit }: Props) {
   </View>;
 }
 
-const bars = StyleSheet.create({
+const useBars = createThemedStyles((color) => ({
   chart: { height: 166, flexGrow: 0 },
   column: { width: COLUMN_WIDTH, alignItems: 'center' },
   track: { height: CHART_HEIGHT + 6, width: 32, alignItems: 'center', justifyContent: 'flex-end',
-    borderBottomWidth: 1, borderColor: '#dfe5df' },
-  label: { color: '#718078', fontSize: 10, lineHeight: 15, textAlign: 'center', marginTop: 5 },
-});
+    borderBottomWidth: 1, borderColor: color('#dfe5df', 'border') },
+  label: { color: color('#718078', 'muted'), fontSize: 10, lineHeight: 15, textAlign: 'center', marginTop: 5 },
+}));

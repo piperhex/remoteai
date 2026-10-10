@@ -1,3 +1,4 @@
+import { createThemedStyles } from '../theme/styles';
 import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -10,6 +11,7 @@ const OverlayContext = createContext<OverlayHost | null>(null);
 
 /** Keep popovers in the same native window so opening them preserves the keyboard. */
 export function ChatOverlay({ children }: { children: ReactNode }) {
+  const overlayStyles = useOverlayStyles();
   const root = useRef<View>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [content, show] = useState<ReactNode>(null);
@@ -29,4 +31,4 @@ export function useChatOverlay() {
   return host;
 }
 
-const overlayStyles = StyleSheet.create({ root: { flex: 1 } });
+const useOverlayStyles = createThemedStyles(() => ({ root: { flex: 1 } }));

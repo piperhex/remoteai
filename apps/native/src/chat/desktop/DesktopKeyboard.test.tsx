@@ -4,6 +4,7 @@ import { DesktopKeyboard } from './DesktopKeyboard';
 
 const runtime = vi.hoisted(() => ({ values: [] as unknown[], index: 0 }));
 vi.mock('react', async () => ({ ...await vi.importActual<typeof import('react')>('react'),
+  useSyncExternalStore: (_subscribe: unknown, snapshot: () => unknown) => snapshot(),
   useState: <T,>(initial: T) => {
     const slot = runtime.index++;
     if (!(slot in runtime.values)) runtime.values[slot] = initial;

@@ -1,6 +1,7 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import type { RemoteDevice } from '../types';
 import type { ChatState } from './types';
 import type { ChatController } from '../../../../shared/remote-chat/client/controller';
@@ -9,13 +10,15 @@ import { ChatReconnectButton } from './ChatReconnectButton';
 import { HOST_IDENTITY_CHANGED } from '../../../../shared/remote-chat/trustedHost';
 import { HostIdentityVerification } from './HostIdentityVerification';
 import { ChatConnectionHealth } from './ChatConnectionHealth';
-import { styles } from './styles';
+import { useStyles } from './styles';
 
 const modeLabels = { get connecting() { return t("正在连接…"); }, direct: 'P2P', relay: 'Relay', get offline() { return t("等待重新连接"); } };
 
 export function ChatConnectionInfo({ state, controller, device, active }: {
   state: ChatState; controller: ChatController; device?: RemoteDevice; active: boolean;
 }) {
+  const connectionStyles = useConnectionStyles();
+  const styles = useStyles();
   useLanguage();
   const [picking, setPicking] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -63,9 +66,9 @@ export function ChatConnectionInfo({ state, controller, device, active }: {
   </>;
 }
 
-const connectionStyles = StyleSheet.create({
+const useConnectionStyles = createThemedStyles(() => ({
   row: { flexDirection: 'row', alignItems: 'center', minWidth: 0 },
   device: { flexShrink: 1 },
   reconnectingDevice: { maxWidth: '40%' },
   project: { flexShrink: 1, minWidth: 0, maxWidth: '60%' },
-});
+}));

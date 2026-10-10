@@ -1,74 +1,74 @@
-.devices-page { color: #111522; background: #f3fbf8; }
+.devices-page { color: var(--app-ink, #111522); background: var(--app-canvas, #f3fbf8); }
 .devices-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .devices-heading h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -.8px; }
 .devices-refresh {
   display: grid; place-items: center; width: 44px; height: 40px;
-  border: 1px solid #bfe9dc; border-radius: 12px; color: #00866b; background: #e3f8f1;
+  border: 1px solid var(--app-border, #bfe9dc); border-radius: 12px; color: var(--app-accent, #00866b); background: var(--app-canvas, #e3f8f1);
 }
-.devices-subtitle { margin: 5px 0 20px; color: #78818f; font-size: 13px; line-height: 1.6; }
+.devices-subtitle { margin: 5px 0 20px; color: var(--app-muted, #78818f); font-size: 13px; line-height: 1.6; }
 .device-overview { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; }
 .device-stat {
   display: flex; align-items: center; gap: 18px; padding: 18px 22px; min-width: 0;
-  border-radius: 18px; background: #fff;
+  border-radius: 18px; background: var(--app-surface, #fff);
 }
 .device-stat-icon {
   display: grid; place-items: center; flex: 0 0 56px; height: 56px;
-  border-radius: 50%; color: #00866b; background: #e3f8f1;
+  border-radius: 50%; color: var(--app-accent, #00866b); background: var(--app-canvas, #e3f8f1);
 }
 .device-stat strong { display: block; font-size: 30px; line-height: 1.2; font-weight: 800; }
 .device-stat div > span {
-  display: flex; align-items: center; gap: 6px; margin-top: 6px; color: #78818f; font-size: 13px;
+  display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--app-muted, #78818f); font-size: 13px;
 }
 .device-stat i, .device-status i { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; background: #00aa7d; }
 .devices-list-title { margin-bottom: 14px; font-size: 18px; font-weight: 700; }
-.devices-list-title > span { color: #78818f; font-weight: 400; }
+.devices-list-title > span { color: var(--app-muted, #78818f); font-weight: 400; }
 .device-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .device-card {
-  position: relative; min-width: 0; border-radius: 18px; background: #fff;
+  position: relative; min-width: 0; border-radius: 18px; background: var(--app-surface, #fff);
   box-shadow: 0 4px 16px #538f7c0d;
 }
 .device-card-main {
   display: block; width: 100%; height: 100%; padding: 18px; text-align: left;
   border: 0; border-radius: inherit; color: inherit; background: transparent;
 }
-.device-card-main:not(:disabled):hover, .device-menu-trigger:hover { background: #edf9f4; }
+.device-card-main:not(:disabled):hover, .device-menu-trigger:hover { background: var(--app-canvas, #edf9f4); }
 .device-card-main:disabled { cursor: default; opacity: 1; }
 .device-card-main:focus-visible, .device-menu-trigger:focus-visible, .devices-refresh:focus-visible {
-  outline: 2px solid #00866b; outline-offset: 3px;
+  outline: 2px solid var(--app-accent, #00866b); outline-offset: 3px;
 }
 .device-card-header { display: flex; align-items: center; gap: 12px; padding-right: 28px; }
 .device-platform {
   display: grid; place-items: center; flex: 0 0 44px; height: 44px;
-  border-radius: 12px; color: #00866b; background: #dcf6ed;
+  border-radius: 12px; color: var(--app-accent, #00866b); background: var(--app-accentSoft, #dcf6ed);
 }
 .device-identity { flex: 1; min-width: 0; }
 .device-identity strong { display: block; overflow-wrap: anywhere; font-size: 16px; font-weight: 800; }
-.device-identity > span { display: block; margin-top: 5px; color: #78818f; font-size: 12px; }
+.device-identity > span { display: block; margin-top: 5px; color: var(--app-muted, #78818f); font-size: 12px; }
 .device-status {
   display: flex; align-items: center; flex-shrink: 0; gap: 6px; padding: 7px 10px;
-  border-radius: 20px; color: #00866b; background: #e3f8f1; font-size: 12px; font-weight: 700;
+  border-radius: 20px; color: var(--app-accent, #00866b); background: var(--app-canvas, #e3f8f1); font-size: 12px; font-weight: 700;
 }
-.offline .device-status { color: #78818f; background: #f0f2f4; }
-.offline .device-status i { background: #99a2ad; }
+.offline .device-status { color: var(--app-muted, #78818f); background: var(--app-canvas, #f0f2f4); }
+.offline .device-status i { background: var(--app-elevated, #99a2ad); }
 .device-menu-trigger {
   position: absolute; right: 6px; top: 18px; width: 36px; height: 44px; display: grid; place-items: center;
-  border: 0; border-radius: 12px; color: #78818f; background: transparent;
+  border: 0; border-radius: 12px; color: var(--app-muted, #78818f); background: transparent;
 }
-.device-details { display: grid; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #eaf0ed; }
+.device-details { display: grid; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--app-border, #eaf0ed); }
 .device-detail {
   display: grid; grid-template-columns: 18px 64px minmax(0, 1fr); align-items: center; gap: 9px;
-  color: #78818f; font-size: 12px; line-height: 1.6;
+  color: var(--app-muted, #78818f); font-size: 12px; line-height: 1.6;
 }
-.device-detail-value { color: #111522; text-align: right; overflow-wrap: anywhere; }
+.device-detail-value { color: var(--app-ink, #111522); text-align: right; overflow-wrap: anywhere; }
 .devices-hint {
   display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 16px; padding: 15px;
-  border-radius: 14px; color: #78818f; background: #e4f6ef; font-size: 12px; line-height: 1.6;
+  border-radius: 14px; color: var(--app-muted, #78818f); background: var(--app-canvas, #e4f6ef); font-size: 12px; line-height: 1.6;
 }
-.devices-hint svg { flex-shrink: 0; color: #00866b; }
-.devices-empty { padding: 36px 20px; border-radius: 18px; background: #fff; text-align: center; }
-.devices-empty svg { color: #00866b; }
+.devices-hint svg { flex-shrink: 0; color: var(--app-accent, #00866b); }
+.devices-empty { padding: 36px 20px; border-radius: 18px; background: var(--app-surface, #fff); text-align: center; }
+.devices-empty svg { color: var(--app-accent, #00866b); }
 .devices-empty h3 { margin: 12px 0; font-size: 17px; }
-.devices-empty p { color: #78818f; font-size: 13px; }
+.devices-empty p { color: var(--app-muted, #78818f); font-size: 13px; }
 .device-options-menu { max-width: min(400px, calc(100vw - 32px)); }
 .device-options-menu .ant-dropdown-menu { padding: 8px; border-radius: 14px; }
 .device-options-menu .ant-dropdown-menu-item { min-height: 44px; }

@@ -1,15 +1,15 @@
 .rd-display-bar { display: flex; flex: 0 0 auto; min-width: 0; gap: 6px; padding: 6px 8px 0;
   overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; background: #171c28;
-  border-bottom: 1px solid #303a4c; }
+  border-bottom: 1px solid var(--app-border, #303a4c); }
 .rd-display-bar button { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; min-width: 148px;
   max-width: 240px; min-height: 48px; padding: 8px 14px; border-radius: 9px 9px 0 0;
-  background: transparent; color: #aebad0; text-align: left; }
+  background: transparent; color: var(--app-faint, #aebad0); text-align: left; }
 .rd-display-bar button:hover:not(:disabled) { background: #242e40; }
-.rd-display-bar button[aria-pressed=true] { color: #e7edf8; background: #2a3f5d;
+.rd-display-bar button[aria-pressed=true] { color: var(--app-faint, #e7edf8); background: #2a3f5d;
   box-shadow: inset 0 -2px #88b5ff; }
 .rd-display-bar svg { flex-shrink: 0; }
 .rd-display-info { display: grid; gap: 3px; min-width: 0; }
 .rd-display-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
-.rd-display-resolution { color: #aebad0; font-size: 11px; white-space: nowrap; }
-.rd-display-primary { flex-shrink: 0; padding: 2px 5px; border-radius: 4px; background: #ffffff14;
-  color: #cbd5e1; font-size: 10px; }
+.rd-display-resolution { color: var(--app-faint, #aebad0); font-size: 11px; white-space: nowrap; }
+.rd-display-primary { flex-shrink: 0; padding: 2px 5px; border-radius: 4px; background: color-mix(in srgb, var(--app-surface, #fff) 8%, transparent);
+  color: var(--app-faint, #cbd5e1); font-size: 10px; }

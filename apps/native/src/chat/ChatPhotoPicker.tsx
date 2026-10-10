@@ -1,8 +1,10 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useState } from 'react';
 import Feather from '@expo/vector-icons/Feather';
 import { Image, Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 import { ImageViewer } from './ImageViewer';
 import { ChatPhotoEditor } from './ChatPhotoEditor';
 import type { useChatPhotos } from './useChatPhotos';
@@ -15,6 +17,9 @@ interface Props {
 }
 
 export function ChatPhotoPicker({ photos, disabled, active, upload, reconnecting }: Props) {
+  const photoStyles = usePhotoStyles();
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -42,7 +47,7 @@ export function ChatPhotoPicker({ photos, disabled, active, upload, reconnecting
         <Pressable accessibilityRole="button" accessibilityLabel={t("移除照片 {value1}", { value1: index + 1 })} disabled={busy}
           accessibilityState={{ disabled: busy }} hitSlop={6} onPress={() => photos.remove(photo.id)}
           style={[photoStyles.remove, busy && styles.disabled]}>
-          <Feather name="x" size={18} color={palette.ink} />
+          <Feather name="x" size={18} color={color(palette.ink, 'ink')} />
         </Pressable>
       </View>)}
     </ScrollView>}
@@ -59,19 +64,19 @@ export function ChatPhotoPicker({ photos, disabled, active, upload, reconnecting
   </View>;
 }
 
-const photoStyles = StyleSheet.create({
+const usePhotoStyles = createThemedStyles((color) => ({
   container: { gap: 8 },
   previews: { gap: 10, padding: 4 },
   card: { position: 'relative', width: 96, flexShrink: 0 },
   previewButton: { height: 96, flexShrink: 0 },
   preview: { width: '100%', height: '100%', borderTopLeftRadius: 12,
-    borderTopRightRadius: 12, backgroundColor: palette.pale },
+    borderTopRightRadius: 12, backgroundColor: color(palette.pale, 'accentSoft') },
   edit: { flexDirection: 'row', gap: 4, paddingHorizontal: 8, paddingVertical: 8,
     alignItems: 'center', justifyContent: 'center', minHeight: 40, width: '100%',
     borderBottomLeftRadius: 12, borderBottomRightRadius: 12, backgroundColor: '#0009' },
   // Explicit leading accommodates Android's Chinese fallback font without clipping the label.
   editText: { color: '#fff', fontSize: 12, lineHeight: 20, includeFontPadding: true, textAlignVertical: 'center' },
   remove: { position: 'absolute', top: 4, right: 4, width: 28, height: 28, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center', backgroundColor: palette.background,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: palette.border },
-});
+    alignItems: 'center', justifyContent: 'center', backgroundColor: color(palette.background, 'canvas'),
+    borderWidth: StyleSheet.hairlineWidth, borderColor: color(palette.border, 'border') },
+}));

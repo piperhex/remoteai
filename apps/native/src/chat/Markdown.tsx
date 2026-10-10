@@ -9,8 +9,8 @@ import { ChatMath } from './ChatMath';
 import { MarkdownParagraph, type MarkdownContext } from './MarkdownInline';
 import { renderMathParagraph, type MarkdownNode } from './markdownTree';
 import { markdownContent } from './markdownContent';
-import { markdownStyles } from './Markdown.styles';
-import { styles } from './styles';
+import { useMarkdownStyles } from './Markdown.styles';
+import { useStyles } from './styles';
 import { SelectableChatText } from './SelectableChatText';
 import type { CopyAction } from './CopyTextButton';
 
@@ -26,6 +26,7 @@ function childContext(context: MarkdownContext, index: number, length: number): 
 function MarkdownPage<Node>({ nodes, render }: {
   nodes: Node[]; render: (node: Node, index: number) => ReactNode;
 }) {
+  const styles = useStyles();
   useLanguage();
   const [limit, setLimit] = useState(PAGE_BLOCKS);
   return <>{nodes.slice(0, limit).map(render)}
@@ -37,6 +38,8 @@ function MarkdownPage<Node>({ nodes, render }: {
 }
 
 function List({ node, context }: { node: MarkdownNode; context: MarkdownContext }) {
+  const markdownStyles = useMarkdownStyles();
+  const styles = useStyles();
   useLanguage();
   const ordered = node.token.type === 'ordered_list_open';
   const start = Number(node.token.attrGet('start') ?? 1);
@@ -69,6 +72,7 @@ function Code({ node, copy }: { node: MarkdownNode; copy?: CopyAction }) {
 }
 
 function TableRow({ node, context }: { node: MarkdownNode; context: MarkdownContext }) {
+  const markdownStyles = useMarkdownStyles();
   useLanguage();
   return <View style={markdownStyles.tableRow}>{node.children.map((child, index) => {
     const alignment = String(child.token.attrGet('style') ?? '').match(/text-align:(left|center|right)/)?.[1];
@@ -80,6 +84,7 @@ function TableRow({ node, context }: { node: MarkdownNode; context: MarkdownCont
 }
 
 function Block({ node, context = {} }: { node: MarkdownNode; context?: MarkdownContext }) {
+  const markdownStyles = useMarkdownStyles();
   useLanguage();
   const { token, children } = node;
   if (token.type.startsWith('math_')) return <ChatMath markup={renderMathParagraph([node])}

@@ -7,7 +7,7 @@
 }
 .connection-health-sheet .adaptive-sheet-content { padding-top: 19px; }
 .connection-health-sheet .sheet-close,
-.connection-health-sheet .ant-modal-close { border-radius: 50%; background: #f0f2f3; }
+.connection-health-sheet .ant-modal-close { border-radius: 50%; background: var(--app-canvas, #f0f2f3); }
 .connection-health-sheet.ant-modal { padding-bottom: 0; }
 .connection-health-sheet.ant-modal .ant-modal-content {
   display: flex;
@@ -15,7 +15,7 @@
   max-height: calc(100dvh - 48px);
   padding: 0;
   overflow: hidden;
-  border: 1px solid rgba(23, 37, 31, .06);
+  border: 1px solid color-mix(in srgb, var(--app-border, #17251f) 6%, transparent);
   border-radius: 20px;
   box-shadow: 0 24px 80px rgba(23, 37, 31, .16);
 }
@@ -23,7 +23,7 @@
   flex-shrink: 0;
   margin: 0;
   padding: 22px 56px 18px 24px;
-  border-bottom: 1px solid #edf1ef;
+  border-bottom: 1px solid var(--app-border, #edf1ef);
 }
 .connection-health-sheet.ant-modal .modal-heading { display: flex; flex-direction: column; gap: 4px; }
 .connection-health-sheet.ant-modal .modal-heading strong {
@@ -31,9 +31,9 @@
 }
 .connection-health-sheet.ant-modal .modal-heading span { color: var(--muted); font-weight: 400; }
 .connection-health-sheet.ant-modal .ant-modal-close {
-  top: 20px; right: 20px; width: 28px; height: 28px; color: #84918b; background: #f5f7f6;
+  top: 20px; right: 20px; width: 28px; height: 28px; color: var(--app-muted, #84918b); background: var(--app-canvas, #f5f7f6);
 }
-.connection-health-sheet.ant-modal .ant-modal-close:hover { color: var(--ink); background: #eaf0ed; }
+.connection-health-sheet.ant-modal .ant-modal-close:hover { color: var(--ink); background: var(--app-elevated, #eaf0ed); }
 .connection-health-sheet.ant-modal .ant-modal-body {
   min-height: 0;
   max-height: none;
@@ -41,7 +41,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: rgba(23, 37, 31, .16) transparent;
+  scrollbar-color: color-mix(in srgb, var(--app-ink, #17251f) 16%, transparent) transparent;
 }
 .connection-health-sheet.ant-modal .ant-modal-body::-webkit-scrollbar { width: 5px; }
 .connection-health-sheet.ant-modal .ant-modal-body::-webkit-scrollbar-track { background: transparent; }
@@ -70,20 +70,20 @@
 .connection-health-copy { display: flex; flex: 1; flex-direction: column; min-width: 0; gap: 4px; }
 .connection-health-copy strong { font-size: 14px; line-height: 22px; font-weight: 600; }
 .connection-health-summary strong { font-size: 16px; line-height: 24px; font-weight: 700; }
-.connection-health-copy p { margin: 0; color: #777f84; font-size: 12px; line-height: 19px; }
+.connection-health-copy p { margin: 0; color: var(--app-muted, #777f84); font-size: 12px; line-height: 19px; }
 .connection-health-steps { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .connection-health-step {
   display: flex; align-items: center; gap: 12px; min-height: 68px; padding: 12px;
-  border: 1px solid #eeeeef; border-radius: 14px; background: #fff;
+  border: 1px solid var(--app-border, #eeeeef); border-radius: 14px; background: var(--app-surface, #fff);
 }
 .connection-health-step-icon {
   display: flex; flex-shrink: 0; align-items: center; justify-content: center;
   width: 40px; height: 40px; border-radius: 50%;
 }
-.health-step-login { color: #21883f; background: #edf7f0; }
-.health-step-computer { color: #358bd5; background: #edf5fe; }
-.health-step-path { color: #7960db; background: #f0ecfc; }
-.health-step-chat { color: #d38132; background: #fff2e8; }
+.health-step-login { color: var(--app-accent, #21883f); background: var(--app-canvas, #edf7f0); }
+.health-step-computer { color: var(--app-info, #358bd5); background: var(--app-canvas, #edf5fe); }
+.health-step-path { color: var(--app-purple, #7960db); background: var(--app-canvas, #f0ecfc); }
+.health-step-chat { color: var(--app-warning, #d38132); background: var(--app-accentSoft, #fff2e8); }
 .connection-health-badge {
   display: flex; flex-shrink: 1; align-items: center; gap: 5px; max-width: 32%; padding: 6px 9px;
   border-radius: 12px; color: var(--health-color); background: var(--health-background);
@@ -91,26 +91,26 @@
 }
 .connection-health-badge-icon { width: 13px; height: 13px; }
 .connection-health-copy .connection-health-badge { max-width: 100%; align-self: flex-start; margin-top: 2px; }
-.connection-health-addresses { padding: 12px; border: 1px solid #eeeeef; border-radius: 14px; }
+.connection-health-addresses { padding: 12px; border: 1px solid var(--app-border, #eeeeef); border-radius: 14px; }
 .connection-health-addresses h3 { margin: 0 0 12px; font-size: 14px; line-height: 22px; font-weight: 700; }
 .connection-health-addresses dl { display: flex; flex-direction: column; gap: 12px; margin: 0; }
 .connection-health-addresses dt { font-size: 14px; line-height: 22px; font-weight: 600; }
 .connection-health-addresses dd { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 0; }
 .connection-health-addresses dd span { font-size: 12px; line-height: 19px; user-select: text; }
 .connection-health-addresses p,
-.connection-health-address-unknown { color: #777f84; font-size: 12px; line-height: 19px; }
+.connection-health-address-unknown { color: var(--app-muted, #777f84); font-size: 12px; line-height: 19px; }
 .connection-health-addresses p { margin: 12px 0 0; }
 .connection-health-note {
   display: flex; align-items: center; gap: 14px; margin-top: 12px;
-  padding: 16px; border-radius: 16px; background: #f4f6fd;
+  padding: 16px; border-radius: 16px; background: var(--app-canvas, #f4f6fd);
 }
-.connection-health-note > svg { flex-shrink: 0; color: #6782df; }
+.connection-health-note > svg { flex-shrink: 0; color: var(--app-info, #6782df); }
 .connection-health-reconnect {
   display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 12px;
   border: 0; border-radius: 12px; background: #0b8065; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
 }
 .connection-health-reconnect:hover { background: #096f58; }
-.connection-health-reconnect:focus-visible { outline: 2px solid #0b8065; outline-offset: 3px; }
+.connection-health-reconnect:focus-visible { outline: 2px solid var(--app-accent, #0b8065); outline-offset: 3px; }
 
 @media (min-width: 768px) {
   .connection-health { max-width: none; gap: 16px; padding-bottom: 0; }
@@ -121,7 +121,7 @@
   .connection-health-steps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .connection-health-step {
     display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-content: start;
-    gap: 6px 10px; min-width: 0; padding: 14px; border-color: #e9eeeb; border-radius: 12px;
+    gap: 6px 10px; min-width: 0; padding: 14px; border-color: var(--app-border, #e9eeeb); border-radius: 12px;
   }
   .connection-health-step .connection-health-copy { display: contents; }
   .connection-health-step .connection-health-copy strong { grid-column: 2; grid-row: 1; }
@@ -132,11 +132,11 @@
     grid-column: 3; grid-row: 1; align-self: center; max-width: 100%; margin: 0;
     gap: 4px; padding: 4px 0; background: transparent;
   }
-  .connection-health-addresses { padding: 14px 16px; border-color: #edf1ef; border-radius: 12px; background: #f8faf9; }
+  .connection-health-addresses { padding: 14px 16px; border-color: var(--app-border, #edf1ef); border-radius: 12px; background: var(--app-canvas, #f8faf9); }
   .connection-health-addresses dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
   .connection-health-addresses dl > div { min-width: 0; }
   .connection-health-addresses p { max-width: 400px; }
-  .connection-health-addresses dt { color: #637269; font-size: 12px; line-height: 18px; font-weight: 500; }
+  .connection-health-addresses dt { color: var(--app-muted, #637269); font-size: 12px; line-height: 18px; font-weight: 500; }
   .connection-health-addresses dd span {
     font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-variant-numeric: tabular-nums;
   }

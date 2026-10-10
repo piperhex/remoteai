@@ -1,3 +1,4 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
@@ -5,7 +6,7 @@ import { BottomSheet } from '../components/BottomSheet';
 import { SheetScrollView } from '../components/SheetScrollView';
 import { normalizeTotpSecret, parseOtpAuthUri } from './totp';
 import { TotpQrScanner } from './TotpQrScanner';
-import { totpStyles as styles } from './styles';
+import { useTotpStyles as useStyles } from './styles';
 import type { TotpAlgorithm, TotpDraft, TotpEntry } from './types';
 
 interface TotpFormSheetProps {
@@ -30,6 +31,7 @@ function OptionRow<T extends string | number>({ options, selected, onChange }: {
   options: readonly T[];
   selected: T;
 }) {
+  const styles = useStyles();
   useLanguage();
   return <View style={styles.optionRow}>{options.map((value) => {
     const active = selected === value;
@@ -47,6 +49,8 @@ export function TotpFormSheet({
   startWithScanner = false,
   visible,
 }: TotpFormSheetProps) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [draft, setDraft] = useState<TotpDraft>(DEFAULT_DRAFT);
   const [periodInput, setPeriodInput] = useState('30');
@@ -115,14 +119,14 @@ export function TotpFormSheet({
         {error ? <Text style={styles.error}>{error}</Text> : null}
         <Text style={styles.fieldLabel}>{t("服务名称")}</Text>
         <TextInput value={draft.issuer} onChangeText={(value) => patchDraft('issuer', value)}
-          placeholder={t("例如 GitHub")} placeholderTextColor="#98a9a0" style={styles.input} maxLength={160} />
+          placeholder={t("例如 GitHub")} placeholderTextColor={color("#98a9a0", 'muted')} style={styles.input} maxLength={160} />
         <Text style={styles.fieldLabel}>{t("账号")}</Text>
         <TextInput value={draft.accountName} onChangeText={(value) => patchDraft('accountName', value)}
-          placeholder={t("邮箱或用户名")} placeholderTextColor="#98a9a0" style={styles.input} maxLength={320} />
+          placeholder={t("邮箱或用户名")} placeholderTextColor={color("#98a9a0", 'muted')} style={styles.input} maxLength={320} />
         <Text style={styles.fieldLabel}>{t("密钥")}</Text>
         <View style={styles.secretRow}>
           <TextInput value={draft.secret} onChangeText={(value) => patchDraft('secret', value)}
-            placeholder={t("Base32 密钥或 otpauth:// 地址")} placeholderTextColor="#98a9a0"
+            placeholder={t("Base32 密钥或 otpauth:// 地址")} placeholderTextColor={color("#98a9a0", 'muted')}
             autoCapitalize="characters" autoCorrect={false} secureTextEntry={!showSecret}
             style={[styles.input, styles.secretInput]} />
           <Pressable style={styles.revealButton} onPress={() => setShowSecret((current) => !current)}>
@@ -138,7 +142,7 @@ export function TotpFormSheet({
           onChange={(value) => patchDraft('digits', value)} />
         <Text style={styles.fieldLabel}>{t("刷新周期（秒）")}</Text>
         <TextInput value={periodInput} onChangeText={(value) => setPeriodInput(value.replace(/\D/g, '').slice(0, 3))}
-          keyboardType="number-pad" placeholder="30" placeholderTextColor="#98a9a0" style={styles.input} />
+          keyboardType="number-pad" placeholder="30" placeholderTextColor={color("#98a9a0", 'muted')} style={styles.input} />
         <Text style={styles.hint}>{t("支持 15 至 120 秒，通常为 30 秒。")}</Text>
       </SheetScrollView>
     </BottomSheet>

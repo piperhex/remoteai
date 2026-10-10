@@ -34,7 +34,7 @@ import { useChatDrawerSwipe } from './useChatDrawerSwipe';
 import { useChatBackground } from './useChatBackground';
 import { useChatCompletionNotifications, useOpenChatNotification } from './useChatNotifications';
 import { notificationId, type ChatNotificationTarget } from './notificationTarget';
-import { styles } from './styles';
+import { useStyles } from './styles';
 import { threadPresentation } from '../../../../shared/remote-chat/sidebar';
 import type { ChatProject } from './types';
 import { compactUnavailableReason } from '../../../../shared/remote-chat/client/composerCommands';
@@ -47,6 +47,7 @@ interface Props {
 }
 
 export function ChatPage(props: Props) {
+  const styles = useStyles();
   useLanguage();
   const { session, active, notification, notificationError, notificationHandled } = props;
   const devices = useOfflineDevices(session, props.devices, props.devicesLoaded);
@@ -73,6 +74,7 @@ function ConnectedChat({ session, device, devices, active: pageActive, chooseDev
   tokenSummary, openTokenSummary, closeTokenSummary }: Props & {
   device?: RemoteDevice; chooseDevice: (id: string) => void;
 }) {
+  const styles = useStyles();
   useLanguage();
   const active = pageActive && !tokenSummary;
   const insets = useSafeAreaInsets();

@@ -8,10 +8,12 @@ import { ChatDiff } from '../ChatDiff';
 import { TaskReviewChecks } from './TaskReviewChecks';
 import { TaskReviewDelivery, TaskReviewRestore } from './TaskReviewDelivery';
 import { ReviewButton } from './ReviewButton';
-import { styles } from '../styles';
-import { reviewStyles as css } from './styles';
+import { useStyles } from '../styles';
+import { useReviewStyles as useCss } from './styles';
 
 export function TaskReviewPanel({ turn }: { turn: Turn }) {
+  const css = useCss();
+  const styles = useStyles();
   useLanguage();
   const model = useTaskReview(turn);
   const comment = model.comment;

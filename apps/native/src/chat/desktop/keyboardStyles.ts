@@ -1,31 +1,31 @@
-import { StyleSheet } from 'react-native';
+import { createThemedStyles } from '../../theme/styles';
 
-export const keyboardStyles = StyleSheet.create({
+export const useKeyboardStyles = createThemedStyles((color) => ({
   root: { backgroundColor: '#111113', flexShrink: 0 },
   tabs: { flexDirection: 'row', alignItems: 'stretch', backgroundColor: '#28282e' },
   tab: { flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 42, borderBottomWidth: 2,
     borderBottomColor: 'transparent' },
-  activeTab: { borderBottomColor: '#568aff' },
-  tabLabel: { color: '#ddd', fontSize: 16 },
-  activeText: { color: '#568aff' },
+  activeTab: { borderBottomColor: color('#568aff', 'info') },
+  tabLabel: { color: color('#ddd', 'faint'), fontSize: 16 },
+  activeText: { color: color('#568aff', 'info') },
   close: { width: 44, alignItems: 'center', justifyContent: 'center' },
   content: { padding: 8 },
   shortcuts: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   shortcut: { minHeight: 64, padding: 8, borderRadius: 5, gap: 4,
     backgroundColor: '#28282e', alignItems: 'center', justifyContent: 'center' },
-  shortcutLabel: { fontSize: 17, color: '#e2e2e7' },
-  description: { color: '#ddd', fontSize: 13 },
+  shortcutLabel: { fontSize: 17, color: color('#e2e2e7', 'faint') },
+  description: { color: color('#ddd', 'faint'), fontSize: 13 },
   keys: { gap: 6 },
   row: { flexDirection: 'row', gap: 6 },
   key: { flex: 1, minHeight: 32, borderRadius: 4, backgroundColor: '#28282e',
     justifyContent: 'center', alignItems: 'center' },
-  keyLabel: { color: '#e2e2e7', fontSize: 15 },
+  keyLabel: { color: color('#e2e2e7', 'faint'), fontSize: 15 },
   selected: { backgroundColor: '#345ca4' },
   combination: { flexDirection: 'row', gap: 5, alignItems: 'center', paddingRight: 4 },
   pages: { flexDirection: 'row', justifyContent: 'center' },
   page: { width: 40, height: 22, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 20, height: 4, borderRadius: 2, backgroundColor: '#737378' },
-  activeDot: { backgroundColor: '#eee' },
-  notice: { color: '#ddd', fontSize: 13, maxWidth: 400, marginBottom: 8 },
+  dot: { width: 20, height: 4, borderRadius: 2, backgroundColor: color('#737378', 'elevated') },
+  activeDot: { backgroundColor: color('#eee', 'elevated') },
+  notice: { color: color('#ddd', 'faint'), fontSize: 13, maxWidth: 400, marginBottom: 8 },
   disabled: { opacity: 0.4 },
-});
+}));

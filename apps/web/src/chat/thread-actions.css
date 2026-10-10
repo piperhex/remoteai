@@ -1,20 +1,20 @@
 .chat-thread-row { display: flex; align-items: center; min-width: 0; }
 .chat-thread-row > .chat-thread { flex: 1; min-width: 0; user-select: none; -webkit-touch-callout: none; }
 .chat-thread-more { display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 40px;
-  border: 0; border-radius: 10px; background: transparent; color: #718078; cursor: pointer; }
-.chat-thread-more:hover, .chat-thread-more:focus-visible { background: #e6f8f1; }
+  border: 0; border-radius: 10px; background: transparent; color: var(--app-muted, #718078); cursor: pointer; }
+.chat-thread-more:hover, .chat-thread-more:focus-visible { background: var(--app-canvas, #e6f8f1); }
 .chat-thread-actions { width: 100%; max-width: 400px; margin-inline: auto; overflow-wrap: anywhere; }
 .chat-thread-actions button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px;
-  padding: 10px 12px; border: 0; border-radius: 10px; background: transparent; color: #17211b;
+  padding: 10px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--app-ink, #17211b);
   font: inherit; line-height: 24px; text-align: left; cursor: pointer; }
 .chat-thread-actions button > svg { flex-shrink: 0; }
-.chat-thread-actions button:hover { background: #f4f4f4; }
+.chat-thread-actions button:hover { background: var(--app-canvas, #f4f4f4); }
 .chat-thread-actions button:disabled { opacity: .45; cursor: default; }
-.chat-thread-actions .chat-thread-danger { color: #c74e47; }
-.chat-thread-actions input { box-sizing: border-box; width: 100%; border: 1px solid #dfe5df;
+.chat-thread-actions .chat-thread-danger { color: var(--app-danger, #c74e47); }
+.chat-thread-actions input { box-sizing: border-box; width: 100%; border: 1px solid var(--app-border, #dfe5df);
   border-radius: 12px; padding: 12px; font: inherit; font-size: 16px; }
 .chat-thread-action-buttons { display: flex; gap: 10px; margin-top: 16px; }
-.chat-thread-action-buttons button { justify-content: center; background: #eef3f0; }
+.chat-thread-action-buttons button { justify-content: center; background: var(--app-canvas, #eef3f0); }
 @media (hover: hover) {
   .chat-thread-more { opacity: 0; }
   .chat-thread-row:hover .chat-thread-more, .chat-thread-row:focus-within .chat-thread-more { opacity: 1; }

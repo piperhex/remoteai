@@ -3,9 +3,10 @@ import { FRAME_RATE_OPTIONS, type DisplaySettingsProps } from '../../../../../sh
 import { useFrameRateInput } from '../../../../../shared/remote-desktop/useFrameRateInput';
 import { t } from '../../i18n';
 import { DisplaySettingsHint, DisplaySettingsSection } from './DisplaySettingsSection';
-import { displaySettingsStyles as s } from './displaySettingsStyles';
+import { useDisplaySettingsStyles as useS } from './displaySettingsStyles';
 
 export function DisplayFrameRateSettings(props: DisplaySettingsProps) {
+  const s = useS();
   const { settings, update, saving } = props;
   const input = useFrameRateInput(props);
   return <DisplaySettingsSection icon="pulse" title="帧率" description="更高的帧率让画面更流畅，也会占用更多带宽">

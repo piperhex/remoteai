@@ -9,5 +9,5 @@
   min-height: 44px; padding: 0 16px; border: 0; border-radius: 12px; background: transparent;
   color: var(--chat-green); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
 }
-.chat-markdown-preview-modes button[aria-pressed="true"] { background: #e3f3ed; }
+.chat-markdown-preview-modes button[aria-pressed="true"] { background: var(--app-canvas, #e3f3ed); }
 .chat-markdown-preview-toolbar > .chat-text-action { min-height: 44px; }

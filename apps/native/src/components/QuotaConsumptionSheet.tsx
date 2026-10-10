@@ -1,6 +1,7 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import type { AccountSummary } from '../types';
 import { BottomSheet } from './BottomSheet';
 import { SheetScrollView, SheetInset } from './SheetScrollView';
@@ -49,6 +50,7 @@ export function QuotaConsumptionSheet({
   onClose,
   onConfirm,
 }: QuotaConsumptionSheetProps) {
+  const styles = useStyles();
   useLanguage();
   const accountIds = useMemo(() => accounts.map((account) => account.id), [accounts]);
   const accountIdsKey = accountIds.join('\n');
@@ -162,20 +164,20 @@ export function QuotaConsumptionSheet({
   </BottomSheet>;
 }
 
-const styles = StyleSheet.create({
-  warning: { borderRadius: 14, backgroundColor: '#fff5e8', padding: 14, marginBottom: 12 },
-  warningTitle: { color: '#8a4e16', fontSize: 13, fontWeight: '900' },
-  warningText: { color: '#8a633c', fontSize: 12, lineHeight: 18, marginTop: 4 },
+const useStyles = createThemedStyles((color) => ({
+  warning: { borderRadius: 14, backgroundColor: color('#fff5e8', 'accentSoft'), padding: 14, marginBottom: 12 },
+  warningTitle: { color: color('#8a4e16', 'warning'), fontSize: 13, fontWeight: '900' },
+  warningText: { color: color('#8a633c', 'warning'), fontSize: 12, lineHeight: 18, marginTop: 4 },
   selectAllRow: {
     minHeight: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomWidth: 1,
-    borderBottomColor: '#e4ece7',
+    borderBottomColor: color('#e4ece7', 'border'),
     paddingHorizontal: 4,
   },
-  selectAllText: { color: '#14806f', fontSize: 13, fontWeight: '900' },
+  selectAllText: { color: color('#14806f', 'accent'), fontSize: 13, fontWeight: '900' },
   list: { maxHeight: 430 },
   listContent: { paddingTop: 8, paddingBottom: 4, gap: 8 },
   accountRow: {
@@ -184,27 +186,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     borderWidth: 1,
-    borderColor: '#dce8df',
+    borderColor: color('#dce8df', 'border'),
     borderRadius: 14,
-    backgroundColor: '#ffffff',
+    backgroundColor: color('#ffffff', 'surface'),
     paddingHorizontal: 14,
     paddingVertical: 11,
   },
-  accountRowSelected: { borderColor: '#76cbb4', backgroundColor: '#f0faf6' },
+  accountRowSelected: { borderColor: color('#76cbb4', 'border'), backgroundColor: color('#f0faf6', 'canvas') },
   accountIdentity: { flex: 1, minWidth: 0 },
-  accountEmail: { color: '#13231c', fontSize: 14, fontWeight: '800' },
-  accountMeta: { color: '#6f8177', fontSize: 11, marginTop: 5 },
-  accountReset: { color: '#708078', fontSize: 11, marginTop: 3 },
+  accountEmail: { color: color('#13231c', 'ink'), fontSize: 14, fontWeight: '800' },
+  accountMeta: { color: color('#6f8177', 'muted'), fontSize: 11, marginTop: 5 },
+  accountReset: { color: color('#708078', 'muted'), fontSize: 11, marginTop: 3 },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: '#aebeb5',
+    borderColor: color('#aebeb5', 'border'),
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxChecked: { borderColor: '#18af8c', backgroundColor: '#18af8c' },
+  checkboxChecked: { borderColor: color('#18af8c', 'accent'), backgroundColor: '#18af8c' },
   checkboxText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
   pressed: { opacity: 0.78 },
-});
+}));

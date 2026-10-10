@@ -1,10 +1,12 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { createThemedStyles } from '../theme/styles';
+import {  Text, View } from 'react-native';
 import type { PreviewProgress } from '../../../../shared/remote-chat/previewProgress';
 import { previewProgressText } from '../../../../shared/chat/previewProgress';
 
 export function PreviewTransferProgress({ progress, label, dark = false }: {
   progress?: PreviewProgress; label: string; dark?: boolean;
 }) {
+  const styles = useStyles();
   const text = previewProgressText(progress);
   const color = dark ? styles.lightText : styles.darkText;
   return <View style={[styles.container, dark && styles.dark]} accessibilityRole="progressbar"
@@ -20,16 +22,16 @@ export function PreviewTransferProgress({ progress, label, dark = false }: {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   container: { width: 288, maxWidth: '100%', alignSelf: 'center', paddingVertical: 10, paddingHorizontal: 12,
-    borderRadius: 12, backgroundColor: '#f0f3f2' },
+    borderRadius: 12, backgroundColor: color('#f0f3f2', 'canvas') },
   dark: { backgroundColor: '#252827' },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 },
   label: { fontSize: 13, flexShrink: 1 },
   percent: { fontSize: 13, fontWeight: '600', fontVariant: ['tabular-nums'] },
   detailRow: { flexWrap: 'wrap', rowGap: 2 },
   detail: { fontSize: 12, opacity: 0.8, fontVariant: ['tabular-nums'] },
-  lightText: { color: '#eee' }, darkText: { color: '#46504c' },
+  lightText: { color: '#eee' }, darkText: { color: color('#46504c', 'ink') },
   track: { height: 3, marginVertical: 6, borderRadius: 2, backgroundColor: '#8d969333', overflow: 'hidden' },
   fill: { height: '100%', backgroundColor: '#43b99a' },
-});
+}));

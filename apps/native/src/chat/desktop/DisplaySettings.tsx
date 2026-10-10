@@ -1,3 +1,4 @@
+import { useThemeColor } from '../../theme/store';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,22 +9,24 @@ import { DisplayFrameRateSettings } from './DisplayFrameRateSettings';
 import { DisplayMonitorSettings } from './DisplayMonitorSettings';
 import { DisplayResolutionSettings } from './DisplayResolutionSettings';
 import { DisplaySettingsHint, DisplaySettingsSection } from './DisplaySettingsSection';
-import { displaySettingsStyles as s } from './displaySettingsStyles';
+import { useDisplaySettingsStyles as useS } from './displaySettingsStyles';
 
 const COMPACT_PANEL_HEIGHT = 300;
 
 export function DisplaySettings(props: DisplaySettingsProps) {
+  const s = useS();
+  const color = useThemeColor();
   useLanguage();
   const [compact, setCompact] = useState(false);
   const { settings, update, saving, close } = props;
   return <View style={s.panel} accessibilityLabel={t('显示设置')}
     onLayout={({ nativeEvent }) => setCompact(nativeEvent.layout.height <= COMPACT_PANEL_HEIGHT)}>
     <View style={[s.header, compact && s.compactHeader]}>
-      <MaterialCommunityIcons name="monitor" size={30} color="#a8c8ff" />
+      <MaterialCommunityIcons name="monitor" size={30} color={color("#a8c8ff", 'info')} />
       <View style={s.headerCopy}><Text style={[s.title, compact && s.compactTitle]}>{t('显示')}</Text>
         {!compact && <Text style={s.description}>{t('调整远程桌面的显示效果')}</Text>}</View>
       <Pressable style={s.close} onPress={close} accessibilityRole="button" accessibilityLabel={t('关闭显示设置')}>
-        <MaterialCommunityIcons name="close" size={22} color="#aab6c9" /></Pressable>
+        <MaterialCommunityIcons name="close" size={22} color={color("#aab6c9", 'faint')} /></Pressable>
     </View>
     <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled"
       indicatorStyle="white" nestedScrollEnabled accessibilityLabel={t('显示设置选项')}>

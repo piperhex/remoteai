@@ -1,10 +1,12 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Platform, Pressable, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { BottomSheet } from '../components/BottomSheet';
 import { copyText, saveTextFile } from './copyText';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 import { Toast } from '../components/AppToast';
 
 export interface CopyAction { text: string; label: string }
@@ -62,13 +64,16 @@ function useTextCopy(text: string) {
 export function CopyTextButton({ text, label = t("复制"), variant = 'inline' }: {
   text: string; label?: string; variant?: 'inline' | 'labeled';
 }) {
+  const copyStyles = useCopyStyles();
+  const color = useThemeColor();
+  const styles = useStyles();
   useLanguage();
   const copy = useTextCopy(text);
   const labeled = variant === 'labeled';
   return <View style={!labeled && copyStyles.inline}><Pressable accessibilityRole="button" accessibilityLabel={label}
     style={labeled ? copyStyles.labeledButton : copyStyles.button} hitSlop={8}
     disabled={copy.saving} onPress={() => void copy.copy()}>
-    <Feather name={copy.status === '已复制' ? 'check' : 'copy'} size={15} color={palette.muted} />
+    <Feather name={copy.status === '已复制' ? 'check' : 'copy'} size={15} color={color(palette.muted, 'muted')} />
     {labeled && <Text style={copyStyles.label}>{copy.status ? t(copy.status) : label}</Text>}</Pressable>
     {copy.request && <BottomSheet visible title={t("保存完整内容")} onClose={copy.close} dismissible={!copy.saving}
       actions={[{ label: t("保存完整内容"), onPress: copy.save, loading: copy.saving, disabled: copy.saving }]}>
@@ -79,12 +84,12 @@ export function CopyTextButton({ text, label = t("复制"), variant = 'inline' }
   </View>;
 }
 
-const copyStyles = StyleSheet.create({
+const useCopyStyles = createThemedStyles((color) => ({
   labeledButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8 },
-  label: { color: palette.muted, fontSize: 14 },
+  label: { color: color(palette.muted, 'muted'), fontSize: 14 },
   // Explicit dimensions let Android lay out this view as one inline attachment in a TextView.
   inline: { width: INLINE_COPY_WIDTH, height: 20 },
   // The inline view ends at the text baseline; the icon's visible bottom also needs the font's descent.
   button: { flex: 1, alignItems: 'center', justifyContent: 'center',
     transform: [{ translateY: INLINE_BASELINE_OFFSET }] },
-});
+}));

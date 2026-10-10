@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
 import { Toast } from '../components/AppToast';
 import { BottomSheet } from '../components/BottomSheet';
-import { styles } from './styles';
+import { useStyles } from './styles';
 
 const MIN_REFRESH_MINUTES = 1;
 const MAX_REFRESH_MINUTES = 1440;
@@ -15,6 +15,7 @@ interface RefreshIntervalSheetProps {
 }
 
 export function RefreshIntervalSheet({ minutes, onSave, onClose }: RefreshIntervalSheetProps) {
+  const styles = useStyles();
   useLanguage();
   const [input, setInput] = useState(String(minutes));
   const [saving, setSaving] = useState(false);

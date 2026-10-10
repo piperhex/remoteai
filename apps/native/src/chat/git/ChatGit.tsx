@@ -1,3 +1,4 @@
+import { useThemeColor } from '../../theme/store';
 import { t, useLanguage } from '../../i18n';
 import { ActivityIndicator, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import type { GitClient } from '../../../../../shared/remote-chat/gitTypes';
@@ -8,7 +9,7 @@ import { GitHistory } from './GitHistory';
 import { GitChanges } from './GitChanges';
 import { GitCommitFiles } from './GitCommitFiles';
 import { GitToolbar } from './GitToolbar';
-import { gitStyles as styles } from './styles';
+import { useGitStyles as useStyles } from './styles';
 import { palette } from '../styles';
 
 interface Props {
@@ -16,6 +17,8 @@ interface Props {
 }
 
 export function ChatGit(props: Props) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const panel = useRemoteGit(props);
   const detail = panel.detail;
@@ -33,14 +36,14 @@ export function ChatGit(props: Props) {
       {panel.changes?.files.some(file => file.conflict) && <Text style={styles.error}>
         {t("请先在电脑上解决冲突或完成正在进行的合并。")}</Text>}
       {!!panel.notice && <Text accessibilityRole="alert" style={styles.notice}>{panel.notice}</Text>}
-      {panel.busy && <ActivityIndicator style={styles.loading} color={palette.green} />}
+      {panel.busy && <ActivityIndicator style={styles.loading} color={color(palette.green, 'accent')} />}
       {detail?.kind === 'files' && <GitCommitFiles commit={detail.commit} state={commitFiles}
         connected={props.connected} onSelect={file => panel.setDetail({ kind: 'diff', path: file.path,
           commit: detail.commit, title: `${file.path} · ${detail.commit.hash.slice(0, 8)}` })} />}
       {detail?.kind === 'diff' && <>
         <Text numberOfLines={2} style={styles.detailTitle}>{detail.title}</Text>
         {!!diff.error && <Text accessibilityRole="alert" style={styles.error}>{diff.error}</Text>}
-        {!diff.value && !diff.error && props.connected && <ActivityIndicator color={palette.green} />}
+        {!diff.value && !diff.error && props.connected && <ActivityIndicator color={color(palette.green, 'accent')} />}
         {diff.value && <ScrollView style={styles.fill}>
           {diff.value.truncated && <Text style={styles.notice}>{t("差异较大，仅显示部分内容。")}</Text>}
           <ScrollView horizontal><Text selectable style={styles.diff}>{diff.value.text

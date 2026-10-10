@@ -1,11 +1,13 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 ﻿import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import {  View } from 'react-native';
 import { quoteKey } from './replyQuotes';
 import { useChatQuotes } from './ChatQuotes';
 import { QuoteChip, QuoteDetails } from './ChatQuoteView';
 
 export function ComposerQuotes({ disabled, active }: { disabled: boolean; active: boolean }) {
+  const quoteStyles = useQuoteStyles();
   useLanguage();
   const draft = useChatQuotes();
   const [selected, setSelected] = useState<string | null>(null);
@@ -22,6 +24,6 @@ export function ComposerQuotes({ disabled, active }: { disabled: boolean; active
   </>;
 }
 
-const quoteStyles = StyleSheet.create({
+const useQuoteStyles = createThemedStyles(() => ({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 6, paddingTop: 6, paddingBottom: 4 },
-});
+}));

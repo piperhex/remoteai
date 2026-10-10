@@ -1,3 +1,4 @@
+import { syntaxColorRoles } from '../../../../shared/theme/syntax';
 import { t, useLanguage } from '../i18n';
 import { useMemo, useState } from 'react';
 import { Code2, WrapText } from 'lucide-react';
@@ -33,7 +34,7 @@ export function ChatCodeBlock({ text, language = '', label, copyLabel = t("复�
       if (more && node.scrollHeight - node.scrollTop - node.clientHeight < 100) {
         setLimit(value => value + PAGE_CHARACTERS);
       }
-    }}><code>{spans.map((span, index) => <span key={index} style={{ color: span.color }}>{span.text}</span>)}</code></pre>
+    }}><code>{spans.map((span, index) => <span key={index} style={{ color: span.color && `var(--app-${syntaxColorRoles[span.color] ?? 'ink'}, ${span.color})` }}>{span.text}</span>)}</code></pre>
     {more && <button type="button" className="chat-text-action" onClick={() => setLimit(value => value + PAGE_CHARACTERS)}>
       {t("显示更多内容")}</button>}
   </section>;

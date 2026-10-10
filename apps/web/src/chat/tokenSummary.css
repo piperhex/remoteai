@@ -1,25 +1,25 @@
 .chat-token-summary { max-height: 75dvh; display: flex; flex-direction: column; gap: 16px; }
-.chat-token-summary input { width: 64px; min-height: 40px; padding: 6px; border: 1px solid #dfe5e1; border-radius: 8px; }
-.chat-token-card { border: 1px solid #e2e9e5; border-radius: 14px; padding: 16px; }
+.chat-token-summary input { width: 64px; min-height: 40px; padding: 6px; border: 1px solid var(--app-border, #dfe5e1); border-radius: 8px; }
+.chat-token-card { border: 1px solid var(--app-border, #e2e9e5); border-radius: 14px; padding: 16px; }
 .chat-token-card h3 { margin: 0 0 12px; font-size: 16px; }
 .chat-token-metrics { display: flex; flex-wrap: wrap; gap: 20px; margin-block: 14px; }
 .chat-token-metrics > div { display: flex; flex-direction: column; gap: 4px; }
-.chat-token-metrics small { color: #74847b; }
-.chat-token-metrics strong { color: #14806f; font-size: 20px; }
+.chat-token-metrics small { color: var(--app-muted, #74847b); }
+.chat-token-metrics strong { color: var(--app-accent, #14806f); font-size: 20px; }
 .chat-token-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 12px; }
-.chat-token-controls select { max-width: 100%; padding: 8px; border: 1px solid #dfe5e1; border-radius: 8px; }
+.chat-token-controls select { max-width: 100%; padding: 8px; border: 1px solid var(--app-border, #dfe5e1); border-radius: 8px; }
 .chat-token-bars { display: flex; gap: 2px; height: 120px; overflow-x: auto; padding-block: 8px;
-  border-bottom: 1px solid #dfe5e1; }
+  border-bottom: 1px solid var(--app-border, #dfe5e1); }
 .chat-token-bars button { display: flex; align-items: flex-end; flex: 1; min-width: 5px; height: 100%;
-  padding: 0; border: 0; background: #f3f6f4; cursor: pointer; }
-.chat-token-bars button[aria-pressed="true"] { outline: 2px solid #14806f; outline-offset: -2px; }
+  padding: 0; border: 0; background: var(--app-canvas, #f3f6f4); cursor: pointer; }
+.chat-token-bars button[aria-pressed="true"] { outline: 2px solid var(--app-accent, #14806f); outline-offset: -2px; }
 .chat-token-bars button span { flex: 1; min-width: 1px; }
-.chat-token-dates { display: flex; justify-content: space-between; gap: 12px; font-size: 10px; color: #74847b; }
+.chat-token-dates { display: flex; justify-content: space-between; gap: 12px; font-size: 10px; color: var(--app-muted, #74847b); }
 .chat-token-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; font-size: 12px; }
 .chat-token-legend strong { width: 100%; }
 .chat-token-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
 .chat-token-ranking { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-block: 14px; font-size: 13px; }
 .chat-token-ranking > span { flex: 1; min-width: 120px; overflow-wrap: anywhere; }
-.chat-token-ranking progress { width: 100%; height: 5px; accent-color: #14806f; }
+.chat-token-ranking progress { width: 100%; height: 5px; accent-color: var(--app-accent, #14806f); }
 .chat-token-heatmap { display: flex; flex-wrap: wrap; gap: 4px; }
 .chat-token-heatmap span { width: 12px; height: 12px; border-radius: 2px; }

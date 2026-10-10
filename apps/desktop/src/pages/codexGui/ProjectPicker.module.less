@@ -29,7 +29,9 @@
   font-size: 14px; line-height: 22px; text-align: left; cursor: pointer;
   > svg { flex-shrink: 0; }
   > span { min-width: 0; overflow-wrap: anywhere; }
-  &[aria-checked="true"], &:hover:not(:disabled), &:focus-visible { background: var(--bg, #f0f1f2); }
+  &[aria-checked="true"], &:hover:not(:disabled), &:focus-visible {
+    background: color-mix(in srgb, var(--ink) 8%, var(--panel, #fafbfc));
+  }
   &:disabled { cursor: default; opacity: .5; }
 }
 .divider { height: 1px; margin: 7px 10px 5px; background: var(--line, #e7e7e7); }

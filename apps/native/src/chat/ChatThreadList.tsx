@@ -1,12 +1,14 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
-import { ActivityIndicator, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, SectionList, Text, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import type { ChatProject, ChatState, Thread } from './types';
 import { threadPresentation } from '../../../../shared/remote-chat/sidebar';
 import { useThreadGroups } from '../../../../shared/remote-chat/client/useThreadGroups';
 import { useThreadListScroll } from './useThreadListScroll';
 import type { ChatController } from './controller';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 import { THREAD_LONG_PRESS_MS } from '../../../../shared/remote-chat/client/threadActions';
 
 interface Props {
@@ -19,6 +21,9 @@ interface Props {
 const LIST_BOTTOM_SPACING = 16;
 
 export function ChatThreadList({ state, newChat, select, controller, bottomInset, openActions }: Props) {
+  const styles = useStyles();
+  const listStyles = useListStyles();
+  const color = useThemeColor();
   useLanguage();
   const { groups, toggle, toggleCollapse } = useThreadGroups(state);
   const layoutKey = JSON.stringify(groups.map(group => [group.cwd, group.data.length, group.canToggle]));
@@ -36,7 +41,7 @@ export function ChatThreadList({ state, newChat, select, controller, bottomInset
         <Pressable accessibilityRole="button" accessibilityState={{ expanded: !section.collapsed }}
           accessibilityLabel={`${section.collapsed ? t("展开项目") : t("折叠项目")}：${section.label}`}
           style={[listStyles.projectToggle, styles.fill]} onPress={() => toggleCollapse(section.cwd)}>
-          <Feather name={section.collapsed ? 'chevron-right' : 'chevron-down'} size={14} color={palette.muted} />
+          <Feather name={section.collapsed ? 'chevron-right' : 'chevron-down'} size={14} color={color(palette.muted, 'muted')} />
           <Text numberOfLines={1} style={[listStyles.project, styles.fill]}>{section.label}</Text>
         </Pressable>
         {!!section.cwd && <Pressable accessibilityRole="button" accessibilityLabel={t("在 {value1} 中新建对话", { value1: section.label })}
@@ -61,7 +66,7 @@ export function ChatThreadList({ state, newChat, select, controller, bottomInset
           onPress={() => select(item)}>
           <Text numberOfLines={1} style={listStyles.title}>{view.title}</Text>
           <View style={listStyles.status}>
-            {ready && view.running ? <ActivityIndicator size="small" color={palette.muted} accessibilityLabel={t("正在回复")} />
+            {ready && view.running ? <ActivityIndicator size="small" color={color(palette.muted, 'muted')} accessibilityLabel={t("正在回复")} />
               : view.unread && <View accessible accessibilityLabel={t("未读回复")} style={listStyles.dot} />}
           </View>
         </Pressable>;
@@ -70,7 +75,7 @@ export function ChatThreadList({ state, newChat, select, controller, bottomInset
         {ready ? t("暂时没有聊天") : t("连接电脑后查看聊天")}</Text></View>}
       ListFooterComponent={state.cursor ? <View style={listStyles.pagination}>
         {pagination.loadingMore && <View style={styles.row}>
-          <ActivityIndicator size="small" color={palette.muted} />
+          <ActivityIndicator size="small" color={color(palette.muted, 'muted')} />
           <Text accessibilityRole="text" accessibilityLiveRegion="polite" style={styles.subtitle}>{t("正在加载…")}</Text>
         </View>}
         {pagination.failed && <Pressable accessibilityRole="button" style={styles.button}
@@ -81,18 +86,18 @@ export function ChatThreadList({ state, newChat, select, controller, bottomInset
   );
 }
 
-const listStyles = StyleSheet.create({
+const useListStyles = createThemedStyles((color) => ({
   content: { paddingHorizontal: 14 },
   pagination: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   projectToggle: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 10 },
-  project: { color: palette.muted, fontSize: 12, lineHeight: 18, fontWeight: '600' },
+  project: { color: color(palette.muted, 'muted'), fontSize: 12, lineHeight: 18, fontWeight: '600' },
   add: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  plus: { color: palette.muted, fontSize: 22 },
+  plus: { color: color(palette.muted, 'muted'), fontSize: 22 },
   thread: { minHeight: 46, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center',
     gap: 10, borderRadius: 10 },
-  selected: { backgroundColor: '#e6f8f1' },
-  title: { flex: 1, color: palette.ink, fontSize: 14, lineHeight: 22 },
+  selected: { backgroundColor: color('#e6f8f1', 'canvas') },
+  title: { flex: 1, color: color(palette.ink, 'ink'), fontSize: 14, lineHeight: 22 },
   status: { width: 18, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#a7b1ab' },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: color('#a7b1ab', 'elevated') },
   more: { paddingHorizontal: 10, minHeight: 40, justifyContent: 'center' },
-});
+}));

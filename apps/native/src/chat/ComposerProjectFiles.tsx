@@ -1,7 +1,9 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useState } from 'react';
 import Feather from '@expo/vector-icons/Feather';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { BottomSheet } from '../components/BottomSheet';
 import { SheetFlatList, SheetInset, SHEET_READABLE_WIDTH } from '../components/SheetScrollView';
 import type { ProjectFile, ProjectFilesRequest, ProjectFilesResponse } from '../../../../shared/remote-chat/projectFiles';
@@ -15,6 +17,8 @@ interface Props {
   close: () => void;
 }
 export function ComposerProjectFiles({ imagesOnly, threadId, cwd, load, choose, close }: Props) {
+  const fileStyles = useFileStyles();
+  const color = useThemeColor();
   useLanguage();
   const [directory, setDirectory] = useState('');
   const [result, setResult] = useState<ProjectFilesResponse>();
@@ -52,9 +56,9 @@ export function ComposerProjectFiles({ imagesOnly, threadId, cwd, load, choose, 
         renderItem={({ item }) => <Pressable accessibilityRole="button" accessibilityLabel={item.name}
           onPress={() => { if (item.directory) setDirectory(item.path); else choose(item); }}
           style={({ pressed }) => [fileStyles.row, pressed && fileStyles.pressed]}>
-          <Feather name={item.directory ? 'folder' : fileIcon} size={22} color="#444" />
+          <Feather name={item.directory ? 'folder' : fileIcon} size={22} color={color("#444", 'ink')} />
           <Text numberOfLines={1} style={fileStyles.name}>{item.name}</Text>
-          {item.directory && <Feather name="chevron-right" size={18} color="#888" />}
+          {item.directory && <Feather name="chevron-right" size={18} color={color("#888", 'muted')} />}
         </Pressable>}
         ListEmptyComponent={!loading && !error ? <Text style={fileStyles.message}>
           {imagesOnly ? t("此文件夹没有照片") : t("此文件夹没有文件")}</Text> : null}
@@ -63,13 +67,13 @@ export function ComposerProjectFiles({ imagesOnly, threadId, cwd, load, choose, 
   </BottomSheet>;
 }
 
-const fileStyles = StyleSheet.create({
+const useFileStyles = createThemedStyles((color) => ({
   root: { flexShrink: 1, paddingBottom: 12 },
   readable: { maxWidth: SHEET_READABLE_WIDTH, width: '100%', alignSelf: 'center' },
   list: { maxHeight: 380, flexGrow: 0 },
   row: { flexDirection: 'row', gap: 12, alignItems: 'center', padding: 12, minHeight: 48, borderRadius: 12 },
   // Leave room for Android font metrics and descenders in file and folder names.
-  name: { fontSize: 15, lineHeight: 22, includeFontPadding: true, paddingVertical: 2, color: '#222', flex: 1 },
-  message: { fontSize: 13, lineHeight: 20, color: '#777', padding: 14, maxWidth: 400 },
-  pressed: { backgroundColor: '#f3f3f3' },
-});
+  name: { fontSize: 15, lineHeight: 22, includeFontPadding: true, paddingVertical: 2, color: color('#222', 'ink'), flex: 1 },
+  message: { fontSize: 13, lineHeight: 20, color: color('#777', 'muted'), padding: 14, maxWidth: 400 },
+  pressed: { backgroundColor: color('#f3f3f3', 'canvas') },
+}));

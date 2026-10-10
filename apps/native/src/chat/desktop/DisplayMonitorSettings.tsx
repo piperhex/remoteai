@@ -1,12 +1,15 @@
+import { useThemeColor } from '../../theme/store';
 import { Pressable, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { displayLabel, displayName } from '../../../../../shared/remote-desktop/displays';
 import type { DisplaySettingsProps } from '../../../../../shared/remote-desktop/displaySettings';
 import { t } from '../../i18n';
 import { DisplaySettingsSection } from './DisplaySettingsSection';
-import { displaySettingsStyles as s } from './displaySettingsStyles';
+import { useDisplaySettingsStyles as useS } from './displaySettingsStyles';
 
 export function DisplayMonitorSettings({ displays, settings, saving, update, stats }: DisplaySettingsProps) {
+  const s = useS();
+  const color = useThemeColor();
   return <DisplaySettingsSection icon="monitor" title="显示器" description="选择要使用的显示器">
     {displays.length > 0 && <View style={s.monitorGrid}>
       {displays.map(item => <Pressable key={item.id} disabled={saving} accessibilityRole="radio"
@@ -26,7 +29,7 @@ export function DisplayMonitorSettings({ displays, settings, saving, update, sta
     </View>}
     <Pressable style={s.toggle} accessibilityRole="switch" accessibilityLabel={t('隐藏连接状态')}
       accessibilityState={{ checked: !stats.visible }} onPress={stats.toggle}>
-      <MaterialCommunityIcons name="view-dashboard-outline" size={20} color="#7e9bc6" />
+      <MaterialCommunityIcons name="view-dashboard-outline" size={20} color={color("#7e9bc6", 'info')} />
       <View style={s.headerCopy}><Text style={s.text}>{t('隐藏连接状态')}</Text>
         <Text style={s.toggleDescription}>{t('连接后不在屏幕上显示状态信息')}</Text></View>
       <View style={[s.switchTrack, !stats.visible && s.switchOn]}>

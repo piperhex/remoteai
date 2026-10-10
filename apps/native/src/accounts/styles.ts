@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { createThemedStyles } from '../theme/styles';
 
 export const accountColors = {
   canvas: '#f5fcfa',
@@ -15,31 +15,32 @@ export const accountColors = {
   warning: '#d89a32',
 };
 
-export const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: accountColors.canvas },
+export const useStyles = createThemedStyles((color) => ({
+  page: { flex: 1, backgroundColor: color(accountColors.canvas, 'canvas') },
   scroll: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
   overview: {
-    padding: 10, paddingTop: 20, borderRadius: 12, backgroundColor: '#bbf6e6',
-    experimental_backgroundImage: 'linear-gradient(110deg, #e1fcf3 0%, #78efd2 100%)',
+    padding: 10, paddingTop: 20, borderRadius: 12, backgroundColor: color('#bbf6e6', 'accentSoft'),
+    experimental_backgroundImage:
+      `linear-gradient(110deg, ${color('#e1fcf3', 'accentSoft')} 0%, ${color('#78efd2', 'surface')} 100%)`,
   },
   headingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, paddingHorizontal: 6 },
-  heading: { flex: 1, color: '#404963', fontSize: 16, fontWeight: '700' },
+  heading: { flex: 1, color: color('#404963', 'ink'), fontSize: 16, fontWeight: '700' },
   privacyButton: { minWidth: 36, minHeight: 32, alignItems: 'center', justifyContent: 'center' },
   overviewRow: { flexDirection: 'row', gap: 6, alignItems: 'stretch' },
   stat: {
     flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.7)', padding: 10,
+    gap: 8, borderRadius: 10, backgroundColor: color('rgba(255,255,255,0.7)', 'elevated'), padding: 10,
   },
   statNarrow: { flexDirection: 'column', alignItems: 'flex-start', gap: 4 },
-  statValue: { color: accountColors.ink, fontSize: 22, fontWeight: '700' },
-  statLabel: { color: accountColors.muted, fontSize: 12, marginTop: 2 },
+  statValue: { color: color(accountColors.ink, 'ink'), fontSize: 22, fontWeight: '700' },
+  statLabel: { color: color(accountColors.muted, 'muted'), fontSize: 12, marginTop: 2 },
   actions: { flex: 1.1, minWidth: 0, gap: 6 },
   action: {
     minHeight: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: 5, borderRadius: 9, paddingHorizontal: 5, paddingVertical: 8,
   },
-  consume: { backgroundColor: 'rgba(255,255,255,0.8)' },
-  consumeText: { color: accountColors.muted, fontSize: 12, fontWeight: '600' },
+  consume: { backgroundColor: color('rgba(255,255,255,0.8)', 'elevated') },
+  consumeText: { color: color(accountColors.muted, 'muted'), fontSize: 12, fontWeight: '600' },
   refresh: {
     backgroundColor: accountColors.green,
     experimental_backgroundImage: 'linear-gradient(110deg, #00be95 0%, #00976a 100%)',
@@ -47,30 +48,30 @@ export const styles = StyleSheet.create({
   refreshText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
   updated: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 5 },
-  updatedText: { flexShrink: 1, color: accountColors.muted, fontSize: 12 },
+  updatedText: { flexShrink: 1, color: color(accountColors.muted, 'muted'), fontSize: 12 },
   add: {
     minHeight: 36, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, paddingHorizontal: 12, borderRadius: 10, backgroundColor: '#fff',
+    gap: 6, paddingHorizontal: 12, borderRadius: 10, backgroundColor: color('#fff', 'surface'),
   },
-  addText: { color: accountColors.green, fontSize: 14, fontWeight: '700' },
+  addText: { color: color(accountColors.green, 'accent'), fontSize: 14, fontWeight: '700' },
   card: {
     flexDirection: 'row', alignItems: 'center', gap: 14,
-    backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 12,
+    backgroundColor: color('#fff', 'surface'), borderRadius: 12, padding: 12, marginBottom: 12,
     shadowColor: '#347d69', shadowOpacity: 0.06, shadowOffset: { width: 0, height: 4 },
     shadowRadius: 12, elevation: 1,
   },
   identity: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
   badge: { maxWidth: 86, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
   plan: { fontSize: 13, fontWeight: '700' },
-  email: { flex: 1, minWidth: 0, color: accountColors.ink, fontSize: 17, fontWeight: '700' },
+  email: { flex: 1, minWidth: 0, color: color(accountColors.ink, 'ink'), fontSize: 17, fontWeight: '700' },
   cardContent: { flex: 1, minWidth: 0 },
   usage: { minWidth: 0 },
   meter: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  track: { flex: 1, height: 9, borderRadius: 6, overflow: 'hidden', backgroundColor: accountColors.track },
+  track: { flex: 1, height: 9, borderRadius: 6, overflow: 'hidden', backgroundColor: color(accountColors.track, 'elevated') },
   fill: { height: '100%', borderRadius: 6 },
   remaining: { minWidth: 38, fontSize: 14, fontWeight: '600', textAlign: 'right' },
   reset: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
-  resetText: { flex: 1, color: accountColors.muted, fontSize: 12, lineHeight: 18 },
+  resetText: { flex: 1, color: color(accountColors.muted, 'muted'), fontSize: 12, lineHeight: 18 },
   pressed: { opacity: 0.72 },
   disabled: { opacity: 0.45 },
-});
+}));

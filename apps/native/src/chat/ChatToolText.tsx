@@ -1,15 +1,18 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { ChatMarkdown } from './Markdown';
 import { toolOutputPage } from './toolOutput';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 import { SelectableChatText } from './SelectableChatText';
 
 /** Match PC tool output paging while preserving the original payload for full-copy actions. */
 export function ChatToolText({ text, markdown = false, prose = false }: {
   text: string; markdown?: boolean; prose?: boolean;
 }) {
+  const toolStyles = useToolStyles();
+  const styles = useStyles();
   useLanguage();
   const [requestedPage, setPage] = useState(0);
   const { page, pages, visible } = toolOutputPage(text, requestedPage);
@@ -29,8 +32,8 @@ export function ChatToolText({ text, markdown = false, prose = false }: {
   </View>;
 }
 
-const toolStyles = StyleSheet.create({
+const useToolStyles = createThemedStyles((color) => ({
   content: { gap: 8 },
-  prose: { color: palette.ink, fontSize: 12, lineHeight: 20 },
+  prose: { color: color(palette.ink, 'ink'), fontSize: 12, lineHeight: 20 },
   paging: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, maxWidth: 400 },
-});
+}));

@@ -1,15 +1,18 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { SheetInset, SheetScrollView } from '../components/SheetScrollView';
 import { ChatCodeBlock } from './ChatCodeBlock';
 import { CopyTextButton } from './CopyTextButton';
 import { ChatMarkdown } from './Markdown';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 
 const PREVIEW_MODES = [{ value: 'preview', get label() { return t("预览"); } }, { value: 'source', get label() { return t("原文"); } }] as const;
 
 export function ChatMarkdownPreview({ text, line }: { text: string; line?: number }) {
+  const previewStyles = usePreviewStyles();
+  const styles = useStyles();
   useLanguage();
   const [mode, setMode] = useState<'preview' | 'source'>('preview');
   return <View style={previewStyles.container}>
@@ -33,12 +36,12 @@ export function ChatMarkdownPreview({ text, line }: { text: string; line?: numbe
   </View>;
 }
 
-const previewStyles = StyleSheet.create({
+const usePreviewStyles = createThemedStyles((color) => ({
   container: { flexShrink: 1 },
   toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 },
   tabs: { flexDirection: 'row', gap: 4 },
   tab: { minHeight: 44, paddingHorizontal: 16, justifyContent: 'center', borderRadius: 12 },
-  selectedTab: { backgroundColor: '#e3f3ed' },
-  tabText: { color: palette.green, fontSize: 14, fontWeight: '700' },
+  selectedTab: { backgroundColor: color('#e3f3ed', 'canvas') },
+  tabText: { color: color(palette.green, 'accent'), fontSize: 14, fontWeight: '700' },
   content: { paddingTop: 12, paddingBottom: 20 },
-});
+}));

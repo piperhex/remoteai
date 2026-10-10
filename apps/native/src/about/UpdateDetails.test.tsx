@@ -12,7 +12,7 @@ vi.mock('react', async (importOriginal) => ({
 vi.mock('react-native', () => ({ Text: 'Text', View: 'View', StyleSheet: {
   create: <T,>(styles: T) => styles, hairlineWidth: 1,
 } }));
-vi.mock('./styles', () => ({ styles: {} }));
+vi.mock('./styles', () => ({ useStyles: () => ({}) }));
 vi.mock('./useAppUpdate', () => ({ openReleasePage: observed.openReleasePage }));
 
 interface Props { children?: unknown; accessibilityRole?: string; onPress?: () => void }

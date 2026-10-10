@@ -1,5 +1,6 @@
+import { useThemeMode } from '../theme/preference';
 import { useEffect, type ReactNode } from 'react';
-import { ConfigProvider as AntConfigProvider } from 'antd';
+import { theme, ConfigProvider as AntConfigProvider } from 'antd';
 import { ConfigProvider as MobileConfigProvider } from 'antd-mobile';
 import { setDefaultConfig } from 'antd-mobile/es/components/config-provider';
 import zhCN from 'antd/locale/zh_CN';
@@ -12,6 +13,7 @@ import { getLocale, useLanguage } from './language';
 
 export function WebLocaleProvider({ children }: { children: ReactNode }) {
   const language = useLanguage();
+  const mode = useThemeMode();
   const mobileLocale = { en: enUSMobile, zh: zhCNMobile, ru: ruRUMobile }[language];
   useEffect(() => {
     document.documentElement.lang = getLocale();
@@ -22,7 +24,8 @@ export function WebLocaleProvider({ children }: { children: ReactNode }) {
   // Imperative dialogs are rendered outside the provider tree.
   useEffect(() => { setDefaultConfig({ locale: mobileLocale }); }, [mobileLocale]);
   return <AntConfigProvider locale={{ en: enUS, zh: zhCN, ru: ruRU }[language]}
-    theme={{ token: { colorPrimary: '#0b9b7c', borderRadius: 12,
+    theme={{ algorithm: mode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
+      token: { colorPrimary: '#0b9b7c', borderRadius: 12,
       fontFamily: "Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif" } }}>
     <MobileConfigProvider locale={mobileLocale}>
       {children}

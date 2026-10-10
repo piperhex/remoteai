@@ -1,6 +1,8 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { updateAccountDetails } from '../api/client';
 import { normalizeTotpSecret, parseOtpAuthUri } from '../totp/totp';
 import { TotpQrScanner } from '../totp/TotpQrScanner';
@@ -37,13 +39,15 @@ function SecretInputRow({ label, value, onChangeText, hidden, onToggle, maxLengt
   onToggle: () => void;
   maxLength: number;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   return <View>
     <Text style={styles.label}>{label}</Text>
     <View style={styles.inputRow}>
       <TextInput value={value} onChangeText={onChangeText} secureTextEntry={hidden}
         autoCapitalize="none" autoCorrect={false} maxLength={maxLength}
-        placeholder={t("未设置")} placeholderTextColor="#98a69f" style={[styles.input, styles.flexInput]} />
+        placeholder={t("未设置")} placeholderTextColor={color("#98a69f", 'muted')} style={[styles.input, styles.flexInput]} />
       <Pressable accessibilityRole="button" onPress={onToggle} style={styles.textButton}>
         <Text style={styles.textButtonLabel}>{hidden ? t("显示") : t("隐藏")}</Text>
       </Pressable>
@@ -56,6 +60,7 @@ function SecretInputRow({ label, value, onChangeText, hidden, onToggle, maxLengt
 }
 
 function AccountTotpPreview({ secret }: { secret: string }) {
+  const styles = useStyles();
   useLanguage();
   const totp = useAccountTotp(secret);
   if (!totp) return null;
@@ -76,6 +81,8 @@ export function AccountPrivateDetailsSheet({ account, session, syncing, onClose,
   onClose: () => void;
   onUpdated: (account: AccountSummary) => void;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [note, setNote] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
@@ -163,19 +170,19 @@ export function AccountPrivateDetailsSheet({ account, session, syncing, onClose,
         },
       ]}>
       {syncing ? <View style={styles.syncingBox}>
-        <ActivityIndicator color="#14806f" />
+        <ActivityIndicator color={color("#14806f", 'accent')} />
         <Text style={styles.syncingText}>{t("正在同步最新账号资料…")}</Text>
       </View> : <SheetScrollView style={styles.scroll} contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled">
         <Text style={styles.label}>{t("预设可用截止日期")}</Text>
         <TextInput value={expiresAt} onChangeText={setExpiresAt} editable={metadataEditable}
-          placeholder="YYYY-MM-DD" placeholderTextColor="#98a69f" maxLength={10} style={styles.input} />
+          placeholder="YYYY-MM-DD" placeholderTextColor={color("#98a69f", 'muted')} maxLength={10} style={styles.input} />
         {!metadataEditable ? <Text style={styles.readOnlyHint}>{t("该字段由管理员维护")}</Text> : null}
 
         <Text style={styles.label}>{t("手机号")}</Text>
         <View style={styles.inputRow}>
           <TextInput value={phoneNumber} onChangeText={setPhoneNumber} keyboardType="phone-pad"
-            placeholder={t("未设置")} placeholderTextColor="#98a69f" maxLength={64}
+            placeholder={t("未设置")} placeholderTextColor={color("#98a69f", 'muted')} maxLength={64}
             style={[styles.input, styles.flexInput]} />
           <Pressable accessibilityRole="button" disabled={!phoneNumber}
             onPress={() => void copyValue(t("手机号"), phoneNumber)}
@@ -194,7 +201,7 @@ export function AccountPrivateDetailsSheet({ account, session, syncing, onClose,
             setPreviewSecret('');
             setTotpError('');
           }} onBlur={previewTotp} secureTextEntry={totpHidden} autoCapitalize="characters"
-            autoCorrect={false} placeholder={t("Base32 密钥")} placeholderTextColor="#98a69f"
+            autoCorrect={false} placeholder={t("Base32 密钥")} placeholderTextColor={color("#98a69f", 'muted')}
             maxLength={512} style={[styles.input, styles.flexInput]} />
           <Pressable onPress={() => setTotpHidden((value) => !value)} style={styles.textButton}>
             <Text style={styles.textButtonLabel}>{totpHidden ? t("显示") : t("隐藏")}</Text>
@@ -208,7 +215,7 @@ export function AccountPrivateDetailsSheet({ account, session, syncing, onClose,
 
         <Text style={styles.label}>{t("备注")}</Text>
         <TextInput value={note} onChangeText={setNote} editable={metadataEditable} multiline
-          textAlignVertical="top" placeholder={t("添加账号备注")} placeholderTextColor="#98a69f"
+          textAlignVertical="top" placeholder={t("添加账号备注")} placeholderTextColor={color("#98a69f", 'muted')}
           style={[styles.input, styles.noteInput]} />
         {!metadataEditable ? <Text style={styles.readOnlyHint}>{t("该字段由管理员维护")}</Text> : null}
       </SheetScrollView>}
@@ -229,57 +236,57 @@ export function AccountPrivateDetailsSheet({ account, session, syncing, onClose,
   </>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   scroll: { maxHeight: 620 },
   content: { paddingBottom: 10 },
   syncingBox: { minHeight: 180, alignItems: 'center', justifyContent: 'center', gap: 10 },
-  syncingText: { color: '#568072', fontSize: 12, fontWeight: '700' },
-  label: { color: '#263b31', fontSize: 12, fontWeight: '800', marginTop: 14, marginBottom: 7 },
+  syncingText: { color: color('#568072', 'accent'), fontSize: 12, fontWeight: '700' },
+  label: { color: color('#263b31', 'ink'), fontSize: 12, fontWeight: '800', marginTop: 14, marginBottom: 7 },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   input: {
     minHeight: 46,
     borderWidth: 1,
-    borderColor: '#cbdcd0',
+    borderColor: color('#cbdcd0', 'border'),
     borderRadius: 10,
-    backgroundColor: '#fbfdfb',
-    color: '#13231c',
+    backgroundColor: color('#fbfdfb', 'surface'),
+    color: color('#13231c', 'ink'),
     fontSize: 14,
     paddingHorizontal: 12,
   },
   flexInput: { flex: 1 },
   noteInput: { minHeight: 110, paddingTop: 12 },
   textButton: { minHeight: 42, justifyContent: 'center', paddingHorizontal: 4 },
-  textButtonLabel: { color: '#14806f', fontSize: 11, fontWeight: '800' },
-  copyButton: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 8, backgroundColor: '#e6f8f1' },
-  copyButtonLabel: { color: '#0b8065', fontSize: 11, fontWeight: '800' },
-  scanButton: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 8, backgroundColor: '#e8f8fb' },
-  scanButtonText: { color: '#168da2', fontSize: 11, fontWeight: '800' },
-  readOnlyHint: { color: '#8a9891', fontSize: 10, marginTop: 5 },
-  errorText: { color: '#bd3c35', fontSize: 11, marginTop: 6 },
+  textButtonLabel: { color: color('#14806f', 'accent'), fontSize: 11, fontWeight: '800' },
+  copyButton: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 8, backgroundColor: color('#e6f8f1', 'canvas') },
+  copyButtonLabel: { color: color('#0b8065', 'accent'), fontSize: 11, fontWeight: '800' },
+  scanButton: { paddingHorizontal: 10, paddingVertical: 10, borderRadius: 8, backgroundColor: color('#e8f8fb', 'canvas') },
+  scanButtonText: { color: color('#168da2', 'info'), fontSize: 11, fontWeight: '800' },
+  readOnlyHint: { color: color('#8a9891', 'muted'), fontSize: 10, marginTop: 5 },
+  errorText: { color: color('#bd3c35', 'danger'), fontSize: 11, marginTop: 6 },
   totpPreview: {
     minHeight: 82,
     marginTop: 10,
     paddingHorizontal: 15,
     borderWidth: 1,
-    borderColor: '#bde8d8',
+    borderColor: color('#bde8d8', 'border'),
     borderRadius: 14,
-    backgroundColor: '#eaf9f4',
+    backgroundColor: color('#eaf9f4', 'canvas'),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  totpCaption: { color: '#568072', fontSize: 11, fontWeight: '700' },
-  totpCode: { color: '#0b8065', fontSize: 26, fontWeight: '900', letterSpacing: 2, marginTop: 4 },
+  totpCaption: { color: color('#568072', 'accent'), fontSize: 11, fontWeight: '700' },
+  totpCode: { color: color('#0b8065', 'accent'), fontSize: 26, fontWeight: '900', letterSpacing: 2, marginTop: 4 },
   countdownBadge: {
     width: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
-    borderColor: '#18af8c',
+    borderColor: color('#18af8c', 'accent'),
     borderRadius: 22,
-    backgroundColor: '#fff',
+    backgroundColor: color('#fff', 'surface'),
   },
-  countdownText: { color: '#0b8065', fontSize: 13, fontWeight: '900' },
+  countdownText: { color: color('#0b8065', 'accent'), fontSize: 13, fontWeight: '900' },
   disabled: { opacity: 0.42 },
-});
+}));

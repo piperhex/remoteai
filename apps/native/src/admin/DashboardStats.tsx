@@ -1,5 +1,6 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
-import { StyleSheet, Text, View } from 'react-native';
+import {  Text, View } from 'react-native';
 import type { AdminDashboardOverview } from '../types';
 
 const PLATFORMS = [
@@ -13,6 +14,7 @@ const MAX_TREND_DAYS = 10;
 type PlatformCounts = AdminDashboardOverview['dailyActivePlatforms'];
 
 export function DailyActivePlatforms({ counts }: { counts?: PlatformCounts }) {
+  const styles = useStyles();
   useLanguage();
   return <View style={styles.platforms}>
     {PLATFORMS.map((platform) => <Text key={platform.name} style={styles.platformCount}>
@@ -22,6 +24,7 @@ export function DailyActivePlatforms({ counts }: { counts?: PlatformCounts }) {
 }
 
 export function DashboardGrowth({ data }: { data: AdminDashboardOverview | null }) {
+  const styles = useStyles();
   useLanguage();
   const trend = data?.trend.slice(-MAX_TREND_DAYS) ?? [];
   const maximum = Math.max(1, ...trend.map((item) => item.installations));
@@ -50,16 +53,16 @@ export function DashboardGrowth({ data }: { data: AdminDashboardOverview | null 
   </View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   growth: { gap: 10 },
   platforms: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
-  platformCount: { color: '#6d7c75', fontSize: 11, fontVariant: ['tabular-nums'] },
+  platformCount: { color: color('#6d7c75', 'muted'), fontSize: 11, fontVariant: ['tabular-nums'] },
   legend: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   dot: { width: 7, height: 7, borderRadius: 4 },
-  subtitle: { color: '#6d7c75', fontSize: 11, flexShrink: 1 },
+  subtitle: { color: color('#6d7c75', 'muted'), fontSize: 11, flexShrink: 1 },
   day: { paddingVertical: 8, gap: 5 },
   heading: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 8 },
-  date: { color: '#10251d', fontSize: 12, fontWeight: '700' },
-  total: { color: '#10251d', fontSize: 11, fontWeight: '600' },
-  track: { height: 7, flexDirection: 'row', backgroundColor: '#e0e8e3', borderRadius: 4, overflow: 'hidden' },
-});
+  date: { color: color('#10251d', 'ink'), fontSize: 12, fontWeight: '700' },
+  total: { color: color('#10251d', 'ink'), fontSize: 11, fontWeight: '600' },
+  track: { height: 7, flexDirection: 'row', backgroundColor: color('#e0e8e3', 'elevated'), borderRadius: 4, overflow: 'hidden' },
+}));

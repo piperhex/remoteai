@@ -1,6 +1,7 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage, getLocale } from '../i18n';
 import { useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { editedImageMessage, imageEditorHtml } from '../../../../shared/chat/imageEditorHtml';
@@ -9,6 +10,7 @@ import type { ChatPhoto } from './chatPhotos';
 interface Props { photo: ChatPhoto; save: (dataUrl: string) => void; close: () => void }
 
 export function ChatPhotoEditor({ photo, save, close }: Props) {
+  const styles = useStyles();
   const language = useLanguage();
   const source = useMemo(() => ({ html: imageEditorHtml(photo.dataUrl, t, getLocale()) }), [photo.dataUrl, language]);
   const [error, setError] = useState('');
@@ -41,9 +43,9 @@ export function ChatPhotoEditor({ photo, save, close }: Props) {
   </Modal>;
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f1f3f6' },
+const useStyles = createThemedStyles((color) => ({
+  container: { flex: 1, backgroundColor: color('#f1f3f6', 'canvas') },
   notice: { padding: 12, maxWidth: 400, alignSelf: 'center' },
-  error: { color: '#b42318', textAlign: 'center' },
+  error: { color: color('#b42318', 'warning'), textAlign: 'center' },
   close: { minHeight: 44, justifyContent: 'center' },
-});
+}));

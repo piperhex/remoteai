@@ -1,3 +1,4 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { StyleSheet, Text, View } from 'react-native';
 import type { UploadProgress } from '../../../../shared/remote-chat/uploadProgress';
@@ -5,6 +6,7 @@ import type { UploadProgress } from '../../../../shared/remote-chat/uploadProgre
 export function ComposerUploadProgress({ progress, reconnecting = false, inline = false }: {
   progress?: UploadProgress; reconnecting?: boolean; inline?: boolean;
 }) {
+  const styles = useStyles();
   useLanguage();
   if (!progress) return null;
   let label = t("上传中");
@@ -24,14 +26,14 @@ export function ComposerUploadProgress({ progress, reconnecting = false, inline 
   </View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   overlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', gap: 2,
     borderTopLeftRadius: 12, borderTopRightRadius: 12, padding: 6, backgroundColor: 'rgba(12, 24, 22, 0.6)' },
   percent: { color: '#fff', fontSize: 18, lineHeight: 24, fontWeight: '600', fontVariant: ['tabular-nums'] },
   label: { color: '#fff', fontSize: 12, lineHeight: 18, includeFontPadding: true, textAlign: 'center' },
   track: { position: 'absolute', bottom: 8, left: 10, right: 10, height: 3, borderRadius: 2,
     backgroundColor: 'rgba(255, 255, 255, 0.25)', overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 2, backgroundColor: '#fff' },
+  fill: { height: '100%', borderRadius: 2, backgroundColor: color('#fff', 'surface') },
   inline: { flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 },
-  inlineText: { color: '#28766c', fontSize: 11, lineHeight: 18 },
-});
+  inlineText: { color: color('#28766c', 'accent'), fontSize: 11, lineHeight: 18 },
+}));

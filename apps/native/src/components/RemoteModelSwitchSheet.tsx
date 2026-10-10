@@ -1,5 +1,7 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useState } from 'react';
 import { remoteModelOptions, type RemoteModelTarget } from '../../../../shared/remote-chat/modelTarget';
 import type { AccountSummary, RemoteDevice, RemoteProviderSummary } from '../types';
@@ -25,6 +27,8 @@ function ModelOption({
   loading,
   onPress,
 }: ModelOptionProps) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   return <Pressable
     accessibilityRole="button"
@@ -46,7 +50,7 @@ function ModelOption({
       <Text style={styles.optionSubtitle} numberOfLines={1}>{subtitle}</Text>
     </View>
     {loading
-      ? <ActivityIndicator color="#14806f" size="small" />
+      ? <ActivityIndicator color={color("#14806f", 'accent')} size="small" />
       : current
         ? <View style={styles.currentPill}><Text style={styles.currentText}>{t("当前")}</Text></View>
         : <Text style={styles.chevron}>›</Text>}
@@ -76,6 +80,7 @@ export function RemoteModelSwitchSheet({
   onSwitchProvider,
   onSwitchProviderGroup,
 }: RemoteModelSwitchSheetProps) {
+  const styles = useStyles();
   useLanguage();
   const [target, setTarget] = useState<RemoteModelTarget>('proxy');
   const busy = Boolean(switchingAccountId || switchingProviderId);
@@ -174,27 +179,27 @@ export function RemoteModelSwitchSheet({
   </BottomSheet>;
 }
 
-const styles = StyleSheet.create({
-  targetRow: { flexDirection: 'row', backgroundColor: '#eaf2ed', borderRadius: 12, padding: 4, gap: 4 },
+const useStyles = createThemedStyles((color) => ({
+  targetRow: { flexDirection: 'row', backgroundColor: color('#eaf2ed', 'elevated'), borderRadius: 12, padding: 4, gap: 4 },
   targetButton: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 10, borderRadius: 9 },
-  targetSelected: { backgroundColor: '#fff' },
-  targetText: { fontSize: 12, fontWeight: '700', color: '#7c8c83', textAlign: 'center' },
-  targetTextSelected: { color: '#0b6e59' },
-  description: { color: '#7c8c83', fontSize: 11, lineHeight: 17, marginVertical: 12, maxWidth: 400 },
+  targetSelected: { backgroundColor: color('#fff', 'surface') },
+  targetText: { fontSize: 12, fontWeight: '700', color: color('#7c8c83', 'muted'), textAlign: 'center' },
+  targetTextSelected: { color: color('#0b6e59', 'accent') },
+  description: { color: color('#7c8c83', 'muted'), fontSize: 11, lineHeight: 17, marginVertical: 12, maxWidth: 400 },
   scroll: { maxHeight: 610 },
-  sectionTitle: { color: '#52675c', fontSize: 12, fontWeight: '800', marginBottom: 9 },
+  sectionTitle: { color: color('#52675c', 'ink'), fontSize: 12, fontWeight: '800', marginBottom: 9 },
   providerHeading: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 20,
   },
-  hint: { color: '#b06b28', fontSize: 10, marginBottom: 9, maxWidth: 190, textAlign: 'right' },
-  emptyText: { color: '#7c8c83', fontSize: 12, lineHeight: 18, paddingVertical: 12 },
+  hint: { color: color('#b06b28', 'warning'), fontSize: 10, marginBottom: 9, maxWidth: 190, textAlign: 'right' },
+  emptyText: { color: color('#7c8c83', 'muted'), fontSize: 12, lineHeight: 18, paddingVertical: 12 },
   option: {
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderColor: '#dce9e2',
+    backgroundColor: color('#fff', 'surface'),
+    borderColor: color('#dce9e2', 'border'),
     borderRadius: 13,
     borderWidth: 1,
     flexDirection: 'row',
@@ -203,25 +208,25 @@ const styles = StyleSheet.create({
     minHeight: 66,
     padding: 12,
   },
-  optionCurrent: { backgroundColor: '#f0faf6', borderColor: '#9bd5c2' },
+  optionCurrent: { backgroundColor: color('#f0faf6', 'canvas'), borderColor: color('#9bd5c2', 'border') },
   optionPressed: { opacity: 0.82 },
   optionDisabled: { opacity: 0.52 },
   badge: {
     alignItems: 'center',
-    backgroundColor: '#e7f5ef',
+    backgroundColor: color('#e7f5ef', 'canvas'),
     borderRadius: 11,
     height: 40,
     justifyContent: 'center',
     width: 40,
   },
-  badgeCurrent: { backgroundColor: '#ccecdf' },
-  badgeText: { color: '#14806f', fontSize: 14, fontWeight: '900' },
-  badgeTextCurrent: { color: '#0b6e59' },
+  badgeCurrent: { backgroundColor: color('#ccecdf', 'accentSoft') },
+  badgeText: { color: color('#14806f', 'accent'), fontSize: 14, fontWeight: '900' },
+  badgeTextCurrent: { color: color('#0b6e59', 'accent') },
   optionCopy: { flex: 1, minWidth: 0 },
-  optionTitle: { color: '#17352a', fontSize: 13, fontWeight: '800' },
-  optionSubtitle: { color: '#7c8c83', fontSize: 10, marginTop: 5 },
-  currentPill: { backgroundColor: '#dff4eb', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
-  currentText: { color: '#0c765f', fontSize: 10, fontWeight: '800' },
-  chevron: { color: '#91a198', fontSize: 24, lineHeight: 25 },
-  footerHint: { color: '#7c8c83', fontSize: 11, lineHeight: 17, marginTop: 13, maxWidth: 400, alignSelf: 'center' },
-});
+  optionTitle: { color: color('#17352a', 'ink'), fontSize: 13, fontWeight: '800' },
+  optionSubtitle: { color: color('#7c8c83', 'muted'), fontSize: 10, marginTop: 5 },
+  currentPill: { backgroundColor: color('#dff4eb', 'canvas'), borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
+  currentText: { color: color('#0c765f', 'accent'), fontSize: 10, fontWeight: '800' },
+  chevron: { color: color('#91a198', 'muted'), fontSize: 24, lineHeight: 25 },
+  footerHint: { color: color('#7c8c83', 'muted'), fontSize: 11, lineHeight: 17, marginTop: 13, maxWidth: 400, alignSelf: 'center' },
+}));

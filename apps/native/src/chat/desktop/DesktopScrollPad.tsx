@@ -1,11 +1,14 @@
+import { useThemeColor } from '../../theme/store';
 import { t, useLanguage } from '../../i18n';
 import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SCROLL_PAD_SIZE } from '../../../../../shared/remote-desktop/scrollPad';
 import type { ScrollPadProps } from '../../../../../shared/remote-desktop/useScrollPad';
-import { scrollPadStyles as s } from './scrollPadStyles';
+import { useScrollPadStyles as useS } from './scrollPadStyles';
 
 export function DesktopScrollPad({ layout, position, horizontal, cancel }: ScrollPadProps) {
+  const s = useS();
+  const color = useThemeColor();
   useLanguage();
   const scale = layout.size / SCROLL_PAD_SIZE;
   const arrows = [
@@ -21,7 +24,7 @@ export function DesktopScrollPad({ layout, position, horizontal, cancel }: Scrol
       {arrows.map(arrow => <View key={arrow.name} pointerEvents="none" style={[s.arrow,
         { left: layout.size * arrow.x - 10, top: layout.size * arrow.y - 10,
           opacity: arrow.y === .5 && !horizontal ? .3 : 1 }]}>
-        <Ionicons name={arrow.name} size={20} color="#dce3ec" /></View>)}
+        <Ionicons name={arrow.name} size={20} color={color("#dce3ec", 'faint')} /></View>)}
       <View pointerEvents="none" style={[s.knob, {
         width: layout.size * .27, height: layout.size * .27,
         left: layout.size * .365 + position.x * scale, top: layout.size * .365 + position.y * scale,

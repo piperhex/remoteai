@@ -2,10 +2,11 @@ import { Text, View } from 'react-native';
 import { connectionEndpointRows } from '../../../../shared/remote-chat/connectionEndpoints';
 import { publicEndpointRows } from '../../../../shared/remote-chat/publicEndpoints';
 import { t } from '../i18n';
-import { healthStyles as css } from './connectionHealthStyles';
+import { useHealthStyles as useCss } from './connectionHealthStyles';
 import type { ChatState } from './types';
 
 export function ChatConnectionAddresses({ state }: { state: ChatState }) {
+  const css = useCss();
   const current = connectionEndpointRows(state.mode, state.directEndpoints);
   return <>
     {current.length > 0 && <View style={css.addresses}>

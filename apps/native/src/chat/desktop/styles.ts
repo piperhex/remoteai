@@ -1,8 +1,9 @@
+import { createThemedStyles } from '../../theme/styles';
 import { StyleSheet } from 'react-native';
 import { CURSOR_SIZE, MOUSE_SIZE, MOUSE_ICON_SIZE }
   from '../../../../../shared/remote-desktop/geometry';
 
-export const desktopStyles = StyleSheet.create({
+export const useDesktopStyles = createThemedStyles((color) => ({
   root: { flex: 1, backgroundColor: '#080b12' },
   workspace: { flex: 1 },
   landscape: { flexDirection: 'row' },
@@ -18,14 +19,14 @@ export const desktopStyles = StyleSheet.create({
   portraitBar: { flexGrow: 0, flexShrink: 0 },
   portraitTool: { flex: 0, minWidth: 48 },
   selected: { backgroundColor: '#304b78' },
-  label: { alignSelf: 'stretch', textAlign: 'center', color: '#e7edf8', fontSize: 10, lineHeight: 16 },
+  label: { alignSelf: 'stretch', textAlign: 'center', color: color('#e7edf8', 'faint'), fontSize: 10, lineHeight: 16 },
   messageLayer: { position: 'absolute', top: 12, left: 12, right: 12, alignItems: 'center' },
   message: { maxWidth: '100%', flexDirection: 'row', alignItems: 'center', backgroundColor: '#222b3aee',
     borderRadius: 12, padding: 12, gap: 12 },
   messageText: { flexShrink: 1, minWidth: 0, maxWidth: 400 },
   retry: { flexShrink: 0, paddingVertical: 6 },
-  text: { color: '#e7edf8', fontSize: 14 },
-  hint: { color: '#aebad0', fontSize: 12, lineHeight: 18 },
+  text: { color: color('#e7edf8', 'faint'), fontSize: 14 },
+  hint: { color: color('#aebad0', 'faint'), fontSize: 12, lineHeight: 18 },
   cursor: { position: 'absolute', ...CURSOR_SIZE, zIndex: 2 },
   // Explicit image dimensions override Metro's 3x bitmap dimensions on both native platforms.
   cursorImage: { ...CURSOR_SIZE },
@@ -33,17 +34,17 @@ export const desktopStyles = StyleSheet.create({
   mouseIcon: { ...MOUSE_ICON_SIZE, borderRadius: 20, backgroundColor: '#30343be6',
     alignItems: 'center', justifyContent: 'center' },
   mouse: { position: 'absolute', left: 0, top: 0, ...MOUSE_SIZE,
-    borderRadius: 40, borderWidth: 2, borderColor: '#94a4be', backgroundColor: '#dce9ffed', overflow: 'hidden' },
+    borderRadius: 40, borderWidth: 2, borderColor: color('#94a4be', 'border'), backgroundColor: '#dce9ffed', overflow: 'hidden' },
   mouseTop: { flexDirection: 'row', height: 64 },
   mouseButton: { flex: 1, alignItems: 'center', justifyContent: 'center', borderBottomWidth: 2,
-    borderColor: '#94a4be' },
+    borderColor: color('#94a4be', 'border') },
   mouseRight: { borderLeftWidth: 2 },
-  mouseText: { color: '#526684', fontSize: 11 },
+  mouseText: { color: color('#526684', 'info'), fontSize: 11 },
   pressed: { backgroundColor: '#90baff' },
   pad: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 12 },
   wheel: { position: 'absolute', top: 8, left: 44, width: 28, height: 46, borderRadius: 15,
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: '#8496b0', backgroundColor: '#e5eeff' },
+    borderWidth: 2, borderColor: color('#8496b0', 'border'), backgroundColor: color('#e5eeff', 'accentSoft') },
   grip: { position: 'absolute', left: 42, top: 52, width: 32, height: 28, alignItems: 'center',
-    justifyContent: 'center', borderRadius: 12, borderWidth: 2, borderColor: '#8496b0', backgroundColor: '#e5eeff' },
-});
+    justifyContent: 'center', borderRadius: 12, borderWidth: 2, borderColor: color('#8496b0', 'border'), backgroundColor: color('#e5eeff', 'accentSoft') },
+}));

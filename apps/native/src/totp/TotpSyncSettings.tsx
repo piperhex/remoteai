@@ -1,9 +1,13 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Switch, Text, View } from 'react-native';
 import type { TotpManagerState } from './types';
 
 export function TotpSyncSettings({ manager }: { manager: TotpManagerState }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [changing, setChanging] = useState(false);
   const [feedback, setFeedback] = useState<{ message: string; error: boolean } | null>(null);
@@ -28,7 +32,7 @@ export function TotpSyncSettings({ manager }: { manager: TotpManagerState }) {
           <Text style={styles.title}>{t("自动云同步")}</Text>
           <Text style={styles.description}>{t("开启后自动同步变更；关闭时仍可在 2FA 页面下拉获取云端密钥。")}</Text>
         </View>
-        {disabled ? <ActivityIndicator color="#18af8c" size="small" /> : <Switch
+        {disabled ? <ActivityIndicator color={color("#18af8c", 'accent')} size="small" /> : <Switch
           accessibilityLabel={t("同步 2FA 密钥至云端")} value={manager.cloudSyncEnabled}
           onValueChange={(enabled) => void change(enabled)}
           trackColor={{ false: '#c8d6cd', true: '#87d9cb' }}
@@ -43,9 +47,9 @@ export function TotpSyncSettings({ manager }: { manager: TotpManagerState }) {
   </>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   sectionLabel: {
-    color: '#6f8177',
+    color: color('#6f8177', 'muted'),
     fontSize: 13,
     fontWeight: '700',
     marginLeft: 3,
@@ -53,8 +57,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   card: {
-    backgroundColor: '#fff',
-    borderColor: '#dce8df',
+    backgroundColor: color('#fff', 'surface'),
+    borderColor: color('#dce8df', 'border'),
     borderWidth: 1,
     borderRadius: 16,
     padding: 17,
@@ -62,9 +66,9 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   copy: { flex: 1, minWidth: 0 },
-  title: { color: '#13231c', fontSize: 16, fontWeight: '800' },
-  description: { color: '#6f8177', fontSize: 12, lineHeight: 18, marginTop: 6 },
-  warning: { color: '#9a6c17', fontSize: 11, lineHeight: 17, marginTop: 13 },
-  feedback: { color: '#14806f', fontSize: 12, lineHeight: 18, marginTop: 12 },
-  error: { color: '#dc5c55' },
-});
+  title: { color: color('#13231c', 'ink'), fontSize: 16, fontWeight: '800' },
+  description: { color: color('#6f8177', 'muted'), fontSize: 12, lineHeight: 18, marginTop: 6 },
+  warning: { color: color('#9a6c17', 'warning'), fontSize: 11, lineHeight: 17, marginTop: 13 },
+  feedback: { color: color('#14806f', 'accent'), fontSize: 12, lineHeight: 18, marginTop: 12 },
+  error: { color: color('#dc5c55', 'danger') },
+}));

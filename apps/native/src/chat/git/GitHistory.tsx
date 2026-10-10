@@ -1,9 +1,10 @@
+import { useThemeColor } from '../../theme/store';
 import { t, useLanguage } from '../../i18n';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { gitGraph, GRAPH_ROW_HEIGHT, type GraphLine, type GraphRow } from '../../../../../shared/remote-chat/gitGraph';
 import type { RemoteGit } from '../../../../../shared/remote-chat/useRemoteGit';
-import { gitStyles as styles } from './styles';
+import { useGitStyles as useStyles } from './styles';
 
 function Line({ line }: { line: GraphLine }) {
   useLanguage();
@@ -16,15 +17,17 @@ function Line({ line }: { line: GraphLine }) {
 }
 
 function Graph({ row, width }: { row: GraphRow; width: number }) {
+  const color = useThemeColor();
   useLanguage();
   return <View accessible={false} style={{ width, height: GRAPH_ROW_HEIGHT }}>
     {row.lines.map((line, index) => <Line key={index} line={line} />)}
     <View style={{ position: 'absolute', width: 9, height: 9, borderRadius: 5, backgroundColor: row.color,
-      borderColor: '#fff', borderWidth: 1, left: row.x - 4.5, top: GRAPH_ROW_HEIGHT / 2 - 4.5 }} />
+      borderColor: color('#fff', 'border'), borderWidth: 1, left: row.x - 4.5, top: GRAPH_ROW_HEIGHT / 2 - 4.5 }} />
   </View>;
 }
 
 export function GitHistory({ panel, connected }: { panel: RemoteGit; connected: boolean }) {
+  const styles = useStyles();
   useLanguage();
   const graph = useMemo(() => gitGraph(panel.commits), [panel.commits]);
   return <ScrollView style={styles.fill}>

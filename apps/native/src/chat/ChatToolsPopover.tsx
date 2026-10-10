@@ -1,3 +1,4 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useLayoutEffect, useState, type ReactNode, type RefObject } from 'react';
 import { BackHandler, Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -14,6 +15,7 @@ const MENU_WIDTH = 184;
 type Position = { left: number; top: number; width: number; maxHeight: number };
 
 export function ChatToolsPopover({ anchor, children, close }: Props) {
+  const popoverStyles = usePopoverStyles();
   useLanguage();
   const host = useChatOverlay();
   const [position, setPosition] = useState<Position>();
@@ -49,10 +51,10 @@ export function ChatToolsPopover({ anchor, children, close }: Props) {
   return null;
 }
 
-const popoverStyles = StyleSheet.create({
-  panel: { position: 'absolute', borderRadius: 12, backgroundColor: '#fff',
+const usePopoverStyles = createThemedStyles((color) => ({
+  panel: { position: 'absolute', borderRadius: 12, backgroundColor: color('#fff', 'surface'),
     shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 16, shadowOffset: { width: 0, height: 4 },
     elevation: 8 },
   scroll: { flexShrink: 1, borderRadius: 12 },
   content: { padding: 8, gap: 4 },
-});
+}));

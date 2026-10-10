@@ -1,13 +1,13 @@
-.rd-keyboard { flex: 0 0 auto; width: 100%; background: #111113; color: #ddd; }
+.rd-keyboard { flex: 0 0 auto; width: 100%; background: #111113; color: var(--app-faint, #ddd); }
 .rd-input-tabs { display: flex; align-items: stretch; background: #28282e; }
 .rd-input-tabs [role=tablist] { flex: 1; display: flex; min-width: 0; }
 .rd-input-tabs [role=tab] { flex: 1; min-width: 0; min-height: 44px; padding: 8px 4px;
   background: transparent; border-bottom: 2px solid transparent; font-size: 16px; }
-.rd-input-tabs [aria-selected=true] { color: #568aff; border-bottom-color: #568aff; }
+.rd-input-tabs [aria-selected=true] { color: var(--app-info, #568aff); border-bottom-color: var(--app-info, #568aff); }
 .rd-keyboard-close { width: 44px; flex-shrink: 0; display: grid; place-items: center; background: transparent; }
 .rd-ime { display: block; width: 100%; height: 38px; padding: 8px 12px; background: #111113;
   border: 0; border-radius: 0; color: #eee; font: 16px/22px system-ui, sans-serif; resize: none; outline: none; }
-.rd-ime::placeholder { color: #999; }
+.rd-ime::placeholder { color: var(--app-muted, #999); }
 .rd-keyboard-content { max-height: min(55dvh, 340px); overflow: auto; padding: 8px;
   overscroll-behavior: contain; touch-action: pan-y; }
 .rd-keyboard-content button { background: #28282e; border-radius: 5px; }
@@ -21,12 +21,12 @@
 .rd-key-row { display: flex; gap: 6px; }
 .rd-key-row button { flex: 1; min-width: 0; min-height: 36px; padding: 5px 2px; font-size: 16px; }
 .rd-combination { display: flex; align-items: center; gap: 5px; font-size: 13px; white-space: nowrap; }
-.rd-combination input { min-width: 0; width: 18px; height: 18px; padding: 0; accent-color: #568aff; }
+.rd-combination input { min-width: 0; width: 18px; height: 18px; padding: 0; accent-color: var(--app-info, #568aff); }
 .rd-key-pages { display: flex; justify-content: center; }
 .rd-key-pages button { width: 40px; height: 22px; display: grid; place-items: center; background: transparent; }
-.rd-key-pages span { width: 20px; height: 4px; border-radius: 2px; background: #737378; }
+.rd-key-pages span { width: 20px; height: 4px; border-radius: 2px; background: var(--app-elevated, #737378); }
 .rd-key-pages button[aria-pressed=true] { background: transparent; }
-.rd-key-pages button[aria-pressed=true] span { background: #eee; }
+.rd-key-pages button[aria-pressed=true] span { background: var(--app-elevated, #eee); }
 @media (max-width: 600px) {
   .rd-shortcuts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .rd-key-row { gap: 3px; }

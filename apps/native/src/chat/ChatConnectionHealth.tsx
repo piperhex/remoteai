@@ -1,3 +1,4 @@
+import { useThemeColor } from '../theme/store';
 import Feather from '@expo/vector-icons/Feather';
 import type { ComponentProps } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -8,7 +9,7 @@ import { connectionHealth, healthStatusLabels, HEALTH_INLINE_STATUS_MAX_CHARACTE
   type HealthStatus, type HealthStep } from '../../../../shared/remote-chat/connectionHealth';
 import type { ChatState } from './types';
 import { ChatConnectionAddresses } from './ChatConnectionAddresses';
-import { healthStyles as css, healthTones, stepTones } from './connectionHealthStyles';
+import { useHealthStyles as useCss, healthTones, stepTones } from './connectionHealthStyles';
 
 type IconName = ComponentProps<typeof Feather>['name'];
 const stepIcons: Record<HealthStep['id'], IconName> = {
@@ -19,9 +20,11 @@ const statusIcons: Record<HealthStatus, IconName> = { ok: 'check', waiting: 'clo
 export function ChatConnectionHealth({ state, device, reconnect, close }: {
   state: ChatState; device?: { online: boolean }; reconnect: () => void; close: () => void;
 }) {
+  const css = useCss();
+  const color = useThemeColor();
   useLanguage();
   const health = connectionHealth(state, device);
-  const tone = healthTones[health.status];
+  const tone = healthTones(color)[health.status];
   return <BottomSheet visible title={t('连接体检')} subtitle={t('检测当前设备与电脑的连接状态')}
     onClose={close} maxWidth={400} fullWidthContent dragFromHeaderOnly>
     <SheetScrollView contentContainerStyle={css.content}>
@@ -37,7 +40,7 @@ export function ChatConnectionHealth({ state, device, reconnect, close }: {
       <View style={css.steps}>{health.steps.map(step => <HealthRow key={step.id} step={step} />)}</View>
       <ChatConnectionAddresses state={state} />
       <View style={css.note}>
-        <Feather name="info" size={22} color="#6782df" accessible={false} />
+        <Feather name="info" size={22} color={color("#6782df", 'info')} accessible={false} />
         <View style={css.copy}>
           <Text style={css.label}>{t(health.nextTitle)}</Text>
           <Text style={css.detail}>{t(health.next)}</Text>
@@ -53,8 +56,10 @@ export function ChatConnectionHealth({ state, device, reconnect, close }: {
 }
 
 function HealthRow({ step }: { step: HealthStep }) {
-  const tone = healthTones[step.status];
-  const iconTone = stepTones[step.id];
+  const css = useCss();
+  const color = useThemeColor();
+  const tone = healthTones(color)[step.status];
+  const iconTone = stepTones(color)[step.id];
   const statusLabel = t(healthStatusLabels[step.status]);
   const inlineStatus = statusLabel.length <= HEALTH_INLINE_STATUS_MAX_CHARACTERS;
   const badge = <View style={[css.badge, !inlineStatus && css.wideBadge, { backgroundColor: tone.background }]}>

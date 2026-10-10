@@ -1,3 +1,4 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +7,7 @@ import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { Toast } from '../components/AppToast';
 import { TotpOptionsMenu } from './TotpOptionsMenu';
 import { TotpServiceIcon } from './TotpServiceIcon';
-import { totpStyles as styles } from './styles';
+import { useTotpStyles as useStyles } from './styles';
 import type { TotpEntry } from './types';
 
 interface TotpCodeCardProps {
@@ -26,6 +27,8 @@ function displayCode(code: string) {
 }
 
 export function TotpCodeCard({ code, entry, now, onCopied, onDelete, onEdit }: TotpCodeCardProps) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const compact = useWindowDimensions().width < COMPACT_CARD_SCREEN_WIDTH;
@@ -50,7 +53,7 @@ export function TotpCodeCard({ code, entry, now, onCopied, onDelete, onEdit }: T
       </View>
       <Pressable accessibilityRole="button" accessibilityLabel={t("管理 {value1} 的 2FA 密钥", { value1: entry.issuer })}
         style={({ pressed }) => [styles.moreButton, pressed && styles.pressed]} onPress={() => setMenuOpen(true)}>
-        <Ionicons name="ellipsis-horizontal" size={21} color="#838b99" />
+        <Ionicons name="ellipsis-horizontal" size={21} color={color("#838b99", 'muted')} />
       </Pressable>
     </View>
     <View style={[styles.codeBody, compact && styles.compactCodeBody]}>
@@ -67,7 +70,7 @@ export function TotpCodeCard({ code, entry, now, onCopied, onDelete, onEdit }: T
       <Pressable accessibilityRole="button" accessibilityLabel={t("复制 {value1} 验证码到剪贴板", { value1: entry.issuer })}
         disabled={!code} onPress={() => void copy()}
         style={({ pressed }) => [styles.copyButton, compact && styles.compactCopyButton, pressed && styles.pressed]}>
-        <Ionicons name="copy-outline" size={21} color="#008956" />
+        <Ionicons name="copy-outline" size={21} color={color("#008956", 'accent')} />
         {!compact && <Text style={styles.copyText}>{t("复制")}</Text>}
       </Pressable>
     </View>

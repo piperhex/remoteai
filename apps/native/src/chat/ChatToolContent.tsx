@@ -1,3 +1,4 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { Linking, Pressable, Text, View } from 'react-native';
 import { SelectableChatText } from './SelectableChatText';
@@ -16,19 +17,23 @@ import { ChatImage } from './ChatImage';
 import { generatedImageSource, itemImageSources } from '../../../../shared/chat/imageSources';
 import { ChatCommandDetails } from './ChatCommandDetails';
 import { toolText } from './toolText';
-import { styles, palette } from './styles';
+import { useStyles, palette } from './styles';
 import type { Item } from './types';
 
 function WebLink({ url, title }: { url?: string; title?: string }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   if (!url || !/^https?:\/\//i.test(url)) return <Text style={styles.messageText}>{title || url}</Text>;
   return <Pressable accessibilityRole="link" onPress={() => {
     void Linking.openURL(url).catch(() => undefined);
-  }}><SelectableChatText style={[styles.messageText, { color: palette.green, textDecorationLine: 'underline' }]}>
+  }}><SelectableChatText style={[styles.messageText, { color: color(palette.green, 'accent'), textDecorationLine: 'underline' }]}>
     {title || url}</SelectableChatText></Pressable>;
 }
 
 function SearchDetails({ item }: { item: Item }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   return <View style={{ gap: 12 }}>
     {(item.action?.queries ?? [item.action?.query || item.query]).filter(Boolean).map((query, index) =>
@@ -36,7 +41,7 @@ function SearchDetails({ item }: { item: Item }) {
     {item.action?.url && <WebLink url={item.action.url} />}
     {item.action?.pattern && <Text style={styles.messageText}>{t("查找：")}{item.action.pattern}</Text>}
     {item.results?.map((result, index) => <View key={index}
-      style={{ borderTopWidth: 1, borderColor: palette.border, paddingTop: 8, gap: 4 }}>
+      style={{ borderTopWidth: 1, borderColor: color(palette.border, 'border'), paddingTop: 8, gap: 4 }}>
       <WebLink url={result.url} title={result.title} />
       {result.snippet && <SelectableChatText style={styles.subtitle}>{result.snippet}</SelectableChatText>}
     </View>)}
@@ -44,6 +49,7 @@ function SearchDetails({ item }: { item: Item }) {
 }
 
 function CollaborationDetails({ item }: { item: Item }) {
+  const styles = useStyles();
   useLanguage();
   return <View style={{ gap: 12 }}>
     <Text style={styles.messageText}>{collaborationSummary(item)}</Text>
@@ -66,6 +72,7 @@ function UserMessageDetails({ item }: { item: Item }) {
 }
 
 export function ChatToolContent({ item }: { item: Item }) {
+  const styles = useStyles();
   useLanguage();
   const text = toolText(item);
   if (item.type === 'userMessage') return <UserMessageDetails item={item} />;

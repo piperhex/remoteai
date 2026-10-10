@@ -1,3 +1,4 @@
+import { useThemeColor } from '../../theme/store';
 import { t, useLanguage } from '../../i18n';
 import { useEffect, useSyncExternalStore } from 'react';
 import { Image, Pressable, Text, View } from 'react-native';
@@ -13,7 +14,7 @@ import { useScrollPad, type ScrollPadGesture } from '../../../../../shared/remot
 import type { DesktopWheel } from '../../../../../shared/remote-desktop/scrollPad';
 import { useScrollButton } from './useScrollButton';
 import { DesktopScrollPad } from './DesktopScrollPad';
-import { desktopStyles as s } from './styles';
+import { useDesktopStyles as useS } from './styles';
 
 interface Props {
   pointer: DesktopPointer; viewport: DesktopViewport; panel: MousePanelActivity;
@@ -21,6 +22,7 @@ interface Props {
 }
 type MousePadProps = Omit<Props, 'wheel' | 'horizontal'> & { scroll: ScrollPadGesture };
 export function DesktopMouse({ visible, ...props }: Props & { visible: boolean }) {
+  const s = useS();
   useLanguage();
   const position = useSyncExternalStore(props.pointer.subscribe, props.pointer.getSnapshot);
   const scroll = useScrollPad({ ...props, enabled: visible && props.panel.expanded });
@@ -43,6 +45,7 @@ export function DesktopMouse({ visible, ...props }: Props & { visible: boolean }
   </>;
 }
 function MouseIcon({ pointer, viewport, panel }: Props) {
+  const s = useS();
   useLanguage();
   const drag = useTrackpad({ pointer, viewport, panel, id: 'icon', onTap: panel.expand });
   return <View {...drag.panHandlers} accessible accessibilityRole="button" accessibilityLabel={t("展开鼠标面板")}
@@ -53,6 +56,8 @@ function MouseIcon({ pointer, viewport, panel }: Props) {
   </View>;
 }
 function MousePad({ pointer, viewport, panel, scroll }: MousePadProps) {
+  const s = useS();
+  const color = useThemeColor();
   useLanguage();
   const buttons = useMouseButtons(pointer);
   const left = useLeftMouseButton({ buttons, viewport, panel });
@@ -81,9 +86,9 @@ function MousePad({ pointer, viewport, panel, scroll }: MousePadProps) {
       <Text style={s.mouseText}>{t("滑动移动")}</Text></View>
     <View accessible accessibilityRole="button" accessibilityLabel={t("按住并拖动以滚动")}
       {...wheel.panHandlers} style={s.wheel}>
-      <Ionicons name="chevron-up" size={18} color="#526684" />
-      <Ionicons name="chevron-down" size={18} color="#526684" /></View>
+      <Ionicons name="chevron-up" size={18} color={color("#526684", 'info')} />
+      <Ionicons name="chevron-down" size={18} color={color("#526684", 'info')} /></View>
     <View {...grip.panHandlers} style={[s.grip, grip.pressed && s.pressed]} accessibilityLabel={t("拖动鼠标面板")}>
-      <Ionicons name="reorder-two" size={22} color="#526684" /></View>
+      <Ionicons name="reorder-two" size={22} color={color("#526684", 'info')} /></View>
   </View>;
 }

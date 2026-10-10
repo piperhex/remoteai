@@ -1,13 +1,16 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
-import { palette, styles } from './styles';
+import { Pressable, Text } from 'react-native';
+import { palette, useStyles } from './styles';
 
 const DOT_INTERVAL_MS = 400;
 const DOTS = ['.', '..', '...'];
 const MILLISECONDS_PER_SECOND = 1000;
 
 export function ChatReconnectButton({ retryAt, onPress }: { retryAt: number | null; onPress: () => void }) {
+  const reconnectStyles = useReconnectStyles();
+  const styles = useStyles();
   useLanguage();
   const [tick, setTick] = useState({ now: Date.now(), dots: 0 });
   useEffect(() => {
@@ -25,10 +28,10 @@ export function ChatReconnectButton({ retryAt, onPress }: { retryAt: number | nu
   </Pressable>;
 }
 
-const reconnectStyles = StyleSheet.create({
+const useReconnectStyles = createThemedStyles((color) => ({
   // Use the available row width; Android's fallback font can exceed the intrinsic text measurement.
   button: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'flex-start' },
-  text: { color: palette.green },
+  text: { color: color(palette.green, 'accent') },
   label: { flexShrink: 1 },
   dots: { minWidth: 16, flexShrink: 0 },
-});
+}));

@@ -1,3 +1,4 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
@@ -35,7 +36,7 @@ import { useComposerMenu } from './useComposerMenu';
 import type { SkillCatalogState } from './skillCatalog';
 import { useChatDraft } from '../../../../shared/remote-chat/client/useChatDraft';
 import type { Model, SendInput, ThreadTokenUsage } from './types';
-import { styles } from './styles';
+import { useStyles } from './styles';
 import type { ComposerSettings } from '../../../../shared/remote-chat/composer';
 import { ChatQueue } from './ChatQueue';
 import type { QueueProps } from '../../../../shared/remote-chat/client/queueProps';
@@ -81,6 +82,8 @@ export function ChatComposer({ models, selection, settingsBusy, settingsError, u
   readUsage, readConversationMetrics, usageActive, tokenUsage, contextSettings, connection, queue, goals, goal, goalBusy,
   threadId, active, ready, sending, running, upload, reconnecting = false, interrupted = false, send, interrupt,
   catalog, cwd, compactReason, compacting, compact, loadCatalog, loadFiles, loadConversations }: Props) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [settings, setSettings] = useState(false);
   const goalMode = useGoalMode(threadId, sending);
@@ -199,7 +202,7 @@ export function ChatComposer({ models, selection, settingsBusy, settingsError, u
       <TextInput ref={menu.input} accessibilityLabel={t("聊天消息")}
         style={[styles.input, compactField && styles.inputCompact]}
         multiline value={draft.text} maxLength={100_000} selection={menu.selection} editable={!queueEditor.loading}
-        placeholderTextColor="#999999" underlineColorAndroid="transparent"
+        placeholderTextColor={color("#999999", 'muted')} underlineColorAndroid="transparent"
         onSelectionChange={(event) => menu.setSelection(event.nativeEvent.selection)}
         onChangeText={draft.setText}
         placeholder={ready ? (goalMode.enabled ? t("描述想完成的目标…") : t("发消息，@ 引用对话…")) : t("连接后发消息")} />

@@ -1,5 +1,6 @@
+import { createThemedStyles } from '../theme/styles';
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import {  Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type ToastTone = 'success' | 'error';
@@ -30,6 +31,7 @@ export const Toast = {
 };
 
 export function AppToastHost() {
+  const styles = useStyles();
   const [notice, setNotice] = useState<ToastNotice | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -60,7 +62,7 @@ export function AppToastHost() {
   </SafeAreaView>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   host: {
     position: 'absolute',
     top: 0,
@@ -89,4 +91,4 @@ const styles = StyleSheet.create({
   noticeError: { backgroundColor: '#b74740' },
   icon: { color: '#ffffff', fontSize: 16, lineHeight: 19, fontWeight: '900' },
   message: { flexShrink: 1, color: '#ffffff', fontSize: 14, lineHeight: 20, fontWeight: '700' },
-});
+}));

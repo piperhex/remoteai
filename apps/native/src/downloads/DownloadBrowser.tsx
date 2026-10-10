@@ -1,3 +1,4 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, BackHandler, FlatList, Pressable, Text, View } from 'react-native';
@@ -7,11 +8,13 @@ import type { ProjectFile, ProjectFilesResponse } from '../../../../shared/remot
 import { DownloadPageHeader } from './DownloadPageHeader';
 import { downloadManager } from './manager';
 import type { DownloadConnection } from './types';
-import { colors, styles } from './styles';
+import { colors, useStyles } from './styles';
 
 export function DownloadBrowser({ connection, scope, back }: {
   connection: DownloadConnection; scope: DownloadBrowse['scope']; back: () => void;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [directories, setDirectories] = useState(['']);
   const directory = directories[directories.length - 1];
@@ -62,7 +65,7 @@ export function DownloadBrowser({ connection, scope, back }: {
           <Text style={styles.sectionLabel}>{t("选择要下载的文件")}</Text>
           <Pressable accessibilityRole="button" onPress={back}
             style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
-            <Ionicons name="list-outline" size={17} color={colors.green} />
+            <Ionicons name="list-outline" size={17} color={color(colors.green, 'accent')} />
             <Text style={styles.buttonText}>{t("下载列表")}</Text></Pressable>
         </View>
         <Text style={styles.path} numberOfLines={2} ellipsizeMode="middle">
@@ -71,17 +74,17 @@ export function DownloadBrowser({ connection, scope, back }: {
         {!!notice && <Text accessibilityLiveRegion="polite" style={styles.message}>{notice}</Text>}
         {!!error && <Pressable accessibilityRole="button" accessibilityLabel={t("重试读取文件夹")}
           onPress={() => setRevision(value => value + 1)}><Text style={styles.error}>{error}</Text></Pressable>}
-        {loading && <ActivityIndicator accessibilityLabel={t("正在读取文件夹")} color={colors.green} />}
+        {loading && <ActivityIndicator accessibilityLabel={t("正在读取文件夹")} color={color(colors.green, 'accent')} />}
       </View>}
       renderItem={({ item }) => <Pressable accessibilityRole="button" disabled={adding || !ready}
         accessibilityLabel={`${item.directory ? t("打开文件夹") : t("下载")}：${item.name}`}
         onPress={() => { void choose(item); }}
         style={({ pressed }) => [styles.row, (adding || !ready) && styles.disabled, pressed && styles.pressed]}>
         <View style={styles.sourceIcon}>
-          <Ionicons name={item.directory ? 'folder-outline' : 'document-outline'} size={23} color={colors.green} />
+          <Ionicons name={item.directory ? 'folder-outline' : 'document-outline'} size={23} color={color(colors.green, 'accent')} />
         </View>
         <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
-        <Ionicons name={item.directory ? 'chevron-forward' : 'download-outline'} size={20} color={colors.muted} />
+        <Ionicons name={item.directory ? 'chevron-forward' : 'download-outline'} size={20} color={color(colors.muted, 'muted')} />
       </Pressable>}
       ListEmptyComponent={!loading && !error && ready ? <Text style={styles.text}>{t("此文件夹没有文件。")}</Text> : null}
       ListFooterComponent={result?.truncated ? <Text style={styles.text}>{t("文件较多，仅显示前 500 项。")}</Text> : null} />

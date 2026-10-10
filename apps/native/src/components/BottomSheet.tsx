@@ -1,3 +1,5 @@
+import { useThemeColor } from '../theme/store';
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import {
@@ -60,6 +62,8 @@ export function BottomSheet({
   maxWidth,
   compactHeader = false,
 }: BottomSheetProps) {
+  const resolveThemeColor = useThemeColor();
+  const styles = useStyles();
   useLanguage();
   const translateY = useRef(new Animated.Value(0)).current;
 
@@ -175,7 +179,7 @@ export function BottomSheet({
               ]}
             >
               {action.loading
-                ? <ActivityIndicator color={tone === 'neutral' ? '#173128' : '#fff'} size="small" />
+                ? <ActivityIndicator color={tone === 'neutral' ? resolveThemeColor('#173128', 'ink') : '#fff'} size="small" />
                 : <Text style={[
                   styles.actionText,
                   tone === 'primary' && styles.actionTextOnColor,
@@ -190,12 +194,12 @@ export function BottomSheet({
   </Modal>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   root: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(6, 20, 15, 0.5)' },
   sheet: {
     maxHeight: '82%',
-    backgroundColor: '#ffffff',
+    backgroundColor: color('#ffffff', 'surface'),
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingTop: 9,
@@ -207,15 +211,15 @@ const styles = StyleSheet.create({
   },
   sheetTall: { maxHeight: '92%' },
   inset: { paddingHorizontal: SHEET_HORIZONTAL_PADDING },
-  handle: { width: 44, height: 5, borderRadius: 3, alignSelf: 'center', backgroundColor: '#d5dfd9', marginBottom: 17 },
+  handle: { width: 44, height: 5, borderRadius: 3, alignSelf: 'center', backgroundColor: color('#d5dfd9', 'elevated'), marginBottom: 17 },
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
   heading: { flex: 1, minWidth: 0 },
-  title: { color: '#10251d', fontSize: 21, lineHeight: 31, fontWeight: '800',
+  title: { color: color('#10251d', 'ink'), fontSize: 21, lineHeight: 31, fontWeight: '800',
     includeFontPadding: true, paddingVertical: 2 },
-  subtitle: { color: '#708078', fontSize: 12, lineHeight: 18, marginTop: 4,
+  subtitle: { color: color('#708078', 'muted'), fontSize: 12, lineHeight: 18, marginTop: 4,
     includeFontPadding: true, paddingVertical: 2 },
-  closeButton: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#eef3f0', alignItems: 'center', justifyContent: 'center' },
-  closeText: { color: '#52645b', fontSize: 25, lineHeight: 28, fontWeight: '400', marginTop: -2 },
+  closeButton: { width: 34, height: 34, borderRadius: 17, backgroundColor: color('#eef3f0', 'canvas'), alignItems: 'center', justifyContent: 'center' },
+  closeText: { color: color('#52645b', 'ink'), fontSize: 25, lineHeight: 28, fontWeight: '400', marginTop: -2 },
   content: { marginTop: 19, flexShrink: 1 },
   compactHandle: { marginBottom: 8 },
   compactHeader: { alignItems: 'center' },
@@ -225,14 +229,14 @@ const styles = StyleSheet.create({
   compactContent: { marginTop: 8 },
   actions: { flexDirection: 'row', gap: 10, paddingTop: 16, paddingBottom: 10 },
   action: {
-    flex: 1, minHeight: 48, borderRadius: 14, backgroundColor: '#eef3f0',
+    flex: 1, minHeight: 48, borderRadius: 14, backgroundColor: color('#eef3f0', 'canvas'),
     alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, paddingVertical: 10,
   },
   actionPrimary: { backgroundColor: '#0b8065' },
   actionDanger: { backgroundColor: '#c84f47' },
-  actionText: { alignSelf: 'stretch', textAlign: 'center', color: '#173128', fontSize: 15,
+  actionText: { alignSelf: 'stretch', textAlign: 'center', color: color('#173128', 'ink'), fontSize: 15,
     lineHeight: 22, includeFontPadding: true, fontWeight: '800' },
   actionTextOnColor: { color: '#ffffff' },
   pressed: { opacity: 0.78 },
   disabled: { opacity: 0.55 },
-});
+}));

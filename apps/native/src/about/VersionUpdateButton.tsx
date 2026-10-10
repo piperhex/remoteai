@@ -1,9 +1,10 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, Text } from 'react-native';
 import type { useAppUpdate } from './useAppUpdate';
-import { styles } from './styles';
-import { styles as settingsStyles } from '../settings/styles';
+import { useStyles } from './styles';
+import { useStyles as useSettingsStyles } from '../settings/styles';
 
 type UpdateState = ReturnType<typeof useAppUpdate>;
 
@@ -22,15 +23,19 @@ function updateAction(update: UpdateState) {
 }
 
 export function VersionUpdateButton({ update }: { update: UpdateState }) {
+  const resolveThemeColor = useThemeColor();
+  const styles = useStyles();
+  const settingsStyles = useSettingsStyles();
+  const color = useThemeColor();
   useLanguage();
   const action = updateAction(update);
   return <Pressable accessibilityRole="button" accessibilityLabel={action.label}
     accessibilityState={{ disabled: Boolean(action.busy), busy: Boolean(action.busy) }} disabled={Boolean(action.busy)}
     onPress={action.onPress} style={({ pressed }) => [styles.versionButton,
       action.current && styles.currentButton, pressed && settingsStyles.pressed]}>
-    {action.busy ? <ActivityIndicator size="small" color="#079c70" />
+    {action.busy ? <ActivityIndicator size="small" color={color("#079c70", 'accent')} />
       : <Ionicons name={action.current ? 'checkmark-circle-outline' : 'arrow-up-circle-outline'}
-        size={16} color={action.current ? '#7d8496' : '#079c70'} />}
+        size={16} color={action.current ? resolveThemeColor('#7d8496', 'muted') : resolveThemeColor('#079c70', 'accent')} />}
     <Text style={[styles.versionButtonText, action.current && styles.currentText]}>{action.label}</Text>
   </Pressable>;
 }

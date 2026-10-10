@@ -1,3 +1,4 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { ActivityIndicator, Keyboard, Pressable, ScrollView, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -5,7 +6,7 @@ import type { GuiToolsClient } from '../../../../shared/remote-chat/guiTools';
 import { MAX_REMOTE_TERMINALS } from '../../../../shared/remote-chat/useRemoteTerminalPanel';
 import { useRemoteTerminalLauncher } from '../../../../shared/remote-chat/useRemoteTerminalLauncher';
 import { TerminalSession } from './terminal/TerminalSession';
-import { terminalStyles as styles } from './terminal/styles';
+import { useTerminalStyles as useStyles } from './terminal/styles';
 import { BottomSheet } from '../components/BottomSheet';
 import { palette } from './styles';
 import { useToolLaunch } from '../../../../shared/remote-chat/useToolLaunch';
@@ -15,6 +16,9 @@ export function ChatTerminal({ client, cwd, active, connected, deviceName, launc
   client: GuiToolsClient['terminal']; cwd: string; active: boolean; connected: boolean; deviceName?: string;
   launchId?: number; hideTrigger?: boolean;
 }) {
+  const resolveThemeColor = useThemeColor();
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const panel = useRemoteTerminalLauncher({ client, cwd, connected });
   useToolLaunch(launchId, panel.toggle, connected && !panel.busy);
@@ -26,12 +30,12 @@ export function ChatTerminal({ client, cwd, active, connected, deviceName, launc
     {!hideTrigger && <Pressable accessibilityRole="button" accessibilityLabel={t("打开远程终端")}
       accessibilityState={{ disabled, expanded: active && panel.open }} disabled={disabled}
       style={[styles.button, disabled && styles.disabled]} onPress={show}>
-      <Ionicons name="terminal-outline" size={24} color={panel.error ? palette.danger : palette.ink} />
+      <Ionicons name="terminal-outline" size={24} color={panel.error ? resolveThemeColor(palette.danger, 'danger') : resolveThemeColor(palette.ink, 'ink')} />
     </Pressable>}
     {!selected && <BottomSheet visible={active && panel.open} title={t("远程终端")} subtitle={deviceName}
       onClose={hide} maxWidth={400} actions={[{ label: panel.error ? t("重试") : t("新建终端"),
         onPress: panel.retry, disabled: !connected, loading: panel.busy }]}>
-      {panel.busy ? <ActivityIndicator color={palette.green} />
+      {panel.busy ? <ActivityIndicator color={color(palette.green, 'accent')} />
         : !!panel.error && <Text accessibilityRole="alert" style={styles.status}>{panel.error}</Text>}
     </BottomSheet>}
     {selected && <TerminalSession key={selected.id} client={client} session={selected.session} deviceName={deviceName}
@@ -43,7 +47,7 @@ export function ChatTerminal({ client, cwd, active, connected, deviceName, launc
           <Text style={styles.tabLabel}>{t("终端")}{' '}{index + 1}</Text></Pressable>)}
         <Pressable accessibilityRole="button" accessibilityLabel={t("新建终端")} style={styles.button}
           disabled={panel.busy || !connected || panel.tabs.length >= MAX_REMOTE_TERMINALS} onPress={panel.add}>
-          <Ionicons name="add-outline" size={22} color="#17211b" /></Pressable>
+          <Ionicons name="add-outline" size={22} color={color("#17211b", 'ink')} /></Pressable>
       </ScrollView>} />}
   </>;
 }

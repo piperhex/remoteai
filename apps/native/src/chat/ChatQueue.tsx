@@ -1,13 +1,18 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { QueueProps } from '../../../../shared/remote-chat/client/queueProps';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 import Feather from '@expo/vector-icons/Feather';
 import { useQueueSelection } from '../../../../shared/remote-chat/client/useQueueSelection';
 
 type Props = QueueProps & { edit: (id: string) => Promise<void>; editDisabled: boolean };
 
 export function ChatQueue({ messages, running, disabled, act, edit, editDisabled }: Props) {
+  const queueStyles = useQueueStyles();
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const { selected, select, canMoveUp, canMoveDown } = useQueueSelection(messages, disabled);
   if (!messages.length) return null;
@@ -22,11 +27,11 @@ export function ChatQueue({ messages, running, disabled, act, edit, editDisabled
       <Pressable accessibilityRole="button" accessibilityLabel={t("上移待发送消息")} disabled={!canMoveUp}
         style={[queueStyles.action, !canMoveUp && styles.disabled]}
         onPress={() => void act('queueMoveUp', selected.id)}>
-        <Feather name="arrow-up" size={17} color={palette.muted} /></Pressable>
+        <Feather name="arrow-up" size={17} color={color(palette.muted, 'muted')} /></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={t("下移待发送消息")} disabled={!canMoveDown}
         style={[queueStyles.action, !canMoveDown && styles.disabled]}
         onPress={() => void act('queueMoveDown', selected.id)}>
-        <Feather name="arrow-down" size={17} color={palette.muted} /></Pressable>
+        <Feather name="arrow-down" size={17} color={color(palette.muted, 'muted')} /></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={t("编辑待发送消息")}
         disabled={disabled || editDisabled || selected.busy} style={queueStyles.action}
         onPress={() => void edit(selected.id)}>
@@ -56,17 +61,17 @@ export function ChatQueue({ messages, running, disabled, act, edit, editDisabled
   </View>;
 }
 
-const queueStyles = StyleSheet.create({
+const useQueueStyles = createThemedStyles((color) => ({
   actions: { flexDirection: 'row', alignItems: 'center' },
-  selected: { backgroundColor: '#edf7f3' },
-  queue: { marginHorizontal: 12, borderWidth: 1, borderColor: palette.border, borderRadius: 12,
-    backgroundColor: '#fff', overflow: 'hidden', minHeight: 42, flexShrink: 1 },
+  selected: { backgroundColor: color('#edf7f3', 'canvas') },
+  queue: { marginHorizontal: 12, borderWidth: 1, borderColor: color(palette.border, 'border'), borderRadius: 12,
+    backgroundColor: color('#fff', 'surface'), overflow: 'hidden', minHeight: 42, flexShrink: 1 },
   heading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12,
     minHeight: 34 },
   list: { maxHeight: 180, flexGrow: 0, flexShrink: 1, paddingHorizontal: 8 },
   item: { flexDirection: 'row', alignItems: 'center', gap: 6, borderTopWidth: 1,
-    borderColor: palette.border, paddingVertical: 6 },
-  text: { color: palette.ink, fontSize: 13, lineHeight: 20 },
+    borderColor: color(palette.border, 'border'), paddingVertical: 6 },
+  text: { color: color(palette.ink, 'ink'), fontSize: 13, lineHeight: 20 },
   action: { minHeight: 40, minWidth: 32, paddingHorizontal: 6, justifyContent: 'center', alignItems: 'center' },
-  error: { color: palette.danger, fontSize: 12, lineHeight: 18 },
-});
+  error: { color: color(palette.danger, 'danger'), fontSize: 12, lineHeight: 18 },
+}));

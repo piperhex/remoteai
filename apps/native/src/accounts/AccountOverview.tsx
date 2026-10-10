@@ -1,7 +1,8 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, Text, View, useWindowDimensions } from 'react-native';
-import { accountColors as colors, styles } from './styles';
+import { accountColors as colors, useStyles } from './styles';
 
 interface AccountOverviewProps {
   accountCount: number;
@@ -21,11 +22,13 @@ function OverviewStat({ value, label, icon }: {
   label: string;
   icon: 'people' | 'laptop-outline';
 }) {
+  const resolveThemeColor = useThemeColor();
+  const styles = useStyles();
   useLanguage();
   const { width, fontScale } = useWindowDimensions();
   const narrow = width / fontScale < 380;
   return <View style={[styles.stat, narrow && styles.statNarrow]}>
-    <Ionicons name={icon} size={24} color={icon === 'people' ? colors.green : colors.muted} />
+    <Ionicons name={icon} size={24} color={icon === 'people' ? resolveThemeColor(colors.green, 'accent') : resolveThemeColor(colors.muted, 'muted')} />
     <View>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
@@ -34,6 +37,8 @@ function OverviewStat({ value, label, icon }: {
 }
 
 function OverviewActions(props: AccountOverviewProps) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const refreshDisabled = props.refreshBusy || props.accountCount === 0;
   const consumeDisabled = props.refreshBusy || !props.canConsumeQuota;
@@ -42,8 +47,8 @@ function OverviewActions(props: AccountOverviewProps) {
       onPress={props.onConsumeQuota}
       style={({ pressed }) => [styles.action, styles.consume,
         pressed && styles.pressed, consumeDisabled && styles.disabled]}>
-      {props.consumingQuota ? <ActivityIndicator color={colors.green} size="small" /> : <>
-        <Ionicons name="flash" size={24} color="#ffc400" />
+      {props.consumingQuota ? <ActivityIndicator color={color(colors.green, 'accent')} size="small" /> : <>
+        <Ionicons name="flash" size={24} color={color("#ffc400", 'warning')} />
         <Text style={styles.consumeText}>{t("消耗额度")}</Text>
       </>}
     </Pressable>
@@ -60,6 +65,8 @@ function OverviewActions(props: AccountOverviewProps) {
 }
 
 export function AccountOverview(props: AccountOverviewProps) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   return <View style={styles.overview}>
     <View style={styles.headingRow}>
@@ -67,7 +74,7 @@ export function AccountOverview(props: AccountOverviewProps) {
       <Pressable accessibilityRole="button" onPress={props.onTogglePrivacy}
         accessibilityLabel={props.privateMode ? t("显示账号邮箱") : t("隐藏账号邮箱")}
         style={({ pressed }) => [styles.privacyButton, pressed && styles.pressed]}>
-        <Ionicons name={props.privateMode ? 'eye-off-outline' : 'eye-outline'} size={18} color={colors.muted} />
+        <Ionicons name={props.privateMode ? 'eye-off-outline' : 'eye-outline'} size={18} color={color(colors.muted, 'muted')} />
       </Pressable>
     </View>
     <View style={styles.overviewRow}>
@@ -79,15 +86,17 @@ export function AccountOverview(props: AccountOverviewProps) {
 }
 
 export function AccountToolbar({ updatedAt, onAddAccount }: { updatedAt: string; onAddAccount: () => void }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   return <View style={styles.toolbar}>
     <View style={styles.updated}>
-      <Ionicons name="time-outline" size={16} color={colors.muted} />
+      <Ionicons name="time-outline" size={16} color={color(colors.muted, 'muted')} />
       <Text style={styles.updatedText}>{t("用量更新：")}{updatedAt}</Text>
     </View>
     <Pressable accessibilityRole="button" onPress={onAddAccount}
       style={({ pressed }) => [styles.add, pressed && styles.pressed]}>
-      <Ionicons name="add" size={22} color={colors.green} />
+      <Ionicons name="add" size={22} color={color(colors.green, 'accent')} />
       <Text style={styles.addText}>{t("添加账户")}</Text>
     </Pressable>
   </View>;

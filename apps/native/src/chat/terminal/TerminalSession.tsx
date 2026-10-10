@@ -1,3 +1,4 @@
+import { useThemeColor } from '../../theme/store';
 import { t, useLanguage } from '../../i18n';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, Text, View } from 'react-native';
@@ -11,13 +12,16 @@ import { createTerminalBridge, parseTerminalMessage } from '../../../../../share
 import { terminalDocument } from './terminalDocument';
 import { useTerminalOrientation } from './useTerminalOrientation';
 import { TerminalKeys } from './TerminalKeys';
-import { terminalStyles as styles } from './styles';
+import { useTerminalStyles as useStyles } from './styles';
 
 export function TerminalSession({ client, session, visible, deviceName, hide, close, tabs, notice }: {
   client: GuiToolsClient['terminal']; session: TerminalInfo; visible: boolean; deviceName?: string;
   hide: () => void; close: () => void;
   tabs?: ReactNode; notice?: string;
 }) {
+  const resolveThemeColor = useThemeColor();
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const cwd = session.cwd;
   const webview = useRef<WebView>(null);
@@ -69,17 +73,17 @@ export function TerminalSession({ client, session, visible, deviceName, hide, cl
           {orientation.landscape && <TerminalKeys input={inputKey} />}
           <Pressable accessibilityRole="switch" accessibilityLabel={t("自动换行")} accessibilityState={{ checked: wrap }}
             style={[styles.wrapButton, wrap && styles.selected]} onPress={() => setWrap(value => !value)}>
-            <Ionicons name="return-down-back-outline" size={20} color={wrap ? '#14806f' : '#718078'} />
+            <Ionicons name="return-down-back-outline" size={20} color={wrap ? resolveThemeColor('#14806f', 'accent') : resolveThemeColor('#718078', 'muted')} />
             <Text style={styles.wrapLabel}>{t("自动换行")}</Text></Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel={orientation.landscape ? t("切换竖屏") : t("切换横屏")}
             accessibilityState={{ disabled: orientation.rotating }} disabled={orientation.rotating}
             style={[styles.button, orientation.rotating && styles.disabled]} onPress={orientation.rotate}>
             <Ionicons name={orientation.landscape ? 'phone-portrait-outline' : 'phone-landscape-outline'}
-              size={22} color="#17211b" /></Pressable>
+              size={22} color={color("#17211b", 'ink')} /></Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel={t("关闭终端")} style={styles.button} onPress={close}>
-            <Ionicons name="trash-outline" size={21} color="#718078" /></Pressable>
+            <Ionicons name="trash-outline" size={21} color={color("#718078", 'muted')} /></Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel={t("收起终端")} style={styles.button} onPress={hide}>
-            <Ionicons name="chevron-down" size={24} color="#17211b" /></Pressable>
+            <Ionicons name="chevron-down" size={24} color={color("#17211b", 'ink')} /></Pressable>
         </View>
         {!orientation.landscape && tabs}
         {html ? <WebView key={generation} ref={webview} source={source} style={styles.screen}
@@ -95,7 +99,7 @@ export function TerminalSession({ client, session, visible, deviceName, hide, cl
             bridge.receive(nativeEvent.data);
           }}
           onError={() => setStatus(t("终端显示遇到问题，请收起后重新打开。"))} />
-          : <ActivityIndicator style={styles.loading} color="#14806f" />}
+          : <ActivityIndicator style={styles.loading} color={color("#14806f", 'accent')} />}
         {!!message && <Text accessibilityRole="alert" style={styles.status}>{message}</Text>}
       </View>
     </SafeAreaView></KeyboardAvoidingView></SafeAreaProvider>

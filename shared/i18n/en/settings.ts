@@ -1,4 +1,11 @@
 export const settings = {
+  '这台电脑暂不支持切换分辨率。': 'This computer does not support changing the resolution yet.',
+  '下载未完成，请重新下载。': 'The download did not finish. Please download it again.',
+  '外观': 'Appearance',
+  '明亮': 'Light',
+  '暗黑': 'Dark',
+  '外观已切换，但未能保存。下次打开应用后请重新选择。':
+    'Appearance changed but could not be saved. Please choose again next time you open the app.',
   '发现新版本': 'Update available',
   '忽略本版本': 'Skip this version',
   '立即更新': 'Update now',

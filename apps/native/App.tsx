@@ -1,4 +1,6 @@
 import 'react-native-gesture-handler';
+import { createThemedStyles } from './src/theme/styles';
+import { loadTheme, useThemeMode, useThemeColor } from './src/theme/preference';
 import { t, useLanguage } from './src/i18n';
 import { loadLanguage } from './src/i18n/preference';
 import { LoginLanguagePicker } from './src/settings/LanguageSheet';
@@ -17,7 +19,6 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -63,7 +64,7 @@ import { mergeRefreshedUsage, mergeServerAccounts } from './src/utils/accounts';
 import { AccountCard } from './src/accounts/AccountCard';
 import { AccountOverview, AccountToolbar } from './src/accounts/AccountOverview';
 import { displayDate, maskEmail, resetLabel } from './src/accounts/formatters';
-import { styles as accountStyles } from './src/accounts/styles';
+import { useStyles as useAccountStyles } from './src/accounts/styles';
 import { AdminArea } from './src/admin/AdminArea';
 import { AccountDetailsDrawer } from './src/accounts/AccountDetailsDrawer';
 import { AddAccountSheet } from './src/components/AddAccountSheet';
@@ -74,7 +75,7 @@ import { useRevokeDesktopService } from './src/devices/useRevokeDesktopService';
 import { RemoteModelSwitchSheet } from './src/components/RemoteModelSwitchSheet';
 import { QuotaConsumptionSheet } from './src/components/QuotaConsumptionSheet';
 import { TotpPage } from './src/totp/TotpPage';
-import { pageStyles as totpPageStyles } from './src/totp/pageStyles';
+import { usePageStyles as useTotpPageStyles } from './src/totp/pageStyles';
 import { ChatPage } from './src/chat/ChatPage';
 import { palette as chatPalette } from './src/chat/styles';
 import { useChatNotificationNavigation } from './src/chat/useChatNotificationNavigation';
@@ -121,12 +122,17 @@ class StartupErrorBoundary extends Component<{ children: ReactNode }, { error: E
 
   render() {
     if (!this.state.error) return this.props.children;
-    return <SafeAreaView style={styles.startupError}>
-      <Text style={styles.startupErrorTitle}>{t("应用启动失败")}</Text>
-      <Text style={styles.startupErrorMessage}>{t("请关闭应用后重试；若问题持续，请重新安装最新版本。")}</Text>
-      <Text selectable style={styles.startupErrorDetail}>{this.state.error.message}</Text>
-    </SafeAreaView>;
+    return <StartupError error={this.state.error} />;
   }
+}
+
+function StartupError({ error }: { error: Error }) {
+  const styles = useStyles();
+  return <SafeAreaView style={styles.startupError}>
+    <Text style={styles.startupErrorTitle}>{t("应用启动失败")}</Text>
+    <Text style={styles.startupErrorMessage}>{t("请关闭应用后重试；若问题持续，请重新安装最新版本。")}</Text>
+    <Text selectable style={styles.startupErrorDetail}>{error.message}</Text>
+  </SafeAreaView>;
 }
 
 function errorMessage(error: unknown) {
@@ -153,6 +159,8 @@ function usageColor(remaining: number) {
 }
 
 function LoginScreen({ initialBaseUrl, onLoggedIn }: { initialBaseUrl: string; onLoggedIn: (session: AuthSession) => void }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const consent = useAgreementConsent();
   const [baseUrl, setBaseUrl] = useState(initialBaseUrl);
@@ -193,16 +201,16 @@ function LoginScreen({ initialBaseUrl, onLoggedIn }: { initialBaseUrl: string; o
             </Pressable> : null}
           </View>
           <TextInput value={baseUrl} onChangeText={setBaseUrl} autoCapitalize="none" autoCorrect={false}
-            keyboardType="url" placeholder={DEFAULT_CLOUD_BASE_URL} placeholderTextColor="#98a9a0"
+            keyboardType="url" placeholder={DEFAULT_CLOUD_BASE_URL} placeholderTextColor={color("#98a9a0", 'muted')}
             style={styles.input} editable={!submitting} />
           <Text style={styles.fieldHint}>{t("填写部署 Remote AI 后端的根地址")}</Text>
           <Text style={styles.fieldLabel}>{t("邮箱")}</Text>
           <TextInput value={email} onChangeText={setEmail} autoCapitalize="none" autoCorrect={false}
-            autoComplete="email" keyboardType="email-address" placeholder="name@example.com" placeholderTextColor="#98a9a0"
+            autoComplete="email" keyboardType="email-address" placeholder="name@example.com" placeholderTextColor={color("#98a9a0", 'muted')}
             style={styles.input} editable={!submitting} />
           <Text style={styles.fieldLabel}>{t("密码")}</Text>
           <TextInput value={password} onChangeText={setPassword} secureTextEntry autoComplete="password"
-            placeholder={t("输入密码")} placeholderTextColor="#98a9a0" style={styles.input} editable={!submitting}
+            placeholder={t("输入密码")} placeholderTextColor={color("#98a9a0", 'muted')} style={styles.input} editable={!submitting}
             onSubmitEditing={requestLogin} />
           <AgreementConsent consent={consent} disabled={submitting} />
           <Pressable accessibilityRole="button" style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed, submitting && styles.disabled]}
@@ -217,6 +225,7 @@ function LoginScreen({ initialBaseUrl, onLoggedIn }: { initialBaseUrl: string; o
 }
 
 function CompactPrimaryUsage({ usage }: { usage?: UsageWindow | null }) {
+  const styles = useStyles();
   useLanguage();
   if (!usage) {
     return <>
@@ -246,6 +255,7 @@ function AccountCardContent({
   account: AccountSummary;
   privateMode: boolean;
 }) {
+  const styles = useStyles();
   useLanguage();
   const email = privateMode ? maskEmail(account.email) : account.email;
   return <View style={styles.compactAccountContent}>
@@ -292,6 +302,9 @@ function Dashboard({
   onSwitch: (deviceId: string, accountId: string) => Promise<boolean>;
   onAccountUpdated: (account: AccountSummary) => void;
 }) {
+  const accountStyles = useAccountStyles();
+  const color = useThemeColor();
+  const styles = useStyles();
   useLanguage();
   const [privateMode, setPrivateMode] = useState(true);
   const [detailAccountId, setDetailAccountId] = useState<string | null>(null);
@@ -308,7 +321,7 @@ function Dashboard({
   return <>
     <ScrollView style={accountStyles.page} contentContainerStyle={accountStyles.scroll}
       refreshControl={<RefreshControl refreshing={syncingServer}
-        onRefresh={() => void onRefreshServer()} tintColor={COLORS.green} />}>
+        onRefresh={() => void onRefreshServer()} tintColor={color(COLORS.green, 'accent')} />}>
       <AccountOverview accountCount={accounts.length}
         onlineDeviceCount={devices.filter((device) => device.online).length}
         refreshBusy={refreshBusy} refreshingUsage={refreshingUsage} consumingQuota={consumingQuota}
@@ -316,7 +329,7 @@ function Dashboard({
         onTogglePrivacy={() => setPrivateMode((current) => !current)}
         onRefreshUsage={() => void onRefreshUsage()} onConsumeQuota={() => setQuotaConsumptionOpen(true)} />
       <AccountToolbar updatedAt={displayDate(latestUpdate)} onAddAccount={() => setAddAccountOpen(true)} />
-      {loading ? <View style={styles.loadingBox}><ActivityIndicator size="large" color={COLORS.green} /><Text style={styles.loadingText}>{t("正在读取账户概览…")}</Text></View> : null}
+      {loading ? <View style={styles.loadingBox}><ActivityIndicator size="large" color={color(COLORS.green, 'accent')} /><Text style={styles.loadingText}>{t("正在读取账户概览…")}</Text></View> : null}
       {!loading && accounts.length === 0 ? <View style={styles.emptyBox}>
         <Text style={styles.emptyTitle}>{t("还没有可展示的账号")}</Text>
         <Text style={styles.emptyText}>{t("点击“添加账户”，使用 ChatGPT 完成授权后即可查看账号。")}</Text>
@@ -400,6 +413,8 @@ function OpenAiAuthAccountDrawer({
   onClose: () => void;
   onSelect: (deviceId: string, accountId: string) => Promise<boolean>;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const handleSelect = useCallback(async (accountId: string) => {
     if (
@@ -451,7 +466,7 @@ function OpenAiAuthAccountDrawer({
         >
           <AccountCardContent account={account} privateMode={false} />
           {switching
-            ? <ActivityIndicator color={COLORS.green} size="small" />
+            ? <ActivityIndicator color={color(COLORS.green, 'accent')} size="small" />
             : current
               ? <View style={styles.openAiAuthAccountCurrentBadge}>
                 <Text style={styles.openAiAuthAccountCurrentText}>{t("当前")}</Text>
@@ -576,37 +591,40 @@ function BottomNavigation({ activePage, onChange }: {
   activePage: AppPage;
   onChange: (page: AppPage) => void;
 }) {
+  const resolveThemeColor = useThemeColor();
+  const styles = useStyles();
+  const totpPageStyles = useTotpPageStyles();
   useLanguage();
   const settingsActive = ['admin', 'about', 'settings'].includes(activePage);
   // Keep the home-indicator area inside the navigation background.
   return <SafeAreaView edges={['bottom']} style={styles.bottomNavigation} accessibilityRole="tablist">
     <Pressable accessibilityRole="tab" accessibilityState={{ selected: activePage === 'chat' }}
       onPress={() => onChange('chat')} style={styles.navItem}>
-      <Ionicons name="chatbubble-outline" size={23} color={activePage === 'chat' ? '#00c98b' : '#858991'} />
+      <Ionicons name="chatbubble-outline" size={23} color={activePage === 'chat' ? resolveThemeColor('#00c98b', 'accent') : resolveThemeColor('#858991', 'muted')} />
       <Text style={[styles.navText, activePage === 'chat' && styles.navTextActive]}>{t("聊天")}</Text>
     </Pressable>
     <Pressable accessibilityRole="tab" accessibilityState={{ selected: activePage === 'accounts' }}
       onPress={() => onChange('accounts')} style={styles.navItem}>
       <Ionicons name={activePage === 'accounts' ? 'people' : 'people-outline'}
-        size={23} color={activePage === 'accounts' ? '#00c98b' : '#858991'} />
+        size={23} color={activePage === 'accounts' ? resolveThemeColor('#00c98b', 'accent') : resolveThemeColor('#858991', 'muted')} />
       <Text style={[styles.navText, activePage === 'accounts' && styles.navTextActive]}>{t("账号")}</Text>
     </Pressable>
     <Pressable accessibilityRole="tab" accessibilityState={{ selected: activePage === 'devices' }}
       onPress={() => onChange('devices')} style={styles.navItem}>
-      <Ionicons name="server-outline" size={23} color={activePage === 'devices' ? '#00c98b' : '#858991'} />
+      <Ionicons name="server-outline" size={23} color={activePage === 'devices' ? resolveThemeColor('#00c98b', 'accent') : resolveThemeColor('#858991', 'muted')} />
       <Text style={[styles.navText, activePage === 'devices' && styles.navTextActive]}>{t("设备")}</Text>
     </Pressable>
     <Pressable accessibilityRole="tab" accessibilityState={{ selected: activePage === 'totp' }}
       onPress={() => onChange('totp')} style={styles.navItem}>
       <View style={activePage === 'totp' ? totpPageStyles.activeTab : totpPageStyles.tab}>
         <Ionicons name={activePage === 'totp' ? 'shield-checkmark' : 'shield-checkmark-outline'}
-          size={23} color={activePage === 'totp' ? '#008956' : '#858991'} />
+          size={23} color={activePage === 'totp' ? resolveThemeColor('#008956', 'accent') : resolveThemeColor('#858991', 'muted')} />
         <Text style={[styles.navText, activePage === 'totp' && styles.navTextActive]}>2FA</Text>
       </View>
     </Pressable>
     <Pressable accessibilityRole="tab" accessibilityState={{ selected: settingsActive }}
       onPress={() => onChange('settings')} style={styles.navItem}>
-      <Ionicons name="settings" size={23} color={settingsActive ? '#00c98b' : '#858991'} />
+      <Ionicons name="settings" size={23} color={settingsActive ? resolveThemeColor('#00c98b', 'accent') : resolveThemeColor('#858991', 'muted')} />
       <Text style={[styles.navText, settingsActive && styles.navTextActive]}>{t("设置")}</Text>
     </Pressable>
   </SafeAreaView>;
@@ -619,6 +637,8 @@ function DeviceSwitchDrawer({ account, devices, switching, onClose, onSwitch }: 
   onClose: () => void;
   onSwitch: (deviceId: string, accountId: string) => Promise<boolean>;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [pendingDeviceId, setPendingDeviceId] = useState<string | null>(null);
 
@@ -665,7 +685,7 @@ function DeviceSwitchDrawer({ account, devices, switching, onClose, onSwitch }: 
             <Text style={styles.switchDeviceMeta}>{device.online ? t("在线") : t("离线")} · {device.platform}</Text>
           </View>
           {pendingDeviceId === device.deviceId
-            ? <ActivityIndicator color={COLORS.green} size="small" />
+            ? <ActivityIndicator color={color(COLORS.green, 'accent')} size="small" />
             : <View style={[styles.switchDeviceAction, current && styles.switchDeviceActionCurrent]}>
               <Text style={[styles.switchDeviceActionText, current && styles.switchDeviceActionTextCurrent]}>
                 {current ? t("当前") : device.online ? t("切换") : t("不可用")}
@@ -678,6 +698,10 @@ function DeviceSwitchDrawer({ account, devices, switching, onClose, onSwitch }: 
 }
 
 function AppContent() {
+  const styles = useStyles();
+  const color = useThemeColor();
+  const totpPageStyles = useTotpPageStyles();
+  const accountStyles = useAccountStyles();
   useLanguage();
   const [session, updateSession] = useState<AuthSession | null>(null);
   const sessionRef = useRef(session);
@@ -1259,16 +1283,16 @@ function AppContent() {
   }, []);
 
   const showBottomNavigation = activePage !== 'token-summary' && activePage !== 'downloads';
-  if (initializing) return <View style={styles.boot}><StatusBar style="dark" /><ActivityIndicator size="large" color={COLORS.green} /><Text style={styles.bootText}>Remote AI</Text></View>;
+  if (initializing) return <View style={styles.boot}><ThemeStatusBar /><ActivityIndicator size="large" color={color(COLORS.green, 'accent')} /><Text style={styles.bootText}>Remote AI</Text></View>;
   if (!session) return <View style={styles.app}>
-    <LoginScreen initialBaseUrl={DEFAULT_CLOUD_BASE_URL} onLoggedIn={handleLogin} />
+    <ThemeStatusBar /><LoginScreen initialBaseUrl={DEFAULT_CLOUD_BASE_URL} onLoggedIn={handleLogin} />
   </View>;
   return <SafeAreaView edges={showBottomNavigation ? ['top', 'left', 'right'] : undefined}
     style={[styles.app, activePage === 'totp' && totpPageStyles.page,
     activePage === 'accounts' && accountStyles.page,
     activePage === 'chat' && styles.chatCanvas,
     (activePage === 'settings' || activePage === 'about' || activePage === 'downloads') && styles.settingsCanvas]}>
-    <StatusBar style="dark" />
+    <ThemeStatusBar />
     <ChatPage session={session} devices={devices} active={activePage === 'chat' || activePage === 'token-summary'}
       devicesLoaded={devicesLoaded}
       tokenSummary={activePage === 'token-summary'} openTokenSummary={() => setActivePage('token-summary')}
@@ -1312,11 +1336,16 @@ function AppContent() {
   </SafeAreaView>;
 }
 
+function ThemeStatusBar() {
+  const mode = useThemeMode();
+  return <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />;
+}
+
 export default function App() {
   useLanguage();
   const updateActivity = useIdleAppUpdate();
   const [languageReady, setLanguageReady] = useState(false);
-  useEffect(() => { void loadLanguage().finally(() => setLanguageReady(true)); }, []);
+  useEffect(() => { void Promise.all([loadLanguage(), loadTheme()]).finally(() => setLanguageReady(true)); }, []);
   if (!languageReady) return null;
   return <SafeAreaProvider initialMetrics={initialWindowMetrics}>
     <View style={{ flex: 1 }} onTouchStart={updateActivity}>
@@ -1330,57 +1359,57 @@ export default function App() {
   </SafeAreaProvider>;
 }
 
-const styles = StyleSheet.create({
-  settingsCanvas: { backgroundColor: '#fff' },
-  chatCanvas: { backgroundColor: chatPalette.background },
-  flex: { flex: 1 }, app: { flex: 1, backgroundColor: COLORS.canvas }, boot: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.canvas, gap: 12 }, bootText: { color: COLORS.ink, fontSize: 18, fontWeight: '700' }, startupError: { flex: 1, padding: 28, justifyContent: 'center', backgroundColor: COLORS.canvas }, startupErrorTitle: { color: COLORS.ink, fontSize: 22, fontWeight: '800' }, startupErrorMessage: { color: COLORS.muted, fontSize: 15, lineHeight: 22, marginTop: 12 }, startupErrorDetail: { color: COLORS.danger, fontSize: 12, marginTop: 20 },
-  loginScroll: { flexGrow: 1, backgroundColor: COLORS.canvas, padding: 28, justifyContent: 'center' }, logoMark: { width: 58, height: 58, borderRadius: 18, backgroundColor: '#a7e733', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 18, shadowColor: '#4f7915', shadowOpacity: 0.18, shadowRadius: 14, elevation: 4 }, logoGlyph: { color: '#184122', fontSize: 34, fontWeight: '900' }, loginTitle: { color: COLORS.ink, fontSize: 30, fontWeight: '800', textAlign: 'center' }, loginSubtitle: { color: COLORS.muted, fontSize: 15, textAlign: 'center', marginTop: 8, marginBottom: 30 }, loginCard: { backgroundColor: COLORS.card, borderColor: COLORS.border, borderWidth: 1, borderRadius: 18, padding: 20, shadowColor: '#314c3d', shadowOpacity: 0.06, shadowRadius: 18, elevation: 2 }, fieldLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 36 }, fieldLabel: { color: COLORS.ink, fontSize: 14, fontWeight: '700', marginBottom: 8, marginTop: 14 }, officialServerButton: { paddingVertical: 6, paddingHorizontal: 9, borderRadius: 8, backgroundColor: COLORS.paleBlue, marginTop: 6 }, officialServerButtonText: { color: '#168da2', fontWeight: '700', fontSize: 12 }, fieldHint: { color: COLORS.muted, fontSize: 12, marginTop: 8 }, input: { height: 48, borderColor: '#cbdcd0', borderWidth: 1, borderRadius: 10, paddingHorizontal: 13, color: COLORS.ink, fontSize: 16, backgroundColor: '#fbfdfb' }, primaryButton: { height: 50, justifyContent: 'center', alignItems: 'center', borderRadius: 11, backgroundColor: COLORS.cyan, marginTop: 24, shadowColor: COLORS.cyan, shadowOpacity: 0.22, shadowRadius: 10, elevation: 3 }, primaryButtonText: { color: '#fff', fontWeight: '800', fontSize: 16 }, pressed: { opacity: 0.82 }, disabled: { opacity: 0.6 }, securityNote: { color: COLORS.muted, fontSize: 12, textAlign: 'center', marginTop: 18 },
-  loadingBox: { backgroundColor: COLORS.card, borderRadius: 16, padding: 38, alignItems: 'center', gap: 14, borderWidth: 1, borderColor: COLORS.border }, loadingText: { color: COLORS.muted }, emptyBox: { backgroundColor: COLORS.card, borderRadius: 16, padding: 28, alignItems: 'center', borderWidth: 1, borderColor: COLORS.border }, emptyTitle: { color: COLORS.ink, fontWeight: '800', fontSize: 17 }, emptyText: { color: COLORS.muted, textAlign: 'center', marginTop: 9, lineHeight: 20 },
+const useStyles = createThemedStyles((color) => ({
+  settingsCanvas: { backgroundColor: color('#fff', 'surface') },
+  chatCanvas: { backgroundColor: color(chatPalette.background, 'canvas') },
+  flex: { flex: 1 }, app: { flex: 1, backgroundColor: color(COLORS.canvas, 'canvas') }, boot: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: color(COLORS.canvas, 'canvas'), gap: 12 }, bootText: { color: color(COLORS.ink, 'ink'), fontSize: 18, fontWeight: '700' }, startupError: { flex: 1, padding: 28, justifyContent: 'center', backgroundColor: color(COLORS.canvas, 'canvas') }, startupErrorTitle: { color: color(COLORS.ink, 'ink'), fontSize: 22, fontWeight: '800' }, startupErrorMessage: { color: color(COLORS.muted, 'muted'), fontSize: 15, lineHeight: 22, marginTop: 12 }, startupErrorDetail: { color: color(COLORS.danger, 'danger'), fontSize: 12, marginTop: 20 },
+  loginScroll: { flexGrow: 1, backgroundColor: color(COLORS.canvas, 'canvas'), padding: 28, justifyContent: 'center' }, logoMark: { width: 58, height: 58, borderRadius: 18, backgroundColor: '#a7e733', justifyContent: 'center', alignItems: 'center', alignSelf: 'center', marginBottom: 18, shadowColor: '#4f7915', shadowOpacity: 0.18, shadowRadius: 14, elevation: 4 }, logoGlyph: { color: color('#184122', 'accent'), fontSize: 34, fontWeight: '900' }, loginTitle: { color: color(COLORS.ink, 'ink'), fontSize: 30, fontWeight: '800', textAlign: 'center' }, loginSubtitle: { color: color(COLORS.muted, 'muted'), fontSize: 15, textAlign: 'center', marginTop: 8, marginBottom: 30 }, loginCard: { backgroundColor: color(COLORS.card, 'surface'), borderColor: color(COLORS.border, 'border'), borderWidth: 1, borderRadius: 18, padding: 20, shadowColor: '#314c3d', shadowOpacity: 0.06, shadowRadius: 18, elevation: 2 }, fieldLabelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 36 }, fieldLabel: { color: color(COLORS.ink, 'ink'), fontSize: 14, fontWeight: '700', marginBottom: 8, marginTop: 14 }, officialServerButton: { paddingVertical: 6, paddingHorizontal: 9, borderRadius: 8, backgroundColor: color(COLORS.paleBlue, 'infoSoft'), marginTop: 6 }, officialServerButtonText: { color: color('#168da2', 'info'), fontWeight: '700', fontSize: 12 }, fieldHint: { color: color(COLORS.muted, 'muted'), fontSize: 12, marginTop: 8 }, input: { height: 48, borderColor: color('#cbdcd0', 'border'), borderWidth: 1, borderRadius: 10, paddingHorizontal: 13, color: color(COLORS.ink, 'ink'), fontSize: 16, backgroundColor: color('#fbfdfb', 'surface') }, primaryButton: { height: 50, justifyContent: 'center', alignItems: 'center', borderRadius: 11, backgroundColor: color(COLORS.cyan, 'info'), marginTop: 24, shadowColor: color(COLORS.cyan, 'info'), shadowOpacity: 0.22, shadowRadius: 10, elevation: 3 }, primaryButtonText: { color: '#fff', fontWeight: '800', fontSize: 16 }, pressed: { opacity: 0.82 }, disabled: { opacity: 0.6 }, securityNote: { color: color(COLORS.muted, 'muted'), fontSize: 12, textAlign: 'center', marginTop: 18 },
+  loadingBox: { backgroundColor: color(COLORS.card, 'surface'), borderRadius: 16, padding: 38, alignItems: 'center', gap: 14, borderWidth: 1, borderColor: color(COLORS.border, 'border') }, loadingText: { color: color(COLORS.muted, 'muted') }, emptyBox: { backgroundColor: color(COLORS.card, 'surface'), borderRadius: 16, padding: 28, alignItems: 'center', borderWidth: 1, borderColor: color(COLORS.border, 'border') }, emptyTitle: { color: color(COLORS.ink, 'ink'), fontWeight: '800', fontSize: 17 }, emptyText: { color: color(COLORS.muted, 'muted'), textAlign: 'center', marginTop: 9, lineHeight: 20 },
   openAiAuthAccountScroll: { maxHeight: 610 },
   openAiAuthAccountScrollContent: { paddingBottom: 8 },
-  openAiAuthAccountCardCurrent: { borderColor: '#7fd1ba', backgroundColor: '#f0faf6' },
-  openAiAuthAccountCurrentBadge: { flexShrink: 0, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: COLORS.paleGreen, borderWidth: 1, borderColor: '#bde8d8' },
-  openAiAuthAccountCurrentText: { color: '#128368', fontSize: 11, fontWeight: '900' },
-  accountCard: { minHeight: 102, flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: COLORS.card, borderColor: COLORS.border, borderWidth: 1, borderRadius: 16, paddingVertical: 14, paddingLeft: 16, paddingRight: 14, marginBottom: 12, shadowColor: '#456152', shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
-  accountCardPressed: { backgroundColor: '#f2f8f4', borderColor: '#bcd7c5' },
+  openAiAuthAccountCardCurrent: { borderColor: color('#7fd1ba', 'border'), backgroundColor: color('#f0faf6', 'canvas') },
+  openAiAuthAccountCurrentBadge: { flexShrink: 0, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: color(COLORS.paleGreen, 'accentSoft'), borderWidth: 1, borderColor: color('#bde8d8', 'border') },
+  openAiAuthAccountCurrentText: { color: color('#128368', 'accent'), fontSize: 11, fontWeight: '900' },
+  accountCard: { minHeight: 102, flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: color(COLORS.card, 'surface'), borderColor: color(COLORS.border, 'border'), borderWidth: 1, borderRadius: 16, paddingVertical: 14, paddingLeft: 16, paddingRight: 14, marginBottom: 12, shadowColor: '#456152', shadowOpacity: 0.04, shadowRadius: 8, elevation: 1 },
+  accountCardPressed: { backgroundColor: color('#f2f8f4', 'canvas'), borderColor: color('#bcd7c5', 'border') },
   compactAccountContent: { flex: 1, minWidth: 0, justifyContent: 'center' },
   compactAccountHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  compactPlanBadge: { flexShrink: 0, maxWidth: 86, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: COLORS.paleGreen, borderWidth: 1, borderColor: '#bde8d8' },
-  compactPlanText: { color: '#128368', fontSize: 11, fontWeight: '800' },
-  compactAccountEmail: { flex: 1, minWidth: 0, color: COLORS.ink, fontWeight: '800', fontSize: 15 },
+  compactPlanBadge: { flexShrink: 0, maxWidth: 86, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: color(COLORS.paleGreen, 'accentSoft'), borderWidth: 1, borderColor: color('#bde8d8', 'border') },
+  compactPlanText: { color: color('#128368', 'accent'), fontSize: 11, fontWeight: '800' },
+  compactAccountEmail: { flex: 1, minWidth: 0, color: color(COLORS.ink, 'ink'), fontWeight: '800', fontSize: 15 },
   compactUsageRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  compactProgressTrack: { flex: 1, height: 7, borderRadius: 10, overflow: 'hidden', backgroundColor: '#dbe8e0' },
+  compactProgressTrack: { flex: 1, height: 7, borderRadius: 10, overflow: 'hidden', backgroundColor: color('#dbe8e0', 'elevated') },
   compactRemaining: { width: 38, textAlign: 'right', fontWeight: '800', fontSize: 12 },
-  compactUsageUnavailable: { width: 38, color: COLORS.muted, textAlign: 'right', fontSize: 12 },
-  compactResetText: { color: COLORS.muted, fontSize: 11, marginTop: 8 },
+  compactUsageUnavailable: { width: 38, color: color(COLORS.muted, 'muted'), textAlign: 'right', fontSize: 12 },
+  compactResetText: { color: color(COLORS.muted, 'muted'), fontSize: 11, marginTop: 8 },
   progressFill: { height: '100%', borderRadius: 10 },
   switchDeviceScroll: { maxHeight: 440, marginBottom: 12 },
-  switchDeviceRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 11, borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, backgroundColor: '#fff', paddingHorizontal: 14, paddingVertical: 11, marginBottom: 10 },
-  switchDeviceRowCurrent: { borderColor: '#8fdccf', backgroundColor: COLORS.paleBlue },
+  switchDeviceRow: { minHeight: 70, flexDirection: 'row', alignItems: 'center', gap: 11, borderWidth: 1, borderColor: color(COLORS.border, 'border'), borderRadius: 14, backgroundColor: color('#fff', 'surface'), paddingHorizontal: 14, paddingVertical: 11, marginBottom: 10 },
+  switchDeviceRowCurrent: { borderColor: color('#8fdccf', 'border'), backgroundColor: color(COLORS.paleBlue, 'infoSoft') },
   switchDeviceRowDisabled: { opacity: 0.58 },
   deviceStatusDot: { width: 9, height: 9, borderRadius: 5 },
   deviceOnline: { backgroundColor: '#32d19b' },
-  deviceOffline: { backgroundColor: '#a8b2ac' },
+  deviceOffline: { backgroundColor: color('#a8b2ac', 'elevated') },
   switchDeviceInfo: { flex: 1, minWidth: 0 },
-  switchDeviceName: { color: COLORS.ink, fontSize: 14, fontWeight: '800' },
-  switchDeviceMeta: { color: COLORS.muted, fontSize: 11, marginTop: 4 },
-  switchDeviceAction: { minWidth: 52, height: 30, borderRadius: 8, backgroundColor: COLORS.paleBlue, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
-  switchDeviceActionCurrent: { backgroundColor: '#c7eee8' },
-  switchDeviceActionText: { color: '#168da2', fontSize: 12, fontWeight: '800' },
-  switchDeviceActionTextCurrent: { color: '#14806f' },
-  switchDeviceEmpty: { minHeight: 150, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border, borderRadius: 14, backgroundColor: COLORS.canvas, padding: 20 },
-  switchDeviceEmptyTitle: { color: COLORS.ink, fontSize: 16, fontWeight: '800' },
-  switchDeviceEmptyText: { color: COLORS.muted, fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 7 },
-  settingsTitle: { color: COLORS.ink, fontSize: 28, fontWeight: '800' }, settingsSubtitle: { color: COLORS.muted, fontSize: 13, marginTop: 4 }, sectionLabel: { color: COLORS.muted, fontSize: 13, fontWeight: '700', marginLeft: 3, marginBottom: 9, marginTop: 2 },
+  switchDeviceName: { color: color(COLORS.ink, 'ink'), fontSize: 14, fontWeight: '800' },
+  switchDeviceMeta: { color: color(COLORS.muted, 'muted'), fontSize: 11, marginTop: 4 },
+  switchDeviceAction: { minWidth: 52, height: 30, borderRadius: 8, backgroundColor: color(COLORS.paleBlue, 'infoSoft'), alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  switchDeviceActionCurrent: { backgroundColor: color('#c7eee8', 'accentSoft') },
+  switchDeviceActionText: { color: color('#168da2', 'info'), fontSize: 12, fontWeight: '800' },
+  switchDeviceActionTextCurrent: { color: color('#14806f', 'accent') },
+  switchDeviceEmpty: { minHeight: 150, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: color(COLORS.border, 'border'), borderRadius: 14, backgroundColor: color(COLORS.canvas, 'canvas'), padding: 20 },
+  switchDeviceEmptyTitle: { color: color(COLORS.ink, 'ink'), fontSize: 16, fontWeight: '800' },
+  switchDeviceEmptyText: { color: color(COLORS.muted, 'muted'), fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 7 },
+  settingsTitle: { color: color(COLORS.ink, 'ink'), fontSize: 28, fontWeight: '800' }, settingsSubtitle: { color: color(COLORS.muted, 'muted'), fontSize: 13, marginTop: 4 }, sectionLabel: { color: color(COLORS.muted, 'muted'), fontSize: 13, fontWeight: '700', marginLeft: 3, marginBottom: 9, marginTop: 2 },
   bottomNavigation: {
-    flexDirection: 'row', backgroundColor: COLORS.card, borderTopWidth: 1, borderTopColor: COLORS.border,
+    flexDirection: 'row', backgroundColor: color(COLORS.card, 'surface'), borderTopWidth: 1, borderTopColor: color(COLORS.border, 'border'),
     shadowColor: '#314c3d', shadowOpacity: 0.08, shadowRadius: 8, elevation: 10,
   },
   navItem: { flex: 1, minHeight: 58, alignItems: 'center', justifyContent: 'center', gap: 2 },
   // Give Android room to draw every glyph instead of using the exact intrinsic text width.
   navText: {
     alignSelf: 'stretch', textAlign: 'center', paddingHorizontal: 4, includeFontPadding: true,
-    color: '#7b8c82', fontSize: 11, lineHeight: 18, fontWeight: '700',
+    color: color('#7b8c82', 'muted'), fontSize: 11, lineHeight: 18, fontWeight: '700',
   },
-  navTextActive: { color: COLORS.green },
-});
+  navTextActive: { color: color(COLORS.green, 'accent') },
+}));

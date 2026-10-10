@@ -1,13 +1,15 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import type { ChatController } from './controller';
 import type { ChatProject, ChatState, Thread } from './types';
 import { ChatThreadList } from './ChatThreadList';
 import { ChatThreadActions } from './ChatThreadActions';
 import { useThreadActions } from '../../../../shared/remote-chat/client/useThreadActions';
-import { palette, styles } from './styles';
+import { palette, useStyles } from './styles';
 
 interface Props {
   state: ChatState; controller: ChatController; newChat: (project?: ChatProject) => void;
@@ -15,6 +17,9 @@ interface Props {
 }
 
 export function ChatThreads({ state, controller, newChat, openSearch, select, profileMenu }: Props) {
+  const styles = useStyles();
+  const listStyles = useListStyles();
+  const color = useThemeColor();
   useLanguage();
   const [footerHeight, setFooterHeight] = useState(0);
   const actions = useThreadActions(state, controller);
@@ -23,7 +28,7 @@ export function ChatThreads({ state, controller, newChat, openSearch, select, pr
       <View style={styles.row}>
         <Text style={[styles.heading, styles.fill]}>{t("聊天")}</Text>
         <Pressable accessibilityRole="button" accessibilityLabel={t("搜索聊天")} onPress={openSearch}
-          style={listStyles.search}><Feather name="search" size={23} color={palette.ink} /></Pressable>
+          style={listStyles.search}><Feather name="search" size={23} color={color(palette.ink, 'ink')} /></Pressable>
       </View>
       <Pressable accessibilityRole="button" style={listStyles.filter} disabled={state.loading}
         onPress={() => { void controller.list({ archived: !state.archived }); }}>
@@ -44,14 +49,14 @@ export function ChatThreads({ state, controller, newChat, openSearch, select, pr
   </View>;
 }
 
-const listStyles = StyleSheet.create({
+const useListStyles = createThemedStyles((color) => ({
   footer: { position: 'absolute', bottom: 0, left: 0, right: 0,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16,
     paddingHorizontal: 20, paddingTop: 12, paddingBottom: 20 },
-  search: { width: 48, height: 48, borderRadius: 24, backgroundColor: palette.background,
+  search: { width: 48, height: 48, borderRadius: 24, backgroundColor: color(palette.background, 'canvas'),
     alignItems: 'center', justifyContent: 'center' },
   filter: { minHeight: 36, justifyContent: 'center' },
   newChat: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10,
     minHeight: 52, paddingHorizontal: 24, borderRadius: 26, backgroundColor: palette.green },
   newChatText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-});
+}));

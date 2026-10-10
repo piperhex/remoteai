@@ -1,6 +1,7 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { SheetScrollView } from '../components/SheetScrollView';
 import { ChatCodeBlock } from './ChatCodeBlock';
@@ -13,6 +14,7 @@ export function isHtmlPath(path: string) {
 }
 
 export function ChatHtmlPreview({ text }: { text: string }) {
+  const styles = useStyles();
   useLanguage();
   const [mode, setMode] = useState<'preview' | 'source'>('preview');
   const [failed, setFailed] = useState(false);
@@ -47,13 +49,13 @@ export function ChatHtmlPreview({ text }: { text: string }) {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   container: { flexShrink: 1 },
-  content: { flex: 1, backgroundColor: '#fff' },
+  content: { flex: 1, backgroundColor: color('#fff', 'surface') },
   tabs: { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 12 },
   tab: { minHeight: 44, paddingHorizontal: 20, justifyContent: 'center', borderRadius: 12 },
-  selectedTab: { backgroundColor: '#e3f3ed' },
-  tabText: { color: '#0b8065', fontSize: 14, fontWeight: '700' },
+  selectedTab: { backgroundColor: color('#e3f3ed', 'canvas') },
+  tabText: { color: color('#0b8065', 'accent'), fontSize: 14, fontWeight: '700' },
   notice: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20 },
-  message: { maxWidth: 400, color: '#708078', fontSize: 14, textAlign: 'center' },
-});
+  message: { maxWidth: 400, color: color('#708078', 'muted'), fontSize: 14, textAlign: 'center' },
+}));

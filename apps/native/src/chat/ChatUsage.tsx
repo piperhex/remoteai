@@ -1,3 +1,5 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
@@ -15,6 +17,8 @@ export function ChatUsage({ read, active, ready, tokenUsage, onContextSettings, 
   readConversationMetrics: ReadConversationMetrics; threadId: string | null;
   onContextSettings?: () => void;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   const language = useLanguage();
   const { usage, error } = useChatUsage(read, active && ready);
   const trailing = usageTrailing(usage, t);
@@ -26,7 +30,7 @@ export function ChatUsage({ read, active, ready, tokenUsage, onContextSettings, 
         accessibilityState={{ disabled: !onContextSettings }} disabled={!onContextSettings}
         style={({ pressed }) => [styles.settings, pressed && styles.pressed, !onContextSettings && styles.disabled]}
         onPress={onContextSettings}>
-        <Feather name="settings" size={16} color={palette.muted} />
+        <Feather name="settings" size={16} color={color(palette.muted, 'muted')} />
       </Pressable>
     </View>
     {usage ? <Text style={styles.row} accessibilityLabel={[
@@ -45,16 +49,16 @@ export function ChatUsage({ read, active, ready, tokenUsage, onContextSettings, 
   </View>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   context: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   contextText: { flex: 1 },
   settings: { minWidth: 32, minHeight: 32, alignItems: 'center', justifyContent: 'center', borderRadius: 8 },
-  pressed: { backgroundColor: palette.pale },
+  pressed: { backgroundColor: color(palette.pale, 'accentSoft') },
   disabled: { opacity: 0.4 },
-  container: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: palette.border, paddingTop: 14, gap: 4 },
-  row: { color: palette.muted, fontSize: 12, lineHeight: 20, flexShrink: 1 },
-  tokens: { color: palette.green, fontWeight: '600' },
-  cost: { color: '#b45d00', fontWeight: '600' },
-  quota: { color: '#16874e', fontWeight: '600' },
-  low: { color: palette.danger, fontWeight: '600' },
-});
+  container: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color(palette.border, 'border'), paddingTop: 14, gap: 4 },
+  row: { color: color(palette.muted, 'muted'), fontSize: 12, lineHeight: 20, flexShrink: 1 },
+  tokens: { color: color(palette.green, 'accent'), fontWeight: '600' },
+  cost: { color: color('#b45d00', 'warning'), fontWeight: '600' },
+  quota: { color: color('#16874e', 'accent'), fontWeight: '600' },
+  low: { color: color(palette.danger, 'danger'), fontWeight: '600' },
+}));

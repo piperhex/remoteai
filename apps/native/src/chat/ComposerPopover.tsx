@@ -1,3 +1,4 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useLayoutEffect, useState, type ReactNode, type RefObject } from 'react';
 import { BackHandler, Pressable, StyleSheet, View } from 'react-native';
@@ -17,6 +18,7 @@ const MAX_PANEL_WIDTH = 400;
 const MAX_PANEL_HEIGHT = 340;
 
 export function ComposerPopover({ anchor, anchorHeight, wide = false, children, close }: Props) {
+  const popoverStyles = usePopoverStyles();
   useLanguage();
   const host = useChatOverlay();
   const [position, setPosition] = useState<{ left: number; bottom: number; height: number }>();
@@ -50,8 +52,8 @@ export function ComposerPopover({ anchor, anchorHeight, wide = false, children, 
   return null;
 }
 
-const popoverStyles = StyleSheet.create({
-  panel: { position: 'absolute', borderRadius: 26, backgroundColor: '#fff', padding: 10,
+const usePopoverStyles = createThemedStyles((color) => ({
+  panel: { position: 'absolute', borderRadius: 26, backgroundColor: color('#fff', 'surface'), padding: 10,
     shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 20, shadowOffset: { width: 0, height: 5 },
     elevation: 8, overflow: 'hidden' },
-});
+}));

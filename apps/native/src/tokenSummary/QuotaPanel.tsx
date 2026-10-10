@@ -9,12 +9,13 @@ import { BottomSheet } from '../components/BottomSheet';
 import { SheetScrollView } from '../components/SheetScrollView';
 import { TimeBars } from './TimeBars';
 import { quotaPoints } from './quotaPoints';
-import { summaryStyles as s } from './styles';
+import { useSummaryStyles as useS } from './styles';
 
 const intervals: Array<[QuotaInterval, string]> = [['hour', '每小时'], ['sixHours', '每 6 小时'], ['day', '每天']];
 const views: Array<[QuotaView, string]> = [['drop', '时段下降'], ['remaining', '剩余额度']];
 
 export function QuotaPanel({ data }: { data: TokenSummary }) {
+  const s = useS();
   const language = useLanguage();
   const [accountId, setAccountId] = useState<string>();
   const [interval, setInterval] = useState<QuotaInterval>('sixHours');

@@ -1,14 +1,17 @@
+import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { BottomSheet } from '../components/BottomSheet';
 import { SheetScrollView } from '../components/SheetScrollView';
 import { CONTEXT_CAPACITY_PRESETS_K, type ContextSettingsApi } from '../../../../shared/remote-chat/contextSettings';
 import { useContextSettings } from '../../../../shared/remote-chat/client/useContextSettings';
-import { styles } from './styles';
+import { useStyles } from './styles';
 
 export function ChatContextSettings({ threadId, api, onClose }: {
   threadId: string; api: ContextSettingsApi; onClose: () => void;
 }) {
+  const styles = useStyles();
+  const presetStyles = usePresetStyles();
   useLanguage();
   const editor = useContextSettings(threadId, api);
   const save = async () => { if (await editor.save()) onClose(); };
@@ -52,7 +55,7 @@ export function ChatContextSettings({ threadId, api, onClose }: {
   </BottomSheet>;
 }
 
-const presetStyles = StyleSheet.create({
+const usePresetStyles = createThemedStyles(() => ({
   options: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   option: { minHeight: 44, justifyContent: 'center' },
-});
+}));

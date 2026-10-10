@@ -1,6 +1,8 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { consumeResetCredit } from '../api/client';
 import { BottomSheet } from '../components/BottomSheet';
 import { Toast } from '../components/AppToast';
@@ -23,6 +25,8 @@ export function ResetCreditsDrawer({ account, visible, privateMode, credits: cre
   onClose: () => void;
   onConsumed: () => Promise<void>;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [consuming, setConsuming] = useState(false);
   const { summary, loading, error, reload: loadCredits } = creditState;
@@ -89,7 +93,7 @@ export function ResetCreditsDrawer({ account, visible, privateMode, credits: cre
       showsVerticalScrollIndicator={false}
     >
       {loading ? <View style={styles.resetCreditStatus}>
-        <ActivityIndicator color={COLORS.green} />
+        <ActivityIndicator color={color(COLORS.green, 'accent')} />
         <Text style={styles.resetCreditStatusText}>{t("正在读取重置卡…")}</Text>
       </View> : error ? <View style={styles.resetCreditStatus}>
         <Text style={styles.resetCreditErrorTitle}>{t("读取失败")}</Text>
@@ -128,51 +132,51 @@ export function ResetCreditsDrawer({ account, visible, privateMode, credits: cre
   </BottomSheet>;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   resetCreditSummary: {
     minHeight: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 14,
-    borderRadius: 15, backgroundColor: COLORS.paleBlue, paddingHorizontal: 16, paddingVertical: 13,
+    borderRadius: 15, backgroundColor: color(COLORS.paleBlue, 'infoSoft'), paddingHorizontal: 16, paddingVertical: 13,
   },
-  resetCreditSummaryLabel: { color: COLORS.ink, fontSize: 14, fontWeight: '800' },
-  resetCreditSummaryHint: { color: COLORS.muted, fontSize: 10, lineHeight: 15, marginTop: 4 },
-  resetCreditCount: { color: '#148da3', fontSize: 26, fontWeight: '900' },
-  resetCreditCountUnit: { color: COLORS.muted, fontSize: 12, fontWeight: '700' },
+  resetCreditSummaryLabel: { color: color(COLORS.ink, 'ink'), fontSize: 14, fontWeight: '800' },
+  resetCreditSummaryHint: { color: color(COLORS.muted, 'muted'), fontSize: 10, lineHeight: 15, marginTop: 4 },
+  resetCreditCount: { color: color('#148da3', 'info'), fontSize: 26, fontWeight: '900' },
+  resetCreditCountUnit: { color: color(COLORS.muted, 'muted'), fontSize: 12, fontWeight: '700' },
   resetCreditsScroll: { maxHeight: 390, marginTop: 12 },
   resetCreditsScrollContent: { paddingBottom: 4 },
   resetCreditStatus: {
-    minHeight: 190, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: COLORS.border,
-    borderRadius: 15, backgroundColor: COLORS.canvas, padding: 22,
+    minHeight: 190, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: color(COLORS.border, 'border'),
+    borderRadius: 15, backgroundColor: color(COLORS.canvas, 'canvas'), padding: 22,
   },
-  resetCreditStatusText: { color: COLORS.muted, fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 8 },
-  resetCreditErrorTitle: { color: COLORS.danger, fontSize: 16, fontWeight: '800' },
+  resetCreditStatusText: { color: color(COLORS.muted, 'muted'), fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 8 },
+  resetCreditErrorTitle: { color: color(COLORS.danger, 'danger'), fontSize: 16, fontWeight: '800' },
   resetCreditRetry: {
     minWidth: 94, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: 10,
-    backgroundColor: COLORS.paleBlue, marginTop: 15, paddingHorizontal: 14,
+    backgroundColor: color(COLORS.paleBlue, 'infoSoft'), marginTop: 15, paddingHorizontal: 14,
   },
-  resetCreditRetryText: { color: '#168da2', fontSize: 13, fontWeight: '800' },
+  resetCreditRetryText: { color: color('#168da2', 'info'), fontSize: 13, fontWeight: '800' },
   resetCreditEmptyIcon: {
-    width: 42, height: 42, borderRadius: 21, color: '#14806f', backgroundColor: '#d8f4ec', fontSize: 23,
+    width: 42, height: 42, borderRadius: 21, color: color('#14806f', 'accent'), backgroundColor: color('#d8f4ec', 'accentSoft'), fontSize: 23,
     lineHeight: 42, fontWeight: '900', textAlign: 'center', overflow: 'hidden',
   },
-  resetCreditEmptyTitle: { color: COLORS.ink, fontSize: 15, fontWeight: '800', marginTop: 12 },
+  resetCreditEmptyTitle: { color: color(COLORS.ink, 'ink'), fontSize: 15, fontWeight: '800', marginTop: 12 },
   resetCreditCard: {
-    borderWidth: 1, borderColor: COLORS.border, borderRadius: 15, backgroundColor: '#fff', padding: 15,
+    borderWidth: 1, borderColor: color(COLORS.border, 'border'), borderRadius: 15, backgroundColor: color('#fff', 'surface'), padding: 15,
     marginBottom: 10,
   },
   resetCreditCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 13 },
   resetCreditCardIcon: {
     width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: COLORS.paleBlue, marginRight: 10,
+    backgroundColor: color(COLORS.paleBlue, 'infoSoft'), marginRight: 10,
   },
-  resetCreditCardIconText: { color: '#168da2', fontSize: 19, lineHeight: 22, fontWeight: '800' },
-  resetCreditCardTitle: { flex: 1, color: COLORS.ink, fontSize: 14, fontWeight: '800' },
+  resetCreditCardIconText: { color: color('#168da2', 'info'), fontSize: 19, lineHeight: 22, fontWeight: '800' },
+  resetCreditCardTitle: { flex: 1, color: color(COLORS.ink, 'ink'), fontSize: 14, fontWeight: '800' },
   resetCreditAvailableBadge: {
-    borderRadius: 7, backgroundColor: COLORS.paleGreen, paddingHorizontal: 8, paddingVertical: 4,
+    borderRadius: 7, backgroundColor: color(COLORS.paleGreen, 'accentSoft'), paddingHorizontal: 8, paddingVertical: 4,
   },
-  resetCreditAvailableText: { color: '#14806f', fontSize: 10, fontWeight: '800' },
+  resetCreditAvailableText: { color: color('#14806f', 'accent'), fontSize: 10, fontWeight: '800' },
   resetCreditTimeRow: { minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 14 },
-  resetCreditTimeLabel: { width: 58, color: COLORS.muted, fontSize: 11 },
-  resetCreditTimeValue: { flex: 1, color: COLORS.ink, fontSize: 12, fontWeight: '700', textAlign: 'right' },
-  resetCreditTimeDivider: { height: 1, backgroundColor: '#eef3ef' },
+  resetCreditTimeLabel: { width: 58, color: color(COLORS.muted, 'muted'), fontSize: 11 },
+  resetCreditTimeValue: { flex: 1, color: color(COLORS.ink, 'ink'), fontSize: 12, fontWeight: '700', textAlign: 'right' },
+  resetCreditTimeDivider: { height: 1, backgroundColor: color('#eef3ef', 'canvas') },
   pressed: { opacity: 0.7 },
-});
+}));

@@ -1,6 +1,7 @@
+import { createThemedStyles } from '../../theme/styles';
 import { t, useLanguage } from '../../i18n';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -16,6 +17,7 @@ interface Props {
   files: FileClient;
 }
 export function VideoViewer({ close, ...options }: Props) {
+  const styles = useStyles();
   useLanguage();
   const video = useVideoStream(options);
   const download = useManagedDownload({ ...options, client: options.files });
@@ -68,15 +70,15 @@ export function VideoViewer({ close, ...options }: Props) {
     </SafeAreaProvider>
   </Modal>;
 }
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   overlay: { flex: 1, backgroundColor: '#000' },
   toolbar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12 },
-  title: { flex: 1, color: '#ddd', fontSize: 14 },
+  title: { flex: 1, color: color('#ddd', 'faint'), fontSize: 14 },
   button: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   download: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 8 },
   player: { flex: 1, backgroundColor: '#000' },
   notice: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 16 },
-  status: { color: '#ddd', fontSize: 14, textAlign: 'center', maxWidth: 400 },
+  status: { color: color('#ddd', 'faint'), fontSize: 14, textAlign: 'center', maxWidth: 400 },
   retry: { minHeight: 44, minWidth: 88, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#333', borderRadius: 12 },
-});
+}));

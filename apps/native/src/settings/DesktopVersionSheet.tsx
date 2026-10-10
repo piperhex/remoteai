@@ -5,7 +5,7 @@ import { BottomSheet } from '../components/BottomSheet';
 import { fetchUserProfile } from '../api/client';
 import type { AuthSession } from '../types';
 import { useDesktopUpdate } from '../../../../shared/desktop-update/useDesktopUpdate';
-import { styles } from './styles';
+import { useStyles } from './styles';
 
 export function DesktopVersionSheet({ session, onClose }: { session: AuthSession; onClose: () => void }) {
   useLanguage();
@@ -19,6 +19,7 @@ export function DesktopVersionSheet({ session, onClose }: { session: AuthSession
 export function DesktopVersionContent({ update, onClose }: {
   update: ReturnType<typeof useDesktopUpdate>; onClose: () => void;
 }) {
+  const styles = useStyles();
   useLanguage();
   const [confirmation, setConfirmation] = useState<{ deviceId: string; version: string } | null>(null);
   const status = update.status;

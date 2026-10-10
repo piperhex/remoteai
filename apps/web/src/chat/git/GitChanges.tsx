@@ -5,6 +5,7 @@ import folderIcon from '../../../../../shared/remote-chat/assets/git-icons/folde
 import { selectionState } from '../../../../../shared/remote-chat/gitFiles';
 import type { GitFileRow } from '../../../../../shared/remote-chat/useGitFileList';
 import type { RemoteGit } from '../../../../../shared/remote-chat/useRemoteGit';
+import { gitAreaColors } from './gitTheme';
 import { t } from '../../i18n';
 
 export function GitChanges({ panel, connected }: { panel: RemoteGit; connected: boolean }) {
@@ -40,13 +41,14 @@ function GitRow({ row, panel, connected, onToggle, flat }: {
   const checked = selectionState(row.files, panel.selected);
   const folder = row.kind === 'folder';
   const area = row.kind === 'area';
+  const colors = gitAreaColors(row.area.id);
   return <div className={`git-file git-file-${row.kind}`} data-area={row.area.id}
-    style={{ color: row.area.color, background: !area && checked === true ? row.area.background : undefined }}>
+    style={{ color: colors.color, background: !area && checked === true ? colors.background : undefined }}>
     <Checkbox aria-label={t('选择 {path}', { path: row.path })} checked={checked === true}
       indeterminate={checked === 'mixed'} disabled={panel.busy || !row.files.some(file => !file.conflict)}
       onChange={() => panel.selectFiles(row.files)} />
-    {area ? <strong><i className="git-area-dot" style={{ background: row.area.color }} />
-      {t(row.name)} <small style={{ background: row.area.background }}>{row.files.length}</small></strong>
+    {area ? <strong><i className="git-area-dot" style={{ background: colors.color }} />
+      {t(row.name)} <small style={{ background: colors.background }}>{row.files.length}</small></strong>
       : <button type="button" aria-label={folder ? t('展开或收起 {path}', { path: row.path })
         : t('查看 {path}', { path: row.path })} aria-expanded={folder ? !row.collapsed : undefined}
         disabled={panel.busy || (!folder && !connected)} title={row.path}
@@ -58,7 +60,7 @@ function GitRow({ row, panel, connected, onToggle, flat }: {
         <span className="git-file-name">{row.name}
           {flat && row.path !== row.name && <small>{row.path}</small>}
           {row.file?.originalPath && <small>{row.file.originalPath} → {row.path}</small>}</span>
-        <span className="git-status" style={{ background: folder ? undefined : row.area.background }}>
+        <span className="git-status" style={{ background: folder ? undefined : colors.background }}>
           {folder ? row.files.length : row.file?.status.trim()}</span>
       </button>}
   </div>;

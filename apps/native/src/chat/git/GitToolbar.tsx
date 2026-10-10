@@ -1,3 +1,4 @@
+import { useThemeColor } from '../../theme/store';
 import { t, useLanguage } from '../../i18n';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
@@ -5,9 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import type { RemoteGit } from '../../../../../shared/remote-chat/useRemoteGit';
 import type { GitAction } from '../../../../../shared/remote-chat/gitTypes';
 import { GIT_ACTIONS } from '../../../../../shared/remote-chat/gitActions';
-import { gitStyles as styles } from './styles';
+import { useGitStyles as useStyles } from './styles';
 
 export function GitToolbar({ panel, connected }: { panel: RemoteGit; connected: boolean }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [menu, setMenu] = useState<'branches' | 'actions' | null>(null);
   const [query, setQuery] = useState('');
@@ -21,16 +24,16 @@ export function GitToolbar({ panel, connected }: { panel: RemoteGit; connected: 
       <Pressable accessibilityRole="button" accessibilityLabel={t("切换分支")} disabled={disabled}
         style={[styles.branchButton, disabled && styles.disabled]}
         onPress={() => setMenu(menu === 'branches' ? null : 'branches')}>
-        <Ionicons name="git-branch-outline" size={16} color="#587267" />
+        <Ionicons name="git-branch-outline" size={16} color={color("#587267", 'muted')} />
         <Text numberOfLines={1} style={styles.branch}>{panel.changes?.branch ?? t("分离的 HEAD")}</Text>
-        <Ionicons name="chevron-down" size={12} color="#718078" /></Pressable>
+        <Ionicons name="chevron-down" size={12} color={color("#718078", 'muted')} /></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={t("同步")} disabled={disabled} style={styles.syncButton}
         onPress={() => setMenu(menu === 'actions' ? null : 'actions')}>
-        <Ionicons name="swap-vertical-outline" size={16} color="#587267" /><Text style={styles.buttonText}>{t("同步")}</Text>
+        <Ionicons name="swap-vertical-outline" size={16} color={color("#587267", 'muted')} /><Text style={styles.buttonText}>{t("同步")}</Text>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={t("刷新 Git")} disabled={disabled} style={styles.button}
         onPress={() => { panel.setDetail(null); void panel.refresh(); }}>
-        <Ionicons name="refresh-outline" size={18} color="#587267" />
+        <Ionicons name="refresh-outline" size={18} color={color("#587267", 'muted')} />
       </Pressable>
     </View>
     {!!repository?.upstream && <Text style={styles.tracking}>

@@ -1,3 +1,4 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
@@ -6,6 +7,7 @@ import { BottomSheet } from '../components/BottomSheet';
 export function HostIdentityVerification({ confirm, close }: {
   confirm: (fingerprint: string) => Promise<void>; close: () => void;
 }) {
+  const color = useThemeColor();
   useLanguage();
   const [fingerprint, setFingerprint] = useState('');
   const [error, setError] = useState('');
@@ -23,7 +25,7 @@ export function HostIdentityVerification({ confirm, close }: {
       <Text>{t("请在电脑的设置中找到“远程桌面”，复制设备指纹并粘贴到下方。")}</Text>
       <TextInput accessibilityLabel={t("设备指纹")} value={fingerprint} onChangeText={setFingerprint}
         autoCapitalize="none" autoCorrect={false} maxLength={100}
-        style={{ borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, padding: 12 }} />
+        style={{ borderWidth: 1, borderColor: color('#cbd5e1', 'border'), borderRadius: 8, padding: 12 }} />
       {!!error && <Text accessibilityRole="alert">{error}</Text>}
     </View>
   </BottomSheet>;

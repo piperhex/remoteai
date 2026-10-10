@@ -1,3 +1,4 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -14,8 +15,8 @@ import { TotpFormSheet } from './TotpFormSheet';
 import { TotpPageHeader, TotpSearchBar } from './TotpPageHeader';
 import { TotpOptionsMenu } from './TotpOptionsMenu';
 import { selectTotpEntries, type TotpSortOrder } from './entryList';
-import { pageStyles as styles } from './pageStyles';
-import { totpStyles } from './styles';
+import { usePageStyles as useStyles } from './pageStyles';
+import { useTotpStyles } from './styles';
 import { generateTotp } from './totp';
 import type { TotpEntry, TotpManagerState } from './types';
 
@@ -41,6 +42,8 @@ function EntryList({ manager, entries, codes, now, onEdit }: {
   now: number;
   onEdit: (entry: TotpEntry) => void;
 }) {
+  const color = useThemeColor();
+  const totpStyles = useTotpStyles();
   useLanguage();
   const confirmDelete = (entry: TotpEntry) => {
     Alert.alert(t("删除 2FA 密钥"), t("确定删除“{value1}”的密钥吗？", { value1: entry.issuer }), [
@@ -49,7 +52,7 @@ function EntryList({ manager, entries, codes, now, onEdit }: {
     ]);
   };
 
-  if (!manager.initialized) return <ActivityIndicator color="#18af8c" />;
+  if (!manager.initialized) return <ActivityIndicator color={color("#18af8c", 'accent')} />;
   if (!manager.entries.length) return <View style={totpStyles.empty}>
     <Text style={totpStyles.emptyIcon}>2FA</Text>
     <Text style={totpStyles.emptyTitle}>{t("还没有 2FA 密钥")}</Text>
@@ -71,6 +74,8 @@ function EntryList({ manager, entries, codes, now, onEdit }: {
 }
 
 export function TotpPage({ manager }: { manager: TotpManagerState }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [editing, setEditing] = useState<TotpEntry | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -103,7 +108,7 @@ export function TotpPage({ manager }: { manager: TotpManagerState }) {
     <ScrollView style={styles.list} contentContainerStyle={styles.listContent}
       keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       refreshControl={<RefreshControl refreshing={manager.syncing}
-        onRefresh={() => void refreshCloud()} tintColor="#2ba47d" colors={['#2ba47d']} />}>
+        onRefresh={() => void refreshCloud()} tintColor={color("#2ba47d", 'accent')} colors={['#2ba47d']} />}>
       <TotpPageHeader onManualAdd={() => openForm(null)} onScanAdd={() => openForm(null, true)} />
       <TotpSearchBar query={query} onQueryChange={setQuery} onSort={() => setSortOpen(true)}
         sorted={sort !== 'default'} />

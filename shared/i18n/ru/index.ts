@@ -14,6 +14,12 @@ import { cliImportRussian } from '../cliImport';
 import { assistanceRussian } from '../remoteAssistance';
 
 export const russian = {
+  '这台电脑暂不支持切换分辨率。': 'Этот компьютер пока не поддерживает изменение разрешения.',
+  '下载未完成，请重新下载。': 'Загрузка не завершена. Скачайте файл заново.',
+  '明亮': 'Светлое',
+  '暗黑': 'Тёмное',
+  '外观已切换，但未能保存。下次打开应用后请重新选择。':
+    'Оформление изменено, но не сохранено. Выберите его снова при следующем запуске.',
   ...assistanceRussian,
   ...downloads,
   ...cliImportRussian,

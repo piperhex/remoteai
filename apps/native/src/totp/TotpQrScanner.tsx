@@ -1,8 +1,9 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
-import { totpStyles as styles } from './styles';
+import { useTotpStyles as useStyles } from './styles';
 
 interface TotpQrScannerProps {
   onClose: () => void;
@@ -11,6 +12,8 @@ interface TotpQrScannerProps {
 }
 
 export function TotpQrScanner({ onClose, onScan, visible }: TotpQrScannerProps) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -27,7 +30,7 @@ export function TotpQrScanner({ onClose, onScan, visible }: TotpQrScannerProps) 
   };
 
   return <Modal visible={visible} animationType="fade" onRequestClose={onClose}>
-    {!permission ? <View style={styles.permissionBox}><ActivityIndicator color="#18af8c" /></View>
+    {!permission ? <View style={styles.permissionBox}><ActivityIndicator color={color("#18af8c", 'accent')} /></View>
       : !permission.granted ? <View style={styles.permissionBox}>
         <Text style={styles.permissionTitle}>{t("需要相机权限")}</Text>
         <Text style={styles.permissionText}>{t("允许使用相机后，即可扫描服务提供的 2FA 二维码。")}</Text>

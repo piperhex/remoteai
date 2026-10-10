@@ -1,3 +1,6 @@
+import type { ThemeColor } from '../../../../shared/theme/mode';
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { getLocale, t, useLanguage } from '../i18n';
 import * as Clipboard from 'expo-clipboard';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -115,13 +118,13 @@ function percentage(value: number, total: number): `${number}%` {
   return `${Math.max(4, Math.min(100, Math.round((value / Math.max(1, total)) * 100)))}%`;
 }
 
-function toneStyles(tone: Tone) {
-  if (tone === 'green') return { backgroundColor: COLORS.primarySoft, color: COLORS.primary };
-  if (tone === 'blue') return { backgroundColor: COLORS.blueSoft, color: COLORS.blue };
-  if (tone === 'amber') return { backgroundColor: COLORS.amberSoft, color: COLORS.amber };
-  if (tone === 'purple') return { backgroundColor: COLORS.purpleSoft, color: COLORS.purple };
-  if (tone === 'red') return { backgroundColor: COLORS.redSoft, color: COLORS.red };
-  return { backgroundColor: '#eef2ef', color: '#5f7067' };
+function toneStyles(tone: Tone, color: ThemeColor) {
+  if (tone === 'green') return { backgroundColor: color(COLORS.primarySoft, 'accentSoft'), color: color(COLORS.primary, 'accent') };
+  if (tone === 'blue') return { backgroundColor: color(COLORS.blueSoft, 'infoSoft'), color: color(COLORS.blue, 'info') };
+  if (tone === 'amber') return { backgroundColor: color(COLORS.amberSoft, 'warningSoft'), color: color(COLORS.amber, 'warning') };
+  if (tone === 'purple') return { backgroundColor: color(COLORS.purpleSoft, 'purpleSoft'), color: color(COLORS.purple, 'purple') };
+  if (tone === 'red') return { backgroundColor: color(COLORS.redSoft, 'dangerSoft'), color: color(COLORS.red, 'danger') };
+  return { backgroundColor: color('#eef2ef', 'elevated'), color: color('#5f7067', 'muted') };
 }
 
 function AdminButton({ label, onPress, tone = 'secondary', loading = false, disabled = false, compact = false }: {
@@ -132,6 +135,8 @@ function AdminButton({ label, onPress, tone = 'secondary', loading = false, disa
   disabled?: boolean;
   compact?: boolean;
 }) {
+  const resolveThemeColor = useThemeColor();
+  const styles = useStyles();
   useLanguage();
   const onColor = tone === 'primary' || tone === 'danger';
   return <Pressable
@@ -149,25 +154,29 @@ function AdminButton({ label, onPress, tone = 'secondary', loading = false, disa
     ]}
   >
     {loading
-      ? <ActivityIndicator size="small" color={onColor ? '#fff' : COLORS.primary} />
+      ? <ActivityIndicator size="small" color={onColor ? '#fff' : resolveThemeColor(COLORS.primary, 'accent')} />
       : <Text style={[styles.buttonText, onColor && styles.buttonTextOnColor, tone === 'quiet' && styles.buttonTextQuiet]}>{label}</Text>}
   </Pressable>;
 }
 
 function Pill({ children, tone = 'gray' }: { children: ReactNode; tone?: Tone }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
-  const colors = toneStyles(tone);
-  return <View style={[styles.pill, { backgroundColor: colors.backgroundColor }]}>
+  const colors = toneStyles(tone, color);
+  return <View style={[styles.pill, { backgroundColor: color(colors.backgroundColor, 'canvas') }]}>
     <Text style={[styles.pillText, { color: colors.color }]}>{children}</Text>
   </View>;
 }
 
 function Surface({ children }: { children: ReactNode }) {
+  const styles = useStyles();
   useLanguage();
   return <View style={styles.surface}>{children}</View>;
 }
 
 function PageShell({ page, onBack, children }: { page: AdminPage; onBack: () => void; children: ReactNode }) {
+  const styles = useStyles();
   useLanguage();
   const meta = pageMeta[page];
   return <View style={styles.flex}>
@@ -196,6 +205,7 @@ function Toolbar({ total, loading, onRefresh, children }: {
   onRefresh: () => void;
   children?: ReactNode;
 }) {
+  const styles = useStyles();
   useLanguage();
   return <View style={styles.toolbar}>
     <View>
@@ -210,6 +220,7 @@ function Toolbar({ total, loading, onRefresh, children }: {
 }
 
 function Pager({ value, onChange }: { value: PageResult<unknown>; onChange: (page: number) => void }) {
+  const styles = useStyles();
   useLanguage();
   const pages = Math.max(1, Math.ceil(value.total / value.pageSize));
   if (pages <= 1) return null;
@@ -226,9 +237,11 @@ function LoadingOrEmpty({ loading, empty, label = t("暂无数据"), children }:
   label?: string;
   children: ReactNode;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   if (loading) return <View style={styles.stateBox}>
-    <View style={styles.stateIcon}><ActivityIndicator color={COLORS.primary} /></View>
+    <View style={styles.stateIcon}><ActivityIndicator color={color(COLORS.primary, 'accent')} /></View>
     <Text style={styles.stateTitle}>{t("正在加载")}</Text>
     <Text style={styles.stateDescription}>{t("稍等一下，数据马上就来")}</Text>
   </View>;
@@ -250,6 +263,8 @@ function Field({ label, value, onChangeText, placeholder, secureTextEntry, multi
   keyboardType?: 'default' | 'email-address' | 'numeric';
   hint?: string;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   return <View style={styles.field}>
     <Text style={styles.fieldLabel}>{label}</Text>
@@ -257,7 +272,7 @@ function Field({ label, value, onChangeText, placeholder, secureTextEntry, multi
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
-      placeholderTextColor="#9aa8a0"
+      placeholderTextColor={color("#9aa8a0", 'muted')}
       secureTextEntry={secureTextEntry}
       multiline={multiline}
       keyboardType={keyboardType}
@@ -275,6 +290,8 @@ function SearchBar({ value, onChangeText, onSearch, placeholder }: {
   onSearch: () => void;
   placeholder: string;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   return <View style={styles.searchWrap}>
     <View style={styles.searchInputWrap}>
@@ -286,7 +303,7 @@ function SearchBar({ value, onChangeText, onSearch, placeholder }: {
         returnKeyType="search"
         autoCapitalize="none"
         placeholder={placeholder}
-        placeholderTextColor="#93a099"
+        placeholderTextColor={color("#93a099", 'muted')}
         style={styles.searchInput}
       />
     </View>
@@ -300,6 +317,7 @@ function SwitchRow({ label, description, value, onValueChange }: {
   value: boolean;
   onValueChange: (value: boolean) => void;
 }) {
+  const styles = useStyles();
   useLanguage();
   return <View style={styles.switchRow}>
     <View style={styles.switchCopy}>
@@ -321,10 +339,12 @@ function ConfirmCopy({ icon, title, description, tone = 'red' }: {
   description: string;
   tone?: Tone;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
-  const colors = toneStyles(tone);
+  const colors = toneStyles(tone, color);
   return <View style={styles.confirmBox}>
-    <View style={[styles.confirmIcon, { backgroundColor: colors.backgroundColor }]}>
+    <View style={[styles.confirmIcon, { backgroundColor: color(colors.backgroundColor, 'canvas') }]}>
       <Text style={[styles.confirmIconText, { color: colors.color }]}>{icon}</Text>
     </View>
     <Text style={styles.confirmTitle}>{title}</Text>
@@ -337,6 +357,8 @@ function AdminHome({ profile, onExit, onOpen }: {
   onExit: () => void;
   onOpen: (page: AdminPage) => void;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   return <ScrollView style={styles.flex} contentContainerStyle={styles.homeScroll}>
     <View style={styles.homeNavigation}>
@@ -369,14 +391,14 @@ function AdminHome({ profile, onExit, onOpen }: {
     </View>
     <View style={styles.entryList}>
       {entries.map((entry) => {
-        const colors = toneStyles(entry.tone);
+        const colors = toneStyles(entry.tone, color);
         return <Pressable
           key={entry.key}
           accessibilityRole="button"
           onPress={() => onOpen(entry.key)}
           style={({ pressed }) => [styles.entryCard, pressed && styles.pressed]}
         >
-          <View style={[styles.entryIcon, { backgroundColor: colors.backgroundColor }]}>
+          <View style={[styles.entryIcon, { backgroundColor: color(colors.backgroundColor, 'canvas') }]}>
             <Text style={[styles.entryIconText, { color: colors.color }]}>{entry.icon}</Text>
           </View>
           <View style={styles.entryCopy}>
@@ -391,6 +413,9 @@ function AdminHome({ profile, onExit, onOpen }: {
 }
 
 function DashboardPage({ session, onBack }: AdminAreaProps & { onBack: () => void }) {
+  const resolveThemeColor = useThemeColor();
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [data, setData] = useState<AdminDashboardOverview | null>(null);
   const [days, setDays] = useState<7 | 30 | 90>(30);
@@ -440,7 +465,7 @@ function DashboardPage({ session, onBack }: AdminAreaProps & { onBack: () => voi
   return <PageShell page="dashboard" onBack={onBack}>
     <ScrollView
       contentContainerStyle={styles.pageScroll}
-      refreshControl={<RefreshControl refreshing={loading} tintColor={COLORS.primary} onRefresh={() => void load()} />}
+      refreshControl={<RefreshControl refreshing={loading} tintColor={color(COLORS.primary, 'accent')} onRefresh={() => void load()} />}
     >
       <View style={styles.segmented}>
         {([7, 30, 90] as const).map((item) => <Pressable
@@ -454,9 +479,9 @@ function DashboardPage({ session, onBack }: AdminAreaProps & { onBack: () => voi
 
       <View style={styles.metricGrid}>
         {metrics.map((metric) => {
-          const colors = toneStyles(metric.tone);
+          const colors = toneStyles(metric.tone, color);
           return <View key={metric.label} style={styles.metricCard}>
-            <View style={[styles.metricAccent, { backgroundColor: colors.backgroundColor }]}>
+            <View style={[styles.metricAccent, { backgroundColor: color(colors.backgroundColor, 'canvas') }]}>
               <View style={[styles.metricAccentDot, { backgroundColor: colors.color }]} />
             </View>
             <Text style={styles.metricLabel}>{t(metric.label)}</Text>
@@ -483,7 +508,7 @@ function DashboardPage({ session, onBack }: AdminAreaProps & { onBack: () => voi
           <View style={styles.distributionMeta}><Text style={styles.distributionName}>{item.name}</Text><Text style={styles.distributionValue}>{item.value}</Text></View>
           <View style={styles.distributionTrack}><View style={[
             styles.distributionFill,
-            { width: percentage(item.value, platformTotal), backgroundColor: index % 2 ? COLORS.blue : COLORS.primary },
+            { width: percentage(item.value, platformTotal), backgroundColor: index % 2 ? resolveThemeColor(COLORS.blue, 'info') : COLORS.primary },
           ]} /></View>
         </View>) : <Text style={styles.inlineEmpty}>{t("暂无平台数据")}</Text>}
       </Surface>
@@ -492,6 +517,8 @@ function DashboardPage({ session, onBack }: AdminAreaProps & { onBack: () => voi
 }
 
 function OfficialAccountsPage({ session, profile, onBack }: AdminAreaProps & { onBack: () => void }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [data, setData] = useState<PageResult<AdminOfficialAccount>>(EMPTY_PAGE);
   const [loading, setLoading] = useState(false);
@@ -600,7 +627,7 @@ function OfficialAccountsPage({ session, profile, onBack }: AdminAreaProps & { o
       <LoadingOrEmpty loading={loading} empty={!data.items.length}>
         {data.items.map((account) => <Surface key={account.id}>
           <View style={styles.cardHeader}>
-            <View style={[styles.avatar, { backgroundColor: COLORS.primarySoft }]}><Text style={[styles.avatarText, { color: COLORS.primary }]}>{t("号")}</Text></View>
+            <View style={[styles.avatar, { backgroundColor: color(COLORS.primarySoft, 'accentSoft') }]}><Text style={[styles.avatarText, { color: color(COLORS.primary, 'accent') }]}>{t("号")}</Text></View>
             <View style={styles.cardHeading}>
               <Text style={styles.cardTitle} numberOfLines={1}>{account.email}</Text>
               <Text style={styles.cardSubtitle}>{t("更新于")}{' '}{formatDate(account.updatedAt)}</Text>
@@ -654,7 +681,7 @@ function OfficialAccountsPage({ session, profile, onBack }: AdminAreaProps & { o
       ]}
     >
       <SheetScrollView style={styles.bindingList}>
-        {bindingLoading ? <View style={styles.sheetLoading}><ActivityIndicator color={COLORS.primary} /><Text style={styles.stateDescription}>{t("正在读取用户…")}</Text></View> : null}
+        {bindingLoading ? <View style={styles.sheetLoading}><ActivityIndicator color={color(COLORS.primary, 'accent')} /><Text style={styles.stateDescription}>{t("正在读取用户…")}</Text></View> : null}
         {!bindingLoading && !bindingUsers.length ? <Text style={styles.inlineEmpty}>{t("暂无可绑定用户")}</Text> : null}
         {bindingUsers.map((user) => {
           const checked = boundIds.includes(user.id);
@@ -687,6 +714,8 @@ function OfficialAccountsPage({ session, profile, onBack }: AdminAreaProps & { o
 }
 
 function InvitationsPage({ session, profile, onBack }: AdminAreaProps & { onBack: () => void }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [data, setData] = useState<PageResult<AdminInvitation>>(EMPTY_PAGE);
   const [loading, setLoading] = useState(false);
@@ -896,10 +925,10 @@ function InvitationsPage({ session, profile, onBack }: AdminAreaProps & { onBack
       actions={[{ label: t("完成"), tone: 'primary', onPress: () => setUsersInvite(null) }]}
     >
       <SheetScrollView style={styles.sheetScroll}>
-        {registeredLoading ? <View style={styles.sheetLoading}><ActivityIndicator color={COLORS.primary} /><Text style={styles.stateDescription}>{t("正在读取注册记录…")}</Text></View> : null}
+        {registeredLoading ? <View style={styles.sheetLoading}><ActivityIndicator color={color(COLORS.primary, 'accent')} /><Text style={styles.stateDescription}>{t("正在读取注册记录…")}</Text></View> : null}
         {!registeredLoading && !registeredUsers.length ? <Text style={styles.inlineEmpty}>{t("暂无注册用户")}</Text> : null}
         {registeredUsers.map((user) => <View key={user.id} style={styles.personRow}>
-          <View style={[styles.miniAvatar, { backgroundColor: COLORS.blueSoft }]}><Text style={[styles.miniAvatarText, { color: COLORS.blue }]}>{user.email.slice(0, 2).toUpperCase()}</Text></View>
+          <View style={[styles.miniAvatar, { backgroundColor: color(COLORS.blueSoft, 'infoSoft') }]}><Text style={[styles.miniAvatarText, { color: color(COLORS.blue, 'info') }]}>{user.email.slice(0, 2).toUpperCase()}</Text></View>
           <View style={styles.personCopy}><Text style={styles.personName} numberOfLines={1}>{user.email}</Text><Text style={styles.personMeta}>{user.role} · {formatDate(user.registeredAt)}</Text></View>
           <View style={styles.personActions}>
             <Pill tone="purple">{user.giftedAccountCount}{' '}{t("个账号")}</Pill>
@@ -923,7 +952,7 @@ function InvitationsPage({ session, profile, onBack }: AdminAreaProps & { onBack
     >
       <SheetInset><Text style={styles.giftHint}>{t("可选择一个或多个账号，已绑定用户较少的账号优先显示。")}</Text></SheetInset>
       <SheetScrollView style={styles.bindingList}>
-        {giftLoading ? <View style={styles.sheetLoading}><ActivityIndicator color={COLORS.primary} /><Text style={styles.stateDescription}>{t("正在读取官方账号池…")}</Text></View> : null}
+        {giftLoading ? <View style={styles.sheetLoading}><ActivityIndicator color={color(COLORS.primary, 'accent')} /><Text style={styles.stateDescription}>{t("正在读取官方账号池…")}</Text></View> : null}
         {!giftLoading && !giftAccounts.items.length ? <Text style={styles.inlineEmpty}>{t("官方账号池暂无可赠送账号")}</Text> : null}
         {giftAccounts.items.map((account) => {
           const checked = giftSelectedIds.includes(account.id);
@@ -960,6 +989,8 @@ function InvitationsPage({ session, profile, onBack }: AdminAreaProps & { onBack
 }
 
 function FeedbackPage({ session, profile, onBack }: AdminAreaProps & { onBack: () => void }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [data, setData] = useState<PageResult<AdminFeedback>>(EMPTY_PAGE);
   const [loading, setLoading] = useState(false);
@@ -1033,7 +1064,7 @@ function FeedbackPage({ session, profile, onBack }: AdminAreaProps & { onBack: (
       <LoadingOrEmpty loading={loading} empty={!data.items.length}>
         {data.items.map((item) => <Surface key={item.id}>
           <View style={styles.cardHeader}>
-            <View style={[styles.avatar, { backgroundColor: COLORS.purpleSoft }]}><Text style={[styles.avatarText, { color: COLORS.purple }]}>{t("馈")}</Text></View>
+            <View style={[styles.avatar, { backgroundColor: color(COLORS.purpleSoft, 'purpleSoft') }]}><Text style={[styles.avatarText, { color: color(COLORS.purple, 'purple') }]}>{t("馈")}</Text></View>
             <View style={styles.cardHeading}>
               <Text style={styles.cardTitle}>{item.email || t("匿名用户")}</Text>
               <Text style={styles.cardSubtitle}>{formatDate(item.createdAt)}</Text>
@@ -1095,7 +1126,7 @@ function FeedbackPage({ session, profile, onBack }: AdminAreaProps & { onBack: (
       <SheetScrollView style={styles.sheetScroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.fieldLabel}>{t("发件服务")}</Text>
         {mailServicesLoading ? <View style={styles.mailServiceLoading}>
-          <ActivityIndicator color={COLORS.primary} size="small" />
+          <ActivityIndicator color={color(COLORS.primary, 'accent')} size="small" />
           <Text style={styles.mailServiceLoadingText}>{t("正在加载发件服务")}</Text>
         </View> : mailServices.length ? <View style={styles.mailServiceList}>
           {mailServices.map((service) => {
@@ -1136,6 +1167,8 @@ function FeedbackPage({ session, profile, onBack }: AdminAreaProps & { onBack: (
 }
 
 function UsersPage({ session, profile, onBack }: AdminAreaProps & { onBack: () => void }) {
+  const resolveThemeColor = useThemeColor();
+  const styles = useStyles();
   useLanguage();
   const [data, setData] = useState<PageResult<AdminUser>>(EMPTY_PAGE);
   const [roles, setRoles] = useState<AdminRole[]>([]);
@@ -1214,8 +1247,8 @@ function UsersPage({ session, profile, onBack }: AdminAreaProps & { onBack: () =
       <LoadingOrEmpty loading={loading} empty={!data.items.length}>
         {data.items.map((user) => <Surface key={user.id}>
           <View style={styles.cardHeader}>
-            <View style={[styles.avatar, { backgroundColor: user.disabled ? COLORS.redSoft : COLORS.blueSoft }]}>
-              <Text style={[styles.avatarText, { color: user.disabled ? COLORS.red : COLORS.blue }]}>{user.email.slice(0, 2).toUpperCase()}</Text>
+            <View style={[styles.avatar, { backgroundColor: user.disabled ? resolveThemeColor(COLORS.redSoft, 'dangerSoft') : resolveThemeColor(COLORS.blueSoft, 'infoSoft') }]}>
+              <Text style={[styles.avatarText, { color: user.disabled ? resolveThemeColor(COLORS.red, 'danger') : resolveThemeColor(COLORS.blue, 'info') }]}>{user.email.slice(0, 2).toUpperCase()}</Text>
             </View>
             <View style={styles.cardHeading}>
               <Text style={styles.cardTitle} numberOfLines={1}>{user.email}</Text>
@@ -1302,16 +1335,16 @@ export function AdminArea({ session, profile, onExit }: AdminAreaRootProps) {
   return <UsersPage {...props} />;
 }
 
-const styles = StyleSheet.create({
+const useStyles = createThemedStyles((color) => ({
   flex: { flex: 1 },
   pressed: { opacity: 0.76 },
   disabled: { opacity: 0.5 },
-  pageHeader: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14, backgroundColor: COLORS.canvas },
-  backButton: { width: 42, height: 42, borderRadius: 14, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
-  backArrow: { color: COLORS.ink, fontSize: 30, lineHeight: 32, marginTop: -3 },
+  pageHeader: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14, backgroundColor: color(COLORS.canvas, 'canvas') },
+  backButton: { width: 42, height: 42, borderRadius: 14, backgroundColor: color(COLORS.surface, 'surface'), borderWidth: 1, borderColor: color(COLORS.border, 'border'), alignItems: 'center', justifyContent: 'center' },
+  backArrow: { color: color(COLORS.ink, 'ink'), fontSize: 30, lineHeight: 32, marginTop: -3 },
   pageHeading: { flex: 1 },
-  pageTitle: { color: COLORS.ink, fontSize: 21, lineHeight: 27, fontWeight: '800' },
-  pageSubtitle: { color: COLORS.muted, fontSize: 12, marginTop: 2 },
+  pageTitle: { color: color(COLORS.ink, 'ink'), fontSize: 21, lineHeight: 27, fontWeight: '800' },
+  pageSubtitle: { color: color(COLORS.muted, 'muted'), fontSize: 12, marginTop: 2 },
   homeScroll: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 36 },
   homeNavigation: {
     flexDirection: 'row',
@@ -1319,155 +1352,155 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
   },
-  homeNavigationTitle: { color: COLORS.ink, fontSize: 18, fontWeight: '800' },
-  homeNavigationSubtitle: { color: COLORS.muted, fontSize: 11, marginTop: 2 },
-  hero: { borderRadius: 24, backgroundColor: COLORS.primaryDark, padding: 22, overflow: 'hidden' },
+  homeNavigationTitle: { color: color(COLORS.ink, 'ink'), fontSize: 18, fontWeight: '800' },
+  homeNavigationSubtitle: { color: color(COLORS.muted, 'muted'), fontSize: 11, marginTop: 2 },
+  hero: { borderRadius: 24, backgroundColor: color(COLORS.primaryDark, 'ink'), padding: 22, overflow: 'hidden' },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 },
   heroMark: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#b7ef5d', alignItems: 'center', justifyContent: 'center' },
-  heroMarkText: { color: COLORS.primaryDark, fontSize: 13, fontWeight: '900', letterSpacing: 0.5 },
-  heroEyebrow: { color: '#99b6aa', fontSize: 11, fontWeight: '800', letterSpacing: 1.6 },
+  heroMarkText: { color: color(COLORS.primaryDark, 'ink'), fontSize: 13, fontWeight: '900', letterSpacing: 0.5 },
+  heroEyebrow: { color: color('#99b6aa', 'muted'), fontSize: 11, fontWeight: '800', letterSpacing: 1.6 },
   heroTitle: { color: '#ffffff', fontSize: 30, lineHeight: 38, fontWeight: '900', marginTop: 5 },
-  heroSubtitle: { color: '#c2d3cb', fontSize: 14, lineHeight: 21, marginTop: 7 },
+  heroSubtitle: { color: color('#c2d3cb', 'faint'), fontSize: 14, lineHeight: 21, marginTop: 7 },
   heroIdentity: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 10, paddingHorizontal: 11, paddingVertical: 7, marginTop: 22, maxWidth: '100%' },
   heroDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#85ddb8' },
-  heroIdentityText: { color: '#dce9e3', fontSize: 12, flexShrink: 1 },
+  heroIdentityText: { color: color('#dce9e3', 'faint'), fontSize: 12, flexShrink: 1 },
   sectionHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 28, marginBottom: 12, paddingHorizontal: 2 },
-  sectionTitle: { color: COLORS.ink, fontSize: 19, fontWeight: '800' },
-  sectionCaption: { color: COLORS.faint, fontSize: 12 },
+  sectionTitle: { color: color(COLORS.ink, 'ink'), fontSize: 19, fontWeight: '800' },
+  sectionCaption: { color: color(COLORS.faint, 'faint'), fontSize: 12 },
   entryList: { gap: 10 },
-  entryCard: { minHeight: 82, flexDirection: 'row', alignItems: 'center', borderRadius: 18, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, padding: 14, shadowColor: '#173128', shadowOpacity: 0.035, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  entryCard: { minHeight: 82, flexDirection: 'row', alignItems: 'center', borderRadius: 18, backgroundColor: color(COLORS.surface, 'surface'), borderWidth: 1, borderColor: color(COLORS.border, 'border'), padding: 14, shadowColor: '#173128', shadowOpacity: 0.035, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
   entryIcon: { width: 48, height: 48, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   entryIconText: { fontSize: 17, fontWeight: '900' },
   entryCopy: { flex: 1, minWidth: 0, marginLeft: 13 },
-  entryTitle: { color: COLORS.ink, fontSize: 16, fontWeight: '800' },
-  entrySubtitle: { color: COLORS.muted, fontSize: 12, marginTop: 4 },
-  entryArrow: { width: 32, height: 32, borderRadius: 11, backgroundColor: COLORS.canvas, alignItems: 'center', justifyContent: 'center' },
-  entryArrowText: { color: COLORS.muted, fontSize: 23, lineHeight: 25, marginTop: -2 },
+  entryTitle: { color: color(COLORS.ink, 'ink'), fontSize: 16, fontWeight: '800' },
+  entrySubtitle: { color: color(COLORS.muted, 'muted'), fontSize: 12, marginTop: 4 },
+  entryArrow: { width: 32, height: 32, borderRadius: 11, backgroundColor: color(COLORS.canvas, 'canvas'), alignItems: 'center', justifyContent: 'center' },
+  entryArrowText: { color: color(COLORS.muted, 'muted'), fontSize: 23, lineHeight: 25, marginTop: -2 },
   toolbar: { minHeight: 68, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, gap: 12 },
-  toolbarEyebrow: { color: COLORS.faint, fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
-  toolbarCount: { color: COLORS.ink, fontSize: 15, fontWeight: '800', marginTop: 2 },
+  toolbarEyebrow: { color: color(COLORS.faint, 'faint'), fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
+  toolbarCount: { color: color(COLORS.ink, 'ink'), fontSize: 15, fontWeight: '800', marginTop: 2 },
   toolbarActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  button: { minHeight: 42, borderRadius: 13, backgroundColor: '#edf2ef', borderWidth: 1, borderColor: '#e2e9e5', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
+  button: { minHeight: 42, borderRadius: 13, backgroundColor: color('#edf2ef', 'elevated'), borderWidth: 1, borderColor: color('#e2e9e5', 'border'), alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16 },
   buttonCompact: { minHeight: 36, borderRadius: 11, paddingHorizontal: 13 },
-  buttonPrimary: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  buttonDanger: { backgroundColor: COLORS.red, borderColor: COLORS.red },
-  buttonQuiet: { backgroundColor: 'transparent', borderColor: COLORS.redSoft },
-  buttonText: { color: COLORS.ink, fontSize: 13, fontWeight: '800' },
+  buttonPrimary: { backgroundColor: color(COLORS.primary, 'accent'), borderColor: color(COLORS.primary, 'accent') },
+  buttonDanger: { backgroundColor: color(COLORS.red, 'danger'), borderColor: color(COLORS.red, 'danger') },
+  buttonQuiet: { backgroundColor: 'transparent', borderColor: color(COLORS.redSoft, 'dangerSoft') },
+  buttonText: { color: color(COLORS.ink, 'ink'), fontSize: 13, fontWeight: '800' },
   buttonTextOnColor: { color: '#ffffff' },
-  buttonTextQuiet: { color: COLORS.red },
+  buttonTextQuiet: { color: color(COLORS.red, 'danger') },
   pill: { alignSelf: 'flex-start', minHeight: 26, borderRadius: 9, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 9, paddingVertical: 4 },
   pillText: { fontSize: 11, fontWeight: '800' },
   pageScroll: { paddingHorizontal: 18, paddingBottom: 32 },
   listScroll: { paddingHorizontal: 18, paddingBottom: 32, gap: 11 },
-  surface: { backgroundColor: COLORS.surface, borderRadius: 19, borderWidth: 1, borderColor: COLORS.border, padding: 16, marginBottom: 11, shadowColor: '#173128', shadowOpacity: 0.035, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
-  segmented: { flexDirection: 'row', backgroundColor: '#e8eeea', padding: 4, borderRadius: 14, marginBottom: 14 },
+  surface: { backgroundColor: color(COLORS.surface, 'surface'), borderRadius: 19, borderWidth: 1, borderColor: color(COLORS.border, 'border'), padding: 16, marginBottom: 11, shadowColor: '#173128', shadowOpacity: 0.035, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
+  segmented: { flexDirection: 'row', backgroundColor: color('#e8eeea', 'elevated'), padding: 4, borderRadius: 14, marginBottom: 14 },
   segment: { flex: 1, minHeight: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  segmentActive: { backgroundColor: COLORS.surface, shadowColor: '#203d32', shadowOpacity: 0.08, shadowRadius: 5, elevation: 2 },
-  segmentText: { color: COLORS.muted, fontSize: 13, fontWeight: '700' },
-  segmentTextActive: { color: COLORS.ink, fontWeight: '900' },
+  segmentActive: { backgroundColor: color(COLORS.surface, 'surface'), shadowColor: '#203d32', shadowOpacity: 0.08, shadowRadius: 5, elevation: 2 },
+  segmentText: { color: color(COLORS.muted, 'muted'), fontSize: 13, fontWeight: '700' },
+  segmentTextActive: { color: color(COLORS.ink, 'ink'), fontWeight: '900' },
   metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 2 },
-  metricCard: { width: '48%', minHeight: 138, borderRadius: 18, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, padding: 15 },
+  metricCard: { width: '48%', minHeight: 138, borderRadius: 18, backgroundColor: color(COLORS.surface, 'surface'), borderWidth: 1, borderColor: color(COLORS.border, 'border'), padding: 15 },
   metricAccent: { width: 27, height: 27, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginBottom: 11 },
   metricAccentDot: { width: 8, height: 8, borderRadius: 4 },
-  metricLabel: { color: COLORS.muted, fontSize: 12, fontWeight: '700' },
-  metricValue: { color: COLORS.ink, fontSize: 28, lineHeight: 34, fontWeight: '900', marginTop: 3 },
-  metricNote: { color: COLORS.faint, fontSize: 10, marginTop: 4 },
+  metricLabel: { color: color(COLORS.muted, 'muted'), fontSize: 12, fontWeight: '700' },
+  metricValue: { color: color(COLORS.ink, 'ink'), fontSize: 28, lineHeight: 34, fontWeight: '900', marginTop: 3 },
+  metricNote: { color: color(COLORS.faint, 'faint'), fontSize: 10, marginTop: 4 },
   panelHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 16 },
-  panelTitle: { color: COLORS.ink, fontSize: 16, fontWeight: '900' },
-  panelSubtitle: { color: COLORS.faint, fontSize: 11, marginTop: 3 },
+  panelTitle: { color: color(COLORS.ink, 'ink'), fontSize: 16, fontWeight: '900' },
+  panelSubtitle: { color: color(COLORS.faint, 'faint'), fontSize: 11, marginTop: 3 },
   distributionRow: { marginBottom: 14 },
   distributionMeta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 },
-  distributionName: { color: COLORS.ink, fontSize: 12, fontWeight: '700' },
-  distributionValue: { color: COLORS.muted, fontSize: 12, fontWeight: '800' },
-  distributionTrack: { height: 7, backgroundColor: '#e8efeb', borderRadius: 5, overflow: 'hidden' },
+  distributionName: { color: color(COLORS.ink, 'ink'), fontSize: 12, fontWeight: '700' },
+  distributionValue: { color: color(COLORS.muted, 'muted'), fontSize: 12, fontWeight: '800' },
+  distributionTrack: { height: 7, backgroundColor: color('#e8efeb', 'elevated'), borderRadius: 5, overflow: 'hidden' },
   distributionFill: { height: '100%', borderRadius: 5 },
   searchWrap: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 18, paddingTop: 8, paddingBottom: 2 },
-  searchInputWrap: { flex: 1, height: 44, flexDirection: 'row', alignItems: 'center', borderRadius: 14, backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12 },
-  searchIcon: { color: COLORS.faint, fontSize: 22, marginRight: 8, marginTop: -2 },
-  searchInput: { flex: 1, height: '100%', color: COLORS.ink, fontSize: 14, paddingVertical: 0 },
+  searchInputWrap: { flex: 1, height: 44, flexDirection: 'row', alignItems: 'center', borderRadius: 14, backgroundColor: color(COLORS.surface, 'surface'), borderWidth: 1, borderColor: color(COLORS.border, 'border'), paddingHorizontal: 12 },
+  searchIcon: { color: color(COLORS.faint, 'faint'), fontSize: 22, marginRight: 8, marginTop: -2 },
+  searchInput: { flex: 1, height: '100%', color: color(COLORS.ink, 'ink'), fontSize: 14, paddingVertical: 0 },
   cardHeader: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontSize: 14, fontWeight: '900' },
   cardHeading: { flex: 1, minWidth: 0, marginLeft: 11, marginRight: 8 },
-  cardTitle: { color: COLORS.ink, fontSize: 15, fontWeight: '900' },
-  cardSubtitle: { color: COLORS.faint, fontSize: 10, marginTop: 4 },
+  cardTitle: { color: color(COLORS.ink, 'ink'), fontSize: 15, fontWeight: '900' },
+  cardSubtitle: { color: color(COLORS.faint, 'faint'), fontSize: 10, marginTop: 4 },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 14 },
-  bodyText: { color: '#405249', fontSize: 13, lineHeight: 20, marginTop: 12 },
-  placeholderText: { color: COLORS.faint, fontStyle: 'italic' },
-  cardFootnote: { color: COLORS.muted, fontSize: 11, marginTop: 12 },
-  cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: COLORS.border, paddingTop: 13, marginTop: 14 },
+  bodyText: { color: color('#405249', 'ink'), fontSize: 13, lineHeight: 20, marginTop: 12 },
+  placeholderText: { color: color(COLORS.faint, 'faint'), fontStyle: 'italic' },
+  cardFootnote: { color: color(COLORS.muted, 'muted'), fontSize: 11, marginTop: 12 },
+  cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color(COLORS.border, 'border'), paddingTop: 13, marginTop: 14 },
   infoGrid: { flexDirection: 'row', gap: 9, marginTop: 14 },
-  infoCell: { flex: 1, borderRadius: 13, backgroundColor: COLORS.canvas, padding: 11 },
-  infoCellLabel: { color: COLORS.faint, fontSize: 10 },
-  infoCellValue: { color: COLORS.ink, fontSize: 14, fontWeight: '900', marginTop: 4 },
-  feedbackContent: { color: '#30443a', fontSize: 14, lineHeight: 21, marginTop: 14 },
+  infoCell: { flex: 1, borderRadius: 13, backgroundColor: color(COLORS.canvas, 'canvas'), padding: 11 },
+  infoCellLabel: { color: color(COLORS.faint, 'faint'), fontSize: 10 },
+  infoCellValue: { color: color(COLORS.ink, 'ink'), fontSize: 14, fontWeight: '900', marginTop: 4 },
+  feedbackContent: { color: color('#30443a', 'ink'), fontSize: 14, lineHeight: 21, marginTop: 14 },
   stateBox: { alignItems: 'center', paddingVertical: 62 },
-  stateIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: COLORS.primarySoft, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-  stateIconText: { color: COLORS.primary, fontSize: 20, fontWeight: '800' },
-  stateTitle: { color: COLORS.ink, fontSize: 15, fontWeight: '800' },
-  stateDescription: { color: COLORS.faint, fontSize: 11, marginTop: 5 },
-  inlineEmpty: { color: COLORS.faint, fontSize: 12, textAlign: 'center', paddingVertical: 24 },
+  stateIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: color(COLORS.primarySoft, 'accentSoft'), alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  stateIconText: { color: color(COLORS.primary, 'accent'), fontSize: 20, fontWeight: '800' },
+  stateTitle: { color: color(COLORS.ink, 'ink'), fontSize: 15, fontWeight: '800' },
+  stateDescription: { color: color(COLORS.faint, 'faint'), fontSize: 11, marginTop: 5 },
+  inlineEmpty: { color: color(COLORS.faint, 'faint'), fontSize: 12, textAlign: 'center', paddingVertical: 24 },
   pager: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, paddingTop: 7 },
   pageBadge: { minWidth: 58, minHeight: 34, alignItems: 'center', justifyContent: 'center' },
-  pageBadgeText: { color: COLORS.muted, fontSize: 12, fontWeight: '700' },
+  pageBadgeText: { color: color(COLORS.muted, 'muted'), fontSize: 12, fontWeight: '700' },
   field: { marginBottom: 16 },
-  fieldLabel: { color: COLORS.ink, fontWeight: '800', fontSize: 13, marginBottom: 8 },
-  input: { minHeight: 48, borderWidth: 1, borderColor: '#d6e0da', borderRadius: 13, color: COLORS.ink, backgroundColor: '#f9fbfa', paddingHorizontal: 13, paddingVertical: 11, fontSize: 14 },
+  fieldLabel: { color: color(COLORS.ink, 'ink'), fontWeight: '800', fontSize: 13, marginBottom: 8 },
+  input: { minHeight: 48, borderWidth: 1, borderColor: color('#d6e0da', 'border'), borderRadius: 13, color: color(COLORS.ink, 'ink'), backgroundColor: color('#f9fbfa', 'canvas'), paddingHorizontal: 13, paddingVertical: 11, fontSize: 14 },
   textarea: { minHeight: 130, lineHeight: 21 },
-  fieldHint: { color: COLORS.faint, fontSize: 10, lineHeight: 15, marginTop: 6 },
-  mailServiceLoading: { minHeight: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, backgroundColor: COLORS.canvas, marginBottom: 16 },
-  mailServiceLoadingText: { color: COLORS.muted, fontSize: 12 },
+  fieldHint: { color: color(COLORS.faint, 'faint'), fontSize: 10, lineHeight: 15, marginTop: 6 },
+  mailServiceLoading: { minHeight: 62, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 14, backgroundColor: color(COLORS.canvas, 'canvas'), marginBottom: 16 },
+  mailServiceLoadingText: { color: color(COLORS.muted, 'muted'), fontSize: 12 },
   mailServiceList: { marginBottom: 16 },
-  mailServiceRow: { minHeight: 62, flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, backgroundColor: '#f9fbfa', paddingHorizontal: 12, marginBottom: 8 },
-  mailServiceRowActive: { borderColor: '#77c8b5', backgroundColor: '#f0faf6' },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: '#aebdb5', alignItems: 'center', justifyContent: 'center' },
-  radioSelected: { borderColor: COLORS.primary },
+  mailServiceRow: { minHeight: 62, flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: color(COLORS.border, 'border'), backgroundColor: color('#f9fbfa', 'canvas'), paddingHorizontal: 12, marginBottom: 8 },
+  mailServiceRowActive: { borderColor: color('#77c8b5', 'border'), backgroundColor: color('#f0faf6', 'canvas') },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, borderColor: color('#aebdb5', 'border'), alignItems: 'center', justifyContent: 'center' },
+  radioSelected: { borderColor: color(COLORS.primary, 'accent') },
   radioDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.primary },
   mailServiceCopy: { flex: 1, minWidth: 0, marginLeft: 11 },
-  mailServiceName: { color: COLORS.ink, fontSize: 13, fontWeight: '800' },
-  mailServiceMeta: { color: COLORS.faint, fontSize: 10, lineHeight: 15, marginTop: 3 },
-  mailServiceEmpty: { color: COLORS.faint, fontSize: 12, lineHeight: 18, textAlign: 'center', borderRadius: 14, backgroundColor: COLORS.canvas, padding: 16, marginBottom: 16 },
-  switchRow: { minHeight: 66, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 14, backgroundColor: COLORS.canvas, paddingHorizontal: 13, marginBottom: 16 },
+  mailServiceName: { color: color(COLORS.ink, 'ink'), fontSize: 13, fontWeight: '800' },
+  mailServiceMeta: { color: color(COLORS.faint, 'faint'), fontSize: 10, lineHeight: 15, marginTop: 3 },
+  mailServiceEmpty: { color: color(COLORS.faint, 'faint'), fontSize: 12, lineHeight: 18, textAlign: 'center', borderRadius: 14, backgroundColor: color(COLORS.canvas, 'canvas'), padding: 16, marginBottom: 16 },
+  switchRow: { minHeight: 66, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 14, backgroundColor: color(COLORS.canvas, 'canvas'), paddingHorizontal: 13, marginBottom: 16 },
   switchCopy: { flex: 1, marginRight: 12 },
-  switchLabel: { color: COLORS.ink, fontSize: 13, fontWeight: '800' },
-  switchDescription: { color: COLORS.faint, fontSize: 10, marginTop: 3 },
+  switchLabel: { color: color(COLORS.ink, 'ink'), fontSize: 13, fontWeight: '800' },
+  switchDescription: { color: color(COLORS.faint, 'faint'), fontSize: 10, marginTop: 3 },
   sheetScroll: { maxHeight: 510 },
   bindingList: { maxHeight: 510 },
   sheetLoading: { minHeight: 120, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  checkRow: { minHeight: 62, flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: COLORS.border, paddingHorizontal: 12, marginBottom: 8 },
-  checkRowActive: { borderColor: '#99d8c8', backgroundColor: '#f0faf6' },
-  checkbox: { width: 24, height: 24, borderRadius: 8, borderWidth: 1.5, borderColor: '#b2c1b9', alignItems: 'center', justifyContent: 'center' },
-  checkboxChecked: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  checkRow: { minHeight: 62, flexDirection: 'row', alignItems: 'center', borderRadius: 14, borderWidth: 1, borderColor: color(COLORS.border, 'border'), paddingHorizontal: 12, marginBottom: 8 },
+  checkRowActive: { borderColor: color('#99d8c8', 'border'), backgroundColor: color('#f0faf6', 'canvas') },
+  checkbox: { width: 24, height: 24, borderRadius: 8, borderWidth: 1.5, borderColor: color('#b2c1b9', 'border'), alignItems: 'center', justifyContent: 'center' },
+  checkboxChecked: { backgroundColor: COLORS.primary, borderColor: color(COLORS.primary, 'accent') },
   checkboxText: { color: '#ffffff', fontSize: 13, fontWeight: '900' },
   checkCopy: { flex: 1, marginLeft: 11 },
-  checkLabel: { color: COLORS.ink, fontSize: 13, fontWeight: '800' },
-  checkMeta: { color: COLORS.faint, fontSize: 10, marginTop: 3 },
-  confirmBox: { alignItems: 'center', borderRadius: 17, backgroundColor: COLORS.canvas, padding: 20 },
+  checkLabel: { color: color(COLORS.ink, 'ink'), fontSize: 13, fontWeight: '800' },
+  checkMeta: { color: color(COLORS.faint, 'faint'), fontSize: 10, marginTop: 3 },
+  confirmBox: { alignItems: 'center', borderRadius: 17, backgroundColor: color(COLORS.canvas, 'canvas'), padding: 20 },
   confirmIcon: { width: 48, height: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   confirmIconText: { fontSize: 21, fontWeight: '900' },
-  confirmTitle: { color: COLORS.ink, fontSize: 15, fontWeight: '900', textAlign: 'center' },
-  confirmDescription: { color: COLORS.muted, fontSize: 12, lineHeight: 19, textAlign: 'center', marginTop: 7 },
-  personRow: { minHeight: 66, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: COLORS.border, paddingVertical: 9 },
+  confirmTitle: { color: color(COLORS.ink, 'ink'), fontSize: 15, fontWeight: '900', textAlign: 'center' },
+  confirmDescription: { color: color(COLORS.muted, 'muted'), fontSize: 12, lineHeight: 19, textAlign: 'center', marginTop: 7 },
+  personRow: { minHeight: 66, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color(COLORS.border, 'border'), paddingVertical: 9 },
   miniAvatar: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   miniAvatarText: { fontSize: 11, fontWeight: '900' },
   personCopy: { flex: 1, minWidth: 0, marginLeft: 10, marginRight: 7 },
-  personName: { color: COLORS.ink, fontSize: 12, fontWeight: '800' },
-  personMeta: { color: COLORS.faint, fontSize: 10, marginTop: 3 },
+  personName: { color: color(COLORS.ink, 'ink'), fontSize: 12, fontWeight: '800' },
+  personMeta: { color: color(COLORS.faint, 'faint'), fontSize: 10, marginTop: 3 },
   personActions: { alignItems: 'flex-end', gap: 7 },
-  giftHint: { color: COLORS.muted, fontSize: 11, lineHeight: 17, marginBottom: 12 },
-  detailContentBox: { borderRadius: 15, backgroundColor: COLORS.canvas, padding: 15, marginBottom: 18 },
-  detailContent: { color: '#2d4137', fontSize: 14, lineHeight: 23 },
-  sheetSectionLabel: { color: COLORS.faint, fontSize: 10, fontWeight: '800', letterSpacing: 1, marginBottom: 8 },
-  fileRow: { minHeight: 60, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: COLORS.border },
-  fileIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: COLORS.purpleSoft, alignItems: 'center', justifyContent: 'center' },
-  fileIconText: { color: COLORS.purple, fontSize: 15, fontWeight: '900' },
+  giftHint: { color: color(COLORS.muted, 'muted'), fontSize: 11, lineHeight: 17, marginBottom: 12 },
+  detailContentBox: { borderRadius: 15, backgroundColor: color(COLORS.canvas, 'canvas'), padding: 15, marginBottom: 18 },
+  detailContent: { color: color('#2d4137', 'ink'), fontSize: 14, lineHeight: 23 },
+  sheetSectionLabel: { color: color(COLORS.faint, 'faint'), fontSize: 10, fontWeight: '800', letterSpacing: 1, marginBottom: 8 },
+  fileRow: { minHeight: 60, flexDirection: 'row', alignItems: 'center', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color(COLORS.border, 'border') },
+  fileIcon: { width: 36, height: 36, borderRadius: 11, backgroundColor: color(COLORS.purpleSoft, 'purpleSoft'), alignItems: 'center', justifyContent: 'center' },
+  fileIconText: { color: color(COLORS.purple, 'purple'), fontSize: 15, fontWeight: '900' },
   fileCopy: { flex: 1, minWidth: 0, marginHorizontal: 10 },
-  fileName: { color: COLORS.ink, fontSize: 12, fontWeight: '800' },
-  fileMeta: { color: COLORS.faint, fontSize: 9, marginTop: 3 },
-  fileSize: { color: COLORS.muted, fontSize: 10 },
+  fileName: { color: color(COLORS.ink, 'ink'), fontSize: 12, fontWeight: '800' },
+  fileMeta: { color: color(COLORS.faint, 'faint'), fontSize: 9, marginTop: 3 },
+  fileSize: { color: color(COLORS.muted, 'muted'), fontSize: 10 },
   choiceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 17 },
-  choiceChip: { minHeight: 38, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.canvas, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
-  choiceChipActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primarySoft },
-  choiceChipText: { color: COLORS.muted, fontSize: 12, fontWeight: '800' },
-  choiceChipTextActive: { color: COLORS.primary },
-});
+  choiceChip: { minHeight: 38, borderRadius: 12, borderWidth: 1, borderColor: color(COLORS.border, 'border'), backgroundColor: color(COLORS.canvas, 'canvas'), alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 },
+  choiceChipActive: { borderColor: color(COLORS.primary, 'accent'), backgroundColor: color(COLORS.primarySoft, 'accentSoft') },
+  choiceChipText: { color: color(COLORS.muted, 'muted'), fontSize: 12, fontWeight: '800' },
+  choiceChipTextActive: { color: color(COLORS.primary, 'accent') },
+}));

@@ -1,3 +1,5 @@
+import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as Clipboard from 'expo-clipboard';
@@ -57,11 +59,14 @@ async function waitForCompletion(session: AuthSession, sessionId: string) {
 }
 
 function LoadingState({ message }: { message: string }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
-  return <View style={styles.centered}><ActivityIndicator color="#18af8c" size="large" /><Text style={styles.stateText}>{message}</Text></View>;
+  return <View style={styles.centered}><ActivityIndicator color={color("#18af8c", 'accent')} size="large" /><Text style={styles.stateText}>{message}</Text></View>;
 }
 
 function ErrorState({ message, onRetry, onClose }: { message: string; onRetry: () => void; onClose: () => void }) {
+  const styles = useStyles();
   useLanguage();
   return <View style={styles.centered}>
     <View style={styles.errorIcon}><Text style={styles.errorIconText}>!</Text></View>
@@ -81,6 +86,8 @@ function ImportPanel({ busy, initialContent, onBack, onSubmit, onFile, onClipboa
   onFile: () => void;
   onClipboard: () => void;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [content, setContent] = useState(initialContent);
   useEffect(() => { setContent(initialContent); }, [initialContent]);
@@ -88,7 +95,7 @@ function ImportPanel({ busy, initialContent, onBack, onSubmit, onFile, onClipboa
     <Text style={styles.importTitle}>{t("导入账号 JSON")}</Text>
     <Text style={styles.importHint}>{t("支持 auth.json、兼容导出文件，也可以直接粘贴内容。")}</Text>
     <TextInput value={content} onChangeText={setContent} multiline textAlignVertical="top" autoCapitalize="none"
-      placeholder={t("在这里粘贴账号 JSON")} placeholderTextColor="#91a198" style={styles.importInput} />
+      placeholder={t("在这里粘贴账号 JSON")} placeholderTextColor={color("#91a198", 'muted')} style={styles.importInput} />
     <View style={styles.importActions}>
       <Pressable disabled={busy} onPress={onFile} style={styles.importAction}><Text style={styles.importActionText}>{t("选择文件")}</Text></Pressable>
       <Pressable disabled={busy} onPress={onClipboard} style={styles.importAction}><Text style={styles.importActionText}>{t("读取剪贴板")}</Text></Pressable>
@@ -108,6 +115,8 @@ export function AddAccountSheet({ session, visible, onAdded, onClose }: {
   onAdded: () => Promise<void>;
   onClose: () => void;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const [mode, setMode] = useState<AddMode>('choice');
   const [initialImport, setInitialImport] = useState('');
@@ -189,46 +198,46 @@ export function AddAccountSheet({ session, visible, onAdded, onClose }: {
           <Pressable onPress={() => void chooseFile()} style={styles.choice}><Text style={styles.choiceIcon}>⌘</Text><View><Text style={styles.choiceTitle}>{t("导入 JSON 文件")}</Text><Text style={styles.choiceHint}>{t("支持 auth.json 和兼容导出格式")}</Text></View></Pressable>
           <Pressable onPress={() => void readClipboard()} style={styles.choice}><Text style={styles.choiceIcon}>▣</Text><View><Text style={styles.choiceTitle}>{t("从剪贴板导入")}</Text><Text style={styles.choiceHint}>{t("直接粘贴账号 JSON 内容")}</Text></View></Pressable>
         </View> : mode === 'import' ? <ImportPanel busy={busy} initialContent={initialImport} onBack={() => setMode('choice')} onSubmit={(content) => void submitImport(content)} onFile={() => void chooseFile()} onClipboard={() => void readClipboard()} />
-          : error ? <ErrorState message={error} onRetry={() => setAttempt((value) => value + 1)} onClose={close} /> : oauth ? <><WebView source={{ uri: oauth.authorizationUrl }} incognito cacheEnabled={false} sharedCookiesEnabled={false} thirdPartyCookiesEnabled saveFormDataDisabled setSupportMultipleWindows={false} javaScriptEnabled domStorageEnabled onLoadStart={() => setPageLoading(true)} onLoadEnd={() => setPageLoading(false)} onShouldStartLoadWithRequest={(request) => handleNavigation(request.url)} onNavigationStateChange={(navigation) => { handleNavigation(navigation.url); }} onError={() => { if (!completingRef.current) setError(t("登录页面加载失败，请检查网络后重试")); }} style={styles.webView} />{pageLoading && !busy ? <View style={styles.loadingOverlay}><ActivityIndicator color="#18af8c" /></View> : null}{busy ? <View style={styles.completingOverlay}><LoadingState message={t("正在安全保存账户…")} /></View> : null}</> : <LoadingState message={t("正在打开 ChatGPT 安全登录…")} />}
+          : error ? <ErrorState message={error} onRetry={() => setAttempt((value) => value + 1)} onClose={close} /> : oauth ? <><WebView source={{ uri: oauth.authorizationUrl }} incognito cacheEnabled={false} sharedCookiesEnabled={false} thirdPartyCookiesEnabled saveFormDataDisabled setSupportMultipleWindows={false} javaScriptEnabled domStorageEnabled onLoadStart={() => setPageLoading(true)} onLoadEnd={() => setPageLoading(false)} onShouldStartLoadWithRequest={(request) => handleNavigation(request.url)} onNavigationStateChange={(navigation) => { handleNavigation(navigation.url); }} onError={() => { if (!completingRef.current) setError(t("登录页面加载失败，请检查网络后重试")); }} style={styles.webView} />{pageLoading && !busy ? <View style={styles.loadingOverlay}><ActivityIndicator color={color("#18af8c", 'accent')} /></View> : null}{busy ? <View style={styles.completingOverlay}><LoadingState message={t("正在安全保存账户…")} /></View> : null}</> : <LoadingState message={t("正在打开 ChatGPT 安全登录…")} />}
       </View>
     </SafeAreaView>
   </Modal>;
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f7faf8' },
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#dce6e0', backgroundColor: '#fff' },
+const useStyles = createThemedStyles((color) => ({
+  root: { flex: 1, backgroundColor: color('#f7faf8', 'canvas') },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, paddingHorizontal: 18, paddingTop: 12, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color('#dce6e0', 'border'), backgroundColor: color('#fff', 'surface') },
   heading: { flex: 1, minWidth: 0, maxWidth: 400 },
-  title: { color: '#10251d', fontSize: 19, lineHeight: 25, fontWeight: '800' },
-  subtitle: { color: '#708078', fontSize: 12, lineHeight: 18, marginTop: 4 },
-  closeButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#eef3f0', alignItems: 'center', justifyContent: 'center' },
-  closeText: { color: '#52645b', fontSize: 25, lineHeight: 28, marginTop: -2 },
-  browser: { flex: 1, backgroundColor: '#fff' },
-  webView: { flex: 1, backgroundColor: '#fff' },
+  title: { color: color('#10251d', 'ink'), fontSize: 19, lineHeight: 25, fontWeight: '800' },
+  subtitle: { color: color('#708078', 'muted'), fontSize: 12, lineHeight: 18, marginTop: 4 },
+  closeButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: color('#eef3f0', 'canvas'), alignItems: 'center', justifyContent: 'center' },
+  closeText: { color: color('#52645b', 'ink'), fontSize: 25, lineHeight: 28, marginTop: -2 },
+  browser: { flex: 1, backgroundColor: color('#fff', 'surface') },
+  webView: { flex: 1, backgroundColor: color('#fff', 'surface') },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
-  stateText: { color: '#62756b', fontSize: 13, marginTop: 14, textAlign: 'center' },
+  stateText: { color: color('#62756b', 'muted'), fontSize: 13, marginTop: 14, textAlign: 'center' },
   choicePanel: { padding: 20, gap: 12 },
-  choice: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 72, padding: 15, borderWidth: 1, borderColor: '#dce8df', borderRadius: 15, backgroundColor: '#fff' },
-  choiceIcon: { width: 40, height: 40, borderRadius: 12, color: '#0b8065', backgroundColor: '#e6f8f1', textAlign: 'center', textAlignVertical: 'center', fontSize: 25, fontWeight: '800' },
-  choiceTitle: { color: '#173128', fontSize: 15, fontWeight: '800' },
-  choiceHint: { color: '#708078', fontSize: 11, marginTop: 4 },
+  choice: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 72, padding: 15, borderWidth: 1, borderColor: color('#dce8df', 'border'), borderRadius: 15, backgroundColor: color('#fff', 'surface') },
+  choiceIcon: { width: 40, height: 40, borderRadius: 12, color: color('#0b8065', 'accent'), backgroundColor: color('#e6f8f1', 'canvas'), textAlign: 'center', textAlignVertical: 'center', fontSize: 25, fontWeight: '800' },
+  choiceTitle: { color: color('#173128', 'ink'), fontSize: 15, fontWeight: '800' },
+  choiceHint: { color: color('#708078', 'muted'), fontSize: 11, marginTop: 4 },
   importPanel: { padding: 20 },
-  importTitle: { color: '#13231c', fontSize: 18, fontWeight: '800' },
-  importHint: { color: '#708078', fontSize: 12, lineHeight: 18, marginTop: 6, marginBottom: 12 },
-  importInput: { minHeight: 220, borderWidth: 1, borderColor: '#cbdcd0', borderRadius: 12, padding: 12, color: '#13231c', fontSize: 12, backgroundColor: '#fbfdfb' },
+  importTitle: { color: color('#13231c', 'ink'), fontSize: 18, fontWeight: '800' },
+  importHint: { color: color('#708078', 'muted'), fontSize: 12, lineHeight: 18, marginTop: 6, marginBottom: 12 },
+  importInput: { minHeight: 220, borderWidth: 1, borderColor: color('#cbdcd0', 'border'), borderRadius: 12, padding: 12, color: color('#13231c', 'ink'), fontSize: 12, backgroundColor: color('#fbfdfb', 'surface') },
   importActions: { flexDirection: 'row', gap: 9, marginTop: 10 },
-  importAction: { flex: 1, minHeight: 42, borderRadius: 10, backgroundColor: '#e8f8f1', alignItems: 'center', justifyContent: 'center' },
-  importActionText: { color: '#0b8065', fontSize: 12, fontWeight: '800' },
-  errorIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: '#fff0ef', alignItems: 'center', justifyContent: 'center' },
-  errorIconText: { color: '#bd3c35', fontSize: 25, fontWeight: '900' },
-  errorTitle: { color: '#8d302b', fontSize: 17, fontWeight: '800', marginTop: 16 },
-  errorText: { color: '#6f8177', fontSize: 13, lineHeight: 20, marginTop: 7, textAlign: 'center', maxWidth: 400 },
+  importAction: { flex: 1, minHeight: 42, borderRadius: 10, backgroundColor: color('#e8f8f1', 'canvas'), alignItems: 'center', justifyContent: 'center' },
+  importActionText: { color: color('#0b8065', 'accent'), fontSize: 12, fontWeight: '800' },
+  errorIcon: { width: 48, height: 48, borderRadius: 16, backgroundColor: color('#fff0ef', 'canvas'), alignItems: 'center', justifyContent: 'center' },
+  errorIconText: { color: color('#bd3c35', 'danger'), fontSize: 25, fontWeight: '900' },
+  errorTitle: { color: color('#8d302b', 'danger'), fontSize: 17, fontWeight: '800', marginTop: 16 },
+  errorText: { color: color('#6f8177', 'muted'), fontSize: 13, lineHeight: 20, marginTop: 7, textAlign: 'center', maxWidth: 400 },
   errorActions: { flexDirection: 'row', gap: 10, marginTop: 22, width: '100%', maxWidth: 360 },
-  secondaryButton: { flex: 1, minHeight: 46, borderRadius: 14, backgroundColor: '#edf2ef', alignItems: 'center', justifyContent: 'center' },
+  secondaryButton: { flex: 1, minHeight: 46, borderRadius: 14, backgroundColor: color('#edf2ef', 'elevated'), alignItems: 'center', justifyContent: 'center' },
   primaryButton: { flex: 1, minHeight: 46, borderRadius: 14, backgroundColor: '#0b8065', alignItems: 'center', justifyContent: 'center' },
-  secondaryButtonText: { color: '#173128', fontSize: 14, fontWeight: '800' },
+  secondaryButtonText: { color: color('#173128', 'ink'), fontSize: 14, fontWeight: '800' },
   primaryButtonText: { color: '#fff', fontSize: 14, fontWeight: '800' },
-  loadingOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,.84)' },
-  completingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,.96)' },
+  loadingOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: color('rgba(255,255,255,.84)', 'surface') },
+  completingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: color('rgba(255,255,255,.96)', 'surface') },
   disabled: { opacity: 0.5 },
-});
+}));

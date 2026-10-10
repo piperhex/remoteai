@@ -1,9 +1,10 @@
+import { useThemeColor } from '../theme/store';
 import { getLocale, t, useLanguage } from '../i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import type { AccountSummary, RemoteDevice, RemoteProviderSummary } from '../types';
 import { remoteModelOptions, type RemoteModelTarget } from '../../../../shared/remote-chat/modelTarget';
-import { deviceColors, styles } from './styles';
+import { deviceColors, useStyles } from './styles';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -38,25 +39,29 @@ function lastSeenLabel(device: RemoteDevice) {
 }
 
 function DeviceDetail({ icon, label, value }: { icon: IconName; label: string; value: string }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   return <View style={styles.detail}>
-    <Ionicons name={icon} size={17} color={deviceColors.muted} />
+    <Ionicons name={icon} size={17} color={color(deviceColors.muted, 'muted')} />
     <Text style={styles.detailLabel}>{label}</Text>
     <Text style={styles.detailValue}>{value}</Text>
   </View>;
 }
 
 function DeviceIdentity({ device, busy }: { device: RemoteDevice; busy: boolean }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const platform = platformInfo(device.platform);
   return <View style={[styles.cardTop, styles.topInset]}>
-    <View style={styles.platform}><Ionicons name={platform.icon} size={25} color={deviceColors.green} /></View>
+    <View style={styles.platform}><Ionicons name={platform.icon} size={25} color={color(deviceColors.green, 'accent')} /></View>
     <View style={styles.identity}>
       <Text style={styles.name} numberOfLines={2}>{device.name}</Text>
       <Text style={styles.meta}>{platform.label}{device.appVersion ? ` · v${device.appVersion}` : ''}</Text>
     </View>
     <View style={[styles.badge, !device.online && styles.badgeOffline]}>
-      {busy ? <ActivityIndicator size="small" color={deviceColors.green} />
+      {busy ? <ActivityIndicator size="small" color={color(deviceColors.green, 'accent')} />
         : <View style={[styles.dot, !device.online && styles.dotOffline]} />}
       <Text style={[styles.badgeText, !device.online && styles.muted]}>{device.online ? t("在线") : t("离线")}</Text>
     </View>
@@ -71,6 +76,8 @@ export function DeviceCard({ device, accounts, providers, busy, onSwitchModel, o
   onSwitchModel: () => void;
   onOpenMenu: () => void;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const account = accounts.find((item) => item.id === device.activeAccountId);
   const authAccount = accounts.find((item) => item.id === device.openaiAuthAccountId);
@@ -93,7 +100,7 @@ export function DeviceCard({ device, accounts, providers, busy, onSwitchModel, o
     </Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={t("{value1} 的更多操作", { value1: device.name })}
       onPress={onOpenMenu} style={({ pressed }) => [styles.menuTrigger, pressed && styles.pressed]}>
-      <Ionicons name="ellipsis-vertical" size={20} color={deviceColors.muted} />
+      <Ionicons name="ellipsis-vertical" size={20} color={color(deviceColors.muted, 'muted')} />
     </Pressable>
   </View>;
 }

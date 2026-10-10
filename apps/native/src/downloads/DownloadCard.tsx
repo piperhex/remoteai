@@ -1,14 +1,17 @@
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import type { DownloadTask } from './types';
 import { downloadDetail, downloadPercent, downloadStatus, formatBytes } from './presentation';
-import { colors, styles } from './styles';
+import { colors, useStyles } from './styles';
 
 export function DownloadCard({ task, connected, busy, action, remove }: {
   task: DownloadTask; connected: boolean; busy: boolean;
   action: () => void; remove: () => void;
 }) {
+  const styles = useStyles();
+  const color = useThemeColor();
   useLanguage();
   const active = ['downloading', 'queued', 'preparing', 'verifying', 'saving'].includes(task.status);
   const complete = task.status === 'completed';
@@ -20,7 +23,7 @@ export function DownloadCard({ task, connected, busy, action, remove }: {
   const percent = downloadPercent(task);
   return <View style={styles.card}>
     <View style={styles.cardHeader}>
-      <View style={styles.fileIcon}><Ionicons name="document-text-outline" size={23} color={colors.green} /></View>
+      <View style={styles.fileIcon}><Ionicons name="document-text-outline" size={23} color={color(colors.green, 'accent')} /></View>
       <View style={styles.fileCopy}>
         <Text style={styles.title} numberOfLines={2}>{task.name}</Text>
         <Text style={styles.caption} numberOfLines={1}>{task.source.deviceName}</Text>
@@ -48,14 +51,14 @@ export function DownloadCard({ task, connected, busy, action, remove }: {
     <View style={[styles.toolbar, styles.cardActions]}>
       <Pressable accessibilityRole="button" accessibilityLabel={t("删除")} disabled={busy} onPress={remove}
         style={({ pressed }) => [styles.deleteButton, busy && styles.disabled, pressed && styles.pressed]}>
-        <Ionicons name="trash-outline" size={16} color={colors.muted} />
+        <Ionicons name="trash-outline" size={16} color={color(colors.muted, 'muted')} />
         <Text style={styles.deleteText}>{t("删除")}</Text>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled, busy }}
         disabled={disabled} onPress={action}
         style={({ pressed }) => [styles.button, disabled && styles.disabled, pressed && styles.pressed]}>
-        {busy ? <ActivityIndicator size="small" color={colors.green} />
-          : <Ionicons name={icon} size={16} color={colors.green} />}
+        {busy ? <ActivityIndicator size="small" color={color(colors.green, 'accent')} />
+          : <Ionicons name={icon} size={16} color={color(colors.green, 'accent')} />}
         <Text style={styles.buttonText}>{label}</Text>
       </Pressable>
     </View>
