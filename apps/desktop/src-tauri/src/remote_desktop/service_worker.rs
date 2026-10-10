@@ -27,6 +27,7 @@ struct Privacy {
     id: String,
     enabled: Option<bool>,
     ticket: Option<String>,
+    resolution: Option<super::displays::Resolution>,
 }
 #[derive(Deserialize)]
 struct Update {
@@ -107,8 +108,13 @@ async fn execute(call: Call, root: PathBuf) -> Result<Value, String> {
         "remote_desktop_privacy" => {
             let args: Privacy = decode(call.args)?;
             encode(
-                super::stream::privacy::remote_desktop_privacy(args.id, args.enabled, args.ticket)
-                    .await?,
+                super::stream::privacy::remote_desktop_privacy(
+                    args.id,
+                    args.enabled,
+                    args.ticket,
+                    args.resolution,
+                )
+                .await?,
             )
         }
         "remote_desktop_stream_close" | "remote_desktop_close" => {

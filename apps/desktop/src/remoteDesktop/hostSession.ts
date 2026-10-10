@@ -1,5 +1,5 @@
 import type { IceServer } from '../../../../shared/remote-chat/protocol';
-import type { DesktopSettings, DesktopSignal } from '../../../../shared/remote-desktop/protocol';
+import type { DesktopResolution, DesktopSettings, DesktopSignal } from '../../../../shared/remote-desktop/protocol';
 import { DesktopHostSession } from './session';
 import { NativeDesktopSession } from './nativeSession';
 import type { ConnectionDiagnostic } from '../../../../shared/remote-chat/diagnostics';
@@ -38,6 +38,8 @@ export class HostSession {
     const policy = offer.permissions;
     return { ...offer, capabilities: { platform: offer.platform,
       privacyScreen: this.session instanceof NativeDesktopSession && policy?.control !== false,
+      resolution: this.session instanceof NativeDesktopSession && policy?.control !== false
+        && !!offer.resolutions?.length,
       keyboard: policy?.control ?? true, control: policy?.control ?? true,
       clipboard: !policy || policy.clipboardRead || policy.clipboardWrite, horizontalScroll: policy?.control ?? true } };
   }
@@ -45,6 +47,10 @@ export class HostSession {
   async privacy(enabled: boolean) {
     if (!(this.session instanceof NativeDesktopSession)) throw new Error('这台电脑暂不支持隐私屏。');
     return this.session.privacy(enabled);
+  }
+  async resolution(resolution: DesktopResolution) {
+    if (!(this.session instanceof NativeDesktopSession)) throw new Error('这台电脑暂不支持切换分辨率。');
+    return this.session.resolution(resolution);
   }
   async renew(expiresAt: number) { this.expiresAt = expiresAt; await this.session.renew(expiresAt); }
   async update(settings: DesktopSettings) { await this.session.update(settings); this.settings = settings; }

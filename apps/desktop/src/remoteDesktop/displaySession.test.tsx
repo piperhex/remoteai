@@ -3,7 +3,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { useDesktopSession } from '../../../../shared/remote-desktop/useDesktopSession';
-import type { DesktopCapabilities, DesktopClient, DesktopDisplays, DesktopSettings }
+import type { DesktopCapabilities, DesktopClient, DesktopDisplays, DesktopResolution, DesktopSettings }
   from '../../../../shared/remote-desktop/protocol';
 import type { DesktopDirectRetry } from '../../../../shared/remote-desktop/directRetry';
 
@@ -13,6 +13,7 @@ interface FakeSession {
     failed: (message: string) => void; directRetry: DesktopDirectRetry };
   start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn>; input: ReturnType<typeof vi.fn>;
   privacy: ReturnType<typeof vi.fn>;
+  resolution: ReturnType<typeof vi.fn<(size: DesktopResolution) => Promise<void>>>;
 }
 const runtime = vi.hoisted(() => ({ sessions: [] as FakeSession[] }));
 vi.mock('../../../../shared/remote-desktop/receiver', () => ({ DesktopReceiver: class {
@@ -24,6 +25,10 @@ vi.mock('../../../../shared/remote-desktop/receiver', () => ({ DesktopReceiver: 
   input = vi.fn(); settings = vi.fn(); mute = vi.fn();
   privacy = vi.fn(async (enabled: boolean) => {
     this.options.displays({ displayId: enabled ? 'private' : 'first', privacyScreen: enabled });
+  });
+  resolution = vi.fn(async (size: DesktopResolution) => {
+    this.options.displays({ displayId: 'first', resolutions: [size],
+      displays: [{ id: 'first', name: 'DISPLAY1', primary: true, ...size }] });
   });
   constructor(public options: FakeSession['options']) { runtime.sessions.push(this); }
 } }));
@@ -40,6 +45,29 @@ beforeEach(async () => {
   await act(async () => root.render(<Harness />));
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); vi.useRealTimers(); });
+
+it('uses host resolutions, prevents overlapping changes and refreshes display dimensions', async () => {
+  const current = runtime.sessions[0];
+  const size = { width: 1920, height: 1080 };
+  await act(async () => current.options.displays({ displayId: 'first', resolutions: [size] }));
+  await act(async () => session.resolution.change(size));
+  expect(current.resolution).not.toHaveBeenCalled();
+  await act(async () => current.options.capabilities({ control: true, resolution: true, privacyScreen: true }));
+  expect(session.resolution.options).toEqual([size]);
+  let finish!: () => void;
+  const original = current.resolution.getMockImplementation()!;
+  current.resolution.mockImplementationOnce(async value => {
+    await new Promise<void>(resolve => { finish = resolve; }); await original(value);
+  });
+  let pending!: Promise<void>;
+  await act(async () => { pending = session.resolution.change(size); });
+  expect(session.saving).toBe(true);
+  await act(async () => { await session.resolution.change(size); await session.togglePrivacy(); });
+  expect(current.resolution).toHaveBeenCalledOnce(); expect(current.privacy).not.toHaveBeenCalled();
+  await act(async () => { finish(); await pending; });
+  expect(session.displays[0]).toMatchObject(size); expect(session.saving).toBe(false);
+  expect(current.stop).not.toHaveBeenCalled(); expect(session.status).toBe('');
+});
 
 it('only toggles privacy with control capability, keeps the session and resets on reconnect', async () => {
   const first = runtime.sessions[0];

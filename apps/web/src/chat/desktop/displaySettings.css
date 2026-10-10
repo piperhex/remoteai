@@ -58,6 +58,7 @@
 .rd-stats-toggle[aria-checked=true] .rd-display-switch > span { transform: translateX(14px); background: #fff; }
 .rd-display-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
 .rd-frame-options { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.rd-resolution-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .rd-display-settings .rd-display-options button { padding: 10px 2px; min-height: 38px; font-size: 12px;
   overflow-wrap: anywhere; border: 1px solid #3c4859; background: #ffffff04; }
 .rd-display-settings .rd-display-options button[aria-pressed=true] { border-color: #589cff;

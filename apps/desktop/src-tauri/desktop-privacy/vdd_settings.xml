@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vdd_settings>
+    <monitors><count>1</count></monitors>
+    <gpu><friendlyname>default</friendlyname></gpu>
+    <resolutions>
+        <resolution><width>1920</width><height>1080</height><refresh_rate>60</refresh_rate></resolution>
+        <resolution><width>1280</width><height>720</height><refresh_rate>60</refresh_rate></resolution>
+        <resolution><width>1600</width><height>900</height><refresh_rate>60</refresh_rate></resolution>
+        <resolution><width>1920</width><height>1200</height><refresh_rate>60</refresh_rate></resolution>
+        <resolution><width>2560</width><height>1440</height><refresh_rate>60</refresh_rate></resolution>
+        <resolution><width>2560</width><height>1600</height><refresh_rate>60</refresh_rate></resolution>
+        <resolution><width>3840</width><height>2160</height><refresh_rate>60</refresh_rate></resolution>
+    </resolutions>
+    <options>
+        <CustomEdid>false</CustomEdid>
+        <HardwareCursor>true</HardwareCursor>
+        <logging>false</logging>
+        <debuglogging>false</debuglogging>
+    </options>
+</vdd_settings>

@@ -1,5 +1,6 @@
 #include "platform.hpp"
 #include "windows_driver.hpp"
+#include "windows_desktop.hpp"
 #include <wtsapi32.h>
 #include <algorithm>
 #include <cwctype>
@@ -8,11 +9,16 @@
 #include <vector>
 
 namespace {
+constexpr DWORD fallback_width = 1920;
+constexpr DWORD fallback_height = 1080;
+constexpr DWORD privacy_refresh_rate = 60;
+constexpr DWORD privacy_color_depth = 32;
 struct Topology {
     std::vector<DISPLAYCONFIG_PATH_INFO> paths;
     std::vector<DISPLAYCONFIG_MODE_INFO> modes;
 };
 Topology topology(UINT32 flags = QDC_ONLY_ACTIVE_PATHS) {
+    InputDesktopScope desktop;
     for (int attempt = 0; attempt < 5; ++attempt) {
         UINT32 paths = 0, modes = 0;
         if (GetDisplayConfigBufferSizes(flags, &paths, &modes)) throw std::runtime_error("display query failed");
@@ -25,12 +31,14 @@ Topology topology(UINT32 flags = QDC_ONLY_ACTIVE_PATHS) {
     throw std::runtime_error("display topology changed");
 }
 std::wstring source_name(const DISPLAYCONFIG_PATH_INFO& path) {
+    InputDesktopScope desktop;
     DISPLAYCONFIG_SOURCE_DEVICE_NAME name{};
     name.header = {DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME, sizeof(name), path.sourceInfo.adapterId, path.sourceInfo.id};
     if (DisplayConfigGetDeviceInfo(&name.header)) throw std::runtime_error("display identity unavailable");
     return name.viewGdiDeviceName;
 }
 bool owned_adapter(const DISPLAYCONFIG_PATH_INFO& path) {
+    InputDesktopScope desktop;
     DISPLAYCONFIG_ADAPTER_NAME name{};
     name.header = {DISPLAYCONFIG_DEVICE_INFO_GET_ADAPTER_NAME, sizeof(name), path.targetInfo.adapterId, 0};
     if (DisplayConfigGetDeviceInfo(&name.header)) return false;
@@ -42,10 +50,11 @@ bool owned_adapter(const DISPLAYCONFIG_PATH_INFO& path) {
     return !instance.empty() && device.find(instance + L'#') != std::wstring::npos;
 }
 void apply(Topology& value) {
+    InputDesktopScope desktop;
     const auto result = SetDisplayConfig(static_cast<UINT32>(value.paths.size()), value.paths.data(),
         static_cast<UINT32>(value.modes.size()), value.modes.data(),
         SDC_APPLY | SDC_USE_SUPPLIED_DISPLAY_CONFIG | SDC_ALLOW_CHANGES);
-    if (result) throw std::runtime_error("display configuration failed");
+    if (result) throw std::runtime_error("display configuration failed: " + std::to_string(result));
 }
 bool session_locked() {
     DWORD session = 0, bytes = 0;
@@ -65,6 +74,26 @@ void lock_session() {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     throw std::runtime_error("lock not confirmed");
+}
+void size_private_display(const std::wstring& selected, const Topology& original) {
+    InputDesktopScope desktop;
+    DWORD width = fallback_width, height = fallback_height;
+    for (const auto& mode : original.modes) {
+        if (mode.infoType != DISPLAYCONFIG_MODE_INFO_TYPE_SOURCE) continue;
+        if (mode.sourceMode.position.x || mode.sourceMode.position.y) continue;
+        width = mode.sourceMode.width; height = mode.sourceMode.height; break;
+    }
+    DEVMODEW chosen{}; chosen.dmSize = sizeof(chosen);
+    DEVMODEW mode{}; mode.dmSize = sizeof(mode);
+    for (DWORD index = 0; EnumDisplaySettingsW(selected.c_str(), index, &mode); ++index) {
+        if (mode.dmBitsPerPel != privacy_color_depth || mode.dmDisplayFrequency != privacy_refresh_rate) continue;
+        if (mode.dmPelsWidth == width && mode.dmPelsHeight == height) { chosen = mode; break; }
+        if (mode.dmPelsWidth == fallback_width && mode.dmPelsHeight == fallback_height) chosen = mode;
+    }
+    if (!chosen.dmPelsWidth) throw std::runtime_error("privacy resolution unavailable");
+    chosen.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY | DM_BITSPERPEL;
+    if (ChangeDisplaySettingsExW(selected.c_str(), &chosen, nullptr, 0, nullptr) != DISP_CHANGE_SUCCESSFUL)
+        throw std::runtime_error("privacy resolution change failed");
 }
 class WindowsPrivacy final : public PrivacyPlatform {
     HANDLE exclusive = nullptr;
@@ -111,7 +140,9 @@ public:
         ensure_privacy_driver();
         created = true;
         set_privacy_device_enabled(true);
-        return discover();
+        const auto name = discover();
+        size_private_display(selected, original);
+        return name;
     }
     void commit() override {
         auto only = topology();

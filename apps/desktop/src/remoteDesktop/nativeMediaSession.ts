@@ -1,5 +1,5 @@
 import type { IceServer } from '../../../../shared/remote-chat/protocol';
-import type { DesktopSettings, DesktopSignal } from '../../../../shared/remote-desktop/protocol';
+import type { DesktopResolution, DesktopSettings, DesktopSignal } from '../../../../shared/remote-desktop/protocol';
 import type { NativeMediaFactory, NativeMediaSession } from '../../../../shared/remote-desktop/nativeMedia';
 import { closeNativeMedia, openNativeMedia, nativeMediaIceServers }
   from '../../../../shared/remote-desktop/nativeMedia';
@@ -42,6 +42,10 @@ export class NativeMediaHostSession implements DesktopHostSession {
   async privacy(enabled: boolean) {
     if (!this.session?.privacy || this.stopped) throw new Error('这台电脑暂不支持隐私屏。');
     return this.session.privacy(enabled);
+  }
+  async resolution(resolution: DesktopResolution) {
+    if (!this.session?.resolution || this.stopped) throw new Error('这台电脑暂不支持切换分辨率。');
+    return this.session.resolution(resolution);
   }
   async renew(expiresAt: number) { await this.session?.renew?.(expiresAt); }
   get closed() { return this.stopped || this.session?.closed === true; }

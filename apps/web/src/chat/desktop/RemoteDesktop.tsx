@@ -127,6 +127,7 @@ function DesktopViewer({ client, active, connected = true, close, localClipboard
           {t(statusAction.label)}</button></div>}
       {windowControls.error && <div className="rd-clipboard-notice" role="alert">{t(windowControls.error)}</div>}
       {display && <DisplaySettings settings={session.settings} displays={session.displays} update={session.update}
+        resolution={session.resolution}
         saving={session.saving || !session.stream}
         stats={{ visible: statsVisible, toggle: () => setStatsVisible(!statsVisible) }}
         close={() => setDisplay(false)} />}

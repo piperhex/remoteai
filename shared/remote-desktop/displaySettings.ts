@@ -1,6 +1,7 @@
-import type { DesktopDisplay, DesktopSettings } from './protocol';
+import type { DesktopDisplay, DesktopResolution, DesktopSettings } from './protocol';
 
 export interface DisplaySettingsProps {
+  resolution?: { options: DesktopResolution[]; change: (size: DesktopResolution) => Promise<void> };
   displays: DesktopDisplay[];
   settings: DesktopSettings;
   update: (settings: DesktopSettings) => Promise<void>;

@@ -124,6 +124,7 @@ export function RemoteDesktop({ client, active, close }: {
             {viewOnly && !session.status && <View pointerEvents="none" style={s.messageLayer}>
               <View style={s.message}><Text style={s.text}>{t("仅观看")}</Text></View></View>}
             {display && <DisplaySettings settings={session.settings} displays={session.displays} update={session.update}
+              resolution={session.resolution}
               saving={session.saving || !session.stream}
               stats={{ visible: statsVisible, toggle: () => setStatsVisible(!statsVisible) }}
               close={() => setDisplay(false)} />}

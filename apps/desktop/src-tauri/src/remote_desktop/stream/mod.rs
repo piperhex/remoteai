@@ -37,6 +37,8 @@ mod rate_control;
 #[cfg(any(windows, target_os = "macos"))]
 mod relay;
 #[cfg(any(windows, target_os = "macos"))]
+mod resolution;
+#[cfg(any(windows, target_os = "macos"))]
 mod sample;
 #[cfg(any(windows, target_os = "macos"))]
 mod signaling;

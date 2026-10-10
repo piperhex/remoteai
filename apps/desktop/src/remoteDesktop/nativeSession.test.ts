@@ -5,6 +5,22 @@ import { DEFAULT_SETTINGS } from '../../../../shared/remote-desktop/protocol';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 const call = vi.mocked(invoke);
+it.each([false, true])('resizes a privacy=%s desktop and updates capture without replacing the peer', async privacyScreen => {
+  const original = call.getMockImplementation()!;
+  const resolution = { width: 1920, height: 1080 };
+  const display = { id: 'selected', name: 'DISPLAY1', primary: true, ...resolution };
+  call.mockImplementation(async (command, args) => command === 'remote_desktop_privacy'
+    ? { pending: false, ticket: 'size', snapshot: { privacyScreen, displayId: display.id,
+      displays: [display], resolutions: [resolution] } } : original(command, args));
+  const session = new NativeDesktopSession(DEFAULT_SETTINGS, []);
+  await session.open();
+  await expect(session.resolution(resolution)).resolves.toMatchObject({ privacyScreen, displays: [display] });
+  expect(call).toHaveBeenCalledWith('remote_desktop_privacy', { id: 'native-lease', resolution });
+  expect(call).toHaveBeenLastCalledWith('remote_desktop_stream_update', { id: 'native-lease',
+    profile: expect.objectContaining({ width: 1920 }) });
+  expect(call.mock.calls.filter(([command]) => command === 'remote_desktop_stream_open')).toHaveLength(1);
+  expect(session.closed).toBe(false); await session.close();
+});
 it('does not touch privacy during ordinary sessions and preserves the native lease when toggled', async () => {
   const original = call.getMockImplementation()!;
   call.mockImplementation(async (command, args) => {
@@ -37,7 +53,7 @@ it('polls a pending privacy transition without a long-running IPC call', async (
   const changing = session.privacy(true);
   await vi.advanceTimersByTimeAsync(250);
   await expect(changing).resolves.toMatchObject({ privacyScreen: true });
-  expect(call).toHaveBeenLastCalledWith('remote_desktop_privacy', { id: 'native-lease', ticket: 'test' });
+  expect(call).toHaveBeenCalledWith('remote_desktop_privacy', { id: 'native-lease', ticket: 'test' });
   expect(session.closed).toBe(false);
   await session.close();
 });

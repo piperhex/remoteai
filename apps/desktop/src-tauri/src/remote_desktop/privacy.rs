@@ -14,6 +14,8 @@ const RESPONSE_TIMEOUT: Duration = Duration::from_secs(15);
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Snapshot {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub resolutions: Vec<super::displays::Resolution>,
     pub displays: Vec<DisplayInfo>,
     pub display_id: String,
     pub privacy_screen: bool,
@@ -175,6 +177,14 @@ pub(super) fn disable(id: &str) -> Result<Snapshot> {
 
 pub(super) fn snapshot(session: &super::Session) -> Result<Snapshot> {
     Ok(Snapshot {
+        #[cfg(windows)]
+        resolutions: if session.permissions.control {
+            super::resolutions::list(&session.display.info.id)
+        } else {
+            vec![]
+        },
+        #[cfg(not(windows))]
+        resolutions: vec![],
         displays: monitors::list()?
             .into_iter()
             .map(|display| display.info)

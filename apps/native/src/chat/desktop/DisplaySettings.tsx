@@ -6,6 +6,7 @@ import { MOUSE_INSTRUCTIONS, QUALITY_OPTIONS, type DisplaySettingsProps }
 import { t, useLanguage } from '../../i18n';
 import { DisplayFrameRateSettings } from './DisplayFrameRateSettings';
 import { DisplayMonitorSettings } from './DisplayMonitorSettings';
+import { DisplayResolutionSettings } from './DisplayResolutionSettings';
 import { DisplaySettingsHint, DisplaySettingsSection } from './DisplaySettingsSection';
 import { displaySettingsStyles as s } from './displaySettingsStyles';
 
@@ -27,6 +28,7 @@ export function DisplaySettings(props: DisplaySettingsProps) {
     <ScrollView style={s.scroll} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled"
       indicatorStyle="white" nestedScrollEnabled accessibilityLabel={t('显示设置选项')}>
       <DisplayMonitorSettings {...props} />
+      <DisplayResolutionSettings {...props} />
       <DisplayFrameRateSettings {...props} />
       <DisplaySettingsSection icon="image-outline" title="画质" description="在画质、流畅度和带宽之间取得平衡">
         <View style={s.options}>{QUALITY_OPTIONS.map(item => <Pressable key={item.value} disabled={saving}

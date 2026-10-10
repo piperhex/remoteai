@@ -310,6 +310,15 @@ export class DesktopReceiver {
     return snapshot;
   }
 
+  async resolution(resolution: import('./protocol').DesktopResolution) {
+    if (this.stopped || this.capabilities.control === false || !this.capabilities.resolution
+      || !this.options.client.resolution) throw new Error('这台电脑暂不支持切换分辨率。');
+    const snapshot = await this.options.client.resolution(this.id, resolution);
+    if (this.stopped) throw new Error('桌面连接已结束。');
+    this.options.displays?.(snapshot);
+    return snapshot;
+  }
+
   input(input: DesktopInput) {
     if (this.capabilities.control === false) return;
     if (input.kind === 'wheel' && input.horizontal && !this.capabilities.horizontalScroll) return;

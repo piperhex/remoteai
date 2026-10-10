@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { IceServer } from '../../../../shared/remote-chat/protocol';
-import type { DesktopDisplays, DesktopSettings, DesktopSignal, DesktopSignalReply }
+import type { DesktopDisplays, DesktopResolution, DesktopSettings, DesktopSignal, DesktopSignalReply }
   from '../../../../shared/remote-desktop/protocol';
 import { openDesktopCapture } from './displays';
 import { desktopFailure } from '../../../../shared/remote-desktop/diagnostics';
@@ -92,31 +92,45 @@ export class NativeDesktopSession {
     this.settings = settings;
   }
   async privacy(enabled: boolean): Promise<DesktopDisplays> {
+    return this.changeDisplay({ enabled });
+  }
+  async resolution(resolution: DesktopResolution): Promise<DesktopDisplays> {
+    return this.changeDisplay({ resolution });
+  }
+  private async changeDisplay(change: { enabled?: boolean; resolution?: DesktopResolution }): Promise<DesktopDisplays> {
     if (!this.id || this.stopped) throw new Error('桌面连接已结束。');
-    if (this.changingPrivacy) throw new Error('正在切换隐私屏，请稍候。');
+    if (this.changingPrivacy) throw new Error('正在调整显示，请稍候。');
+    const failure = change.resolution ? '分辨率未能切换，请选择其他分辨率后重试。'
+      : '隐私屏未能切换，请重新连接后重试。';
     this.changingPrivacy = true;
     let accepted = false;
     try {
-      let progress = await invoke<PrivacyProgress>('remote_desktop_privacy', { id: this.id, enabled });
+      let progress = await invoke<PrivacyProgress>('remote_desktop_privacy', { id: this.id, ...change });
       accepted = true;
       const until = Date.now() + PRIVACY_TIMEOUT;
       while (progress.pending) {
-        if (this.stopped || Date.now() >= until) throw new Error('隐私屏未能切换，请重新连接后重试。');
+        if (this.stopped || Date.now() >= until) throw new Error(failure);
         await new Promise(resolve => setTimeout(resolve, PRIVACY_POLL_INTERVAL));
         if (this.stopped) throw new Error('桌面连接已结束。');
         progress = await invoke<PrivacyProgress>('remote_desktop_privacy', { id: this.id, ticket: progress.ticket });
       }
       if (this.stopped) throw new Error('桌面连接已结束。');
       const snapshot = progress.snapshot;
-      if (!snapshot || snapshot.privacyScreen !== enabled) throw new Error('隐私屏未能切换，请重新连接后重试。');
+      if (!snapshot || (change.enabled !== undefined && snapshot.privacyScreen !== change.enabled)) {
+        throw new Error(failure);
+      }
+      const display = snapshot.displays?.find(item => item.id === snapshot.displayId);
+      if (change.resolution && (display?.width !== change.resolution.width
+        || display?.height !== change.resolution.height)) throw new Error(failure);
       this.displays = { ...this.displays, ...snapshot };
       this.settings = { ...this.settings, displayId: snapshot.displayId };
+      await this.update(this.settings);
       return snapshot;
     } catch (error) {
       // Once accepted, an ambiguous result cannot leave a hidden privacy session running.
       if (accepted) await this.close();
       if (desktopFailure(error).desktopError === 'unknown') {
-        throw new Error('隐私屏未能切换，请重新连接后重试。');
+        throw new Error(failure);
       }
       throw typeof error === 'string' ? new Error(error) : error;
     } finally { this.changingPrivacy = false; }

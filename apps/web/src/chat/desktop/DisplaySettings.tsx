@@ -66,6 +66,18 @@ function FrameRate(props: DisplaySettingsProps) {
   </Section>;
 }
 
+function Resolution({ resolution, settings, displays, saving }: DisplaySettingsProps) {
+  const current = displays.find(display => display.id === settings.displayId);
+  return <Section icon={Monitor} title="分辨率" description="调整远程电脑的桌面大小">
+    {resolution?.options.length ? <div className="rd-display-options rd-resolution-options"
+      role="group" aria-label={t('分辨率')}>
+      {resolution.options.map(size => <button key={`${size.width}x${size.height}`} disabled={saving}
+        aria-pressed={current?.width === size.width && current?.height === size.height}
+        onClick={() => { void resolution.change(size); }}>{size.width} × {size.height}</button>)}
+    </div> : <Hint>{t('这台电脑暂不支持切换分辨率。')}</Hint>}
+  </Section>;
+}
+
 export function DisplaySettings(props: DisplaySettingsProps) {
   const { settings, saving, update, close } = props;
   return <aside className="rd-settings rd-display-settings" aria-label={t('显示设置')}>
@@ -76,6 +88,7 @@ export function DisplaySettings(props: DisplaySettingsProps) {
     </header>
     <div className="rd-display-scroll" tabIndex={0} role="region" aria-label={t('显示设置选项')}>
       <Monitors {...props} />
+      <Resolution {...props} />
       <FrameRate {...props} />
       <Section icon={Image} title="画质" description="在画质、流畅度和带宽之间取得平衡">
         <div className="rd-display-options" role="group" aria-label={t('画质')}>

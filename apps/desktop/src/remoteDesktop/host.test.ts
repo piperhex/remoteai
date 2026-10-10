@@ -9,10 +9,26 @@ vi.mock('./hostSession', () => ({ HostSession: vi.fn(class {
   signal = vi.fn(async () => ({ candidates: [] }));
   update = vi.fn();
   privacy = vi.fn(async (enabled: boolean) => ({ privacyScreen: enabled, displayId: 'private' }));
+  resolution = vi.fn(async () => ({ displayId: 'selected' }));
   close = vi.fn(() => { this.closed = true; });
 }) }));
 beforeEach(() => vi.clearAllMocks());
 const opening = { action: 'open', id: 'desktop-1', settings: DEFAULT_SETTINGS };
+
+it('validates resolution dimensions and binds changes to the authenticated owner', async () => {
+  const host = new RemoteDesktopHost(); host.register('alice', []); host.register('bob', []);
+  await host.request(opening, 'alice');
+  const change = { action: 'resolution', id: 'desktop-1', resolution: { width: 1920, height: 1080 } };
+  await expect(host.request(change, 'bob')).rejects.toThrow('连接已结束');
+  for (const resolution of [null, {}, { width: '1920', height: 1080 }, { width: 0, height: 1080 },
+    { width: 1920, height: 8193 }, { width: 1920.5, height: 1080 }]) {
+    await expect(host.request({ ...change, resolution }, 'alice')).rejects.toThrow('有效的分辨率');
+  }
+  const session = vi.mocked(DesktopHostSession).mock.results[0].value;
+  expect(session.resolution).not.toHaveBeenCalled();
+  await expect(host.request(change, 'alice')).resolves.toMatchObject({ displayId: 'selected' });
+  expect(session.resolution).toHaveBeenCalledWith(change.resolution); host.release();
+});
 
 it('privacy is explicit, owner-bound and requires a boolean switch', async () => {
   const host = new RemoteDesktopHost();

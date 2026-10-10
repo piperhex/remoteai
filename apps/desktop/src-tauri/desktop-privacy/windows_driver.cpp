@@ -62,11 +62,29 @@ void record_device(HDEVINFO devices, SP_DEVINFO_DATA& device) {
     RegCloseKey(key);
     if (result) throw std::runtime_error("device ownership write failed");
 }
+void configure_driver() {
+    const auto folder = executable().parent_path() / "privacy-driver";
+    if (!std::filesystem::is_regular_file(folder / "vdd_settings.xml"))
+        throw std::runtime_error("privacy display modes missing");
+    // This driver instance is exclusively owned by Remote AI. Point it at the packaged
+    // configuration before enabling it; copying the INF alone leaves only fallback modes.
+    const auto path = folder.wstring();
+    HKEY key = nullptr;
+    if (RegCreateKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\MikeTheTech\\VirtualDisplayDriver", 0,
+        nullptr, 0, KEY_SET_VALUE, nullptr, &key, nullptr))
+        throw std::runtime_error("privacy configuration registry unavailable");
+    RegCloseKey(key);
+    const auto result = RegSetKeyValueW(HKEY_LOCAL_MACHINE,
+        L"SOFTWARE\\MikeTheTech\\VirtualDisplayDriver", L"VDDPATH", REG_SZ,
+        path.c_str(), static_cast<DWORD>((path.size() + 1) * sizeof(wchar_t)));
+    if (result) throw std::runtime_error("privacy mode configuration failed");
+}
 void install() {
     if (!driver_devices().empty()) throw std::runtime_error("another virtual display driver exists");
     const auto root = executable().parent_path() / "privacy-driver";
     if (!trusted(root / "MttVDD.dll") || !trusted(root / "mttvdd.cat"))
         throw std::runtime_error("untrusted privacy driver");
+    configure_driver();
     const auto devices = SetupDiCreateDeviceInfoList(&GUID_DEVCLASS_DISPLAY, nullptr);
     if (devices == INVALID_HANDLE_VALUE) throw std::runtime_error("driver install unavailable");
     SP_DEVINFO_DATA device{}; device.cbSize = sizeof(device);
@@ -104,6 +122,7 @@ void ensure_privacy_driver() {
     if (devices.empty()) throw std::runtime_error("privacy driver installation required");
     if (devices.size() != 1 || _wcsicmp(devices[0].c_str(), privacy_device_instance().c_str()))
         throw std::runtime_error("virtual driver owned by another application");
+    configure_driver();
 }
 void set_privacy_device_enabled(bool enabled) {
     const auto devices = SetupDiCreateDeviceInfoList(&GUID_DEVCLASS_DISPLAY, nullptr);
@@ -114,9 +133,16 @@ void set_privacy_device_enabled(bool enabled) {
     change.StateChange = enabled ? DICS_ENABLE : DICS_DISABLE;
     change.Scope = DICS_FLAG_CONFIGSPECIFIC;
     const auto instance = privacy_device_instance();
-    const bool success = !instance.empty()
-        && SetupDiOpenDeviceInfoW(devices, instance.c_str(), nullptr, 0, &device)
-        && SetupDiSetClassInstallParamsW(devices, &device, &change.ClassInstallHeader, sizeof(change))
+    bool success = !instance.empty() && SetupDiOpenDeviceInfoW(devices, instance.c_str(), nullptr, 0, &device);
+    if (success && enabled) {
+        // Clear a global disable left by Device Manager or emergency recovery first.
+        // Enabling only the current hardware profile cannot override that state.
+        change.Scope = DICS_FLAG_GLOBAL;
+        success = SetupDiSetClassInstallParamsW(devices, &device, &change.ClassInstallHeader, sizeof(change))
+            && SetupDiCallClassInstaller(DIF_PROPERTYCHANGE, devices, &device);
+    }
+    change.Scope = DICS_FLAG_CONFIGSPECIFIC;
+    success = success && SetupDiSetClassInstallParamsW(devices, &device, &change.ClassInstallHeader, sizeof(change))
         && SetupDiCallClassInstaller(DIF_PROPERTYCHANGE, devices, &device);
     SetupDiDestroyDeviceInfoList(devices);
     if (!success) throw std::runtime_error("privacy device switch failed");

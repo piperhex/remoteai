@@ -30,6 +30,8 @@ pub(crate) mod privacy;
 #[cfg(windows)]
 mod privacy_setup;
 #[cfg(windows)]
+mod resolutions;
+#[cfg(windows)]
 pub(crate) mod service_worker;
 pub(crate) mod stream;
 pub(crate) mod system_permissions;
@@ -44,6 +46,9 @@ pub(super) enum DesktopError {
     #[cfg(any(windows, target_os = "macos"))]
     #[error("privacy display unavailable")]
     Privacy,
+    #[cfg(any(windows, target_os = "macos"))]
+    #[error("display resolution unavailable")]
+    Resolution,
     #[cfg(windows)]
     #[error("privacy display requires the desktop service")]
     PrivacyService,
@@ -173,6 +178,8 @@ fn safe_error(error: DesktopError) -> String {
     match error {
         #[cfg(any(windows, target_os = "macos"))]
         DesktopError::Privacy => "隐私屏未能切换，请重新连接后重试。",
+        #[cfg(any(windows, target_os = "macos"))]
+        DesktopError::Resolution => "分辨率未能切换，请选择其他分辨率后重试。",
         #[cfg(windows)]
         DesktopError::PrivacyService => "请先在电脑的远程设置中开启无人值守，再使用隐私屏。",
         #[cfg(windows)]
@@ -266,8 +273,17 @@ fn open(
         let monitors = monitors::list()?;
         let display = monitors::select(&monitors, display_id.as_deref())?;
         let display_id = display.info.id.clone();
+        #[cfg(windows)]
+        let resolutions = if permissions.control {
+            resolutions::list(&display_id)
+        } else {
+            vec![]
+        };
+        #[cfg(not(windows))]
+        let resolutions = vec![];
         let id = begin_session(display, permissions, expires_at)?;
         Ok(displays::Opened {
+            resolutions,
             platform: Some(if cfg!(target_os = "macos") {
                 displays::HostPlatform::Macos
             } else {

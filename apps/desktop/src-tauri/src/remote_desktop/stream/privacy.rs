@@ -1,13 +1,19 @@
 //! Display changes are serialized with encoding and preserve the existing peer and media tracks.
 use super::{encoder::Encoder, native::Stream};
-use crate::remote_desktop::{privacy, DesktopError, Result};
+use crate::remote_desktop::{displays::Resolution, privacy, DesktopError, Result};
 use serde::{Deserialize, Serialize};
 use std::{path::Path, sync::Arc, time::Duration};
 use tokio::sync::{mpsc, oneshot};
 
 pub(super) struct Change {
-    enabled: bool,
+    target: Target,
     reply: oneshot::Sender<Result<privacy::Snapshot>>,
+}
+
+#[derive(Clone, Copy)]
+enum Target {
+    Privacy(bool),
+    Resolution(Resolution),
 }
 
 pub(super) struct Pending {
@@ -28,38 +34,44 @@ pub(crate) async fn remote_desktop_privacy(
     id: String,
     enabled: Option<bool>,
     ticket: Option<String>,
+    resolution: Option<Resolution>,
 ) -> std::result::Result<Progress, String> {
     #[cfg(windows)]
     if crate::desktop_service::delegation::delegated(&id) {
         return crate::desktop_service::delegation::call(
             "remote_desktop_privacy",
             &id,
-            serde_json::json!({"enabled": enabled, "ticket": ticket}),
+            serde_json::json!({"enabled": enabled, "ticket": ticket, "resolution": resolution}),
         )
         .await;
     }
-    request(&id, enabled, ticket.as_deref())
+    request(&id, enabled, ticket.as_deref(), resolution)
         .await
         .map_err(crate::remote_desktop::safe_error)
 }
 
-async fn request(id: &str, enabled: Option<bool>, ticket: Option<&str>) -> Result<Progress> {
+async fn request(
+    id: &str,
+    enabled: Option<bool>,
+    ticket: Option<&str>,
+    resolution: Option<Resolution>,
+) -> Result<Progress> {
     if ticket.is_some_and(|value| value.len() > 64) {
         return Err(DesktopError::Invalid);
     }
     let stream = super::current(id).await?;
     let mut pending = stream.privacy_pending.lock().await;
-    match (enabled, ticket) {
-        (None, Some(ticket)) => return poll(&mut pending, ticket),
-        (Some(_), None) if pending.is_none() => {}
+    let target = match (enabled, ticket, resolution) {
+        (None, Some(ticket), None) => return poll(&mut pending, ticket),
+        (Some(enabled), None, None) if pending.is_none() => Target::Privacy(enabled),
+        (None, None, Some(size)) if pending.is_none() => Target::Resolution(size),
         _ => return Err(DesktopError::Invalid),
-    }
-    let enabled = enabled.ok_or(DesktopError::Invalid)?;
-    authorize(&stream, enabled).await?;
+    };
+    authorize(&stream, target).await?;
     let (reply, result) = oneshot::channel();
     stream
         .privacy
-        .try_send(Change { enabled, reply })
+        .try_send(Change { target, reply })
         .map_err(|_| DesktopError::Busy)?;
     let ticket = uuid::Uuid::new_v4().to_string();
     *pending = Some(Pending {
@@ -73,12 +85,15 @@ async fn request(id: &str, enabled: Option<bool>, ticket: Option<&str>) -> Resul
     })
 }
 
-async fn authorize(stream: &Arc<Stream>, _enabled: bool) -> Result<()> {
+async fn authorize(stream: &Arc<Stream>, target: Target) -> Result<()> {
     let id = &stream.id;
     let session_id = id.to_owned();
     #[cfg(windows)]
     let runtime = stream.runtime.clone();
     tauri::async_runtime::spawn_blocking(move || {
+        if let Target::Resolution(size) = target {
+            return super::resolution::authorize(&session_id, size);
+        }
         crate::remote_desktop::with_lease(&session_id, |session| {
             if !session.permissions.control {
                 return Err(DesktopError::Denied);
@@ -92,7 +107,7 @@ async fn authorize(stream: &Arc<Stream>, _enabled: bool) -> Result<()> {
         // Release the session lock before checking/installing. A confirmation request returns
         // before queueing a display change, so capture and the ordinary desktop remain usable.
         #[cfg(windows)]
-        if _enabled {
+        if matches!(target, Target::Privacy(true)) {
             crate::remote_desktop::privacy_setup::prepare(&runtime)?;
         }
         Ok(())
@@ -134,7 +149,7 @@ pub(super) async fn apply(
     // Keep viewer authorization and the guardian alive while the encoder is stopped.
     let transaction = tokio::time::timeout(
         Duration::from_secs(45),
-        switch(stream, path, encoder, request.enabled),
+        switch(stream, path, encoder, request.target),
     );
     tokio::pin!(transaction);
     let mut tick = tokio::time::interval(Duration::from_secs(2));
@@ -159,6 +174,28 @@ pub(super) async fn apply(
 }
 
 async fn switch(
+    stream: &Stream,
+    path: &Path,
+    encoder: &mut Encoder,
+    target: Target,
+) -> Result<privacy::Snapshot> {
+    if let Target::Resolution(size) = target {
+        encoder.stop().await;
+        let state = super::resolution::apply(&stream.id, size).await?;
+        let first = reopen(stream, path, encoder).await?;
+        super::pump::send_frame(stream, first).await?;
+        return Ok(state);
+    }
+    switch_privacy(
+        stream,
+        path,
+        encoder,
+        matches!(target, Target::Privacy(true)),
+    )
+    .await
+}
+
+async fn switch_privacy(
     stream: &Stream,
     path: &Path,
     encoder: &mut Encoder,
@@ -206,7 +243,7 @@ async fn switch(
 async fn snapshot(id: &str) -> Result<privacy::Snapshot> {
     let id = id.to_owned();
     tauri::async_runtime::spawn_blocking(move || {
-        crate::remote_desktop::with_lease(&id, |session| privacy::snapshot(session))
+        crate::remote_desktop::with_session(&id, |session| privacy::snapshot(session))
     })
     .await
     .map_err(|_| DesktopError::Privacy)?
@@ -242,6 +279,7 @@ mod tests {
             Err(DesktopError::Expired)
         ));
         let snapshot = privacy::Snapshot {
+            resolutions: vec![],
             displays: vec![],
             display_id: "virtual".into(),
             privacy_screen: true,

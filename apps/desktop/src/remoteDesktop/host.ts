@@ -1,5 +1,6 @@
 import { object, type IceServer } from '../../../../shared/remote-chat/protocol';
-import { validateSettings, type DesktopDisplays, type DesktopOffer, type DesktopSettings, type DesktopSignal, type DesktopSignalReply }
+import { validateResolution, validateSettings, type DesktopDisplays, type DesktopOffer, type DesktopResolution,
+  type DesktopSettings, type DesktopSignal, type DesktopSignalReply }
   from '../../../../shared/remote-desktop/protocol';
 import { HostSession } from './hostSession';
 import type { ConnectionDiagnostic } from '../../../../shared/remote-chat/diagnostics';
@@ -14,6 +15,7 @@ export interface DesktopHostSession {
   signal(signal: DesktopSignal): Promise<DesktopSignalReply>;
   update(settings: DesktopSettings): Promise<void>;
   privacy?(enabled: boolean): Promise<DesktopDisplays>;
+  resolution?(resolution: DesktopResolution): Promise<DesktopDisplays>;
   renew?(expiresAt: number): Promise<void>;
 }
 
@@ -60,6 +62,9 @@ export class RemoteDesktopHost {
       throw new Error('桌面连接已结束，请重新连接。');
     }
     switch (body.action) {
+      case 'resolution':
+        if (!active.session.resolution) throw new Error('这台电脑暂不支持切换分辨率。');
+        return active.session.resolution(validateResolution(body.resolution));
       case 'privacy':
         if (typeof body.enabled !== 'boolean') throw new Error('远程操作无效，请重试。');
         if (!active.session.privacy) throw new Error('这台电脑暂不支持隐私屏。');

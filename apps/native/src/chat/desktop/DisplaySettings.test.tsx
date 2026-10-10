@@ -31,6 +31,21 @@ const displays: DesktopDisplay[] = [
 ];
 afterEach(() => vi.unstubAllGlobals());
 
+it.each([false, true])('selects supported resolutions and disables changes while saving=%s', saving => {
+  vi.stubGlobal('React', React);
+  const change = vi.fn(async () => {});
+  const size = { width: 2560, height: 1440 };
+  const tree = nodes(DisplaySettings({ settings: { ...DEFAULT_SETTINGS, displayId: 'first' }, displays,
+    update: vi.fn(), saving, close: vi.fn(), stats: { visible: true, toggle: vi.fn() },
+    resolution: { options: [{ width: 1920, height: 1080 }, size], change } }));
+  const current = tree.find(node => node.props.accessibilityLabel === '1920 × 1080')!;
+  const option = tree.find(node => node.props.accessibilityLabel === '2560 × 1440')!;
+  expect(current.props.accessibilityState?.checked).toBe(true);
+  expect(option.props.accessibilityState).toEqual({ checked: false, disabled: saving });
+  expect(option.props.disabled).toBe(saving);
+  if (!saving) { option.props.onPress!(); expect(change).toHaveBeenCalledWith(size); }
+});
+
 it.each([false, true])('shows selected display, wraps labels and prevents repeat switches while saving=%s', saving => {
   vi.stubGlobal('React', React);
   const update = vi.fn(async () => {});

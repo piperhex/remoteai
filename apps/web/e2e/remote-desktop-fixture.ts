@@ -1,4 +1,4 @@
-import type { DesktopDisplay, DesktopInput, DesktopSettings, DesktopSystemPermission }
+import type { DesktopDisplay, DesktopInput, DesktopResolution, DesktopSettings, DesktopSystemPermission }
   from '../../../shared/remote-desktop/protocol';
 import { RemoteDesktopHost } from '../../desktop/src/remoteDesktop/host';
 import { HostSession } from '../../desktop/src/remoteDesktop/hostSession';
@@ -40,6 +40,7 @@ let selected = displays[0];
 const multiDisplay = new URLSearchParams(location.search).has('displays');
 export const desktopTest = { inputs: [] as DesktopInput[], settings: [] as DesktopSettings[],
   privacyChanges: [] as boolean[],
+  resolutionChanges: [] as DesktopResolution[],
   privacyInstallationRequired: new URLSearchParams(location.search).has('privacy-install'),
   permissionRequired: (new URLSearchParams(location.search).has('permissions')
     ? 'screenRecording' : null) as DesktopSystemPermission | null,
@@ -166,13 +167,16 @@ if (window.desktopRelayFixture) {
 }
 // The privacy fixture substitutes display management only; media still uses the production peer.
 const privacyFixture = new URLSearchParams(location.search).has('privacy');
-const host = new RemoteDesktopHost(privacyFixture ? (settings, ice, expiry, diagnostic) => {
+const resolutionFixture = new URLSearchParams(location.search).has('resolutions');
+const resolutions = [{ width: 1600, height: 900 }, { width: 1920, height: 1080 }, { width: 2560, height: 1440 }];
+const host = new RemoteDesktopHost(privacyFixture || resolutionFixture ? (settings, ice, expiry, diagnostic) => {
   const session = new HostSession(settings, ice, expiry, diagnostic);
   return {
     get closed() { return session.closed; },
     open: async () => {
       const offer = await session.open();
-      return { ...offer, capabilities: { ...offer.capabilities, privacyScreen: true } };
+      return { ...offer, resolutions: resolutionFixture ? resolutions : [],
+        capabilities: { ...offer.capabilities, privacyScreen: privacyFixture, resolution: resolutionFixture } };
     },
     signal: signal => session.signal(signal), update: settings => session.update(settings), close: () => session.close(),
     privacy: async enabled => {
@@ -181,7 +185,13 @@ const host = new RemoteDesktopHost(privacyFixture ? (settings, ice, expiry, diag
       }
       desktopTest.privacyChanges.push(enabled);
       selected = enabled ? { ...displays[0], id: 'private', name: 'Privacy' } : displays[0];
-      return { displays: enabled ? [selected] : displays, displayId: selected.id, privacyScreen: enabled };
+      return { displays: enabled ? [selected] : displays, displayId: selected.id, privacyScreen: enabled, resolutions };
+    },
+    resolution: async size => {
+      desktopTest.resolutionChanges.push(size);
+      selected.width = size.width; selected.height = size.height;
+      return { displays: selected.id === 'private' ? [selected] : displays, displayId: selected.id,
+        privacyScreen: selected.id === 'private', resolutions };
     },
   };
 } : undefined);

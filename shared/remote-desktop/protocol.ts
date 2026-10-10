@@ -2,6 +2,8 @@ import type { IceServer } from '../remote-chat/protocol';
 
 export const DESKTOP_OPERATION = 'remoteDesktop';
 export const MAX_FPS = 144;
+const MIN_RESOLUTION_DIMENSION = 320;
+const MAX_RESOLUTION_DIMENSION = 8192;
 export const DEFAULT_SETTINGS: DesktopSettings = { fps: 'auto', quality: 'auto' };
 export type DesktopQuality = 'auto' | 'smooth' | 'clear' | 'original';
 export type DesktopVideoCodec = 'h264' | 'h265';
@@ -18,10 +20,13 @@ export type DesktopPlatform = 'windows' | 'macos';
 export type DesktopSystemPermission = 'screenRecording' | 'accessibility';
 export interface DesktopPermissionStatus { required: DesktopSystemPermission | null }
 export interface DesktopDisplays {
+  resolutions?: DesktopResolution[];
   privacyScreen?: boolean;
   displays?: DesktopDisplay[]; displayId?: string; permissions?: DesktopPermissions; platform?: DesktopPlatform;
 }
+export interface DesktopResolution { width: number; height: number }
 export interface DesktopCapabilities {
+  resolution?: boolean;
   privacyScreen?: boolean;
   platform?: DesktopPlatform;
   keyboard?: boolean; clipboard?: boolean; horizontalScroll?: boolean; control?: boolean;
@@ -63,6 +68,7 @@ export interface DesktopClient {
   signal(id: string, signal: DesktopSignal): Promise<DesktopSignalReply>;
   settings(id: string, settings: DesktopSettings): Promise<void>;
   privacy?(id: string, enabled: boolean): Promise<DesktopDisplays>;
+  resolution?(id: string, resolution: DesktopResolution): Promise<DesktopDisplays>;
   close(id: string): Promise<void>;
 }
 
@@ -78,8 +84,19 @@ export function desktopClient(request: <T>(body: object) => Promise<T>,
     signal: (id, signal) => call('signal', { id, ...signal }),
     settings: (id, settings) => call('settings', { id, settings }),
     privacy: (id, enabled) => call('privacy', { id, enabled }),
+    resolution: (id, resolution) => call('resolution', { id, resolution }),
     close: id => call('close', { id }),
   };
+}
+
+export function validateResolution(value: unknown): DesktopResolution {
+  const size = value as Partial<DesktopResolution> | null;
+  if (!size || !Number.isInteger(size.width) || !Number.isInteger(size.height)
+    || size.width! < MIN_RESOLUTION_DIMENSION || size.height! < MIN_RESOLUTION_DIMENSION
+    || size.width! > MAX_RESOLUTION_DIMENSION || size.height! > MAX_RESOLUTION_DIMENSION) {
+    throw new Error('请选择有效的分辨率。');
+  }
+  return { width: size.width!, height: size.height! };
 }
 
 export function validateSettings(value: unknown): DesktopSettings {

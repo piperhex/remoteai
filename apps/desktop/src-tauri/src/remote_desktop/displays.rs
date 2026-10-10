@@ -1,5 +1,12 @@
 use serde::{Deserialize, Serialize};
 
+/// Pixel dimensions selected from the active display's supported modes.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub(crate) struct Resolution {
+    pub width: u32,
+    pub height: u32,
+}
+
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum HostPlatform {
@@ -20,6 +27,8 @@ pub(crate) struct DisplayInfo {
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Opened {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub resolutions: Vec<Resolution>,
     #[serde(default)]
     pub platform: Option<HostPlatform>,
     #[serde(default)]

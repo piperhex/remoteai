@@ -1,4 +1,11 @@
 export const remoteDesktopMessages: Record<string, string> = {
+  '分辨率': 'Resolution',
+  '调整远程电脑的桌面大小': 'Change the remote desktop resolution',
+  '这台电脑暂不支持切换分辨率。': 'Resolution changes are unavailable on this computer.',
+  '请选择有效的分辨率。': 'Choose a valid resolution.',
+  '正在调整显示，请稍候。': 'Adjusting the display…',
+  '正在切换分辨率，请稍候。': 'Changing resolution…',
+  '分辨率未能切换，请选择其他分辨率后重试。': 'Could not change resolution. Try another resolution.',
   '未能获取 Mac 的屏幕画面。请确认电脑已登录；若已开启屏幕录制仍无效，请在 Mac 的远程设置中修复权限。':
     'Could not capture the Mac screen. Make sure you are signed in. '
     + 'If Screen Recording is already allowed, repair permissions in Remote settings on the Mac.',

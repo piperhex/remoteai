@@ -3,10 +3,11 @@ import { DesktopReceiver } from './receiver';
 import { DesktopPointer } from './input';
 import { DesktopRecovery, DESKTOP_OFFLINE_STATUS } from './recovery';
 import { DesktopDirectRetry } from './directRetry';
+import { changeDesktopDisplay } from './displayActions';
 import { waitingForDesktopPermission } from './permissionWait';
 import type { ClipboardContent, ClipboardProgress } from './clipboard';
 import { DEFAULT_SETTINGS, validateSettings, type DesktopCapabilities, type DesktopClient, type DesktopDisplay,
-  type DesktopSettings, type DesktopStats }
+  type DesktopResolution, type DesktopSettings, type DesktopStats }
   from './protocol';
 
 interface Options {
@@ -23,6 +24,7 @@ export function useDesktopSession({ client, active, connected = true, createPeer
   const updating = useRef(false);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [displays, setDisplays] = useState<DesktopDisplay[]>([]);
+  const [resolutions, setResolutions] = useState<DesktopResolution[]>([]);
   const [stream, setStream] = useState<MediaStream>();
   const [status, setStatus] = useState('正在连接桌面…');
   const [stats, setStats] = useState<DesktopStats>();
@@ -49,6 +51,7 @@ export function useDesktopSession({ client, active, connected = true, createPeer
 
   useEffect(() => {
     setStream(undefined); setStats(undefined); setHasAudio(false); setCapabilities({}); setPrivacyScreen(false);
+    setResolutions([]);
     if (!active) return;
     if (!available.current) { recovery.current?.failed(DESKTOP_OFFLINE_STATUS); return; }
     const session = new DesktopReceiver({ client, createPeer, directRetry, stream: setStream, status: setStatus,
@@ -57,6 +60,7 @@ export function useDesktopSession({ client, active, connected = true, createPeer
       stats: setStats, audio: setHasAudio, capabilities: setCapabilities, displays: value => {
         setPrivacyScreen(value.privacyScreen === true);
         setDisplays(value.displays ?? []);
+        setResolutions(value.resolutions ?? []);
         settingsRef.current = { ...settingsRef.current, displayId: value.displayId };
         setSettings(settingsRef.current);
       } });
@@ -91,17 +95,14 @@ export function useDesktopSession({ client, active, connected = true, createPeer
   const mute = (value: boolean) => {
     mutedRef.current = value; setMuted(value); receiver.current?.mute(value);
   };
-  const togglePrivacy = async () => {
-    const current = receiver.current;
-    if (!current || updating.current || !capabilities.privacyScreen || capabilities.control === false) return;
-    updating.current = true; setSaving(true); pointer.release(); setStatus('正在切换隐私屏，请稍候。');
-    try {
-      await current.privacy(!privacyScreen);
-      if (receiver.current === current) setStatus('');
-    } catch (error) {
-      if (receiver.current === current) setStatus(error instanceof Error ? error.message : '隐私屏未能切换，请重试。');
-    } finally { updating.current = false; setSaving(false); }
-  };
+  const displayAction = { receiver, updating, saving: setSaving, status: setStatus, release: () => pointer.release() };
+  const togglePrivacy = () => changeDesktopDisplay({ ...displayAction,
+    allowed: capabilities.privacyScreen === true && capabilities.control !== false,
+    message: '正在切换隐私屏，请稍候。', run: current => current.privacy(!privacyScreen) });
+  const resolution = { options: capabilities.resolution && capabilities.control !== false ? resolutions : [],
+    change: (size: DesktopResolution) => changeDesktopDisplay({ ...displayAction,
+      allowed: capabilities.resolution === true && capabilities.control !== false,
+      message: '正在切换分辨率，请稍候。', run: current => current.resolution(size) }) };
   const currentClipboard = () => {
     if (!capabilities.clipboard) throw new Error(capabilities.control === undefined
       ? '请更新远程电脑上的应用，启用实体键盘和剪贴板。' : '电脑未允许剪贴板操作，请在电脑的设置中调整。');
@@ -115,7 +116,7 @@ export function useDesktopSession({ client, active, connected = true, createPeer
       currentClipboard().write(content, paste, progress),
   };
   return { stream, status, stats, settings, displays, update, saving, pointer, muted, mute, hasAudio, clipboard, capabilities,
-    privacyScreen, togglePrivacy, frameRendered: () => receiver.current?.frameRendered(stream),
+    privacyScreen, togglePrivacy, resolution, frameRendered: () => receiver.current?.frameRendered(stream),
     waitingForPermission: waitingForDesktopPermission(status),
     input: (input: Parameters<DesktopReceiver['input']>[0]) => receiver.current?.input(input),
     retry: () => {

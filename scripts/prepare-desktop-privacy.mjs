@@ -48,6 +48,7 @@ async function driver() {
   const target = join(destination, 'privacy-driver');
   await mkdir(target, { recursive: true });
   for (const name of ['MttVDD.inf', 'MttVDD.dll', 'mttvdd.cat']) await cp(join(folder, name), join(target, name));
+  await cp(join(source, 'vdd_settings.xml'), join(target, 'vdd_settings.xml'));
   await cp(join(source, 'LICENSE-VirtualDisplayDriver'), join(target, 'LICENSE.txt'));
 }
 
