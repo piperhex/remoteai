@@ -18,6 +18,12 @@ html:has(.app-shell.chat-active), body:has(.app-shell.chat-active) { overscroll-
   color: var(--chat-ink); background: var(--chat-background); font-size: 15px; line-height: 1.6;
 }
 .chat-conversation { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.chat-sidebar, .chat-drawer .ant-drawer-header, .chat-thread-controls,
+.chat-thread-list, .chat-drawer-footer, .chat-header {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
 .chat-sidebar {
   order: -1; display: flex; flex-direction: column; flex: 0 0 clamp(240px, 23vw, 300px);
   min-height: 0; min-width: 0; border-right: 1px solid var(--chat-border); background: #f8faf9;

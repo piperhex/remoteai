@@ -52,7 +52,11 @@
   .sidebarTitle { background-image: none; color: CanvasText; -webkit-text-fill-color: CanvasText; }
 }
 .sidebarActions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-.sidebarHeading[data-tauri-drag-region], .header[data-tauri-drag-region] { user-select: none; }
+.sidebar, .header, .projectBar, .composerControls, .composerHint {
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: default;
+}
 .sidebar .threadFilter {
   --filter-radius: 999px;
   --filter-highlight: color-mix(in srgb, var(--panel) 78%, transparent);

@@ -37,6 +37,8 @@ async function mockCommands(page: Page) {
     }
     if (command === "codex_gui_cli_status") result = { version: "0.1.0" };
     if (command === "codex_gui_connect") result = [];
+    if (command === "codex_gui_queue_read") result = { revision: 0, threads: {} };
+    if (command === "codex_gui_queue_save") result = args.snapshot;
     if (command === "codex_gui_events") result = { cursor: { streamId: "test", sequence: 1 }, reset: false, events: [] };
     if (command === "codex_gui_model_settings") result = { threadId: null, selection: null, revision: 0 };
     if (command === "codex_gui_scheduled_tasks") result = [task];
@@ -51,6 +53,9 @@ async function mockCommands(page: Page) {
     if (command === "codex_gui_request") {
       const request = args.request as { operation: string };
       let data: unknown = { data: [], nextCursor: null };
+      if (request.operation === "models") data = { data: [{ id: "test-model", model: "test-model",
+        displayName: "测试模型", isDefault: true, defaultReasoningEffort: "medium",
+        supportedReasoningEfforts: [{ reasoningEffort: "medium", description: "" }] }], nextCursor: null };
       if (request.operation === "list") data = { data: migrated
         ? [thread, { ...thread, id: sourceThread.sessionId, name: sourceThread.title, cwd: sourceThread.cwd }]
         : [thread], nextCursor: null };
