@@ -50,6 +50,11 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.msvcArch }}
+      - uses: swatinem/rust-cache@v2
+        with:
+          key: installer-helper-${{ matrix.target }}
+          cache-bin: false
+          workspaces: apps/desktop/src-tauri/installer-helper
       - name: Check formatting, lint, and shutdown behavior
         run: node scripts/check-installer-helper.mjs
       - name: Test runtime dependency checks

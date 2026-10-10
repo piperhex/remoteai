@@ -18,6 +18,12 @@ concurrency:
   group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
+env:
+  CARGO_NET_GIT_FETCH_WITH_CLI: 'true'
+  # Check/test dependencies do not need full debug symbols. Release profiles stay unchanged.
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_PROFILE_TEST_DEBUG: '0'
+
 jobs:
   create-release:
     name: Create GitHub Release
@@ -194,7 +200,12 @@ jobs:
       - name: Cache Rust build artifacts
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: "./apps/desktop/src-tauri -> target"
+          # Cross-compilation targets can share a runner host, but need separate caches.
+          key: desktop-${{ matrix.name }}
+          cache-bin: false
+          workspaces: |
+            apps/desktop/src-tauri
+            apps/desktop/src-tauri/installer-helper
 
       - name: Install frontend dependencies
         run: npm ci
@@ -304,6 +315,7 @@ jobs:
         run: npm ci
 
       - name: Install Android NDK
+        id: android-ndk
         shell: bash
         run: |
           set -euo pipefail
@@ -324,6 +336,7 @@ jobs:
           for attempt in 1 2 3; do
             if "$sdkmanager" "ndk;$ndk_version" \
               && [[ -f "$android_sdk_root/ndk/$ndk_version/source.properties" ]]; then
+              echo "version=$ndk_version" >> "$GITHUB_OUTPUT"
               exit 0
             fi
 
@@ -339,6 +352,13 @@ jobs:
 
       - name: Install Rust connectivity toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+      - name: Cache Android Rust dependencies and cargo-ndk
+        uses: swatinem/rust-cache@v2
+        with:
+          key: android-ndk-${{ steps.android-ndk.outputs.version }}-cargo-ndk-4.1.2-all-abis
+          workspaces: crates/chat-connectivity
       - name: Install connectivity build dependencies
         run: |
           sudo apt-get update
@@ -351,6 +371,19 @@ jobs:
       - name: Generate Android project
         working-directory: apps/native
         run: npm run prebuild:android
+
+      - name: Cache Gradle downloads
+        uses: actions/cache@v5
+        with:
+          # Cache downloaded modules and Gradle distributions, not ABI-dependent task outputs.
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper
+          key: >-
+            gradle-downloads-${{ runner.os }}-java17-${{
+              hashFiles('package-lock.json', 'apps/native/android/**/*.gradle*',
+                'apps/native/android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-downloads-${{ runner.os }}-java17-
 
       - name: Build release APK
         working-directory: apps/native
@@ -423,8 +456,21 @@ jobs:
 
       - name: Install Rust connectivity toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim,x86_64-apple-ios
       - name: Install connectivity build dependencies
         run: brew install protobuf
+      - name: Identify Apple build toolchain
+        id: apple-cache
+        shell: bash
+        run: echo "version=$(xcodebuild -version | shasum -a 256 | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+      - name: Cache iOS Rust dependencies
+        uses: swatinem/rust-cache@v2
+        with:
+          # Match chat-connectivity.yml so new tags can read the default branch cache.
+          shared-key: chat-connectivity-macos-15-${{ steps.apple-cache.outputs.version }}
+          cache-bin: false
+          workspaces: crates/chat-connectivity
 
       - name: Type-check native app
         run: npm run check -w @codex-switch/native
@@ -432,6 +478,17 @@ jobs:
       - name: Generate iOS project
         working-directory: apps/native
         run: npm run prebuild:ios
+
+      - name: Cache CocoaPods downloads
+        uses: actions/cache@v5
+        with:
+          # Always regenerate Pods and the app; only reuse downloaded dependency sources.
+          path: ~/Library/Caches/CocoaPods
+          key: >-
+            cocoapods-downloads-${{ runner.os }}-${{ runner.arch }}-${{
+              hashFiles('package-lock.json', 'apps/native/ios/Podfile',
+                'apps/native/ios/Podfile.properties.json', 'apps/native/plugins/**/*.podspec') }}
+          restore-keys: cocoapods-downloads-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Install iOS Pods
         working-directory: apps/native/ios

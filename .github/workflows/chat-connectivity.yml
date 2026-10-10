@@ -27,6 +27,8 @@ jobs:
     timeout-minutes: 45
     env:
       CARGO_NET_GIT_FETCH_WITH_CLI: 'true'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -41,8 +43,16 @@ jobs:
         run: brew install protobuf
       - if: runner.os == 'Windows'
         run: choco install protoc --no-progress -y
+      - name: Identify Apple build toolchain
+        if: runner.os == 'macOS'
+        id: apple-cache
+        shell: bash
+        run: echo "version=$(xcodebuild -version | shasum -a 256 | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
       - uses: swatinem/rust-cache@v2
         with:
+          # iOS releases can reuse the default branch's device and simulator dependencies.
+          shared-key: chat-connectivity-${{ matrix.os }}-${{ steps.apple-cache.outputs.version }}
+          cache-bin: false
           workspaces: crates/chat-connectivity
       - run: cargo fmt --manifest-path crates/chat-connectivity/Cargo.toml --all --check
       - run: >-

@@ -33,6 +33,10 @@ jobs:
     runs-on: ${{ matrix.runner }}
     # A cold Intel Tauri build plus Clippy can consume the previous 30-minute limit before archive verification.
     timeout-minutes: 45
+    env:
+      # Keep debug assertions, but avoid archiving full debug symbols for CI dependencies.
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
@@ -44,6 +48,8 @@ jobs:
           components: rustfmt, clippy
       - uses: swatinem/rust-cache@v2
         with:
+          key: computer-use-${{ matrix.runner }}
+          cache-bin: false
           workspaces: "./apps/desktop/src-tauri -> target"
       - run: npm ci
       - run: brew install protobuf
