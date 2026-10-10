@@ -19,6 +19,7 @@ import type { AccessMode, GuiState } from "./types";
 import { ImageAttachments } from "./ImageAttachments";
 import { IMAGE_TYPES, useComposerDraft } from "./useComposerDraft";
 import { ModelPicker } from "./ModelPicker";
+import { useGuiRequestSpeed } from "./useGuiRequestSpeed";
 import { UsageStatus } from "./UsageStatus";
 import { ConversationTokenStatus } from './ConversationTokenStatus';
 import { ProjectPicker } from "./ProjectPicker";
@@ -41,6 +42,7 @@ export const Composer = forwardRef<ComposerHandle, {
   const key = state.selected ?? "new";
   const [dialog, setDialog] = useState<"files" | "goal" | null>(null);
   const goalMode = useGoalMode(state.selected, Boolean(state.goalBusy));
+  const requestSpeed = useGuiRequestSpeed(active);
   const workspaceBusy = Boolean(state.workspaceBusy);
   const { draft, reading, editContent, removeImage, editImage, addImages, paste, pasteKeyDown, send: sendDraft,
     addAttachments, removeAttachment, addQuote, removeQuote, clearQuotes, editQueued } = useComposerDraft(key, controller);
@@ -130,6 +132,7 @@ export const Composer = forwardRef<ComposerHandle, {
             <UsageStatus active={active} threadId={state.selected} tokenUsage={current?.tokenUsage} />
           </div>
           <ModelPicker models={state.models} model={state.settings.model} effort={state.settings.effort}
+            speed={requestSpeed}
             error={state.modelCatalogError}
             onOpen={() => void controller.refreshModels().catch(controller.report)}
             disabled={state.connection !== "ready" || Boolean(state.modelCatalogLoading)}

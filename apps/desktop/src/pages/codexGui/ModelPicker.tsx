@@ -1,17 +1,19 @@
 import { guiText } from "../../i18n/guiText";
 import { useEffect, useState, type KeyboardEvent } from "react";
 import { Button, Input, Popover, Tooltip } from "antd";
-import { Check, ChevronLeft, ChevronRight, RotateCcw, Search } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, RotateCcw, Search, Zap } from "lucide-react";
 import type { Model } from "./types";
 import { resolveModelSelection, type ModelSelection } from "./modelSelection";
 import styles from "./ModelPicker.module.less";
 import { GuiSpeedButton } from './GuiSpeedButton';
-import { EFFORT_LABELS } from '../../../../../shared/remote-chat/composer';
+import { EFFORT_LABELS, type RequestSpeed } from '../../../../../shared/remote-chat/composer';
+import { requestSpeedSuffix, speedBoltCount } from '../../../../../shared/remote-chat/requestSpeed';
 const EFFORT_ORDER = Object.keys(EFFORT_LABELS);
 const MODEL_SEARCH_THRESHOLD = 8;
 interface ModelPickerProps extends ModelSelection {
   models: Model[];
   disabled: boolean;
+  speed?: RequestSpeed;
   onChange: (selection: ModelSelection) => void;
   onOpen?: () => void;
   error?: string;
@@ -65,6 +67,7 @@ export function ModelPicker(props: ModelPickerProps) {
   const selected = models.find((entry) => entry.model === model);
   const modelLabel = selected?.displayName || model || guiText("正在加载模型…");
   const effortLabel = guiText(EFFORT_LABELS[effort] || effort);
+  const speedBolts = speedBoltCount(props.speed ?? 'normal');
   const recommended = resolveModelSelection(models, { model, effort: "" });
   const levels = [...(selected?.supportedReasoningEfforts ?? [])].sort((left, right) =>
     EFFORT_ORDER.indexOf(left.reasoningEffort) - EFFORT_ORDER.indexOf(right.reasoningEffort));
@@ -123,9 +126,14 @@ export function ModelPicker(props: ModelPickerProps) {
     onOpenChange={changeOpen} content={panel} styles={{ root: { maxWidth: 400 },
       body: { padding: 0, borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 16px rgb(0 0 0 / 8%)" } }}>
     <button type="button" className={styles.trigger} disabled={disabled} aria-expanded={open && !disabled}
-      aria-label={guiText("模型与推理强度：{value1} {value2}", { value1: modelLabel, value2: effortLabel })}>
+      aria-label={guiText("模型与推理强度：{value1} {value2}", { value1: modelLabel, value2: effortLabel })
+        + requestSpeedSuffix(props.speed, guiText)}>
       <span className={styles.triggerModel}>{modelLabel}</span>
       {effortLabel && <span className={styles.triggerEffort}>{effortLabel}</span>}
+      {speedBolts > 0 && <span className={styles.triggerSpeed} aria-hidden="true" data-speed={props.speed}>
+        <span className={styles.speedSeparator}>·</span>
+        {Array.from({ length: speedBolts }, (_, index) => <Zap key={index} size="1em" />)}
+      </span>}
     </button>
   </Popover>;
 }

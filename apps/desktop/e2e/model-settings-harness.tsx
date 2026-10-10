@@ -6,6 +6,7 @@ import { Messages } from "../src/pages/codexGui/Messages";
 import { ModelPicker } from "../src/pages/codexGui/ModelPicker";
 import { ComposerSubmit } from "../src/pages/codexGui/ComposerSubmit";
 import { useUsageStatus } from "../src/pages/codexGui/useUsageStatus";
+import { useGuiRequestSpeed } from "../src/pages/codexGui/useGuiRequestSpeed";
 
 const controller = getGuiController();
 function Harness() {
@@ -13,6 +14,7 @@ function Harness() {
   const [text, setText] = useState("");
   const [beats, setBeats] = useState(0);
   const { usage } = useUsageStatus(true);
+  const speed = useGuiRequestSpeed(true);
   useEffect(() => { const stop = retainGuiSession(); void controller.connect(); return stop; }, []);
   useEffect(() => {
     const timer = setInterval(() => setBeats((count) => count + 1), 50);
@@ -29,7 +31,7 @@ function Harness() {
     <Messages selected={state.selected} value={state.selected ? state.conversations[state.selected] : undefined} />
     <section><textarea aria-label="聊天消息" value={text} onChange={(event) => setText(event.target.value)} />
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-        <ModelPicker models={state.models} {...state.settings} error={state.modelCatalogError}
+        <ModelPicker models={state.models} {...state.settings} speed={speed} error={state.modelCatalogError}
           disabled={state.connection !== "ready" || Boolean(state.modelCatalogLoading)} onChange={controller.settings}
           onOpen={() => void controller.refreshModels().catch(controller.report)} />
         <ComposerSubmit state={state} controller={controller} hasDraft={Boolean(text.trim())}
