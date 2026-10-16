@@ -24,6 +24,13 @@ body:has(.accounts-page)
 .accounts-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 18px 0; }
 .accounts-toolbar > span { display: flex; align-items: center; gap: 6px; color: var(--app-muted, #7b819e); font-size: 13px; }
 .accounts-toolbar .adm-button { flex-shrink: 0; font-weight: 650; }
+.accounts-toolbar-actions { display: flex; align-items: center; gap: 10px; }
+.accounts-toolbar .consume-quota-button { min-height: 40px; border-radius: 9px;
+  --background-color: #008568; --border-color: #008568; --text-color: #fff; }
+@media (max-width: 600px) {
+  .accounts-toolbar { flex-wrap: wrap; }
+  .accounts-toolbar-actions { margin-left: auto; gap: 6px; }
+}
 .accounts-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .account-row { --quota-color: #2aceac; display: flex; align-items: center; gap: 16px; min-width: 0;
   padding: 20px; border: 1px solid var(--app-border, #e4eeeb); border-radius: 17px; background: var(--app-surface, white);

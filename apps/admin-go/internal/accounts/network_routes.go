@@ -6,6 +6,7 @@ import (
 )
 
 func (s *service) registerAccountNetwork(r *gin.RouterGroup, read, write gin.HandlerFunc) {
+	s.registerQuotaConsumption(r, write)
 	r.GET(
 		"/accounts/:id/usage",
 		read,

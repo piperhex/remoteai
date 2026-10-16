@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/codex-switch/admin-go/internal/platform"
 )
@@ -37,6 +38,7 @@ func validateOutboundProxy(value string) error {
 type requestOptionsHTTP struct {
 	Context     context.Context
 	MaxBytes    int64
+	Timeout     time.Duration
 	URL, Method string
 	Body        interface{}
 	Form        url.Values
@@ -56,6 +58,11 @@ func (s *service) request(options requestOptionsHTTP) (*responseHTTP, error) {
 	client, err := s.outbound.client(s.deps.Config, options.Proxy)
 	if err != nil {
 		return nil, err
+	}
+	if options.Timeout > 0 {
+		copy := *client
+		copy.Timeout = options.Timeout
+		client = &copy
 	}
 	response, err := client.Do(request)
 	if err != nil {

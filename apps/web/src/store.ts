@@ -1,4 +1,5 @@
 import { t } from './i18n';
+import quotaConsumptionReducer, { consumeAllQuota } from './accounts/quotaConsumptionSlice';
 import { mergeRemoteModelState, remoteModelPath, type RemoteModelTarget } from '../../../shared/remote-chat/modelTarget';
 import { configureStore, createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import {
@@ -221,6 +222,14 @@ const dataSlice = createSlice({
     clearError(state) { state.error = null; },
   },
   extraReducers: (builder) => builder
+    .addCase(consumeAllQuota.fulfilled, (state, action) => {
+      const usage = new Map(action.payload.usage.map(item => [item.accountId, item.usage]));
+      state.accounts = state.accounts.map(account => {
+        const updated = usage.get(account.id);
+        return updated ? { ...account, plan: updated.plan ?? account.plan, usage: updated } : account;
+      });
+      state.lastRefreshAt = Date.now();
+    })
     .addCase(bootstrapApp.pending, (state) => { state.loading = true; })
     .addCase(bootstrapApp.fulfilled, (state, action) => {
       state.loading = false;
@@ -331,7 +340,9 @@ const dataSlice = createSlice({
     }),
 });
 
-export const store = configureStore({ reducer: { auth: authSlice.reducer, data: dataSlice.reducer } });
+export const store = configureStore({
+  reducer: { auth: authSlice.reducer, data: dataSlice.reducer, quotaConsumption: quotaConsumptionReducer },
+});
 subscribeSession((session) => store.dispatch(authSlice.actions.sessionUpdated(session)));
 
 export const { pageChanged, deviceSocketMessage, resetData, clearError: clearDataError } = dataSlice.actions;

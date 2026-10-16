@@ -98,7 +98,8 @@ func TestKongRoutesCoverRegisteredGoEndpoints(t *testing.T) {
 
 func TestKongRouteAuthenticationBoundaries(t *testing.T) {
 	services := readKongServices(t)
-	for _, path := range []string{"/sync/accounts", "/admin/api/users", "/devices", "/official-usage",
+	for _, path := range []string{"/sync/accounts", "/sync/accounts/account-id/quota/consume",
+		"/admin/api/users", "/devices", "/official-usage",
 		"/remote-assistance", "/chat-push/status", "/admin/api/update-sharing"} {
 		_, route := matchKongRoute(services, path)
 		if !hasKongAccountJWT(route) {

@@ -92,6 +92,99 @@ test('account overview, private details, 2FA, and nested sheets', async ({ page 
   expect(errors).toEqual([]);
 });
 
+test('one-click quota consumption stays compact, reports progress and refreshes usage', async ({ page }, info) => {
+  await navigate(page, '账号');
+  const ids: string[] = [];
+  let release: () => void = () => {};
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/sync/accounts/*/quota/consume', async route => {
+    expect(route.request().method()).toBe('POST');
+    expect(route.request().postDataJSON().requestId).toMatch(/^[0-9a-f-]{36}$/);
+    const id = route.request().url().split('/').at(-3)!;
+    ids.push(id);
+    await gate;
+    if (id === 'account-1') await route.fulfill({ status: 502, json: { message: '未确认完成' } });
+    else await route.fulfill({ json: { consumed: id !== 'account-3', skipped: id === 'account-3' } });
+  });
+  let usageRequests = 0;
+  await page.route('**/sync/accounts/*/usage', async route => {
+    usageRequests++;
+    if (route.request().url().includes('account-2')) {
+      await route.fulfill({ status: 500, json: { message: '查询失败' } });
+    } else await route.fulfill({ json: { primary: { remainingPercent: 42, usedPercent: 58 } } });
+  });
+  const button = page.getByRole('button', { name: '一键消耗', exact: true });
+  await expect(button).toBeVisible();
+  await expect(page.getByText('全部账号额度消耗', { exact: true })).toHaveCount(0);
+  await button.click();
+  await expect(button).toBeDisabled();
+  await expect(button).toContainText('消耗中… 0/4');
+  await expect.poll(() => ids.length).toBe(4);
+  await noOverflow(page);
+  await page.screenshot({ path: info.outputPath('quota-progress.png') });
+  release();
+  await expect(page.getByText('完成：成功 2，未确认 1，跳过 1；1 个账号用量刷新失败')).toBeVisible();
+  await expect(button).toBeEnabled();
+  expect(new Set(ids).size).toBe(4);
+  expect(ids.length).toBe(4);
+  expect(usageRequests).toBe(4);
+  await expect(page.locator('.account-row').first()).toContainText('42%');
+  await noOverflow(page);
+  await page.screenshot({ path: info.outputPath('quota-completed.png') });
+});
+
+test('quota progress survives navigation and cannot be started twice', async ({ page }) => {
+  await navigate(page, '账号');
+  let calls = 0;
+  let release: () => void = () => {};
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/sync/accounts/*/quota/consume', async route => {
+    calls++;
+    await gate;
+    await route.fulfill({ json: { consumed: true, skipped: false } });
+  });
+  await page.getByRole('button', { name: '一键消耗', exact: true }).click();
+  await expect.poll(() => calls).toBe(4);
+  await navigate(page, '设备');
+  await navigate(page, '账号');
+  await expect(page.getByRole('button', { name: '一键消耗', exact: true })).toBeDisabled();
+  release();
+  await expect(page.getByText('完成：成功 4，未确认 0，跳过 0')).toBeVisible();
+  expect(calls).toBe(4);
+});
+
+test('quota consumption limits concurrency and stops queued accounts on logout', async ({ page }) => {
+  await navigate(page, '账号');
+  await page.route('**/sync/accounts/web-summary', async route => {
+    const response = await route.fetch();
+    const payload = await response.json();
+    const sample = payload.accounts[0];
+    await route.fulfill({ json: { accounts: Array.from({ length: 9 }, (_, index) => ({
+      ...sample, id: `extra-${index}`, email: `extra-${index}@example.test`,
+    })) } });
+  });
+  await page.route('**/sync/accounts/*/usage', route => route.fulfill({ json: {} }));
+  await page.getByRole('button', { name: '批量刷新用量', exact: true }).click();
+  await expect(page.locator('.account-row')).toHaveCount(9);
+  let calls = 0;
+  let release: () => void = () => {};
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/sync/accounts/*/quota/consume', async route => {
+    calls++;
+    await gate;
+    await route.fulfill({ json: { consumed: true, skipped: false } });
+  });
+  await page.getByRole('button', { name: '一键消耗', exact: true }).click();
+  await expect.poll(() => calls).toBe(4);
+  await navigate(page, '设置');
+  await page.getByRole('button', { name: '退出登录', exact: true }).click();
+  await page.locator('.adm-dialog').getByRole('button', { name: '退出登录', exact: true }).click();
+  await expect(page.getByRole('button', { name: '登录并查看' })).toBeVisible();
+  release();
+  await expect(page.getByText('登录状态已改变，已停止消耗', { exact: true })).toBeVisible();
+  expect(calls).toBe(4);
+});
+
 test('2FA search, sorting, eight digits, editing and failed clipboard', async ({ page }, info) => {
   await navigate(page, '2FA');
   await page.getByRole('button', { name: '同步 2FA 密钥', exact: true }).click();

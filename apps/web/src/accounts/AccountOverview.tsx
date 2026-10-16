@@ -2,6 +2,7 @@ import { t, useLanguage } from '../i18n';
 import { Button } from 'antd-mobile';
 import { Clock3, Eye, EyeOff, Laptop, Plus, RefreshCw, Users } from 'lucide-react';
 import { displayDate } from './formatters';
+import { QuotaConsumptionButton } from './QuotaConsumptionButton';
 
 export function AccountOverview({ count, online, privateMode, refreshing, updatedAt, onPrivacy, onRefresh, onAdd }: {
   count: number; online: number; privateMode: boolean; refreshing: boolean; updatedAt: number | null;
@@ -22,7 +23,8 @@ export function AccountOverview({ count, online, privateMode, refreshing, update
       </div>
     </section>
     <div className="accounts-toolbar"><span><Clock3 size={16} />{t("用量更新：")}{updatedAt ? displayDate(new Date(updatedAt).toISOString()) : t("未刷新")}</span>
-      <Button fill="none" color="primary" onClick={onAdd}><Plus size={20} />{t("添加账户")}</Button>
+      <div className="accounts-toolbar-actions"><QuotaConsumptionButton />
+        <Button fill="none" color="primary" onClick={onAdd}><Plus size={20} />{t("添加账户")}</Button></div>
     </div>
   </>;
 }
