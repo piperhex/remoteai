@@ -46,8 +46,8 @@ interface ListProps {
   ListEmptyComponent: ReactNode; contentContainerStyle: unknown;
   ListHeaderComponent: ReactNode; refreshControl?: ReactNode;
 }
-interface DrawerProps { entry: { items: Item[] }; onOpen: (id: string) => void; onClose: () => void }
-interface DetailProps { item: Item; onBack: () => void }
+interface DrawerProps { entry: { items: Item[] }; onClose: () => void }
+interface DetailProps { item: Item }
 interface ActivityProps { item: Item; count: number; running: boolean; onOpen: () => void }
 
 beforeEach(() => {
@@ -198,7 +198,7 @@ function activityRow(tree: ReactNode): ActivityProps {
   return component(row.props).props;
 }
 
-it('opens all grouped commands, inspects one, and returns to live updates in the same drawer', () => {
+it('opens grouped commands in one drawer and keeps its items current through completion', () => {
   const live: Turn = { id: 'turn', status: 'inProgress', items: [command('first'), command('second', 'inProgress')] };
   let tree = render(live);
   expect(findElement(tree, 'WorkDrawer')).toBeUndefined();
@@ -209,14 +209,8 @@ it('opens all grouped commands, inspects one, and returns to live updates in the
   tree = render(live);
   const drawer = element<DrawerProps>(tree, 'WorkDrawer').props;
   expect(drawer.entry.items.map(item => item.id)).toEqual(['first', 'second']);
-  drawer.onOpen('first');
-  tree = render(live);
-  const detail = element<DetailProps>(tree, 'ToolDetails').props;
-  expect(detail.item.aggregatedOutput).toBe('output-first');
-  expect(findElement(tree, 'WorkDrawer')).toBeUndefined();
+  expect(findElement(tree, 'ToolDetails')).toBeUndefined();
   const updated = { ...live, items: [command('first'), command('second'), command('third', 'inProgress')] };
-  expect(element<DetailProps>(render(updated), 'ToolDetails').props.item.id).toBe('first');
-  detail.onBack();
   tree = render(updated);
   expect(element<DrawerProps>(tree, 'WorkDrawer').props.entry.items).toHaveLength(3);
   expect(activityRow(tree).item.id).toBe('third');

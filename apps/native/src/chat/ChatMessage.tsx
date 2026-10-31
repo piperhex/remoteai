@@ -80,8 +80,8 @@ function activitySummary(item: Item): { preview: string; icon: IconName } {
   return { icon, preview: [label, content, STATUS_LABELS[item.status ?? '']].filter(Boolean).join(' · ') };
 }
 
-export function ChatActivityRow({ item, onOpen, running = false, count }: {
-  item: Item; onOpen: (id: string) => void; running?: boolean; count?: number;
+export function ChatActivityRow({ item, onOpen, running = false, count, expanded }: {
+  item: Item; onOpen: (id: string) => void; running?: boolean; count?: number; expanded?: boolean;
 }) {
   const messageStyles = useMessageStyles();
   const color = useThemeColor();
@@ -91,10 +91,12 @@ export function ChatActivityRow({ item, onOpen, running = false, count }: {
   const preview = summary.preview.slice(0, PREVIEW_LENGTH).replace(/\s+/g, ' ').trim();
   const label = count ? t("client.mobile.viewAllActivities", { value1: preview, value2: count }) : preview;
   return <Pressable accessibilityRole="button" accessibilityLabel={label}
+    accessibilityState={expanded === undefined ? undefined : { expanded }}
     style={messageStyles.activity} onPress={() => onOpen(item.id)}>
     <ChatActivityLabel icon={summary.icon} text={preview} active={running && item.status === 'inProgress'}
       failed={item.status === 'failed'} />
-    <Ionicons name="chevron-forward" size={15} color={color(palette.muted, 'muted')} />
+    <Ionicons name={expanded ? 'chevron-down' : 'chevron-forward'} size={15}
+      color={color(palette.muted, 'muted')} />
   </Pressable>;
 }
 

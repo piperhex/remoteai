@@ -12,7 +12,7 @@ import { hasCompactTimelineGap } from '../../../../shared/chat/timelineSpacing';
 import { ChatActivity } from './ChatActivity';
 import { turnElapsedMs } from '../../../desktop/src/pages/codexGui/turnTiming';
 import { formatTurnDuration } from './formatters';
-import { AdaptiveSheet } from '../components/AdaptiveSheet';
+import { ChatWorkDrawer } from './ChatWorkDrawer';
 import { useDesktopLayout } from '../useDesktopLayout';
 import { useHistoryScroll } from './useHistoryScroll';
 import { ChatMessage } from './ChatMessage';
@@ -134,7 +134,6 @@ function ChatMessageHistory({ props, scroll }: {
   const item = selection?.type === 'item'
     ? turns.flatMap(turn => turn.items).find(item => item.id === selection.id) : undefined;
   const turn = selection?.type === 'turn' ? turns.find(turn => turn.id === selection.id) : undefined;
-  const back = selection?.type === 'item' ? selection.back : undefined;
   const close = () => setSelection(null);
   return <>
     <div ref={scroll.content} className={`chat-message-content${!entries.length ? ' is-empty' : ''}`}
@@ -165,15 +164,8 @@ function ChatMessageHistory({ props, scroll }: {
         {desktop && <div className="chat-empty-suggestions"><span>{t("client.chat.understandCode")}</span><span>{t("client.chat.buildAFeature")}</span>
           <span>{t("client.chat.troubleshoot")}</span></div>}</div>}
     </div>
-    {work && <AdaptiveSheet open title={work.turn.status === 'inProgress' ? t("client.chat.working") : t("client.chat.activity")}
-      subtitle={t("client.chat.actions", { value1: work.items.length })} width={760} onClose={close}>
-      <div className="chat-detail-stack">{work.items.map(item => <ChatMessage key={item.id} item={item} process
-        running={work.turn.status === 'inProgress' && item.status !== 'completed'} onQuote={close}
-        onOpen={id => open({ type: 'item', id,
-          back: { type: work.kind === 'activities' ? 'activities' : 'work', id: work.id } })} />)}</div>
-    </AdaptiveSheet>}
-    {item && <ChatToolDetails item={item} onClose={close}
-      onBack={back ? () => setSelection(back) : undefined} />}
+    {work && <ChatWorkDrawer key={selection?.id} entry={work} onClose={close} />}
+    {item && <ChatToolDetails item={item} onClose={close} />}
     {turn && selection?.type === 'turn' && <ChatTurnDetails turn={turn} panel={selection.panel} onClose={close} />}
     {drawers.panels}
   </>;

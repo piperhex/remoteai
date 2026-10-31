@@ -20,7 +20,7 @@ import type { ChatMessagesProps } from '../../../../shared/remote-chat/client/me
 import { palette, useStyles } from './styles';
 
 type ProcessSelection = { type: 'work' | 'activities'; id: string };
-type Selection = ProcessSelection | { type: 'item'; id: string; parent?: ProcessSelection }
+type Selection = ProcessSelection | { type: 'item'; id: string }
   | { type: 'turn'; id: string; panel: TurnPanel };
 
 const PROCESS_SEPARATOR_STYLE = { height: 14 };
@@ -113,7 +113,6 @@ export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder,
   const selectedTool = selection?.type === 'item'
     ? thread?.turns?.flatMap((turn) => turn.items).find((item) => item.id === selection.id) : undefined;
   const selectedTurn = selection?.type === 'turn' ? thread?.turns?.find((turn) => turn.id === selection.id) : undefined;
-  const parent = selection?.type === 'item' ? selection.parent : undefined;
   const close = () => setSelection(null);
   return <><View style={styles.fill}><FlatList ref={list} data={timeline} keyExtractor={(entry) => entry.id}
     style={showInitialLoading && styles.messageListLoading}
@@ -158,10 +157,8 @@ export function ChatMessages({ thread, loading, loadingMore, hasMore, loadOlder,
       <Text style={[styles.subtitle, styles.messageLoadingText]}>{t("client.chat.loadingChatHistory")}</Text>
     </View>}
     </View>
-    {selectedEntry && <ChatWorkDrawer entry={selectedEntry} onClose={close}
-      onOpen={(id) => open({ type: 'item', id, parent: processSelection })} />}
-    {selectedTool && <ChatToolDetails key={selectedTool.id} item={selectedTool} onClose={close}
-      onBack={parent ? () => open(parent) : undefined} />}
+    {selectedEntry && <ChatWorkDrawer key={processSelection?.id} entry={selectedEntry} onClose={close} />}
+    {selectedTool && <ChatToolDetails key={selectedTool.id} item={selectedTool} onClose={close} />}
     {selectedTurn && selection?.type === 'turn' && <ChatTurnDetails turn={selectedTurn}
       panel={selection.panel} onClose={close} />}
   </>;

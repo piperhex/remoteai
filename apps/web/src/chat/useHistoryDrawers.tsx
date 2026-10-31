@@ -6,7 +6,7 @@ import { ChatToolDetails } from './ChatToolDetails';
 import { ChatTurnDetails } from './ChatTurnDetails';
 
 type WorkSelection = { type: 'work' | 'activities'; id: string };
-export type HistorySelection = WorkSelection | { type: 'item'; id: string; back?: WorkSelection }
+export type HistorySelection = WorkSelection | { type: 'item'; id: string }
   | { type: 'turn'; id: string; panel: TurnPanel };
 type DrawerSelection = Exclude<HistorySelection, WorkSelection>;
 const tabId = (selection: DrawerSelection) =>

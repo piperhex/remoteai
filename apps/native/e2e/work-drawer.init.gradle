@@ -1,0 +1,9 @@
+// Verify production components without replacing the user's installed application.
+gradle.afterProject { project ->
+    if (project.path == ':app') {
+        project.layout.buildDirectory.set(new File(project.projectDir, 'build-work-drawer'))
+        project.android.defaultConfig.applicationId = 'com.codexswitch.mobile.workdrawertest'
+        project.extensions.getByName('react').entryFile = new File(project.rootDir, '../e2e/WorkDrawerFixture.tsx')
+        project.extensions.getByName('react').debuggableVariants = []
+    }
+}

@@ -1,0 +1,14 @@
+.chat-work-drawer .chat-inline-tool-content {
+  margin: 8px 0 0 7px;
+  padding: 0 0 12px 16px;
+  border-left: 1px solid var(--app-border, #dfe5e1);
+}
+.chat-work-drawer .chat-activity[aria-expanded='true'] > svg:last-child { transform: rotate(90deg); }
+.chat-work-drawer.mobile-popup-fullscreen {
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 0;
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+.chat-work-drawer.mobile-popup-fullscreen .sheet-drag-surface,
+.chat-work-drawer.mobile-popup-fullscreen .adaptive-sheet-content { flex: 1; min-height: 0; }
