@@ -1,5 +1,5 @@
 const KEY = "__CODEX_SWITCH_USAGE_STATUSLINE__";
-const VERSION = 9;
+const VERSION = 10;
 const REFRESH_MS = 1000;
 const TIMING_REFRESH_MS = 2000;
 const TIMING_TIMEOUT_MS = 10000;
@@ -47,6 +47,7 @@ const copy = {
 const state = { version: VERSION, disposed: false, busy: false, registry: null,
   nextDiscovery: 0, records: new Map(), timings: new Map(), node: null, parts: [],
   timingRequest: null, timingConversationId: null, nextTiming: 0 };
+const nativeUsage = createNativeUsageSubscription({ onChange: () => { void refresh(); } });
 const style = document.createElement("style");
 style.textContent = __USAGE_STATUSLINE_CSS__;
 document.head.append(style);
@@ -142,8 +143,10 @@ function readMetrics(id) {
   // Only read the selected local conversation. Never request/resume a thread or wrap its transport.
   const manager = state.registry?.getImplForHostId("local");
   const conversation = manager?.getConversation?.(id);
-  if (!conversation || conversation.resumeState === "needs_resume") return null;
-  const metrics = composerUsageMetrics(conversation, state.timings.get(id));
+  const subscribed = nativeUsage.get(id);
+  const snapshot = subscribed ? { latestTokenUsageInfo: subscribed }
+    : conversation?.resumeState === "needs_resume" ? null : conversation;
+  const metrics = composerUsageMetrics(snapshot, state.timings.get(id));
   if (metrics) state.records.set(id, metrics);
   if (state.records.size > 64) state.records.delete(state.records.keys().next().value);
   return metrics;
@@ -181,18 +184,19 @@ async function refresh() {
   if (!isStatuslineEnabled()) { api.dispose(); return; }
   if (state.disposed || state.busy || document.hidden) return;
   const card = activeComposer();
-  if (!card) { if (state.node) state.node.hidden = true; return; }
+  if (!card) { nativeUsage.select(null); if (state.node) state.node.hidden = true; return; }
   state.node ??= createStatusline();
   const dailyUsage = window.__CODEX_SWITCH_SPEED_SELECTOR__?.usageNode;
   if (dailyUsage && dailyUsage.parentElement !== state.node) state.node.append(dailyUsage);
   if (card.nextElementSibling !== state.node) card.after(state.node);
   state.node.hidden = false;
   const id = activeConversationId(card);
+  nativeUsage.select(id);
   renderMetrics(id ? state.records.get(id) : null);
   if (!id) { state.timingRequest = null; state.timingConversationId = null; return; }
   state.busy = true;
   try {
-    await discoverRegistry();
+    if (!nativeUsage.supported) await discoverRegistry();
     if (!state.disposed && activeConversationId(card) === id && card.isConnected) {
       requestTiming(id);
       renderMetrics(readMetrics(id));
@@ -202,10 +206,11 @@ async function refresh() {
 }
 
 const timer = setInterval(refresh, REFRESH_MS);
-const onVisible = () => { if (!document.hidden) void refresh(); };
+const onVisible = () => { if (document.hidden) nativeUsage.select(null); else void refresh(); };
 document.addEventListener("visibilitychange", onVisible);
 const api = { version: VERSION, refresh, receiveTiming, dispose() {
   state.disposed = true; clearInterval(timer); document.removeEventListener("visibilitychange", onVisible);
+  nativeUsage.dispose();
   state.node?.remove(); style.remove(); state.records.clear(); state.timings.clear(); state.timingRequest = null;
   state.registry = null;
   if (window[KEY] === api) delete window[KEY];

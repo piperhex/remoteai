@@ -213,6 +213,16 @@ test("ambiguous editor identities and missing registries cannot leak another con
   h.window.__CODEX_SWITCH_USAGE_STATUSLINE__.dispose();
 });
 
+test("proxy output speed remains available when the native conversation registry is absent", async () => {
+  const h = setup(); h.window.__CODEX_SWITCH_USAGE_STATUSLINE__.dispose();
+  delete h.window.__codexRoot; h.run(); await drain();
+  const bar = h.document.querySelector("[data-codex-switch-usage-statusline]");
+  assert.equal(bar.querySelector('[data-usage-metric="0"]').textContent, "51.0 tok/s");
+  assert.equal(bar.querySelector('[data-usage-metric="1"]').textContent, "缓存命中 —");
+  assert.equal(bar.querySelector('[data-usage-metric="2"]').textContent, "—");
+  h.window.__CODEX_SWITCH_USAGE_STATUSLINE__.dispose();
+});
+
 test("context ring follows the displayed percentage instead of remaining full", async () => {
   const h = setup(); await drain();
   const bar = h.document.querySelector("[data-codex-switch-usage-statusline]");

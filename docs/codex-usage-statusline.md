@@ -24,7 +24,8 @@ Remote AI 自己的聊天页和网页版继续使用原有统计界面。
   统计栏沿用 Codex 的次要文字颜色，并使用 13px 文字和 14px 图标，随明暗主题切换。
   上下文圆环使用与上方圆环相同的颜色，尺寸缩为 14px、1.4px 线宽；文字大小保持不变。
 
-缓存和上下文数据来自官方 Codex 已加载的当前本地会话；速度读取 Remote AI 已有的请求计时。
+缓存和上下文数据来自官方 Codex 已加载的当前本地会话；新版 Codex 使用本地会话的只读用量订阅，
+旧版继续读取已加载的会话管理器。速度读取 Remote AI 已有的请求计时，独立于缓存和上下文数据刷新。
 统计栏只读这些状态，不发送模型请求、不读认证文件、
 不扫描会话历史，也不启动额外的 HTTP 服务。会话切换、新建草稿和多个输入框并存时，不推断其他会话的数据。
 
@@ -36,7 +37,7 @@ Remote AI 自己的聊天页和网页版继续使用原有统计界面。
 
 ```sh
 npm run generate:i18n
-node --test scripts/codex-usage-metrics.test.mjs scripts/codex-usage-statusline.test.mjs
+node --test scripts/codex-native-usage-subscription.test.mjs scripts/codex-usage-metrics.test.mjs scripts/codex-usage-statusline.test.mjs
 node --test scripts/codex-usage-statusline.browser.test.mjs scripts/codex-usage-recovery.test.mjs
 node --test scripts/codex-usage-overlay.test.mjs scripts/codex-context-settings.test.mjs
 npm run check:i18n

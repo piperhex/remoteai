@@ -4,7 +4,7 @@ const root = new URL("../../apps/desktop/src-tauri/src/dream_skin_native/", impo
 const read = name => readFileSync(new URL(name, root), "utf8");
 const metrics = readFileSync(new URL("../../shared/context-usage/metrics.js", import.meta.url), "utf8");
 const footerCss = readFileSync(new URL("../../shared/chat/usageFooter.css", import.meta.url), "utf8");
-const body = [read("native_registry_reader.js"), read("context_usage_reader.js"),
+const body = [read("native_registry_reader.js"), read("native_usage_subscription.js"), read("context_usage_reader.js"),
   metrics.replaceAll("export ", ""), read("usage_statusline.js")
     .replace("__USAGE_STATUSLINE_CSS__", JSON.stringify(`${read("usage_statusline.css")}\n${footerCss}`))].join("\n");
 const install = `window.__CODEX_SWITCH_REFRESH_USAGE_STATUSLINE__ = () => { ${body} };`;

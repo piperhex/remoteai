@@ -106,6 +106,64 @@ for (const dark of [false, true]) {
   });
 }
 
+test('current Codex host subscriptions restore metrics without the legacy registry and follow new chats', async () => {
+  const page = await browser.newPage({ viewport: { width: 1100, height: 300 } });
+  try {
+    await page.route('http://codex-fixture.test/**', route => {
+      const isModule = route.request().url().endsWith('/assets/app-shared-fixture.js');
+      return route.fulfill({ contentType: isModule ? 'text/javascript' : 'text/html',
+        body: isModule ? `
+          const resource = () => ({ [Symbol.dispose]() {} });
+          export const services = { appServerManagers: {
+            openAccount() { throw new Error('Account access is not needed for usage'); },
+            subscribe(hostId, listener) {
+              if (hostId !== 'local') throw new Error('Unexpected host');
+              queueMicrotask(() => listener({ status: 'ready', manager: { dup() {
+                return { ...resource(), subscribe(options) {
+                  if (options.field !== 'tokenUsageInfo') throw new Error('Unexpected subscription');
+                  window.fixtureUsageSubscriptions ??= [];
+                  window.fixtureUsageSubscriptions.push(options);
+                  queueMicrotask(() => options.listener(window.fixtureNativeUsage));
+                  return resource();
+                } };
+              } } }));
+              return resource();
+            }
+          } };
+        ` : '<!doctype html><title>Native usage fixture</title>' });
+    });
+    await page.goto('http://codex-fixture.test/');
+    await setup(page, false);
+    await page.evaluate(() => {
+      window.__CODEX_SWITCH_USAGE_STATUSLINE__.dispose();
+      delete window.__codexRoot;
+      window.fixtureNativeUsage = { total: { inputTokens: 1000, cachedInputTokens: 650 },
+        last: { totalTokens: 2050 }, modelContextWindow: 10000 };
+      const preload = document.createElement('link');
+      preload.rel = 'modulepreload'; preload.href = '/assets/app-shared-fixture.js'; document.head.append(preload);
+    });
+    await page.evaluate(script);
+    const bar = page.getByRole('status', { name: '会话用量统计' });
+    await expect(bar).toHaveText('51.0 tok/s缓存命中 65.0%20.5%');
+    await page.evaluate(() => {
+      document.querySelector('[data-above-composer-conversation-id]')
+        .setAttribute('data-above-composer-conversation-id', 'local:second');
+      window.fixtureNativeUsage = null;
+    });
+    await expect(bar).toHaveText('51.0 tok/s缓存命中 ——');
+    await page.evaluate(() => {
+      const subscription = window.fixtureUsageSubscriptions.at(-1);
+      subscription.listener({ total: { inputTokens: 100, cachedInputTokens: 80 },
+        last: { totalTokens: 3200 }, modelContextWindow: 10000 });
+    });
+    await expect(bar).toHaveText('51.0 tok/s缓存命中 80.0%32.0%');
+    await page.locator('[contenteditable]').fill('The composer remains responsive');
+    await expect(page.locator('[contenteditable]')).toHaveText('The composer remains responsive');
+    await page.evaluate(() => window.__CODEX_SWITCH_USAGE_STATUSLINE__.dispose());
+    await expect(bar).toHaveCount(0);
+  } finally { await page.close(); }
+});
+
 test("Japanese and usage toggles stay responsive while conversation timings are pending", async () => {
   const page = await browser.newPage({ viewport: { width: 420, height: 320 } });
   try {
