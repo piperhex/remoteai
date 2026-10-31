@@ -26,13 +26,14 @@ import { verifyNativeAdminBadge } from './lounge-admin-badge-check.mjs';
 import { verifyNativeAccountPrivacy } from './lounge-account-privacy-check.mjs';
 import { verifyNativeGestures } from './lounge-gestures-check.mjs';
 import { verifyNativeLoungeScroll } from './lounge-scroll-check.mjs';
+import { verifyNativePrivateScroll } from './lounge-private-scroll-check.mjs';
 
 const exec = promisify(execFile);
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const serial = process.env.ANDROID_SERIAL;
 assert.ok(serial, 'Set ANDROID_SERIAL to a physical test device');
-const output = path.join(root, process.env.LOUNGE_TEXT_ONLY === '1'
-  ? `.codex-tmp/lounge-text-${serial}` : '.codex-tmp/lounge-android');
+const output = path.join(root, process.env.LOUNGE_TEST_OUTPUT ?? (process.env.LOUNGE_TEXT_ONLY === '1'
+  ? `.codex-tmp/lounge-text-${serial}` : '.codex-tmp/lounge-android'));
 const app = process.env.LOUNGE_TEST_APP ?? 'com.codexswitch.mobile.loungetest';
 const adb = async (...args) => (await exec('adb', ['-s', serial, ...args], {
   encoding: 'utf8', timeout: 60_000, windowsHide: true, maxBuffer: 4 * 1024 * 1024,
@@ -266,6 +267,10 @@ try {
     await find('在线交流'); if (scale === 1.3) await tap('Light fixture');
     await find('1'); await screenshot(`discovery-${scale}`);
     await tap('在线交流'); await find('搜索聊天');
+    if (process.env.LOUNGE_PRIVATE_SCROLL_ONLY === '1') {
+      await verifyNativePrivateScroll({ adb, tap, find, nodes, screenshot, scale, broadcast, incoming, image });
+      continue;
+    }
     if (process.env.LOUNGE_PRIVACY_ONLY === '1') {
       await verifyNativeAccountPrivacy({ tap, find, nodes, screenshot, scale, broadcast, incoming });
       continue;

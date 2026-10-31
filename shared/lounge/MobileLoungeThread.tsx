@@ -13,7 +13,7 @@ import type { LoungeAccount } from './types';
 export function MobileLoungeThread({ model, controller, mention }: {
   model: MobileLounge; controller: LoungeController; mention: (user: LoungeAccount) => void;
 }) {
-  const { state, scrollPositions, atBottom, updateScrollPosition } = model;
+  const { state, scrollPositions, following, updateScrollPosition } = model;
   const list = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const { focus, messages, highlight } = model.navigation;
@@ -25,8 +25,8 @@ export function MobileLoungeThread({ model, controller, mention }: {
   }, [scrollPositions, state.conversation, updateScrollPosition]);
   const scrollBottom = useCallback(() => {
     if (focus && highlight) { scrollToLoungeMessage(list.current, focus.key); return; }
-    if (atBottom && list.current) list.current.scrollTop = list.current.scrollHeight;
-  }, [atBottom, focus, highlight]);
+    if (following && list.current) list.current.scrollTop = list.current.scrollHeight;
+  }, [following, focus, highlight]);
   useLayoutEffect(() => {
     if (!focus) return;
     const frame = requestAnimationFrame(() => scrollToLoungeMessage(list.current, focus.key));
@@ -37,9 +37,9 @@ export function MobileLoungeThread({ model, controller, mention }: {
     if (!node || focus) return;
     const position = scrollPositions.current.get(state.conversation) ?? 0;
     // Restore before paint so receipt updates cannot discard a reader's next scroll event.
-    node.scrollTop = atBottom ? node.scrollHeight : position;
+    node.scrollTop = following ? node.scrollHeight : position;
     updatePosition();
-  }, [state.conversation, messages, atBottom, scrollPositions, focus, updatePosition]);
+  }, [state.conversation, messages, following, scrollPositions, focus, updatePosition]);
   useLayoutEffect(() => {
     if (!list.current || !content.current) return;
     const observer = new ResizeObserver(() => { scrollBottom(); updatePosition(); });

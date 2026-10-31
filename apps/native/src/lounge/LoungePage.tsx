@@ -55,6 +55,8 @@ export function LoungePage({ controller, onBack }: { controller: LoungeControlle
           keyboardShouldPersistTaps="handled" scrollEventThrottle={32} onScrollToIndexFailed={focus.failed}
           onContentSizeChange={scroll.onContentSizeChange} onLayout={scroll.onLayout}
           onScroll={scroll.onScroll} onScrollBeginDrag={scroll.onScrollBeginDrag}
+          onScrollEndDrag={scroll.onScrollEndDrag} onMomentumScrollBegin={scroll.onScrollBeginDrag}
+          onMomentumScrollEnd={scroll.onScrollEndDrag}
           renderItem={({ item }) => <LoungeMessage message={item} own={item.sender.id === state.user?.id}
             reply={model.quote} blocked={state.blocked.includes(item.sender.id)}
             direct={item.sender.id !== state.user?.id && state.directAvailable ? () => model.select(item.sender) : undefined}

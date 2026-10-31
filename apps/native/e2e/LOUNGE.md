@@ -11,6 +11,9 @@ The lounge does not request notifications or send system alerts.
 ## Mobile layout
 
 The chat header combines back navigation, the conversation title, member status and the Chats entry.
+Manual dragging and momentum take priority over automatic scrolling. Leaving the bottom preserves
+the reading position even within the read-receipt proximity threshold; reaching the bottom or using
+the latest-message shortcut resumes following. Native and mobile Web retain that position on reopening.
 Private chat accounts stay on one line with an ellipsis for overflow; presence is shown underneath.
 Chats opens a full-page searchable list with local message previews, drafts and unread badges; opening
 the list does not mark other conversations as read. Text, image attachments, quoted replies and scroll
@@ -78,6 +81,13 @@ wrapped Chinese messages and back navigation at font scales 1.0 and 1.3. Inspect
 do not establish that text is unclipped. `LOUNGE_TEST_APK` can select an isolated fixture APK when
 another build is using the default Android output directory. The mobile Web regression is
 `apps/desktop/e2e/lounge-text.pw.ts`, using the production Web entry at 320px and 390px.
+
+Set `LOUNGE_PRIVATE_SCROLL_ONLY=1` to verify small downward drags, stable message positions, reopening,
+longer history swipes and the latest-message shortcut with mixed-height image messages and read receipts.
+The physical Android runner covers font scales 1.0 and 1.3; inspect `private-idle-*`, `private-reopened-*`,
+`private-history-*` and `private-latest-*`. Set `LOUNGE_TEST_OUTPUT` to choose a separate capture directory.
+Mobile Web regressions in `apps/desktop/e2e/lounge-mobile-scroll.pw.ts` cover 320px and 390px layouts,
+incoming messages while reading near the bottom, restoration and resuming automatic following.
 
 Set `LOUNGE_IMAGE_ONLY=1` to verify image previews with real two-finger pinch gestures, single-finger
 panning, back navigation and previews above history at both font scales. The gesture runner compares
