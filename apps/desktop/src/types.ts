@@ -569,6 +569,7 @@ export interface AppSettings {
   proxyTransport?: import("./api/proxyTransport").ProxyTransportSettings;
   responseHeaderTimeout?: import("./api/responseHeaderTimeout").ResponseHeaderTimeoutSettings;
   showUsageNetworkErrors?: boolean;
+  quotaWindowSyncEnabled?: boolean;
   gpt56SolContextWindow?: number;
   officialModelContextWindows?: Record<string, number>;
   webProxyPort?: number | null;

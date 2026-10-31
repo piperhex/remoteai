@@ -118,7 +118,7 @@ pub(crate) async fn consume_account_quota<R: Runtime>(
         .map_err(|error| format!("消耗额度任务失败：{error}"))?
 }
 
-fn consume_account_quota_blocking<R: Runtime>(
+pub(crate) fn consume_account_quota_blocking<R: Runtime>(
     app: tauri::AppHandle<R>,
     id: String,
 ) -> Result<(), String> {

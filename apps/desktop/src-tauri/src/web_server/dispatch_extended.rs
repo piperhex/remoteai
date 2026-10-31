@@ -1,5 +1,8 @@
 fn dispatch_extended_command(app: AppHandle, command: &str, args: Value) -> Result<Value, String> {
     match command {
+        "set_quota_window_sync_enabled" => serialize(block_on(
+            crate::quota_window_sync::set_quota_window_sync_enabled(app, argument(&args, "enabled")?),
+        )),
         "get_quota_display_status" => serialize(block_on(crate::quota_display::get_quota_display_status(app))),
         "set_quota_display_all_accounts" => serialize(block_on(crate::quota_display::set_quota_display_all_accounts(
             app, argument(&args, "enabled")?,

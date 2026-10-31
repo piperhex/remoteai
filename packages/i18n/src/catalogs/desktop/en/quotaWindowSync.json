@@ -1,0 +1,10 @@
+{
+  "settings.quotaWindowSync.title": "Start five-hour windows together",
+  "settings.quotaWindowSync.description": "After you use an account, send one short request to other available accounts whose five-hour windows have not started, so their allowances refresh at roughly the same time.",
+  "settings.quotaWindowSync.hint": "Uses a small amount of allowance. Accounts with running windows, disabled accounts, and accounts with no weekly allowance are skipped. The service determines reset times.",
+  "settings.quotaWindowSync.enabled": "Start windows together",
+  "settings.quotaWindowSync.loadError": "Could not load this setting. Please retry.",
+  "settings.quotaWindowSync.saveError": "Could not save this setting. Please retry.",
+  "settings.quotaWindowSync.retry": "Retry",
+  "settings.quotaWindowSync.cloudHint": "On the computer managing these accounts, enable “Start five-hour windows together” in Settings. Remote chats through that computer will also trigger it. Set this up separately on each computer."
+}

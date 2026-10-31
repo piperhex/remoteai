@@ -83,7 +83,9 @@ pub(crate) fn try_refresh_usage_blocking<R: Runtime>(
         .map_err(|error| format!("解析用量响应失败：{error}"))?;
     let mut usage = parse_usage(&payload);
     usage.api_expires_at = subscription_active_until(&auth.value);
+    let previous = load_usage(&usage_path(&paths, id));
     save_usage(&usage_path(&paths, id), &usage)?;
+    crate::quota_window_sync::observe_usage(app, id, &previous, &usage);
     crate::codex_runtime::refresh_usage_summary();
     // History is supplementary: a storage failure must not turn a successful quota refresh
     // into an account error or trigger automatic account exclusion.

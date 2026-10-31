@@ -42,6 +42,14 @@ export interface MessageParams41 {
   "settings.quotaDisplay.stale": Record<string, never>;
   "settings.quotaDisplay.summary": { "primary": string | number; "secondary": string | number; "total": string | number };
   "settings.quotaDisplay.unsupported": Record<string, never>;
+  "settings.quotaWindowSync.cloudHint": Record<string, never>;
+  "settings.quotaWindowSync.description": Record<string, never>;
+  "settings.quotaWindowSync.enabled": Record<string, never>;
+  "settings.quotaWindowSync.hint": Record<string, never>;
+  "settings.quotaWindowSync.loadError": Record<string, never>;
+  "settings.quotaWindowSync.retry": Record<string, never>;
+  "settings.quotaWindowSync.saveError": Record<string, never>;
+  "settings.quotaWindowSync.title": Record<string, never>;
   "settings.responseHeaderTimeout.description": Record<string, never>;
   "settings.responseHeaderTimeout.duration": Record<string, never>;
   "settings.responseHeaderTimeout.title": Record<string, never>;
@@ -192,12 +200,4 @@ export interface MessageParams41 {
   "skills.prompt.toast.updated": Record<string, never>;
   "skills.prompt.uninstall": Record<string, never>;
   "skills.prompt.update": { "version": string | number };
-  "skills.prompt.updateTitle": Record<string, never>;
-  "skills.prompt.version": Record<string, never>;
-  "skills.publish.action": Record<string, never>;
-  "skills.publish.close": Record<string, never>;
-  "skills.publish.description": Record<string, never>;
-  "skills.publish.publishing": Record<string, never>;
-  "skills.publish.submit": Record<string, never>;
-  "skills.publish.title": Record<string, never>;
 }

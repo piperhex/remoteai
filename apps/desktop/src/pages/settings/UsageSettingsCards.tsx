@@ -14,6 +14,7 @@ import { ResponseHeaderTimeoutCard } from "./ResponseHeaderTimeoutCard";
 import { DurationTimePicker } from "./DurationTimePicker";
 import type { SettingsPageProps } from "./types";
 import { PetDockSettingsCard } from "./PetDockSettingsCard";
+import { QuotaWindowSyncCard } from "./QuotaWindowSyncCard";
 
 function TokenUsageCard({ settings }: { settings: SettingsPageProps }) {
   const {
@@ -222,6 +223,7 @@ export function UsageSettingsCards({ settings }: { settings: SettingsPageProps }
       <PetDockSettingsCard t={settings.t} />
       <CodexUsageSummaryCard settings={settings} />
       <TokenUsageCard settings={settings} />
+      <QuotaWindowSyncCard t={settings.t} />
       <Upstream429RetryCard settings={settings} />
       <SseIdleTimeoutCard settings={settings} />
       <ResponseHeaderTimeoutCard settings={settings} />
