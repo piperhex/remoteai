@@ -17,6 +17,8 @@ import { ChatImage } from './ChatImage';
 import { ChatFileLink } from './ChatFileLink';
 import { CommandOutput } from '../../../../shared/chat/CommandOutput';
 import { ChatCopyButton } from './ChatCopyButton';
+import { VirtualCommandText } from './VirtualCommandText';
+import { useDesktopLayout } from '../useDesktopLayout';
 
 const FILE_CHANGE_STATUS: Record<string, string> = {
   declined: "client.chat.notApplied", failed: "client.chat.editFailed", inProgress: "client.chat.editing",
@@ -38,6 +40,7 @@ function SearchContent({ item }: { item: Item }) {
 
 export function ChatToolContent({ item }: { item: Item }) {
   useLanguage();
+  const desktop = useDesktopLayout();
   const text = toolText(item);
   const files = useMemo(() => item.type === 'fileChange' ? changedFiles(item.changes ?? []) : [], [item]);
   if (['agentMessage', 'reasoning', 'plan', 'enteredReviewMode', 'exitedReviewMode'].includes(item.type)) {
@@ -45,10 +48,14 @@ export function ChatToolContent({ item }: { item: Item }) {
   }
   if (item.type === 'commandExecution') return <>
     <p className="chat-muted">{item.cwd}{item.durationMs != null && ` · ${formatTurnDuration(item.durationMs)}`}</p>
-    <CommandOutput command={item.command ?? ''} label={t("client.workspaceActions.toolContent")}
+    {desktop ? <CommandOutput command={item.command ?? ''} label={t("client.workspaceActions.toolContent")}
       output={item.aggregatedOutput || (item.status === 'inProgress' ? t("client.chat.waitingForOutput") : t("client.chat.noTextOutput"))}
       copyCommand={<ChatCopyButton text={item.command ?? ''} label={t("client.chat.copyCommand")} iconOnly />}
-      copyOutput={<ChatCopyButton text={item.aggregatedOutput ?? ''} label={t("client.chat.copyOutput")} iconOnly />} />
+      copyOutput={<ChatCopyButton text={item.aggregatedOutput ?? ''} label={t("client.chat.copyOutput")} iconOnly />} /> : <>
+      <VirtualCommandText text={item.command ?? ''} label={t('client.chat.copyCommand')} command />
+      <VirtualCommandText text={item.aggregatedOutput ?? ''} label={t('client.chat.copyOutput')}
+        empty={item.status === 'inProgress' ? t('client.chat.waitingForOutput') : t('client.chat.noTextOutput')} />
+    </>}
     {item.exitCode != null && <p className={item.exitCode ? 'chat-error' : 'chat-muted'}>{t("client.chat.exitCode")}{item.exitCode}</p>}
   </>;
   if (item.type === 'fileChange') return <ChatDiff files={files}

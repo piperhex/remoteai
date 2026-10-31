@@ -6,6 +6,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
+import { getStringAsync } from 'expo-clipboard';
 import { ChatProcessSummary } from '../src/chat/ChatProcessSummary';
 import { ChatWorkDrawer } from '../src/chat/ChatWorkDrawer';
 import { ChatQuotesProvider } from '../src/chat/ChatQuotes';
@@ -23,7 +24,9 @@ const items: Item[] = [
     result: { content: [{ type: 'text', text: 'TOOL_OUTPUT\n请检查命令输出。' }] } },
   { id: 'long', type: 'commandExecution', status: 'completed',
     command: 'Get-Content shared/chat/activityTimeline.ts; Get-Content apps/native/src/chat/ChatWorkDrawer.tsx',
-    aggregatedOutput: Array.from({ length: 100 }, (_, i) => `LINE_${i} 检查记录`).join('\n'), exitCode: 0 },
+    aggregatedOutput: Array.from({ length: 160 }, (_, i) =>
+      `LINE_${i} 检查记录 🙂 packages/cua/vendor/libs/cua-driver/scripts/install-windows-regression.ps1`).join('\n')
+      + '\nOUTPUT_END', exitCode: 0 },
   { id: 'last', type: 'commandExecution', status: 'completed', command: 'git diff --stat',
     aggregatedOutput: 'LAST_OUTPUT', exitCode: 0 },
 ];
@@ -32,6 +35,7 @@ function WorkDrawerFixture() {
   const [fonts] = useFonts({ ...Ionicons.font, ...Feather.font });
   const [open, setOpen] = useState(false);
   const [tick, setTick] = useState(0);
+  const [copied, setCopied] = useState('');
   const theme = useThemeMode();
   useEffect(() => {
     const timer = setInterval(() => setTick(value => value + 1), 2000);
@@ -51,6 +55,12 @@ function WorkDrawerFixture() {
         onPress={() => updateThemeMode(theme === 'dark' ? 'light' : 'dark')}>
         <Text style={{ ...textMetrics(16, 24), color: theme === 'dark' ? '#fff' : '#17211b' }}>Toggle theme</Text>
       </Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Read clipboard"
+        onPress={() => void getStringAsync().then(value =>
+          setCopied(`COPIED:${value.length}:${value.endsWith('OUTPUT_END')}`))}>
+        <Text style={{ ...textMetrics(16, 24) }}>Read clipboard</Text>
+      </Pressable>
+      <Text testID="clipboard-result" style={textMetrics(14, 22)}>{copied}</Text>
     </View>
     <ChatQuotesProvider scope="work-drawer" active enabled>
       {open && <ChatWorkDrawer entry={entry} onClose={() => setOpen(false)} />}

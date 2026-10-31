@@ -34,19 +34,24 @@ async function find(label) {
 }
 async function tap(label) {
   const [left, top, right, bottom] = bounds(await find(label));
-  await adb('shell', 'input', 'tap', String((left + right) >> 1), String((top + bottom) >> 1));
+  // Target the summary label instead of blank space inside its full-width accessibility node.
+  const x = label.startsWith('查看处理过程')
+    ? left + Math.min(right - left, bottom - top) / 2 : (left + right) / 2;
+  // Allow focus and layout to settle around the hierarchy probe and injected touch.
+  await new Promise(resolve => setTimeout(resolve, 300));
+  await adb('shell', 'input', 'tap', String(Math.round(x)), String((top + bottom) >> 1));
+  await new Promise(resolve => setTimeout(resolve, 300));
 }
 async function screenshot(name) {
   await adb('shell', 'screencap', '-p', '/sdcard/work-drawer-result.png');
   await adb('pull', '/sdcard/work-drawer-result.png', path.join(output, `${name}.png`));
 }
 async function verifyCollapsed(name) {
+  const close = await find('关闭正在处理');
   const tree = await nodes();
   assert.ok(!tree.some(node => /FIRST_OUTPUT|LIVE_OUTPUT_|TOOL_OUTPUT|LAST_OUTPUT|LINE_/.test(node.text)),
     'Collapsed details are absent from the native tree');
   assert.ok(!tree.some(node => matches(node, '复制命令')), 'Collapsed commands have no detail controls');
-  const close = tree.find(node => matches(node, '关闭正在处理'));
-  assert.ok(close, 'The first-level activity sheet remains open');
   assert.ok(bounds(close)[1] < 200, 'The sheet header reaches the top safe area');
   assert.ok(!tree.some(node => matches(node, '返回上一层')), 'No second detail sheet');
   await screenshot(name);
@@ -72,6 +77,52 @@ async function verifyLive() {
   assert.ok(updated, 'Expanded output keeps receiving live updates');
   await tap('正在运行 npm run check');
 }
+async function scrollOutput(toEnd) {
+  const tree = await nodes();
+  const pane = tree.find(node => node['resource-id'] === 'command-output');
+  assert.ok(pane, 'Expanded command has a scrolling output pane');
+  const [left, top, right, bottom] = bounds(pane);
+  const x = String((left + right) >> 1);
+  const from = String(toEnd ? bottom - 30 : top + 30);
+  const to = String(toEnd ? top + 30 : bottom - 30);
+  await adb('shell', 'input', 'swipe', x, from, x, to, '180');
+}
+async function verifyVirtual(name) {
+  await tap('已运行 Get-Content shared/chat/activityTimeline.ts; Get-Content apps/native/src/chat/ChatWorkDrawer.tsx');
+  await find('复制输出');
+  // Move the outer drawer while keeping the gesture outside the nested text pane.
+  await adb('shell', 'input', 'swipe', '8', '2000', '8', '700', '350');
+  let tree = await nodes();
+  assert.ok(tree.some(node => node.text.includes('LINE_0 ')));
+  assert.ok(!tree.some(node => /内容较长|上一段|下一段/.test(node.text)));
+  await screenshot(`${name}-output-start`);
+  for (let attempt = 0; attempt < 65 && !tree.some(node => node.text.includes('OUTPUT_END')); attempt++) {
+    await scrollOutput(true);
+    tree = await nodes();
+    if (attempt === 6) await screenshot(`${name}-output-scrolled`);
+  }
+  assert.ok(tree.some(node => node.text.includes('OUTPUT_END')), 'Scrolling automatically reaches all output');
+  assert.ok(!tree.some(node => node.text.includes('LINE_0 ')), 'Earlier output is recycled');
+  assert.ok(tree.filter(node => node['resource-id'].startsWith('virtual-text-')).length < 8);
+  // The final chunk can be mounted in overscan before its last line enters the viewport.
+  await scrollOutput(true);
+  await scrollOutput(true);
+  await screenshot(`${name}-output-end`);
+  await scrollOutput(false);
+  await scrollOutput(false);
+  assert.ok(!(await nodes()).some(node => node.text.includes('OUTPUT_END')), 'Scrolling back restores earlier output');
+  await screenshot(`${name}-output-back`);
+  await tap('复制输出');
+  await tap('关闭正在处理');
+  await tap('Read clipboard');
+  const fullOutput = Array.from({ length: 160 }, (_, i) =>
+    `LINE_${i} 检查记录 🙂 packages/cua/vendor/libs/cua-driver/scripts/install-windows-regression.ps1`).join('\n')
+    + '\nOUTPUT_END';
+  await find(`COPIED:${fullOutput.length}:true`);
+  await tap('查看处理过程，5 项活动');
+  await verifyCollapsed(`${name}-reopen-collapsed`);
+  console.log(`PASS: ${name} virtual scrolling, recycling, scrolling back and full copy`);
+}
 async function verifyScale(scale) {
   await adb('shell', 'settings', 'put', 'system', 'font_scale', scale);
   await adb('shell', 'am', 'force-stop', app);
@@ -80,12 +131,14 @@ async function verifyScale(scale) {
   await verifyCollapsed(`android-light-font-${scale}-list`);
   await verifyExpanded(`android-light-font-${scale}-expanded`);
   await verifyLive();
+  await verifyVirtual(`android-light-font-${scale}`);
   await tap('关闭正在处理');
   await find('查看处理过程，5 项活动');
   await tap('Toggle theme');
   await tap('查看处理过程，5 项活动');
   await verifyCollapsed(`android-dark-font-${scale}-list`);
   await verifyExpanded(`android-dark-font-${scale}-expanded`);
+  await verifyVirtual(`android-dark-font-${scale}`);
   await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
   await find('查看处理过程，5 项活动');
 }
@@ -101,7 +154,8 @@ try {
   assert.doesNotMatch(errors, /FATAL EXCEPTION|TypeError|ReferenceError/);
   await writeFile(path.join(output, 'result.json'), JSON.stringify({ serial, passed: true,
     scales: ['1.0', '1.3'], cases: ['fullscreen', 'lazy details', 'inline toggle', 'live updates', 'close', 'back',
-      'reopen collapsed', 'light and dark'] }, null, 2));
+      'reopen collapsed', 'light and dark', 'virtual scrolling beyond 8000 characters', 'full output copy'],
+  }, null, 2));
   console.log('PASS: Android fullscreen activity drawer, lazy inline output, live updates and font scales');
 } finally {
   if (originalScale === 'null') await adb('shell', 'settings', 'delete', 'system', 'font_scale');
