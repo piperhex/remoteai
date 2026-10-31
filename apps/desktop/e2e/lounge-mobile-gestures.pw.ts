@@ -15,6 +15,24 @@ async function hold(page: Page, target: Locator) {
   await session.detach();
 }
 
+async function verifyCompactOwnMenu(page: Page, width: number) {
+  await page.getByRole('textbox', { name: '消息', exact: true }).fill('🥺');
+  await page.getByRole('button', { name: '发送', exact: true }).click();
+  const bubble = page.locator('.lounge-message.is-own .lounge-bubble').last();
+  await hold(page, bubble);
+  const menu = page.getByRole('menu', { name: '消息操作' });
+  await expect(menu.getByRole('menuitem')).toHaveText(['复制', '引用回复']);
+  const bounds = (await menu.boundingBox())!;
+  expect(bounds.width).toBeLessThan(200);
+  expect(bounds.height).toBeLessThan(90);
+  await page.screenshot({ path: `../../.codex-tmp/lounge-menu-compact/web-own-menu-${width}.png` });
+  await page.keyboard.press('Escape');
+  await bubble.click({ button: 'right' });
+  await expect(menu.getByRole('menuitem')).toHaveText(['复制', '引用回复']);
+  await menu.getByRole('menuitem', { name: '复制', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => sessionStorage.getItem('copied-text'))).toBe('🥺');
+}
+
 for (const width of [320, 390]) {
   test(`mobile gestures ${width}: avatar mentions and anchored message actions`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
@@ -85,5 +103,7 @@ for (const width of [320, 390]) {
     await page.waitForTimeout(650); await expect(menu).toBeHidden();
     await bubble.dispatchEvent('pointercancel', { pointerId: 4 });
     expect(relay.sent).toHaveLength(0);
+    await page.setViewportSize({ width, height: 844 });
+    await verifyCompactOwnMenu(page, width);
   });
 }

@@ -2,17 +2,18 @@
 .lounge-mobile-menu-trigger.is-menu-open { filter: brightness(.94); }
 .lounge-mobile-menu-layer { position: fixed; inset: 0; z-index: 1600; }
 .lounge-mobile-menu-backdrop { position: absolute; inset: 0; }
-.lounge-mobile-message-menu { position: absolute; display: flex; flex-wrap: wrap; box-sizing: border-box;
-  width: min(360px, calc(100vw - 24px)); max-width: 400px; padding: 8px; border-radius: 18px;
+.lounge-mobile-message-menu { position: absolute; display: grid; box-sizing: border-box;
+  grid-template-columns: repeat(var(--menu-columns), minmax(0, 1fr));
+  max-width: min(400px, calc(100vw - 24px)); padding: var(--menu-padding); border-radius: 12px;
   background: #5b5b5b; color: #fff; box-shadow: 0 6px 24px #0003; }
-.lounge-mobile-message-menu::before { content: ''; position: absolute; top: -7px;
-  left: calc(var(--menu-arrow) - 7px); width: 14px; height: 14px; border-radius: 2px;
+.lounge-mobile-message-menu::before { content: ''; position: absolute; top: -5px;
+  left: calc(var(--menu-arrow) - 5px); width: 10px; height: 10px; border-radius: 2px;
   transform: rotate(45deg); background: inherit; }
-.lounge-mobile-message-menu.is-above::before { top: auto; bottom: -7px; }
-.lounge-mobile-message-menu button { position: relative; flex: 1 0 25%; min-width: 0; min-height: 80px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px;
-  border: 0; border-radius: 12px; padding: 10px 4px; background: transparent; color: inherit;
-  font: inherit; font-size: 14px; line-height: 1.5; cursor: pointer; }
+.lounge-mobile-message-menu.is-above::before { top: auto; bottom: -5px; }
+.lounge-mobile-message-menu button { position: relative; min-width: 0; min-height: 60px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  border: 0; border-radius: 8px; padding: 6px 4px; background: transparent; color: inherit;
+  font: inherit; font-size: 12px; line-height: 1.5; cursor: pointer; }
 .lounge-mobile-message-menu button svg { flex-shrink: 0; }
 .lounge-mobile-message-menu button span { max-width: 100%; overflow-wrap: anywhere; text-align: center; }
 .lounge-mobile-message-menu button:active, .lounge-mobile-message-menu button:focus-visible { background: #ffffff20; }

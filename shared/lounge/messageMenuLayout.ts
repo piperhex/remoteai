@@ -3,6 +3,19 @@ const MENU_MARGIN = 12;
 const MENU_GAP = 10;
 const ARROW_INSET = 24;
 export const MESSAGE_MENU_MAX_WIDTH = 360;
+export const MESSAGE_MENU_PADDING = 6;
+const ACTION_WIDTH = 64;
+
+/** Fit the available actions instead of stretching a short menu across the phone. */
+export function messageMenuSize({ actionCount, viewportWidth, fontScale = 1 }: {
+  actionCount: number; viewportWidth: number; fontScale?: number;
+}) {
+  const maxWidth = Math.min(MESSAGE_MENU_MAX_WIDTH, viewportWidth - MENU_MARGIN * 2);
+  const actionWidth = ACTION_WIDTH * Math.max(1, fontScale);
+  const capacity = Math.max(1, Math.floor((maxWidth - MESSAGE_MENU_PADDING * 2) / actionWidth));
+  const columns = Math.ceil(actionCount / Math.ceil(actionCount / capacity));
+  return { columns, width: Math.min(maxWidth, columns * actionWidth + MESSAGE_MENU_PADDING * 2) };
+}
 
 /** Place the whole menu inside the visible viewport, including when the keyboard is open. */
 export function messageMenuPosition({ anchor, menu, viewport }: {

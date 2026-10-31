@@ -5,7 +5,7 @@ import { Ban, Copy, MessageCircle, Quote } from 'lucide-react';
 import { displayText as t } from '../localization/messages';
 import { useThreadLongPress } from '../chat/useThreadLongPress';
 import { messageMenuActions } from './messageMenuActions';
-import { messageMenuPosition, type MenuAnchor } from './messageMenuLayout';
+import { MESSAGE_MENU_PADDING, messageMenuPosition, messageMenuSize, type MenuAnchor } from './messageMenuLayout';
 import type { LoungeMessageMenuActions } from './LoungeMessageMenu';
 import './mobileMessageMenu.css';
 
@@ -35,6 +35,7 @@ function MessagePopover({ anchor, actions, close, select, restoreFocus }: {
   select: (key: ActionKey) => void; restoreFocus: () => void;
 }) {
   const menu = useRef<HTMLDivElement>(null);
+  const size = messageMenuSize({ actionCount: actions.length, viewportWidth: window.visualViewport?.width ?? innerWidth });
   const [position, setPosition] = useState<ReturnType<typeof messageMenuPosition>>();
   useLayoutEffect(() => {
     const node = menu.current;
@@ -69,6 +70,7 @@ function MessagePopover({ anchor, actions, close, select, restoreFocus }: {
     <div ref={menu} role="menu" aria-label={t('client.lounge.messageActions')}
       className={`lounge-mobile-message-menu${position?.above ? ' is-above' : ''}`}
       style={{ left: position?.left, top: position?.top, visibility: position ? 'visible' : 'hidden',
+        width: size.width, '--menu-columns': size.columns, '--menu-padding': `${MESSAGE_MENU_PADDING}px`,
         '--menu-arrow': `${position?.arrow ?? 24}px` } as CSSProperties}
       onKeyDown={event => {
         if (!['Tab', 'ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
@@ -81,7 +83,7 @@ function MessagePopover({ anchor, actions, close, select, restoreFocus }: {
       {actions.map(action => {
         const Icon = icons[action.key];
         return <button key={action.key} type="button" role="menuitem" onClick={() => select(action.key)}>
-          <Icon size={25} aria-hidden /><span>{t(action.label)}</span></button>;
+          <Icon size={20} aria-hidden /><span>{t(action.label)}</span></button>;
       })}
     </div>
   </div>, document.body);
