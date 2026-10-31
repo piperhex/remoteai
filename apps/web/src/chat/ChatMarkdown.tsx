@@ -18,6 +18,7 @@ import { ChatCodeBlock } from './ChatCodeBlock';
 import { ChatImage } from './ChatImage';
 import { ChatFileContext, ChatFileLink } from './ChatFileLink';
 import { ChatMarkdownTable } from './ChatMarkdownTable';
+import { MermaidDiagram } from '../../../../shared/chat/MermaidDiagram';
 
 function textContent(children: ReactNode): string {
   return Children.toArray(children).map(child => {
@@ -29,8 +30,13 @@ function textContent(children: ReactNode): string {
 function codeBlock(children: ReactNode, desktop = false) {
   const code = Children.toArray(children).find(child => isValidElement(child));
   const language = isValidElement<{ className?: string }>(code)
-    ? code.props.className?.replace(/^language-/, '') : '';
-  return <ChatCodeBlock text={textContent(children).replace(/\n$/, '')} language={language} desktop={desktop} />;
+    ? code.props.className?.replace(/^language-/, '') ?? '' : '';
+  const text = textContent(children).replace(/\n$/, '');
+  if (language.toLowerCase() === 'mermaid') {
+    return <MermaidDiagram source={text} previewLabel={t("client.chat.preview")} sourceLabel={t("client.chat.source")}
+      copyLabel={t("client.chat.copySource")} />;
+  }
+  return <ChatCodeBlock text={text} language={language} desktop={desktop} />;
 }
 
 function MarkdownImage({ src, alt }: { src?: string; alt?: string }) {
