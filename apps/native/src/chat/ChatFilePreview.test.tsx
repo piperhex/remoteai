@@ -4,7 +4,6 @@ import { parseFileReference, type FileReference } from '../../../../shared/chat/
 import { ChatFileProvider } from './ChatFilePreview';
 import { ChatImageFilePreview } from './ChatImageFilePreview';
 import { ImageViewer } from './ImageViewer';
-import { ImageAiToolbar } from './ImageAiToolbar';
 import { VideoViewer } from './video/VideoViewer';
 import { PreviewTransferProgress } from './PreviewTransferProgress';
 
@@ -201,8 +200,8 @@ it('offers original loading without starting it and allows an explicit save befo
   const loading = descendants(ImageViewer(props));
   expect(loading.some(node => node.type === 'Image')).toBe(false);
   expect(loading.some(node => node.props.children === '正在加载原图…')).toBe(false);
-  expect(loading.find(node => node.type === ImageAiToolbar)?.props.originalAction)
-    .toMatchObject({ label: '查看原图', onPress: expect.any(Function) });
+  expect(loading.find(node => node.props.accessibilityLabel === '查看原图')?.props)
+    .toMatchObject({ accessibilityRole: 'button', onPress: expect.any(Function) });
   expect(loading.find(node => node.props.accessibilityLabel === '下载图片到相册')?.props.disabled).toBe(false);
   state.original = original;
   const loaded = descendants(ImageViewer(props));
@@ -218,7 +217,7 @@ it('shows a retry when an image file cannot be loaded', async () => {
   await expect(props.load()).rejects.toThrow('missing');
   state.imageError = true;
   const nodes = descendants(ImageViewer(props));
-  expect(nodes.find(node => node.type === ImageAiToolbar)?.props.originalAction)
-    .toMatchObject({ label: '重新加载原图', onPress: expect.any(Function) });
+  expect(nodes.find(node => node.props.accessibilityLabel === '重新加载原图')?.props)
+    .toMatchObject({ accessibilityRole: 'button', onPress: expect.any(Function) });
   expect(nodes.find(node => node.props.accessibilityLabel === '下载图片到相册')?.props.disabled).toBe(false);
 });

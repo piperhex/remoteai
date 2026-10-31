@@ -1,5 +1,6 @@
 import { useState, useSyncExternalStore } from 'react';
-import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { Modal } from '../components/Modal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLoungeHistory } from '../../../../shared/lounge/useLoungeHistory';
 import type { LoungeController } from '../../../../shared/lounge/controller';

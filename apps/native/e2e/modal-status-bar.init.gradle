@@ -1,0 +1,9 @@
+// Keep system-bar verification separate from the installed application and other test builds.
+gradle.afterProject { project ->
+    if (project.path == ':app') {
+        project.layout.buildDirectory.set(new File(project.projectDir, 'build-modal-status-bar'))
+        project.android.defaultConfig.applicationId = 'com.codexswitch.mobile.modalstatustest'
+        project.extensions.getByName('react').entryFile = new File(project.rootDir, '../e2e/ModalStatusBarFixture.tsx')
+        project.extensions.getByName('react').debuggableVariants = []
+    }
+}

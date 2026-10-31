@@ -2,7 +2,8 @@ import { displayError } from '../../i18n/index';
 import { createThemedStyles } from '../../theme/styles';
 import { t, useLanguage } from '../../i18n';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Modal } from '../../components/Modal';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -28,7 +29,7 @@ export function VideoViewer({ close, ...options }: Props) {
     ? t("client.mobile.cannotPlayThisVideoTryAnotherMp4File") : '');
   const source = useMemo(() => video.url
     ? { html: videoPlayerHtml(video.url, t("client.runtimeErrors.videoPlayer")), baseUrl: video.url } : undefined, [video.url, language]);
-  return <Modal visible animationType="fade" onRequestClose={close} statusBarTranslucent
+  return <Modal visible animationType="fade" onRequestClose={close} statusBarStyle="light" statusBarTranslucent
     navigationBarTranslucent supportedOrientations={['portrait', 'portrait-upside-down',
       'landscape-left', 'landscape-right']}>
     <SafeAreaProvider>

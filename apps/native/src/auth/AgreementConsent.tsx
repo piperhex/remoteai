@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Keyboard, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal } from '../components/Modal';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { agreementCopy, getUserAgreement } from '@remoteai/i18n/legal/agreement';
 import type { AgreementConsent as Consent } from '../../../../shared/legal/useAgreementConsent';

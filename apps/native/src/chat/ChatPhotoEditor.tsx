@@ -3,7 +3,8 @@ import { createThemedStyles } from '../theme/styles';
 import { useThemeMode } from '../theme/store';
 import { t, useLanguage, getLocale } from '../i18n';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { Modal } from '../components/Modal';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { editedImageMessage, imageEditorHtml,

@@ -16,6 +16,7 @@ vi.mock('react-native', () => ({ View: 'View', Pressable: 'Pressable', Text: 'Te
   useWindowDimensions: () => ({ width: 390, height: 844 }),
   ScrollView: 'ScrollView', TextInput: 'TextInput', StyleSheet: { create: <T,>(value: T) => value } }));
 vi.mock('@expo/vector-icons', () => ({ MaterialCommunityIcons: 'Icon' }));
+vi.mock('../../components/Modal', () => ({ Modal: 'Modal' }));
 interface Props {
   children?: ReactNode; accessibilityRole?: string; accessibilityLabel?: string;
   accessibilityState?: { checked?: boolean; disabled?: boolean; expanded?: boolean };

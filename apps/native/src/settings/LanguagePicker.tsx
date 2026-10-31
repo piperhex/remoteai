@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Modal } from '../components/Modal';
 import { Ionicons } from '@expo/vector-icons';
 import { LANGUAGE_OPTIONS, languageLabel, t, useLanguage, type Language } from '../i18n';
 import { setLanguage } from '../i18n/preference';

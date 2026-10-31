@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { Linking, Modal, Platform, Pressable, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, Text, View } from 'react-native';
+import { Modal } from '../../components/Modal';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { t } from '../../i18n';

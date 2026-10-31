@@ -1,4 +1,5 @@
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { Modal } from '../components/Modal';
 import type { MobileLounge } from '../../../../shared/lounge/useMobileLounge';
 import { t } from '../i18n';
 import { useLoungeStyles } from './styles';

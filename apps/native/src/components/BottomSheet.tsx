@@ -7,13 +7,13 @@ import {
   ActivityIndicator,
   Animated,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Modal } from './Modal';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { SHEET_HORIZONTAL_PADDING } from './SheetScrollView';
 import { useBottomSheetDrag } from './useBottomSheetDrag';

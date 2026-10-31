@@ -2,7 +2,8 @@ import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Modal } from '../components/Modal';
 import { useTotpStyles as useStyles } from './styles';
 
 interface TotpQrScannerProps {
@@ -30,6 +31,7 @@ export function TotpQrScanner({ onClose, onScan, visible }: TotpQrScannerProps) 
   };
 
   return <Modal visible={visible} animationType="fade" onRequestClose={onClose}
+    statusBarStyle={permission?.granted ? 'light' : undefined}
     supportedOrientations={['portrait', 'landscape-left', 'landscape-right']}>
     {!permission ? <View style={styles.permissionBox}><ActivityIndicator color={color("#18af8c", 'accent')} /></View>
       : !permission.granted ? <View style={styles.permissionBox}>

@@ -2,7 +2,8 @@ import { displayError, displayText } from '../../i18n/index';
 import { useThemeColor } from '../../theme/store';
 import { t, useLanguage } from '../../i18n';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal } from '../../components/Modal';
 import { SafeAreaProvider, SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { RTCPeerConnection, RTCView, type MediaStream as NativeMediaStream } from 'react-native-webrtc';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -108,7 +109,8 @@ export function RemoteDesktop({ client, active, close }: {
       {tool.icon === 'mouse' ? <MaterialCommunityIcons name="mouse" size={22} color={color("#e7edf8", 'faint')} />
         : <Ionicons name={tool.icon} size={22} color={color("#e7edf8", 'faint')} />}<Text style={s.label}>{tool.label}</Text>
     </Pressable>);
-  return <Modal visible={active} onRequestClose={close} hardwareAccelerated statusBarTranslucent navigationBarTranslucent
+  return <Modal visible={active} onRequestClose={close} statusBarStyle="light"
+    hardwareAccelerated statusBarTranslucent navigationBarTranslucent
     onShow={orientation.onShow} presentationStyle="fullScreen"
     supportedOrientations={['portrait', 'landscape-left', 'landscape-right']}>
     <SafeAreaProvider><SafeAreaView style={s.root} edges={safeEdges}>

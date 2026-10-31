@@ -16,6 +16,7 @@ vi.mock('../../../../shared/app-update/useStartupUpdate', () => ({
 vi.mock('./startupUpdate', () => ({ startupUpdateOptions: {} }));
 vi.mock('./updateActions', () => ({ beginAppUpdateDownload: state.download }));
 vi.mock('./useAndroidUpdateDownloadState', () => ({ useAndroidUpdateDownloadState: () => state.downloadState }));
+vi.mock('../components/Modal', () => ({ Modal: 'Modal' }));
 vi.mock('react-native', () => ({ Modal: 'Modal', Pressable: 'Pressable', Text: 'Text', View: 'View',
   StyleSheet: { create: <T,>(value: T) => value } }));
 

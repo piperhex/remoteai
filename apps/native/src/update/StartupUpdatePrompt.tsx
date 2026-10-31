@@ -1,7 +1,8 @@
 import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
 import { useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { Modal } from '../components/Modal';
 import { useStartupUpdate } from '../../../../shared/app-update/useStartupUpdate';
 import { startupUpdateOptions } from './startupUpdate';
 import { beginAppUpdateDownload } from './updateActions';

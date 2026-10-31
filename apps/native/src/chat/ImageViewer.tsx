@@ -2,7 +2,8 @@ import { displayError } from '../i18n/index';
 import { createThemedStyles } from '../theme/styles';
 import { textMetrics } from '../theme/text';
 import { t, useLanguage } from '../i18n';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal } from '../components/Modal';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -30,7 +31,7 @@ export function ImageViewer({ thumbnail, description, load, close, save }: Props
   const message = saving.message || orientation.error;
   const source = image.url ?? thumbnail;
   const originalLabel = t(image.error ? 'client.mobile.reloadOriginalImage' : 'client.chat.viewOriginal');
-  return <Modal visible animationType="fade" onRequestClose={close} statusBarTranslucent
+  return <Modal visible animationType="fade" onRequestClose={close} statusBarStyle="light" statusBarTranslucent
     navigationBarTranslucent supportedOrientations={['portrait', 'portrait-upside-down',
       'landscape-left', 'landscape-right']}>
     <SafeAreaProvider>

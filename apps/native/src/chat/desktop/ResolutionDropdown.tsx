@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import { Modal } from '../../components/Modal';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { DesktopResolution } from '../../../../../shared/remote-desktop/protocol';
 import { t } from '../../i18n';
@@ -48,7 +49,7 @@ export function ResolutionDropdown({ options, current, saving, change }: {
       <MaterialCommunityIcons name={anchor && !saving ? 'chevron-up' : 'chevron-down'}
         size={20} color={color('#aab6c9', 'faint')} />
     </Pressable>
-    {anchor && !saving && <Modal transparent statusBarTranslucent navigationBarTranslucent
+    {anchor && !saving && <Modal transparent statusBarStyle="light" statusBarTranslucent navigationBarTranslucent
       supportedOrientations={['portrait', 'landscape-left', 'landscape-right']} onRequestClose={() => setAnchor(null)}>
       <View style={s.resolutionOverlay} onLayout={({ nativeEvent }) => setMenuViewport(nativeEvent.layout)}>
         <Pressable style={s.resolutionBackdrop} onPress={() => setAnchor(null)}
