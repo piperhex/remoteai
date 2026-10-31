@@ -107,6 +107,9 @@ jobs:
   release:
     name: Build ${{ matrix.name }}
     needs: create-release
+    env:
+      # The desktop bundle exceeds Node's default 2 GiB heap on macOS arm64 runners.
+      NODE_OPTIONS: --max-old-space-size=4096
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
