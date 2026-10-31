@@ -11,6 +11,7 @@ export function conversationRows(options: {
       const user = contact?.user;
       const id = user?.id ?? '';
       return { id, user, contact, online: state.status === 'connected' && contact?.online === true,
+        blocked: !!user && state.blocked.includes(id),
         notificationsMuted: state.mutedConversations?.includes(id) ?? false,
         draft: drafts[id], last: controller.conversationPreview(id),
         unread: state.unreadByConversation[id] ?? 0 };

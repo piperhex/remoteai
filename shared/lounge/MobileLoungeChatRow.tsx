@@ -1,5 +1,5 @@
 import { accountName } from './names';
-import { BellOff, MessagesSquare, Pin } from 'lucide-react';
+import { Ban, BellOff, MessagesSquare, Pin } from 'lucide-react';
 import { displayText as t } from '../localization/messages';
 import { contactStatus } from './contacts';
 import type { ConversationRow } from './conversationRows';
@@ -12,7 +12,8 @@ export function MobileLoungeChatRow({ row, model }: { row: ConversationRow; mode
   return <div className="lounge-chat-row">
     <button className="lounge-chat-row-main" type="button"
       aria-label={row.user ? t('client.lounge.directWith', { account: accountName(row.user) }) : t('client.lounge.groupChat')}
-      aria-description={row.contact ? t(contactStatus(row.contact)) : undefined}
+      aria-description={row.blocked ? t('client.lounge.blocked')
+        : row.contact ? t(contactStatus(row.contact)) : undefined}
       onClick={() => model.select(row.user)}>
       <span className="lounge-chat-avatar">
         {row.user ? <>
@@ -22,7 +23,10 @@ export function MobileLoungeChatRow({ row, model }: { row: ConversationRow; mode
           <MessagesSquare size={22} /></span>}
         <LoungeUnreadBadge count={row.unread} />
       </span>
-      <span className="lounge-chat-row-copy"><strong>{row.user ? accountName(row.user) : t('client.lounge.groupChat')}</strong>
+      <span className="lounge-chat-row-copy"><strong className="lounge-chat-row-identity">
+        <span>{row.user ? accountName(row.user) : t('client.lounge.groupChat')}</span>
+        {row.blocked && <Ban size={14} className="lounge-chat-row-blocked" role="img"
+          aria-label={t('client.lounge.blocked')} />}</strong>
         <span>{conversationPreviewText(row)}</span></span>
       <span className="lounge-chat-row-meta">
         {row.contact?.pinned && <Pin size={14} className="lounge-pin" role="img"

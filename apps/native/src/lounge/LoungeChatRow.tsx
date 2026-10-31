@@ -21,7 +21,8 @@ export function LoungeChatRow({ row, model, actions }: {
       <Pressable accessibilityRole="button" style={styles.chatRowMain}
         accessibilityLabel={row.user ? t('client.lounge.directWith', { account: accountName(row.user) })
           : t('client.lounge.groupChat')}
-        accessibilityHint={row.contact ? t(contactStatus(row.contact)) : undefined}
+        accessibilityHint={row.blocked ? t('client.lounge.blocked')
+          : row.contact ? t(contactStatus(row.contact)) : undefined}
         onPress={() => model.select(row.user)} onLongPress={actions}>
         <View style={styles.chatAvatar}>
           {row.user ? <>
@@ -33,7 +34,14 @@ export function LoungeChatRow({ row, model, actions }: {
             <Text style={styles.chatAvatarBadgeText}>{row.unread > 99 ? '99+' : row.unread}</Text></View>}
         </View>
         <View style={styles.heading}>
-          <Text style={styles.rowTitle}>{row.user ? accountName(row.user) : t('client.lounge.groupChat')}</Text>
+          <View style={styles.chatRowIdentity}>
+            <Text style={[styles.rowTitle, styles.chatRowName]}>
+              {row.user ? accountName(row.user) : t('client.lounge.groupChat')}</Text>
+            {row.blocked && <View accessible accessibilityLabel={t('client.lounge.blocked')}
+              style={styles.chatRowBlocked}>
+              <Ionicons name="ban-outline" size={14} color={color('#687c89', 'muted')} accessible={false} />
+            </View>}
+          </View>
           <Text numberOfLines={1} ellipsizeMode="tail" style={styles.muted}>{conversationPreviewText(row)}</Text>
         </View>
         <View style={styles.rowMeta}>
