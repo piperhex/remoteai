@@ -362,6 +362,11 @@ fn record_token_usage_entry<R: Runtime>(
     accounting: LanUsageAccounting,
 ) {
     let usage = usage.unwrap_or_default();
+    if usage.total_tokens.is_some_and(|tokens| tokens > 0) {
+        if let Some(account) = &context.account {
+            crate::quota_window_sync::observe_activity(app, &account.account_id);
+        }
+    }
     let duration_ms = context.started_at.elapsed().as_millis() as u64;
     let id = short_hash_str(&format!(
         "{}:{}:{}:{}:{}:{}",

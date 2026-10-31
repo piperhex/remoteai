@@ -1,0 +1,10 @@
+{
+  "settings.quotaWindowSync.title": "同步启动五小时计时",
+  "settings.quotaWindowSync.description": "使用一个账号后，自动向其他尚未开始五小时计时的可用账号发送一次简短请求，让它们尽量同时刷新额度。",
+  "settings.quotaWindowSync.hint": "会消耗少量额度。已在计时、已禁用或周额度用尽的账号会跳过。刷新时间以服务端为准。",
+  "settings.quotaWindowSync.enabled": "同步启动计时",
+  "settings.quotaWindowSync.loadError": "设置读取失败，请重试。",
+  "settings.quotaWindowSync.saveError": "设置保存失败，请重试。",
+  "settings.quotaWindowSync.retry": "重试",
+  "settings.quotaWindowSync.cloudHint": "请在管理这些账号的电脑上，打开设置中的“同步启动五小时计时”。开启后，通过这台电脑进行的远程对话也会自动触发；每台电脑需单独设置。"
+}

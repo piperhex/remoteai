@@ -71,6 +71,7 @@ mod provider_models;
 mod provider_platform;
 mod providers;
 mod quota_display;
+mod quota_window_sync;
 mod remote_chat;
 mod remote_command;
 mod remote_control;
@@ -502,6 +503,7 @@ pub fn run() {
             official_models::refresh_official_model_catalog,
             official_models::read_admin_model_names,
             commands::consume_account_quota,
+            quota_window_sync::set_quota_window_sync_enabled,
             commands::fetch_reset_credits,
             commands::consume_reset_credit,
             commands::restart_chatgpt,

@@ -1,0 +1,10 @@
+{
+  "settings.quotaWindowSync.title": "5時間枠を同時に開始",
+  "settings.quotaWindowSync.description": "アカウントを使用すると、5時間枠がまだ始まっていない他の利用可能なアカウントに短いリクエストを1回送り、利用枠の更新時刻をできるだけそろえます。",
+  "settings.quotaWindowSync.hint": "利用枠を少量消費します。計時中、無効、または週間枠を使い切ったアカウントはスキップします。更新時刻はサービス側で決まります。",
+  "settings.quotaWindowSync.enabled": "計時を同時に開始",
+  "settings.quotaWindowSync.loadError": "設定を読み込めませんでした。再試行してください。",
+  "settings.quotaWindowSync.saveError": "設定を保存できませんでした。再試行してください。",
+  "settings.quotaWindowSync.retry": "再試行",
+  "settings.quotaWindowSync.cloudHint": "アカウントを管理するパソコンの設定で「5時間枠を同時に開始」を有効にしてください。そのパソコンを経由するリモートチャットでも自動的に動作します。パソコンごとに設定が必要です。"
+}

@@ -17,6 +17,8 @@ pub(crate) struct AppSettings {
     #[serde(default)]
     pub(crate) quota_display_all_accounts: bool,
     #[serde(default)]
+    pub(crate) quota_window_sync_enabled: bool,
+    #[serde(default)]
     pub(crate) pet_dock_enabled: bool,
     #[serde(default)]
     pub(crate) pet_dock_show_labels: bool,
@@ -279,6 +281,7 @@ impl Default for AppSettings {
             non_proxy_enhancements_enabled: default_non_proxy_enhancements_enabled(),
             floating_bubble_enabled: default_floating_bubble_enabled(),
             quota_display_all_accounts: false,
+            quota_window_sync_enabled: false,
             pet_dock_enabled: false,
             pet_dock_show_labels: false,
             theme_color: None,

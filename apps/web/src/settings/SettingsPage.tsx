@@ -1,6 +1,7 @@
 import { displayText } from '../i18n/index';
 import { getLanguage, t, useLanguage } from '../i18n';
 import { petDockText } from '@remoteai/i18n/copy/petDock';
+import { QuotaWindowSyncGuidance } from './QuotaWindowSyncGuidance';
 import { useState } from 'react';
 import { Button, Dialog, Switch } from 'antd-mobile';
 import { ChevronRight, Grid2X2, Info, LockKeyhole, LogOut,
@@ -73,6 +74,7 @@ export function SettingsPage({ totpManager }: { totpManager: ReturnType<typeof u
             onClick={() => setPanel('totp')} />
           <SettingsRow label={petDockText(getLanguage(), 'settings.petDock.title')}
             icon={PawPrint} onClick={() => setPanel('petDock')} />
+          <QuotaWindowSyncGuidance />
         </section>
         {profile?.role === 'admin' && <section className="settings-group">
           <SettingsRow label={t("client.settings.adminConsole")} icon={Grid2X2}
