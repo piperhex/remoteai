@@ -8,11 +8,10 @@ import { t } from '../i18n';
 const icons = ['draw', 'comment-plus-outline', 'image-filter-center-focus', 'eraser', 'resize'] as const;
 interface Props {
   load: () => Promise<string>; close: () => void;
-  originalAction?: { label: string; onPress: () => void };
 }
-export function ImageAiToolbar({ load, close, originalAction }: Props) {
+export function ImageAiToolbar({ load, close }: Props) {
   const editor = useImageAiEdit({ load, close });
-  if (!editor.available && !originalAction) return null;
+  if (!editor.available) return null;
   const selected = IMAGE_AI_TOOLS.find(item => item.id === editor.tool);
   return <View>
     {selected && <ScrollView style={styles.form} keyboardShouldPersistTaps="handled">
@@ -41,12 +40,7 @@ export function ImageAiToolbar({ load, close, originalAction }: Props) {
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.toolbar}
       contentContainerStyle={styles.tools} keyboardShouldPersistTaps="handled" directionalLockEnabled
       alwaysBounceHorizontal={false}>
-      {originalAction && <Pressable accessibilityRole="button" accessibilityLabel={originalAction.label}
-        onPress={originalAction.onPress} style={styles.tool}>
-        <MaterialCommunityIcons name="image-outline" size={20} color="#ddd" />
-        <Text style={styles.label} numberOfLines={1}>{originalAction.label}</Text>
-      </Pressable>}
-      {editor.available && IMAGE_AI_TOOLS.map((item, index) => <Pressable key={item.id} accessibilityRole="button"
+      {IMAGE_AI_TOOLS.map((item, index) => <Pressable key={item.id} accessibilityRole="button"
         accessibilityLabel={t(item.label)} accessibilityState={{ selected: item.id === editor.tool,
           disabled: editor.busy || !editor.enabled }} disabled={editor.busy || !editor.enabled}
         onPress={() => editor.select(item.id)} style={[styles.tool, item.id === editor.tool && styles.selected,

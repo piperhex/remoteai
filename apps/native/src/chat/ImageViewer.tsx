@@ -1,5 +1,6 @@
 import { displayError } from '../i18n/index';
 import { createThemedStyles } from '../theme/styles';
+import { textMetrics } from '../theme/text';
 import { t, useLanguage } from '../i18n';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -28,6 +29,7 @@ export function ImageViewer({ thumbnail, description, load, close, save }: Props
   const saving = useSaveImage({ load: image.loadOriginal, save });
   const message = saving.message || orientation.error;
   const source = image.url ?? thumbnail;
+  const originalLabel = t(image.error ? 'client.mobile.reloadOriginalImage' : 'client.chat.viewOriginal');
   return <Modal visible animationType="fade" onRequestClose={close} statusBarTranslucent
     navigationBarTranslucent supportedOrientations={['portrait', 'portrait-upside-down',
       'landscape-left', 'landscape-right']}>
@@ -57,15 +59,17 @@ export function ImageViewer({ thumbnail, description, load, close, save }: Props
               disabled={orientation.rotating} onPress={orientation.rotate} style={styles.rotate}>
               <MaterialCommunityIcons name="screen-rotation" size={28} color="#fff" />
             </Pressable>}
-            <ImageAiToolbar load={image.loadOriginal} close={close}
-              originalAction={!image.url && !image.loading ? {
-                label: t(image.error ? "client.mobile.reloadOriginalImage" : "client.chat.viewOriginal"), onPress: image.request,
-              } : undefined} />
+            <ImageAiToolbar load={image.loadOriginal} close={close} />
           </View>
         </SafeAreaView>
         </KeyboardAvoidingView>
         <SafeAreaView pointerEvents="box-none" edges={['top', 'left', 'right']} style={styles.header}>
           <View pointerEvents="box-none" style={styles.headerActions}>
+            {!image.url && !image.loading && <Pressable accessibilityRole="button"
+              accessibilityLabel={originalLabel} onPress={image.request} style={styles.original}>
+              <MaterialCommunityIcons name="image-outline" size={20} color="#fff" />
+              <Text style={styles.originalLabel}>{originalLabel}</Text>
+            </Pressable>}
             <Pressable accessibilityRole="button" accessibilityLabel={t("client.mobile.saveImageToPhotos")}
               accessibilityState={{ disabled: image.loading || saving.saving, busy: saving.saving }}
               disabled={image.loading || saving.saving} onPress={saving.save}
@@ -86,10 +90,14 @@ const useStyles = createThemedStyles((color) => ({
   image: { width: '100%', height: '100%' },
   controls: { flex: 1, justifyContent: 'flex-end' },
   header: { position: 'absolute', top: 0, left: 0, right: 0 },
-  headerActions: { alignItems: 'flex-end', paddingHorizontal: 12, paddingTop: 12 },
+  headerActions: { flexDirection: 'row', alignItems: 'flex-start', gap: 12,
+    paddingHorizontal: 12, paddingTop: 12 },
+  original: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1, maxWidth: 400,
+    minHeight: 48, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 24, backgroundColor: '#484848' },
+  originalLabel: { ...textMetrics(14, 20), color: '#fff', flexShrink: 1 },
   footer: { paddingHorizontal: 12, paddingBottom: 12, paddingTop: 12 },
   rotate: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
-  save: { width: 48, height: 48, borderRadius: 24, backgroundColor: '#484848',
+  save: { width: 48, height: 48, flexShrink: 0, marginLeft: 'auto', borderRadius: 24, backgroundColor: '#484848',
     alignItems: 'center', justifyContent: 'center' },
   disabled: { opacity: 0.4 },
   notices: { alignItems: 'center', gap: 8 },

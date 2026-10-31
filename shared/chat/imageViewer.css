@@ -45,7 +45,8 @@
 @keyframes cs-image-download-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .cs-image-download-spinner { animation: none; } }
 @media (max-width: 640px), (hover: none) and (pointer: coarse) {
-  .cs-image-viewer .cs-image-close { left: max(12px, env(safe-area-inset-left)); right: auto; }
+  .cs-image-viewer:has(.cs-image-download) .cs-image-close {
+    right: max(68px, calc(env(safe-area-inset-right) + 56px)); }
   .cs-image-viewer .cs-image-download { right: max(12px, env(safe-area-inset-right)); width: 44px; padding: 0; }
   .cs-image-download span { display: none; }
 }
@@ -53,5 +54,14 @@
   transform: translateX(-50%); display: flex; align-items: center; gap: 8px;
   min-height: 44px; padding: 0 18px; border-radius: 22px; background: #282b2a; }
 .cs-image-original ~ .cs-image-status { bottom: 140px; }
+.cs-image-viewer > .cs-image-original-mobile {
+  top: max(12px, env(safe-area-inset-top)); bottom: auto; left: max(12px, env(safe-area-inset-left));
+  transform: none; box-sizing: border-box; max-width: min(400px, calc(100vw - 136px
+    - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  padding: 8px 14px; color: #eee; font-size: 14px; line-height: 20px; text-align: left;
+}
+.cs-image-original-mobile svg { flex-shrink: 0; }
+.cs-image-original-mobile span { min-width: 0; overflow-wrap: anywhere; }
+.cs-image-original-mobile ~ .cs-image-status { bottom: 88px; }
 .cs-image-transfer { width: 288px; max-width: calc(100vw - 32px); }
 .cs-image-transfer .cs-preview-progress { background: #252827; }

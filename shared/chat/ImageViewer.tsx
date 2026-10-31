@@ -7,6 +7,7 @@ import type { PreviewImageLoader } from '../remote-chat/previewProgress';
 import { PreviewTransferProgress } from './PreviewTransferProgress';
 import { ImageViewerFrame } from './ImageViewerFrame';
 import { ImageAiToolbar } from './ImageAiToolbar';
+import { useMobileImageViewer } from './useMobileImageViewer';
 
 interface Props {
   thumbnail: string; description: string; load: PreviewImageLoader; close: () => void;
@@ -25,11 +26,15 @@ export function ImageViewer({ thumbnail, description, load, close, download, con
   const image = useImageViewer(load, autoLoadOriginal);
   const [downloadError, setDownloadError] = useState('');
   const [saving, setSaving] = useState(false);
+  const mobile = useMobileImageViewer();
+  const originalAction = !image.url && !image.loading && <button type="button"
+    className={`cs-image-original${mobile ? ' cs-image-original-mobile' : ''}`} onClick={image.request}>
+    <ImageIcon size={20} aria-hidden="true" />
+    <span>{translate(image.error ? 'client.mobile.reloadOriginalImage' : 'client.chat.viewOriginal')}</span>
+  </button>;
   const renderEditor = (viewControls?: ReactNode) => <ImageAiToolbar load={image.loadOriginal}
     close={close} translate={translate} viewControls={viewControls}
-    originalAction={!image.url && !image.loading && <button type="button" className="cs-image-original"
-      onClick={image.request}><ImageIcon size={20} aria-hidden="true" />
-      <span>{translate(image.error ? "client.mobile.reloadOriginalImage" : "client.chat.viewOriginal")}</span></button>} />;
+    originalAction={mobile ? undefined : originalAction} />;
   return <ImageViewerFrame src={image.url ?? thumbnail} description={description} close={close}
     renderToolbar={inlineViewControls ? renderEditor : undefined}
     translate={translate} onError={image.fail} onContextMenu={(event) => {
@@ -37,6 +42,7 @@ export function ImageViewer({ thumbnail, description, load, close, download, con
       event.preventDefault();
       if (image.url && !image.error) contextMenu(event, image.url);
     }}>
+    {mobile && originalAction}
     {download && <button type="button" className="cs-image-download" disabled={saving || image.loading}
       aria-label={translate(saving ? "client.projectBrowser.saving" : "client.shared.downloadImage")} aria-busy={saving}
       onClick={async () => {
