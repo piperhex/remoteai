@@ -18,6 +18,7 @@ const goOnlyPermissions = new Set([
   'admin.chat-traffic.read', 'admin.chat-traffic.manage',
   'admin.update-sharing.read', 'admin.update-sharing.manage',
   'admin.provider-market.read', 'admin.provider-market.manage', 'admin.provider-market.order',
+  'admin.provider-market.review', 'admin.provider-market.promote',
 ]);
 // The chat policy/limit smoke tests cover these additions; compare only the frozen Nest contract here.
 const goOnlyChatFields = new Set([
@@ -66,7 +67,8 @@ function legacyProviderField(value, field, parent) {
 }
 
 export async function request(base, method, path, options = {}) {
-  const headers = { ...options.headers };
+  // Compare representation bytes and lengths; Go's gzip negotiation has dedicated transport tests.
+  const headers = { 'Accept-Encoding': 'identity', ...options.headers };
   if (options.token) headers.Authorization = `Bearer ${options.token}`;
   let body = options.body;
   if (body !== undefined && !(body instanceof FormData) && !Buffer.isBuffer(body)) {

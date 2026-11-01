@@ -8,8 +8,21 @@ const stableHeaders = [
 ];
 const missingID = '10000000-0000-4000-8000-000000000099';
 
+export function assertLegacyVary(actual, expected) {
+  const tokens = (value) => value?.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean) ?? [];
+  const actualTokens = tokens(actual);
+  assert.equal(new Set(actualTokens).size, actualTokens.length, 'Vary tokens must not repeat');
+  // Go adds compression negotiation; every frozen CORS/cache variation must remain unchanged.
+  const comparable = actualTokens.filter((token) => token !== 'accept-encoding');
+  assert.deepEqual(comparable.sort(), tokens(expected).sort(), 'transport header vary');
+}
+
 function headersMatch(result, extra = []) {
   for (const key of [...stableHeaders, ...extra]) {
+    if (key === 'vary') {
+      assertLegacyVary(result.modern.headers[key], result.legacy.headers[key]);
+      continue;
+    }
     assert.equal(result.modern.headers[key], result.legacy.headers[key], `transport header ${key}`);
   }
 }

@@ -6,8 +6,12 @@ const normalize = (value) => normalizeLegacyResponse(value, { ids: new Map(), al
 
 test('only known Go market permissions are excluded from the frozen contract', () => {
   const permissions = ['admin.users.read', 'admin.provider-market.read', 'admin.provider-market.manage',
-    'admin.provider-market.order', 'unexpected.permission'];
-  assert.deepEqual(normalize({ permissions }).permissions, ['admin.users.read', 'unexpected.permission']);
+    'admin.provider-market.order', 'admin.provider-market.review', 'admin.provider-market.promote',
+    'admin.provider-market.unknown', 'unexpected.permission'];
+  assert.deepEqual(normalize({ permissions }).permissions,
+    ['admin.provider-market.unknown', 'admin.users.read', 'unexpected.permission']);
+  assert.deepEqual(normalize(permissions.map((code) => ({ code }))),
+    [{ code: 'admin.users.read' }, { code: 'admin.provider-market.unknown' }, { code: 'unexpected.permission' }]);
 });
 
 test('old Providers cannot acquire an enabled balance parser', () => {
