@@ -39,6 +39,7 @@ pub(super) fn convert(input: &Value, context: &Context) -> Result<Value, BridgeE
             builder.system = super::history::merge_system(&previous.system, builder.system);
         }
     }
+    super::super::thought_signatures::prepare_native_history(&mut builder.contents);
     let mut body = json!({ "contents": builder.contents });
     if !builder.system.is_empty() {
         body["systemInstruction"] = json!({ "parts": builder.system })
@@ -114,10 +115,11 @@ impl InputBuilder<'_> {
             return Err(BridgeError::InvalidToolCall);
         }
         self.calls.insert(id.into(), name.into());
-        self.message(
-            "model",
-            vec![json!({ "functionCall": { "id": id, "name": name, "args": args } })],
-        );
+        let mut part = json!({ "functionCall": { "id": id, "name": name, "args": args } });
+        if let Some(signature) = super::super::thought_signatures::chat_signature(&call) {
+            part["thoughtSignature"] = json!(signature);
+        }
+        self.message("model", vec![part]);
         Ok(())
     }
 

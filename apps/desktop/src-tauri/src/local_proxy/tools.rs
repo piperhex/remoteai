@@ -112,14 +112,14 @@ fn responses_function_call_to_chat_tool_call(
     let name = item.get("name").and_then(Value::as_str).unwrap_or("");
     let namespace = item.get("namespace").and_then(Value::as_str);
     let chat_name = tool_context.chat_name_for_response_function(name, namespace);
-    json!({
+    thought_signatures::copy_chat_signature(item, json!({
         "id": call_id,
         "type": "function",
         "function": {
             "name": chat_name,
             "arguments": canonicalize_tool_arguments(item.get("arguments"))
         }
-    })
+    }))
 }
 
 fn responses_custom_tool_call_to_chat_tool_call(item: &Value) -> Value {
@@ -130,14 +130,14 @@ fn responses_custom_tool_call_to_chat_tool_call(item: &Value) -> Value {
         .unwrap_or("");
     let name = item.get("name").and_then(Value::as_str).unwrap_or("");
     let input = item.get("input").cloned().unwrap_or_else(|| json!(""));
-    json!({
+    thought_signatures::copy_chat_signature(item, json!({
         "id": call_id,
         "type": "function",
         "function": {
             "name": name,
             "arguments": canonical_json_string(&json!({ CUSTOM_TOOL_INPUT_FIELD: input }))
         }
-    })
+    }))
 }
 
 fn responses_tool_search_call_to_chat_tool_call(item: &Value) -> Value {
@@ -146,7 +146,7 @@ fn responses_tool_search_call_to_chat_tool_call(item: &Value) -> Value {
         .or_else(|| item.get("id"))
         .and_then(Value::as_str)
         .unwrap_or("");
-    json!({
+    thought_signatures::copy_chat_signature(item, json!({
         "id": call_id,
         "type": "function",
         "function": {
@@ -156,7 +156,7 @@ fn responses_tool_search_call_to_chat_tool_call(item: &Value) -> Value {
                 .map(canonical_json_string)
                 .unwrap_or_else(|| "{}".to_string())
         }
-    })
+    }))
 }
 
 fn responses_tool_choice_to_chat(tool_choice: &Value, tool_context: &CodexToolContext) -> Value {
@@ -302,14 +302,15 @@ fn chat_tool_call_to_response_item(
     let name = function.get("name").and_then(Value::as_str).unwrap_or("");
     let arguments = canonicalize_tool_arguments(function.get("arguments"));
     let item_id = response_tool_call_item_id_from_chat_name(&call_id, name, tool_context);
-    response_tool_call_item_from_chat_name(
+    let item = response_tool_call_item_from_chat_name(
         &item_id,
         "completed",
         &call_id,
         name,
         &arguments,
         tool_context,
-    )
+    );
+    thought_signatures::copy_chat_signature(tool_call, item)
 }
 
 fn response_tool_call_item_id_from_chat_name(

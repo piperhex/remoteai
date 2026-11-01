@@ -95,7 +95,6 @@ fn native_stream_maps_thoughts_parallel_tools_and_trailing_partial_usage() {
     let output = convert(&tool_stream());
     assert!(output.contains("event: response.reasoning_summary_text.delta"));
     assert!(output.contains("event: response.function_call_arguments.delta"));
-    assert!(!output.contains("opaque"));
     let final_response = terminal(&output);
     assert_eq!(final_response["status"], "completed");
     assert_eq!(final_response["usage"]["input_tokens"], 20);
@@ -109,6 +108,16 @@ fn native_stream_maps_thoughts_parallel_tools_and_trailing_partial_usage() {
     assert_eq!(calls.len(), 2);
     assert_eq!(calls[0]["arguments"], "{\"x\":1}");
     assert_ne!(calls[0]["call_id"], calls[1]["call_id"]);
+    assert_eq!(
+        calls[0]["extra_content"]["google"]["thought_signature"],
+        "opaque"
+    );
+    assert!(calls[1].get("extra_content").is_none());
+    for item in final_response["output"].as_array().unwrap() {
+        if item["type"] != "function_call" {
+            assert!(!item.to_string().contains("opaque"));
+        }
+    }
 }
 
 #[test]

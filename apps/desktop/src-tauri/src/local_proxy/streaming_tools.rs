@@ -170,7 +170,7 @@ impl<R: BufRead> ChatSseReader<R> {
             let output_index = state.output_index.unwrap_or(key + 1);
             let arguments = canonicalize_tool_arguments_str(&state.arguments);
             let is_custom_tool = self.tool_context.is_custom_tool_chat_name(&state.name);
-            let item = response_tool_call_item_from_chat_name(
+            let mut item = response_tool_call_item_from_chat_name(
                 &state.item_id,
                 "completed",
                 &state.call_id,
@@ -178,6 +178,9 @@ impl<R: BufRead> ChatSseReader<R> {
                 &arguments,
                 &self.tool_context,
             );
+            if !state.thought_signature.is_empty() {
+                thought_signatures::set_chat_signature(&mut item, &state.thought_signature);
+            }
             state.done = true;
             items.push((output_index, item.clone()));
 

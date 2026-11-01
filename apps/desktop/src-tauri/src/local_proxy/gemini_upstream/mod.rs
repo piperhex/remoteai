@@ -16,6 +16,8 @@ mod correctness_tests;
 #[cfg(test)]
 mod http_tests;
 #[cfg(test)]
+mod signature_tests;
+#[cfg(test)]
 mod stream_tests;
 #[cfg(test)]
 mod tests;

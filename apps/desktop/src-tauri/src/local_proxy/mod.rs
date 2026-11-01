@@ -60,6 +60,7 @@ mod session_titles;
 pub(crate) mod sse_idle_timeout;
 mod sse_transport;
 mod stream_completion;
+mod thought_signatures;
 pub(crate) mod transport_settings;
 mod upstream_transport;
 mod usage_service_tier;
@@ -150,6 +151,7 @@ mod tests {
     include!("tests/part_04.rs");
     include!("tests/part_05.rs");
     include!("tests/part_06.rs");
+    mod thought_signatures;
     include!("tests/part_07.rs");
     include!("tests/chat_bridge_headers.rs");
     include!("tests/provider_api_fallback.rs");

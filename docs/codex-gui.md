@@ -425,6 +425,18 @@ Chat/Gemini responses that require buffering, Anthropic/Gemini event conversion,
 and proxy model catalog reads no longer impose byte or content-block caps.
 Protocol validation and the upstream model's own limits still apply.
 
+Gemini tool-call thought signatures are retained in Responses tool metadata for both
+buffered and streamed replies and restored when that metadata is returned. The shared
+proxy also keeps its scoped continuation cache for clients that omit extra fields;
+native Gemini replay restores the complete original signed parts when available.
+After history restoration, an unsigned first tool call in a Gemini step receives
+Google's documented `skip_thought_signature_validator` compatibility marker. This
+allows imported histories and resumed sessions with expired or lost caches to continue.
+The marker cannot recover missing reasoning state; original signatures always remain
+unchanged, and unsigned parallel sibling calls remain unsigned. Chat compatibility
+applies this fallback only to Gemini model IDs, including names such as `google/gemini-*`.
+See [Google's thought-signature guidance](https://ai.google.dev/gemini-api/docs/generate-content/thought-signatures#faqs).
+
 Messages conversion no longer supplies a fixed 16,384-token output length. Explicit
 client output lengths and Provider overrides are preserved. When no output length
 is supplied, the proxy retrieves `max_tokens` from the upstream model's

@@ -114,12 +114,6 @@ pub(super) fn capture(scope: Option<&Scope>, original: &[Value], call_ids: &[Str
 }
 
 pub(super) fn restore(scope: Option<&Scope>, parts: &mut Vec<Value>) {
-    if parts
-        .iter()
-        .any(|part| part.get("thoughtSignature").is_some())
-    {
-        return;
-    }
     let Some(scope) = scope else { return };
     let Some(key) = fingerprint(parts) else {
         return;
@@ -137,7 +131,34 @@ pub(super) fn restore(scope: Option<&Scope>, parts: &mut Vec<Value>) {
     if matching.any(|entry| entry.parts != first.parts) {
         return;
     }
+    if !compatible_signatures(parts, &first.parts) {
+        return;
+    }
     *parts = first.parts.clone();
+}
+
+fn compatible_signatures(supplied: &[Value], original: &[Value]) -> bool {
+    // A client can retain tool proofs but omit signed text parts. Restore the complete
+    // cached response only when every supplied proof agrees with its original call.
+    if supplied
+        .iter()
+        .any(|part| part.get("thoughtSignature").is_some() && part.get("functionCall").is_none())
+    {
+        return false;
+    }
+    let originals = original
+        .iter()
+        .filter(|part| part.get("functionCall").is_some());
+    supplied
+        .iter()
+        .filter(|part| part.get("functionCall").is_some())
+        .zip(originals)
+        .all(|(part, cached)| {
+            part.get("thoughtSignature").is_none_or(|signature| {
+                signature.as_str().is_none_or(str::is_empty)
+                    || *signature == cached["thoughtSignature"]
+            })
+        })
 }
 
 fn fingerprint(parts: &[Value]) -> Option<Value> {

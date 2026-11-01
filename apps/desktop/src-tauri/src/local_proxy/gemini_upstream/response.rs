@@ -67,7 +67,13 @@ impl State {
             merged.push_str(text);
             delta[field] = json!(merged);
         } else if let Some(function) = part.get("functionCall") {
-            let call = function_call(function, self.calls.len())?;
+            let mut call = function_call(function, self.calls.len())?;
+            if let Some(signature) = part["thoughtSignature"]
+                .as_str()
+                .filter(|value| !value.is_empty())
+            {
+                call["extra_content"] = json!({ "google": { "thought_signature": signature } });
+            }
             if delta.get("tool_calls").is_none() {
                 delta["tool_calls"] = json!([])
             }

@@ -34,6 +34,7 @@ fn forward_chat_bridge(
     provider_reasoning::apply(&responses_body, &mut chat_body, provider);
     provider_tool_schema::adapt_chat_tool_schemas(&provider.base_url, &mut chat_body);
     provider_request_options::body(&mut chat_body, provider);
+    thought_signatures::prepare_chat_history(&mut chat_body);
     let request_history = if continuation_scope.is_some() {
         chat_body["messages"]
             .as_array()

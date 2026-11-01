@@ -292,9 +292,9 @@ fn restore_thought_signature(tool_call: &mut Value, signature: &str) {
     };
     let extra_content = object_field(tool_call, "extra_content");
     let google = object_field(extra_content, "google");
-    google
-        .entry("thought_signature".to_string())
-        .or_insert_with(|| Value::String(signature.to_string()));
+    if non_empty_string(google.get("thought_signature")).is_none() {
+        google.insert("thought_signature".to_string(), Value::String(signature.to_string()));
+    }
 }
 
 fn object_field<'a>(object: &'a mut Map<String, Value>, key: &str) -> &'a mut Map<String, Value> {
