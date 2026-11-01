@@ -9,13 +9,17 @@ import { selectTotpEntries, type TotpSortOrder } from '../../../native/src/totp/
 import { TotpCodeCard } from '../totp/TotpCodeCard';
 import { TotpForm } from '../totp/TotpForm';
 import { useTotpCodes } from '../totp/useTotpCodes';
+import { TotpMobileHeader } from '../totp/TotpMobileHeader';
+import { DiscoveryBackButton } from '../discovery/DiscoveryPage';
 import '../totp/styles.css';
 
 const SORT_OPTIONS = [{ key: 'default', get label() { return t("client.app.defaultOrder"); } }, { key: 'name', get label() { return t("client.app.byServiceName"); } },
   { key: 'newest', get label() { return t("client.app.recentlyAddedFirst"); } }];
 const REFRESH_TEXT = { get pulling() { return t("client.app.pullToSync"); }, get canRelease() { return t("client.app.releaseToSync"); }, get refreshing() { return t("client.app.syncing"); }, get complete() { return t("client.app.synced"); } };
 
-export function TotpPage({ manager }: { manager: ReturnType<typeof useTotpVault> }) {
+export function TotpPage({ manager, onBack }: {
+  manager: ReturnType<typeof useTotpVault>; onBack: () => void;
+}) {
   useLanguage();
   const [form, setForm] = useState<{ entry: TotpEntry | null; scanFirst: boolean } | null>(null);
   const [query, setQuery] = useState('');
@@ -39,6 +43,9 @@ export function TotpPage({ manager }: { manager: ReturnType<typeof useTotpVault>
     if (confirmed) manager.deleteEntry(entry.id);
   };
   return <>
+    <div className="verification-desktop-back"><DiscoveryBackButton onBack={onBack} /></div>
+    <TotpMobileHeader onBack={onBack} onManualAdd={() => setForm({ entry: null, scanFirst: false })}
+      onScanAdd={() => setForm({ entry: null, scanFirst: true })} />
     <PullToRefresh onRefresh={refresh} renderText={status => REFRESH_TEXT[status]}>
       <div className="page-body verification-page">
         <header className="verification-heading"><div><h1>{t("client.app.2faCodes")}</h1>

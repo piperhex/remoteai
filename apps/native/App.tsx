@@ -1298,7 +1298,7 @@ function AppContent() {
     }}>
     {activePage === 'downloads' && <DownloadManagerPage session={session} onBack={() => setActivePage('discover')} />}
     {isDiscoveryPage(activePage)
-      && !['downloads', 'token-summary', 'lounge', 'port-mappings', 'devices'].includes(activePage)
+      && !['downloads', 'token-summary', 'lounge', 'port-mappings', 'totp', 'devices'].includes(activePage)
       && <DiscoveryBackButton onBack={() => setActivePage('discover')} />}
     {activePage === 'port-mappings'
       && <PortMappingPage devices={devices} onBack={() => setActivePage('discover')} />}
@@ -1314,7 +1314,7 @@ function AppContent() {
           onSwitchProviderGroup={handleRemoteProviderGroupSwitch}
           onSetOpenAiAuthAccount={handleSetOpenAiAuthAccount} />
         : activePage === 'totp'
-          ? <TotpPage manager={totpManager} />
+          ? <TotpPage manager={totpManager} onBack={() => setActivePage('discover')} />
           : activePage === 'admin' && profile?.role === 'admin'
             ? <AdminArea session={session} profile={profile} onExit={() => setActivePage('settings')} />
             : activePage === 'about'

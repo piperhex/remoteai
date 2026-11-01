@@ -374,7 +374,8 @@ function AppShell() {
     downloads: session && <DownloadManagerPage owner={downloadOwner(session)}
       onBack={() => dispatch(pageChanged('discover'))} />,
     accounts: <AccountsPage />, devices: <DevicesPage />,
-    totp: <TotpPage manager={totpManager} />, settings: <SettingsPage totpManager={totpManager} />,
+    totp: <TotpPage manager={totpManager} onBack={() => dispatch(pageChanged('discover'))} />,
+    settings: <SettingsPage totpManager={totpManager} />,
   };
   const pageTitle = page === 'devices' ? t('client.app.devices')
     : page === 'totp' ? t('client.discovery.twoFactor') : navItems.find(item => item.key === page)?.label;
@@ -450,7 +451,7 @@ function AppShell() {
           accounts: otherPages.accounts, discover: discoveryPage, settings: otherPages.settings,
         }}>
         {isDiscoveryPage(page)
-          && !['downloads', 'token-summary', 'lounge', 'devices'].includes(page)
+          && !['downloads', 'token-summary', 'lounge', 'totp', 'devices'].includes(page)
           && <DiscoveryBackButton onBack={() => dispatch(pageChanged('discover'))} />}
         {page !== 'chat' && page !== 'accounts' && page !== 'discover' && page !== 'settings' && otherPages[page]}
         </PrimaryPagePager>

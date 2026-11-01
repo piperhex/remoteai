@@ -2,41 +2,45 @@ import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, TextInput, View } from 'react-native';
+import { useState } from 'react';
+import { createThemedStyles } from '../theme/styles';
+import { textMetrics } from '../theme/text';
 import { usePageStyles as useStyles, totpColors as colors } from './pageStyles';
 
-export function TotpPageHeader({ onManualAdd, onScanAdd }: {
-  onManualAdd: () => void;
-  onScanAdd: () => void;
+export function TotpPageHeader({ onBack, onAdd, expanded }: {
+  onBack: () => void;
+  onAdd: () => void;
+  expanded: boolean;
 }) {
-  const styles = useStyles();
+  const styles = useHeaderStyles();
   const color = useThemeColor();
   useLanguage();
+  const [sideWidth, setSideWidth] = useState(64);
   return <View style={styles.header}>
-    <View style={styles.heading}>
-      <View style={styles.illustration} pointerEvents="none" accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants">
-        <View style={styles.glow} />
-        <View style={styles.flourish} />
-        <Ionicons name="shield" size={74} color={color("#43b98f", 'accent')} />
-        <Ionicons name="lock-closed" size={26} color="#fff" style={styles.lock} />
-      </View>
-      <Text style={styles.title}>{t("client.app.2faCodes")}</Text>
-      <Text style={styles.subtitle}>{t("client.mobile.pullDownToSyncKeysTapACodeToCopy")}</Text>
-    </View>
-    <View style={styles.actions}>
-      <Pressable accessibilityRole="button" onPress={onManualAdd}
-        style={({ pressed }) => [styles.addButton, styles.manualButton, pressed && styles.pressed]}>
-        <Ionicons name="add" size={25} color={color(colors.green, 'accent')} />
-        <Text style={styles.manualText}>{t("client.app.addManually")}</Text>
-      </Pressable>
-      <Pressable accessibilityRole="button" onPress={onScanAdd}
-        style={({ pressed }) => [styles.addButton, styles.scanButton, pressed && styles.pressed]}>
-        <Ionicons name="qr-code-outline" size={22} color="#fff" />
-        <Text style={styles.scanText}>{t("client.app.scanQrCode")}</Text>
-      </Pressable>
-    </View>
+    <Pressable accessibilityRole="button" accessibilityLabel={t('client.discovery.back')} onPress={onBack}
+      style={({ pressed }) => [styles.back, { width: sideWidth }, pressed && styles.pressed]}>
+      <Ionicons name="chevron-back" size={22} color={color(colors.ink, 'ink')} />
+    </Pressable>
+    <Text accessibilityRole="header" style={styles.title}>{t('client.app.2faCodes')}</Text>
+    <Pressable accessibilityRole="button" accessibilityLabel={t('client.shared.add')}
+      accessibilityState={{ expanded }} onPress={onAdd}
+      onLayout={event => setSideWidth(event.nativeEvent.layout.width)}
+      style={({ pressed }) => [styles.add, pressed && styles.pressed]}>
+      <Ionicons name="add" size={20} color={color(colors.green, 'accent')} />
+      <Text style={styles.addText}>{t('client.shared.add')}</Text>
+    </Pressable>
   </View>;
 }
+
+const useHeaderStyles = createThemedStyles(color => ({
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, gap: 4 },
+  back: { minHeight: 44, justifyContent: 'center', alignItems: 'flex-start' },
+  title: { ...textMetrics(18, 28), flex: 1, textAlign: 'center', fontWeight: '600', color: color(colors.ink, 'ink') },
+  add: { minHeight: 44, maxWidth: '32%', flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'flex-end', gap: 2 },
+  addText: { ...textMetrics(16, 24), flexShrink: 1, fontWeight: '600', color: color(colors.green, 'accent') },
+  pressed: { opacity: 0.65 },
+}));
 
 export function TotpSearchBar({ query, onQueryChange, onSort, sorted }: {
   query: string;

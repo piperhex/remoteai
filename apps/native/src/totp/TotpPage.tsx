@@ -13,6 +13,7 @@ import { Toast } from '../components/AppToast';
 import { TotpCodeCard } from './TotpCodeCard';
 import { TotpFormSheet } from './TotpFormSheet';
 import { TotpPageHeader, TotpSearchBar } from './TotpPageHeader';
+import { TotpAddMenu } from './TotpAddMenu';
 import { TotpOptionsMenu } from './TotpOptionsMenu';
 import { selectTotpEntries, type TotpSortOrder } from './entryList';
 import { usePageStyles as useStyles } from './pageStyles';
@@ -73,7 +74,7 @@ function EntryList({ manager, entries, codes, now, onEdit }: {
   />)}</>;
 }
 
-export function TotpPage({ manager }: { manager: TotpManagerState }) {
+export function TotpPage({ manager, onBack }: { manager: TotpManagerState; onBack: () => void }) {
   const styles = useStyles();
   const color = useThemeColor();
   useLanguage();
@@ -83,6 +84,8 @@ export function TotpPage({ manager }: { manager: TotpManagerState }) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<TotpSortOrder>('default');
   const [sortOpen, setSortOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const entries = useMemo(() => selectTotpEntries(manager.entries, query, sort), [manager.entries, query, sort]);
   const { codes, now } = useTotpCodes(manager.entries);
 
@@ -105,11 +108,13 @@ export function TotpPage({ manager }: { manager: TotpManagerState }) {
   };
 
   return <View style={styles.page}>
+    <View onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}>
+      <TotpPageHeader onBack={onBack} onAdd={() => setAddOpen(true)} expanded={addOpen} />
+    </View>
     <ScrollView style={styles.list} contentContainerStyle={styles.listContent}
       keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
       refreshControl={<RefreshControl refreshing={manager.syncing}
         onRefresh={() => void refreshCloud()} tintColor={color("#2ba47d", 'accent')} colors={['#2ba47d']} />}>
-      <TotpPageHeader onManualAdd={() => openForm(null)} onScanAdd={() => openForm(null, true)} />
       <TotpSearchBar query={query} onQueryChange={setQuery} onSort={() => setSortOpen(true)}
         sorted={sort !== 'default'} />
       <EntryList manager={manager} entries={entries} codes={codes} now={now} onEdit={openForm} />
@@ -129,5 +134,7 @@ export function TotpPage({ manager }: { manager: TotpManagerState }) {
         else manager.addEntry(draft);
       }}
     />
+    {addOpen && <TotpAddMenu headerHeight={headerHeight} onClose={() => setAddOpen(false)}
+      onManualAdd={() => openForm(null)} onScanAdd={() => openForm(null, true)} />}
   </View>;
 }
