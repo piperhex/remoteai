@@ -1,0 +1,104 @@
+{
+  "profile": "release",
+  "platform": "Windows",
+  "filesystem": "F: NTFS",
+  "network": "none",
+  "samples": [
+    {
+      "bytes": 67108864,
+      "data_syncs": 128,
+      "ledger_replaces": 128,
+      "ledger_syncs": 128,
+      "mib_per_second": 83.12562750107479,
+      "mode": "before",
+      "network": "none; in-memory identical 512 KiB blocks",
+      "round": 0,
+      "seconds": 0.769919,
+      "storage_directory": "F:/projects/codex-switch/.codex-tmp/task8"
+    },
+    {
+      "bytes": 67108864,
+      "data_syncs": 8,
+      "ledger_replaces": 8,
+      "ledger_syncs": 8,
+      "mib_per_second": 521.8883224226056,
+      "mode": "batched",
+      "network": "none; in-memory identical 512 KiB blocks",
+      "round": 0,
+      "seconds": 0.1226316,
+      "storage_directory": "F:/projects/codex-switch/.codex-tmp/task8"
+    },
+    {
+      "bytes": 67108864,
+      "data_syncs": 8,
+      "ledger_replaces": 8,
+      "ledger_syncs": 8,
+      "mib_per_second": 587.1678143962538,
+      "mode": "batched",
+      "network": "none; in-memory identical 512 KiB blocks",
+      "round": 1,
+      "seconds": 0.1089978,
+      "storage_directory": "F:/projects/codex-switch/.codex-tmp/task8"
+    },
+    {
+      "bytes": 67108864,
+      "data_syncs": 128,
+      "ledger_replaces": 128,
+      "ledger_syncs": 128,
+      "mib_per_second": 84.20123094305772,
+      "mode": "before",
+      "network": "none; in-memory identical 512 KiB blocks",
+      "round": 1,
+      "seconds": 0.7600839,
+      "storage_directory": "F:/projects/codex-switch/.codex-tmp/task8"
+    },
+    {
+      "bytes": 67108864,
+      "data_syncs": 128,
+      "ledger_replaces": 128,
+      "ledger_syncs": 128,
+      "mib_per_second": 83.41960963011614,
+      "mode": "before",
+      "network": "none; in-memory identical 512 KiB blocks",
+      "round": 2,
+      "seconds": 0.7672057,
+      "storage_directory": "F:/projects/codex-switch/.codex-tmp/task8"
+    },
+    {
+      "bytes": 67108864,
+      "data_syncs": 8,
+      "ledger_replaces": 8,
+      "ledger_syncs": 8,
+      "mib_per_second": 608.8552284967079,
+      "mode": "batched",
+      "network": "none; in-memory identical 512 KiB blocks",
+      "round": 2,
+      "seconds": 0.1051153,
+      "storage_directory": "F:/projects/codex-switch/.codex-tmp/task8"
+    },
+    {
+      "bytes": 67108864,
+      "data_syncs": 8,
+      "ledger_replaces": 8,
+      "ledger_syncs": 8,
+      "mib_per_second": 612.9716289912594,
+      "mode": "batched",
+      "network": "none; in-memory identical 512 KiB blocks",
+      "round": 3,
+      "seconds": 0.1044094,
+      "storage_directory": "F:/projects/codex-switch/.codex-tmp/task8"
+    },
+    {
+      "bytes": 67108864,
+      "data_syncs": 128,
+      "ledger_replaces": 128,
+      "ledger_syncs": 128,
+      "mib_per_second": 83.1403027684032,
+      "mode": "before",
+      "network": "none; in-memory identical 512 KiB blocks",
+      "round": 3,
+      "seconds": 0.7697831,
+      "storage_directory": "F:/projects/codex-switch/.codex-tmp/task8"
+    }
+  ]
+}

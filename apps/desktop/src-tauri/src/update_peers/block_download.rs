@@ -132,9 +132,26 @@ pub(super) async fn download_recorded(
     reporting: (&mut Report, impl FnMut(usize, Option<u64>)),
 ) -> Result<Vec<u8>> {
     let (report, mut progress) = reporting;
-    let (sender, mut blocks) = mpsc::channel(16);
+    let (sender, blocks) = mpsc::channel(16);
     let mut state = Download::new(leases, artifact, service, report);
     state.start();
+    if let Err(error) = receive_blocks(&mut state, &mut progress, &sender, blocks).await {
+        if let Some(destination) = &state.destination {
+            if let Err(flush_error) = destination.flush().await {
+                eprintln!("could not checkpoint failed update download: {flush_error}");
+            }
+        }
+        return Err(error);
+    }
+    state.finish().await
+}
+
+async fn receive_blocks(
+    state: &mut Download<'_>,
+    progress: &mut impl FnMut(usize, Option<u64>),
+    sender: &mpsc::Sender<Block>,
+    mut blocks: mpsc::Receiver<Block>,
+) -> Result<()> {
     let mut next_refill = Instant::now() + REFILL_INTERVAL;
     let mut discovery: Discovery<'_> = None;
     let mut last_progress = Instant::now();
@@ -142,10 +159,10 @@ pub(super) async fn download_recorded(
         tokio::select! {
             biased;
             Some(block) = blocks.recv() => {
-                if state.accept_block(block, &mut progress).await? { last_progress = Instant::now(); }
+                if state.accept_block(block, progress).await? { last_progress = Instant::now(); }
             }
             Some((source, result)) = state.jobs.next(), if !state.jobs.is_empty() => {
-                state.accept_source(source, result, &mut progress).await?;
+                state.accept_source(source, result, progress).await?;
             }
             found = discover(&mut discovery), if discovery.is_some() => {
                 if let Ok(leases) = found { state.add_peers(leases); }
@@ -154,20 +171,20 @@ pub(super) async fn download_recorded(
             _ = tokio::time::sleep(Duration::from_millis(100)) => {}
         }
         if state.complete() {
-            return state.finish().await;
+            return Ok(());
         }
         if Instant::now() >= next_refill
             && discovery.is_none()
             && state.slots.iter().any(Option::is_none)
         {
-            discovery = Some(service.find_peers(&artifact.id).boxed());
+            discovery = Some(state.service.find_peers(&state.artifact.id).boxed());
             next_refill = Instant::now() + REFILL_INTERVAL;
         }
-        state.schedule(&sender);
+        state.schedule(sender);
         if last_progress.elapsed() > STALL_TIMEOUT
             || (state.jobs.is_empty()
                 && state.ready.iter().all(Option::is_none)
-                && service.broker.borrow().is_none())
+                && state.service.broker.borrow().is_none())
         {
             return Err(Error::Unavailable);
         }

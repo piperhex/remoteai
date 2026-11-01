@@ -20,6 +20,7 @@ mod signaling;
 mod snapshot;
 mod transfer;
 
+pub(crate) use checkpoint::shutdown as checkpoint_shutdown;
 pub(crate) use signaling::{Bridge, Offer, Offers};
 
 use std::{sync::Arc, time::Duration};
