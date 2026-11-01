@@ -13,6 +13,7 @@ import { useGuiAccounts } from '../../../../shared/remote-chat/client/useGuiAcco
 import type { GuiToolsClient } from '../../../../shared/remote-chat/guiTools';
 import { ChatGuiUpdateSheet } from './ChatGuiUpdateSheet';
 import { palette, useStyles } from './styles';
+import { ChatSettingsConnection } from './ChatSettingsConnection';
 
 export interface ChatConnectionProps {
   client: GuiAccountsClient; deviceName?: string; chooseDevice: () => void;
@@ -53,7 +54,7 @@ export function ChatProfileMenu(props: Props) {
 
   const connectionOptions = <>
     <Pressable accessibilityRole="button" accessibilityLabel={t("client.chat.switchComputer")}
-      style={[pickerStyles.option, settings && pickerStyles.settingOption]}
+      style={pickerStyles.option}
       onPress={() => { setPanel(null); chooseDevice(); }}>
       <Feather name="monitor" size={22} color={color(palette.ink, 'ink')} />
       <View style={pickerStyles.copy}><Text style={styles.title}>{t("client.chat.switchComputer")}</Text>
@@ -61,7 +62,7 @@ export function ChatProfileMenu(props: Props) {
       <Feather name="chevron-right" size={18} color={color(palette.muted, 'muted')} />
     </Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={t("client.chat.switchAccount")}
-      style={[pickerStyles.option, settings && pickerStyles.settingOption]}
+      style={pickerStyles.option}
       onPress={() => { setQuery(''); setPanel('accounts'); if (ready) accounts.refresh(); }}>
       <Feather name="user" size={22} color={color(palette.ink, 'ink')} />
       <View style={pickerStyles.copy}><Text style={styles.title}>{t("client.chat.switchAccount")}</Text>
@@ -70,7 +71,10 @@ export function ChatProfileMenu(props: Props) {
     </Pressable>
   </>;
   return <>
-    {settings ? connectionOptions : <Pressable accessibilityRole="button" accessibilityLabel={t("client.chat.openProfileMenu")}
+    {settings ? <ChatSettingsConnection deviceName={deviceName || t('client.settings.chooseAComputer')}
+      accountName={name} onDevice={() => { setPanel(null); chooseDevice(); }}
+      onAccount={() => { setQuery(''); setPanel('accounts'); if (ready) accounts.refresh(); }} />
+      : <Pressable accessibilityRole="button" accessibilityLabel={t("client.chat.openProfileMenu")}
       accessibilityState={{ expanded: panel !== null && active }} style={pickerStyles.trigger}
       onPress={() => setPanel('profile')}>
       <Text style={pickerStyles.initials}>{initials}</Text>
@@ -148,7 +152,6 @@ const usePickerStyles = createThemedStyles((color) => ({
   readable: { width: '100%', maxWidth: SHEET_READABLE_WIDTH, alignSelf: 'center' },
   list: { maxHeight: 360 },
   option: { flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 64, padding: 12, borderRadius: 12 },
-  settingOption: { borderWidth: 1, borderColor: color(palette.border, 'border') },
   selected: { backgroundColor: color(palette.pale, 'accentSoft') },
   copy: { flex: 1, minWidth: 0 },
   empty: { color: color(palette.muted, 'muted'), fontSize: 13, lineHeight: 20, paddingVertical: 16 },

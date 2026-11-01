@@ -37,16 +37,14 @@ beforeEach(() => {
 });
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); });
 
-it('shows current tokens and USD cost with performance on the final row', () => {
+it('shows performance above the usage card with current tokens, cost and account credits', () => {
   const readConversationMetrics = vi.fn();
   const view = ChatUsage({ read: vi.fn(), active: true, ready: true, readConversationMetrics,
     threadId: 'mobile-thread', tokenUsage: { total: { totalTokens: 2_500 }, last: { totalTokens: 500 } } });
-  const summary = Children.toArray(view.props.children).at(-1);
-  const rows = isValidElement<{ children?: ReactNode }>(summary) ? Children.toArray(summary.props.children) : [];
-  expect(rows).toHaveLength(4);
-  expect(text(rows.at(-2))).toBe('额度点数 —');
-  expect(text(view)).toContain('当前 2.50K Token · 1.23USD');
-  expect(text(rows.at(-1))).toBe('75.0% TSR · 150.0 TPS · 1.25 TTFT');
+  expect(text(view)).toContain('额度点数—');
+  expect(text(view)).toContain('2.50K Token');
+  expect(text(view)).toContain('1.23 USD');
+  expect(text(Children.toArray(view.props.children)[0])).toBe('75.0% TSR · 150.0 TPS · 1.25 TTFT');
   expect(useConversationMetrics).toHaveBeenCalledWith(readConversationMetrics, 'mobile-thread', true);
 });
 
@@ -55,7 +53,7 @@ it('shows a placeholder and disables polling while disconnected or settings are 
   for (const state of [{ active: false, ready: true }, { active: true, ready: false }]) {
     const readConversationMetrics = vi.fn();
     expect(text(ChatUsage({ read: vi.fn(), readConversationMetrics, threadId: 'mobile-thread', ...state })))
-      .toContain('当前 — Token · —USD');
+      .toContain('当前— Token— USD');
     expect(useConversationMetrics).toHaveBeenLastCalledWith(readConversationMetrics, 'mobile-thread', false);
   }
 });

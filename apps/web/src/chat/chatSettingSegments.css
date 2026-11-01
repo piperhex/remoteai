@@ -15,6 +15,25 @@
 }
 .chat-setting-segments-track button.is-selected { color: #fff; }
 .chat-setting-segments-track button:focus-visible { outline: 2px solid var(--chat-green); outline-offset: 3px; }
+.chat-setting-segments-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.chat-setting-segments-label { width: 34px; flex-shrink: 0; font-size: 15px; font-weight: 600; }
+.chat-setting-segments-row.is-stacked { flex-direction: column; align-items: stretch; gap: 6px; }
+.chat-setting-segments-row.is-stacked .chat-setting-segments-label { width: auto; }
+.chat-setting-segments-row .chat-setting-segments-rail {
+  flex: 1; padding: 2px; border-radius: 11px; background: var(--chat-settings-surface);
+}
+.chat-setting-segments-row .chat-setting-segments-track button {
+  min-height: 42px; padding: 6px 2px; font-weight: 400; color: var(--app-muted, #596772);
+}
+.chat-setting-segments-row .chat-setting-segments-track button.is-selected { color: #fff; }
+.chat-setting-segments-divider {
+  position: absolute; left: 0; top: 22%; bottom: 22%; width: 1px;
+  background: var(--chat-settings-divider); pointer-events: none;
+}
+@media (max-width: 360px) {
+  .chat-setting-segments-row { flex-direction: column; align-items: stretch; gap: 6px; }
+  .chat-setting-segments-label { width: auto; }
+}
 @media (prefers-reduced-motion: reduce) {
   .chat-setting-segments-thumb { transition: none; }
 }

@@ -12,14 +12,16 @@ import { useConversationMetrics } from '../../../../shared/remote-chat/client/us
 import { ConversationPerformanceValues } from './ConversationPerformance';
 import { QuotaProgress } from '../../../../shared/chat/QuotaProgress';
 import { ChatContextProgress } from './ChatContextProgress';
+import { ChatUsageCard } from './ChatUsageCard';
 
 export function ChatUsage({ read, active, ready, tokenUsage, onContextSettings,
-  quotaProgress = false, showAccountCredits = false,
+  quotaProgress = false, showAccountCredits = false, card = false,
   readConversationMetrics, threadId }: {
   read: ReadUsage; active: boolean; ready: boolean; tokenUsage?: ThreadTokenUsage;
   onContextSettings?: () => void;
   quotaProgress?: boolean;
   showAccountCredits?: boolean;
+  card?: boolean;
   readConversationMetrics?: ReadConversationMetrics; threadId?: string | null;
 }) {
   useLanguage();
@@ -27,6 +29,8 @@ export function ChatUsage({ read, active, ready, tokenUsage, onContextSettings,
   const metrics = useConversationMetrics(readConversationMetrics, threadId ?? null, active && ready && visible);
   const trailing = usageTrailing(usage, displayText, formatCost, { compactQuota: quotaProgress });
   const notice = ready ? (error ? displayError(error) : t("client.chat.loadingTodaySUsage")) : t("client.chat.connectToViewTodaySUsage");
+  if (card) return <ChatUsageCard usage={usage} tokenUsage={tokenUsage} metrics={metrics} trailing={trailing}
+    notice={notice} onContextSettings={onContextSettings} disabled={!ready || !active} />;
   return <div className="chat-usage" role="group" aria-label={t("client.chat.todaySUsage")}>
     <ChatContextProgress usage={tokenUsage} onSettings={onContextSettings} disabled={!ready || !active} />
     {usage && trailing && <QuotaLine trailing={trailing}

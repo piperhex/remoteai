@@ -8,6 +8,7 @@ import { ChatContextSettings } from './ChatContextSettings';
 import { ChatProfileMenu, type ChatConnectionProps } from './ChatProfileMenu';
 import { ModelRefreshButton } from './ModelRefreshButton';
 import { ChatSettingSegments } from './ChatSettingSegments';
+import './chatSettings.css';
 import type { ContextSettingsApi } from '../../../../shared/remote-chat/contextSettings';
 import type { ReadUsage } from '../../../../shared/remote-chat/usage';
 import type { ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
@@ -48,11 +49,17 @@ export function ChatSettings({ models, selection, saving, ready, error, updateSe
     if (value !== selection[field] || error) await updateSettings({ [field]: value });
     setField((current) => current === field ? null : current);
   };
-  return <AdaptiveSheet open hideMobileHeader title={t("client.chat.chatSettings.1e06eb")} width={400} onClose={onClose}>
-    <div className="chat-settings" aria-hidden={field !== null || contextOpen}>
-      <ChatProfileMenu {...connection} variant="settings" ready={ready} />
+  const usage = <ChatUsage read={readUsage} active={!field && !contextOpen} ready={ready} tokenUsage={tokenUsage}
+    card={!desktop} readConversationMetrics={readConversationMetrics} threadId={threadId}
+    onContextSettings={threadId ? () => setContextOpen(true) : undefined} />;
+  return <AdaptiveSheet open hideMobileHeader className="chat-settings-sheet"
+    title={t("client.chat.chatSettings.1e06eb")} width={400} onClose={onClose}>
+    <div className={`chat-settings${desktop ? '' : ' chat-settings-mobile'}`} aria-hidden={field !== null || contextOpen}>
+      {!desktop && usage}
+      <ChatProfileMenu {...connection} variant="settings" compact={!desktop} ready={ready} />
       {visibleSettingsFields(selection).map((entry) => entry.field !== 'model'
-        ? <ChatSettingSegments key={entry.field} label={displayText(entry.label)} value={selection[entry.field] ?? ''}
+        ? <ChatSettingSegments key={entry.field} field={entry.field} compact={!desktop}
+          label={displayText(entry.label)} value={selection[entry.field] ?? ''}
           options={settingOptions(entry.field, models, selection)} onChange={value => selectInline(entry.field, value)}
           inactive={field !== null || contextOpen} />
         : <button key={entry.field} type="button"
@@ -65,10 +72,7 @@ export function ChatSettings({ models, selection, saving, ready, error, updateSe
       {!!notice && <p role={error ? 'alert' : 'status'} className={error ? 'chat-error' : 'chat-muted'}>{displayError(notice)}</p>}
       {!!error && <button type="button" className="chat-button" onClick={() => { void updateSettings(selection); }}>
         {t("client.chat.saveAgain")}</button>}
-      <ChatUsage read={readUsage} active={!field && !contextOpen} ready={ready} tokenUsage={tokenUsage}
-        quotaProgress={!desktop} showAccountCredits={!desktop}
-        readConversationMetrics={readConversationMetrics} threadId={threadId}
-        onContextSettings={threadId ? () => setContextOpen(true) : undefined} />
+      {desktop && usage}
     </div>
     {field && <AdaptiveSheet open title={displayText(SETTINGS_FIELDS.find((entry) => entry.field === field)!.title)} width={400}
       titleAction={field === 'model' ? <ModelRefreshButton ready={ready} refreshModels={refreshModels} /> : undefined}

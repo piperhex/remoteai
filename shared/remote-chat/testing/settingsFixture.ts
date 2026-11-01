@@ -34,3 +34,19 @@ export const settingsFixture = {
     total: { totalTokens: 24_980_000 }, last: { totalTokens: 244_900 }, modelContextWindow: 258_400,
   } satisfies ThreadTokenUsage,
 };
+
+/** Card preview values exercise an empty quota while context remains in its healthy color range. */
+export const settingsCardFixture = {
+  ...settingsFixture,
+  readUsage: async () => ({ totalTokens: 37_770_000, estimatedCostUsd: 48.83, primaryRemainingPercent: 0,
+    estimatedQuota: { remainingUsd: 0, capacityUsd: 1659.51 },
+    accountCredits: { hasCredits: true, unlimited: false, balance: '56879.423' } }),
+  readConversationMetrics: async () => ({
+    totalOutputTokens: 3630, totalOutputTimeMs: 100_000, outputRequestCount: 10,
+    totalFirstTokenTimeMs: 7330, firstTokenRequestCount: 10,
+    successfulCommandCount: 934, completedCommandCount: 1000, estimatedCostUsd: 12.19,
+  }),
+  tokenUsage: {
+    total: { totalTokens: 9_830_000 }, last: { totalTokens: 155_800 }, modelContextWindow: 258_400,
+  } satisfies ThreadTokenUsage,
+};

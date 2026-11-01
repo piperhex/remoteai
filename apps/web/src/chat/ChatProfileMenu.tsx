@@ -8,13 +8,14 @@ import { guiAccountAvatar } from '../../../../shared/remote-chat/guiAccountAvata
 import { useGuiAccounts } from '../../../../shared/remote-chat/client/useGuiAccounts';
 import type { GuiToolsClient } from '../../../../shared/remote-chat/guiTools';
 import { ChatGuiUpdateSheet } from './ChatGuiUpdateSheet';
+import { ChatSettingsConnection } from './ChatSettingsConnection';
 
 const ACCOUNT_REFRESH_MS = 60_000;
 export interface ChatConnectionProps {
   client: GuiAccountsClient; deviceName: string; chooseDevice: () => void;
 }
 type Props = ChatConnectionProps & { ready: boolean; active?: boolean } & (
-  { variant: 'settings' } | { variant?: 'profile'; email: string;
+  { variant: 'settings'; compact?: boolean } | { variant?: 'profile'; email: string;
     guiTools: GuiToolsClient; running: boolean }
 );
 
@@ -47,7 +48,11 @@ export function ChatProfileMenu(props: Props) {
         <small>{current?.name || t("client.chat.chooseAccount")}</small></span><span>›</span></button>
   </>;
   return <>
-    {settings ? connectionOptions : <button type="button"
+    {settings ? (props.compact ? <ChatSettingsConnection deviceName={deviceName}
+      accountName={current?.name || t('client.chat.chooseAccount')}
+      onDevice={() => { close(); chooseDevice(); }}
+      onAccount={() => { setQuery(''); setPanel('accounts'); if (ready) accounts.refresh(); }} />
+      : connectionOptions) : <button type="button"
       className="chat-profile-trigger"
       aria-label={t("client.chat.openProfileMenu")} aria-expanded={panel !== null} onClick={() => setPanel('profile')}>
       {initials}</button>}

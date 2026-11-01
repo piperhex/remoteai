@@ -170,6 +170,16 @@ export interface MessageParams5 {
   "client.chatReliability.yourComputerConfirmedReceiptWaitingForProgressToSync": Record<string, never>;
   "client.chatReliability.yourComputerHasNotConfirmedThisMessageCheckChatAnd": Record<string, never>;
   "client.chatReliability.yourConnectionIsWorkingChatAndTasksAreAvailable": Record<string, never>;
+  "client.chatSettings.access": Record<string, never>;
+  "client.chatSettings.account": Record<string, never>;
+  "client.chatSettings.computer": Record<string, never>;
+  "client.chatSettings.context": Record<string, never>;
+  "client.chatSettings.effort": Record<string, never>;
+  "client.chatSettings.fast": Record<string, never>;
+  "client.chatSettings.normal": Record<string, never>;
+  "client.chatSettings.quotaRemaining": Record<string, never>;
+  "client.chatSettings.speed": Record<string, never>;
+  "client.chatSettings.ultrafast": Record<string, never>;
   "client.cliImport.1CompletePackage": Record<string, never>;
   "client.cliImport.2ReleaseVerificationFile": Record<string, never>;
   "client.cliImport.accessToTheInstallationFilesWasDeniedCheckFolderPermissions": Record<string, never>;
@@ -190,14 +200,4 @@ export interface MessageParams5 {
   "client.cliImport.openTheLinkAndSaveThePageAsAFile": Record<string, never>;
   "client.cliImport.optional": Record<string, never>;
   "client.cliImport.preparingDownloadLinks": Record<string, never>;
-  "client.cliImport.remove": Record<string, never>;
-  "client.cliImport.selected": { "filename": string | number };
-  "client.cliImport.selectTheCompletePackage": Record<string, never>;
-  "client.cliImport.selectTheReleaseVerificationFile": Record<string, never>;
-  "client.cliImport.theFilesDoNotMatchDownloadBothFilesForThe": Record<string, never>;
-  "client.cliImport.theInstallationDiskIsFullFreeUpSpaceAndTry": Record<string, never>;
-  "client.cliImport.thePackageCouldNotBeExtractedAndMayBeDamaged": Record<string, never>;
-  "client.cliImport.thePackageIsInvalidOrIncompatibleWithThisComputerDownload": Record<string, never>;
-  "client.cliImport.thePackageIsMissingTheCodexExecutableDownloadTheComplete": Record<string, never>;
-  "client.cliImport.theSelectedFileCannotBeReadSelectTheDownloadedFile": Record<string, never>;
 }

@@ -7,9 +7,10 @@ import { Pressable, Text } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { ChatSettings } from '../src/chat/ChatSettings';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
-import { initialSettings, settingsFixture } from '../../../shared/remote-chat/testing/settingsFixture';
+import { initialSettings, settingsCardFixture } from '../../../shared/remote-chat/testing/settingsFixture';
 import { textMetrics } from '../src/theme/text';
 import { t } from '../src/i18n';
+import { updateThemeMode } from '../src/theme/store';
 
 setInterfaceLanguage('zh');
 
@@ -22,7 +23,11 @@ function ChatSettingsFixture() {
       accessibilityLabel={t('client.chat.chatSettings.1e06eb')}>
       <Text style={{ ...textMetrics(20, 30), color: '#17211b' }}>{t('client.chat.chatSettings.1e06eb')}</Text>
     </Pressable>
-    {open && fontsReady && <ChatSettings {...settingsFixture} selection={selection} usageActive
+    <Pressable accessibilityRole="button" accessibilityLabel={t('client.settings.dark')}
+      onPress={() => updateThemeMode('dark')}>
+      <Text style={textMetrics(16, 24)}>{t('client.settings.dark')}</Text>
+    </Pressable>
+    {open && fontsReady && <ChatSettings {...settingsCardFixture} selection={selection} usageActive
       updateSettings={async patch => setSelection(current => ({ ...current, ...patch }))}
       onClose={() => setOpen(false)} />}
   </SafeAreaView></SafeAreaProvider>;

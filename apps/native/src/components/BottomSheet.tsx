@@ -131,7 +131,7 @@ export function BottomSheet({
           (fillHeight || fullscreen) && styles.fill]} {...panHandlers}>
         <View style={insetStyle} {...sheetAccessibility}>
           {!fullscreen && <View testID="bottom-sheet-handle" collapsable={false} {...handleHandlers}
-            style={[styles.handleArea, compactHeader && styles.compactHandle]}
+            style={[styles.handleArea, compactHeader && styles.compactHandle, hideHeader && styles.headerlessHandle]}
             accessible={dismissible} accessibilityRole="button"
             accessibilityLabel={t('client.sheet.dragToClose')} onAccessibilityTap={close}>
             <View pointerEvents="none" style={styles.handle} />
@@ -237,6 +237,7 @@ const useStyles = createThemedStyles((color) => ({
   compactSubtitle: { ...textMetrics(11, 18), flexShrink: 1, marginTop: 0 },
   compactContent: { marginTop: 8 },
   headerlessContent: { marginTop: 0 },
+  headerlessHandle: { minHeight: 24, paddingBottom: 10 },
   actions: { flexDirection: 'row', gap: 10, paddingTop: 16, paddingBottom: 10 },
   action: {
     flex: 1, minHeight: 48, borderRadius: 14, backgroundColor: color('#eef3f0', 'canvas'),

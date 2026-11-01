@@ -59,9 +59,13 @@ export function ChatSettings({ models, selection, saving, ready, error, updateSe
   return <BottomSheet visible fullWidthContent hideHeader title={t("client.chat.chatSettings.1e06eb")} onClose={onClose}>
     <SheetScrollView contentContainerStyle={[styles.settings, menuStyles.content]}
       accessibilityElementsHidden={nestedOpen} importantForAccessibility={nestedOpen ? 'no-hide-descendants' : 'auto'}>
+      <ChatUsage read={readUsage} active={usageActive && !nestedOpen} ready={ready} tokenUsage={tokenUsage}
+        readConversationMetrics={readConversationMetrics} threadId={threadId}
+        onContextSettings={threadId && ready ? () => setContextOpen(true) : undefined} />
       <ChatProfileMenu {...connection} variant="settings" ready={ready} active={usageActive} />
       {visibleSettingsFields(selection).map((entry) => entry.field !== 'model'
-        ? <ChatSettingSegments key={entry.field} label={displayText(entry.label)} value={selection[entry.field] ?? ''}
+        ? <ChatSettingSegments key={entry.field} field={entry.field}
+          label={displayText(entry.label)} value={selection[entry.field] ?? ''}
           options={settingOptions(entry.field, models, selection)} onChange={value => selectInline(entry.field, value)} />
         : <Pressable key={entry.field} accessibilityRole="button"
         accessibilityLabel={t("client.chat.set", { value1: displayText(entry.label) })}
@@ -75,9 +79,6 @@ export function ChatSettings({ models, selection, saving, ready, error, updateSe
         style={error ? styles.error : styles.subtitle}>{displayError(notice)}</Text>}
       {!!error && <Pressable accessibilityRole="button" style={styles.button}
         onPress={() => { void updateSettings(selection); }}><Text style={styles.buttonText}>{t("client.chat.saveAgain")}</Text></Pressable>}
-      <ChatUsage read={readUsage} active={usageActive && !nestedOpen} ready={ready} tokenUsage={tokenUsage}
-        readConversationMetrics={readConversationMetrics} threadId={threadId}
-        onContextSettings={threadId && ready ? () => setContextOpen(true) : undefined} />
     </SheetScrollView>
     {contextOpen && threadId && ready && <ChatContextSettings key={threadId} threadId={threadId}
       api={contextSettings} onClose={() => setContextOpen(false)} />}
@@ -103,11 +104,10 @@ export function ChatSettings({ models, selection, saving, ready, error, updateSe
 }
 
 const useMenuStyles = createThemedStyles((color) => ({
-  content: { paddingBottom: 18 },
+  content: { paddingHorizontal: 14, paddingBottom: 14, gap: 12 },
   options: { maxWidth: SHEET_READABLE_WIDTH },
-  title: { flexShrink: 1, ...textMetrics(16, 24), color: color(palette.ink, 'ink'), fontWeight: '700' },
-  entry: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, padding: 14,
-    borderWidth: 1, borderColor: color(palette.border, 'border'), borderRadius: 12 },
-  value: { flex: 1, textAlign: 'right', color: color(palette.green, 'accent'), ...textMetrics(13, 20) },
-  arrow: { color: color(palette.muted, 'muted'), fontSize: 22 },
+  title: { flexShrink: 1, ...textMetrics(15, 22), color: color(palette.ink, 'ink'), fontWeight: '600' },
+  entry: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 42 },
+  value: { flex: 1, textAlign: 'right', color: color(palette.green, 'accent'), ...textMetrics(14, 22) },
+  arrow: { color: color(palette.muted, 'muted'), ...textMetrics(22, 28) },
 }));

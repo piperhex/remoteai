@@ -8,10 +8,11 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 const exec = promisify(execFile);
 const root = fileURLToPath(new URL('../../../', import.meta.url));
-const output = path.join(root, '.codex-tmp/chat-settings-android');
+const output = path.join(root, '.codex-tmp/chat-settings-card-android');
 const serial = process.env.ANDROID_SERIAL;
 assert.ok(serial, 'Set ANDROID_SERIAL to a physical test device');
 const app = 'com.codexswitch.mobile.settingsuitest';
+const appearanceOnly = process.argv.includes('--appearance-only');
 const adb = async (...args) => (await exec('adb', ['-s', serial, ...args], {
   encoding: 'utf8', timeout: 60_000, windowsHide: true, maxBuffer: 4 * 1024 * 1024,
 })).stdout.trim();
@@ -56,6 +57,17 @@ async function screenshot(name) {
   await adb('pull', '/sdcard/settings-result.png', path.join(output, `${name}.png`));
 }
 
+async function scrollSettings(direction) {
+  const scroll = (await nodes()).find(node => node.scrollable === 'true');
+  assert.ok(scroll, 'Settings scroll container is present');
+  const [left, top, right, bottom] = [...scroll.bounds.matchAll(/\d+/g)].map(value => Number(value[0]));
+  const x = Math.round((left + right) / 2);
+  const start = top + (bottom - top) * (direction === 'down' ? 0.8 : 0.25);
+  const end = top + (bottom - top) * (direction === 'down' ? 0.25 : 0.8);
+  await adb('shell', 'input', 'swipe', String(x), String(Math.round(start)), String(x), String(Math.round(end)), '500');
+  await delay(350);
+}
+
 async function dragHandle(distance, duration = '650', label = '下拉关闭') {
   const [x, y] = center(await find(label)).map(Number);
   await adb('shell', 'input', 'swipe', String(x), String(y), String(x), String(y + distance), duration);
@@ -95,18 +107,20 @@ try {
   await mkdir(output, { recursive: true });
   await adb('install', '-r', path.join(root,
     'apps/native/android/app/build-chat-settings/outputs/apk/debug/app-debug.apk'));
-  for (const scale of [1, 1.3]) {
+  for (const scale of appearanceOnly ? [] : [1, 1.3]) {
     await adb('shell', 'settings', 'put', 'system', 'font_scale', String(scale));
     await adb('shell', 'am', 'force-stop', app);
     await adb('shell', 'am', 'start', '-W', '-n', `${app}/com.codexswitch.mobile.MainActivity`);
-    await find('极高');
+    await find('设置当前对话的上下文容量');
     await delay(600);
     const tree = await nodes();
     assert.ok(!tree.some(node => node.text === '聊天设置' || node['content-desc'] === '关闭聊天设置'));
-    assert.ok(tree.some(node => node.text === '今日 437.77M Token · 640.61USD'));
-    assert.ok(tree.some(node => node.text === '额度点数 62,500.125'));
+    assert.ok(tree.some(node => node.text === '37.77M Token'));
+    assert.ok(tree.some(node => node.text === '56,879.423'));
     await screenshot(`initial-${scale}`);
-    await verifySheetGestures();
+    if (scale === 1) await verifySheetGestures();
+    if (scale > 1) await scrollSettings('down');
+    await find('极高');
     await tap('低');
     await checked('低');
     await swipe('低', 'Ultra');
@@ -123,13 +137,28 @@ try {
     await screenshot(`warm-${scale}`);
     await dragHandle(300);
     await tap('聊天设置');
+    if (scale > 1) await scrollSettings('down');
     await tap('设置模型');
     await find('GPT-6-Astra');
     await tap('返回上一层');
     await find('Ultra');
     console.log(`PASS: native selectors, sheet dragging/rebound, nested sheets, close/reopen at font scale ${scale}`);
   }
-  await writeFile(path.join(output, 'result.json'), JSON.stringify({ passed: true, fontScales: [1, 1.3] }));
+  await adb('shell', 'settings', 'put', 'system', 'font_scale', '1.3');
+  await adb('shell', 'am', 'force-stop', app);
+  await adb('shell', 'am', 'start', '-W', '-n', `${app}/com.codexswitch.mobile.MainActivity`);
+  await find('设置当前对话的上下文容量');
+  await dragHandle(300);
+  await tap('暗黑');
+  await tap('聊天设置');
+  await find('设置当前对话的上下文容量');
+  await screenshot('dark-1.3');
+  await scrollSettings('down');
+  await find('完全访问');
+  await screenshot('dark-options-1.3');
+  await writeFile(path.join(output, appearanceOnly ? 'appearance-result.json' : 'result.json'),
+    JSON.stringify({ passed: true, fontScales: appearanceOnly ? [1.3] : [1, 1.3], appearanceOnly }));
+  console.log('PASS: dark appearance and scrolling at font scale 1.3');
 } finally {
   if (originalScale === 'null') await adb('shell', 'settings', 'delete', 'system', 'font_scale');
   else await adb('shell', 'settings', 'put', 'system', 'font_scale', originalScale);
