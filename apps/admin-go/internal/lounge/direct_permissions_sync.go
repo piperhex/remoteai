@@ -25,8 +25,8 @@ func (h *hub) sendDirectPermissions(user string, peers []string) {
 	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	for client := range h.clients {
-		if h.activeLocked(client) && client.direct && client.user.ID == user {
+	for client := range h.clientsByUser[user] {
+		if h.activeLocked(client) && client.direct {
 			client.enqueue(data)
 		}
 	}

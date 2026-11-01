@@ -176,6 +176,9 @@ func (h *hub) authorize(client *peer, input incoming) bool {
 	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	if h.closed {
+		return false
+	}
 	client.user, client.expires = user, expires
 	client.user.Moderator = value.Moderator
 	client.moderator = value.Moderator
@@ -184,11 +187,14 @@ func (h *hub) authorize(client *peer, input incoming) bool {
 	client.groupAcks = input.GroupAcks
 	client.applyRelationships(privacy)
 	h.clients[client] = true
+	h.indexContactPeerLocked(client)
+	h.scheduleContactExpiryLocked(client)
 	if !h.sendReadyLocked(client, value, privacy, muted) {
 		return false
 	}
 	h.publishPresenceLocked(client)
-	h.publishContactPresenceLocked()
+	h.refreshContactPresenceLocked(client)
+	h.publishContactPresenceLocked(user.ID)
 	client.conn.SetReadLimit(maxFrameBytes)
 	return true
 }

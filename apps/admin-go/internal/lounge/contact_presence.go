@@ -23,15 +23,19 @@ func (h *hub) watch(client *peer, ids []string) bool {
 		if _, err := uuid.Parse(id); err != nil {
 			return false
 		}
-		if id != client.user.ID {
-			watching[id] = true
-		}
+		watching[id] = true
 	}
 	h.mu.Lock()
-	client.watching, client.presence = watching, nil
-	h.publishContactPresenceLocked()
+	if h.closed || !h.activeLocked(client) {
+		h.mu.Unlock()
+		return false
+	}
+	user := client.user.ID
+	delete(watching, user)
+	h.replaceContactWatchLocked(client, watching)
+	h.refreshContactPresenceLocked(client)
 	h.mu.Unlock()
-	h.sendDirectPermissions(client.user.ID, ids)
+	h.sendDirectPermissions(user, ids)
 	return true
 }
 
@@ -42,38 +46,64 @@ func samePresence(a, b *bool) bool {
 	return *a == *b
 }
 
-func (h *hub) publishContactPresenceLocked() {
-	online := make(map[string]bool)
-	for client := range h.clients {
+// Only this account's devices are inspected, including expired or closing connections.
+func (h *hub) contactOnlineLocked(user string) bool {
+	for client := range h.clientsByUser[user] {
 		if h.activeLocked(client) {
-			online[client.user.ID] = true
+			return true
 		}
 	}
-	for client := range h.clients {
-		if !h.activeLocked(client) || len(client.watching) == 0 {
-			continue
-		}
-		h.sendContactPresenceLocked(client, online)
+	return false
+}
+
+// The caller owns h.mu. Unrelated connections and their subscriptions are never visited.
+func (h *hub) publishContactPresenceLocked(user string) {
+	online := h.contactOnlineLocked(user)
+	for client := range h.contactWatchers[user] {
+		h.sendContactChangeLocked(client, user, online)
 	}
 }
 
-func (h *hub) sendContactPresenceLocked(client *peer, online map[string]bool) {
+func (h *hub) sendContactChangeLocked(client *peer, user string, online bool) {
+	if !h.activeLocked(client) || !client.watching[user] {
+		return
+	}
+	if change, changed := contactChangeLocked(client, user, online); changed {
+		sendContactPresenceLocked(client, []contactPresence{change})
+	}
+}
+
+func (h *hub) refreshContactPresenceLocked(client *peer) {
+	if !h.activeLocked(client) {
+		return
+	}
 	changes := []contactPresence{}
+	for id := range client.watching {
+		if change, changed := contactChangeLocked(client, id, h.contactOnlineLocked(id)); changed {
+			changes = append(changes, change)
+		}
+	}
+	sendContactPresenceLocked(client, changes)
+}
+
+func contactChangeLocked(client *peer, id string, online bool) (contactPresence, bool) {
+	var current *bool
+	if client.canContact(id) {
+		current = &online
+	}
+	previous, known := client.presence[id]
+	if known && samePresence(previous, current) {
+		return contactPresence{}, false
+	}
 	if client.presence == nil {
 		client.presence = make(map[string]*bool)
 	}
-	for id := range client.watching {
-		var current *bool
-		if client.canContact(id) {
-			value := online[id]
-			current = &value
-		}
-		previous, known := client.presence[id]
-		if !known || !samePresence(previous, current) {
-			changes = append(changes, contactPresence{id, current})
-			client.presence[id] = current
-		}
-	}
+	client.presence[id] = current
+	return contactPresence{id, current}, true
+}
+
+// Enqueue under h.mu to preserve state-transition order; socket writes run in the writer.
+func sendContactPresenceLocked(client *peer, changes []contactPresence) {
 	if len(changes) == 0 {
 		return
 	}

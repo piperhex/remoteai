@@ -51,19 +51,16 @@ func (h *hub) block(client *peer, input incoming) {
 	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	for other, authenticated := range h.clients {
-		if !authenticated {
-			continue
-		}
-		if other.user.ID == client.user.ID {
-			other.applyRelationships(value)
-			h.sendPrivacyLocked(other, value.Blocked)
-		}
-		if other.user.ID == input.UserID {
-			other.blockedBy[client.user.ID] = *input.Blocked
-		}
+	for other := range h.clientsByUser[client.user.ID] {
+		other.applyRelationships(value)
+		h.sendPrivacyLocked(other, value.Blocked)
+		h.refreshContactPresenceLocked(other)
 	}
-	h.publishContactPresenceLocked()
+	online := h.contactOnlineLocked(client.user.ID)
+	for other := range h.clientsByUser[input.UserID] {
+		other.blockedBy[client.user.ID] = *input.Blocked
+		h.sendContactChangeLocked(other, client.user.ID, online)
+	}
 	data, err := json.Marshal(map[string]string{"type": "updated", "id": input.ID})
 	if err == nil {
 		client.enqueue(data)

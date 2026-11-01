@@ -11,23 +11,24 @@ import (
 const maxQueuedBytes = 12 * 1024 * 1024
 
 type peer struct {
-	conn         *websocket.Conn
-	queue        chan []byte
-	done         chan struct{}
-	once         sync.Once
-	mu           sync.Mutex
-	queued       int
-	user         account
-	expires      time.Time
-	moderator    bool // Guarded by hub.mu, including live permission revocation.
-	direct       bool
-	receipts     bool
-	groupAcks    bool
-	blocks       map[string]bool
-	blockedBy    map[string]bool
-	watching     map[string]bool
-	presence     map[string]*bool
-	profileWatch map[string]bool
+	conn           *websocket.Conn
+	queue          chan []byte
+	done           chan struct{}
+	once           sync.Once
+	mu             sync.Mutex
+	queued         int
+	user           account
+	expires        time.Time
+	moderator      bool // Guarded by hub.mu, including live permission revocation.
+	direct         bool
+	receipts       bool
+	groupAcks      bool
+	blocks         map[string]bool
+	blockedBy      map[string]bool
+	watching       map[string]bool
+	presence       map[string]*bool
+	profileWatch   map[string]bool
+	presenceExpiry *time.Timer // Guarded by hub.mu.
 }
 
 type hub struct {
@@ -36,6 +37,8 @@ type hub struct {
 	key              []byte
 	mu               sync.Mutex
 	clients          map[*peer]bool
+	clientsByUser    map[string]map[*peer]struct{}
+	contactWatchers  map[string]map[*peer]struct{}
 	closed           bool
 	presenceCount    int
 	relationships    relationshipRepository
@@ -49,21 +52,37 @@ type hub struct {
 	notifications    notificationRepository
 }
 
-func newHub(key []byte) *hub { return &hub{key: key, clients: make(map[*peer]bool)} }
+func newHub(key []byte) *hub {
+	return &hub{key: key, clients: make(map[*peer]bool),
+		clientsByUser: make(map[string]map[*peer]struct{}), contactWatchers: make(map[string]map[*peer]struct{})}
+}
+
+func (p *peer) stop() { p.once.Do(func() { close(p.done) }) }
 
 func (p *peer) close() {
-	p.once.Do(func() {
-		close(p.done)
+	p.stop()
+	if p.conn != nil {
 		// Closing an already broken socket is best effort; no connection or content is logged.
 		_ = p.conn.Close()
-	})
+	}
+}
+
+// Overflow must interrupt even a writer blocked in I/O without waiting under hub.mu.
+func (p *peer) closeLater() {
+	p.stop()
+	go p.close()
 }
 
 func (p *peer) enqueue(data []byte) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	select {
+	case <-p.done:
+		return false
+	default:
+	}
 	if p.queued+len(data) > maxQueuedBytes {
-		p.close()
+		p.closeLater()
 		return false
 	}
 	select {
@@ -73,7 +92,7 @@ func (p *peer) enqueue(data []byte) bool {
 		p.queued += len(data)
 		return true
 	default:
-		p.close()
+		p.closeLater()
 		return false
 	}
 }
@@ -141,9 +160,17 @@ func (h *hub) broadcast(sender *peer, input incoming) {
 
 func (h *hub) close() {
 	h.mu.Lock()
-	defer h.mu.Unlock()
 	h.closed = true
+	clients := make([]*peer, 0, len(h.clients))
 	for client := range h.clients {
+		client.stop()
+		if client.presenceExpiry != nil {
+			client.presenceExpiry.Stop()
+		}
+		clients = append(clients, client)
+	}
+	h.mu.Unlock()
+	for _, client := range clients {
 		client.close()
 	}
 }
