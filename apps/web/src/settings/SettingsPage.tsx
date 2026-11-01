@@ -18,6 +18,7 @@ import { RefreshIntervalSheet } from './RefreshIntervalSheet';
 import { PasswordSheet } from './PasswordSheet';
 import { AboutPage } from './AboutPage';
 import { LanguageSettingsRow } from './LanguageSettingsRow';
+import { LanguageSheet } from './LanguageSheet';
 import { ThemeSheet } from './ThemeSheet';
 import { ThemeSettingsRow } from './ThemeSettingsRow';
 import { profileRole } from '../i18n/profile';
@@ -25,16 +26,20 @@ import './styles.css';
 import { AutoSaveSettings } from '../../../../shared/project-browser/AutoSaveSettings';
 import { JsonHighlightSettings } from '../../../../shared/file-preview/JsonHighlightSettings';
 import { useBrowserPreferences } from '../../../../shared/project-browser/useBrowserPreferences';
+import { AUTO_SAVE_OPTIONS } from '../../../../shared/project-browser/preferences';
+import { useDesktopLayout } from '../useDesktopLayout';
 import { GlobalFontSettings } from '../../../../shared/appearance/GlobalFontSettings';
 import { useGlobalFontSize } from '../../../../shared/appearance/fontSize';
 
 type Panel = 'profile' | 'refresh' | 'totp' | 'password' | 'about'
-  | 'desktop' | 'theme' | 'files' | 'font' | 'petDock' | null;
+  | 'desktop' | 'theme' | 'language' | 'files' | 'font' | 'petDock' | null;
 
 export function SettingsPage({ totpManager }: { totpManager: ReturnType<typeof useTotpVault> }) {
   useLanguage();
   const fontSize = useGlobalFontSize();
   const filePreferences = useBrowserPreferences();
+  const desktop = useDesktopLayout();
+  const autoSaveOption = AUTO_SAVE_OPTIONS.find(option => option.value === filePreferences.delay);
   const dispatch = useAppDispatch();
   const session = useAppSelector(state => state.auth.session);
   const profile = useAppSelector(state => state.data.profile) ?? session?.profile;
@@ -59,7 +64,7 @@ export function SettingsPage({ totpManager }: { totpManager: ReturnType<typeof u
       </section>
       <section className="settings-group">
         <ThemeSettingsRow onOpen={() => setPanel('theme')} />
-        <LanguageSettingsRow />
+        <LanguageSettingsRow onOpen={() => setPanel('language')} />
       </section>
       </div>
       <div className="settings-preferences">
@@ -67,10 +72,12 @@ export function SettingsPage({ totpManager }: { totpManager: ReturnType<typeof u
           <SettingsRow label={t('client.appearance.globalFontSize')} value={`${fontSize}px`} icon={Type}
             onClick={() => setPanel('font')} />
           <SettingsRow label={t("client.projectBrowser.fileBrowserSettings")} icon={RefreshCw}
+            value={!desktop && autoSaveOption ? t(autoSaveOption.label) : undefined}
             onClick={() => setPanel('files')} />
           <SettingsRow label={t("client.settings.autoRefreshUsage")} value={t("client.settings.minutes", { value1: minutes })} icon={RefreshCw}
             onClick={() => setPanel('refresh')} />
-          <SettingsRow label={t("client.app.2faKeys")} value={totpManager.cloudSyncEnabled ? t("client.settings.on") : t("client.settings.off")} icon={ShieldCheck}
+          <SettingsRow label={t(desktop ? 'client.app.2faKeys' : 'client.settings.twoFactorKeyCloudSync')}
+            value={totpManager.cloudSyncEnabled ? t("client.settings.on") : t("client.settings.off")} icon={ShieldCheck}
             onClick={() => setPanel('totp')} />
           <SettingsRow label={petDockText(getLanguage(), 'settings.petDock.title')}
             icon={PawPrint} onClick={() => setPanel('petDock')} />
@@ -109,7 +116,8 @@ export function SettingsPage({ totpManager }: { totpManager: ReturnType<typeof u
     <AdaptiveSheet open={panel === 'profile'} onClose={close} width={400} title={t("client.settings.profile")}>
       <dl className="settings-profile-details"><dt>{t("client.app.email")}</dt><dd>{email}</dd><dt>{t("client.settings.role")}</dt><dd>{role}</dd></dl>
     </AdaptiveSheet>
-    <AdaptiveSheet open={panel === 'totp'} title={t("client.app.2faKeys")} onClose={close} width={400}>
+    <AdaptiveSheet open={panel === 'totp'}
+      title={t(desktop ? 'client.app.2faKeys' : 'client.settings.twoFactorKeyCloudSync')} onClose={close} width={400}>
       <div className="settings-sync"><div><strong>{t("client.settings.cloudSync")}</strong>
         <p>{t("client.settings.useTheSame2faKeysOnYourPhoneAndThe")}</p></div>
         <Switch aria-label={t("client.settings.cloudSync")} checked={totpManager.cloudSyncEnabled} disabled={totpManager.syncing}
@@ -118,6 +126,7 @@ export function SettingsPage({ totpManager }: { totpManager: ReturnType<typeof u
     {panel === 'refresh' && <RefreshIntervalSheet minutes={minutes} onSaved={setMinutes} onClose={close} />}
     {panel === 'password' && <PasswordSheet onClose={close} />}
     {panel === 'theme' && <ThemeSheet onClose={close} />}
+    {panel === 'language' && <LanguageSheet onClose={close} />}
     {panel === 'desktop' && <DesktopVersionSheet onClose={close} />}
   </>;
 }

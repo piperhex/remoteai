@@ -196,8 +196,8 @@ export interface MessageParams24 {
   "client.settings.thisAlgorithmIsNotSupported": Record<string, never>;
   "client.settings.thisBrowserCannotScanQrCodesPasteTheKeyManually": Record<string, never>;
   "client.settings.thisComputerIsUnavailable": Record<string, never>;
+  "client.settings.twoFactorKeyCloudSync": Record<string, never>;
   "client.settings.untitled": Record<string, never>;
   "client.settings.updateAvailable": Record<string, never>;
   "client.settings.updateNow": Record<string, never>;
-  "client.settings.updateRemoteAiOnThisComputerToEnableRemoteUpdates": Record<string, never>;
 }

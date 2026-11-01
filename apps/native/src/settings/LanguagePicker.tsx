@@ -6,7 +6,7 @@ import { LANGUAGE_OPTIONS, languageLabel, t, useLanguage, type Language } from '
 import { setLanguage } from '../i18n/preference';
 import { createThemedStyles } from '../theme/styles';
 import { textMetrics } from '../theme/text';
-import { settingsColors, useStyles } from './styles';
+import { settingsColors } from './styles';
 
 interface Anchor { x: number; y: number; width: number; height: number }
 const MENU_MARGIN = 8;
@@ -96,20 +96,6 @@ export function LanguagePicker() {
   </View>;
 }
 
-export function LanguageSettingsRow() {
-  const styles = useStyles();
-  const localStyles = useLocalStyles();
-  return <View style={styles.row}>
-    <View style={[styles.icon, localStyles.icon]}><Ionicons name="language-outline" size={22}
-      style={localStyles.iconText} /></View>
-    <View style={styles.rowContent}>
-      <Text style={styles.label}>{t('client.settings.language')}</Text>
-      <View style={styles.spacer} />
-      <LanguagePicker />
-    </View>
-  </View>;
-}
-
 export function LoginLanguagePicker() {
   const styles = useLocalStyles();
   return <View style={styles.login}><LanguagePicker /></View>;
@@ -130,7 +116,5 @@ const useLocalStyles = createThemedStyles(color => ({
     justifyContent: 'space-between', gap: 8 },
   selected: { backgroundColor: color('#e5fbf3', 'accentSoft') },
   error: { ...textMetrics(14, 21), maxWidth: 400, color: color(settingsColors.danger, 'danger'), marginTop: 6 },
-  icon: { backgroundColor: color('#e7f3ff', 'elevated') },
-  iconText: { color: color(settingsColors.blue, 'info') },
   login: { alignSelf: 'center', marginBottom: 8 },
 }));

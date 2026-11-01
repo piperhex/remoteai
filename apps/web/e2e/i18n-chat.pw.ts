@@ -1,3 +1,4 @@
+import { openLanguageSettings, languageOption } from './language-settings';
 import { expect, test } from '@playwright/test';
 import { connect, fixtureUrl, login, navigate, state } from './chat-helpers';
 import type { MessageKey } from '@remoteai/i18n';
@@ -11,8 +12,8 @@ test('switches language while keeping the chat connection, draft and user conten
   const draft = '保留这条草稿 / keep this draft';
   await page.getByRole('textbox', { name: '聊天消息' }).fill(draft);
   await navigate(page, '设置');
-  await page.locator('.interface-language-select').click();
-  await page.getByRole('option', { name: 'English', exact: true }).click();
+  await openLanguageSettings(page);
+  await languageOption(page, 'English').click();
   await navigate(page, 'Chat');
   await expect(page.getByRole('textbox', { name: 'Chat message' })).toHaveValue(draft);
   await expect(page.getByRole('button', { name: 'Send message', exact: true })).toBeEnabled();
@@ -33,21 +34,20 @@ test('switches language while keeping the chat connection, draft and user conten
     await page.keyboard.press('Escape');
   } else {
     await page.getByRole('button', { name: /chat settings/ }).click();
-    await expect(page.getByRole('button', { name: 'Set Reasoning effort', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Set Access', exact: true }).click();
+    await expect(page.getByRole('radiogroup', { name: 'Reasoning effort', exact: true })).toBeVisible();
+    await expect(page.getByRole('radiogroup', { name: 'Access', exact: true })).toBeVisible();
     await expect(page.getByRole('radio', { name: 'Ask for approval', exact: true })).toBeVisible();
     await expect(page.getByRole('radio', { name: 'Full access', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Go back one level', exact: true }).click();
     await expect(page.getByRole('group', { name: "Today's usage" })).toBeVisible();
     await expect(page.getByRole('group', { name: "Today's usage" })).toContainText(/context/i);
     await expect(page.getByRole('group', { name: "Today's usage" })).not.toContainText(/[\p{Script=Han}]/u);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath('chat-settings-english.png') });
-    await page.getByRole('button', { name: 'Close', exact: true }).last().click();
+    await page.getByRole('button', { name: 'Drag down to close', exact: true }).press('Enter');
   }
   await navigate(page, 'Settings');
-  await page.locator('.interface-language-select').click();
-  await page.getByRole('option', { name: 'Русский', exact: true }).click();
+  await openLanguageSettings(page);
+  await languageOption(page, 'Русский').click();
   const ru = (key: MessageKey) => testText(key, {}, 'ru');
   await navigate(page, ru("client.app.chat"));
   await expect(page.getByRole('textbox', { name: ru("client.chat.chatMessage") })).toHaveValue(draft);
@@ -56,8 +56,8 @@ test('switches language while keeping the chat connection, draft and user conten
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('chat-russian-draft.png') });
   await navigate(page, ru("client.app.settings"));
-  await page.locator('.interface-language-select').click();
-  await page.getByRole('option', { name: '日本語', exact: true }).click();
+  await openLanguageSettings(page);
+  await languageOption(page, '日本語').click();
   const ja = (key: MessageKey) => testText(key, {}, 'ja');
   await expect(page.locator('html')).toHaveAttribute('lang', 'ja-JP');
   await navigate(page, ja('client.app.chat'));
@@ -67,8 +67,8 @@ test('switches language while keeping the chat connection, draft and user conten
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: info.outputPath('chat-japanese-draft.png') });
   await navigate(page, ja('client.app.settings'));
-  await page.locator('.interface-language-select').click();
-  await page.getByRole('option', { name: '简体中文', exact: true }).click();
+  await openLanguageSettings(page);
+  await languageOption(page, '简体中文').click();
   await navigate(page, '聊天');
   await expect(page.getByRole('textbox', { name: '聊天消息' })).toHaveValue(draft);
   expect((await state(request)).mobileConnections).toBe(connections);

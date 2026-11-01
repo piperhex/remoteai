@@ -1,3 +1,4 @@
+import { openLanguageSettings, languageOption } from './language-settings';
 import { expect, test, type Page } from '@playwright/test';
 import { navigate } from './chat-helpers';
 import { testText } from '../../../scripts/i18n-fixture.mjs';
@@ -101,8 +102,8 @@ test('shows the system preference in every released language while offline', asy
   await openSettings(page);
   await context.setOffline(true);
   for (const [language, label] of [['en', 'English'], ['ru', 'Русский'], ['ja', '日本語'], ['zh', '简体中文']]) {
-    await page.locator('.interface-language-select').click();
-    await page.getByRole('option', { name: label, exact: true }).click();
+    await openLanguageSettings(page);
+    await languageOption(page, label).click();
     const appearance = testText('client.workspaceSettings.appearance', {}, language);
     const system = testText('client.settings.followSystem', {}, language);
     await page.getByRole('button', { name: new RegExp(appearance) }).click();

@@ -1,6 +1,6 @@
 import { useThemeColor } from '../theme/store';
-import { t, useLanguage } from '../i18n';
-import { LanguageSettingsRow } from './LanguagePicker';
+import { languageLabel, t, useLanguage } from '../i18n';
+import { LanguageSheet } from './LanguageSheet';
 import { ThemeSheet } from './ThemeSheet';
 import { useThemePreference } from '../theme/preference';
 import { THEME_LABELS } from '../../../../shared/theme/mode';
@@ -18,6 +18,8 @@ import { SettingsRow } from './SettingsRow';
 import { DesktopVersionSheet } from './DesktopVersionSheet';
 import { settingsColors, useStyles } from './styles';
 import { FileAutoSaveSheet } from './FileAutoSaveSheet';
+import { useFilePreferences } from './filePreferences';
+import { AUTO_SAVE_OPTIONS } from '../../../../shared/project-browser/preferences';
 
 interface SettingsPageProps {
   session: AuthSession;
@@ -31,7 +33,7 @@ interface SettingsPageProps {
 }
 
 type SettingsPanel = 'profile' | 'refresh' | 'totp' | 'password' | 'logout'
-  | 'desktop' | 'theme' | 'files' | null;
+  | 'desktop' | 'theme' | 'language' | 'files' | null;
 
 function identityLabel(profile?: UserProfile | null) {
   if (!profile) return t("client.mobile.loading");
@@ -44,7 +46,9 @@ export function SettingsPage({ session, profile, globalRefreshMinutes, onGlobalR
   onOpenAbout, onOpenAdmin, onLogout, totpManager }: SettingsPageProps) {
   const styles = useStyles();
   const color = useThemeColor();
-  useLanguage();
+  const language = useLanguage();
+  const filePreferences = useFilePreferences();
+  const autoSaveOption = AUTO_SAVE_OPTIONS.find(option => option.value === filePreferences.delay);
   const preference = useThemePreference();
   const [panel, setPanel] = useState<SettingsPanel>(null);
   const activeProfile = profile ?? session.profile;
@@ -71,14 +75,17 @@ export function SettingsPage({ session, profile, globalRefreshMinutes, onGlobalR
         <SettingsRow label={t("client.workspaceSettings.appearance")}
           value={t(THEME_LABELS[preference])} icon="contrast-outline"
           color={color(settingsColors.blue, 'info')} background="#e7f3ff" divider onPress={() => setPanel('theme')} />
-        <LanguageSettingsRow />
+        <SettingsRow label={t('client.settings.language')} value={languageLabel(language)} icon="language-outline"
+          color={color(settingsColors.blue, 'info')} background="#e7f3ff" onPress={() => setPanel('language')} />
       </View>
       <View style={styles.group}>
         <SettingsRow label={t("client.projectBrowser.autoSaveFiles")} icon="save-outline"
+          value={autoSaveOption ? t(autoSaveOption.label) : undefined}
           color={color(settingsColors.green, 'accent')} background="#e5fbf3" divider onPress={() => setPanel('files')} />
         <SettingsRow label={t("client.settings.autoRefreshUsage")} value={t("client.settings.minutes", { value1: globalRefreshMinutes })} icon="sync-outline"
           color={color(settingsColors.green, 'accent')} background="#e5fbf3" divider onPress={() => setPanel('refresh')} />
-        <SettingsRow label={t("client.app.2faKeys")} value={totpManager.cloudSyncEnabled ? t("client.settings.on") : t("client.settings.off")}
+        <SettingsRow label={t('client.settings.twoFactorKeyCloudSync')}
+          value={totpManager.cloudSyncEnabled ? t("client.settings.on") : t("client.settings.off")}
           icon="shield-checkmark-outline" color={color(settingsColors.green, 'accent')} background="#e5fbf3"
           onPress={() => setPanel('totp')} />
       </View>
@@ -114,10 +121,11 @@ export function SettingsPage({ session, profile, globalRefreshMinutes, onGlobalR
     </BottomSheet>
     {panel === 'refresh' && <RefreshIntervalSheet minutes={globalRefreshMinutes}
       onSave={onGlobalRefreshMinutesChange} onClose={close} />}
-    <BottomSheet visible={panel === 'totp'} title={t("client.app.2faKeys")} onClose={close}>
+    <BottomSheet visible={panel === 'totp'} title={t('client.settings.twoFactorKeyCloudSync')} onClose={close}>
       <View style={styles.sheetBody}><TotpSyncSettings manager={totpManager} /></View>
     </BottomSheet>
     {panel === 'theme' && <ThemeSheet onClose={close} />}
+    {panel === 'language' && <LanguageSheet onClose={close} />}
     {panel === 'files' && <FileAutoSaveSheet onClose={close} />}
     {panel === 'password' && <PasswordSheet session={session} onClose={close} />}
     {panel === 'desktop' && <DesktopVersionSheet session={session} onClose={close} />}
