@@ -1,0 +1,1 @@
+Azure OpenAI 自有资源模板。添加后，请将服务地址中的 YOUR_RESOURCE_NAME 替换为你的 Azure 资源名称，并将模型名称改为实际的部署名称。本配置使用 v1 接口，无需填写 api-version。

@@ -1,0 +1,781 @@
+{
+  "source": {
+    "repository": "https://github.com/farion1231/cc-switch",
+    "revision": "8be840557bacd89d592f13ddc1bee0586afaea14",
+    "file": "src/config/codexProviderPresets.ts",
+    "sha256": "66c72036c2a8c3666ad828e9b14bb0a2d6490980f6a6cc99e1a01b64d2f004c5",
+    "license": "MIT",
+    "grouping": "src/components/providers/forms/presetGroups.ts"
+  },
+  "baseUrl": "https://codex.onepiper.cloud",
+  "startedAt": "2026-11-01T05:26:30.390Z",
+  "finishedAt": "2026-11-01T05:27:15.162Z",
+  "before": {
+    "public": 0,
+    "mine": 0
+  },
+  "after": {
+    "public": 84,
+    "verified": 84
+  },
+  "created": [
+    {
+      "id": "b30480b9-c740-40b7-bf70-15445a8f4e07",
+      "name": "88API",
+      "revision": 1
+    },
+    {
+      "id": "26b33992-26d5-4a6c-886c-037b36dcec64",
+      "name": "9527CODE",
+      "revision": 1
+    },
+    {
+      "id": "726343e5-9f5a-46cc-acb8-7cea44436c5c",
+      "name": "A6API",
+      "revision": 1
+    },
+    {
+      "id": "1110e4a0-3a48-4ac8-a0cb-df89b5a239c9",
+      "name": "AICodeMirror",
+      "revision": 1
+    },
+    {
+      "id": "d014d957-cda1-4fb2-ae17-69d6abe4302c",
+      "name": "AICodeWith",
+      "revision": 1
+    },
+    {
+      "id": "2eedcb31-485d-4d37-a49d-f726fbeb9432",
+      "name": "AICoding",
+      "revision": 1
+    },
+    {
+      "id": "6354f997-b1fe-44b8-a52e-803c16f8d09c",
+      "name": "AIComing",
+      "revision": 1
+    },
+    {
+      "id": "b519eb2c-6c88-4308-a205-76430a193151",
+      "name": "AIGoCode",
+      "revision": 1
+    },
+    {
+      "id": "d290692f-1fa7-43d2-9c21-4216e2ee02af",
+      "name": "AiHubMix",
+      "revision": 1
+    },
+    {
+      "id": "a8a3f490-b17a-49c7-afde-c5cfe2a2d853",
+      "name": "AllTokens",
+      "revision": 1
+    },
+    {
+      "id": "6ca645f4-22a2-4d7b-be67-ca11c646bebf",
+      "name": "AllTokens SI",
+      "revision": 1
+    },
+    {
+      "id": "2abbe15e-f1c5-45ab-994c-887a0f30877b",
+      "name": "Amux",
+      "revision": 1
+    },
+    {
+      "id": "fc8e6848-4760-4777-bb54-18443f9030dd",
+      "name": "APIKEY.FUN",
+      "revision": 1
+    },
+    {
+      "id": "7f839d52-b03a-4adb-8530-eefa9ee837a9",
+      "name": "APINebula",
+      "revision": 1
+    },
+    {
+      "id": "40b4b0e1-c501-4c69-b635-389740078a6f",
+      "name": "AtlasCloud",
+      "revision": 1
+    },
+    {
+      "id": "5c76b958-24cb-4ac5-8735-1bcdf97274ac",
+      "name": "Azure OpenAI",
+      "revision": 1
+    },
+    {
+      "id": "1d336e0e-9506-493f-b81c-21b96033455b",
+      "name": "Baseten",
+      "revision": 1
+    },
+    {
+      "id": "65b33d87-6b37-4354-bdb2-866dbfdb52f6",
+      "name": "BotCF",
+      "revision": 1
+    },
+    {
+      "id": "fa3731c5-2600-47be-8cc8-b042d65d9f00",
+      "name": "BuyToken",
+      "revision": 1
+    },
+    {
+      "id": "06584b6e-7766-4def-8298-fc5a8c2f9fd3",
+      "name": "CCSub",
+      "revision": 1
+    },
+    {
+      "id": "993c19b2-f687-4726-a931-1740d9b53628",
+      "name": "CherryIN",
+      "revision": 1
+    },
+    {
+      "id": "7390b86a-4c14-4e6b-8a8e-0d59dac02ed5",
+      "name": "ClaudeCN",
+      "revision": 1
+    },
+    {
+      "id": "6c6e7bff-6583-4af9-adf0-00551acd0257",
+      "name": "ClinePass",
+      "revision": 1
+    },
+    {
+      "id": "61fd8ccf-0604-4573-82f6-215f16b5f3c5",
+      "name": "Code0",
+      "revision": 1
+    },
+    {
+      "id": "d4913c08-d3f3-48fe-938d-d7a797886730",
+      "name": "Command Code",
+      "revision": 1
+    },
+    {
+      "id": "5c78e29a-ef04-4558-9107-cd356af1682a",
+      "name": "Compshare",
+      "revision": 1
+    },
+    {
+      "id": "24c5f2f0-a1bd-4f2b-9bf7-da3850f929db",
+      "name": "Compshare Coding Plan",
+      "revision": 1
+    },
+    {
+      "id": "dbb57d91-b284-405c-8e16-2c5e20f21431",
+      "name": "CrazyRouter",
+      "revision": 1
+    },
+    {
+      "id": "67d3e7dc-b18f-45c0-a1b6-9f892dd5c116",
+      "name": "Cubence",
+      "revision": 1
+    },
+    {
+      "id": "7113252d-41d5-449f-9d6f-7d5079f4f541",
+      "name": "DeepInfra",
+      "revision": 1
+    },
+    {
+      "id": "db778d2c-4b21-4891-8613-a2289e666880",
+      "name": "DIT.ai",
+      "revision": 1
+    },
+    {
+      "id": "2854cd12-72c2-44db-8669-f424a40a9fc5",
+      "name": "DMXAPI",
+      "revision": 1
+    },
+    {
+      "id": "234c72b2-e69f-4091-aeb0-9526cf0e4ba6",
+      "name": "E-FlowCode",
+      "revision": 1
+    },
+    {
+      "id": "8c025b1c-a91f-46b6-b0d2-bb8496ba3d7f",
+      "name": "FennoAI",
+      "revision": 1
+    },
+    {
+      "id": "53f2f130-f3cc-4e98-bb79-fc2566e22279",
+      "name": "FluxA Token Plan",
+      "revision": 1
+    },
+    {
+      "id": "2aadb6d3-29c6-419a-9b03-15686888c809",
+      "name": "GrooRoute Pro",
+      "revision": 1
+    },
+    {
+      "id": "b361969e-c88d-4415-860f-cdf29c1bc495",
+      "name": "Groq",
+      "revision": 1
+    },
+    {
+      "id": "689ccd15-2a35-4d64-a267-d084f2d92076",
+      "name": "hao.ai",
+      "revision": 1
+    },
+    {
+      "id": "37013589-bc74-4851-86c4-ee0fa6ff1792",
+      "name": "Hugging Face",
+      "revision": 1
+    },
+    {
+      "id": "28a8e865-1405-4f4f-9d4b-091e86367c9d",
+      "name": "IKunCode",
+      "revision": 1
+    },
+    {
+      "id": "6061e0c4-9567-48a4-9d6b-d01774fbce13",
+      "name": "JieKou AI",
+      "revision": 1
+    },
+    {
+      "id": "9c57bf76-19e9-46b9-b25e-989934c7fe68",
+      "name": "Micu",
+      "revision": 1
+    },
+    {
+      "id": "43074b1b-a983-4158-9520-fffe8489eec7",
+      "name": "Modelflare",
+      "revision": 1
+    },
+    {
+      "id": "3aed787e-c487-45bf-b2a0-b406f2e40d9a",
+      "name": "ModelScope",
+      "revision": 1
+    },
+    {
+      "id": "6fa3dd3d-d224-453d-a609-3c07050cad7f",
+      "name": "Nebius Token Factory",
+      "revision": 1
+    },
+    {
+      "id": "375fb556-b44a-437c-b8da-c6dde3c0db9e",
+      "name": "NekoCode",
+      "revision": 1
+    },
+    {
+      "id": "667e268d-6b41-49e7-8b69-fa247f789489",
+      "name": "Novita AI",
+      "revision": 1
+    },
+    {
+      "id": "36b9d818-b870-4cb4-8335-ac669f5531d9",
+      "name": "Nvidia",
+      "revision": 1
+    },
+    {
+      "id": "22aa6431-c967-40e5-9182-a968d30ae819",
+      "name": "OpenCode Go",
+      "revision": 1
+    },
+    {
+      "id": "10949b05-bd98-43ab-956e-89eab0f9fe65",
+      "name": "OpenCode Zen",
+      "revision": 1
+    },
+    {
+      "id": "fd8ec77e-863a-477e-afc0-33b9b613c63b",
+      "name": "OpenModel",
+      "revision": 1
+    },
+    {
+      "id": "f88964b4-c072-4ac1-b5e6-a32d32f8b9d9",
+      "name": "OpenRouter",
+      "revision": 1
+    },
+    {
+      "id": "57bfc13e-9d1b-4449-bc7c-0a5834ed7b56",
+      "name": "OspreyAI",
+      "revision": 1
+    },
+    {
+      "id": "fa07a655-a15d-4bb8-9a3c-30d13f12fbd4",
+      "name": "PackyCode",
+      "revision": 1
+    },
+    {
+      "id": "4e695a97-75c1-4015-8457-b954ceefb09e",
+      "name": "PatewayAI",
+      "revision": 1
+    },
+    {
+      "id": "6c81f667-6da3-4348-a875-a6f269855be7",
+      "name": "PIPELLM",
+      "revision": 1
+    },
+    {
+      "id": "c5dc46d6-8e21-4b37-b613-c2247d1fe025",
+      "name": "PPIO",
+      "revision": 1
+    },
+    {
+      "id": "fea2f0e5-7799-4dfd-8355-f191dd1c8ad9",
+      "name": "Qiniu",
+      "revision": 1
+    },
+    {
+      "id": "711e264a-6e40-4484-bbfe-8cd6f3421b66",
+      "name": "RelaxyCode",
+      "revision": 1
+    },
+    {
+      "id": "550d5b3c-1a77-4d9f-847a-eaabe2ff8e35",
+      "name": "RightCode",
+      "revision": 1
+    },
+    {
+      "id": "a0343bb9-e957-4721-b0ff-1ebc4dcec010",
+      "name": "RunAPI",
+      "revision": 1
+    },
+    {
+      "id": "304b0e11-8a79-4276-9702-5b74c77c630e",
+      "name": "RunToken",
+      "revision": 1
+    },
+    {
+      "id": "c586ab3c-cec2-4e10-8c0f-1b1998a42ad8",
+      "name": "Shengsuanyun",
+      "revision": 1
+    },
+    {
+      "id": "29faae11-68b8-4e84-b167-48e09b1bb397",
+      "name": "SiliconFlow",
+      "revision": 1
+    },
+    {
+      "id": "f7106bbb-3d24-479c-8fd6-04748d98d632",
+      "name": "SiliconFlow en",
+      "revision": 1
+    },
+    {
+      "id": "5c6cf47a-4886-42b4-abae-cd04f4736a28",
+      "name": "SoleAPI",
+      "revision": 1
+    },
+    {
+      "id": "f9ec4998-5d3c-42b4-af18-0622f3b4a20d",
+      "name": "SoruxGPT",
+      "revision": 1
+    },
+    {
+      "id": "6df307c0-4b26-436b-be65-5a941084a782",
+      "name": "SoruxGPT Coding Plan",
+      "revision": 1
+    },
+    {
+      "id": "2a5e6895-904b-4ea5-b662-f2dd57f2a4c6",
+      "name": "Soshow",
+      "revision": 1
+    },
+    {
+      "id": "90f1d9b8-d7e9-4aa3-bc02-da2b2e03ee1f",
+      "name": "SSSAiCode",
+      "revision": 1
+    },
+    {
+      "id": "9d08fbf9-0594-41b5-a9bb-d7bd9090cb97",
+      "name": "SubRouter",
+      "revision": 1
+    },
+    {
+      "id": "2b048bc5-1048-4f23-84d5-c5fdd4a6777f",
+      "name": "SudoCode.chat",
+      "revision": 1
+    },
+    {
+      "id": "eb9fcc95-fb06-4d62-8cfb-dc29ac6f4122",
+      "name": "SudoCode.us",
+      "revision": 1
+    },
+    {
+      "id": "5765ef91-6cd5-49a5-9571-9131be18c1eb",
+      "name": "TeamoRouter",
+      "revision": 1
+    },
+    {
+      "id": "b3dc4acd-8312-45e1-b5c2-25258179fbff",
+      "name": "TheRouter",
+      "revision": 1
+    },
+    {
+      "id": "141af18b-90ac-4d10-bb7c-8e42f5bc3568",
+      "name": "TokenFactory",
+      "revision": 1
+    },
+    {
+      "id": "5b2ea2b1-35bf-4005-a48e-a1101a7fcdeb",
+      "name": "TokenFlux",
+      "revision": 1
+    },
+    {
+      "id": "10d0474e-f908-4663-890d-19d554e6419e",
+      "name": "Tu-zi",
+      "revision": 1
+    },
+    {
+      "id": "269cff26-42b4-44e9-a272-7f130a719eb2",
+      "name": "V-API",
+      "revision": 1
+    },
+    {
+      "id": "926e7d45-b9c2-4e71-9823-2fd939ea47d5",
+      "name": "Vercel AI Gateway",
+      "revision": 1
+    },
+    {
+      "id": "12662f82-0a3b-452b-adf3-50e09d711e2d",
+      "name": "xAI (Grok)",
+      "revision": 1
+    },
+    {
+      "id": "0be195c0-d250-4269-9de9-91deb37574cf",
+      "name": "XycAi",
+      "revision": 1
+    },
+    {
+      "id": "cafe65d9-54b9-4b4b-b32b-132dbfc0d757",
+      "name": "YYLX",
+      "revision": 1
+    },
+    {
+      "id": "e21add10-b55e-4e15-90c4-b27bbe926873",
+      "name": "模力方舟",
+      "revision": 1
+    }
+  ],
+  "verified": [
+    {
+      "id": "b30480b9-c740-40b7-bf70-15445a8f4e07",
+      "name": "88API"
+    },
+    {
+      "id": "26b33992-26d5-4a6c-886c-037b36dcec64",
+      "name": "9527CODE"
+    },
+    {
+      "id": "726343e5-9f5a-46cc-acb8-7cea44436c5c",
+      "name": "A6API"
+    },
+    {
+      "id": "1110e4a0-3a48-4ac8-a0cb-df89b5a239c9",
+      "name": "AICodeMirror"
+    },
+    {
+      "id": "d014d957-cda1-4fb2-ae17-69d6abe4302c",
+      "name": "AICodeWith"
+    },
+    {
+      "id": "2eedcb31-485d-4d37-a49d-f726fbeb9432",
+      "name": "AICoding"
+    },
+    {
+      "id": "6354f997-b1fe-44b8-a52e-803c16f8d09c",
+      "name": "AIComing"
+    },
+    {
+      "id": "b519eb2c-6c88-4308-a205-76430a193151",
+      "name": "AIGoCode"
+    },
+    {
+      "id": "d290692f-1fa7-43d2-9c21-4216e2ee02af",
+      "name": "AiHubMix"
+    },
+    {
+      "id": "a8a3f490-b17a-49c7-afde-c5cfe2a2d853",
+      "name": "AllTokens"
+    },
+    {
+      "id": "6ca645f4-22a2-4d7b-be67-ca11c646bebf",
+      "name": "AllTokens SI"
+    },
+    {
+      "id": "2abbe15e-f1c5-45ab-994c-887a0f30877b",
+      "name": "Amux"
+    },
+    {
+      "id": "fc8e6848-4760-4777-bb54-18443f9030dd",
+      "name": "APIKEY.FUN"
+    },
+    {
+      "id": "7f839d52-b03a-4adb-8530-eefa9ee837a9",
+      "name": "APINebula"
+    },
+    {
+      "id": "40b4b0e1-c501-4c69-b635-389740078a6f",
+      "name": "AtlasCloud"
+    },
+    {
+      "id": "5c76b958-24cb-4ac5-8735-1bcdf97274ac",
+      "name": "Azure OpenAI"
+    },
+    {
+      "id": "1d336e0e-9506-493f-b81c-21b96033455b",
+      "name": "Baseten"
+    },
+    {
+      "id": "65b33d87-6b37-4354-bdb2-866dbfdb52f6",
+      "name": "BotCF"
+    },
+    {
+      "id": "fa3731c5-2600-47be-8cc8-b042d65d9f00",
+      "name": "BuyToken"
+    },
+    {
+      "id": "06584b6e-7766-4def-8298-fc5a8c2f9fd3",
+      "name": "CCSub"
+    },
+    {
+      "id": "993c19b2-f687-4726-a931-1740d9b53628",
+      "name": "CherryIN"
+    },
+    {
+      "id": "7390b86a-4c14-4e6b-8a8e-0d59dac02ed5",
+      "name": "ClaudeCN"
+    },
+    {
+      "id": "6c6e7bff-6583-4af9-adf0-00551acd0257",
+      "name": "ClinePass"
+    },
+    {
+      "id": "61fd8ccf-0604-4573-82f6-215f16b5f3c5",
+      "name": "Code0"
+    },
+    {
+      "id": "d4913c08-d3f3-48fe-938d-d7a797886730",
+      "name": "Command Code"
+    },
+    {
+      "id": "5c78e29a-ef04-4558-9107-cd356af1682a",
+      "name": "Compshare"
+    },
+    {
+      "id": "24c5f2f0-a1bd-4f2b-9bf7-da3850f929db",
+      "name": "Compshare Coding Plan"
+    },
+    {
+      "id": "dbb57d91-b284-405c-8e16-2c5e20f21431",
+      "name": "CrazyRouter"
+    },
+    {
+      "id": "67d3e7dc-b18f-45c0-a1b6-9f892dd5c116",
+      "name": "Cubence"
+    },
+    {
+      "id": "7113252d-41d5-449f-9d6f-7d5079f4f541",
+      "name": "DeepInfra"
+    },
+    {
+      "id": "db778d2c-4b21-4891-8613-a2289e666880",
+      "name": "DIT.ai"
+    },
+    {
+      "id": "2854cd12-72c2-44db-8669-f424a40a9fc5",
+      "name": "DMXAPI"
+    },
+    {
+      "id": "234c72b2-e69f-4091-aeb0-9526cf0e4ba6",
+      "name": "E-FlowCode"
+    },
+    {
+      "id": "8c025b1c-a91f-46b6-b0d2-bb8496ba3d7f",
+      "name": "FennoAI"
+    },
+    {
+      "id": "53f2f130-f3cc-4e98-bb79-fc2566e22279",
+      "name": "FluxA Token Plan"
+    },
+    {
+      "id": "2aadb6d3-29c6-419a-9b03-15686888c809",
+      "name": "GrooRoute Pro"
+    },
+    {
+      "id": "b361969e-c88d-4415-860f-cdf29c1bc495",
+      "name": "Groq"
+    },
+    {
+      "id": "689ccd15-2a35-4d64-a267-d084f2d92076",
+      "name": "hao.ai"
+    },
+    {
+      "id": "37013589-bc74-4851-86c4-ee0fa6ff1792",
+      "name": "Hugging Face"
+    },
+    {
+      "id": "28a8e865-1405-4f4f-9d4b-091e86367c9d",
+      "name": "IKunCode"
+    },
+    {
+      "id": "6061e0c4-9567-48a4-9d6b-d01774fbce13",
+      "name": "JieKou AI"
+    },
+    {
+      "id": "9c57bf76-19e9-46b9-b25e-989934c7fe68",
+      "name": "Micu"
+    },
+    {
+      "id": "43074b1b-a983-4158-9520-fffe8489eec7",
+      "name": "Modelflare"
+    },
+    {
+      "id": "3aed787e-c487-45bf-b2a0-b406f2e40d9a",
+      "name": "ModelScope"
+    },
+    {
+      "id": "6fa3dd3d-d224-453d-a609-3c07050cad7f",
+      "name": "Nebius Token Factory"
+    },
+    {
+      "id": "375fb556-b44a-437c-b8da-c6dde3c0db9e",
+      "name": "NekoCode"
+    },
+    {
+      "id": "667e268d-6b41-49e7-8b69-fa247f789489",
+      "name": "Novita AI"
+    },
+    {
+      "id": "36b9d818-b870-4cb4-8335-ac669f5531d9",
+      "name": "Nvidia"
+    },
+    {
+      "id": "22aa6431-c967-40e5-9182-a968d30ae819",
+      "name": "OpenCode Go"
+    },
+    {
+      "id": "10949b05-bd98-43ab-956e-89eab0f9fe65",
+      "name": "OpenCode Zen"
+    },
+    {
+      "id": "fd8ec77e-863a-477e-afc0-33b9b613c63b",
+      "name": "OpenModel"
+    },
+    {
+      "id": "f88964b4-c072-4ac1-b5e6-a32d32f8b9d9",
+      "name": "OpenRouter"
+    },
+    {
+      "id": "57bfc13e-9d1b-4449-bc7c-0a5834ed7b56",
+      "name": "OspreyAI"
+    },
+    {
+      "id": "fa07a655-a15d-4bb8-9a3c-30d13f12fbd4",
+      "name": "PackyCode"
+    },
+    {
+      "id": "4e695a97-75c1-4015-8457-b954ceefb09e",
+      "name": "PatewayAI"
+    },
+    {
+      "id": "6c81f667-6da3-4348-a875-a6f269855be7",
+      "name": "PIPELLM"
+    },
+    {
+      "id": "c5dc46d6-8e21-4b37-b613-c2247d1fe025",
+      "name": "PPIO"
+    },
+    {
+      "id": "fea2f0e5-7799-4dfd-8355-f191dd1c8ad9",
+      "name": "Qiniu"
+    },
+    {
+      "id": "711e264a-6e40-4484-bbfe-8cd6f3421b66",
+      "name": "RelaxyCode"
+    },
+    {
+      "id": "550d5b3c-1a77-4d9f-847a-eaabe2ff8e35",
+      "name": "RightCode"
+    },
+    {
+      "id": "a0343bb9-e957-4721-b0ff-1ebc4dcec010",
+      "name": "RunAPI"
+    },
+    {
+      "id": "304b0e11-8a79-4276-9702-5b74c77c630e",
+      "name": "RunToken"
+    },
+    {
+      "id": "c586ab3c-cec2-4e10-8c0f-1b1998a42ad8",
+      "name": "Shengsuanyun"
+    },
+    {
+      "id": "29faae11-68b8-4e84-b167-48e09b1bb397",
+      "name": "SiliconFlow"
+    },
+    {
+      "id": "f7106bbb-3d24-479c-8fd6-04748d98d632",
+      "name": "SiliconFlow en"
+    },
+    {
+      "id": "5c6cf47a-4886-42b4-abae-cd04f4736a28",
+      "name": "SoleAPI"
+    },
+    {
+      "id": "f9ec4998-5d3c-42b4-af18-0622f3b4a20d",
+      "name": "SoruxGPT"
+    },
+    {
+      "id": "6df307c0-4b26-436b-be65-5a941084a782",
+      "name": "SoruxGPT Coding Plan"
+    },
+    {
+      "id": "2a5e6895-904b-4ea5-b662-f2dd57f2a4c6",
+      "name": "Soshow"
+    },
+    {
+      "id": "90f1d9b8-d7e9-4aa3-bc02-da2b2e03ee1f",
+      "name": "SSSAiCode"
+    },
+    {
+      "id": "9d08fbf9-0594-41b5-a9bb-d7bd9090cb97",
+      "name": "SubRouter"
+    },
+    {
+      "id": "2b048bc5-1048-4f23-84d5-c5fdd4a6777f",
+      "name": "SudoCode.chat"
+    },
+    {
+      "id": "eb9fcc95-fb06-4d62-8cfb-dc29ac6f4122",
+      "name": "SudoCode.us"
+    },
+    {
+      "id": "5765ef91-6cd5-49a5-9571-9131be18c1eb",
+      "name": "TeamoRouter"
+    },
+    {
+      "id": "b3dc4acd-8312-45e1-b5c2-25258179fbff",
+      "name": "TheRouter"
+    },
+    {
+      "id": "141af18b-90ac-4d10-bb7c-8e42f5bc3568",
+      "name": "TokenFactory"
+    },
+    {
+      "id": "5b2ea2b1-35bf-4005-a48e-a1101a7fcdeb",
+      "name": "TokenFlux"
+    },
+    {
+      "id": "10d0474e-f908-4663-890d-19d554e6419e",
+      "name": "Tu-zi"
+    },
+    {
+      "id": "269cff26-42b4-44e9-a272-7f130a719eb2",
+      "name": "V-API"
+    },
+    {
+      "id": "926e7d45-b9c2-4e71-9823-2fd939ea47d5",
+      "name": "Vercel AI Gateway"
+    },
+    {
+      "id": "12662f82-0a3b-452b-adf3-50e09d711e2d",
+      "name": "xAI (Grok)"
+    },
+    {
+      "id": "0be195c0-d250-4269-9de9-91deb37574cf",
+      "name": "XycAi"
+    },
+    {
+      "id": "cafe65d9-54b9-4b4b-b32b-132dbfc0d757",
+      "name": "YYLX"
+    },
+    {
+      "id": "e21add10-b55e-4e15-90c4-b27bbe926873",
+      "name": "模力方舟"
+    }
+  ]
+}

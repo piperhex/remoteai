@@ -1,0 +1,4966 @@
+{
+  "schema": "remoteai.provider-market.cc-switch-import.v1",
+  "source": {
+    "repository": "https://github.com/farion1231/cc-switch",
+    "revision": "8be840557bacd89d592f13ddc1bee0586afaea14",
+    "file": "src/config/codexProviderPresets.ts",
+    "sha256": "66c72036c2a8c3666ad828e9b14bb0a2d6490980f6a6cc99e1a01b64d2f004c5",
+    "license": "MIT",
+    "grouping": "src/components/providers/forms/presetGroups.ts"
+  },
+  "platformCount": 79,
+  "configurationCount": 84,
+  "entries": [
+    {
+      "source": {
+        "name": "88API",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://88api.ai",
+        "apiKeyUrl": "https://88api.ai/sign-up?aff=HSGY",
+        "baseUrl": "https://api.88api.ai/v1",
+        "endpointCandidates": [
+          "https://api.88api.ai/v1",
+          "https://88api.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "88API",
+        "description": "",
+        "baseUrl": "https://api.88api.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://88api.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "9527CODE",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://9527.codes",
+        "apiKeyUrl": "https://9527.codes/register?aff=e5zI",
+        "baseUrl": "https://9527.codes/v1",
+        "endpointCandidates": [
+          "https://9527.codes/v1",
+          "https://api.9527.codes/v1",
+          "https://cdn.9527.codes/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "9527CODE",
+        "description": "",
+        "baseUrl": "https://9527.codes/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://9527.codes",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "A6API",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://www.a6api.com",
+        "apiKeyUrl": "https://a6api.com/register?aff=AqNr",
+        "baseUrl": "https://api.a6api.com/v1",
+        "endpointCandidates": [
+          "https://api.a6api.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "A6API",
+        "description": "",
+        "baseUrl": "https://api.a6api.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.a6api.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "AICodeMirror",
+        "family": null,
+        "category": null,
+        "websiteUrl": "https://www.aicodemirror.ai",
+        "apiKeyUrl": "https://www.aicodemirror.ai/register?invitecode=9915W3",
+        "baseUrl": "https://api.aicodemirror.ai/api/codex/backend-api/codex",
+        "endpointCandidates": [
+          "https://api.aicodemirror.ai/api/codex/backend-api/codex"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "AICodeMirror",
+        "description": "",
+        "baseUrl": "https://api.aicodemirror.ai/api/codex/backend-api/codex",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.aicodemirror.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "AICodeWith",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://aicodewith.ai",
+        "apiKeyUrl": "https://aicodewith.ai/login?tab=register",
+        "baseUrl": "https://api.aicodewith.ai/v1",
+        "endpointCandidates": [
+          "https://api.aicodewith.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "AICodeWith",
+        "description": "",
+        "baseUrl": "https://api.aicodewith.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://aicodewith.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "AICoding",
+        "family": null,
+        "category": null,
+        "websiteUrl": "https://aicoding.inc",
+        "apiKeyUrl": "https://aicoding.inc/i/CCSWITCH",
+        "baseUrl": "https://api.aicoding.inc",
+        "endpointCandidates": [
+          "https://api.aicoding.inc"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "AICoding",
+        "description": "",
+        "baseUrl": "https://api.aicoding.inc",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://aicoding.inc",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "AIComing",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://aicoming.top",
+        "apiKeyUrl": "https://aicoming.top/console#keys",
+        "baseUrl": "https://api.aicoming.top/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "AIComing",
+        "description": "",
+        "baseUrl": "https://api.aicoming.top/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://aicoming.top",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "AIGoCode",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://aigocode.net",
+        "apiKeyUrl": "https://aigocode.net/invite/CC-SWITCH",
+        "baseUrl": "https://api.aigocode.dev",
+        "endpointCandidates": [
+          "https://api.aigocode.dev",
+          "https://api.aigocode.app"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "AIGoCode",
+        "description": "",
+        "baseUrl": "https://api.aigocode.dev",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://aigocode.net",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "AiHubMix",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://aihubmix.com",
+        "apiKeyUrl": null,
+        "baseUrl": "https://aihubmix.com/v1",
+        "endpointCandidates": [
+          "https://aihubmix.com/v1",
+          "https://api.aihubmix.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "AiHubMix",
+        "description": "",
+        "baseUrl": "https://aihubmix.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://aihubmix.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "AllTokens",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://alltokens.cc",
+        "apiKeyUrl": "https://alltokens.cc/register",
+        "baseUrl": "https://alltokens.cc/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "AllTokens",
+        "description": "",
+        "baseUrl": "https://alltokens.cc/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://alltokens.cc",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "AllTokens SI",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://alltokens.si",
+        "apiKeyUrl": "https://alltokens.si/enterprise-register",
+        "baseUrl": "https://alltokens.si/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "AllTokens SI",
+        "description": "",
+        "baseUrl": "https://alltokens.si/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://alltokens.si",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Amux",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://amux.ai",
+        "apiKeyUrl": "https://amux.ai",
+        "baseUrl": "https://api.amux.ai/v1",
+        "endpointCandidates": [
+          "https://api.amux.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Amux",
+        "description": "",
+        "baseUrl": "https://api.amux.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://amux.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "APIKEY.FUN",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://apikey.fan",
+        "apiKeyUrl": "https://apikey.fan/register?aff=CCSwitch",
+        "baseUrl": "https://api.apikey.fan/v1",
+        "endpointCandidates": [
+          "https://api.apikey.fan/v1",
+          "https://api.apikey.fun/v1",
+          "https://slb.apikey.fun/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "APIKEY.FUN",
+        "description": "",
+        "baseUrl": "https://api.apikey.fan/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://apikey.fan",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "APINebula",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://apinebula.ai",
+        "apiKeyUrl": "https://apinebula.ai/VjM74M",
+        "baseUrl": "https://apinebula.ai/v1",
+        "endpointCandidates": [
+          "https://apinebula.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "APINebula",
+        "description": "",
+        "baseUrl": "https://apinebula.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://apinebula.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "AtlasCloud",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://www.atlascloud.ai/console/coding-plan",
+        "apiKeyUrl": "https://www.atlascloud.ai/console/coding-plan",
+        "baseUrl": "https://api.atlascloud.ai/v1",
+        "endpointCandidates": [
+          "https://api.atlascloud.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "AtlasCloud",
+        "description": "",
+        "baseUrl": "https://api.atlascloud.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "zai-org/glm-5.3",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.atlascloud.ai/console/coding-plan",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Azure OpenAI",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/codex",
+        "apiKeyUrl": null,
+        "baseUrl": "https://YOUR_RESOURCE_NAME.openai.azure.com/openai",
+        "endpointCandidates": [
+          "https://YOUR_RESOURCE_NAME.openai.azure.com/openai"
+        ],
+        "adaptation": {
+          "kind": "azure-v1",
+          "reference": "https://learn.microsoft.com/en-us/azure/foundry/openai/api-version-lifecycle"
+        }
+      },
+      "draft": {
+        "name": "Azure OpenAI",
+        "description": "Azure OpenAI 自有资源模板。添加后，请将服务地址中的 YOUR_RESOURCE_NAME 替换为你的 Azure 资源名称，并将模型名称改为实际的部署名称。本配置使用 v1 接口，无需填写 api-version。",
+        "baseUrl": "https://YOUR_RESOURCE_NAME.openai.azure.com/openai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-5.6-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://learn.microsoft.com/en-us/azure/ai-foundry/openai/how-to/codex",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Baseten",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://www.baseten.co",
+        "apiKeyUrl": "https://app.baseten.co/settings/api_keys",
+        "baseUrl": "https://inference.baseten.co/v1",
+        "endpointCandidates": [
+          "https://inference.baseten.co/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Baseten",
+        "description": "",
+        "baseUrl": "https://inference.baseten.co/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "zai-org/GLM-5.3",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "moonshotai/Kimi-K3",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "zai-org/GLM-5.3-Flash",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "zai-org/GLM-5.3-Fast",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.baseten.co",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "BotCF",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://botcf.com",
+        "apiKeyUrl": "https://botcf.com/console/token",
+        "baseUrl": "https://botcf.com/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "BotCF",
+        "description": "",
+        "baseUrl": "https://botcf.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://botcf.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "BuyToken",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://buytoken.work",
+        "apiKeyUrl": "https://buytoken.work/sign-up?aff=cc-switch",
+        "baseUrl": "https://api.buytoken.work/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "BuyToken",
+        "description": "",
+        "baseUrl": "https://api.buytoken.work/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-5.6-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://buytoken.work",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "CCSub",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://www.ccsub.net",
+        "apiKeyUrl": "https://www.ccsub.net/register?ref=Y6Z8DXEA",
+        "baseUrl": "https://www.ccsub.net/v1",
+        "endpointCandidates": [
+          "https://www.ccsub.net/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "CCSub",
+        "description": "",
+        "baseUrl": "https://www.ccsub.net/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6-astra",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.ccsub.net",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "CherryIN",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://open.cherryin.ai",
+        "apiKeyUrl": "https://open.cherryin.ai/console/token",
+        "baseUrl": "https://open.cherryin.net/v1",
+        "endpointCandidates": [
+          "https://open.cherryin.net/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "CherryIN",
+        "description": "",
+        "baseUrl": "https://open.cherryin.net/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "openai/gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://open.cherryin.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "ClaudeCN",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://claudecn.top",
+        "apiKeyUrl": "https://claudecn.ai/register?aff=HEL9",
+        "baseUrl": "https://claudecn.top/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "ClaudeCN",
+        "description": "",
+        "baseUrl": "https://claudecn.top/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://claudecn.top",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "ClinePass",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://docs.cline.bot/getting-started/clinepass",
+        "apiKeyUrl": "https://app.cline.bot",
+        "baseUrl": "https://api.cline.bot/api/v1",
+        "endpointCandidates": [
+          "https://api.cline.bot/api/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "ClinePass",
+        "description": "",
+        "baseUrl": "https://api.cline.bot/api/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "cline-pass/kimi-k3.1-pro",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "cline-pass/glm-5.3",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "cline-pass/glm-5.3-flash",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "cline-pass/kimi-k3",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "cline-pass/deepseek-v4-pro",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "cline-pass/deepseek-v4.1-flash",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "cline-pass/qwen3.8-max",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "cline-pass/qwen3.7-plus",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "cline-pass/minimax-m3",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "cline-pass/minimax-m3.1-flash",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "cline-pass/mimo-v2.6-pro",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "cline-pass/mimo-v2.6-flash",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://docs.cline.bot/getting-started/clinepass",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Code0",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://code0.ai",
+        "apiKeyUrl": "https://code0.ai/agent/register/B2XHxGjGmRvqgznY",
+        "baseUrl": "https://code0.ai/v1",
+        "endpointCandidates": [
+          "https://code0.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Code0",
+        "description": "",
+        "baseUrl": "https://code0.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://code0.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Command Code",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://commandcode.ai",
+        "apiKeyUrl": "https://commandcode.ai/settings/keys",
+        "baseUrl": "https://api.commandcode.ai/provider/v1",
+        "endpointCandidates": [
+          "https://api.commandcode.ai/provider/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Command Code",
+        "description": "",
+        "baseUrl": "https://api.commandcode.ai/provider/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "deepseek/deepseek-v4.1-flash",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "z-ai/glm-5.3-flash",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "Qwen/Qwen3.8-Flash",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "moonshotai/Kimi-K3.1-Pro",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "zai-org/GLM-5.3",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://commandcode.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Compshare",
+        "family": "compshare",
+        "category": "aggregator",
+        "websiteUrl": "https://www.compshare.cn",
+        "apiKeyUrl": "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_cc-switch",
+        "baseUrl": "https://api.modelverse.cn/v1",
+        "endpointCandidates": [
+          "https://api.modelverse.cn/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Compshare",
+        "description": "",
+        "baseUrl": "https://api.modelverse.cn/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.compshare.cn",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Compshare Coding Plan",
+        "family": "compshare",
+        "category": "aggregator",
+        "websiteUrl": "https://www.compshare.cn",
+        "apiKeyUrl": "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_cc-switch",
+        "baseUrl": "https://cp.compshare.cn/v1",
+        "endpointCandidates": [
+          "https://cp.compshare.cn/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Compshare Coding Plan",
+        "description": "",
+        "baseUrl": "https://cp.compshare.cn/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.compshare.cn",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "CrazyRouter",
+        "family": null,
+        "category": null,
+        "websiteUrl": "https://www.crazyrouter.com",
+        "apiKeyUrl": "https://www.crazyrouter.com/register?aff=OZcm&ref=cc-switch",
+        "baseUrl": "https://cn.crazyrouter.com/v1",
+        "endpointCandidates": [
+          "https://cn.crazyrouter.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "CrazyRouter",
+        "description": "",
+        "baseUrl": "https://cn.crazyrouter.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.crazyrouter.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Cubence",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://cubence.com",
+        "apiKeyUrl": "https://cubence.com/signup?code=CCSWITCH&source=ccs",
+        "baseUrl": "https://api.cubence.com/v1",
+        "endpointCandidates": [
+          "https://api.cubence.com/v1",
+          "https://api-cf.cubence.com/v1",
+          "https://api-dmit.cubence.com/v1",
+          "https://api-bwg.cubence.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Cubence",
+        "description": "",
+        "baseUrl": "https://api.cubence.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://cubence.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "DeepInfra",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://deepinfra.com",
+        "apiKeyUrl": "https://deepinfra.com/dash/api_keys",
+        "baseUrl": "https://api.deepinfra.com/v1",
+        "endpointCandidates": [
+          "https://api.deepinfra.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "DeepInfra",
+        "description": "",
+        "baseUrl": "https://api.deepinfra.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "moonshotai/Kimi-K3",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "zai-org/GLM-5.3",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "zai-org/GLM-5.3-Flash",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://deepinfra.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "DIT.ai",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://dit.ai",
+        "apiKeyUrl": "https://dit.ai?utm_source=ccswitch",
+        "baseUrl": "https://api.dit.ai/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "DIT.ai",
+        "description": "",
+        "baseUrl": "https://api.dit.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-5.6-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://dit.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "DMXAPI",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://www.dmxapi.cn",
+        "apiKeyUrl": null,
+        "baseUrl": "https://www.dmxapi.cn/v1",
+        "endpointCandidates": [
+          "https://www.dmxapi.cn/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "DMXAPI",
+        "description": "",
+        "baseUrl": "https://www.dmxapi.cn/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.dmxapi.cn",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "E-FlowCode",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://e-flowcode.cc",
+        "apiKeyUrl": "https://e-flowcode.cc",
+        "baseUrl": "https://e-flowcode.cc/v1",
+        "endpointCandidates": [
+          "https://e-flowcode.cc/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "E-FlowCode",
+        "description": "",
+        "baseUrl": "https://e-flowcode.cc/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://e-flowcode.cc",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "FennoAI",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://api.fenno.ai",
+        "apiKeyUrl": "https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=P9MR3D3PLCNL",
+        "baseUrl": "https://api.fenno.ai",
+        "endpointCandidates": [
+          "https://api.fenno.ai"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "FennoAI",
+        "description": "",
+        "baseUrl": "https://api.fenno.ai",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://api.fenno.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "FluxA Token Plan",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://agentmarket.fluxapay.xyz/",
+        "apiKeyUrl": "https://agentmarket.fluxapay.xyz/marketplace/tokenplans",
+        "baseUrl": "https://api.baiduqianfan.ai/v2/tokenplan/team",
+        "endpointCandidates": [
+          "https://api.baiduqianfan.ai/v2/tokenplan/team"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "FluxA Token Plan",
+        "description": "",
+        "baseUrl": "https://api.baiduqianfan.ai/v2/tokenplan/team",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "deepseek-v4.1-flash",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "deepseek-v4-flash-0731",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "deepseek-v4-flash",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "deepseek-v3.2",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "glm-5.3",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "glm-5.2",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "glm-5.1",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "glm-5",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "kimi-k2.6",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://agentmarket.fluxapay.xyz/",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "GrooRoute Pro",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://grooroute.pro",
+        "apiKeyUrl": "https://grooroute.pro/sign-up?aff=qqm9",
+        "baseUrl": "https://grooroute.pro/v1",
+        "endpointCandidates": [
+          "https://grooroute.pro/v1",
+          "https://grooroute.xyz/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "GrooRoute Pro",
+        "description": "",
+        "baseUrl": "https://grooroute.pro/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://grooroute.pro",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Groq",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://groq.com",
+        "apiKeyUrl": "https://console.groq.com/keys",
+        "baseUrl": "https://api.groq.com/openai/v1",
+        "endpointCandidates": [
+          "https://api.groq.com/openai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Groq",
+        "description": "",
+        "baseUrl": "https://api.groq.com/openai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "openai/gpt-oss-120b",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "openai/gpt-oss-20b",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://groq.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "hao.ai",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://hao.ai",
+        "apiKeyUrl": "https://hao.ai/invite/DTBZS3OR",
+        "baseUrl": "https://api.hao.ai/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "hao.ai",
+        "description": "",
+        "baseUrl": "https://api.hao.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "openai/gpt-5.6-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://hao.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Hugging Face",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://huggingface.co/inference/models",
+        "apiKeyUrl": "https://huggingface.co/settings/tokens/new?ownUserPermissions=inference.serverless.write&tokenType=fineGrained",
+        "baseUrl": "https://router.huggingface.co/v1",
+        "endpointCandidates": [
+          "https://router.huggingface.co/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Hugging Face",
+        "description": "",
+        "baseUrl": "https://router.huggingface.co/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "zai-org/GLM-5.3:baseten",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "zai-org/GLM-5.3-Flash:baseten",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "moonshotai/Kimi-K3:baseten",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "deepseek-ai/DeepSeek-V4.1-Flash-1017:baseten",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://huggingface.co/inference/models",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "IKunCode",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://api.ikuncode.ai",
+        "apiKeyUrl": "https://api.ikuncode.ai/console/token",
+        "baseUrl": "https://api.ikuncode.ai/v1",
+        "endpointCandidates": [
+          "https://api.ikuncode.ai/v1",
+          "https://api.ikuncode.cc/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "IKunCode",
+        "description": "",
+        "baseUrl": "https://api.ikuncode.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://api.ikuncode.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "JieKou AI",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://jiekou.ai/#model-library",
+        "apiKeyUrl": "https://jiekou.ai/settings/key-management",
+        "baseUrl": "https://api.jiekou.ai/openai/v1",
+        "endpointCandidates": [
+          "https://api.jiekou.ai/openai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "JieKou AI",
+        "description": "",
+        "baseUrl": "https://api.jiekou.ai/openai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "claude-fable-5-1",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://jiekou.ai/#model-library",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Micu",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://www.micuapi.ai",
+        "apiKeyUrl": "https://www.micuapi.ai/register?aff=aOYQ",
+        "baseUrl": "https://www.micuapi.ai/v1",
+        "endpointCandidates": [
+          "https://www.micuapi.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Micu",
+        "description": "",
+        "baseUrl": "https://www.micuapi.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.micuapi.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Modelflare",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://modelflare.dev",
+        "apiKeyUrl": "https://modelflare.dev/sign-up?utm_medium=referral&utm_source=ccswitch",
+        "baseUrl": "https://modelflare.dev/v1",
+        "endpointCandidates": [
+          "https://modelflare.dev/v1",
+          "https://origin.modelflare.dev/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Modelflare",
+        "description": "",
+        "baseUrl": "https://modelflare.dev/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://modelflare.dev",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "ModelScope",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://modelscope.cn",
+        "apiKeyUrl": "https://modelscope.cn/my/myaccesstoken",
+        "baseUrl": "https://api-inference.modelscope.cn/v1",
+        "endpointCandidates": [
+          "https://api-inference.modelscope.cn/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "ModelScope",
+        "description": "",
+        "baseUrl": "https://api-inference.modelscope.cn/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "ZhipuAI/GLM-5.2",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://modelscope.cn",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Nebius Token Factory",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://nebius.com/token-factory",
+        "apiKeyUrl": "https://tokenfactory.nebius.com/project/api-keys",
+        "baseUrl": "https://api.tokenfactory.nebius.com/v1",
+        "endpointCandidates": [
+          "https://api.tokenfactory.nebius.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Nebius Token Factory",
+        "description": "",
+        "baseUrl": "https://api.tokenfactory.nebius.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "zai-org/GLM-5.3",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "zai-org/GLM-5.3-Flash",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "moonshotai/Kimi-K3",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "moonshotai/Kimi-K2.7-Code",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "deepseek-ai/DeepSeek-V4.1-Flash",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "MiniMaxAI/MiniMax-M3.1-Flash",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://nebius.com/token-factory",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "NekoCode",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://nekoapi.ai",
+        "apiKeyUrl": "https://nekoapi.ai/token",
+        "baseUrl": "https://nekoapi.ai/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "NekoCode",
+        "description": "",
+        "baseUrl": "https://nekoapi.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://nekoapi.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Novita AI",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://novita.ai",
+        "apiKeyUrl": "https://novita.ai",
+        "baseUrl": "https://api.novita.ai/openai/v1",
+        "endpointCandidates": [
+          "https://api.novita.ai/openai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Novita AI",
+        "description": "",
+        "baseUrl": "https://api.novita.ai/openai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "zai-org/glm-5.3",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://novita.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Nvidia",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://build.nvidia.com",
+        "apiKeyUrl": "https://build.nvidia.com/settings/api-keys",
+        "baseUrl": "https://integrate.api.nvidia.com/v1",
+        "endpointCandidates": [
+          "https://integrate.api.nvidia.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Nvidia",
+        "description": "",
+        "baseUrl": "https://integrate.api.nvidia.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "moonshotai/kimi-k2.6",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://build.nvidia.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "OpenCode Go",
+        "family": "opencode",
+        "category": "third_party",
+        "websiteUrl": "https://opencode.ai/go",
+        "apiKeyUrl": "https://opencode.ai/go",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "endpointCandidates": [
+          "https://opencode.ai/zen/go/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "OpenCode Go",
+        "description": "",
+        "baseUrl": "https://opencode.ai/zen/go/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "glm-5.3",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "glm-5.3-flash",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "kimi-k3.1-pro",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "deepseek-v4.1-flash",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "mimo-v2.6-pro",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://opencode.ai/go",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "OpenCode Zen",
+        "family": "opencode",
+        "category": "aggregator",
+        "websiteUrl": "https://opencode.ai/zen",
+        "apiKeyUrl": "https://opencode.ai/auth",
+        "baseUrl": "https://opencode.ai/zen/v1",
+        "endpointCandidates": [
+          "https://opencode.ai/zen/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "OpenCode Zen",
+        "description": "",
+        "baseUrl": "https://opencode.ai/zen/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://opencode.ai/zen",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "OpenModel",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://www.openmodel.ai",
+        "apiKeyUrl": "https://www.openmodel.ai?ref=cc-switch",
+        "baseUrl": "https://api.openmodel.ai/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "OpenModel",
+        "description": "",
+        "baseUrl": "https://api.openmodel.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.openmodel.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "OpenRouter",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://openrouter.ai",
+        "apiKeyUrl": "https://openrouter.ai/keys",
+        "baseUrl": "https://openrouter.ai/api/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "OpenRouter",
+        "description": "",
+        "baseUrl": "https://openrouter.ai/api/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "openai/gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://openrouter.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "OspreyAI",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://open.ospreyai.cn",
+        "apiKeyUrl": "https://open.ospreyai.cn",
+        "baseUrl": "https://open.ospreyai.cn/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "OspreyAI",
+        "description": "",
+        "baseUrl": "https://open.ospreyai.cn/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://open.ospreyai.cn",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "PackyCode",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://www.packyapi.ai",
+        "apiKeyUrl": "https://www.packyapi.ai/register?aff=cc-switch",
+        "baseUrl": "https://www.packyapi.ai/v1",
+        "endpointCandidates": [
+          "https://www.packyapi.ai/v1",
+          "https://cf.api.fan/v1",
+          "https://slb-v1.api.fan/v1",
+          "https://www.packyapi.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "PackyCode",
+        "description": "",
+        "baseUrl": "https://www.packyapi.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.packyapi.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "PatewayAI",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://pateway.ai",
+        "apiKeyUrl": "https://pateway.ai/?ch=etzpm8&aff=WB6M6F67#/",
+        "baseUrl": "https://api.pateway.ai/v1",
+        "endpointCandidates": [
+          "https://api.pateway.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "PatewayAI",
+        "description": "",
+        "baseUrl": "https://api.pateway.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://pateway.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "PIPELLM",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://code.pipellm.ai",
+        "apiKeyUrl": "https://code.pipellm.ai/login?ref=uvw650za",
+        "baseUrl": "https://cc-api.pipellm.ai/v1",
+        "endpointCandidates": [
+          "https://cc-api.pipellm.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "PIPELLM",
+        "description": "",
+        "baseUrl": "https://cc-api.pipellm.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://code.pipellm.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "PPIO",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://ppio.com",
+        "apiKeyUrl": "https://ppio.com/activity/ccswitch",
+        "baseUrl": "https://api.ppio.com/openai/v1",
+        "endpointCandidates": [
+          "https://api.ppio.com/openai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "PPIO",
+        "description": "",
+        "baseUrl": "https://api.ppio.com/openai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "deepseek/deepseek-v4.1-flash",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://ppio.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Qiniu",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://s.qiniu.com/nMvAvy",
+        "apiKeyUrl": "https://s.qiniu.com/nMvAvy",
+        "baseUrl": "https://api.qnaigc.com/bypass/openai/v1",
+        "endpointCandidates": [
+          "https://api.qnaigc.com/bypass/openai/v1",
+          "https://api.modelink.ai/bypass/openai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Qiniu",
+        "description": "",
+        "baseUrl": "https://api.qnaigc.com/bypass/openai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6-astra",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://s.qiniu.com/nMvAvy",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "RelaxyCode",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://www.relaxycode.com",
+        "apiKeyUrl": "https://www.relaxycode.com/register",
+        "baseUrl": "https://www.relaxycode.com/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "RelaxyCode",
+        "description": "",
+        "baseUrl": "https://www.relaxycode.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6-astra",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.relaxycode.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "RightCode",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://www.rightapi.ai",
+        "apiKeyUrl": "https://www.rightapi.ai/register?aff=CCSWITCH",
+        "baseUrl": "https://www.rightapi.ai/codex/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "RightCode",
+        "description": "",
+        "baseUrl": "https://www.rightapi.ai/codex/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.rightapi.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "RunAPI",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://runapi.host",
+        "apiKeyUrl": "https://runapi.host/register?aff=iOKB",
+        "baseUrl": "https://runapi.host/v1",
+        "endpointCandidates": [
+          "https://runapi.host/v1",
+          "https://runapi.co/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "RunAPI",
+        "description": "",
+        "baseUrl": "https://runapi.host/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://runapi.host",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "RunToken",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://www.runtoken.ai",
+        "apiKeyUrl": "https://www.runtoken.ai/console/token",
+        "baseUrl": "https://www.runtoken.ai/v1",
+        "endpointCandidates": [
+          "https://www.runtoken.ai/v1",
+          "https://fast.runtoken.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "RunToken",
+        "description": "",
+        "baseUrl": "https://www.runtoken.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.runtoken.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Shengsuanyun",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://www.shengsuanyun.com/?from=CH_4HHXMRYF",
+        "apiKeyUrl": "https://www.shengsuanyun.com/?from=CH_4HHXMRYF",
+        "baseUrl": "https://router.shengsuanyun.com/api/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Shengsuanyun",
+        "description": "",
+        "baseUrl": "https://router.shengsuanyun.com/api/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "openai/gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://www.shengsuanyun.com/?from=CH_4HHXMRYF",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "SiliconFlow",
+        "family": "siliconflow",
+        "category": "aggregator",
+        "websiteUrl": "https://siliconflow.cn",
+        "apiKeyUrl": "https://cloud.siliconflow.cn/i/YflgU2Ve",
+        "baseUrl": "https://api.siliconflow.cn/v1",
+        "endpointCandidates": [
+          "https://api.siliconflow.cn/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "SiliconFlow",
+        "description": "",
+        "baseUrl": "https://api.siliconflow.cn/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "deepseek-ai/DeepSeek-V4-Flash",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://siliconflow.cn",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "SiliconFlow en",
+        "family": "siliconflow",
+        "category": "aggregator",
+        "websiteUrl": "https://siliconflow.com",
+        "apiKeyUrl": "https://cloud.siliconflow.cn/i/YflgU2Ve",
+        "baseUrl": "https://api.siliconflow.com/v1",
+        "endpointCandidates": [
+          "https://api.siliconflow.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "SiliconFlow en",
+        "description": "",
+        "baseUrl": "https://api.siliconflow.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "MiniMaxAI/MiniMax-M3",
+            "protocol": "openaiChat",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://siliconflow.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "SoleAPI",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://soleapi.com",
+        "apiKeyUrl": "https://soleapi.com/r/ccswitch",
+        "baseUrl": "https://soleapi.com/v1",
+        "endpointCandidates": [
+          "https://soleapi.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "SoleAPI",
+        "description": "",
+        "baseUrl": "https://soleapi.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://soleapi.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "SoruxGPT",
+        "family": "soruxgpt",
+        "category": "aggregator",
+        "websiteUrl": "https://ai.soruxgpt.com",
+        "apiKeyUrl": "https://ai.soruxgpt.com/console/token",
+        "baseUrl": "https://ai.soruxgpt.com/v1",
+        "endpointCandidates": [
+          "https://ai.soruxgpt.com/v1",
+          "https://api-cf.soruxgpt.com/v1",
+          "https://api-host.soruxgpt.com/v1",
+          "https://api-node6.soruxgpt.com/v1",
+          "https://api-node3.soruxgpt.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "SoruxGPT",
+        "description": "",
+        "baseUrl": "https://ai.soruxgpt.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://ai.soruxgpt.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "SoruxGPT Coding Plan",
+        "family": "soruxgpt",
+        "category": "aggregator",
+        "websiteUrl": "https://app.soruxgpt.com",
+        "apiKeyUrl": null,
+        "baseUrl": "https://app.soruxgpt.com/api/codex",
+        "endpointCandidates": [
+          "https://app.soruxgpt.com/api/codex",
+          "https://center.soruxgpt.com/api/codex",
+          "https://u.soruxgpt.com/api/codex"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "SoruxGPT Coding Plan",
+        "description": "",
+        "baseUrl": "https://app.soruxgpt.com/api/codex",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://app.soruxgpt.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Soshow",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://aimarket.so-show.com",
+        "apiKeyUrl": "https://aimarket.so-show.com/workbench/access-key",
+        "baseUrl": "https://maas.so-show.com/v1",
+        "endpointCandidates": [],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Soshow",
+        "description": "",
+        "baseUrl": "https://maas.so-show.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://aimarket.so-show.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "SSSAiCode",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://sssaicodeapi.com",
+        "apiKeyUrl": "https://sssaicodeapi.com/register?ref=DCP0SM",
+        "baseUrl": "https://node-hk.sssaicodeapi.com/api/v1",
+        "endpointCandidates": [
+          "https://node-hk.sssaicodeapi.com/api/v1",
+          "https://node-hk.sssaiapi.com/api/v1",
+          "https://node-cf.sssaicodeapi.com/api/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "SSSAiCode",
+        "description": "",
+        "baseUrl": "https://node-hk.sssaicodeapi.com/api/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://sssaicodeapi.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "SubRouter",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://subrouter.ai",
+        "apiKeyUrl": "https://subrouter.ai/register?aff=l3ri",
+        "baseUrl": "https://subrouter.ai/v1",
+        "endpointCandidates": [
+          "https://subrouter.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "SubRouter",
+        "description": "",
+        "baseUrl": "https://subrouter.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://subrouter.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "SudoCode.chat",
+        "family": "sudocode",
+        "category": "third_party",
+        "websiteUrl": "https://sudocode.chat",
+        "apiKeyUrl": "https://sudocode.chat/sign-up?aff=CC-SWITCH&utm_source=cc-switch&utm_medium=sponsor&utm_campaign=ccswitch",
+        "baseUrl": "https://api.sudocode.chat/v1",
+        "endpointCandidates": [
+          "https://api.sudocode.chat/v1",
+          "https://api.sudorelay.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "SudoCode.chat",
+        "description": "",
+        "baseUrl": "https://api.sudocode.chat/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://sudocode.chat",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "SudoCode.us",
+        "family": "sudocode",
+        "category": "third_party",
+        "websiteUrl": "https://sudocode.us",
+        "apiKeyUrl": "https://sudocode.us",
+        "baseUrl": "https://sudocode.us/v1",
+        "endpointCandidates": [
+          "https://sudocode.us/v1",
+          "https://sudocode.run/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "SudoCode.us",
+        "description": "",
+        "baseUrl": "https://sudocode.us/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://sudocode.us",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "TeamoRouter",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://teamorouter.cn",
+        "apiKeyUrl": "https://teamorouter.cn/?utm_source=cc_switch&utm_medium=referral&utm_campaign=ai_directory",
+        "baseUrl": "https://api.teamorouter.cn/v1",
+        "endpointCandidates": [
+          "https://api.teamorouter.cn/v1",
+          "https://api.teamorouter.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "TeamoRouter",
+        "description": "",
+        "baseUrl": "https://api.teamorouter.cn/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://teamorouter.cn",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "TheRouter",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://therouter.ai",
+        "apiKeyUrl": "https://dashboard.therouter.ai",
+        "baseUrl": "https://api.therouter.ai/v1",
+        "endpointCandidates": [
+          "https://api.therouter.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "TheRouter",
+        "description": "",
+        "baseUrl": "https://api.therouter.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "openai/gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://therouter.ai",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "TokenFactory",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://tokenfactory.cn",
+        "apiKeyUrl": "https://console.tokenfactory.cn/login",
+        "baseUrl": "https://api.tokenfactory.cn/v1",
+        "endpointCandidates": [
+          "https://api.tokenfactory.cn/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "TokenFactory",
+        "description": "",
+        "baseUrl": "https://api.tokenfactory.cn/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "glm-5.3",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "kimi-k3",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "deepseek-v4.1-flash",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "glm-5.3-flash",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "qwen3.8-flash",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://tokenfactory.cn",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "TokenFlux",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://tokenflux.com",
+        "apiKeyUrl": "https://tokenflux.com/keys",
+        "baseUrl": "https://tokenflux.com/v1",
+        "endpointCandidates": [
+          "https://tokenflux.com/v1",
+          "https://tokenflux.dev/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "TokenFlux",
+        "description": "",
+        "baseUrl": "https://tokenflux.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://tokenflux.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Tu-zi",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://api.tu-zi.com",
+        "apiKeyUrl": "https://api.tu-zi.com/token",
+        "baseUrl": "https://api.tu-zi.com/v1",
+        "endpointCandidates": [
+          "https://api.tu-zi.com/v1",
+          "https://api.ourzhishi.top/v1",
+          "https://api.sydney-ai.com/v1",
+          "https://apicdn.tu-zi.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Tu-zi",
+        "description": "",
+        "baseUrl": "https://api.tu-zi.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://api.tu-zi.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "V-API",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://gpt.ge",
+        "apiKeyUrl": "https://gpt.ge/signup?aff=URNP",
+        "baseUrl": "https://api.gpt.ge/v1",
+        "endpointCandidates": [
+          "https://api.gpt.ge/v1",
+          "https://api.vveai.com/v1",
+          "https://run.v3.cm/v1",
+          "https://api1.v3.cm/v1",
+          "https://api2.v3.cm/v1",
+          "https://us.gpt.ge/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "V-API",
+        "description": "",
+        "baseUrl": "https://api.gpt.ge/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://gpt.ge",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "Vercel AI Gateway",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://vercel.com/ai-gateway",
+        "apiKeyUrl": "https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai-gateway%2Fapi-keys",
+        "baseUrl": "https://ai-gateway.vercel.sh/codex/v1",
+        "endpointCandidates": [
+          "https://ai-gateway.vercel.sh/codex/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "Vercel AI Gateway",
+        "description": "",
+        "baseUrl": "https://ai-gateway.vercel.sh/codex/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "openai/gpt-6-astra",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "openai/gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "openai/gpt-6-luna",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "anthropic/claude-sonnet-5.5",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "anthropic/claude-opus-5.5",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://vercel.com/ai-gateway",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "xAI (Grok)",
+        "family": null,
+        "category": "third_party",
+        "websiteUrl": "https://x.ai/api",
+        "apiKeyUrl": "https://console.x.ai",
+        "baseUrl": "https://api.x.ai/v1",
+        "endpointCandidates": [
+          "https://api.x.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "xAI (Grok)",
+        "description": "",
+        "baseUrl": "https://api.x.ai/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "grok-4.5",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "grok-4.7",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://x.ai/api",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "XycAi",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://xycai.us",
+        "apiKeyUrl": "https://xycai.us/register?aff=Uhu9",
+        "baseUrl": "https://apicdn.xycai.us/v1",
+        "endpointCandidates": [
+          "https://apicdn.xycai.us/v1",
+          "https://apicdn.xyc.ai/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "XycAi",
+        "description": "",
+        "baseUrl": "https://apicdn.xycai.us/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://xycai.us",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "YYLX",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://yylx.io",
+        "apiKeyUrl": "https://app.yylx.io/keys",
+        "baseUrl": "https://app.yylx.io/v1",
+        "endpointCandidates": [
+          "https://app.yylx.io/v1",
+          "https://global.yylx.io/v1",
+          "https://cn.yylx.io/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "YYLX",
+        "description": "",
+        "baseUrl": "https://app.yylx.io/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "gpt-6.1-sol",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://yylx.io",
+          "query": "",
+          "headers": {}
+        }
+      }
+    },
+    {
+      "source": {
+        "name": "模力方舟",
+        "family": null,
+        "category": "aggregator",
+        "websiteUrl": "https://moark.com",
+        "apiKeyUrl": "https://moark.com/dashboard/tokens",
+        "baseUrl": "https://moark.com/v1",
+        "endpointCandidates": [
+          "https://moark.com/v1"
+        ],
+        "adaptation": null
+      },
+      "draft": {
+        "name": "模力方舟",
+        "description": "",
+        "baseUrl": "https://moark.com/v1",
+        "currency": "USD",
+        "unit": "millionTokens",
+        "models": [
+          {
+            "id": "deepseek-v4.1-flash",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "GLM-5.3",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "GLM-5.3-Flash",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          },
+          {
+            "id": "Kimi-K2.7-Code",
+            "protocol": "openaiResponses",
+            "tiers": [
+              {
+                "multiplier": 1,
+                "input": null,
+                "output": null,
+                "cachedInput": null,
+                "longContextThreshold": null,
+                "longContext": {
+                  "input": null,
+                  "output": null,
+                  "cachedInput": null
+                }
+              }
+            ]
+          }
+        ],
+        "balanceQuery": null,
+        "pageLink": {
+          "url": "https://moark.com",
+          "query": "",
+          "headers": {}
+        }
+      }
+    }
+  ]
+}
