@@ -136,6 +136,8 @@ it('streams before completion even when disk history stays stale, without replay
     threadId: remote.id, turnId: 'active', itemId: 'answer', delta,
   } });
   await vi.advanceTimersByTimeAsync(40);
+  // The host's 40ms transport batch is followed by the client's bounded display frame.
+  await vi.advanceTimersByTimeAsync(32);
   expect(controller.snapshot().selected?.turns?.at(-1)).toMatchObject({ status: 'inProgress',
     items: [{ text: 'hello world' }] });
   await controller.refreshSelected();

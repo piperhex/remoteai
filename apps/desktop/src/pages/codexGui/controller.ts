@@ -31,8 +31,7 @@ import { GuiModelCatalog } from "./modelCatalog";
 import { GuiThreadTitles } from "./threadTitles";
 import type { ApprovalReply, GuiEvent, GuiState, Model, Settings, Thread, Turn } from "./types";
 import type { Item, MessageInput, SkillReference } from "./types";
-
-const STREAM_FRAME_MS = 32;
+import { isTextDelta, StreamFrame } from '../../../../../shared/chat/streamFrame';
 
 export class GuiController {
   readonly queueJournal: QueueJournal;
@@ -65,8 +64,9 @@ export class GuiController {
       this.patch({ modelCatalogLoading });
       if (!modelCatalogLoading) Object.keys(this.state.queued).forEach(id => void this.queue.flush(id));
     } });
-  private streamEvents: GuiEvent[] = [];
-  private streamTimer?: ReturnType<typeof setTimeout>;
+  private readonly stream = new StreamFrame(events => {
+    this.patch(events.reduce(reduceEvent, this.state), true, true);
+  });
   readonly titles = new GuiThreadTitles({ active: () => !this.disposed, receive: (event) => this.receive(event),
     currentName: (id) => this.state.conversations[id]?.thread.name
       ?? this.state.threads.find((thread) => thread.id === id)?.name });
@@ -104,6 +104,7 @@ export class GuiController {
     if (notify) this.listeners.forEach((listener) => listener());
   };
   report = (error: unknown) => {
+    this.flushStream();
     const message = error instanceof Error ? error.message : error;
     this.patch({ error: typeof message === "string" ? message : "操作未完成，请重试。" });
   };
@@ -151,13 +152,11 @@ export class GuiController {
   };
 
   private flushStream = () => {
-    clearTimeout(this.streamTimer);
-    this.streamTimer = undefined;
-    if (!this.streamEvents.length) return;
-    this.patch(this.streamEvents.reduce(reduceEvent, this.state), true, true);
-    this.streamEvents = [];
+    this.stream.flush();
   };
   private receive = (event: GuiEvent) => {
+    if (this.disposed) return;
+    if (!isTextDelta(event)) this.flushStream();
     const threadId = event.params.threadId ?? event.params.thread?.id;
     const known = threadId ? this.state.conversations[threadId]?.thread : undefined;
     if (known && !this.threadList.has(known.id)) this.threadList.upsert(known);
@@ -173,12 +172,10 @@ export class GuiController {
     if (threadId && this.deletedThreads.has(threadId)) return;
     if (event.method === "connection/restored") { void this.connect(); return; }
     if (event.method === "connection/updated") { void this.connect({ reuseExisting: true }); return; }
-    if (event.method.endsWith("Delta") || event.method.endsWith("/delta")) {
-      this.streamEvents.push(event);
-      this.streamTimer ??= setTimeout(this.flushStream, STREAM_FRAME_MS);
+    if (isTextDelta(event)) {
+      this.stream.push(event);
       return;
     }
-    this.flushStream();
     const release = threadId ? this.conversationCache.retain(threadId) : undefined;
     try { this.receiveSettled(event); }
     finally { release?.(); this.trimConversations(); }
@@ -278,6 +275,7 @@ export class GuiController {
     savePreferences(this.state);
   };
   newConversation = () => {
+    this.flushStream();
     ++this.selectionGeneration;
     if (this.state.selected && !this.state.modelSettingsLoading) {
       const { model, effort } = this.state.settings;
@@ -289,6 +287,7 @@ export class GuiController {
   };
 
   select = async (id: string) => {
+    this.flushStream();
     if (this.state.deleting === id) return;
     this.deletedThreads.delete(id);
     this.conversationCache.touch(id);
@@ -434,6 +433,7 @@ export class GuiController {
   };
 
   interrupt = async () => {
+    this.flushStream();
     this.capacityRetry.stop();
     const id = this.state.selected;
     const turnId = id ? this.state.conversations[id]?.activeTurn : null;
@@ -523,11 +523,11 @@ export class GuiController {
     this.patch({ ...reduceEvent(this.state, { method: "connection/closed", params: {} }), error: "" });
   };
   dispose = () => {
+    this.flushStream();
     this.threadList.invalidate();
     this.modelCatalog.suspend();
     this.capacityRetry.cancelAll();
     this.disposed = true; this.unlisten?.(); this.unlisten = undefined;
-    clearTimeout(this.streamTimer); this.streamTimer = undefined; this.streamEvents = [];
     this.listeners.clear(); this.messageListeners.clear();
   };
 }

@@ -5,6 +5,7 @@ import { mergeTaskDelivery } from '../taskDelivery';
 import type { RemoteComposerCatalog } from '../composerCatalog';
 import type { ProjectFilesRequest, ProjectFilesResponse } from '../projectFiles';
 import { applyChatEvent } from './events';
+import { isTextDelta, StreamFrame } from '../../chat/streamFrame';
 import { syncChatProcessing } from './processing';
 import { mergeHistory } from './history';
 import { historyLoadResult } from './historyLoad';
@@ -78,6 +79,11 @@ export class ChatController {
   private state = initialChatState();
   private readonly listeners = new Set<() => void>();
   private readonly eventListeners = new Set<(event: GuiEvent) => void>();
+  private readonly stream = new StreamFrame(events => {
+    this.state = events.reduce(applyChatEvent, this.state);
+    this.emit();
+    this.markViewed();
+  });
   private readonly connection: Pick<ChatConnection, 'request' | 'start' | 'stop'>
     & Partial<Pick<ChatConnection, 'confirmHostIdentity' | 'reportDiagnostic' | 'retryNow' | 'openNativeMedia'
       | 'downloadsBulk' | 'setBulkSupport' | 'mappingStreams'>>;
@@ -118,6 +124,7 @@ export class ChatController {
   private synchronizing?: number;
   private skillGeneration = 0;
   private active = false;
+  private stopped = false;
   private transportConnected = false;
   private syncTimer?: ReturnType<typeof setTimeout>;
   private readonly images = new ImageCache(<T>(body: Parameters<ConstructorParameters<typeof ImageCache>[0]>[0]) =>
@@ -150,7 +157,10 @@ export class ChatController {
     this.historyReader = new HistoryReader((body) => this.connection.request('request', body), versions);
     if (offline) this.offlineWriter = new OfflineWriter(offline, this.cacheFailure);
     this.connection = createConnection({
-      mode: (mode) => this.changeMode(mode), error: (error) => this.update({ error, connectionIssue: error }),
+      mode: (mode) => this.changeMode(mode), error: (error) => {
+        this.stream.flush();
+        this.update({ error, connectionIssue: error });
+      },
       stage: (connectionStage) => this.update({ connectionStage }),
       publicEndpoints: (publicEndpoints) => this.update({ publicEndpoints }),
       directEndpoints: (directEndpoints) => this.update({ directEndpoints }),
@@ -206,10 +216,12 @@ export class ChatController {
   }
   private request<T>(body: Request) { return this.connection.request<T>('request', body); }
   private failure(error: unknown) {
+    this.stream.flush();
     this.update({ error: error instanceof Error ? error.message : '操作未完成，请稍后重试。' });
   }
 
   private changeMode(mode: ConnectionMode) {
+    this.stream.flush();
     // A path outage keeps the logical session, pending requests and loaded history intact.
     if (mode !== 'offline' && this.transportConnected) {
       this.update({ mode });
@@ -244,8 +256,10 @@ export class ChatController {
   }
 
   private receive(event: GuiEvent) {
-    if (!event?.params || typeof event.method !== 'string') return;
+    if (this.stopped || !event?.params || typeof event.method !== 'string') return;
+    if (!isTextDelta(event)) this.stream.flush();
     for (const listener of this.eventListeners) listener(event);
+    if (isTextDelta(event)) { this.stream.push(event); return; }
     if (event.method === 'thread/deleted' && event.params.threadId) {
       this.completeThreadMutation({ operation: 'delete', threadId: event.params.threadId });
     }
@@ -309,6 +323,7 @@ export class ChatController {
   }
 
   start() {
+    this.stopped = false;
     this.active = true;
     if (this.offline && !this.cacheStarted) { this.cacheStarted = true; void this.listOffline(); }
     this.connection.start();
@@ -339,6 +354,7 @@ export class ChatController {
   };
 
   connectNow = () => {
+    this.stopped = false;
     this.active = true;
     this.connection.retryNow?.();
     if (this.state.ready || this.state.connecting) return;
@@ -349,6 +365,8 @@ export class ChatController {
   };
 
   stop() {
+    this.stream.flush();
+    this.stopped = true;
     this.threadList.invalidate();
     this.previewDownloads?.dispose();
     void this.flushCache();
@@ -548,6 +566,7 @@ export class ChatController {
   }
 
   async select(thread: Thread) {
+    this.stream.flush();
     this.selectionGeneration += 1;
     this.rememberHistory();
     void this.flushCache();
@@ -582,6 +601,7 @@ export class ChatController {
   }
 
   async refreshSelected(older = false) {
+    this.stream.flush();
     if (this.messageEditor.busy) { this.historyDirty = true; return; }
     if (this.offline && !this.transportConnected) return;
     const selected = this.state.selected;
@@ -595,6 +615,8 @@ export class ChatController {
     try {
       const result = await this.historyReader.read(selected,
         { start: this.historyPages.get(selected.id)?.start, older });
+      // The response may already contain buffered deltas; reconcile them before installing the snapshot.
+      this.stream.flush();
       if (generation === this.readGeneration && this.state.selected?.id === selected.id) {
         this.loadedThreadId = selected.id;
         if (result.page) this.historyPages.set(selected.id, result.page);
@@ -657,6 +679,7 @@ export class ChatController {
 
   back(project: ChatProject | null = null) {
     if (this.state.sending) return;
+    this.stream.flush();
     this.selectionGeneration += 1;
     const inherit = this.state.selected && this.state.ready && !this.state.settingsBusy
       ? { model: this.state.settings.model, effort: this.state.settings.effort, access: this.state.settings.access }
@@ -865,6 +888,7 @@ export class ChatController {
   };
 
   async interrupt() {
+    this.stream.flush();
     const thread = this.state.selected;
     const turn = thread?.turns?.find((entry) => entry.status === 'inProgress');
     if (!thread || !turn) return;

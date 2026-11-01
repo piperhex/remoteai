@@ -17,6 +17,7 @@ let container: HTMLDivElement;
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.resetAllMocks();
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   Object.defineProperty(HTMLDialogElement.prototype, "showModal", {
     configurable: true, value(this: HTMLDialogElement) { this.open = true; },
   });

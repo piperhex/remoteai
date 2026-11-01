@@ -1,6 +1,7 @@
 import { uiText } from "../../i18n/uiText";
 import { useGuiLanguage } from '../../i18n/useGuiLanguage';
 import { Fragment, memo, useMemo } from "react";
+import { useCommittedCallback } from '../../../../../shared/chat/useCommittedCallback';
 import type { Item, Turn } from "./types";
 import type { SubmitMessageEdit } from "./messageEditContent";
 import { MessageItem } from "./MessageItem";
@@ -31,6 +32,10 @@ export const TurnMessage = memo(function TurnMessage({ turn, running, active, fo
   onFork?: () => void; forkDisabled?: boolean;
 } & CapacityRetryControl) {
   useGuiLanguage();
+  const fork = useCommittedCallback(() => onFork?.());
+  const edit = useCommittedCallback<Parameters<SubmitMessageEdit>, ReturnType<SubmitMessageEdit>>(
+    content => onEdit ? onEdit(content) : Promise.resolve(false));
+  const remove = useCommittedCallback(() => onDelete ? onDelete() : Promise.resolve(false));
   const groups = useMemo(() => messageGroups ?? groupVisibleTurns([
     { turn, items: visibleItems, followsInterruption },
   ])[0].groups, [turn, followsInterruption, visibleItems, messageGroups]);
@@ -51,10 +56,10 @@ export const TurnMessage = memo(function TurnMessage({ turn, running, active, fo
         active={active} timed={index === responseIndex} />
         : <div className={styles.messageEntry} data-message-id={group.items[0].id}>
         <MessageItem item={group.items[0]} startedAt={turn.startedAt}
-        completedAt={turn.completedAt} onFork={onFork}
+        completedAt={turn.completedAt} onFork={onFork ? fork : undefined}
         forkDisabled={forkDisabled || running || turn.status === "inProgress"}
-        onEdit={group.items[0].id === editableItemId ? onEdit : undefined} editDisabled={editDisabled}
-        onDelete={group.items[0].id === editableItemId ? onDelete : undefined}
+        onEdit={onEdit && group.items[0].id === editableItemId ? edit : undefined} editDisabled={editDisabled}
+        onDelete={onDelete && group.items[0].id === editableItemId ? remove : undefined}
         streaming={running && group.items[0].status !== "completed"} /></div>}
     </Fragment>)}
     {showDuration && !running && !isModelCapacityError(turn.error)
