@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  loadAccountQuotaHistory, loadDailyTokenUsage, loadTokenUsageBreakdown, loadTokenUsageEntries,
-} from "../../api/backend";
 import type { DailyTokenUsage, TokenUsageEntry } from "../../types";
 import type { AccountQuotaHistory, DailyTokenUsageBreakdown } from "../../types/tokenUsageAnalytics";
 import { startOfCalendar } from "./chartUtils";
 import { createDashboardLoader } from "./dashboardLoader";
+import { readDashboardQuery } from "./dashboardQuery";
 
 interface DashboardData {
   entries: TokenUsageEntry[];
@@ -34,35 +32,34 @@ export function useDashboardData({ weeks, refreshSeconds, thresholdTokens }: Das
 
   useEffect(() => {
     let active = true;
-    const task = async () => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const interval = refreshSeconds * 1000;
+    const task = async (maxAgeMs = 0) => {
       if (!active) return;
-      setLoading(true);
+      clearTimeout(timer);
+      if (!maxAgeMs) setLoading(true);
       const startTs = Math.floor(startOfCalendar(weeks).getTime() / 1000);
-      const endTs = Math.floor(Date.now() / 1000);
-      const [entries, daily, breakdown, quota] = await Promise.allSettled([
-        loadTokenUsageEntries(), loadDailyTokenUsage(startTs),
-        loadTokenUsageBreakdown(startTs, thresholdTokens), loadAccountQuotaHistory(startTs, endTs),
-      ]);
-      if (!active) return;
-      setData({
-        entries: entries.status === "fulfilled" ? entries.value : [],
-        dailyUsage: daily.status === "fulfilled" ? daily.value : [],
-        breakdown: breakdown.status === "fulfilled" ? breakdown.value : [],
-        quotaHistory: quota.status === "fulfilled" ? quota.value : [],
-        error: entries.status === "rejected" || daily.status === "rejected",
-        analyticsError: breakdown.status === "rejected", quotaError: quota.status === "rejected",
-        updatedAt: new Date(), startTs, endTs,
-      });
-      setLoading(false);
+      let nextRefresh = Date.now() + interval;
+      try {
+        const next = await readDashboardQuery({ startTs, thresholdTokens, maxAgeMs });
+        nextRefresh = next.updatedAt.getTime() + interval + 1;
+        if (active) setData(current => current.updatedAt?.getTime() === next.updatedAt.getTime() ? current : next);
+      } catch {
+        if (active) setData(current => ({ ...current, error: true }));
+      } finally {
+        if (active) {
+          setLoading(false);
+          timer = setTimeout(() => void scheduler.current(() => task(interval)), Math.max(1, nextRefresh - Date.now()));
+        }
+      }
     };
     // Clear the previous scope immediately so it cannot be shown under a new range or threshold.
-    setData((current) => ({ ...current, dailyUsage: [], breakdown: [], quotaHistory: [],
+    setData((current) => ({ ...current, dailyUsage: [], breakdown: [], quotaHistory: [], updatedAt: null,
       startTs: Math.floor(startOfCalendar(weeks).getTime() / 1000), endTs: Math.floor(Date.now() / 1000) }));
     setLoading(true);
     reload.current = () => { void scheduler.current(task); };
     void scheduler.current(task, true);
-    const timer = window.setInterval(() => void scheduler.current(task), refreshSeconds * 1000);
-    return () => { active = false; window.clearInterval(timer); };
+    return () => { active = false; reload.current = () => undefined; clearTimeout(timer); };
   }, [weeks, refreshSeconds, thresholdTokens]);
 
   const load = useCallback(() => reload.current(), []);

@@ -8,7 +8,7 @@ import { useLanguage } from "../hooks/useLanguage";
 import { useThemeColor } from "../hooks/useThemeColor";
 import { useThemeMode } from "../hooks/useThemeMode";
 import { useTokenUsagePreferences } from "../hooks/useTokenUsagePreferences";
-import { TokenUsageDashboard } from "./TokenUsageDashboard";
+import { TokenUsagePanel } from "./TokenUsagePanel";
 
 const ignoreError = () => undefined;
 
@@ -34,7 +34,7 @@ export function TokenUsageWindow() {
         fontFamily: "\"DM Sans\", \"Microsoft YaHei UI\", sans-serif",
       },
     }}>
-      <TokenUsageDashboard
+      <TokenUsagePanel
         dark={themeMode.mode === "dark"}
         language={language}
         themeColor={themeColor.color}

@@ -42,7 +42,7 @@ import { AboutModal } from "../modals/AboutModal";
 import { HelpModal } from "../modals/HelpModal";
 import { FeedbackModal } from "../modals/FeedbackModal";
 import { TokenUsageHeatmap } from "../TokenUsageHeatmap";
-import { TokenUsageDashboard } from "../TokenUsageDashboard";
+import { TokenUsagePanel } from "../TokenUsagePanel";
 import { TotpPage } from "../../pages/TotpPage";
 import { TotpCloudSyncSwitch } from "../TotpCloudSyncSwitch";
 import { LogDiagnosticsPage, type LogDiagnosticsTab } from "../../pages/LogDiagnosticsPage";
@@ -1612,7 +1612,7 @@ export function DashboardApp() {
               language={language} t={t} />
           </section>
           <section className="page-panel token-dashboard-page" hidden={page !== "tokens"}>
-            <TokenUsageDashboard dark={themeMode.mode === "dark"} language={language}
+            <TokenUsagePanel active={page === "tokens"} dark={themeMode.mode === "dark"} language={language}
               themeColor={themeColor.color}
               weeks={tokenUsagePreferences.weeks}
               refreshSeconds={tokenUsagePreferences.refreshSeconds}

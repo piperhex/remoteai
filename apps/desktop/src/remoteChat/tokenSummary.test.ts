@@ -7,13 +7,16 @@ import { ChatOperations } from './operations';
 import { LONG_CONTEXT_COST_STORAGE_KEY, DEFAULT_LONG_CONTEXT_COST_SETTINGS } from '../utils/tokenCostLongContext';
 import { ChatController } from '../../../../shared/remote-chat/client/controller';
 import { QUOTA_HISTORY_FORMAT } from '../../../../shared/remote-chat/tokenSummaryCodec';
+import { invalidateTokenQueries } from '../../../../shared/token-usage/queryCache';
 import type { RpcRequest } from '../../../../shared/remote-chat/protocol';
 
-vi.mock('../api/backend', () => ({ loadAppSettings: vi.fn(), loadTokenUsageEntries: vi.fn(),
+vi.mock('../api/backend', () => ({ isDesktopApp: true, isHostedWebApp: false,
+  loadAppSettings: vi.fn(), loadTokenUsageEntries: vi.fn(),
   loadDailyTokenUsage: vi.fn(), loadTokenUsageBreakdown: vi.fn(), loadAccountQuotaHistory: vi.fn(), invoke: vi.fn() }));
 vi.mock('../api/officialUsage', () => ({ loadOfficialUsage: vi.fn() }));
 
-beforeEach(() => {
+beforeEach(async () => {
+  await invalidateTokenQueries('');
   vi.resetAllMocks();
   localStorage.clear();
   vi.mocked(backend.loadAppSettings).mockResolvedValue({ tokenUsageWeeks: 4, tokenUsageRefreshSeconds: 30,

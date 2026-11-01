@@ -1,6 +1,5 @@
-import {
-  loadAppSettings, loadAccountQuotaHistory, loadDailyTokenUsage, loadTokenUsageBreakdown, loadTokenUsageEntries,
-} from '../api/backend';
+import { loadAppSettings } from '../api/backend';
+import { readDashboardQuery } from '../components/TokenUsageDashboard/dashboardQuery';
 import { aggregateEntries, calendarDateKeys, startOfCalendar } from '../components/TokenUsageDashboard/chartUtils';
 import { loadLongContextCostSettings } from '../utils/tokenCostLongContext';
 import { MAX_SUMMARY_WEEKS, MIN_SUMMARY_WEEKS, type TokenSummary } from '../../../../shared/remote-chat/tokenSummary';
@@ -18,22 +17,19 @@ export async function readTokenSummary(requestedWeeks: unknown): Promise<TokenSu
   const weeks = requestedWeeks as number | undefined ?? settings.tokenUsageWeeks ?? DEFAULT_WEEKS;
   const thresholdTokens = loadLongContextCostSettings().thresholdTokens;
   const startTs = Math.floor(startOfCalendar(weeks).getTime() / 1000);
-  const endTs = Math.floor(Date.now() / 1000);
-  const [entries, daily, breakdown, quota, official] = await Promise.allSettled([
-    loadTokenUsageEntries(), loadDailyTokenUsage(startTs),
-    loadTokenUsageBreakdown(startTs, thresholdTokens), loadAccountQuotaHistory(startTs, endTs),
-    loadOfficialUsage(startTs),
+  const [usage, official] = await Promise.all([
+    readDashboardQuery({ startTs, thresholdTokens, maxAgeMs: 0 }),
+    loadOfficialUsage(startTs).catch(() => null),
   ]);
-  const recent = entries.status === 'fulfilled' ? entries.value : [];
+  const recent = usage.entries;
+  const endTs = usage.endTs;
   return {
     weeks, refreshSeconds: settings.tokenUsageRefreshSeconds ?? DEFAULT_REFRESH_SECONDS,
     thresholdTokens, startTs, endTs, dateKeys: calendarDateKeys(weeks),
-    dailyUsage: daily.status === 'fulfilled' ? daily.value : [],
-    breakdown: breakdown.status === 'fulfilled' ? breakdown.value : [],
-    quotaHistory: quota.status === 'fulfilled' ? quota.value : [],
-    officialUsage: official.status === 'fulfilled'
-      ? official.value
-      : { accounts: [], status: 'unavailable', updatedAt: endTs },
+    dailyUsage: usage.dailyUsage,
+    breakdown: usage.breakdown,
+    quotaHistory: usage.quotaHistory,
+    officialUsage: official ?? { accounts: [], status: 'unavailable', updatedAt: endTs },
     rankings: {
       providers: aggregateEntries(recent, (entry) => entry.provider),
       models: aggregateEntries(recent, (entry) => entry.model),
@@ -41,7 +37,6 @@ export async function readTokenSummary(requestedWeeks: unknown): Promise<TokenSu
         || entry.accountId?.trim() || uiText("client.usage.unidentifiedAccount")),
     },
     entryCount: recent.length,
-    errors: { usage: entries.status === 'rejected' || daily.status === 'rejected',
-      analytics: breakdown.status === 'rejected', quota: quota.status === 'rejected' },
+    errors: { usage: usage.error, analytics: usage.analyticsError, quota: usage.quotaError },
   };
 }

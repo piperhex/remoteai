@@ -3,6 +3,7 @@ import { getLocale, t, useLanguage } from '../i18n';
 import { useEffect, useState } from 'react';
 import { AdaptiveSheet } from '../components/AdaptiveSheet';
 import { useTokenSummary } from '../../../../shared/remote-chat/client/useTokenSummary';
+import { useWindowVisible } from '../../../../shared/token-usage/useWindowVisible';
 import type { ReadTokenSummary, TokenSummary, UsageRanking } from '../../../../shared/remote-chat/tokenSummary';
 import { formatTokens } from '../../../../shared/remote-chat/usage';
 import { TOKEN_FIELDS, CONTEXT_FIELDS, MODE_FIELDS, type ConsumptionField }
@@ -73,12 +74,7 @@ export function ChatTokenSummary({ read, ready, scope, deviceName, onClose }: {
   read: ReadTokenSummary; ready: boolean; scope: string; deviceName?: string; onClose: () => void;
 }) {
   useLanguage();
-  const [visible, setVisible] = useState(document.visibilityState === 'visible');
-  useEffect(() => {
-    const update = () => setVisible(document.visibilityState === 'visible');
-    document.addEventListener('visibilitychange', update);
-    return () => document.removeEventListener('visibilitychange', update);
-  }, []);
+  const visible = useWindowVisible();
   const summary = useTokenSummary({ read, active: ready && visible, scope });
   const [weeks, setWeeks] = useState('');
   useEffect(() => { setWeeks(String(summary.weeks ?? '')); }, [summary.weeks]);
@@ -93,7 +89,7 @@ export function ChatTokenSummary({ read, ready, scope, deviceName, onClose }: {
           onClick={summary.refresh}>{summary.loading ? t("client.chat.updating") : t("client.chat.refresh")}</button></form>
       {!ready && <p className="chat-muted">{t("client.chat.connectToYourComputerToViewTokenUsage")}</p>}
       {summary.error && <p role="alert" className="chat-error">{displayError(summary.error)}</p>}
-      {summary.data && <><p className="chat-muted">{t("client.accounts.updated")} {new Date(summary.data.endTs * 1000).toLocaleTimeString(getLocale())}</p>
+      {visible && summary.data && <><p className="chat-muted">{t("client.accounts.updated")} {new Date(summary.data.endTs * 1000).toLocaleTimeString(getLocale())}</p>
         <SummaryContent data={summary.data} /></>}
     </div>
   </AdaptiveSheet>;

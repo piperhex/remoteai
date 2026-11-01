@@ -8,8 +8,10 @@ import { readGuiAccounts } from './guiAccounts';
 import { connectionDetails } from './connectionDetails';
 import { readTokenSummary } from './tokenSummary';
 import { loadOfficialUsage } from '../api/officialUsage';
+import { invalidateTokenQueries } from '../../../../shared/token-usage/queryCache';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn(), queryProviderBalance: vi.fn(), hasLocalBackend: false,
+  isDesktopApp: true, isHostedWebApp: false,
   loadAppSettings: vi.fn(), loadTokenUsageEntries: vi.fn(), loadDailyTokenUsage: vi.fn(),
   loadTokenUsageBreakdown: vi.fn(), loadAccountQuotaHistory: vi.fn() }));
 vi.mock('../api/officialUsage', () => ({ loadOfficialUsage: vi.fn() }));
@@ -21,7 +23,7 @@ const balance: ProviderBalance = {
 };
 const settle = async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); };
 
-beforeEach(() => { vi.resetAllMocks(); localStorage.clear(); });
+beforeEach(async () => { await invalidateTokenQueries(''); vi.resetAllMocks(); localStorage.clear(); });
 afterEach(() => { setGuiLanguage('zh'); connectionDetails.reset(); });
 
 it('formats balance details in the current host language on every read', async () => {
