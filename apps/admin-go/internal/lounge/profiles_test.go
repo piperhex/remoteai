@@ -101,7 +101,7 @@ func TestLoungeProfilesRejectInvalidAndFailedSaves(t *testing.T) {
 	h, url := fixture(t)
 	h.profiles = &memoryProfiles{avatars: make(map[string]string), fail: true}
 	alice := connect(t, h, url, uuid.NewString())
-	for _, avatar := range []string{"https://tracking.test/avatar", avatarPicture(t, 49), avatarPicture(t, avatarSize)} {
+	for _, avatar := range []string{"https://tracking.test/avatar", avatarPicture(t, 129), avatarPicture(t, avatarSize)} {
 		write(t, alice, incoming{Type: "avatar", ID: "invalid", Avatar: avatar})
 		frame := read(t, alice)
 		if frame["type"] != "rejected" || frame["code"] != "client.lounge.avatarSaveFailed" {

@@ -18,6 +18,16 @@ func (h *hub) readProfiles(ids []string) ([]avatarProfile, error) {
 }
 
 func sendProfiles(client *peer, profiles []avatarProfile) {
+	// Keep even maximum-size avatars below the client's 6 MiB frame limit.
+	const profilesPerFrame = 32
+	for len(profiles) > profilesPerFrame {
+		sendProfileBatch(client, profiles[:profilesPerFrame])
+		profiles = profiles[profilesPerFrame:]
+	}
+	sendProfileBatch(client, profiles)
+}
+
+func sendProfileBatch(client *peer, profiles []avatarProfile) {
 	data, err := json.Marshal(struct {
 		Type     string          `json:"type"`
 		Profiles []avatarProfile `json:"profiles"`

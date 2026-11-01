@@ -1,0 +1,12 @@
+.cloud-account-identity { display: flex; align-items: center; gap: 16px; min-width: 0; padding: 20px;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--panel); margin-bottom: 20px; }
+.cloud-account-identity-details { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;
+  padding: 0; border: 0; color: inherit; background: transparent; cursor: pointer; text-align: left; font: inherit; }
+.cloud-account-identity-details > span, .cloud-account-identity > span { flex: 1; min-width: 0; }
+.cloud-account-identity strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--ink); font-size: 18px; line-height: 1.6; }
+.cloud-account-identity small { display: block; margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.cloud-account-identity-details svg { flex-shrink: 0; color: var(--muted); }
+.cloud-avatar-button .lounge-avatar { width: 24px; height: 24px; flex: 0 0 24px; border-radius: 7px;
+  background: var(--green-soft); color: var(--green-dark); }
+.window-titlebar-tools .cloud-avatar-button .lounge-avatar { width: 21px; height: 21px; flex-basis: 21px; }

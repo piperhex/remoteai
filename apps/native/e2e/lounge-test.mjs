@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import { setTimeout as delay } from 'node:timers/promises';
 import WebSocket from 'ws';
 import { verifyNativeAvatar } from './lounge-avatar-check.mjs';
+import { verifyNativeSettingsAvatar } from './settings-avatar-check.mjs';
 import { verifyNativeImage } from './lounge-image-check.mjs';
 import { verifyNativeEmoji } from './lounge-emoji-check.mjs';
 import { verifyNativeText } from './lounge-text-check.mjs';
@@ -39,7 +40,8 @@ const adb = async (...args) => (await exec('adb', ['-s', serial, ...args], {
   encoding: 'utf8', timeout: 60_000, windowsHide: true, maxBuffer: 4 * 1024 * 1024,
 })).stdout.trim();
 const image = 'data:image/png;base64,' + (await readFile(path.join(root,
-  'apps/desktop/src-tauri/icons/32x32.png'))).toString('base64');
+  'apps/desktop/src-tauri/icons', process.env.LOUNGE_SETTINGS_AVATAR_ONLY === '1'
+    ? '128x128.png' : '32x32.png'))).toString('base64');
 const sent = [];
 const moderated = [];
 let online = true;
@@ -266,6 +268,14 @@ try {
     await adb('shell', 'am', 'start', '-W', '-n', `${app}/com.codexswitch.mobile.MainActivity`);
     await find('在线交流'); if (scale === 1.3) await tap('Light fixture');
     await find('1'); await screenshot(`discovery-${scale}`);
+    if (process.env.LOUNGE_SETTINGS_AVATAR_ONLY === '1') {
+      await verifyNativeSettingsAvatar({ tap, find, screenshot, image, scale, saves: () => avatarSaves,
+        fail: value => { rejectAvatar = value; },
+        profile: value => { avatar = value; broadcast({ type: 'profiles', profiles: [{ id: 'alice', avatar }] }); },
+      });
+      avatar = '';
+      continue;
+    }
     await tap('在线交流'); await find('搜索聊天');
     if (process.env.LOUNGE_PRIVATE_SCROLL_ONLY === '1') {
       await verifyNativePrivateScroll({ adb, tap, find, nodes, screenshot, scale, broadcast, incoming, image });

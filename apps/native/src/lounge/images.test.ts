@@ -25,13 +25,13 @@ describe('native lounge attachments', () => {
     expect(await prepareNativeImage({ ...asset, mimeType: 'image/gif' })).toBe('data:image/gif;base64,AAAA');
     expect(mocks.encode).not.toHaveBeenCalled();
   });
-  it('center crops avatars to 48px PNG and rejects output over the avatar limit', async () => {
+  it('center crops avatars to 128px PNG and rejects output over the avatar limit', async () => {
     mocks.encode.mockResolvedValue({ uri: 'file:///avatar.png', base64: 'AAAA' });
     expect(await prepareNativeImage(asset, true)).toBe('data:image/png;base64,AAAA');
     expect(mocks.encode).toHaveBeenCalledWith(asset.uri, [{ crop: {
       originX: 500, originY: 0, width: 2000, height: 2000,
-    } }, { resize: { width: 48, height: 48 } }], { base64: true, format: 'png', compress: 1 });
-    mocks.encode.mockResolvedValue({ uri: 'file:///invalid.png', base64: 'A'.repeat(24000) });
+    } }, { resize: { width: 128, height: 128 } }], { base64: true, format: 'png', compress: 1 });
+    mocks.encode.mockResolvedValue({ uri: 'file:///invalid.png', base64: 'A'.repeat(120000) });
     await expect(prepareNativeImage(asset, true)).rejects.toThrow('client.lounge.imageFailed');
   });
   it('handles cancellation and enforces the remaining image limit before reading photos', async () => {

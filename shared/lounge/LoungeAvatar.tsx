@@ -4,6 +4,7 @@ import { initials, type LoungeAccount } from './types';
 import { displayText as t } from '../localization/messages';
 import { LoungeAvatarMenu } from './LoungeAvatarMenu';
 import { useThreadLongPress } from '../chat/useThreadLongPress';
+import './avatar.css';
 
 export function LoungeAvatar({ user, onDirect, onProfile, onMention, onLongPress }: {
   user: LoungeAccount; onDirect?: () => void; onProfile?: () => void; onMention?: () => void;

@@ -13,6 +13,7 @@ import type {
 } from "../../types";
 
 export interface SettingsPageProps {
+  cloudIdentity?: import('react').ReactNode;
   providers: Provider[];
   sseIdleTimeout: ReturnType<typeof import("../../hooks/useSseIdleTimeout").useSseIdleTimeout>;
   proxyTransport: ReturnType<typeof import("../../hooks/useProxyTransport").useProxyTransport>;

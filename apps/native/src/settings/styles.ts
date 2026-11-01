@@ -12,6 +12,7 @@ export const useStyles = createThemedStyles((color) => ({
   scroll: { flexGrow: 1 },
   group: { backgroundColor: color('#fff', 'surface'), marginBottom: 12 },
   profile: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 22, paddingVertical: 24, gap: 18 },
+  profileDetails: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: {
     width: 56, height: 56, borderRadius: 12, backgroundColor: color('#c6f8ef', 'accentSoft'),
     alignItems: 'center', justifyContent: 'center',

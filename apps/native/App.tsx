@@ -1292,6 +1292,7 @@ function AppContent() {
           account.id === updated.id ? { ...account, ...updated } : account
         )))} />,
     settings: <SettingsPage session={session} profile={profile} globalRefreshMinutes={globalRefreshMinutes}
+      loungeController={lounge.controller}
       onGlobalRefreshMinutesChange={handleGlobalRefreshMinutesChange}
       onOpenAbout={() => setActivePage('about')} onOpenAdmin={() => setActivePage('admin')}
       onLogout={handleLogout} totpManager={totpManager} />,

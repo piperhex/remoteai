@@ -20,6 +20,8 @@ import { settingsColors, useStyles } from './styles';
 import { FileAutoSaveSheet } from './FileAutoSaveSheet';
 import { useFilePreferences } from './filePreferences';
 import { AUTO_SAVE_OPTIONS } from '../../../../shared/project-browser/preferences';
+import type { LoungeController } from '../../../../shared/lounge/controller';
+import { SettingsAvatar } from './SettingsAvatar';
 
 interface SettingsPageProps {
   session: AuthSession;
@@ -30,6 +32,7 @@ interface SettingsPageProps {
   onOpenAdmin: () => void;
   onLogout: () => void;
   totpManager: TotpManagerState;
+  loungeController: LoungeController;
 }
 
 type SettingsPanel = 'profile' | 'refresh' | 'totp' | 'password' | 'logout'
@@ -43,7 +46,7 @@ function identityLabel(profile?: UserProfile | null) {
 }
 
 export function SettingsPage({ session, profile, globalRefreshMinutes, onGlobalRefreshMinutesChange,
-  onOpenAbout, onOpenAdmin, onLogout, totpManager }: SettingsPageProps) {
+  onOpenAbout, onOpenAdmin, onLogout, totpManager, loungeController }: SettingsPageProps) {
   const styles = useStyles();
   const color = useThemeColor();
   const language = useLanguage();
@@ -59,17 +62,18 @@ export function SettingsPage({ session, profile, globalRefreshMinutes, onGlobalR
   return <View style={styles.page}>
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.group}>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("client.mobile.viewUserDetails", { value1: username })}
-          onPress={() => setPanel('profile')} style={({ pressed }) => [styles.profile, pressed && styles.pressed]}>
-          <View style={styles.avatar}><View style={styles.avatarCenter}>
-            <Text style={styles.avatarText}>{username.slice(0, 2).toUpperCase()}</Text>
-          </View></View>
+        <View style={styles.profile}>
+          <SettingsAvatar controller={loungeController} account={username} />
+          <Pressable accessibilityRole="button"
+            accessibilityLabel={t('client.mobile.viewUserDetails', { value1: username })}
+            onPress={() => setPanel('profile')} style={({ pressed }) => [styles.profileDetails, pressed && styles.pressed]}>
           <View style={styles.profileCopy}>
             <Text style={styles.profileName} numberOfLines={1}>{username}</Text>
             <Text style={styles.caption}>{t("client.settings.remoteAiCloudAccount")}</Text>
           </View>
           <Ionicons name="chevron-forward" size={19} color={color(settingsColors.muted, 'muted')} />
-        </Pressable>
+          </Pressable>
+        </View>
       </View>
       <View style={styles.group}>
         <SettingsRow label={t("client.workspaceSettings.appearance")}

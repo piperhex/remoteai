@@ -7,8 +7,10 @@ import (
 	"strings"
 )
 
-const avatarSize = 48
-const maxAvatarBytes = 16 * 1024
+const avatarSize = 128
+
+// Allow an uncompressed RGBA bitmap plus PNG framing without reducing image quality.
+const maxAvatarBytes = 80 * 1024
 
 // Both profile uploads and legacy message fields are limited to complete, small PNGs.
 func validateAvatar(data string) error {
@@ -24,7 +26,7 @@ func validateAvatar(data string) error {
 		return errInvalid
 	}
 	config, err := png.DecodeConfig(bytes.NewReader(decoded))
-	if err != nil || config.Width != avatarSize || config.Height != avatarSize {
+	if err != nil || config.Width < 1 || config.Width > avatarSize || config.Height != config.Width {
 		return errInvalid
 	}
 	if _, err := png.Decode(bytes.NewReader(decoded)); err != nil {

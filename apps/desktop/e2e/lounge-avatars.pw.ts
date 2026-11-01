@@ -22,7 +22,7 @@ for (const mode of ['local', 'remote', 'web', 'mobile']) {
     const save = dialog.getByRole('button', { name: /^保\s*存$/ });
     await page.goto(web ? 'http://127.0.0.1:1486/web/' : `/e2e/lounge-harness.html?mode=${mode}`);
     await relay.ready(); await enter(); await openSettings();
-    await expect(dialog.getByText('图片会裁剪为 48×48，保存后同步到各设备。')).toBeVisible();
+    await expect(dialog.getByText('图片会裁剪为 128×128，保存后同步到各设备。')).toBeVisible();
     await page.locator('.lounge-avatar-settings input[type=file]').setInputFiles({ name: 'avatar.png',
       mimeType: 'image/png', buffer: Buffer.from(pixel.split(',')[1], 'base64') });
     await expect(dialog.locator('.lounge-avatar img')).toBeVisible();

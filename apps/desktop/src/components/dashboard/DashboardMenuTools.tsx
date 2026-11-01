@@ -1,8 +1,7 @@
 import type { CSSProperties } from "react";
-import { Dropdown, Popover, Tooltip } from "antd";
+import { Popover, Tooltip } from "antd";
 import {
   Bell,
-  ChevronDown,
   CircleHelp,
   Cloud,
   Download,
@@ -24,6 +23,8 @@ import type { useCloudContent } from "../../hooks/useCloudContent";
 import type { Language, Translate } from "../../i18n";
 import type { ThemeMode } from "../../utils/themeMode";
 import { NotificationPanel } from "./NotificationPanel";
+import type { LoungeAccount } from '../../../../../shared/lounge/types';
+import { CloudAccountMenu } from './CloudAccountMenu';
 
 interface MenuActions {
   checkForUpdates: () => void;
@@ -44,6 +45,7 @@ interface DashboardMenuToolsProps {
   actions: MenuActions;
   appUpdate: ReturnType<typeof useAppUpdate>;
   cloud: ReturnType<typeof useCloudAuth>;
+  loungeUser?: LoungeAccount;
   cloudContent: ReturnType<typeof useCloudContent>;
   language: Language;
   onToggleThemeMode: () => void;
@@ -123,21 +125,13 @@ export function DashboardMenuTools(options: DashboardMenuToolsProps) {
     return new Date(notification.updatedAt).getTime()
       > new Date(cloudContent.lastNotificationSeenAt).getTime();
   }).length;
-  const signedInLabel = cloud.state.userEmail ?? t("cloud.signedIn");
   return (
     <div className="menu-tools">
-      <Dropdown trigger={["click"]} menu={{
+      <CloudAccountMenu email={cloud.state.userEmail} user={options.loungeUser}
+        authenticated={cloud.state.authenticated} loading={cloud.loading} t={t} menu={{
         items: menuItems(options),
         onClick: ({ key }) => handleMenuClick(key, options),
-      }}>
-        <button type="button"
-          className={`cloud-avatar-button${cloud.state.authenticated ? " authenticated" : ""}`}
-          aria-label={cloud.state.authenticated ? t("cloud.accountDetails") : t("cloud.login")}
-          title={cloud.state.authenticated ? signedInLabel : t("cloud.login")} disabled={cloud.loading}>
-          <span>{cloud.state.authenticated ? signedInLabel : t("cloud.login")}</span>
-          <ChevronDown size={14} />
-        </button>
-      </Dropdown>
+      }} />
       {cloud.state.authenticated && (
         <Tooltip title={t("cloud.syncDescription")}>
           <button type="button" className="cloud-sync-menu-button" aria-label={t("cloud.sync")}

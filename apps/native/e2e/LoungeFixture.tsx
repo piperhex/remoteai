@@ -13,6 +13,12 @@ import type { AuthSession } from '../src/types';
 import { textMetrics } from '../src/theme/text';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
 import { updateThemeMode, useThemeColor } from '../src/theme/store';
+import { SettingsPage } from '../src/settings/SettingsPage';
+import type { TotpManagerState } from '../src/totp/types';
+
+const totpManager: TotpManagerState = { entries: [], initialized: true, syncing: false, cloudSyncEnabled: false,
+  addEntry() {}, deleteEntry() {}, updateEntry() {}, setCloudSyncEnabled: async () => {},
+  refreshCloud: async () => 'empty' };
 
 const session: AuthSession = { baseUrl: 'http://127.0.0.1:1497', email: 'alice@example.test',
   accessToken: 'fixture', refreshToken: 'fixture' };
@@ -31,6 +37,9 @@ function LoungeFixture() {
   return <SafeAreaProvider><SafeAreaView style={{ flex: 1, backgroundColor: color('#f5f7f8', 'canvas') }}>
     {fonts && signedIn && <>
       {page === 'lounge' ? <LoungePage controller={lounge.controller} onBack={() => setPage('discover')} />
+        : page === 'settings' ? <SettingsPage session={session} profile={null} globalRefreshMinutes={30}
+          onGlobalRefreshMinutesChange={async () => {}} onOpenAbout={() => {}} onOpenAdmin={() => {}}
+          onLogout={() => setSignedIn(false)} totpManager={totpManager} loungeController={lounge.controller} />
         : <View style={{ flex: 1 }}>
         <DiscoveryPage loungeUnread={lounge.state.unread} onOpen={setPage} />
         <Pressable onPress={() => setInterfaceLanguage('en')}><Text style={textMetrics(14, 22)}>English</Text></Pressable>

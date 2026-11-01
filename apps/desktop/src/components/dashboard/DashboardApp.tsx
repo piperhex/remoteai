@@ -49,6 +49,7 @@ import { LogDiagnosticsPage, type LogDiagnosticsTab } from "../../pages/LogDiagn
 import { DownloadsPage } from "../../pages/DownloadsPage";
 import { LoungePage } from "../../../../../shared/lounge/LoungePage";
 import { useDesktopLounge } from "../../lounge/useDesktopLounge";
+import { CloudAccountIdentity } from './CloudAccountIdentity';
 import { authenticatedDownloadOwner } from "../../downloads/useDesktopDownloads";
 import logDiagnosticsStyles from "../../pages/LogDiagnosticsPage/index.module.less";
 import { CloudLoginModal } from "../modals/CloudLoginModal";
@@ -1257,7 +1258,7 @@ export function DashboardApp() {
       openRepository,
       openSettings: () => setPage("settings"),
       syncCloud: () => void syncCloud(),
-    }} appUpdate={appUpdate} cloud={cloud} cloudContent={cloudContent} language={language}
+    }} appUpdate={appUpdate} cloud={cloud} cloudContent={cloudContent} language={language} loungeUser={lounge.state.user}
       onToggleThemeMode={themeMode.toggleMode} t={t} themeMode={themeMode.mode} />
   );
   const sidebarToggleLabel = t(navigationStyle.sidebarCollapsed
@@ -1455,6 +1456,8 @@ export function DashboardApp() {
           </section>
           <section className="page-panel" hidden={page !== "settings"}>
             <MemoSettingsPage providers={providerManager.providers}
+              cloudIdentity={cloud.state.authenticated && <CloudAccountIdentity controller={lounge.controller}
+                email={cloud.state.userEmail ?? ''} onDetails={openCloudAccount} />}
               info={manager.info} autoRefreshEnabled={autoRefresh.enabled}
               autoUpdateEnabled={appUpdate.autoUpdateEnabled}
               onAutoUpdateChange={appUpdate.setAutoUpdateEnabled}
@@ -1684,6 +1687,7 @@ export function DashboardApp() {
           onSendRegistrationCode={cloud.sendRegistrationCode} sessionExpired={cloudSessionExpired}
           language={language} t={t} />}
         {showCloudAccount && cloud.state.authenticated && <CloudAccountModal
+          loungeController={lounge.controller}
           email={cloud.state.userEmail} baseUrl={cloud.state.baseUrl}
           changingPassword={cloud.changingPassword} onChangePassword={cloud.changePassword}
           onClose={() => setShowCloudAccount(false)} onOpenPasswordReset={() => {

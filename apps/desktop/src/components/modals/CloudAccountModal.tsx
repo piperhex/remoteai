@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { ExternalLink, KeyRound, LockKeyhole, Mail, Server, UserRound, X } from "lucide-react";
 import type { Translate } from "../../i18n";
+import type { LoungeController } from '../../../../../shared/lounge/controller';
+import { CloudAccountIdentity } from '../dashboard/CloudAccountIdentity';
 
 interface CloudAccountModalProps {
   email?: string | null;
@@ -10,6 +12,7 @@ interface CloudAccountModalProps {
   onClose: () => void;
   onOpenPasswordReset: () => void;
   t: Translate;
+  loungeController: LoungeController;
 }
 
 export function CloudAccountModal({
@@ -20,6 +23,7 @@ export function CloudAccountModal({
   onClose,
   onOpenPasswordReset,
   t,
+  loungeController,
 }: CloudAccountModalProps) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -48,6 +52,7 @@ export function CloudAccountModal({
         <div className="modal-icon"><UserRound size={24} /></div>
         <h2 id="cloud-account-title">{t("cloudAccount.title")}</h2>
         <p>{t("cloudAccount.description")}</p>
+        <CloudAccountIdentity controller={loungeController} email={email ?? ''} />
 
         <div className="cloud-account-details">
           <div><Mail size={16} /><span><small>{t("cloudAccount.email")}</small><b>{email ?? "-"}</b></span></div>

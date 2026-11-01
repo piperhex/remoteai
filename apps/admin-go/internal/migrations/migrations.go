@@ -71,6 +71,9 @@ var loungeDirectPermissionsSchema string
 //go:embed 022_lounge_profiles.sql
 var loungeProfilesSchema string
 
+//go:embed 028_lounge_avatar_resolution.sql
+var loungeAvatarResolutionSchema string
+
 //go:embed 023_lounge_direct_reset.sql
 var loungeDirectResetSchema string
 
@@ -163,6 +166,9 @@ func InitializeEmpty(db *gorm.DB) error {
 			return err
 		}
 		if err := tx.Exec(loungeProfilesSchema).Error; err != nil {
+			return err
+		}
+		if err := tx.Exec(loungeAvatarResolutionSchema).Error; err != nil {
 			return err
 		}
 		if err := tx.Exec(loungeDirectResetSchema).Error; err != nil {

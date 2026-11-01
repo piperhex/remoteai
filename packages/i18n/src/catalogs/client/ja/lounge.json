@@ -64,7 +64,7 @@
   "client.lounge.tooLong": "メッセージは4000文字以内で入力してください。",
   "client.lounge.stillImage": "変換が必要なアニメーション画像は静止画として送信されます。",
   "client.lounge.avatarSettings": "アバターを設定",
-  "client.lounge.avatarHint": "画像は48×48に切り抜かれ、保存すると各端末に同期されます。",
+  "client.lounge.avatarHint": "画像は128×128に切り抜かれ、保存すると各端末に同期されます。",
   "client.lounge.chooseAvatar": "画像を選択",
   "client.lounge.resetAvatar": "既定のアバターに戻す",
   "client.lounge.avatarSaveFailed": "アバターを保存できませんでした。もう一度お試しください。",

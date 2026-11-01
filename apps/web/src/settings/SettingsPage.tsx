@@ -30,11 +30,16 @@ import { AUTO_SAVE_OPTIONS } from '../../../../shared/project-browser/preference
 import { useDesktopLayout } from '../useDesktopLayout';
 import { GlobalFontSettings } from '../../../../shared/appearance/GlobalFontSettings';
 import { useGlobalFontSize } from '../../../../shared/appearance/fontSize';
+import { AccountAvatarButton } from '../../../../shared/lounge/AccountAvatarButton';
+import { accountLabel } from '../../../../shared/lounge/accountLabel';
+import type { LoungeController } from '../../../../shared/lounge/controller';
 
 type Panel = 'profile' | 'refresh' | 'totp' | 'password' | 'about'
   | 'desktop' | 'theme' | 'language' | 'files' | 'font' | 'petDock' | null;
 
-export function SettingsPage({ totpManager }: { totpManager: ReturnType<typeof useTotpVault> }) {
+export function SettingsPage({ totpManager, loungeController }: {
+  totpManager: ReturnType<typeof useTotpVault>; loungeController: LoungeController;
+}) {
   useLanguage();
   const fontSize = useGlobalFontSize();
   const filePreferences = useBrowserPreferences();
@@ -58,9 +63,14 @@ export function SettingsPage({ totpManager }: { totpManager: ReturnType<typeof u
     <div className="page-body settings-page">
       <div className="settings-layout"><div className="settings-profile-group">
       <section className="settings-group">
-        <button type="button" className="settings-profile" onClick={() => setPanel('profile')} aria-label={t("client.settings.viewProfile")}>
-          <span className="settings-avatar">{email.slice(0, 2).toUpperCase()}</span>
-          <span><strong>{email}</strong><small>{t("client.settings.remoteAiCloudAccount")}</small></span><ChevronRight size={20} /></button>
+        <div className="settings-profile">
+          <AccountAvatarButton controller={loungeController} account={email} />
+          <button type="button" className="settings-profile-details-button" onClick={() => setPanel('profile')}
+            aria-label={t('client.settings.viewProfile')}>
+            <span><strong>{desktop ? accountLabel(email) : email}</strong>
+              <small>{t('client.settings.remoteAiCloudAccount')}</small></span><ChevronRight size={20} />
+          </button>
+        </div>
       </section>
       <section className="settings-group">
         <ThemeSettingsRow onOpen={() => setPanel('theme')} />

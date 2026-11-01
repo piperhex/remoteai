@@ -6,7 +6,7 @@ export async function verifyNativeAvatar(options) {
   const { tap, find, screenshot, restart, profile, saves, fail, image, scale } = options;
   const open = async () => { await tap('添加内容'); await tap('设置头像'); };
   profile(image); await delay(350); await open();
-  await find('图片会裁剪为 48×48，保存后同步到各设备。');
+  await find('图片会裁剪为 128×128，保存后同步到各设备。');
   assert.equal((await find('恢复默认头像')).enabled, 'true');
   await screenshot(`avatar-synced-${scale}`);
   fail(true); await tap('保存'); await find('头像保存失败，请稍后重试。');

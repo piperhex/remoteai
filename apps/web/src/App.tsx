@@ -33,6 +33,8 @@ import { DownloadManagerPage } from './downloads/DownloadManagerPage';
 import { LoungePage } from '../../../shared/lounge/LoungePage';
 import { LoungeIcon } from '../../../shared/lounge/LoungeIcon';
 import { useWebLounge } from './lounge/useWebLounge';
+import { LoungeAvatar } from '../../../shared/lounge/LoungeAvatar';
+import { accountLabel } from '../../../shared/lounge/accountLabel';
 import { downloadOwner } from './downloads/manager';
 import { loadRefreshMinutes, REFRESH_INTERVAL_EVENT } from "./settings/refreshInterval";
 import { useTotpVault } from "./useTotpVault";
@@ -375,7 +377,7 @@ function AppShell() {
       onBack={() => dispatch(pageChanged('discover'))} />,
     accounts: <AccountsPage />, devices: <DevicesPage />,
     totp: <TotpPage manager={totpManager} onBack={() => dispatch(pageChanged('discover'))} />,
-    settings: <SettingsPage totpManager={totpManager} />,
+    settings: <SettingsPage totpManager={totpManager} loungeController={lounge.controller} />,
   };
   const pageTitle = page === 'devices' ? t('client.app.devices')
     : page === 'totp' ? t('client.discovery.twoFactor') : navItems.find(item => item.key === page)?.label;
@@ -422,8 +424,8 @@ function AppShell() {
       <Tooltip placement="right" title={menuVisible ? undefined : t("client.app.accountMenu")}>
         <Dropdown menu={{ items: userMenu }} trigger={["click"]}>
           <button type="button" className="sidebar-profile" aria-label={t("client.app.accountMenu")}>
-            <span>{(profile?.email || session?.email || "U").slice(0, 2).toUpperCase()}</span>
-            <div><strong>{profile?.email || session?.email}</strong>
+            <LoungeAvatar user={lounge.state.user ?? { id: '', account: profile?.email || session?.email || '' }} />
+            <div><strong>{accountLabel(profile?.email || session?.email || '')}</strong>
               <small>{profileRole(profile)}</small></div>
             <Menu size={17} />
           </button>

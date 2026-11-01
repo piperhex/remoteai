@@ -64,7 +64,7 @@
   "client.lounge.tooLong": "每条消息最多 4000 个字符。",
   "client.lounge.stillImage": "需要转换的动图会作为静态图片发送。",
   "client.lounge.avatarSettings": "设置头像",
-  "client.lounge.avatarHint": "图片会裁剪为 48×48，保存后同步到各设备。",
+  "client.lounge.avatarHint": "图片会裁剪为 128×128，保存后同步到各设备。",
   "client.lounge.chooseAvatar": "选择图片",
   "client.lounge.resetAvatar": "恢复默认头像",
   "client.lounge.avatarSaveFailed": "头像保存失败，请稍后重试。",

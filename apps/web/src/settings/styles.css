@@ -4,14 +4,14 @@
   border-radius: 16px; background: var(--app-surface, #fff); }
 .settings-profile-group { min-width: 0; align-self: start; }
 .settings-profile { display: flex; align-items: center; gap: 14px; width: 100%; padding: 24px 18px;
-  border: 0; background: transparent; text-align: left; cursor: pointer; }
-.settings-avatar { display: grid; place-items: center; width: 58px; height: 58px; flex-shrink: 0;
-  border-radius: 16px; color: var(--app-accent, #086552); background: var(--app-accentSoft, #bcf6ed); font-size: 25px; font-weight: 750; }
-.settings-profile > span:nth-child(2) { flex: 1; min-width: 0; }
+  border: 0; background: transparent; text-align: left; }
+.settings-profile-details-button { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0;
+  border: 0; padding: 0; background: transparent; text-align: left; cursor: pointer; font: inherit; }
+.settings-profile-details-button > span { flex: 1; min-width: 0; }
 .settings-profile strong { display: block; overflow: hidden; color: var(--app-ink, #111827); font-size: 19px;
   text-overflow: ellipsis; white-space: nowrap; }
 .settings-profile small { display: block; margin-top: 6px; color: var(--app-muted, #848d9f); font-size: 13px; }
-.settings-profile > svg { flex-shrink: 0; color: var(--app-muted, #848d9f); }
+.settings-profile-details-button > svg { flex-shrink: 0; color: var(--app-muted, #848d9f); }
 .settings-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 67px;
   padding: 12px 18px; border: 0; background: transparent; text-align: left; }
 button.settings-row { cursor: pointer; }

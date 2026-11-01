@@ -1,5 +1,6 @@
-export const AVATAR_SIZE = 48;
-export const MAX_AVATAR_BYTES = 16 * 1024;
+export const AVATAR_SIZE = 128;
+// A detailed RGBA PNG can exceed 64 KiB; leave room for PNG framing without reducing image quality.
+export const MAX_AVATAR_BYTES = 80 * 1024;
 const SUPPORTED_IMAGES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
 
 export interface LoungeAvatarStore {
@@ -28,7 +29,7 @@ export function browserAvatarStore(baseUrl: string): LoungeAvatarStore {
   };
 }
 
-/** Center-crop once and encode only the 48px bitmap, excluding original metadata. */
+/** Center-crop once and encode only the avatar-sized bitmap, excluding original metadata. */
 export async function prepareAvatar(file: File): Promise<string> {
   if (!SUPPORTED_IMAGES.has(file.type)) throw new Error('client.lounge.imageFormat');
   let bitmap: ImageBitmap;

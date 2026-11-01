@@ -67,6 +67,7 @@ export function SettingsPage(settings: SettingsPageProps) {
 
   return (
     <div className={`${styles.styleScope} settings-page`}>
+      {settings.cloudIdentity}
       <SettingsSection id="settings-appearance"
         title={settings.t("settings.sections.appearance.title")}
         description={settings.t("settings.sections.appearance.description")}>

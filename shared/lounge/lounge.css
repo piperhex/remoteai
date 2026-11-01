@@ -35,15 +35,6 @@
 .lounge-time time { display: inline-block; background: var(--lounge-paper); padding: 4px 13px; border-radius: 20px; }
 .lounge-message { display: flex; align-items: flex-start; gap: 12px; margin: 0 0 24px; }
 .lounge-message.is-own { flex-direction: row-reverse; }
-.lounge-avatar { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 50%; display: grid; overflow: hidden;
-  place-items: center; background: #dee9f7; color: #4b6c96; font-size: 15px; font-weight: 600; }
-.is-own .lounge-avatar { background: #d9e8fa; color: #3275ad; }
-.lounge-avatar img { display: block; width: 48px; height: 48px; object-fit: cover; }
-.lounge-avatar-direct { border: 0; padding: 0; font-family: inherit; cursor: pointer; }
-.lounge-avatar-direct:focus-visible { outline: 2px solid var(--lounge-text); outline-offset: 2px; }
-.lounge-avatar-settings { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 12px 0; }
-.lounge-avatar-settings p { margin: 0; max-width: 352px; line-height: 1.7; }
-.lounge-avatar-settings > div { display: flex; gap: 8px; }
 .lounge-message-main { min-width: 0; max-width: min(72%, 680px); display: flex; flex-direction: column; align-items: flex-start; }
 .is-own .lounge-message-main { align-items: flex-end; }
 .lounge-account { max-width: 100%; overflow-wrap: anywhere; font-size: 12px; line-height: 1.5;

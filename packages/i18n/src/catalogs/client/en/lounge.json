@@ -64,7 +64,7 @@
   "client.lounge.tooLong": "Messages can contain up to 4000 characters.",
   "client.lounge.stillImage": "Animated images that need conversion will be sent as still images.",
   "client.lounge.avatarSettings": "Set avatar",
-  "client.lounge.avatarHint": "Your image is cropped to 48×48 and synced across your devices when saved.",
+  "client.lounge.avatarHint": "Your image is cropped to 128×128 and synced across your devices when saved.",
   "client.lounge.chooseAvatar": "Choose image",
   "client.lounge.resetAvatar": "Use default avatar",
   "client.lounge.avatarSaveFailed": "Could not save your avatar. Please try again.",

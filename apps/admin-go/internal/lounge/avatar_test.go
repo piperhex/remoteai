@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/base64"
 	"image"
+	"image/color"
 	"image/png"
+	"math/rand"
 	"strings"
 	"testing"
 )
@@ -18,14 +20,14 @@ func avatarPicture(t *testing.T, size int) string {
 	return "data:image/png;base64," + base64.StdEncoding.EncodeToString(output.Bytes())
 }
 
-func TestLoungeAvatarRequiresSmallComplete48PixelPNG(t *testing.T) {
+func TestLoungeAvatarAcceptsCompleteSquarePNGsUpTo128Pixels(t *testing.T) {
 	valid := avatarPicture(t, avatarSize)
-	for _, avatar := range []string{"", valid} {
+	for _, avatar := range []string{"", valid, avatarPicture(t, 48), avatarPicture(t, 32)} {
 		if validate(incoming{ID: "valid", Text: "message", Avatar: avatar}) != nil {
 			t.Fatal("valid avatar rejected")
 		}
 	}
-	for _, avatar := range []string{avatarPicture(t, 49), avatarPicture(t, 32),
+	for _, avatar := range []string{avatarPicture(t, 129),
 		"https://tracking.example/avatar.png", strings.Replace(valid, "image/png", "image/jpeg", 1),
 		"data:image/png;base64," + base64.StdEncoding.EncodeToString(make([]byte, maxAvatarBytes+1)),
 		valid[:len(valid)-12]} {
@@ -49,6 +51,40 @@ func TestLoungeMessageCannotOverwriteServerAvatar(t *testing.T) {
 	read(t, alice)
 	if _, present := read(t, bob)["sender"].(map[string]interface{})["avatar"]; present {
 		t.Fatal("server retained a previous avatar")
+	}
+}
+
+func detailedAvatar(t *testing.T) string {
+	t.Helper()
+	bitmap := image.NewNRGBA(image.Rect(0, 0, avatarSize, avatarSize))
+	random := rand.New(rand.NewSource(1))
+	for y := range avatarSize {
+		for x := range avatarSize {
+			bitmap.SetNRGBA(x, y, color.NRGBA{R: uint8(random.Intn(256)), G: uint8(random.Intn(256)),
+				B: uint8(random.Intn(256)), A: uint8(random.Intn(256))})
+		}
+	}
+	var output bytes.Buffer
+	if err := png.Encode(&output, bitmap); err != nil {
+		t.Fatal(err)
+	}
+	return "data:image/png;base64," + base64.StdEncoding.EncodeToString(output.Bytes())
+}
+
+func TestLoungeAvatarPreservesDetailed128PixelPNG(t *testing.T) {
+	avatar := detailedAvatar(t)
+	if len(avatar) <= 21870 {
+		t.Fatal("fixture must exceed the old avatar storage limit")
+	}
+	if _, err := canonicalAvatar(avatar); err != nil {
+		t.Fatal("detailed 128px avatar rejected", err)
+	}
+	var output bytes.Buffer
+	if err := png.Encode(&output, image.NewNRGBA(image.Rect(0, 0, 128, 127))); err != nil {
+		t.Fatal(err)
+	}
+	if validateAvatar("data:image/png;base64,"+base64.StdEncoding.EncodeToString(output.Bytes())) == nil {
+		t.Fatal("non-square avatar accepted")
 	}
 }
 

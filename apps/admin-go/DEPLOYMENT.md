@@ -16,11 +16,15 @@ Go 对至少 1 KiB 的完整 GET/HEAD 文本响应协商 gzip，包括社区列�
 
 先依次执行 `sql/20261028-lounge-moderation.sql`、`sql/20261028-lounge-blocks.sql`、
 `sql/20261028-lounge-direct-permissions.sql`、`sql/20261028-lounge-profiles.sql`、
-`sql/20261029-lounge-direct-reset.sql`、`sql/20261029-lounge-names.sql` 和
-`sql/20261029-lounge-notifications.sql`，
+`sql/20261029-lounge-direct-reset.sql`、`sql/20261029-lounge-names.sql`、
+`sql/20261029-lounge-notifications.sql` 和 `sql/20261101-lounge-avatar-resolution.sql`，
 再使用本文的 `deployment_compose.py check/up/verify` 流程更新 admin-go，并同步更新各端客户端。
 新表仅保存当前聊天管理员权限、禁言到期时间、用户屏蔽关系、双方的私聊发送权限、头像、昵称、私人备注和免打扰设置，
 不保存消息、聊天图片附件、在线状态或操作历史。回滚只使用已验证的 Go 镜像，保留这些设置表。
+
+128×128 头像需要先执行头像容量升级脚本，再更新全部 admin-go 实例，最后更新客户端。
+新上限为 128×128 的正方形 PNG、80 KiB 图片内容；旧 48×48 头像继续有效。
+迁移仅放宽头像字段容量，不修改已有图片。旧服务不支持新头像尺寸，回滚时应使用支持 128×128 的已验证 Go 镜像。
 
 `ready.notificationSettings` 声明支持免打扰，`ready.mutedConversations` 返回该用户的当前设置。
 客户端通过已认证的 `notification-setting` 帧设置 `conversation` 和 `muted`；空会话标识表示群聊，
