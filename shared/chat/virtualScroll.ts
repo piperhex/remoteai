@@ -6,10 +6,11 @@ const BOTTOM_TOLERANCE = 2;
 
 export interface VirtualScrollAnchor { root: Element; bottom: boolean; anchor?: Element; top: number; offset: number }
 
-export function captureVirtualScroll(root: Element | null): VirtualScrollAnchor | null {
+/** Explicit follow state survives height changes that temporarily clamp a paused reader to the bottom. */
+export function captureVirtualScroll(root: Element | null, following?: boolean): VirtualScrollAnchor | null {
   if (!root) return null;
-  const bottom = !root.hasAttribute('data-history-newer')
-    && root.scrollHeight - root.scrollTop - root.clientHeight <= BOTTOM_TOLERANCE;
+  const bottom = following ?? (!root.hasAttribute('data-history-newer')
+    && root.scrollHeight - root.scrollTop - root.clientHeight <= BOTTOM_TOLERANCE);
   const top = root.getBoundingClientRect().top;
   const anchor = bottom ? undefined : [...root.querySelectorAll('[data-message-id], [data-viewport-content]')]
     .find(node => node.getBoundingClientRect().bottom > top);

@@ -1,0 +1,80 @@
+{
+  "task": "Mobile Web bounded history rendering",
+  "date": "2026-11-01",
+  "baseCommit": "0a31dd445",
+  "scope": "Mobile Web; wide Web retains ViewportContent; narrow embedded desktop remote workspaces retain their existing rendering strategy; native FlatList is unchanged.",
+  "implementation": {
+    "window": "Rich message subtrees unmount outside the actual scroll viewport plus 400px overscan. Every loaded row keeps a lightweight shell and measured height.",
+    "anchors": "Explicit following state and message anchors cover deferred measurements, pagination, stream updates, disclosure expansion, image decoding, bottom jumps and viewport changes.",
+    "interaction": "Expanded details survive recycling. Focused or selected content and the row owning an open dialog stay mounted until interaction ends.",
+    "memoFixture": "The chatRendering test explicitly disables IntersectionObserver to isolate update-phase memo counts; strict historical=0 and active=40 assertions remain unchanged. Browser tests exercise asynchronous viewport admission."
+  },
+  "verification": [
+    {
+      "cwd": "apps/web",
+      "command": "npx playwright test --config playwright.history-window.config.ts",
+      "passed": 54,
+      "failed": 0,
+      "skipped": 16,
+      "skipReason": "Viewport-specific scenarios run in the applicable project only.",
+      "toolSession": 31319,
+      "artifacts": ".codex-tmp/history-window-results",
+      "coverage": "Real ChatMessages via repository display harness: pagination, row identity/order, reading anchors, streaming, bottom jumps, disclosure recycling, selection, image preview, delayed image sizing, height/width changes, mobile/wide breakpoint transitions; existing display, touch, scroll and rendering regressions."
+    },
+    {
+      "cwd": "apps/desktop",
+      "command": "npx vitest run src/remoteChat/mobileHistoryContent.test.tsx src/remoteChat/chatRendering.test.tsx src/remoteChat/committedCallback.test.tsx src/pages/codexGui/ViewportContent.test.tsx --maxWorkers=1",
+      "passed": 11,
+      "failed": 0,
+      "files": 4,
+      "toolSession": 32349,
+      "memoCounts": { "historyRows": 0, "historyParses": 0, "activeRows": 40, "activeParses": 40 }
+    },
+    {
+      "cwd": "apps/native",
+      "command": "npx vitest run src/chat/useChatScroll.test.ts src/chat/historyLoad.test.ts --maxWorkers=1",
+      "passed": 32,
+      "failed": 0,
+      "files": 2,
+      "purpose": "Native scroll/pagination reference; no native implementation changes."
+    }
+  ],
+  "measurement": {
+    "method": "Bundled Chromium through scripts/test-browser.mjs, Windows host, Vite development display harness with production UI components, mobile viewport 390x844. Initial 60 mixed Markdown/code/math messages plus four pages of 60. CDP HeapProfiler.collectGarbage then Runtime.getHeapUsage. MutationObserver tracks peak mounted .chat-markdown nodes. Sixty requestAnimationFrame scroll steps (30 forward, 30 backward).",
+    "baseline": "Captured immediately before mobile window integration on the current shared renderer. HISTORY_WINDOW_BASELINE=1 only relaxes window assertions and selects before evidence filenames; obtaining a new baseline requires the unwindowed implementation.",
+    "rawBefore": ".codex-tmp/history-window-evidence/mobile-before.json",
+    "rawAfter": ".codex-tmp/history-window-evidence/mobile-after.json",
+    "rows": 300,
+    "afterFourthPage": {
+      "before": { "rich": 300, "peakRich": 300, "placeholders": 0, "domElements": 24420, "gcJsHeapBytes": 55952088 },
+      "after": { "rich": 5, "peakRich": 16, "placeholders": 295, "domElements": 1157, "gcJsHeapBytes": 31146612 }
+    },
+    "afterReturningToReadingPosition": {
+      "before": { "rich": 300, "peakRich": 300, "placeholders": 0, "domElements": 24420, "gcJsHeapBytes": 56028740 },
+      "after": { "rich": 4, "peakRich": 16, "placeholders": 296, "domElements": 1084, "gcJsHeapBytes": 31170520 }
+    },
+    "frameMilliseconds": {
+      "before": { "median": 16.6, "p95": 18.1, "max": 18.2 },
+      "after": { "median": 16.6, "p95": 17.9, "max": 18.1 }
+    }
+  },
+  "screenshotsInspected": {
+    "directory": ".codex-tmp/history-window-evidence",
+    "mobileWeb390x844": [
+      "mobile-after-reading.png", "mobile-after-bottom.png", "mobile-stream-reading.png",
+      "mobile-stream-bottom.png", "mobile-remounted-expanded.png", "mobile-image-preview.png",
+      "mobile-remounted-image.png", "mobile-prepend-anchor-0.png", "mobile-prepend-anchor-180.png"
+    ],
+    "mobileWeb390x520KeyboardHeightSimulation": ["mobile-keyboard-height.png"],
+    "mobileWeb430x844": ["mobile-width-change.png"],
+    "wideWeb1280x900": ["desktop-after-reading.png", "desktop-after-bottom.png"]
+  },
+  "limits": [
+    "The content window bounds mounted rich subtrees, not total DOM, loaded message data or total memory. Lightweight row shells and retained history still grow with loaded history.",
+    "GC heap measurements are JavaScript heap only, not browser process memory. This is a single host-development run with concurrent workspace activity.",
+    "Frame timings do not establish a significant scrolling-speed improvement or quantify real-device jank.",
+    "Screenshots use the running repository display harness with deterministic data, not a live backend/account.",
+    "No physical Android/iOS browser, native app, actual OS keyboard, or Tauri local/remote shell was visually exercised by this task. Native behavior was inspected and its 32 reference tests passed.",
+    "Build OOM history does not establish a runtime memory leak or a Mermaid cause."
+  ]
+}

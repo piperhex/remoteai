@@ -1,5 +1,6 @@
 import { t, useLanguage } from '../i18n';
-import { ViewportContent } from '../../../../shared/chat/ViewportContent';
+import { HistoryContent, useHistoryWindowed } from './HistoryContent';
+import { useMobileHistoryAnchor } from './useMobileHistoryAnchor';
 import { Fragment, memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useCommittedCallback } from '../../../../shared/chat/useCommittedCallback';
 import { ArrowDown, ChevronDown, ChevronRight, Terminal } from 'lucide-react';
@@ -100,7 +101,10 @@ type MessageProps = ChatMessagesProps & {
 export function ChatMessages(props: MessageProps & { footer?: ReactNode }) {
   useLanguage();
   const desktop = useDesktopLayout();
-  const scroll = useHistoryScroll(props);
+  const windowed = useHistoryWindowed(desktop);
+  const scroll = useHistoryScroll(props, windowed);
+  useMobileHistoryAnchor({ enabled: windowed, viewport: scroll.list, content: scroll.body,
+    readingAnchor: scroll.readingAnchor, following: scroll.following });
   const jump = scroll.showBottom && <button type="button" className="chat-scroll-bottom"
     onClick={scroll.toBottom}><ArrowDown size={17} />{t("client.chat.scrollToBottom")}</button>;
   return <div className={`chat-message-region${props.footer ? ' has-scroll-footer' : ''}`}>
@@ -159,11 +163,11 @@ function ChatMessageHistory({ props, scroll }: {
           data-message-role={'item' in entry ? entry.item.type : undefined}
           data-response-continuation={hasCompactTimelineGap(timeline[index - 1], entry) || undefined}
           className={`chat-entry-${entry.kind}`}>
-          <ViewportContent enabled={desktop && 'item' in entry
+          <HistoryContent desktop={desktop} enabled={desktop && 'item' in entry
             && ['userMessage', 'agentMessage'].includes(entry.item.type)}>
             {() => <TimelineEntry entry={entry} open={open} inline={setInline} desktop={desktop}
               renderUserMessage={props.renderUserMessage} />}
-          </ViewportContent>
+          </HistoryContent>
         </div>
       </Fragment>)}
       {!runningSummary && props.processing}

@@ -37,7 +37,8 @@
 @media (max-width: 860px) {
   /* Response parts use 12px of the shared 22px gap; action rows already include a 44px touch area. */
   .chat-message-content > [data-response-continuation] { margin-top: -10px; }
-  .chat-message-content > :is(.chat-entry-message, .chat-entry-process):has(.chat-message-actions)
+  .chat-message-content > :is(.chat-entry-message, .chat-entry-process):is(:has(.chat-message-actions),
+    [data-history-actions])
     + [data-response-continuation] { margin-top: -18px; }
   /* Process paragraphs have no outer margins; one 6px gap separates commentary and tools. */
   .chat-message-content > :is(.chat-entry-process, .chat-entry-activities)

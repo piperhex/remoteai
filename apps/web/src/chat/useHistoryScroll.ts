@@ -3,9 +3,10 @@ import type { ChatMessagesProps } from '../../../../shared/remote-chat/client/me
 import { isNearHistoryStart, shouldFollowScroll, shouldShowScrollToBottom }
   from '../../../../shared/chat/scrollPosition';
 import { useScrollMovement } from '../../../../shared/chat/useScrollMovement';
-import { useVirtualScroll } from '../../../../shared/chat/virtualScroll';
+import { restoreVirtualScroll, useVirtualScroll } from '../../../../shared/chat/virtualScroll';
 import { useHistoryPull } from '../../../../shared/chat/useHistoryPull';
 import { useHistoryContinuation } from '../../../../shared/chat/useHistoryContinuation';
+import { useCommittedCallback } from '../../../../shared/chat/useCommittedCallback';
 
 const TOP_TOLERANCE = 1;
 
@@ -18,7 +19,10 @@ function canScrollUp(target: EventTarget, container: HTMLElement) {
   return false;
 }
 
-export function useHistoryScroll({ thread, loading, loadingMore, hasMore, loadOlder, historyLoad }: ChatMessagesProps) {
+export function useHistoryScroll(
+  { thread, loading, loadingMore, hasMore, loadOlder, historyLoad }: ChatMessagesProps,
+  windowed = false,
+) {
   const list = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
@@ -42,14 +46,19 @@ export function useHistoryScroll({ thread, loading, loadingMore, hasMore, loadOl
       contentHeight: node.scrollHeight, viewportHeight: node.clientHeight, offset: node.scrollTop,
     }));
   }, []);
+  const rememberReadingAnchor = () => {
+    const node = list.current;
+    if (!node) return;
+    const top = node.getBoundingClientRect().top;
+    const element = [...node.querySelectorAll('[data-message-id]')]
+      .find(item => item.getBoundingClientRect().bottom > top);
+    anchor.current = element ? { element, top: element.getBoundingClientRect().top } : undefined;
+  };
   const more = () => {
     if (!hasMore || loading || loadingMore || fetching.current || !loadOlder || !list.current) return;
     continueHistory();
     following.current = false;
-    const top = list.current.getBoundingClientRect().top;
-    const element = [...list.current.querySelectorAll('[data-message-id]')]
-      .find((item) => item.getBoundingClientRect().bottom > top);
-    if (element) anchor.current = { element, top: element.getBoundingClientRect().top };
+    rememberReadingAnchor();
     fetching.current = true;
     const current = scope.current;
     void loadOlder().finally(() => { if (scope.current === current) fetching.current = false; });
@@ -76,10 +85,27 @@ export function useHistoryScroll({ thread, loading, loadingMore, hasMore, loadOl
     } else if (following.current) node.scrollTop = node.scrollHeight;
     movement.remember(node);
     updateScrollButton();
-    if (!loadingMore) anchor.current = undefined;
-  }, [thread, loadingMore, updateScrollButton, movement]);
+    if (!loadingMore && !windowed) anchor.current = undefined;
+  }, [thread, loadingMore, updateScrollButton, movement, windowed]);
+  const onScroll = useCommittedCallback(() => {
+    const node = list.current;
+    if (!node) return;
+    const offsetChange = movement.read(node);
+    // Layout and resize effects already remember their restored position before the scroll event arrives.
+    if (offsetChange === 0) return;
+    if (windowed) {
+      if (fetching.current) rememberReadingAnchor();
+      else anchor.current = undefined;
+    }
+    following.current = shouldFollowScroll({ contentHeight: node.scrollHeight, viewportHeight: node.clientHeight,
+      offset: node.scrollTop, movement: offsetChange });
+    updateScrollButton();
+    if (offsetChange < 0 && isNearHistoryStart({ offset: node.scrollTop, viewportHeight: node.clientHeight })) more();
+  });
   useLayoutEffect(() => {
     const follow = () => {
+      // Lazy measurements can arrive before the browser dispatches a pending reader scroll.
+      if (windowed) onScroll();
       if (following.current && list.current) {
         list.current.scrollTop = list.current.scrollHeight;
       }
@@ -91,18 +117,7 @@ export function useHistoryScroll({ thread, loading, loadingMore, hasMore, loadOl
     if (list.current) observer.observe(list.current);
     follow();
     return () => observer.disconnect();
-  }, [updateScrollButton, movement]);
-  const onScroll = () => {
-    const node = list.current;
-    if (!node) return;
-    const offsetChange = movement.read(node);
-    // Layout and resize effects already remember their restored position before the scroll event arrives.
-    if (offsetChange === 0) return;
-    following.current = shouldFollowScroll({ contentHeight: node.scrollHeight, viewportHeight: node.clientHeight,
-      offset: node.scrollTop, movement: offsetChange });
-    updateScrollButton();
-    if (offsetChange < 0 && isNearHistoryStart({ offset: node.scrollTop, viewportHeight: node.clientHeight })) more();
-  };
+  }, [updateScrollButton, movement, windowed, onScroll]);
   const onWheel = (event: WheelEvent<HTMLDivElement>) => {
     if (event.deltaY >= 0 || event.ctrlKey || event.defaultPrevented) return;
     if (canScrollUp(event.target, event.currentTarget)) return;
@@ -112,11 +127,17 @@ export function useHistoryScroll({ thread, loading, loadingMore, hasMore, loadOl
     more();
   };
   const toBottom = () => {
+    if (windowed) anchor.current = undefined;
     following.current = true;
     setShowBottom(false);
-    list.current?.scrollTo({ top: list.current.scrollHeight, behavior: 'smooth' });
+    const node = list.current;
+    if (!node) return;
+    // A windowed list learns heights as it mounts: a smooth scroll's obsolete target can stop halfway.
+    if (windowed) restoreVirtualScroll({ root: node, bottom: true, top: 0, offset: node.scrollTop });
+    else node.scrollTo({ top: node.scrollHeight, behavior: 'smooth' });
   };
   const pauseFollowing = () => { following.current = false; };
-  return { list, content, body, onScroll, onWheel, more, showBottom, toBottom, pauseFollowing,
+  return { list, content, body, following, readingAnchor: anchor,
+    onScroll, onWheel, more, showBottom, toBottom, pauseFollowing,
     onTouchStart, onTouchMove, onTouchEnd: pull.clear, onTouchCancel: pull.clear };
 }

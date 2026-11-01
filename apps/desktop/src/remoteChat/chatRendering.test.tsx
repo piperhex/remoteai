@@ -25,6 +25,8 @@ let host: HTMLDivElement;
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  // Count memoized renders independently of asynchronous viewport admission; browser tests cover windowing.
+  vi.stubGlobal('IntersectionObserver', undefined);
   vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   host = document.createElement('div'); document.body.append(host); root = createRoot(host);
   counts.rows = []; counts.markdown = [];
