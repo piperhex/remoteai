@@ -1,7 +1,7 @@
 import { Check, Copy } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
 import { useDocumentThemeMode } from '../theme/useDocumentThemeMode';
-import { renderMermaid } from './mermaidRenderer';
+import { useMermaidDiagram } from './useMermaidDiagram';
 import './mermaidDiagram.css';
 
 const COPY_FEEDBACK_MS = 2000;
@@ -11,23 +11,9 @@ export function MermaidDiagram({ source, previewLabel, sourceLabel, copyLabel }:
 }) {
   const generatedId = useId().replace(/:/g, '');
   const theme = useDocumentThemeMode();
-  const [svg, setSvg] = useState('');
+  const { svg, renderFailed } = useMermaidDiagram(source, theme, `mermaid-${generatedId}`);
   const [showSource, setShowSource] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [renderFailed, setRenderFailed] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    setSvg('');
-    setRenderFailed(false);
-    const controller = new AbortController();
-    void renderMermaid({ source, id: `mermaid-${generatedId}`, theme, signal: controller.signal }).then(result => {
-      if (active && result) setSvg(result.svg);
-    }).catch(() => {
-      if (active) setRenderFailed(true);
-    });
-    return () => { active = false; controller.abort(); };
-  }, [generatedId, source, theme]);
 
   useEffect(() => {
     if (!copied) return;
