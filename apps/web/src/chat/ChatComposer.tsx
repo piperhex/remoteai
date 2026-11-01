@@ -160,6 +160,7 @@ export function ChatComposer(props: ComposerProps) {
             beforeOpen={() => { closeMenus(); menu.input.current?.blur(); }} />}
           <ComposerSuggestion text={suggestion.text} accept={suggestion.accept} />
           <ComposerInput ref={menu.input} aria-label={t("client.chat.chatMessage")} value={draft.text} maxLength={100_000} rows={1}
+            contextScope={`${threadId}:${cwd}`} active={active}
             readOnly={state.queueEditor.loading}
             onBeforeInput={suggestion.dismiss} onCompositionStart={suggestion.dismiss}
             onCompositionEnd={suggestion.restore}

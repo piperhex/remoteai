@@ -16,6 +16,7 @@ import { SkillMenu } from "./SkillMenu";
 import { useSuggestionInput } from './useSuggestionInput';
 import styles from "./SkillInput.module.less";
 import { readPastedContent } from "../../../../../shared/chat/clipboard";
+import { ComposerContextMenu } from '../../../../../shared/chat/ComposerContextMenu';
 
 export interface SkillInputHandle { addSkill: (skill: Skill) => void; focus: () => void }
 
@@ -134,7 +135,7 @@ export const SkillInput = forwardRef<SkillInputHandle, {
     if (option.kind !== "skill") option.command.run();
   };
   const keyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (disabled || !active) return;
+    if (event.defaultPrevented || disabled || !active) return;
     onPasteKeyDown?.(event);
     if (composing.current || event.nativeEvent.isComposing || event.keyCode === 229) return;
     if (!open && ghost.keyDown(event)) return;
@@ -179,6 +180,7 @@ export const SkillInput = forwardRef<SkillInputHandle, {
         aria-label={uiText("client.chat.useSuggestion")} aria-keyshortcuts="Tab" tabIndex={-1}
         onPointerDown={event => event.preventDefault()} onClick={ghost.accept}><kbd>Tab</kbd></button>
     </div>}
+    <ComposerContextMenu scope={`${draftKey}:${cwd}`} active={active} translate={uiText}>
     <div ref={editor} role="textbox" aria-label={editing ? uiText("client.conversation.editMessage") : uiText("client.conversation.message")}
       aria-multiline="true" aria-disabled={disabled}
       aria-autocomplete="list" aria-controls={open ? listId : undefined}
@@ -195,5 +197,6 @@ export const SkillInput = forwardRef<SkillInputHandle, {
       }} onPaste={paste} onDrop={(event) => event.preventDefault()}
       onCompositionStart={() => { ghost.dismiss(); composing.current = true; setTrigger(null); }}
       onCompositionEnd={() => { composing.current = false; change(); }} />
+    </ComposerContextMenu>
   </div>;
 });

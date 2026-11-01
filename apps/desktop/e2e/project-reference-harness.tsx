@@ -1,5 +1,7 @@
 import { createRoot } from 'react-dom/client';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, theme } from 'antd';
+import { installBrowserDefaultsGuard } from '../../../shared/browser/installBrowserDefaultsGuard';
+import { setThemeMode } from '../../web/src/theme/preference';
 import { ChatFileReferencesProvider } from '../../../shared/chat/ChatFileReferences';
 import { DetailsWorkspace } from '../src/pages/codexGui/DetailsWorkspace';
 import { Composer } from '../src/pages/codexGui/Composer';
@@ -18,6 +20,8 @@ import '../../web/src/styles.css';
 import '../src/styles.css';
 
 const mode = new URLSearchParams(location.search).get('mode') ?? 'local';
+const dark = new URLSearchParams(location.search).has('dark');
+installBrowserDefaultsGuard();
 const cwd = mode === 'local' ? 'C:/project' : 'D:/remote';
 const client = createGuiToolsClient(<T,>(request: object) => browserRequest<T>(request as ProjectBrowserRequest));
 guiApi.request = <T,>(request: object) => browserRequest<T>(request as ProjectBrowserRequest);
@@ -48,11 +52,12 @@ const remote: ComposerProps = {
   send: async input => { document.body.dataset.sent = JSON.stringify(input); return true; },
 };
 localStorage.setItem('codex-switch:language', 'zh');
-document.documentElement.dataset.theme = 'light';
+setThemeMode(dark ? 'dark' : 'light');
 document.body.style.minWidth = '0';
 
 function Harness() {
-  return <ConfigProvider><main style={{ height: '100dvh' }}>
+  return <ConfigProvider theme={{ algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm }}>
+    <main style={{ height: '100dvh' }}>
     <DetailsWorkspace selected={null} active>
       <ChatFileReferencesProvider>
         {mode === 'local' ? <Composer state={state} controller={controller} active /> : <>
