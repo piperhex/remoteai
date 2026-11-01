@@ -62,3 +62,90 @@ fn persisted_attempt_survives_restart_and_expires_after_the_window() {
     storage::write_json_atomic(&marker, &serde_json::json!({})).unwrap();
     assert!(attempt_pending(&paths, "idle", now).is_err());
 }
+
+fn quota_response(at: i64, reset: i64, used: f64) -> crate::models::UsageSummary {
+    let mut usage = crate::codex_api::parse_usage(&serde_json::json!({
+        "rate_limit": {
+            "primary_window": {
+                "used_percent": used,
+                "limit_window_seconds": 18000,
+                "reset_at": reset
+            }
+        }
+    }));
+    usage.fetched_at = Some(
+        chrono::DateTime::from_timestamp(at, 0)
+            .unwrap()
+            .to_rfc3339(),
+    );
+    usage
+}
+
+#[test]
+fn live_quota_probe_confirms_sliding_placeholder_but_skips_fixed_rounded_zero() {
+    let now = 1_790_000_000;
+    for (drift, expected) in [(3, true), (0, false), (1, false)] {
+        let mut responses = [
+            Ok(quota_response(now, now + WINDOW_SECONDS, 0.0)),
+            Ok(quota_response(now + 3, now + WINDOW_SECONDS + drift, 0.0)),
+        ]
+        .into_iter();
+        let waited = std::cell::Cell::new(false);
+        let reads = std::cell::Cell::new(0);
+        let result = confirm_idle_window(
+            || {
+                if reads.get() == 1 {
+                    assert!(waited.get());
+                }
+                reads.set(reads.get() + 1);
+                responses.next().unwrap()
+            },
+            || waited.set(true),
+            || now,
+        )
+        .unwrap();
+        assert_eq!(result, expected);
+        assert_eq!(reads.get(), 2);
+    }
+}
+
+#[test]
+fn probe_fails_closed_on_errors_or_new_usage_without_retrying() {
+    let now = 1_790_000_000;
+    for second in [
+        Err("network failure".to_string()),
+        Ok(quota_response(now + 3, now + WINDOW_SECONDS + 3, 1.0)),
+        Ok(crate::models::UsageSummary::default()),
+    ] {
+        let mut responses =
+            [Ok(quota_response(now, now + WINDOW_SECONDS, 0.0)), second].into_iter();
+        let result = confirm_idle_window(|| responses.next().unwrap(), || {}, || now);
+        assert!(!result.unwrap_or(false));
+        assert!(responses.next().is_none());
+    }
+}
+
+#[test]
+fn unambiguous_idle_and_running_quotas_need_only_one_read() {
+    let now = 1_790_000_000;
+    for (used, reset, expected) in [
+        (0.0, now - 1, true),
+        (0.0, now + 600, false),
+        (1.0, now + WINDOW_SECONDS, false),
+    ] {
+        let reads = std::cell::Cell::new(0);
+        assert_eq!(
+            confirm_idle_window(
+                || {
+                    reads.set(reads.get() + 1);
+                    Ok(quota_response(now, reset, used))
+                },
+                || panic!("An unambiguous window must not need a confirmation read"),
+                || now,
+            )
+            .unwrap(),
+            expected
+        );
+        assert_eq!(reads.get(), 1);
+    }
+}
