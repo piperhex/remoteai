@@ -4,7 +4,7 @@ import { createThemedStyles } from '../theme/styles';
 import { textMetrics } from '../theme/text';
 import { getLocale, t, useLanguage } from '../i18n';
 import { formatAccountCredits } from '../../../../shared/remote-chat/accountCredits';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useChatUsage } from '../../../../shared/remote-chat/client/useChatUsage';
 import { formatCost, formatThreadTokens, formatTokens, usageTrailing,
   type ReadUsage } from '../../../../shared/remote-chat/usage';
@@ -52,7 +52,7 @@ export function ChatUsage({ read, active, ready, tokenUsage, onContextSettings, 
 }
 
 const useStyles = createThemedStyles((color) => ({
-  container: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color(palette.border, 'border'), paddingTop: 14, gap: 4 },
+  container: { paddingTop: 14, gap: 4 },
   summary: { padding: 12, gap: 4, borderRadius: 12, backgroundColor: color('#eef3f0', 'canvas') },
   row: { color: color(palette.muted, 'muted'), ...textMetrics(12, 20), flexShrink: 1 },
   tokens: { color: color(palette.green, 'accent'), fontWeight: '600' },
