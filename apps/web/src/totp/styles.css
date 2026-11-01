@@ -1,9 +1,27 @@
 .verification-page { background: var(--app-canvas, #f3faf7); }
 .verification-mobile-header { display: none; }
 .verification-add-menu { width: 200px; max-width: min(400px, calc(100vw - 24px)); }
-.verification-add-menu .ant-dropdown-menu-item { min-height: 48px; padding: 8px 12px; font-size: 16px; }
-.verification-add-menu .ant-dropdown-menu-title-content { white-space: normal; overflow-wrap: anywhere; }
-.verification-add-menu .ant-dropdown-menu-item-icon { color: var(--app-accent, #008956); }
+.verification-add-menu.ant-dropdown .ant-dropdown-menu {
+  padding: 4px; border: 1px solid var(--app-border, #d6ece3); border-radius: 12px;
+  background: var(--app-surface, #fff); box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+}
+.verification-add-menu .ant-dropdown-menu .ant-dropdown-menu-item {
+  min-height: 48px; padding: 8px 12px; gap: 10px; border-radius: 8px;
+  color: var(--app-ink, #101827); font: 400 16px/24px system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+.verification-add-menu .ant-dropdown-menu .ant-dropdown-menu-title-content {
+  padding-block: 2px; white-space: normal; overflow-wrap: anywhere;
+}
+.verification-add-menu .ant-dropdown-menu .ant-dropdown-menu-item-icon {
+  flex: 0 0 20px; margin-inline-end: 0; color: var(--app-accent, #008956);
+}
+.verification-add-menu .ant-dropdown-menu .ant-dropdown-menu-item:hover,
+.verification-add-menu .ant-dropdown-menu .ant-dropdown-menu-item-active {
+  background: var(--app-elevated, #edf7f2);
+}
+.verification-add-menu .ant-dropdown-menu .ant-dropdown-menu-item:focus-visible {
+  outline: 2px solid var(--app-accent, #008956); outline-offset: -2px;
+}
 .verification-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px;
   padding: 8px 0 25px; }
 .verification-heading h1 { color: var(--app-ink, #111c2c); font-size: 35px; font-weight: 800; letter-spacing: -.7px; }
@@ -52,9 +70,11 @@
     position: sticky; top: 0; z-index: 10; display: grid;
     grid-template-columns: minmax(64px, 1fr) auto minmax(64px, 1fr);
     align-items: center; gap: 4px; padding: max(6px, env(safe-area-inset-top)) 12px 6px;
+    font-family: system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
     color: var(--app-ink, #101827); background: var(--app-canvas, #f3faf7);
   }
-  .verification-mobile-header h1 { margin: 0; padding-block: 2px; font-size: 18px; font-weight: 600;
+  .verification-mobile-header h1 { margin: 0; padding-block: 2px; font-family: inherit;
+    font-size: 18px; font-weight: 600;
     line-height: 1.56; text-align: center; overflow-wrap: anywhere; }
   .verification-mobile-header button { display: flex; align-items: center; min-height: 44px; min-width: 44px;
     padding: 0; border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
