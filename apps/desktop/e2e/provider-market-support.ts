@@ -25,6 +25,7 @@ export async function setupMarket(page: Page, mode: string, authenticated = true
   page.on('requestfailed', (request) => console.log(`market failed request: ${request.url()} ${request.failure()?.errorText}`));
   const saved: Record<string, unknown>[] = [];
   const publications: Record<string, unknown>[] = [];
+  const removals: Record<string, unknown>[] = [];
   let item = fixtureItem();
   let userId = authenticated ? 'alice' : '';
   const exchange = async (call: Call): Promise<unknown> => {
@@ -33,12 +34,15 @@ export async function setupMarket(page: Page, mode: string, authenticated = true
     if (call.command === 'cloud_provider_market') {
       const request = call.args.request as Record<string, unknown>;
       if (request.type === 'list') return list
-        ? list(request as Extract<MarketRequest, { type: 'list' }>) : { items: [item], total: 1 };
+        ? list(request as Extract<MarketRequest, { type: 'list' }>)
+        : { items: removals.length ? [] : [item], total: removals.length ? 0 : 1 };
       if (request.type === 'get') return item;
       if (request.type === 'save') {
-        publications.push(request); item = { ...item, ...request.draft as object, revision: item.revision + 1 };
+        publications.push(request); item = { ...item, ...request.draft as object,
+          published: request.published as boolean, revision: item.revision + 1 };
         return item;
       }
+      if (request.type === 'remove') removals.push(request);
       return { ok: true };
     }
     if (call.command === 'save_provider' || call.command === 'cloud_install_market_provider') {
@@ -78,5 +82,5 @@ export async function setupMarket(page: Page, mode: string, authenticated = true
       ...(Object.hasOwn(body, 'sortOrder') ? { sortOrder: body.sortOrder as number | null } : {}) };
     await route.fulfill({ json: item });
   });
-  return { saved, publications, switchAccount: () => { userId = 'bob'; } };
+  return { saved, publications, removals, switchAccount: () => { userId = 'bob'; } };
 }

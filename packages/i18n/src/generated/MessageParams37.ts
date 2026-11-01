@@ -13,7 +13,6 @@ export interface MessageParams37 {
   "market.scriptResponse": Record<string, never>;
   "market.scriptScope": Record<string, never>;
   "market.search": Record<string, never>;
-  "market.share": Record<string, never>;
   "market.signIn": Record<string, never>;
   "market.statsNotice": Record<string, never>;
   "market.thresholdLabel": Record<string, never>;
@@ -200,4 +199,5 @@ export interface MessageParams37 {
   "providers.catalog.editTitle": { "provider": string | number };
   "providers.catalog.endpoint": Record<string, never>;
   "providers.catalog.endpoint.agentPlanChina": Record<string, never>;
+  "providers.catalog.endpoint.bytePlusInternational": Record<string, never>;
 }

@@ -59,7 +59,6 @@ export interface MarketClient {
   request: (request: MarketRequest, identity: MarketIdentity | null) => Promise<MarketReply>;
   add?: (item: MarketItem, apiKey: string, identity: MarketIdentity | null) => Promise<'added' | 'downloaded'>;
   addition?: (identity: MarketIdentity | null) => 'local' | 'cloud' | 'download';
-  share?: (item: MarketItem) => Promise<void>;
 }
 export const emptyPrice = (): MarketPrice => ({ input: null, output: null, cachedInput: null });
 export const emptyTier = (multiplier = 1): MarketTier => ({

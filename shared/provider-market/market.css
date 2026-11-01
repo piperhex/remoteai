@@ -30,20 +30,37 @@
 }
 .pm-card-title { background: none; border: 0; color: inherit; text-align: start; font-size: 18px;
   font-weight: 700; cursor: pointer; padding: 0; margin-bottom: 12px; }
-.pm-card-title:hover { color: #4096ff; }
+.pm-card { position: relative; }
+/* Stretch the native button over the card while keeping menu controls separate. */
+.pm-card-header .pm-card-title::after { content: ''; position: absolute; inset: 0; border-radius: 12px; }
+.pm-card-title:enabled:hover { color: #4096ff; }
+.pm-card-header .pm-card-title:focus-visible { outline: none; }
+.pm-card-header .pm-card-title:focus-visible::after { outline: 2px solid #4096ff; outline-offset: 2px; }
+.pm-card-title:disabled { cursor: wait; }
 .pm-card-title, .pm-detail-title { display: flex; align-items: center; gap: 10px; }
 .pm-card-title > span:last-child, .pm-detail-title > span:last-child { min-width: 0; overflow-wrap: anywhere; }
 .pm-detail-title { margin: 0; }
+.pm-add-modal { top: 24px; padding-bottom: 24px; }
+.pm-add-modal .ant-modal-content { display: flex; flex-direction: column; max-height: calc(100dvh - 48px); }
+.pm-add-modal .ant-modal-body { min-height: 0; max-height: none; padding: 4px 4px 4px 0; }
+.pm-add-modal .ant-modal-header, .pm-add-modal .ant-modal-footer { flex: none; }
+.pm-add-modal .ant-modal-title { padding-inline-end: 28px; }
+.pm-add-modal .ant-modal-title .pm-row { align-items: center; }
+.pm-add-modal .ant-modal-footer {
+  padding-top: 16px; border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent); text-align: end;
+}
 .pm-provider-icon {
   display: inline-grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 9px;
   color: var(--green-dark, #168348); background: var(--green-soft, color-mix(in srgb, #168348 10%, transparent));
 }
 .pm-card-header {
-  display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between;
+  display: flex; align-items: flex-start; justify-content: space-between;
   gap: 12px; margin-bottom: 12px;
 }
-.pm-card-header .pm-card-title { flex: 1 1 160px; min-width: 0; margin: 0; }
-.pm-card-actions.ant-space { margin-inline-start: auto; justify-content: flex-end; }
+.pm-card-header .pm-card-title { flex: 1; min-width: 0; margin: 0; }
+.pm-card-actions { position: relative; z-index: 1; flex: none; margin-inline-start: auto; }
+.pm-card-menu .ant-dropdown-menu { min-width: 128px; }
+.pm-card-menu .ant-dropdown-menu-title-content { white-space: normal; overflow-wrap: anywhere; }
 .pm-feed-tail { min-height: 1px; }
 .pm-feed-tail > [role="status"] { padding: 12px; text-align: center; }
 .pm-card > .ant-space { display: flex; margin-block: 6px; }

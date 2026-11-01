@@ -66,7 +66,8 @@ test('publishes multiple models and independent tiers, and rejects stale identit
   const state = await setupMarket(page, 'local');
   await page.goto('/e2e/provider-market-harness.html?dark=1');
   await page.getByRole('button', { name: 'Provider market', exact: true }).first().click();
-  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  await page.getByRole('button', { name: 'More actions', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Edit', exact: true }).click();
   await expect(page.getByLabel('Model ID', { exact: true })).toHaveCount(2);
   await page.getByLabel('Input', { exact: true }).first().fill('9');
   await page.getByRole('button', { name: 'Add model', exact: true }).click();
@@ -77,7 +78,8 @@ test('publishes multiple models and independent tiers, and rejects stale identit
   const draft = state.publications[0].draft as { models: { tiers: { input: number | null }[] }[] };
   expect(draft.models).toHaveLength(3); expect(draft.models[0].tiers.map((v) => v.input)).toEqual([9, 11]);
   expect(state.saved).toHaveLength(0);
-  await page.getByRole('button', { name: 'Edit', exact: true }).click();
+  await page.getByRole('button', { name: 'More actions', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Edit', exact: true }).click();
   state.switchAccount();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page.locator('.pm-editor')).toHaveCount(0);

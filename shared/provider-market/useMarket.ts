@@ -74,8 +74,5 @@ export function useMarket(client: MarketClient, initialId?: string) {
     },
     selectScope: (value: typeof feed.scope) => { setError(null); feed.selectScope(value); },
     find: (value: string) => { setError(null); feed.find(value); },
-    share: async (item: MarketItem) => run(async () => {
-      await client.share?.(item); setNotice('market.copied');
-    }),
   };
 }

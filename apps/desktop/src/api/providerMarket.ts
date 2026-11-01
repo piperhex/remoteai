@@ -1,5 +1,4 @@
 import { invoke, loadCloudAuthState } from './backend';
-import { copyText } from '../utils/clipboard';
 import type { Provider, ProviderInput } from '../types';
 import type { MarketClient, MarketIdentity, MarketReply } from '../../../../shared/provider-market/types';
 import { personalProviderFields } from '../../../../shared/provider-market/install';
@@ -28,13 +27,6 @@ export function desktopProviderMarket(
         catch { /* Usage is optional; the personal Provider was successfully saved. */ }
       }
       return 'added';
-    },
-    share: async (item) => {
-      const state = await loadCloudAuthState();
-      if (!state.baseUrl) throw new Error('market.unavailable');
-      const url = new URL(`${state.baseUrl.replace(/\/+$/, '')}/web/`);
-      url.searchParams.set('providerMarket', item.id);
-      await copyText(url.toString());
     },
   };
 }

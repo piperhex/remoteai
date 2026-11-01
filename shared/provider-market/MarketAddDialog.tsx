@@ -1,0 +1,36 @@
+import { useState, type ReactNode } from 'react';
+import { Alert, Button, Checkbox, Input, Modal, Tag } from 'antd';
+import type { MarketText } from './i18n';
+import type { MarketItem } from './types';
+import { MarketDetail, MarketDetailTitle } from './MarketDetail';
+
+export function MarketAddDialog({ item, t, busy, error, mode = 'local', onAdd, onClose }: {
+  item: MarketItem; t: MarketText; busy: boolean; error: ReactNode; mode?: 'local' | 'cloud' | 'download';
+  onAdd?: (item: MarketItem, key: string) => Promise<void>; onClose: () => void;
+}) {
+  const [apiKey, setApiKey] = useState('');
+  const [scriptEnabled, setScriptEnabled] = useState(false);
+  const addButton = onAdd && <Button type="primary" loading={busy} disabled={mode !== 'download' && !apiKey.trim()}
+    onClick={() => void onAdd({ ...item, balanceQuery: mode === 'download' || scriptEnabled
+      ? item.balanceQuery : null }, apiKey.trim())}>
+    {t(mode === 'download' ? 'market.webAnonymousAdd' : 'market.add')}</Button>;
+  return <Modal open title={<div className="pm-row"><MarketDetailTitle item={item} />
+    <Tag>{t(item.official ? 'market.official' : 'market.community')}</Tag></div>}
+    width={1040} className="provider-market-modal pm-add-modal" footer={addButton ?? null}
+    onCancel={onClose} keyboard={!busy} maskClosable={!busy}
+    closable={{ disabled: busy, 'aria-label': t('market.close') }}>
+    <div className="provider-market">
+      {onAdd && <section className="pm-install">
+        {mode !== 'download' && <label><span>{t('market.ownKey')}</span>
+          <Input.Password autoFocus value={apiKey} disabled={busy} autoComplete="new-password"
+            aria-label={t('market.ownKey')} onChange={event => setApiKey(event.target.value)} /></label>}
+        <Alert type="info" message={t(mode === 'download' ? 'market.webAnonymousInfo' : 'market.addInfo')} />
+        {mode === 'cloud' && <p>{t('market.webAddInfo')}</p>}
+      </section>}
+      {error}
+      <MarketDetail item={item} t={t} showTitle={false} scriptControl={onAdd && mode !== 'download'
+        ? <Checkbox checked={scriptEnabled} disabled={busy}
+          onChange={event => setScriptEnabled(event.target.checked)}>{t('market.enableScript')}</Checkbox> : null} />
+    </div>
+  </Modal>;
+}

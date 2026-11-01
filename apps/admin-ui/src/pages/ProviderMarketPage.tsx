@@ -74,7 +74,7 @@ export function ProviderMarketPage({ api, canManage, canOrder }: Props) {
     {editing ? <MarketEditor initial={editing === 'new' ? undefined : editing} t={t} busy={busy}
       onSave={save} onCancel={() => setEditing(null)} /> : selected ? <>
       <Button onClick={() => setSelected(null)}>{t('market.back')}</Button>
-      <MarketDetail item={selected} t={t} busy={busy} />
+      <MarketDetail item={selected} t={t} />
     </> : <>
       <div className="pm-toolbar"><Input.Search placeholder={t('market.search')} aria-label={t('market.search')}
         style={{ maxWidth: 360 }} onSearch={(value) => { setSearch(value); setPage(1); }} />

@@ -5,7 +5,8 @@ test('publishing requires a page and persists query strings and custom headers',
   const state = await setupMarket(page, 'local');
   await page.goto('/e2e/provider-market-harness.html?language=zh');
   await page.locator('#provider-topbar-actions .provider-market-button').click();
-  await page.getByRole('button', { name: /^编\s*辑$/ }).click();
+  await page.getByRole('button', { name: '更多操作', exact: true }).click();
+  await page.getByRole('menuitem', { name: '编辑', exact: true }).click();
   const address = page.getByLabel('页面地址（发布必填）', { exact: true });
   await address.fill('');
   await page.getByRole('button', { name: /^保\s*存$/ }).click();

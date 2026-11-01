@@ -90,6 +90,12 @@ popup tabs, fullscreen controls, polling responsiveness and cleanup after a rend
 
 ## Adding and counting
 
+Market cards open the add dialog from anywhere on the card. Publisher maintenance actions live in the
+top-right ellipsis menu; deletion still requires confirmation. The add dialog uses the Provider name as
+its title, places the private API key field first, and keeps the add action in the fixed bottom-right
+footer while details scroll. Closing this dialog returns to the market; closing the market dismisses it.
+The add dialog does not offer a copy-share-link action.
+
 Desktop local and hosted desktop pages save to the computer's existing personal Provider store.
 Desktop remote workspaces and signed-in Web pages save to the existing personal cloud store; the
 computer must sync before the Provider becomes available there. No remote activation is performed.

@@ -144,7 +144,6 @@ export interface MessageParams36 {
   "market.community": Record<string, never>;
   "market.confirmDelete": Record<string, never>;
   "market.conflict": Record<string, never>;
-  "market.copied": Record<string, never>;
   "market.currency": Record<string, never>;
   "market.deleteConfirm": Record<string, never>;
   "market.description": Record<string, never>;
@@ -171,6 +170,7 @@ export interface MessageParams36 {
   "market.modelConfiguration": Record<string, never>;
   "market.modelPlaceholder": Record<string, never>;
   "market.models": Record<string, never>;
+  "market.moreActions": Record<string, never>;
   "market.multiplier": Record<string, never>;
   "market.name": Record<string, never>;
   "market.next": Record<string, never>;
