@@ -1,5 +1,5 @@
 import { t, useLanguage } from '../i18n';
-import { Children, isValidElement, useContext, useEffect, useRef, type ReactNode } from 'react';
+import { Children, isValidElement, memo, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { FileEnvironmentContext } from '../../../desktop/src/pages/codexGui/fileEnvironment';
 import { RichText } from '../../../desktop/src/pages/codexGui/RichText';
 import { previewReference } from '../../../desktop/src/pages/codexGui/filePreview/references';
@@ -55,7 +55,19 @@ const desktopComponents: Components = { ...components,
   pre: ({ children }) => codeBlock(children, true),
   table: ({ children }) => <ChatMarkdownTable>{children}</ChatMarkdownTable> };
 
-export function ChatMarkdown({ text, process = false, desktop = false }: {
+// Context consumers below this boundary still update links/images without reparsing the document.
+const MarkdownContent = memo(function MarkdownContent({ text, desktop }: { text: string; desktop: boolean }) {
+  useLanguage();
+  return <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]}
+    rehypePlugins={[[rehypeKatex, mathOptions]]} components={desktop ? desktopComponents : components}
+    urlTransform={(url, key) => {
+      if (/^https?:\/\//i.test(url)) return url;
+      if (key === 'href' && parseFileReference(url)) return url;
+      return key === 'src' && (isInlineImage(url) || localImageSource(url)) ? url : '';
+    }}>{normalizeMathDelimiters(text)}</ReactMarkdown>;
+});
+
+export const ChatMarkdown = memo(function ChatMarkdown({ text, process = false, desktop = false }: {
   text: string; process?: boolean; desktop?: boolean;
 }) {
   useLanguage();
@@ -67,12 +79,6 @@ export function ChatMarkdown({ text, process = false, desktop = false }: {
     return <div className={process ? 'chat-process-prose' : undefined}><RichText text={text} /></div>;
   }
   return <div ref={root} className={`chat-markdown${process ? ' chat-process-prose' : ''}`}>
-    <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath, remarkBreaks]} rehypePlugins={[[rehypeKatex, mathOptions]]}
-      components={desktop || environment ? desktopComponents : components}
-      urlTransform={(url, key) => {
-        if (/^https?:\/\//i.test(url)) return url;
-        if (key === 'href' && parseFileReference(url)) return url;
-        return key === 'src' && (isInlineImage(url) || localImageSource(url)) ? url : '';
-      }}>{normalizeMathDelimiters(text)}</ReactMarkdown>
+    <MarkdownContent text={text} desktop={desktop || Boolean(environment)} />
   </div>;
-}
+});

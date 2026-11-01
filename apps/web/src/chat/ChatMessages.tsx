@@ -1,6 +1,7 @@
 import { t, useLanguage } from '../i18n';
 import { ViewportContent } from '../../../../shared/chat/ViewportContent';
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Fragment, memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCommittedCallback } from '../../../../shared/chat/useCommittedCallback';
 import { ArrowDown, ChevronDown, ChevronRight, Terminal } from 'lucide-react';
 import type { ChatMessagesProps } from '../../../../shared/remote-chat/client/messageProps';
 import { useConversationEntries } from '../../../../shared/chat/useConversationEntries';
@@ -52,20 +53,27 @@ function WorkSummary({ entry, open, inline, desktop }: {
   </div>;
 }
 
-function TimelineEntry({ entry, open, inline, desktop, renderUserMessage }: {
+const TimelineEntry = memo(function TimelineEntry({ entry, open, inline, desktop, renderUserMessage }: {
   entry: Entry; open: (selection: Selection) => void; inline: (id: string, value: boolean) => void;
   desktop: boolean;
   renderUserMessage?: RenderUserMessage;
 }) {
   useLanguage();
+  const turnId = entry.turn.id;
+  const process = entry.kind === 'process';
+  const inspect = useCallback(() => inline(turnId, true), [inline, turnId]);
+  const openItem = useCallback((id: string) => {
+    if (process) inline(turnId, true);
+    open({ type: 'item', id });
+  }, [inline, open, process, turnId]);
   if (entry.kind === 'activities') {
     const item = latestActivity(entry.items);
     return item && <ChatActivity item={item} count={entry.items.length}
       running={entry.turn.status === 'inProgress' && item.status === 'inProgress'}
-      inline={desktop} onInspect={() => inline(entry.turn.id, true)}
+      inline={desktop} onInspect={inspect}
       content={desktop ? () => entry.items.map(activity => <ChatMessage key={activity.id} item={activity} process desktop
         running={entry.turn.status === 'inProgress' && activity.status === 'inProgress'}
-        onInspect={() => inline(entry.turn.id, true)} onOpen={id => open({ type: 'item', id })} />) : undefined}
+        onInspect={inspect} onOpen={openItem} />) : undefined}
       onOpen={() => open({ type: 'activities', id: entry.id })} />;
   }
   if (entry.kind === 'duration') {
@@ -81,10 +89,9 @@ function TimelineEntry({ entry, open, inline, desktop, renderUserMessage }: {
     return renderUserMessage({ item: entry.item, turn: entry.turn });
   }
   return <ChatMessage item={entry.item} process={entry.kind === 'process'} desktop={desktop}
-    onInspect={() => inline(entry.turn.id, true)}
-    onOpen={id => { if (entry.kind === 'process') inline(entry.turn.id, true); open({ type: 'item', id }); }}
+    onInspect={inspect} onOpen={openItem}
     running={entry.turn.status === 'inProgress' && entry.item.status !== 'completed'} />;
-}
+});
 
 type MessageProps = ChatMessagesProps & {
   processing?: ReactNode; renderUserMessage?: RenderUserMessage;
@@ -126,7 +133,9 @@ function ChatMessageHistory({ props, scroll }: {
   const runningSummary = timeline.find(entry => entry.kind === 'summary' && entry.turn.id === runningTurn?.id);
   const [selection, setSelection] = useState<Selection | null>(null);
   const drawers = useHistoryDrawers(turns);
-  const open = (next: Selection) => { setSelection(drawers.open(next) ? null : next); };
+  const open = useCommittedCallback((next: Selection) => {
+    setSelection(drawers.open(next) ? null : next);
+  });
   // Dismiss the previous layout's sheets before switching to inline work and docked reviews.
   useEffect(() => { setSelection(null); }, [desktop]);
   const work = selection?.type === 'work' ? findWorkEntry(entries, selection.id)
