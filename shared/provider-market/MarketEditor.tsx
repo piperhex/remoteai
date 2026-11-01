@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Alert, Button, Checkbox, ConfigProvider, Input, Select, Space } from 'antd';
 import type { MarketText } from './i18n';
 import { emptyDraft, emptyModel, publicDraft, type MarketDraft } from './types';
@@ -9,19 +9,36 @@ import { PageLinkEditor } from './PageLinkEditor';
 import { validPageLink } from './pageLink';
 import './providerBrowser.css';
 
-export function MarketEditor({ initial, busy, t, onSave, onCancel }: {
+export function MarketEditorActions({ busy, t, onCancel, formId }: {
+  busy: boolean; t: MarketText; onCancel: () => void; formId?: string;
+}) {
+  return <Space wrap><Button disabled={busy} onClick={onCancel} aria-label={t('market.cancel')}>
+    {t('market.cancel')}</Button>
+    <Button type="primary" htmlType="submit" form={formId} loading={busy} aria-label={t('market.publishAction')}>
+      {t('market.publishAction')}</Button></Space>;
+}
+
+export function MarketEditor({ initial, busy, t, onSave, onCancel, externalFormId, requiresReview = true }: {
   initial?: MarketDraft; busy: boolean; t: MarketText;
   onSave: (draft: MarketDraft, published: boolean) => Promise<void>; onCancel: () => void;
+  externalFormId?: string;
+  requiresReview?: boolean;
 }) {
   const [value, setValue] = useState(() => initial ? publicDraft(initial) : emptyDraft());
   const [published, setPublished] = useState(() => initial && 'published' in initial ? Boolean(initial.published) : true);
   const [attempted, setAttempted] = useState(false);
+  const validationRef = useRef<HTMLDivElement>(null);
   const valid = validDraft(value) && (!published || validPageLink(value.pageLink));
-  return <form className="pm-editor" onSubmit={(event) => {
+  return <form id={externalFormId} className="pm-editor" onSubmit={(event) => {
     event.preventDefault(); setAttempted(true);
-    if (valid && !busy) void onSave(publicDraft(value), published);
+    if (!valid) {
+      requestAnimationFrame(() => validationRef.current?.scrollIntoView({ block: 'nearest' }));
+      return;
+    }
+    if (!busy) void onSave(publicDraft(value), published);
   }}>
     <Alert type="info" showIcon message={t('market.publicNotice')} />
+    {requiresReview && <Alert type="info" showIcon message={t('market.reviewNotice')} />}
     <ConfigProvider componentDisabled={busy}><fieldset disabled={busy}>
       <label><span>{t('market.name')}</span><Input value={value.name} maxLength={80}
         aria-label={t('market.name')} onChange={(event) => setValue({ ...value, name: event.target.value })} /></label>
@@ -47,11 +64,10 @@ export function MarketEditor({ initial, busy, t, onSave, onCancel }: {
       <BalanceQueryEditor value={value.balanceQuery ?? null} t={t}
         onChange={(balanceQuery) => setValue({ ...value, balanceQuery })} />
       <Checkbox checked={published} onChange={(event) => setPublished(event.target.checked)}>
-        {t('market.published')}</Checkbox>
+        {t(requiresReview ? 'market.requestPublication' : 'market.published')}</Checkbox>
     </fieldset></ConfigProvider>
-    {attempted && !valid && <Alert type="error"
-      message={t(!validPageLink(value.pageLink) && published ? 'market.pageRequired' : 'market.invalid')} />}
-    <Space><Button disabled={busy} onClick={onCancel}>{t('market.cancel')}</Button>
-      <Button type="primary" htmlType="submit" loading={busy}>{t('market.save')}</Button></Space>
+    {attempted && !valid && <div ref={validationRef}><Alert type="error"
+      message={t(!validPageLink(value.pageLink) && published ? 'market.pageRequired' : 'market.invalid')} /></div>}
+    {!externalFormId && <MarketEditorActions busy={busy} t={t} onCancel={onCancel} />}
   </form>;
 }

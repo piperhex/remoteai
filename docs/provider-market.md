@@ -19,16 +19,45 @@ all existing routes. Public GETs are anonymous; publishing, own entries and usag
 authentication. The Go handlers enforce authentication and ownership even if reached without Kong.
 Old servers display an unavailable/update message in clients.
 
-Three independent admin permissions are added by the runtime permission catalog:
+Five independent admin permissions are added by the runtime permission catalog:
 
 - `admin.provider-market.read`: inspect all entries.
 - `admin.provider-market.manage`: maintain platform-owned entries, including publication status.
 - `admin.provider-market.order`: set or clear Provider entry priority.
+- `admin.provider-market.review`: approve or reject community publications.
+- `admin.provider-market.promote`: set or remove marketing badges on any market entry.
 
-The latter two depend on read permission. Community maintenance is always restricted to the
+All mutation permissions depend on read permission. Community content editing is always restricted to the
 authenticated publisher. Request bodies cannot supply ownership, official status, user counts or
 ordering. Optimistic revisions prevent stale changes. “Maintained by Remote AI” means platform
 maintenance, not model-vendor certification.
+
+## Review and marketing badges
+
+Apply `apps/admin-go/sql/20261102_provider_market_review.sql` before starting the updated Go service.
+New databases use embedded migration 029. Existing community entries enter review and become hidden
+from public browsing until an administrator approves them; existing official presets remain approved.
+Reapplying the upgrade does not reset completed reviews. This task does not deploy production services.
+
+Community publication requests enter `pending`. Any subsequent publisher write resets approval;
+submitted edits and republishing require a new review, while withdrawal sets `draft`. The current entry
+is hidden during review rather than retaining a separate live revision. The public list, detail and
+usage endpoints require both `published` and `reviewStatus: approved`. The owner can inspect pending
+or rejected entries under My publications, including the rejection reason. Successful submission opens
+that scope and explains that publication awaits approval. Already installed personal Providers stay intact.
+
+Admins filter entries by review status, inspect the full definition, and use
+`PATCH /admin/api/provider-market/:id/review` with a revision, `approved` or `rejected` decision,
+and a required reason for rejection. Approval is only valid for a pending, nonwithdrawn community
+entry. Reviews record the reviewer and time. Concurrent publisher, order, badge and review writes
+invalidate stale revisions, so a review cannot approve unseen edits. These routes use the existing
+protected `/admin/api` Kong prefix and enforce their own permissions in Go.
+
+`PATCH /admin/api/provider-market/:id/badge` accepts a revision and a nullable badge containing
+up to 24 text characters and one of `blue`, `green`, `orange`, `red`, or `purple`. Badge changes do
+not approve content. Cards render badges in the upper-right area beside the maintenance menu, with
+wrapping for long text. Badge text is administrator content, never HTML or CSS. Publisher request
+allowlists reject badges and review metadata; the local Rust and hosted transports retain server metadata.
 
 ## Public format and prices
 
@@ -98,6 +127,8 @@ The add dialog does not offer a copy-share-link action.
 Both dialogs are centered at 85vw by 85vh. Content wraps inside a scrollable body with its scrollbar at
 the dialog's right edge; headers and the add footer remain fixed. The add dialog omits the service URL
 and page-access settings. Those settings remain part of publications and installed configurations.
+The new-publication and editing forms keep Cancel and Publish in the same fixed bottom-right footer;
+the form fields scroll independently, and Publish retains form validation and duplicate-submit protection.
 
 Desktop local and hosted desktop pages save to the computer's existing personal Provider store.
 Desktop remote workspaces and signed-in Web pages save to the existing personal cloud store; the

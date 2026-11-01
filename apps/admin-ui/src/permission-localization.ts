@@ -14,7 +14,9 @@ export function localizePermission(
   if (permission.system && permission.code.startsWith('admin.provider-market.')) {
     const t = marketText(language);
     const suffix = permission.code.slice('admin.provider-market.'.length);
-    const key = suffix === 'manage' ? 'permissionManage' : suffix === 'order' ? 'permissionOrder' : 'permissionRead';
+    const keys = { manage: 'permissionManage', order: 'permissionOrder', review: 'permissionReview',
+      promote: 'permissionPromote', read: 'permissionRead' } as const;
+    const key = keys[suffix as keyof typeof keys] ?? 'permissionRead';
     return { ...permission, group: t('market.permissionGroup'), name: t(`market.${key}`),
       description: t(`market.${key}Description`) };
   }

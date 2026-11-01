@@ -1339,6 +1339,8 @@ export function AdminConsole({ dark, onThemeChange }: AdminConsoleProps) {
     if (activeKey === 'providerMarket') {
       return <ProviderMarketPage key={profile?.id} api={api}
         canManage={Boolean(profile?.permissions?.includes('admin.provider-market.manage'))}
+        canReview={Boolean(profile?.permissions?.includes('admin.provider-market.review'))}
+        canPromote={Boolean(profile?.permissions?.includes('admin.provider-market.promote'))}
         canOrder={Boolean(profile?.permissions?.includes('admin.provider-market.order'))} />;
     }
     if (activeKey === "officialModels") {

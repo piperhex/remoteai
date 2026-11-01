@@ -37,6 +37,7 @@ for (const mode of ['local', 'hosted']) {
     await expect(page.locator('.pm-editor')).toBeVisible();
     await expect(page.locator('.pm-detail')).toHaveCount(0);
     await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await page.getByText('My publications', { exact: true }).click();
     await openMenu(page);
     await page.getByRole('menuitem', { name: 'Unpublish', exact: true }).click();
     await expect.poll(() => state.publications.length).toBe(1);
@@ -157,6 +158,7 @@ test('pending maintenance disables the card and keeps the interface responsive',
   });
   await page.goto('/e2e/provider-market-harness.html?mode=hosted', { waitUntil: 'domcontentloaded' });
   await page.locator('.provider-market-button').first().click();
+  await page.getByText('My publications', { exact: true }).click();
   await openMenu(page);
   await page.getByRole('menuitem', { name: 'Unpublish', exact: true }).click();
   await expect(page.getByRole('button', { name: 'More actions', exact: true })).toBeDisabled();

@@ -23,6 +23,7 @@ export async function expectMarketDialogLayout(page: Page) {
 export function fixtureItem(): MarketItem {
   return { id: '11111111-1111-4111-8111-111111111111', ownerId: 'alice', official: false,
     published: true, revision: 1, userCount: 8, sortOrder: null, name: 'Example Gateway',
+    reviewStatus: 'approved', reviewReason: '', marketingBadge: null,
     description: 'Public connection settings', baseUrl: 'https://provider.example/v1', currency: 'USD',
     pageLink: { url: 'https://provider.example/dashboard?view=usage#balance', query: 'source=remoteai&tag=a&tag=b',
       headers: { 'X-Source': 'RemoteAI' } },
@@ -51,11 +52,15 @@ export async function setupMarket(page: Page, mode: string, authenticated = true
       const request = call.args.request as Record<string, unknown>;
       if (request.type === 'list') return list
         ? list(request as Extract<MarketRequest, { type: 'list' }>)
-        : { items: removals.length ? [] : [item], total: removals.length ? 0 : 1 };
+        : { items: removals.length || (request.scope !== 'mine' &&
+          (!item.published || item.reviewStatus !== 'approved')) ? [] : [item],
+        total: removals.length || (request.scope !== 'mine' &&
+          (!item.published || item.reviewStatus !== 'approved')) ? 0 : 1 };
       if (request.type === 'get') return item;
       if (request.type === 'save') {
         publications.push(request); item = { ...item, ...request.draft as object,
-          published: request.published as boolean, revision: item.revision + 1 };
+          published: request.published as boolean, revision: item.revision + 1,
+          reviewStatus: request.published ? 'pending' : 'draft', reviewReason: '' };
         return item;
       }
       if (request.type === 'remove') removals.push(request);
@@ -90,13 +95,20 @@ export async function setupMarket(page: Page, mode: string, authenticated = true
   });
   await page.route(/^https?:\/\/[^/]+\/(?:admin\/api\/)?provider-market(?:\/|\?|$)/, async (route) => {
     if (route.request().method() === 'GET') {
-      await route.fulfill({ json: { items: [item], total: 1 } }); return;
+      const status = new URL(route.request().url()).searchParams.get('reviewStatus');
+      const visible = !status || status === 'all' || status === item.reviewStatus;
+      await route.fulfill({ json: { items: visible ? [item] : [], total: visible ? 1 : 0 } }); return;
     }
     const body = route.request().postDataJSON() as Record<string, unknown>;
     publications.push(body);
     item = { ...item, ...body.draft as object, revision: item.revision + 1,
       ...(Object.hasOwn(body, 'sortOrder') ? { sortOrder: body.sortOrder as number | null } : {}) };
+    if (Object.hasOwn(body, 'badge')) item.marketingBadge = body.badge as MarketItem['marketingBadge'];
+    if (Object.hasOwn(body, 'decision')) {
+      item.reviewStatus = body.decision as MarketItem['reviewStatus']; item.reviewReason = body.reason as string;
+    }
     await route.fulfill({ json: item });
   });
-  return { saved, publications, removals, switchAccount: () => { userId = 'bob'; } };
+  return { saved, publications, removals, switchAccount: () => { userId = 'bob'; },
+    setItem: (value: MarketItem) => { item = value; } };
 }

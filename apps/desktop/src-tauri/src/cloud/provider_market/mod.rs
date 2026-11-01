@@ -185,6 +185,9 @@ mod tests {
             "headers",
             "requestOptions",
             "walletPassword",
+            "reviewStatus",
+            "reviewReason",
+            "marketingBadge",
         ] {
             draft[key] = "secret".into();
             assert!(serde_json::from_value::<models::Draft>(draft.clone()).is_err());
@@ -205,6 +208,17 @@ mod tests {
             "revision":1,"userCount":3,"sortOrder":null,"name":"Example","description":"",
             "baseUrl":"https://example.test/v1","currency":"USD","unit":"millionTokens",
             "models":[],"balanceQuery":null,"pageLink":null});
+        let reply: ProviderMarketReply = serde_json::from_value(value.clone()).unwrap();
+        assert_eq!(serde_json::to_value(reply).unwrap(), value);
+    }
+
+    #[test]
+    fn market_review_and_badge_survive_native_transport() {
+        let value = json!({"id":"entry", "ownerId":"owner", "official":false,"published":true,
+            "revision":2,"userCount":3,"sortOrder":null,"name":"Example","description":"",
+            "baseUrl":"https://example.test/v1","currency":"USD","unit":"millionTokens",
+            "models":[],"balanceQuery":null,"pageLink":null,"reviewStatus":"rejected",
+            "reviewReason":"Update the page URL", "marketingBadge":{"text":"Offer","tone":"orange"}});
         let reply: ProviderMarketReply = serde_json::from_value(value.clone()).unwrap();
         assert_eq!(serde_json::to_value(reply).unwrap(), value);
     }

@@ -25,6 +25,8 @@ func Register(r *gin.Engine, deps *platform.Dependencies) error {
 	a.PUT("/:id", deps.RequirePermissions("admin.provider-market.manage"), s.save(true))
 	a.DELETE("/:id", deps.RequirePermissions("admin.provider-market.manage"), s.remove(true))
 	a.PATCH("/:id/order", deps.RequirePermissions("admin.provider-market.order"), s.order)
+	a.PATCH("/:id/review", deps.RequirePermissions("admin.provider-market.review"), s.review)
+	a.PATCH("/:id/badge", deps.RequirePermissions("admin.provider-market.promote"), s.badge)
 	return nil
 }
 func (s service) list(c *gin.Context) {
@@ -34,8 +36,16 @@ func (s service) list(c *gin.Context) {
 	case "/provider-market/mine":
 		query = query.Where("owner_id = ? AND official = false", platform.User(c).ID)
 	case "/admin/api/provider-market":
+		status := reviewStatus(c.Query("reviewStatus"))
+		if status != "" && status != "all" {
+			if !validReviewStatus(status) {
+				platform.Respond(c, nil, invalid())
+				return
+			}
+			query = query.Where("review_status = ?", status)
+		}
 	default:
-		query = query.Where("published = true")
+		query = query.Where("published = true AND review_status = ?", reviewApproved)
 	}
 	if scope := c.Query("scope"); scope == "official" || scope == "community" {
 		query = query.Where("official = ?", scope == "official")
@@ -69,8 +79,9 @@ func (s service) list(c *gin.Context) {
 	platform.Respond(c, gin.H{"items": items, "total": total}, err)
 }
 func (s service) get(c *gin.Context) {
+	c.Header("Cache-Control", "no-store")
 	value, err := findItem(s.deps.DB.WithContext(c.Request.Context()), c.Param("id"))
-	if err == nil && !value.Published {
+	if err == nil && !isPublic(value) {
 		err = missing()
 	}
 	platform.Respond(c, present(value), err)

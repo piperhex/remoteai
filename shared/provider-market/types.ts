@@ -44,7 +44,12 @@ export interface MarketItem extends MarketDraft {
   revision: number;
   userCount: number;
   sortOrder: number | null;
+  reviewStatus?: 'draft' | 'pending' | 'approved' | 'rejected';
+  reviewReason?: string;
+  marketingBadge?: MarketBadge | null;
 }
+export const MARKET_BADGE_TONES = ['blue', 'green', 'orange', 'red', 'purple'] as const;
+export interface MarketBadge { text: string; tone: typeof MARKET_BADGE_TONES[number] }
 export interface MarketIdentity { userId: string; baseUrl: string }
 export interface MarketPage { items: MarketItem[]; total: number }
 export type MarketRequest =

@@ -22,6 +22,8 @@ import '../src/styles.css';
 loadStoredSession();
 const query = new URLSearchParams(location.search);
 const mode = query.get('mode') ?? 'local';
+// The standalone admin page does not inherit the desktop shell's minimum window width.
+if (mode === 'admin') { document.body.style.minWidth = '0'; document.body.style.overflow = 'auto'; }
 const requestedLanguage = query.get('language') ?? 'en';
 setLanguage(isAppLanguage('web', requestedLanguage) ? requestedLanguage : 'en');
 if (mode === 'web') void import('../../web/src/styles.css');
@@ -71,7 +73,8 @@ function Harness() {
         computers={{ current: null, devices: [], authenticated: true, loading: false, error: '',
           refresh: nothing, choose: nothing, login: nothing }} />
     </aside> : mode === 'admin' ? <I18nProvider language={language} onLanguageChange={setLanguage}>
-      <ProviderMarketPage api={adminApi} canManage canOrder />
+      <ProviderMarketPage api={adminApi} canManage={!query.has('readOnly')} canOrder={!query.has('readOnly')}
+        canReview={!query.has('readOnly')} canPromote={!query.has('readOnly')} />
     </I18nProvider> : <RemoteModelSwitchSheet device={{ deviceId: 'test-computer', name: 'Test computer',
       platform: 'windows', localProxyRunning: true, capabilities: [], lastSeenAt: '', online: true }}
       accounts={[]} providers={[]} switchingAccountId={null} switchingProviderId={null} onClose={nothing}

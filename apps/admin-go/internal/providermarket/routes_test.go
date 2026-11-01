@@ -43,18 +43,22 @@ func TestAuthenticationAndStrictPublicAllowlist(t *testing.T) {
 		{"DELETE", "/provider-market/example"}, {"POST", "/provider-market/example/usage"},
 		{"GET", "/provider-market/mine"}, {"POST", "/admin/api/provider-market"},
 		{"PATCH", "/admin/api/provider-market/example/order"},
+		{"PATCH", "/admin/api/provider-market/example/review"},
+		{"PATCH", "/admin/api/provider-market/example/badge"},
 	} {
 		if response := call(router, "", target.method, target.path, nil); response.Code != 401 {
 			t.Fatalf("anonymous %s: %d", target.path, response.Code)
 		}
 	}
-	for _, key := range []string{"ownerId", "authorId", "official", "sortOrder", "apiKey", "userCount"} {
+	for _, key := range []string{"ownerId", "authorId", "official", "sortOrder", "apiKey", "userCount",
+		"reviewStatus", "reviewReason", "marketingBadge", "reviewedBy"} {
 		body := map[string]interface{}{"draft": fixture(), "published": true, key: "forged"}
 		if response := call(router, "user", "POST", "/provider-market", body); response.Code != 400 {
 			t.Fatalf("accepted forged %s: %d", key, response.Code)
 		}
 	}
-	for _, key := range []string{"apiKey", "walletPassword", "balanceQueryToken", "headers", "requestOptions"} {
+	for _, key := range []string{"apiKey", "walletPassword", "balanceQueryToken", "headers", "requestOptions",
+		"reviewStatus", "marketingBadge"} {
 		encoded, _ := json.Marshal(fixture())
 		var draft map[string]interface{}
 		json.Unmarshal(encoded, &draft)

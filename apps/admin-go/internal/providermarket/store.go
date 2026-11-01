@@ -65,6 +65,7 @@ func mutate(db *gorm.DB, request change) (item, error) {
 			return tx.Delete(&result).Error
 		}
 		result.Draft, result.Published = request.Input.Draft, *request.Input.Published
+		resetReview(&result)
 		return tx.Omit("UserCount").Save(&result).Error
 	})
 	return result, err
@@ -96,7 +97,7 @@ func recordUsage(db *gorm.DB, owner, id, providerID string) (bool, error) {
 		if err != nil {
 			return err
 		}
-		if !value.Published {
+		if !isPublic(value) {
 			return missing()
 		}
 		models := make([]string, len(value.Draft.Models))

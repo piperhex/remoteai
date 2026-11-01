@@ -57,6 +57,35 @@ pub(crate) struct Item {
     revision: u64,
     user_count: u64,
     sort_order: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    review_status: Option<ReviewStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    review_reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    marketing_badge: Option<MarketingBadge>,
+}
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+enum ReviewStatus {
+    Draft,
+    Pending,
+    Approved,
+    Rejected,
+}
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+enum BadgeTone {
+    Blue,
+    Green,
+    Orange,
+    Red,
+    Purple,
+}
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct MarketingBadge {
+    text: String,
+    tone: BadgeTone,
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "lowercase")]

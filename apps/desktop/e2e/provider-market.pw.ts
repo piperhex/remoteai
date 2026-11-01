@@ -73,7 +73,7 @@ test('publishes multiple models and independent tiers, and rejects stale identit
   await page.getByRole('button', { name: 'Add model', exact: true }).click();
   await page.getByLabel('Model ID', { exact: true }).last().fill('model-new');
   await page.screenshot({ path: info.outputPath('dark-editor.png') });
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: 'Publish', exact: true }).click();
   await expect.poll(() => state.publications.length).toBe(1);
   const draft = state.publications[0].draft as { models: { tiers: { input: number | null }[] }[] };
   expect(draft.models).toHaveLength(3); expect(draft.models[0].tiers.map((v) => v.input)).toEqual([9, 11]);
@@ -81,7 +81,7 @@ test('publishes multiple models and independent tiers, and rejects stale identit
   await page.getByRole('button', { name: 'More actions', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Edit', exact: true }).click();
   state.switchAccount();
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.getByRole('button', { name: 'Publish', exact: true }).click();
   await expect(page.locator('.pm-editor')).toHaveCount(0);
   expect(state.publications).toHaveLength(1);
 });

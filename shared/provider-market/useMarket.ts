@@ -52,10 +52,13 @@ export function useMarket(client: MarketClient, initialId?: string) {
   };
   const write = async (request: MarketRequest) => run(async (current) => {
     if (!current) throw new Error('market.signIn');
-    await client.request(request, current);
+    const reply = await client.request(request, current);
     if (!mounted.current) return;
     if (!sameIdentity(current, await client.identity())) throw new Error('market.signIn');
-    setEditor(null); setSelected(null); setNotice('market.saved'); reload();
+    const pending = 'reviewStatus' in reply && reply.reviewStatus === 'pending';
+    setEditor(null); setSelected(null); setNotice(pending ? 'market.reviewSubmitted' : 'market.saved');
+    if (pending) feed.selectScope('mine');
+    reload();
   });
   const save = async (draft: MarketDraft, published: boolean) => write({ type: 'save', draft: publicDraft(draft),
     published, ...(editor && editor !== 'new' ? { id: editor.id, revision: editor.revision } : {}) });

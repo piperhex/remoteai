@@ -115,7 +115,15 @@ export interface MessageParams36 {
   "market.addTier": Record<string, never>;
   "market.adminIntro": Record<string, never>;
   "market.all": Record<string, never>;
+  "market.approve": Record<string, never>;
   "market.back": Record<string, never>;
+  "market.badgeColor": Record<string, never>;
+  "market.badgeColor.blue": Record<string, never>;
+  "market.badgeColor.green": Record<string, never>;
+  "market.badgeColor.orange": Record<string, never>;
+  "market.badgeColor.purple": Record<string, never>;
+  "market.badgeColor.red": Record<string, never>;
+  "market.badgeText": Record<string, never>;
   "market.balanceAuth": Record<string, never>;
   "market.balanceScript": Record<string, never>;
   "market.balanceUrl": Record<string, never>;
@@ -139,6 +147,7 @@ export interface MessageParams36 {
   "market.cachedInput": Record<string, never>;
   "market.cachedInputPrice": Record<string, never>;
   "market.cancel": Record<string, never>;
+  "market.clearBadge": Record<string, never>;
   "market.clearOrder": Record<string, never>;
   "market.close": Record<string, never>;
   "market.community": Record<string, never>;
@@ -163,6 +172,7 @@ export interface MessageParams36 {
   "market.longContext": Record<string, never>;
   "market.longContextThreshold": Record<string, never>;
   "market.manualOrder": Record<string, never>;
+  "market.marketingBadge": Record<string, never>;
   "market.mine": Record<string, never>;
   "market.missing": Record<string, never>;
   "market.missingPrice": Record<string, never>;
@@ -190,14 +200,4 @@ export interface MessageParams36 {
   "market.permissionManage": Record<string, never>;
   "market.permissionManageDescription": Record<string, never>;
   "market.permissionOrder": Record<string, never>;
-  "market.permissionOrderDescription": Record<string, never>;
-  "market.permissionRead": Record<string, never>;
-  "market.permissionReadDescription": Record<string, never>;
-  "market.previous": Record<string, never>;
-  "market.pricesNote": Record<string, never>;
-  "market.protocol": Record<string, never>;
-  "market.publicNotice": Record<string, never>;
-  "market.publish": Record<string, never>;
-  "market.published": Record<string, never>;
-  "market.remove": Record<string, never>;
 }

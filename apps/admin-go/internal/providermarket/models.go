@@ -37,16 +37,21 @@ type balanceQuery struct {
 	Script string `json:"script"`
 }
 type item struct {
-	ID        string    `gorm:"primaryKey" json:"id"`
-	OwnerID   *string   `json:"ownerId"`
-	Official  bool      `json:"official"`
-	Published bool      `json:"published"`
-	Revision  int64     `json:"revision"`
-	SortOrder *int64    `json:"sortOrder"`
-	Draft     draft     `gorm:"serializer:json;type:jsonb" json:"-"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
-	UserCount int64     `gorm:"->;-:migration" json:"userCount"`
+	ID             string          `gorm:"primaryKey" json:"id"`
+	OwnerID        *string         `json:"ownerId"`
+	Official       bool            `json:"official"`
+	Published      bool            `json:"published"`
+	Revision       int64           `json:"revision"`
+	SortOrder      *int64          `json:"sortOrder"`
+	Draft          draft           `gorm:"serializer:json;type:jsonb" json:"-"`
+	CreatedAt      time.Time       `json:"-"`
+	UpdatedAt      time.Time       `json:"-"`
+	UserCount      int64           `gorm:"->;-:migration" json:"userCount"`
+	ReviewStatus   reviewStatus    `json:"-"`
+	ReviewReason   string          `json:"-"`
+	ReviewedBy     *string         `json:"-"`
+	ReviewedAt     *time.Time      `json:"-"`
+	MarketingBadge *marketingBadge `gorm:"serializer:json;type:jsonb" json:"-"`
 }
 
 func (item) TableName() string { return "provider_market_items" }
@@ -62,18 +67,22 @@ func (usage) TableName() string { return "provider_market_usage" }
 
 type presentation struct {
 	draft
-	ID        string  `json:"id"`
-	OwnerID   *string `json:"ownerId"`
-	Official  bool    `json:"official"`
-	Published bool    `json:"published"`
-	Revision  int64   `json:"revision"`
-	SortOrder *int64  `json:"sortOrder"`
-	UserCount int64   `json:"userCount"`
+	ID             string          `json:"id"`
+	OwnerID        *string         `json:"ownerId"`
+	Official       bool            `json:"official"`
+	Published      bool            `json:"published"`
+	Revision       int64           `json:"revision"`
+	SortOrder      *int64          `json:"sortOrder"`
+	UserCount      int64           `json:"userCount"`
+	ReviewStatus   reviewStatus    `json:"reviewStatus"`
+	ReviewReason   string          `json:"reviewReason"`
+	MarketingBadge *marketingBadge `json:"marketingBadge"`
 }
 
 func present(value item) presentation {
-	return presentation{value.Draft, value.ID, value.OwnerID, value.Official,
-		value.Published, value.Revision, value.SortOrder, value.UserCount}
+	return presentation{draft: value.Draft, ID: value.ID, OwnerID: value.OwnerID, Official: value.Official,
+		Published: value.Published, Revision: value.Revision, SortOrder: value.SortOrder, UserCount: value.UserCount,
+		ReviewStatus: value.ReviewStatus, ReviewReason: value.ReviewReason, MarketingBadge: value.MarketingBadge}
 }
 
 type saveInput struct {

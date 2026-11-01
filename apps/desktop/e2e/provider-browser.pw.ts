@@ -9,7 +9,7 @@ test('publishing requires a page and persists query strings and custom headers',
   await page.getByRole('menuitem', { name: '编辑', exact: true }).click();
   const address = page.getByLabel('页面地址（发布必填）', { exact: true });
   await address.fill('');
-  await page.getByRole('button', { name: /^保\s*存$/ }).click();
+  await page.getByRole('button', { name: /^发\s*布$/ }).click();
   expect(state.publications).toHaveLength(0);
   await expect(page.getByRole('alert').last()).toContainText('请填写有效的页面地址');
   await address.fill('https://provider.example/dashboard?view=usage#balance');
@@ -17,7 +17,7 @@ test('publishing requires a page and persists query strings and custom headers',
   await page.getByLabel('自定义请求头', { exact: true }).fill('{"X-Source":"RemoteAI"}');
   await page.locator('.pm-page-link').scrollIntoViewIfNeeded();
   await page.screenshot({ path: info.outputPath('desktop-local-publish-page-settings.png') });
-  await page.getByRole('button', { name: /^保\s*存$/ }).click();
+  await page.getByRole('button', { name: /^发\s*布$/ }).click();
   await expect.poll(() => state.publications.length).toBe(1);
   expect(state.publications[0].draft).toMatchObject({ pageLink: {
     url: 'https://provider.example/dashboard?view=usage#balance', query: 'tag=a&tag=b&source=remoteai',

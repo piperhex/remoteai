@@ -64,12 +64,16 @@
   display: inline-grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 9px;
   color: var(--green-dark, #168348); background: var(--green-soft, color-mix(in srgb, #168348 10%, transparent));
 }
-.pm-card-header {
+.pm-card-header, .pm-admin-card-header {
   display: flex; align-items: flex-start; justify-content: space-between;
   gap: 12px; margin-bottom: 12px;
 }
 .pm-card-header .pm-card-title { flex: 1; min-width: 0; margin: 0; }
 .pm-card-actions { position: relative; z-index: 1; flex: none; margin-inline-start: auto; }
+.pm-card-tools { display: flex; flex-wrap: wrap; align-items: start; justify-content: end; gap: 8px; max-width: 50%; }
+.pm-marketing-badge.ant-tag { margin: 0; max-width: 160px; white-space: normal; overflow-wrap: anywhere; }
+.pm-marketing-badge, .pm-publication-status { justify-self: start; }
+.pm-review-reason { color: var(--ant-color-error, #d4380d); }
 .pm-card-menu .ant-dropdown-menu { min-width: 128px; }
 .pm-card-menu .ant-dropdown-menu-title-content { white-space: normal; overflow-wrap: anywhere; }
 .pm-feed-tail { min-height: 1px; }

@@ -125,6 +125,14 @@ func TestDatabaseUsageCountsRealProvidersOnceAndSortsOnlyEntries(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	first, err = reviewItem(db, first.ID, other, reviewInput{Revision: first.Revision, Decision: reviewApproved})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err = reviewItem(db, second.ID, other, reviewInput{Revision: second.Revision, Decision: reviewApproved})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if counted, err := recordUsage(db, owner, first.ID, "not-saved"); err != nil || counted {
 		t.Fatal("unpersisted usage counted", err)
 	}

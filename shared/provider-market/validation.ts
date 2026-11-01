@@ -1,4 +1,5 @@
-import { MARKET_PROTOCOLS, type MarketDraft, type MarketItem, type MarketPrice, type MarketTier } from './types';
+import { MARKET_BADGE_TONES, MARKET_PROTOCOLS, type MarketDraft, type MarketItem,
+  type MarketPrice, type MarketTier } from './types';
 import { validPageLink } from './pageLink';
 
 export function publicUrl(value: string): boolean {
@@ -42,6 +43,14 @@ export function parseItem(value: unknown): MarketItem {
   if (!value || typeof value !== 'object') throw new Error('market.unavailable');
   const item = value as MarketItem;
   try {
+    if (item.reviewStatus !== undefined && !['draft', 'pending', 'approved', 'rejected'].includes(item.reviewStatus)) {
+      throw new Error('market.unavailable');
+    }
+    if (item.reviewReason !== undefined && typeof item.reviewReason !== 'string') throw new Error('market.unavailable');
+    if (item.marketingBadge && (typeof item.marketingBadge.text !== 'string'
+      || [...item.marketingBadge.text].length > 24 || !MARKET_BADGE_TONES.includes(item.marketingBadge.tone))) {
+      throw new Error('market.unavailable');
+    }
     if (typeof item.id === 'string' && typeof item.official === 'boolean'
       && typeof item.published === 'boolean' && Number.isInteger(item.revision) && item.revision > 0
       && Number.isInteger(item.userCount) && item.userCount >= 0 && validDraft(item)) return item;
