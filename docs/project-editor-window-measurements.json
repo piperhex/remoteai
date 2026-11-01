@@ -1,0 +1,656 @@
+[
+  {
+    "repeat": 0,
+    "mode": "before",
+    "size": 134250496,
+    "textBytes": 134250496,
+    "textReadyMs": 2453.9018,
+    "stages": [
+      {
+        "operation": "projectFileRead",
+        "ms": 113.82780000000001
+      },
+      {
+        "operation": "projectFileRead",
+        "ms": 5.3637
+      }
+    ],
+    "parallelReadMs": 95.8835,
+    "parallelWriteMs": 102.2327,
+    "transportBytes": 179007920,
+    "calls": 514,
+    "nodeStart": {
+      "rss": 46977024,
+      "heapTotal": 7577600,
+      "heapUsed": 5501176,
+      "external": 2166713,
+      "arrayBuffers": 35290
+    },
+    "nodeEnd": {
+      "rss": 438730752,
+      "heapTotal": 286064640,
+      "heapUsed": 251098688,
+      "external": 137036004,
+      "arrayBuffers": 134868530
+    },
+    "nodePeak": {
+      "workingSet": 438845440,
+      "privateBytes": 467189760,
+      "peakWorkingSet": 438845440
+    },
+    "hostStart": {
+      "workingSet": 4571136,
+      "privateBytes": 860160,
+      "peakWorkingSet": 4571136
+    },
+    "hostPeak": {
+      "workingSet": 5177344,
+      "privateBytes": 1490944,
+      "peakWorkingSet": 138903552
+    },
+    "snapshotDiskBytes": 0,
+    "maximumSaveExtraDiskBytes": 0
+  },
+  {
+    "repeat": 0,
+    "mode": "after",
+    "size": 134250496,
+    "textBytes": 65536,
+    "textReadyMs": 229.18500000000006,
+    "nextPageMs": 0.5836,
+    "saveMs": 415.0204,
+    "saveParallelReadMs": 0.6071,
+    "saveParallelWriteMs": 11.3703,
+    "hostSavePeak": {
+      "workingSet": 4796416,
+      "privateBytes": 1093632,
+      "peakWorkingSet": 5210112
+    },
+    "stages": [
+      {
+        "operation": "projectFileRead",
+        "ms": 227.17399999999998
+      }
+    ],
+    "parallelReadMs": 0.7437,
+    "parallelWriteMs": 9.5343,
+    "transportBytes": 67804,
+    "calls": 1,
+    "nodeStart": {
+      "rss": 47120384,
+      "heapTotal": 7577600,
+      "heapUsed": 5402936,
+      "external": 2157361,
+      "arrayBuffers": 25938
+    },
+    "nodeEnd": {
+      "rss": 47763456,
+      "heapTotal": 10199040,
+      "heapUsed": 5931824,
+      "external": 2299231,
+      "arrayBuffers": 74671
+    },
+    "nodePeak": {
+      "workingSet": 47837184,
+      "privateBytes": 55173120,
+      "peakWorkingSet": 54841344
+    },
+    "hostStart": {
+      "workingSet": 4583424,
+      "privateBytes": 925696,
+      "peakWorkingSet": 4595712
+    },
+    "hostPeak": {
+      "workingSet": 4808704,
+      "privateBytes": 1114112,
+      "peakWorkingSet": 4935680
+    },
+    "snapshotDiskBytes": 134250496,
+    "maximumSaveExtraDiskBytes": 402751488
+  },
+  {
+    "repeat": 1,
+    "mode": "before",
+    "size": 134250496,
+    "textBytes": 134250496,
+    "textReadyMs": 2551.5326,
+    "stages": [
+      {
+        "operation": "projectFileRead",
+        "ms": 105.86760000000001
+      },
+      {
+        "operation": "projectFileRead",
+        "ms": 9.7616
+      }
+    ],
+    "parallelReadMs": 89.5333,
+    "parallelWriteMs": 100.1656,
+    "transportBytes": 179007920,
+    "calls": 514,
+    "nodeStart": {
+      "rss": 47034368,
+      "heapTotal": 7577600,
+      "heapUsed": 5418536,
+      "external": 2166725,
+      "arrayBuffers": 35302
+    },
+    "nodeEnd": {
+      "rss": 439693312,
+      "heapTotal": 287752192,
+      "heapUsed": 252533152,
+      "external": 137560316,
+      "arrayBuffers": 134824820
+    },
+    "nodePeak": {
+      "workingSet": 439779328,
+      "privateBytes": 469241856,
+      "peakWorkingSet": 439779328
+    },
+    "hostStart": {
+      "workingSet": 4567040,
+      "privateBytes": 856064,
+      "peakWorkingSet": 4567040
+    },
+    "hostPeak": {
+      "workingSet": 6262784,
+      "privateBytes": 2678784,
+      "peakWorkingSet": 138907648
+    },
+    "snapshotDiskBytes": 0,
+    "maximumSaveExtraDiskBytes": 0
+  },
+  {
+    "repeat": 1,
+    "mode": "after",
+    "size": 134250496,
+    "textBytes": 65536,
+    "textReadyMs": 238.34939999999995,
+    "nextPageMs": 0.6307,
+    "saveMs": 440.0956,
+    "saveParallelReadMs": 0.6128,
+    "saveParallelWriteMs": 11.519400000000001,
+    "hostSavePeak": {
+      "workingSet": 4915200,
+      "privateBytes": 1241088,
+      "peakWorkingSet": 5300224
+    },
+    "stages": [
+      {
+        "operation": "projectFileRead",
+        "ms": 235.7985
+      }
+    ],
+    "parallelReadMs": 0.7836,
+    "parallelWriteMs": 11.0636,
+    "transportBytes": 67804,
+    "calls": 1,
+    "nodeStart": {
+      "rss": 47235072,
+      "heapTotal": 7577600,
+      "heapUsed": 5392992,
+      "external": 2157373,
+      "arrayBuffers": 25950
+    },
+    "nodeEnd": {
+      "rss": 47771648,
+      "heapTotal": 10199040,
+      "heapUsed": 5953120,
+      "external": 2299234,
+      "arrayBuffers": 68781
+    },
+    "nodePeak": {
+      "workingSet": 47792128,
+      "privateBytes": 55513088,
+      "peakWorkingSet": 55861248
+    },
+    "hostStart": {
+      "workingSet": 4591616,
+      "privateBytes": 925696,
+      "peakWorkingSet": 4603904
+    },
+    "hostPeak": {
+      "workingSet": 4833280,
+      "privateBytes": 1187840,
+      "peakWorkingSet": 5025792
+    },
+    "snapshotDiskBytes": 134250496,
+    "maximumSaveExtraDiskBytes": 402751488
+  },
+  {
+    "repeat": 2,
+    "mode": "before",
+    "size": 134250496,
+    "textBytes": 134250496,
+    "textReadyMs": 2443.8896999999997,
+    "stages": [
+      {
+        "operation": "projectFileRead",
+        "ms": 111.33460000000001
+      },
+      {
+        "operation": "projectFileRead",
+        "ms": 9.6942
+      }
+    ],
+    "parallelReadMs": 92.8139,
+    "parallelWriteMs": 103.3469,
+    "transportBytes": 179007920,
+    "calls": 514,
+    "nodeStart": {
+      "rss": 47104000,
+      "heapTotal": 7577600,
+      "heapUsed": 5426496,
+      "external": 2166725,
+      "arrayBuffers": 35302
+    },
+    "nodeEnd": {
+      "rss": 440274944,
+      "heapTotal": 288202752,
+      "heapUsed": 253236736,
+      "external": 141842349,
+      "arrayBuffers": 134868529
+    },
+    "nodePeak": {
+      "workingSet": 440385536,
+      "privateBytes": 469602304,
+      "peakWorkingSet": 440385536
+    },
+    "hostStart": {
+      "workingSet": 4567040,
+      "privateBytes": 860160,
+      "peakWorkingSet": 4567040
+    },
+    "hostPeak": {
+      "workingSet": 6254592,
+      "privateBytes": 2670592,
+      "peakWorkingSet": 138903552
+    },
+    "snapshotDiskBytes": 0,
+    "maximumSaveExtraDiskBytes": 0
+  },
+  {
+    "repeat": 2,
+    "mode": "after",
+    "size": 134250496,
+    "textBytes": 65536,
+    "textReadyMs": 219.22379999999998,
+    "nextPageMs": 0.3285,
+    "saveMs": 444.9377,
+    "saveParallelReadMs": 0.6027,
+    "saveParallelWriteMs": 10.5712,
+    "hostSavePeak": {
+      "workingSet": 4841472,
+      "privateBytes": 1183744,
+      "peakWorkingSet": 5111808
+    },
+    "stages": [
+      {
+        "operation": "projectFileRead",
+        "ms": 217.521
+      }
+    ],
+    "parallelReadMs": 1.1202,
+    "parallelWriteMs": 11.001199999999999,
+    "transportBytes": 67804,
+    "calls": 1,
+    "nodeStart": {
+      "rss": 47058944,
+      "heapTotal": 7577600,
+      "heapUsed": 5390848,
+      "external": 2157361,
+      "arrayBuffers": 25938
+    },
+    "nodeEnd": {
+      "rss": 47665152,
+      "heapTotal": 10199040,
+      "heapUsed": 5929112,
+      "external": 2299232,
+      "arrayBuffers": 75640
+    },
+    "nodePeak": {
+      "workingSet": 47693824,
+      "privateBytes": 54767616,
+      "peakWorkingSet": 55816192
+    },
+    "hostStart": {
+      "workingSet": 4575232,
+      "privateBytes": 909312,
+      "peakWorkingSet": 4587520
+    },
+    "hostPeak": {
+      "workingSet": 4808704,
+      "privateBytes": 1105920,
+      "peakWorkingSet": 4943872
+    },
+    "snapshotDiskBytes": 134250496,
+    "maximumSaveExtraDiskBytes": 402751488
+  },
+  {
+    "repeat": 0,
+    "mode": "before",
+    "size": 268500992,
+    "textBytes": 268500992,
+    "textReadyMs": 4796.2499,
+    "stages": [
+      {
+        "operation": "projectFileRead",
+        "ms": 207.851
+      },
+      {
+        "operation": "projectFileRead",
+        "ms": 9.3217
+      }
+    ],
+    "parallelReadMs": 187.6518,
+    "parallelWriteMs": 198.0652,
+    "transportBytes": 358015580,
+    "calls": 1026,
+    "nodeStart": {
+      "rss": 47095808,
+      "heapTotal": 7577600,
+      "heapUsed": 5457016,
+      "external": 2166713,
+      "arrayBuffers": 35290
+    },
+    "nodeEnd": {
+      "rss": 820453376,
+      "heapTotal": 532656128,
+      "heapUsed": 498151064,
+      "external": 274683731,
+      "arrayBuffers": 269042550
+    },
+    "nodePeak": {
+      "workingSet": 820514816,
+      "privateBytes": 849301504,
+      "peakWorkingSet": 820514816
+    },
+    "hostStart": {
+      "workingSet": 4575232,
+      "privateBytes": 864256,
+      "peakWorkingSet": 4575232
+    },
+    "hostPeak": {
+      "workingSet": 6537216,
+      "privateBytes": 3010560,
+      "peakWorkingSet": 273154048
+    },
+    "snapshotDiskBytes": 0,
+    "maximumSaveExtraDiskBytes": 0
+  },
+  {
+    "repeat": 0,
+    "mode": "after",
+    "size": 268500992,
+    "textBytes": 65536,
+    "textReadyMs": 453.4905,
+    "nextPageMs": 0.3544,
+    "saveMs": 867.7709,
+    "saveParallelReadMs": 0.8407,
+    "saveParallelWriteMs": 5.1867,
+    "hostSavePeak": {
+      "workingSet": 4788224,
+      "privateBytes": 1073152,
+      "peakWorkingSet": 5120000
+    },
+    "stages": [
+      {
+        "operation": "projectFileRead",
+        "ms": 451.43899999999996
+      }
+    ],
+    "parallelReadMs": 0.5674,
+    "parallelWriteMs": 8.5874,
+    "transportBytes": 67804,
+    "calls": 1,
+    "nodeStart": {
+      "rss": 47181824,
+      "heapTotal": 7577600,
+      "heapUsed": 5384952,
+      "external": 2157361,
+      "arrayBuffers": 25938
+    },
+    "nodeEnd": {
+      "rss": 47755264,
+      "heapTotal": 10199040,
+      "heapUsed": 5933368,
+      "external": 2299231,
+      "arrayBuffers": 71731
+    },
+    "nodePeak": {
+      "workingSet": 47792128,
+      "privateBytes": 55484416,
+      "peakWorkingSet": 55840768
+    },
+    "hostStart": {
+      "workingSet": 4648960,
+      "privateBytes": 921600,
+      "peakWorkingSet": 4648960
+    },
+    "hostPeak": {
+      "workingSet": 4739072,
+      "privateBytes": 1036288,
+      "peakWorkingSet": 4939776
+    },
+    "snapshotDiskBytes": 268500992,
+    "maximumSaveExtraDiskBytes": 805502976
+  },
+  {
+    "repeat": 1,
+    "mode": "before",
+    "size": 268500992,
+    "textBytes": 268500992,
+    "textReadyMs": 4879.0010999999995,
+    "stages": [
+      {
+        "operation": "projectFileRead",
+        "ms": 230.2381
+      },
+      {
+        "operation": "projectFileRead",
+        "ms": 9.9607
+      }
+    ],
+    "parallelReadMs": 212.6857,
+    "parallelWriteMs": 223.7447,
+    "transportBytes": 358015580,
+    "calls": 1026,
+    "nodeStart": {
+      "rss": 47132672,
+      "heapTotal": 7839744,
+      "heapUsed": 5444960,
+      "external": 2166712,
+      "arrayBuffers": 35289
+    },
+    "nodeEnd": {
+      "rss": 818216960,
+      "heapTotal": 530968576,
+      "heapUsed": 496462712,
+      "external": 273285467,
+      "arrayBuffers": 269129913
+    },
+    "nodePeak": {
+      "workingSet": 818274304,
+      "privateBytes": 847564800,
+      "peakWorkingSet": 818274304
+    },
+    "hostStart": {
+      "workingSet": 4571136,
+      "privateBytes": 864256,
+      "peakWorkingSet": 4571136
+    },
+    "hostPeak": {
+      "workingSet": 5562368,
+      "privateBytes": 1880064,
+      "peakWorkingSet": 273149952
+    },
+    "snapshotDiskBytes": 0,
+    "maximumSaveExtraDiskBytes": 0
+  },
+  {
+    "repeat": 1,
+    "mode": "after",
+    "size": 268500992,
+    "textBytes": 65536,
+    "textReadyMs": 425.84100000000007,
+    "nextPageMs": 0.4627,
+    "saveMs": 902.7339,
+    "saveParallelReadMs": 0.5537,
+    "saveParallelWriteMs": 10.6867,
+    "hostSavePeak": {
+      "workingSet": 4800512,
+      "privateBytes": 1097728,
+      "peakWorkingSet": 5189632
+    },
+    "stages": [
+      {
+        "operation": "projectFileRead",
+        "ms": 424.0557
+      }
+    ],
+    "parallelReadMs": 0.6880999999999999,
+    "parallelWriteMs": 6.2197,
+    "transportBytes": 67804,
+    "calls": 1,
+    "nodeStart": {
+      "rss": 46981120,
+      "heapTotal": 7577600,
+      "heapUsed": 5388720,
+      "external": 2157361,
+      "arrayBuffers": 25938
+    },
+    "nodeEnd": {
+      "rss": 47587328,
+      "heapTotal": 10199040,
+      "heapUsed": 5932688,
+      "external": 2299233,
+      "arrayBuffers": 65841
+    },
+    "nodePeak": {
+      "workingSet": 47603712,
+      "privateBytes": 55410688,
+      "peakWorkingSet": 55660544
+    },
+    "hostStart": {
+      "workingSet": 4587520,
+      "privateBytes": 937984,
+      "peakWorkingSet": 4603904
+    },
+    "hostPeak": {
+      "workingSet": 4771840,
+      "privateBytes": 1077248,
+      "peakWorkingSet": 5033984
+    },
+    "snapshotDiskBytes": 268500992,
+    "maximumSaveExtraDiskBytes": 805502976
+  },
+  {
+    "repeat": 2,
+    "mode": "before",
+    "size": 268500992,
+    "textBytes": 268500992,
+    "textReadyMs": 4812.4875999999995,
+    "stages": [
+      {
+        "operation": "projectFileRead",
+        "ms": 224.67100000000002
+      },
+      {
+        "operation": "projectFileRead",
+        "ms": 10.632000000000001
+      }
+    ],
+    "parallelReadMs": 207.4964,
+    "parallelWriteMs": 219.40290000000002,
+    "transportBytes": 358015580,
+    "calls": 1026,
+    "nodeStart": {
+      "rss": 47128576,
+      "heapTotal": 7577600,
+      "heapUsed": 5444960,
+      "external": 2166713,
+      "arrayBuffers": 35290
+    },
+    "nodeEnd": {
+      "rss": 819785728,
+      "heapTotal": 532299776,
+      "heapUsed": 497759744,
+      "external": 274072015,
+      "arrayBuffers": 269042538
+    },
+    "nodePeak": {
+      "workingSet": 819666944,
+      "privateBytes": 848654336,
+      "peakWorkingSet": 819798016
+    },
+    "hostStart": {
+      "workingSet": 4575232,
+      "privateBytes": 860160,
+      "peakWorkingSet": 4575232
+    },
+    "hostPeak": {
+      "workingSet": 6533120,
+      "privateBytes": 3022848,
+      "peakWorkingSet": 273154048
+    },
+    "snapshotDiskBytes": 0,
+    "maximumSaveExtraDiskBytes": 0
+  },
+  {
+    "repeat": 2,
+    "mode": "after",
+    "size": 268500992,
+    "textBytes": 65536,
+    "textReadyMs": 445.1144,
+    "nextPageMs": 0.4015,
+    "saveMs": 940.2855,
+    "saveParallelReadMs": 0.5706,
+    "saveParallelWriteMs": 5.629300000000001,
+    "hostSavePeak": {
+      "workingSet": 4784128,
+      "privateBytes": 1073152,
+      "peakWorkingSet": 5193728
+    },
+    "stages": [
+      {
+        "operation": "projectFileRead",
+        "ms": 442.58779999999996
+      }
+    ],
+    "parallelReadMs": 0.8212,
+    "parallelWriteMs": 10.6393,
+    "transportBytes": 67804,
+    "calls": 1,
+    "nodeStart": {
+      "rss": 47071232,
+      "heapTotal": 7577600,
+      "heapUsed": 5382392,
+      "external": 2157373,
+      "arrayBuffers": 25950
+    },
+    "nodeEnd": {
+      "rss": 47501312,
+      "heapTotal": 9674752,
+      "heapUsed": 5944888,
+      "external": 2299244,
+      "arrayBuffers": 46251
+    },
+    "nodePeak": {
+      "workingSet": 47505408,
+      "privateBytes": 54095872,
+      "peakWorkingSet": 55803904
+    },
+    "hostStart": {
+      "workingSet": 4661248,
+      "privateBytes": 937984,
+      "peakWorkingSet": 4661248
+    },
+    "hostPeak": {
+      "workingSet": 4751360,
+      "privateBytes": 1048576,
+      "peakWorkingSet": 4947968
+    },
+    "snapshotDiskBytes": 268500992,
+    "maximumSaveExtraDiskBytes": 805502976
+  }
+]

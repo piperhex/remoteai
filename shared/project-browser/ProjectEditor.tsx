@@ -13,7 +13,7 @@ import { useEditorSelectionMenu } from './useEditorSelectionMenu';
 import { EditorSelectionMenu } from './EditorSelectionMenu';
 import { EditorSearchPanel } from './editorSearchPanel';
 import { utf8ToBytes } from '@noble/hashes/utils';
-import { PROJECT_PLAIN_TEXT_THRESHOLD } from './protocol';
+import { PROJECT_FILE_CHUNK_BYTES, PROJECT_PLAIN_TEXT_THRESHOLD } from './protocol';
 import { useNpmScriptButtons } from './useNpmScriptButtons';
 import { useGitBlame, type BlameSource } from './useGitBlame';
 import { GutterMenu } from './GutterMenu';
@@ -25,6 +25,8 @@ interface Props {
   quoteSelection?: BrowserHost['quoteSelection'];
   prepareScript?: () => Promise<boolean>;
   blame?: BlameSource;
+  windowed?: boolean;
+  bounded?: boolean;
 }
 
 export function ProjectEditor(props: Props) {
@@ -38,7 +40,8 @@ export function ProjectEditor(props: Props) {
   const [wrap, setWrap] = useState(false);
   const [languageError, setLanguageError] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [plainText, setPlainText] = useState(() => utf8ToBytes(props.text).length > PROJECT_PLAIN_TEXT_THRESHOLD);
+  const [limitReached, setLimitReached] = useState(false);
+  const [plainText, setPlainText] = useState(() => !!props.windowed || utf8ToBytes(props.text).length > PROJECT_PLAIN_TEXT_THRESHOLD);
   const byteLength = useRef(0);
   const selectionMenu = useEditorSelectionMenu({ view, path: props.path, enabled: !!props.quoteSelection });
   const blame = useGitBlame(view, props.blame, props.t);
@@ -51,6 +54,15 @@ export function ProjectEditor(props: Props) {
     const editor = new EditorView({
       parent: host.current,
       state: EditorState.create({ doc: props.text, extensions: [
+        EditorState.transactionFilter.of(transaction => {
+          if (!latest.current.bounded || !transaction.docChanged) return transaction;
+          if (transaction.newDoc.length <= PROJECT_FILE_CHUNK_BYTES
+            && utf8ToBytes(transaction.newDoc.sliceString(0, transaction.newDoc.length,
+            transaction.startState.lineBreak)).length <= PROJECT_FILE_CHUNK_BYTES) {
+            setLimitReached(false); return transaction;
+          }
+          setLimitReached(true); return [];
+        }),
         features.of(editorExtensions(props.t, plainText)), editorTheme, editorPhrases(props.t),
         search({ top: true, createPanel: editor => new EditorSearchPanel(editor, latest.current.t) }),
         EditorState.lineSeparator.of(props.text.includes('\r\n') ? '\r\n' : '\n'),
@@ -64,7 +76,7 @@ export function ProjectEditor(props: Props) {
               byteLength.current += utf8ToBytes(update.state.sliceDoc(fromB, toB)).length
                 - utf8ToBytes(update.startState.sliceDoc(fromA, toA)).length;
             });
-            setPlainText(byteLength.current > PROJECT_PLAIN_TEXT_THRESHOLD);
+            setPlainText(!!latest.current.windowed || byteLength.current > PROJECT_PLAIN_TEXT_THRESHOLD);
           }
           if (searchPanelOpen(update.startState) !== searchPanelOpen(update.state)) {
             setSearchOpen(searchPanelOpen(update.state));
@@ -132,7 +144,8 @@ export function ProjectEditor(props: Props) {
         aria-pressed={blame.enabled} onClick={blame.toggle}><GitCommitHorizontal size={16} /></button>}
       <BrowserFullscreenButton t={props.t} />
     </div>
-    {plainText && <p className="pf-notice" role="status">{props.t('client.projectBrowser.largePlainText')}</p>}
+    {limitReached && <p className="pf-notice" role="alert">{props.t('client.projectBrowser.windowEditLimit')}</p>}
+    {plainText && !props.windowed && <p className="pf-notice" role="status">{props.t('client.projectBrowser.largePlainText')}</p>}
     {blame.notice && <p className="pf-notice pf-blame-notice" role="status">{blame.notice}</p>}
     <div ref={host} className="pf-editor-host" {...blame.handlers} />
     {blame.menu && <GutterMenu position={blame.menu} enabled={blame.enabled}

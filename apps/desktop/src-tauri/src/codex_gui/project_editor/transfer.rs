@@ -9,7 +9,7 @@ use std::{
 
 const MAX_UPLOADS: usize = 8;
 const UPLOAD_IDLE: Duration = Duration::from_secs(15 * 60);
-static UPLOADS: OnceLock<Mutex<HashMap<String, Upload>>> = OnceLock::new();
+static UPLOADS: OnceLock<Mutex<HashMap<String, Slot>>> = OnceLock::new();
 
 #[derive(Debug, Deserialize, Clone)]
 pub(super) struct ReadRange {
@@ -29,6 +29,14 @@ pub(super) struct UploadChunk {
     cancel: bool,
 }
 
+struct Slot {
+    path: PathBuf,
+    revision: String,
+    size: u64,
+    updated: Instant,
+    upload: Option<Upload>,
+}
+
 struct Upload {
     target: Target,
     path: PathBuf,
@@ -36,7 +44,6 @@ struct Upload {
     size: u64,
     received: u64,
     staged: tempfile::NamedTempFile,
-    updated: Instant,
 }
 
 pub(super) fn read_chunk(path: &Path, range: &ReadRange) -> Result<GuiResponse> {
@@ -44,6 +51,13 @@ pub(super) fn read_chunk(path: &Path, range: &ReadRange) -> Result<GuiResponse> 
         return Err(GuiError::InvalidRequest);
     }
     let mut file = File::open(path).map_err(|_| GuiError::FileRead)?;
+    let end = range
+        .offset
+        .checked_add(range.length as u64)
+        .ok_or(GuiError::InvalidRequest)?;
+    if end > file.metadata().map_err(|_| GuiError::FileRead)?.len() {
+        return Err(GuiError::InvalidRequest);
+    }
     file.seek(SeekFrom::Start(range.offset))
         .map_err(|_| GuiError::FileRead)?;
     let mut bytes = vec![0; range.length];
@@ -71,7 +85,6 @@ fn create(request: &Save, path: PathBuf, chunk: &UploadChunk) -> Result<Upload> 
         size: chunk.size,
         received: 0,
         staged,
-        updated: Instant::now(),
     })
 }
 
@@ -101,7 +114,6 @@ fn append(upload: &mut Upload, chunk: &UploadChunk, bytes: &[u8]) -> Result<()> 
             .map_err(|_| GuiError::ProjectFileWrite)?;
         upload.received = end;
     }
-    upload.updated = Instant::now();
     Ok(())
 }
 
@@ -109,14 +121,9 @@ fn finish(upload: Upload) -> Result<GuiResponse> {
     if upload.received != upload.size {
         return Err(GuiError::InvalidRequest);
     }
-    let bytes = file_bytes(upload.staged.path())?;
-    if bytes.contains(&0) || std::str::from_utf8(&bytes).is_err() {
+    let mut document = snapshot(upload.staged.path())?;
+    if document.kind != "text" {
         return Err(GuiError::ProjectFileWrite);
-    }
-    if resolve(&upload.target)? != upload.path
-        || revision(&file_bytes(&upload.path)?) != upload.revision
-    {
-        return Err(GuiError::ProjectFileConflict);
     }
     let permissions = fs::metadata(&upload.path)
         .map_err(|_| GuiError::FileRead)?
@@ -130,36 +137,88 @@ fn finish(upload: Upload) -> Result<GuiResponse> {
         .set_permissions(permissions)
         .and_then(|()| upload.staged.as_file().sync_all())
         .map_err(|_| GuiError::ProjectFileWrite)?;
+    if stream::inspect(&upload.path)?.revision != upload.revision
+        || resolve(&upload.target)? != upload.path
+    {
+        return Err(GuiError::ProjectFileConflict);
+    }
+    document.path = execution_path(&upload.path);
+    let reply = response(document)?;
     upload
         .staged
         .persist(&upload.path)
         .map_err(|_| GuiError::ProjectFileWrite)?;
-    response(snapshot(&upload.path)?)
+    Ok(reply)
 }
 
-fn stage_chunk(
-    uploads: &mut HashMap<String, Upload>,
-    request: &Save,
-    path: PathBuf,
-) -> Result<u64> {
-    let chunk = request.upload.as_ref().ok_or(GuiError::InvalidRequest)?;
-    let bytes = STANDARD
-        .decode(&chunk.data)
-        .map_err(|_| GuiError::InvalidRequest)?;
-    if bytes.is_empty() || bytes.len() > INLINE_BYTES {
-        return Err(GuiError::InvalidRequest);
-    }
-    if !uploads.contains_key(&chunk.token) {
-        if chunk.offset != 0 || uploads.len() >= MAX_UPLOADS {
-            return Err(GuiError::FileBusy);
+pub(super) fn prune() {
+    let Some(registry) = UPLOADS.get() else {
+        return;
+    };
+    let Ok(mut uploads) = registry.lock() else {
+        return;
+    };
+    let expired: Vec<_> = uploads
+        .iter()
+        .filter(|(_, slot)| slot.upload.is_some() && slot.updated.elapsed() >= UPLOAD_IDLE)
+        .map(|(token, _)| token.clone())
+        .collect();
+    let retired: Vec<_> = expired
+        .iter()
+        .filter_map(|token| uploads.remove(token))
+        .collect();
+    drop(uploads);
+    drop(retired);
+}
+
+fn take_upload(request: &Save, path: &Path, chunk: &UploadChunk) -> Result<Option<Upload>> {
+    windows::start_cleanup()?;
+    prune();
+    let mut uploads = UPLOADS
+        .get_or_init(|| Mutex::new(HashMap::new()))
+        .lock()
+        .map_err(|_| GuiError::FileBusy)?;
+    if let Some(slot) = uploads.get_mut(&chunk.token) {
+        if slot.path != path || slot.revision != request.revision || slot.size != chunk.size {
+            return Err(GuiError::InvalidRequest);
         }
-        uploads.insert(chunk.token.clone(), create(request, path, chunk)?);
+        let upload = slot.upload.take();
+        drop(uploads);
+        return upload.map(Some).ok_or(GuiError::FileBusy);
     }
-    let upload = uploads
-        .get_mut(&chunk.token)
-        .ok_or(GuiError::InvalidRequest)?;
-    append(upload, chunk, &bytes)?;
-    Ok(upload.received)
+    if chunk.offset != 0 || uploads.len() >= MAX_UPLOADS {
+        return Err(GuiError::FileBusy);
+    }
+    uploads.insert(
+        chunk.token.clone(),
+        Slot {
+            path: path.to_owned(),
+            revision: request.revision.clone(),
+            size: chunk.size,
+            updated: Instant::now(),
+            upload: None,
+        },
+    );
+    drop(uploads);
+    Ok(None)
+}
+
+fn restore(token: &str, upload: Option<Upload>) -> Result<()> {
+    let mut uploads = UPLOADS
+        .get_or_init(|| Mutex::new(HashMap::new()))
+        .lock()
+        .map_err(|_| GuiError::FileBusy)?;
+    let retired = if let Some(upload) = upload {
+        let slot = uploads.get_mut(token).ok_or(GuiError::InvalidRequest)?;
+        slot.updated = Instant::now();
+        slot.upload = Some(upload);
+        None
+    } else {
+        uploads.remove(token)
+    };
+    drop(uploads);
+    drop(retired);
+    Ok(())
 }
 
 pub(super) fn write(request: Save) -> Result<GuiResponse> {
@@ -169,33 +228,41 @@ pub(super) fn write(request: Save) -> Result<GuiResponse> {
     {
         return Err(GuiError::InvalidRequest);
     }
-    let _guard = EDIT_LOCK.lock().map_err(|_| GuiError::FileBusy)?;
     let path = resolve(&request.target)?;
-    let mut uploads = UPLOADS
-        .get_or_init(|| Mutex::new(HashMap::new()))
-        .lock()
-        .map_err(|_| GuiError::FileBusy)?;
-    uploads.retain(|_, upload| upload.updated.elapsed() < UPLOAD_IDLE);
-    if let Some(upload) = uploads.get(&chunk.token) {
-        if upload.path != path || upload.revision != request.revision || upload.size != chunk.size {
-            return Err(GuiError::InvalidRequest);
-        }
+    let _guard = locks::acquire(&path, false)?;
+    if resolve(&request.target)? != path {
+        return Err(GuiError::ProjectFileConflict);
     }
+    let existing = take_upload(&request, &path, chunk)?;
     if chunk.cancel {
-        uploads.remove(&chunk.token);
+        restore(&chunk.token, None)?;
         return Ok(GuiResponse {
             data: serde_json::Value::Null,
         });
     }
-    let received = stage_chunk(&mut uploads, &request, path)?;
-    if !chunk.finish {
-        return Ok(GuiResponse {
+    let result = (|| {
+        let mut upload = match existing {
+            Some(upload) => upload,
+            None => create(&request, path, chunk)?,
+        };
+        let bytes = STANDARD
+            .decode(&chunk.data)
+            .map_err(|_| GuiError::InvalidRequest)?;
+        if bytes.is_empty() || bytes.len() > INLINE_BYTES {
+            return Err(GuiError::InvalidRequest);
+        }
+        append(&mut upload, chunk, &bytes)?;
+        if chunk.finish {
+            return finish(upload);
+        }
+        let received = upload.received;
+        restore(&chunk.token, Some(upload))?;
+        Ok(GuiResponse {
             data: serde_json::json!({ "received": received }),
-        });
+        })
+    })();
+    if chunk.finish || result.is_err() {
+        restore(&chunk.token, None)?;
     }
-    let upload = uploads
-        .remove(&chunk.token)
-        .ok_or(GuiError::InvalidRequest)?;
-    drop(uploads);
-    finish(upload)
+    result
 }

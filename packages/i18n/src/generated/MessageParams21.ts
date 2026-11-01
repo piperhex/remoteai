@@ -165,6 +165,15 @@ export interface MessageParams21 {
   "client.projectBrowser.unfoldLine": Record<string, never>;
   "client.projectBrowser.unsaved": Record<string, never>;
   "client.projectBrowser.wholeWords": Record<string, never>;
+  "client.projectBrowser.windowEditLimit": Record<string, never>;
+  "client.projectBrowser.windowFirst": Record<string, never>;
+  "client.projectBrowser.windowHostUpdate": Record<string, never>;
+  "client.projectBrowser.windowLast": Record<string, never>;
+  "client.projectBrowser.windowMode": Record<string, never>;
+  "client.projectBrowser.windowNavigation": Record<string, never>;
+  "client.projectBrowser.windowNext": Record<string, never>;
+  "client.projectBrowser.windowPrevious": Record<string, never>;
+  "client.projectBrowser.windowRange": { "end": string | number; "start": string | number; "total": string | number };
   "client.projectBrowser.wrapLines": Record<string, never>;
   "client.projectExplorer.actionError": Record<string, never>;
   "client.projectExplorer.address": Record<string, never>;
@@ -191,13 +200,4 @@ export interface MessageParams21 {
   "client.projectExplorer.folder": Record<string, never>;
   "client.projectExplorer.forward": Record<string, never>;
   "client.projectExplorer.items": { "count": string | number };
-  "client.projectExplorer.large": Record<string, never>;
-  "client.projectExplorer.list": Record<string, never>;
-  "client.projectExplorer.loadError": Record<string, never>;
-  "client.projectExplorer.location": Record<string, never>;
-  "client.projectExplorer.medium": Record<string, never>;
-  "client.projectExplorer.modified": Record<string, never>;
-  "client.projectExplorer.more": Record<string, never>;
-  "client.projectExplorer.name": Record<string, never>;
-  "client.projectExplorer.new": Record<string, never>;
 }

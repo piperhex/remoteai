@@ -36,7 +36,13 @@ export function seedLargeText(atThreshold = false) {
 }
 
 function writeText(request: Extract<ProjectBrowserRequest, { operation: 'projectFileWrite' }>) {
-  if ('text' in request) return request.text;
+  if ('text' in request) {
+    if (!request.window) return request.text;
+    const original = utf8ToBytes(documents[request.path.replace(request.cwd + '/', '')] ?? '');
+    const decoder = new TextDecoder();
+    return decoder.decode(original.subarray(0, request.window.offset)) + request.text
+      + decoder.decode(original.subarray(request.window.end));
+  }
   const chunk = request.upload;
   if (chunk.cancel) { uploads.delete(chunk.token); return; }
   const bytes = uploads.get(chunk.token) ?? new Uint8Array(chunk.size);
@@ -119,9 +125,18 @@ export async function browserRequest<T>(request: ProjectBrowserRequest): Promise
     return { data: fromByteArray(bytes.subarray(request.chunk.offset, request.chunk.offset + request.chunk.length)) } as T;
   }
   const kind = relative === 'archive.zip' ? 'binary' : relative === 'huge.png' ? 'large' : 'text';
-  const chunked = bytes.length > FILE_CHUNK_BYTES;
+  const windowRequest = 'window' in request ? request.window : undefined;
+  if (windowRequest?.cancel) return null as T;
+  const windowed = bytes.length > FILE_CHUNK_BYTES && !!windowRequest && kind === 'text';
+  const offset = windowRequest?.offset ?? 0;
+  const end = request.operation === 'projectFileWrite' && 'text' in request
+    ? offset + utf8ToBytes(request.text).length : Math.min(bytes.length, offset + 64 * 1024);
+  const window = windowed ? { token: windowRequest!.token, offset, end,
+    previous: Math.max(0, offset - 64 * 1024) } : undefined;
+  const chunked = !windowed && bytes.length > FILE_CHUNK_BYTES;
   const data: ProjectDocument = { path: request.path, kind, size: kind === 'large' ? 70_000_000 : bytes.length,
     readOnly: kind !== 'text', revision: fileRevision(relative), chunked,
-    text: chunked ? undefined : documents[relative] };
+    text: windowed ? new TextDecoder().decode(bytes.subarray(offset, end)) : chunked ? undefined : documents[relative],
+    ...(window ? { window } : {}) };
   return data as T;
 }

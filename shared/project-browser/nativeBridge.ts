@@ -3,6 +3,7 @@ import type { DocumentsSnapshot } from './documents';
 import { withinPath, type BrowserHost, type EntryAction } from './entryActions';
 import { validFileSelection } from './fileSelection';
 import { displayText } from '../localization/messages';
+import { windowRequest } from './windowRequest';
 
 function entryAction(target: Record<string, unknown>): EntryAction {
   if (target.action === 'delete') return { action: 'delete' };
@@ -91,11 +92,17 @@ export async function handleBrowserRequest(raw: string, options: {
         : await options.host.download?.(file);
       return { type: 'reply', id, data };
     }
-    if (message.action === 'read') return { type: 'reply', id, data: await options.client.read(file) };
+    const window = windowRequest(target.window);
+    const readTarget = { ...file, ...(window ? { window } : {}) };
+    if (message.action === 'release') {
+      await options.client.release?.(readTarget);
+      return { type: 'reply', id };
+    }
+    if (message.action === 'read') return { type: 'reply', id, data: await options.client.read(readTarget) };
     if (message.action !== 'save' || typeof target.text !== 'string'
       || typeof target.revision !== 'string') throw new Error('未能保存文件，请确认文件可写后重试。');
     return { type: 'reply', id,
-      data: await options.client.save({ ...file, text: target.text, revision: target.revision }) };
+      data: await options.client.save({ ...readTarget, text: target.text, revision: target.revision }) };
   } catch (error) {
     return { type: 'reply', id,
       error: typeof error === 'string' ? error : error instanceof Error ? error.message : '文件暂时无法读取，请重试。' };

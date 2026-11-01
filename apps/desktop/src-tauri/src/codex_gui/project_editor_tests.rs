@@ -9,6 +9,7 @@ fn target(root: &Path, path: &str) -> Target {
         cwd: execution_path(root),
         path: path.to_owned(),
         chunk: None,
+        window: None,
     }
 }
 
@@ -58,6 +59,7 @@ fn rejects_paths_outside_the_project_and_non_files() {
     assert!(resolve(&target(root.path(), ".")).is_err());
     assert!(resolve(&Target {
         chunk: None,
+        window: None,
         cwd: ".".into(),
         path: "note.txt".into()
     })

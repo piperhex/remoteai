@@ -25,6 +25,7 @@ fn read_file(root: &Path, name: &str) -> Response {
             cwd: execution_path(root),
             path: name.into(),
             chunk: None,
+            window: None,
         },
         revision: revision(&fs::read(path).unwrap()),
     })
@@ -87,6 +88,7 @@ fn handles_non_repositories_untracked_files_empty_files_and_stale_revisions() {
             cwd: execution_path(root),
             path: "note".into(),
             chunk: None,
+            window: None,
         },
         revision: "stale".into(),
     };
@@ -131,6 +133,7 @@ fn rejects_binary_and_outside_paths() {
                 cwd: execution_path(dir.path()),
                 path,
                 chunk: None,
+                window: None,
             },
             revision: revision(&[0, 1, 2]),
         };

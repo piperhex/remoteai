@@ -26,8 +26,15 @@ const dark = params.has('dark');
 const mode = params.get('mode') ?? 'local';
 if (params.has('largeDirectory')) seedLargeDirectory(10_001);
 if (params.has('largeText')) seedLargeText(params.has('atThreshold'));
-const client = createGuiToolsClient(<T,>(request: object) => previewBrowserRequest<T>(request as ProjectBrowserRequest));
-guiApi.request = <T,>(request: object) => previewBrowserRequest<T>(request as ProjectBrowserRequest);
+function fixtureRequest<T>(request: object): Promise<T> {
+  const operation = (request as ProjectBrowserRequest).operation;
+  if (params.has('editorService') && ['projectFileRead', 'projectFileWrite'].includes(operation)) {
+    return (window as unknown as { projectEditorService: (request: object) => Promise<T> }).projectEditorService(request);
+  }
+  return previewBrowserRequest<T>(request as ProjectBrowserRequest);
+}
+const client = createGuiToolsClient(fixtureRequest);
+guiApi.request = fixtureRequest;
 Object.assign(window, { savedFiles, causeConflict, setPreviewFiles, previewReads });
 const browserActions: { path: string; action: string }[] = [];
 const fixtureHost: BrowserHost = {

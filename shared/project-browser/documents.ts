@@ -1,5 +1,6 @@
-import type { ProjectBrowserClient, ProjectDocument } from './protocol';
+import type { ProjectBrowserClient, ProjectDocument, ProjectWindowRequest } from './protocol';
 import { browserError } from './useProjectTree';
+import { projectRequestToken } from './requestToken';
 import { normalizedPath, withinPath, type EntryRequest } from './entryActions';
 import { editorGroups, editorLayoutIds, emptyGroup, mapEditorGroups, rebaseGroupPaths, removeGroupPaths,
   resizeEditorSplit, splitEditorGroup, type EditorLayout, type SplitDirection } from './editorGroups';
@@ -32,7 +33,7 @@ export class ProjectDocuments {
   private snapshot: WorkspaceSnapshot = { tabs: [], layout: emptyGroup(), activeGroupId: 'main' };
   private listeners = new Set<() => void>();
   private entryListeners = new Set<(change: EntryMutation) => Promise<void>>();
-  private reads = new Map<string, symbol>();
+  private reads = new Map<string, AbortController>();
 
   constructor(private client: ProjectBrowserClient, private cwd: string, initial?: DocumentsSnapshot) {
     if (initial) this.snapshot = {
@@ -93,15 +94,30 @@ export class ProjectDocuments {
     this.select(path, groupId);
     await this.reload(path);
   };
-  reload = async (path: string) => {
+  private release(document?: ProjectDocument) {
+    if (document?.window) void this.client.release?.({ cwd: this.cwd, path: document.path,
+      window: document.window }).catch(() => console.warn('Project view cleanup deferred until session expiry'));
+  }
+  page = async (path: string, direction: 'previous' | 'next' | 'first' | 'last') => {
+    const tab = this.get(path);
+    const window = tab?.document?.window;
+    if (!tab || !window || tab.loading || tab.saving) return;
+    const offsets = { previous: window.previous, next: window.end, first: 0,
+      last: Math.max(0, tab.document!.size - 64 * 1024) };
+    await this.reload(path, { token: window.token, offset: offsets[direction],
+      ...(direction === 'previous' ? { end: window.offset } : {}) });
+  };
+  reload = async (path: string, window?: ProjectWindowRequest) => {
     const tab = this.get(path);
     if (!tab || tab.saving || this.snapshot.mutationPath) return;
-    const request = Symbol(path);
+    this.reads.get(path)?.abort();
+    const request = new AbortController();
     this.reads.set(path, request);
     this.update(path, { loading: true, error: '' });
     try {
-      const document = await this.client.read({ cwd: this.cwd, path });
+      const document = await this.client.read({ cwd: this.cwd, path, ...(window ? { window } : {}) }, request.signal);
       if (this.reads.get(path) !== request) return;
+      if (!window) this.release(tab.document);
       this.update(path, { document, text: document.text ?? '', saved: false,
         editorVersion: tab.editorVersion + 1, editedAt: 0 });
     } catch (failure) {
@@ -122,6 +138,7 @@ export class ProjectDocuments {
     try {
       const document = await this.client.save({
         cwd: this.cwd, path: tab.document.path, text: tab.text, revision: tab.document.revision,
+        ...(tab.document.window ? { window: tab.document.window } : {}),
       });
       // Saving updates only the baseline; typing and switching tabs may continue during the request.
       this.update(path, { document, saved: true });
@@ -143,7 +160,11 @@ export class ProjectDocuments {
     if (this.snapshot.mutationPath || paths.some(path => this.get(path)?.saving)) return;
     const layout = removeGroupPaths(this.snapshot.layout, groupId, paths);
     const visible = new Set(editorGroups(layout).flatMap(group => group.paths));
-    for (const path of paths) { if (!visible.has(path)) this.reads.delete(path); }
+    for (const path of paths) {
+      if (!visible.has(path)) {
+        this.reads.get(path)?.abort(); this.reads.delete(path); this.release(this.get(path)?.document);
+      }
+    }
     this.publish({ ...this.snapshot, layout, tabs: this.snapshot.tabs.filter(tab => visible.has(tab.path)) });
   };
   lastViews = (groupId: string, paths: string[]) => {
@@ -181,17 +202,19 @@ export class ProjectDocuments {
     try {
       const result = await this.client.mutate(request);
       if (request.action === 'rename' || request.action === 'move' || request.action === 'delete') {
-        this.applyEntryChange(request, result.path);
+        await this.applyEntryChange(request, result.path);
       }
       await Promise.all([...this.entryListeners].map(listener => listener({ request, path: result.path })));
       return result;
     } finally { this.publish({ ...this.snapshot, mutationPath: undefined }); }
   };
-  private applyEntryChange(request: EntryRequest, destination: string) {
+  private async applyEntryChange(request: EntryRequest, destination: string) {
     const affected = (path: string) => withinPath(path, request.path);
     const rebase = (path: string) => affected(path)
       ? normalizedPath(destination) + normalizedPath(path).slice(normalizedPath(request.path).length) : path;
     let tabs = this.snapshot.tabs;
+    const moved = tabs.filter(tab => affected(tab.path) && tab.document?.window);
+    for (const tab of moved) this.release(tab.document);
     if (request.action === 'delete') tabs = tabs.filter(tab => !affected(tab.path));
     else tabs = tabs.map(tab => !affected(tab.path) ? tab : {
       ...tab, path: rebase(tab.path),
@@ -200,5 +223,23 @@ export class ProjectDocuments {
     const layout = rebaseGroupPaths(this.snapshot.layout,
       path => request.action === 'delete' && affected(path) ? undefined : rebase(path));
     this.publish({ ...this.snapshot, tabs, layout });
+    if (request.action !== 'delete') {
+      for (const tab of moved) await this.rebindWindow(tab, rebase(tab.path));
+    }
+  }
+  private async rebindWindow(tab: DocumentTab, path: string) {
+    const previous = tab.document!;
+    try {
+      const document = await this.client.read({ cwd: this.cwd, path,
+        window: { ...previous.window!, token: projectRequestToken(), open: true } });
+      if (document.revision !== previous.revision) {
+        this.release(document);
+        throw new Error('client.projectBrowser.thisFileChangedElsewhereCopyYourEditsBeforeReloadingIt');
+      }
+      // Only the saved baseline changes. An unsaved page survives moving its file or parent folder.
+      this.update(path, { document });
+    } catch (failure) {
+      this.update(path, { error: browserError(failure), document: { ...previous, path, readOnly: true } });
+    }
   }
 }

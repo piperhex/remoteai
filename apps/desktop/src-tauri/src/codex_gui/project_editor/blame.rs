@@ -1,5 +1,7 @@
 //! Read-only annotations for a validated, revision-matched text snapshot.
-use super::{file_bytes, resolve, revision, GuiError, GuiResponse, Target};
+#[cfg(test)]
+use super::revision;
+use super::{resolve, GuiError, GuiResponse, Target};
 use crate::codex_gui::git;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -59,12 +61,25 @@ pub(in crate::codex_gui) async fn read(request: Request) -> super::Result<GuiRes
 
 fn snapshot(request: Request) -> super::Result<Response> {
     let path = resolve(&request.target)?;
-    let bytes = file_bytes(&path)?;
-    let version = revision(&bytes);
+    let document = {
+        let _guard = super::locks::acquire(&path, false)?;
+        if resolve(&request.target)? != path {
+            return Err(GuiError::ProjectFileConflict);
+        }
+        super::snapshot(&path)?
+    };
+    if document.kind != "text" {
+        return Err(GuiError::TextPreview);
+    }
+    let version = document.revision;
+    let Some(text) = document.text else {
+        return Ok(Response::empty(Status::Unavailable, version));
+    };
+    let bytes = text.as_bytes();
     if version != request.revision {
         return Ok(Response::empty(Status::Changed, version));
     }
-    if bytes.contains(&0) || std::str::from_utf8(&bytes).is_err() {
+    if bytes.contains(&0) || std::str::from_utf8(bytes).is_err() {
         return Err(GuiError::TextPreview);
     }
     // Use the file's parent to discover nested repositories, submodules and linked worktrees.
@@ -73,7 +88,7 @@ fn snapshot(request: Request) -> super::Result<Response> {
     if status != Status::Ready {
         return Ok(Response::empty(status, version));
     }
-    match annotate(parent, &path, &bytes) {
+    match annotate(parent, &path, bytes) {
         Ok(annotations) => Ok(Response {
             status: Status::Ready,
             revision: version,

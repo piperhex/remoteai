@@ -60,18 +60,21 @@ for (const mode of ['local', 'remote', 'web']) {
   });
 }
 
-test('exactly 5 MiB keeps code features; crossing the byte threshold preserves undo history', async ({ page }) => {
+test('a 5 MiB project file opens one editable plain-text window and preserves undo history', async ({ page }) => {
   test.setTimeout(90_000);
   await page.goto('/e2e/project-browser-harness.html?mode=standalone&largeText=1&atThreshold=1');
   await page.getByRole('treeitem', { name: 'large.ts', exact: true }).click();
   const pane = page.locator('.pf-editor:visible');
-  await expect(pane).toHaveAttribute('data-plain-text', 'false');
+  await expect(pane).toHaveAttribute('data-plain-text', 'true');
+  await expect(page.locator('.pf-window-navigation')).toBeVisible();
   const editor = page.getByRole('textbox', { name: '文件内容', exact: true });
   await editor.press('Control+End');
   await page.keyboard.insertText('中');
   await expect(pane).toHaveAttribute('data-plain-text', 'true');
   await page.getByRole('button', { name: '撤销', exact: true }).click();
-  await expect(pane).toHaveAttribute('data-plain-text', 'false');
+  await expect(editor).not.toContainText('中');
+  await expect(pane).toHaveAttribute('data-plain-text', 'true');
   await page.getByRole('button', { name: '重做', exact: true }).click();
   await expect(pane).toHaveAttribute('data-plain-text', 'true');
+  await expect(editor).toContainText('中');
 });

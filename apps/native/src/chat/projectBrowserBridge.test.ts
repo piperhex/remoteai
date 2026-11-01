@@ -35,6 +35,27 @@ it('routes reads and writes to the host-selected project regardless of the embed
     text: 'updated', revision: '1' });
 });
 
+it('preserves page ranges through read/save/release and rejects malformed ranges', async () => {
+  const options = fixture();
+  options.client.release = vi.fn().mockResolvedValue(undefined);
+  const window = { token: '00000000-0000-4000-8000-000000000001', offset: 64, end: 128 };
+  const body = { cwd: '/other', path: '/project/readme.txt', window };
+  const send = (action: string, target = body) => handleBrowserRequest(JSON.stringify({
+    type: 'request', id: 1, action, body: target,
+  }), options);
+  await send('read');
+  expect(options.client.read).toHaveBeenCalledWith(expect.objectContaining({ cwd: '/project', window }));
+  await handleBrowserRequest(JSON.stringify({ type: 'request', id: 2, action: 'save',
+    body: { ...body, text: 'this page only', revision: 'one' } }), options);
+  expect(options.client.save).toHaveBeenCalledWith(expect.objectContaining({ window, text: 'this page only' }));
+  await send('release');
+  expect(options.client.release).toHaveBeenCalledWith(expect.objectContaining({ window }));
+  for (const offset of [-1, 0.5, Number.MAX_SAFE_INTEGER + 1]) {
+    expect(await send('read', { ...body, window: { ...window, offset } })).toMatchObject({ error: expect.any(String) });
+  }
+  expect(options.client.read).toHaveBeenCalledTimes(1);
+});
+
 it('rejects disconnected, malformed and unsupported requests without touching files', async () => {
   const options = fixture(false);
   const read = { type: 'request', id: 1, action: 'read', body: { path: '/project/readme.txt' } };

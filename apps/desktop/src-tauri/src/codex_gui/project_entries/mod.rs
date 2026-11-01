@@ -67,9 +67,11 @@ struct Change {
 
 pub(super) async fn execute(request: Request) -> super::error::Result<GuiResponse> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _guard = super::project_editor::EDIT_LOCK
-            .lock()
-            .map_err(|_| GuiError::FileBusy)?;
+        let root = paths::root(&request.cwd).map_err(GuiError::ProjectEntry)?;
+        let _guard = super::project_editor::locks::acquire(&root, true)?;
+        if paths::root(&request.cwd).map_err(GuiError::ProjectEntry)? != root {
+            return Err(GuiError::ProjectFiles);
+        }
         let change = perform(request).map_err(GuiError::ProjectEntry)?;
         Ok(GuiResponse {
             data: serde_json::to_value(change).map_err(|_| GuiError::InvalidRequest)?,

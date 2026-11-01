@@ -10,6 +10,7 @@ import { displayText } from '../localization/messages';
 import { nativeSshTreeOptions } from '../terminal/nativeSshBrowser';
 import { TerminalWorkspaceProvider } from '../terminal/TerminalWorkspaceProvider';
 import { nativeScriptPanel } from './nativeScripts';
+import { readProjectDocument } from './fileTransfer';
 
 declare global {
   interface Window {
@@ -36,7 +37,11 @@ const request = <T,>(action: string, body: object) => new Promise<T>((resolve, r
 });
 const client: ProjectBrowserClient = {
   list: (_cwd, directory, query) => request('list', { directory, query }),
-  read: target => request('read', target),
+  read: (target, signal) => readProjectDocument(<T,>(input: object) => {
+    const body = input as import('./protocol').ProjectFileRead;
+    return request<T>(body.window?.cancel ? 'release' : 'read', body);
+  }, target, signal, false),
+  release: target => request('release', target),
   save: target => request('save', target),
   mutate: target => request('mutate', target),
 };

@@ -65,6 +65,7 @@ export function ProjectEditorPane({ group, frame, options }: {
       renderPreview={options.renderPreview}
       blame={options.blame}
       openFile={path => { void store.open(path, group.id); }}
+      page={direction => actions.guard([tab.path], () => { void store.page(tab.path, direction); })}
       save={() => { if (connected && !blocked) void store.save(tab.path); }} t={t} />)}
   </section>;
 }
