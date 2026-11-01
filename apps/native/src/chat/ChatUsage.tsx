@@ -8,7 +8,7 @@ import { Text, View } from 'react-native';
 import { useChatUsage } from '../../../../shared/remote-chat/client/useChatUsage';
 import { formatCost, formatThreadTokens, formatTokens, usageTrailing,
   type ReadUsage } from '../../../../shared/remote-chat/usage';
-import { palette } from './styles';
+import { CHAT_SETTINGS_GAP, palette } from './styles';
 import type { ThreadTokenUsage } from './types';
 import { formatConversationCost, type ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
 import { useConversationMetrics } from '../../../../shared/remote-chat/client/useConversationMetrics';
@@ -52,7 +52,8 @@ export function ChatUsage({ read, active, ready, tokenUsage, onContextSettings, 
 }
 
 const useStyles = createThemedStyles((color) => ({
-  container: { paddingTop: 14, gap: 4 },
+  // Include the parent settings gap in the 8px spacing above usage.
+  container: { marginTop: 8 - CHAT_SETTINGS_GAP, gap: 4 },
   summary: { padding: 12, gap: 4, borderRadius: 12, backgroundColor: color('#eef3f0', 'canvas') },
   row: { color: color(palette.muted, 'muted'), ...textMetrics(12, 20), flexShrink: 1 },
   tokens: { color: color(palette.green, 'accent'), fontWeight: '600' },

@@ -5,6 +5,8 @@ import { StyleSheet } from 'react-native';
 export const palette = { ink: '#17211b', muted: '#718078', green: '#0b8065', border: '#dfe5df',
   background: '#f4f4f4', pale: '#e7f5f4', danger: '#c74e47' };
 
+export const CHAT_SETTINGS_GAP = 12;
+
 export const useStyles = createThemedStyles((color) => ({
   fill: { flex: 1 },
   hidden: { display: 'none' },
@@ -84,7 +86,7 @@ export const useStyles = createThemedStyles((color) => ({
     paddingHorizontal: 8, paddingVertical: 8, textAlignVertical: 'top' },
   compactButton: { minHeight: 36, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10,
     backgroundColor: color(palette.pale, 'accentSoft'), justifyContent: 'center' },
-  settings: { gap: 12, maxWidth: 400, width: '100%', alignSelf: 'center' },
+  settings: { gap: CHAT_SETTINGS_GAP, maxWidth: 400, width: '100%', alignSelf: 'center' },
   choice: { padding: 12, borderWidth: 1, borderColor: color(palette.border, 'border'), borderRadius: 12 },
   chosen: { borderColor: color(palette.green, 'accent'), backgroundColor: color(palette.pale, 'accentSoft') },
   approval: { maxWidth: 400, width: '100%', alignSelf: 'center', borderWidth: 1,

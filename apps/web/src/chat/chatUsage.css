@@ -21,7 +21,12 @@
 .chat-usage-low { color: var(--app-danger, #c74e47); }
 .chat-usage-summary { display: contents; }
 @media (max-width: 860px) {
-  .chat-settings .chat-usage { border-top: 0; }
+  .chat-settings .chat-usage {
+    border-top: 0;
+    padding-top: 0;
+    /* Include the parent settings gap in the 8px spacing above usage. */
+    margin-top: calc(8px - var(--chat-settings-gap));
+  }
   .chat-settings .chat-usage-summary {
     display: flex;
     flex-wrap: wrap;

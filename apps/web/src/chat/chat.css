@@ -219,7 +219,10 @@ html:has(.app-shell.chat-active), body:has(.app-shell.chat-active) { overscroll-
   background: var(--app-surface, white); border: 1px solid var(--app-border, #dce8df); border-radius: 10px; color: var(--app-ink, #13231c);
 }
 
-.chat-settings { width: 100%; max-width: 400px; margin: auto; display: flex; flex-direction: column; gap: 16px; }
+.chat-settings {
+  --chat-settings-gap: 16px;
+  width: 100%; max-width: 400px; margin: auto; display: flex; flex-direction: column; gap: var(--chat-settings-gap);
+}
 .chat-answer {
   width: 100%; padding: 12px; border: 1px solid var(--app-border, #dce8df); border-radius: 10px;
   background: var(--app-surface, white); font-size: 16px; color: var(--app-ink, #13231c);
