@@ -84,7 +84,7 @@ const FileCard = memo(function FileCard({ file, split, initialOpen }: {
 });
 
 export interface DiffDocumentProps {
-  files: DiffFile[]; title?: string; status?: string; initialOpen?: boolean; continuous?: boolean;
+  files: readonly DiffFile[]; title?: string; status?: string; initialOpen?: boolean; continuous?: boolean;
   filePath?: string;
 }
 

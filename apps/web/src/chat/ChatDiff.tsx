@@ -32,7 +32,7 @@ function DiffContent({ file, onComment }: { file: DiffFile; onComment?: (file: D
 }
 
 export function ChatDiff({ files, status, onComment }: {
-  files: DiffFile[]; status?: string; onComment?: (file: DiffFile, line: DiffLine) => void;
+  files: readonly DiffFile[]; status?: string; onComment?: (file: DiffFile, line: DiffLine) => void;
 }) {
   useLanguage();
   const panel = useContext(DetailsContext);

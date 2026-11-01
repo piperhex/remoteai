@@ -16,7 +16,8 @@ const entryCache = new WeakMap<Turn, Map<string, TurnEntry[]>>();
 
 /** Rejected or still-running edits are not completed file changes. A net diff takes precedence. */
 export function completedTurnFiles(turn: Turn) {
-  if (turn.diff?.trim()) return parseDiff(turn.diff);
+  const netFiles = parseDiff(turn.diff ?? '');
+  if (netFiles.length) return netFiles;
   return changedFiles(turn.items.filter((item) => item.type === 'fileChange'
     && !['declined', 'failed', 'inProgress'].includes(item.status ?? ''))
     .flatMap((item) => item.changes ?? []));

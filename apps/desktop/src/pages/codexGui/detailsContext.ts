@@ -3,7 +3,7 @@ import type { DiffFile } from "./diff";
 import type { FileReference } from "./fileReference";
 import type { WebsitePreviewOptions } from "./filePreview/usePreviewHistory";
 
-export interface DiffPanelEntry { id: string; title: string; files: DiffFile[]; status?: string; filePath?: string }
+export interface DiffPanelEntry { id: string; title: string; files: readonly DiffFile[]; status?: string; filePath?: string }
 interface DetailsContextValue {
   open: (entry: DiffPanelEntry) => void;
   update: (entry: DiffPanelEntry) => void;

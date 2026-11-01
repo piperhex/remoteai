@@ -10,7 +10,7 @@ import styles from "./EditedFilesSummary.module.less";
 import { WorkspaceOperationContext } from "./workspaceOperationContext";
 
 export function TurnDiff({ files, title, threadId, turnId, disabled }: {
-  files: DiffFile[]; title: string; threadId?: string; turnId: string; disabled: boolean;
+  files: readonly DiffFile[]; title: string; threadId?: string; turnId: string; disabled: boolean;
 }) {
   const [undone, setUndone] = useState(false);
   const workspace = useContext(WorkspaceOperationContext);

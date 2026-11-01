@@ -4,6 +4,7 @@ import { useId, useMemo } from "react";
 import { ChevronRight, FileText } from "lucide-react";
 import { useDetailsEntry } from "./detailsContext";
 import { useTurnChangedFiles } from "./useTurnChangedFiles";
+import { summarizeDiffFiles } from "../../../../../shared/chat/diffSummary";
 import type { Conversation, Turn } from "./types";
 import styles from "./RunningChangesSummary.module.less";
 
@@ -15,9 +16,8 @@ function TurnChangesBadge({ turn }: { turn: Turn }) {
   const entry = useMemo(() => ({ id, title, files }), [id, files, title]);
   const panel = useDetailsEntry(entry);
   if (!files.length) return null;
-  const count = new Set(files.map((file) => file.path)).size;
-  const added = files.reduce((sum, file) => sum + file.added, 0);
-  const removed = files.reduce((sum, file) => sum + file.removed, 0);
+  const { files: summary, added, removed } = summarizeDiffFiles(files);
+  const count = summary.length;
   return <div className={styles.wrap}>
     <button type="button" className={styles.badge} onClick={() => panel?.open(entry)}
       aria-label={uiText("client.conversation.viewChangesThisTurnFilesEditedLinesAddedLinesRemoved", { value1: count, value2: added, value3: removed })}>

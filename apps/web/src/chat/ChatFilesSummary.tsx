@@ -8,7 +8,7 @@ import { ChatChangesPill } from './ChatChangesPill';
 
 /** Remote paths are review buttons; they never invoke the viewing computer's file actions. */
 export function ChatFilesSummary({ files, title = "client.chat.changesThisTurn", status, compact = false, beforeReview }: {
-  files: DiffFile[]; title?: string; status?: string; compact?: boolean; beforeReview?: ReactNode;
+  files: readonly DiffFile[]; title?: string; status?: string; compact?: boolean; beforeReview?: ReactNode;
 }) {
   const id = useId();
   const environment = useContext(FileEnvironmentContext);

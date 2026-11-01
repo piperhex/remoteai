@@ -1,6 +1,7 @@
-import { useId, useMemo, useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { ChevronDown, FileDiff } from "lucide-react";
 import type { DiffFile } from "./diff";
+import { summarizeDiffFiles } from "../../../../../shared/chat/diffSummary";
 import { useDiffText } from "../../../../../shared/chat/diffText";
 import styles from "./EditedFilesSummary.module.less";
 
@@ -16,18 +17,8 @@ function Counts({ added, removed }: { added: number; removed: number }) {
   </span>;
 }
 
-function summarizeFiles(files: DiffFile[]) {
-  const paths = new Map<string, { path: string; added: number; removed: number }>();
-  for (const file of files) {
-    const previous = paths.get(file.path);
-    paths.set(file.path, { path: file.path, added: (previous?.added ?? 0) + file.added,
-      removed: (previous?.removed ?? 0) + file.removed });
-  }
-  return [...paths.values()];
-}
-
 export function EditedFilesSummary({ files, title, status, onReview, onReviewFile, undo, beforeReview, renderFile }: {
-  files: DiffFile[]; title: string; status?: string; onReview: () => void;
+  files: readonly DiffFile[]; title: string; status?: string; onReview: () => void;
   onReviewFile: (path: string) => void;
   undo?: ReactNode;
   beforeReview?: ReactNode;
@@ -36,9 +27,7 @@ export function EditedFilesSummary({ files, title, status, onReview, onReviewFil
   const t = useDiffText();
   const listId = useId();
   const [expanded, setExpanded] = useState(false);
-  const summary = useMemo(() => summarizeFiles(files), [files]);
-  const added = summary.reduce((sum, file) => sum + file.added, 0);
-  const removed = summary.reduce((sum, file) => sum + file.removed, 0);
+  const { files: summary, added, removed } = summarizeDiffFiles(files);
   const changed = !UNAPPLIED_STATUSES.some(key => status === key || status === t(key));
   const hiddenCount = summary.length - COLLAPSED_FILE_COUNT;
   const visibleFiles = expanded ? summary : summary.slice(0, COLLAPSED_FILE_COUNT);

@@ -1,109 +1,77 @@
 import type { FileChange } from "../../apps/desktop/src/pages/codexGui/types";
+import { DiffCache } from "./diffCache";
+import { parseFileChange, parseUnifiedDiff } from "./diffParser";
 
 export interface DiffLine {
-  kind: "context" | "add" | "remove" | "hunk" | "meta";
-  text: string;
-  oldLine?: number;
-  newLine?: number;
+  readonly kind: "context" | "add" | "remove" | "hunk" | "meta";
+  readonly text: string;
+  readonly oldLine?: number;
+  readonly newLine?: number;
 }
 export interface DiffFile {
-  path: string;
-  previousPath?: string;
-  kind: string;
-  raw: string;
-  lines: DiffLine[];
-  added: number;
-  removed: number;
+  readonly path: string;
+  readonly previousPath?: string;
+  readonly kind: string;
+  readonly raw: string;
+  readonly lines: readonly DiffLine[];
+  readonly added: number;
+  readonly removed: number;
 }
 export interface DiffPair { left?: DiffLine; right?: DiffLine; heading?: DiffLine }
 
-function linesOf(text: string) {
-  const lines = text.replace(/\r\n/g, "\n").split("\n");
-  if (lines.at(-1) === "") lines.pop();
-  return lines;
+const parsedCache = new DiffCache<readonly DiffFile[]>();
+const fileIds = new WeakMap<DiffFile, number>();
+let nextFileId = 0;
+const EMPTY_FILES: readonly DiffFile[] = Object.freeze([]);
+const LINE_WEIGHT = 128;
+const FILE_WEIGHT = 512;
+
+function filesWeight(files: readonly DiffFile[]): number {
+  // UTF-16 raw + line text, row objects, paths, arrays and summary rows. DiffCache also charges the key.
+  // Shared files are deliberately charged again for list entries so aggregate lists cannot bypass the budget.
+  return files.reduce((sum, file) => sum + FILE_WEIGHT + file.raw.length * 4
+    + (file.path.length + (file.previousPath?.length ?? 0)) * 4 + file.lines.length * LINE_WEIGHT, 0);
 }
 
-/** Git quotes non-ASCII paths as UTF-8 octal bytes when core.quotePath is enabled. */
-function decodePath(value: string) {
-  const path = value.trim();
-  if (!path.startsWith('"')) return path.split("\t")[0];
-  const bytes: number[] = [];
-  const encoder = new TextEncoder();
-  const quoted = path.match(/^"((?:\\.|[^"\\])*)"/)?.[1] ?? path;
-  for (const token of quoted.match(/\\[0-7]{1,3}|\\.|[^\\]+/g) ?? []) {
-    if (/^\\[0-7]/.test(token)) bytes.push(parseInt(token.slice(1), 8));
-    else bytes.push(...encoder.encode(token.replace(/\\(["\\tnr])/g,
-      (_, char: string) => ({ t: "\t", n: "\n", r: "\r" })[char] ?? char)));
+function freezeFiles(files: DiffFile[]): readonly DiffFile[] {
+  for (const file of files) {
+    file.lines.forEach(Object.freeze);
+    Object.freeze(file.lines);
+    Object.freeze(file);
   }
-  return new TextDecoder().decode(new Uint8Array(bytes));
+  return Object.freeze(files);
 }
 
-function stripPrefix(value: string) { return decodePath(value).replace(/^[ab]\//, ""); }
-
-function parseLines(raw: string, kind: string): DiffLine[] {
-  const source = linesOf(raw);
-  // Add/delete items from app-server contain the whole file, without patch markers.
-  if (kind === "add" || kind === "delete") {
-    return source.map((text, index) => kind === "add"
-      ? { kind: "add", text, newLine: index + 1 } : { kind: "remove", text, oldLine: index + 1 });
-  }
-  let oldLine: number | undefined;
-  let newLine: number | undefined;
-  return source.map((text): DiffLine => {
-    const hunk = text.match(/^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/);
-    if (hunk) {
-      oldLine = Number(hunk[1]); newLine = Number(hunk[2]);
-      return { kind: "hunk", text };
-    }
-    if (oldLine == null || newLine == null || text.startsWith("\\")) return { kind: "meta", text };
-    if (text.startsWith("+")) return { kind: "add", text: text.slice(1), newLine: newLine++ };
-    if (text.startsWith("-")) return { kind: "remove", text: text.slice(1), oldLine: oldLine++ };
-    if (text.startsWith(" ")) return { kind: "context", text: text.slice(1), oldLine: oldLine++, newLine: newLine++ };
-    return { kind: "meta", text };
+/** Parsing depends only on diff content and file metadata, never on turn/status/UI state. */
+export function changedFiles(changes: readonly FileChange[]): readonly DiffFile[] {
+  if (!changes.length) return EMPTY_FILES;
+  const files = changes.map(change => {
+    const options = JSON.stringify([change.path, change.kind.type, change.kind.movePath ?? null]);
+    const cached = parsedCache.get(change.diff, options);
+    if (cached) return cached[0];
+    const parsed = freezeFiles([parseFileChange(change)]);
+    return parsedCache.set(change.diff, options, parsed, filesWeight(parsed))[0];
   });
-}
-
-function makeFile(change: FileChange, patch = false): DiffFile {
-  const lines = parseLines(change.diff, patch ? "patch" : change.kind.type);
-  return { path: change.kind.movePath || change.path,
-    previousPath: change.kind.movePath ? change.path : undefined, kind: change.kind.type,
-    raw: change.diff, lines,
-    added: lines.filter((line) => line.kind === "add").length,
-    removed: lines.filter((line) => line.kind === "remove").length };
-}
-
-const fileCache = new WeakMap<FileChange[], DiffFile[]>();
-export function changedFiles(changes: FileChange[]): DiffFile[] {
-  const cached = fileCache.get(changes);
-  if (cached) return cached;
-  const files = changes.map((change) => makeFile(change));
-  fileCache.set(changes, files);
-  return files;
-}
-
-function parsePatch(raw: string): DiffFile {
-  const header = raw.split(/^@@ /m)[0];
-  const oldPath = header.match(/^--- (.+)$/m)?.[1];
-  const newPath = header.match(/^\+\+\+ (.+)$/m)?.[1];
-  const renamedFrom = header.match(/^rename from (.+)$/m)?.[1];
-  const renamedTo = header.match(/^rename to (.+)$/m)?.[1];
-  const gitPaths = header.match(/^diff --git ("(?:\\.|[^"\\])*"|.+?) ("(?:\\.|[^"\\])*"|b\/.+)$/m);
-  const kind = /new file mode/m.test(header) || oldPath === "/dev/null" ? "add"
-    : /deleted file mode/m.test(header) || newPath === "/dev/null" ? "delete" : "update";
-  const path = stripPrefix((newPath === "/dev/null" ? oldPath : newPath) ?? gitPaths?.[2] ?? "文件修改");
-  return makeFile({ path: renamedFrom ? decodePath(renamedFrom) : path, diff: raw,
-    kind: { type: kind, movePath: renamedTo ? decodePath(renamedTo) : undefined } }, true);
+  // Compare just parsed-file identities; never stringify or deep-compare turn/items/code here.
+  const key = files.map(file => {
+    let id = fileIds.get(file);
+    if (id === undefined) { id = ++nextFileId; fileIds.set(file, id); }
+    return id;
+  }).join(',');
+  return parsedCache.get(key, 'list')
+    ?? parsedCache.set(key, 'list', Object.freeze(files), filesWeight(files));
 }
 
 /** Keep headers and unsupported/binary patches visible without inventing line numbers. */
-export function parseDiff(diff: string): DiffFile[] {
-  if (!diff.trim()) return [];
-  const normalized = diff.replace(/\r\n/g, "\n");
-  const separator = /^diff --git /m.test(normalized) ? /(?=^diff --git )/m : /(?=^--- .+\n\+\+\+ )/m;
-  return normalized.split(separator).filter((part) => part.trim()).map(parsePatch);
+export function parseDiff(diff: string): readonly DiffFile[] {
+  if (!diff) return EMPTY_FILES;
+  const cached = parsedCache.get(diff, 'patch');
+  if (cached) return cached;
+  const files = freezeFiles(parseUnifiedDiff(diff));
+  return parsedCache.set(diff, 'patch', files, filesWeight(files));
 }
 
-export function pairDiffLines(lines: DiffLine[]): DiffPair[] {
+export function pairDiffLines(lines: readonly DiffLine[]): DiffPair[] {
   const pairs: DiffPair[] = [];
   let index = 0;
   while (index < lines.length) {

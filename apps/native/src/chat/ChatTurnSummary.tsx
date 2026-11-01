@@ -59,7 +59,7 @@ function FileHeader({ count, added, removed, onOpen, onResult }: {
 }
 
 function FileSummary({ files, onOpen, onResult, running }: {
-  files: DiffFile[]; onOpen: () => void; onResult?: () => void; running: boolean;
+  files: readonly DiffFile[]; onOpen: () => void; onResult?: () => void; running: boolean;
 }) {
   const summaryStyles = useSummaryStyles();
   const color = useThemeColor();

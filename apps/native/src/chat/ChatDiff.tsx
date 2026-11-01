@@ -23,7 +23,7 @@ export function DiffCounts({ added, removed }: { added: number; removed: number 
 }
 
 export function ChatDiff({ files, copy, onComment }: {
-  files: DiffFile[]; copy?: CopyAction; onComment?: (file: DiffFile, line: DiffLine) => void;
+  files: readonly DiffFile[]; copy?: CopyAction; onComment?: (file: DiffFile, line: DiffLine) => void;
 }) {
   const diffStyles = useDiffStyles();
   const styles = useStyles();

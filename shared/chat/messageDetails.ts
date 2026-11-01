@@ -55,6 +55,7 @@ export function messageSections(item: Item): DetailSection[] {
 }
 
 export function turnFiles(turn: Turn) {
-  if (turn.diff?.trim()) return parseDiff(turn.diff);
+  const netFiles = parseDiff(turn.diff ?? '');
+  if (netFiles.length) return netFiles;
   return changedFiles(turn.items.flatMap((item) => item.changes ?? []));
 }
