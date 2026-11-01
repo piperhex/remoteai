@@ -224,6 +224,7 @@ function DevicesPage() {
   return <>
     <PullToRefresh onRefresh={performRefresh} renderText={(status) => PULL_REFRESH_TEXT[status]}>
       <DeviceManagementList devices={sorted} accounts={accounts} providers={providers}
+        onBack={() => dispatch(pageChanged('discover'))}
         onScreenControl={onScreenControl}
         refreshing={refreshing} onRefresh={performRefresh} deletingDeviceId={deletingDeviceId}
         switchingModelDeviceId={switchingProvider?.deviceId ?? (switchingAccountId ? modelDeviceId : null)}
@@ -448,7 +449,8 @@ function AppShell() {
             closeTokenSummary={() => dispatch(pageChanged('discover'))} />,
           accounts: otherPages.accounts, discover: discoveryPage, settings: otherPages.settings,
         }}>
-        {isDiscoveryPage(page) && page !== 'downloads' && page !== 'token-summary' && page !== 'lounge'
+        {isDiscoveryPage(page)
+          && !['downloads', 'token-summary', 'lounge', 'devices'].includes(page)
           && <DiscoveryBackButton onBack={() => dispatch(pageChanged('discover'))} />}
         {page !== 'chat' && page !== 'accounts' && page !== 'discover' && page !== 'settings' && otherPages[page]}
         </PrimaryPagePager>

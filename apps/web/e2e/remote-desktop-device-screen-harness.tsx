@@ -15,6 +15,7 @@ const devices: RemoteDevice[] = [
 function Devices() {
   const screenControl = useDeviceScreenControl();
   return <DeviceManagementList devices={devices} accounts={[]} providers={[]} refreshing={false}
+    onBack={() => {}}
     deletingDeviceId={null} switchingModelDeviceId={null} switchingAuthDeviceId={null}
     onRefresh={async () => {}} onSwitchModel={() => {}} onSelectAuthAccount={() => {}}
     onDelete={() => {}} onRevokeService={() => {}} onScreenControl={screenControl} />;

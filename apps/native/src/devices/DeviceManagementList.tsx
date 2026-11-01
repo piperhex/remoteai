@@ -2,10 +2,11 @@ import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import type { AccountSummary, RemoteDevice, RemoteProviderSummary } from '../types';
 import { DeviceCard } from './DeviceCard';
 import { DeviceOptionsMenu } from './DeviceOptionsMenu';
+import { DevicePageHeader } from './DevicePageHeader';
 import { deviceColors, useStyles } from './styles';
 
 interface DeviceManagementListProps {
@@ -17,6 +18,7 @@ interface DeviceManagementListProps {
   switchingModelDeviceId: string | null;
   switchingAuthDeviceId: string | null;
   onRefresh: () => Promise<void>;
+  onBack: () => void;
   onDelete: (device: RemoteDevice) => void;
   onRevokeService: (device: RemoteDevice) => void;
   onScreenControl: (device: RemoteDevice, enabled: boolean) => void;
@@ -55,19 +57,10 @@ export function DeviceManagementList(props: DeviceManagementListProps) {
   const { devices, refreshing, onRefresh } = props;
   const menuDevice = devices.find((device) => device.deviceId === menuDeviceId) ?? null;
   return <>
+    <DevicePageHeader onBack={props.onBack} onRefresh={onRefresh} refreshing={refreshing} />
     <ScrollView style={styles.page} contentContainerStyle={styles.scroll}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()}
         tintColor={color(deviceColors.green, 'accent')} colors={[deviceColors.green]} />}>
-      <View style={styles.header}>
-        <Text style={styles.heading}>{t("client.app.devices.7e708d")}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel={t("client.app.refreshDeviceList")} disabled={refreshing}
-          accessibilityState={{ disabled: refreshing, busy: refreshing }} onPress={() => void onRefresh()}
-          style={({ pressed }) => [styles.refresh, pressed && styles.pressed]}>
-          {refreshing ? <ActivityIndicator color={color(deviceColors.green, 'accent')} />
-            : <Ionicons name="sync-outline" size={23} color={color(deviceColors.green, 'accent')} />}
-        </Pressable>
-      </View>
-      <Text style={styles.subtitle}>{t("client.app.viewDeviceStatusAndSelectACardToSwitchModels")}</Text>
       <DeviceOverview devices={devices} />
       {devices.map((device) => <DeviceCard key={device.deviceId} device={device}
         accounts={props.accounts} providers={props.providers}

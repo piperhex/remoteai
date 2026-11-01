@@ -22,6 +22,7 @@ function DeviceScreenFixture() {
   return <SafeAreaProvider><SafeAreaView style={{ flex: 1 }}>
     <Text style={textMetrics(14, 22)}>{result}</Text>
     {fonts && <DeviceManagementList devices={devices} accounts={[]} providers={[]} refreshing={false}
+      onBack={() => {}}
       deletingDeviceId={null} switchingModelDeviceId={null} switchingAuthDeviceId={null}
       onRefresh={async () => {}} onSwitchModel={() => {}} onSelectAuthAccount={() => {}}
       onDelete={() => {}} onRevokeService={() => {}} onScreenControl={screen} />}

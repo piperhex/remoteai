@@ -2,18 +2,24 @@ import { t, useLanguage } from '../i18n';
 import { Info, Layers, RefreshCw, Smartphone } from 'lucide-react';
 import type { ComponentProps } from 'react';
 import { DeviceCard } from './DeviceCard';
+import { DeviceMobileHeader } from './DeviceMobileHeader';
+import { DiscoveryBackButton } from '../discovery/DiscoveryPage';
 import './styles.css';
 
 type DeviceManagementListProps = Omit<ComponentProps<typeof DeviceCard>, 'device'> & {
   devices: ComponentProps<typeof DeviceCard>['device'][];
   refreshing: boolean;
   onRefresh: () => Promise<void>;
+  onBack: () => void;
 };
 
-export function DeviceManagementList({ devices, refreshing, onRefresh, ...cardProps }: DeviceManagementListProps) {
+export function DeviceManagementList({ devices, refreshing, onRefresh, onBack, ...cardProps }: DeviceManagementListProps) {
   useLanguage();
   const online = devices.filter((device) => device.online).length;
-  return <div className="page-body devices-page">
+  return <>
+    <div className="devices-desktop-back"><DiscoveryBackButton onBack={onBack} /></div>
+    <DeviceMobileHeader onBack={onBack} onRefresh={onRefresh} refreshing={refreshing} />
+    <div className="page-body devices-page">
     <header className="devices-heading"><h1>{t("client.app.devices.7e708d")}</h1>
       <button className="devices-refresh" type="button" disabled={refreshing} onClick={() => void onRefresh()}
         aria-label={t("client.app.refreshDeviceList")} aria-busy={refreshing}>
@@ -34,5 +40,6 @@ export function DeviceManagementList({ devices, refreshing, onRefresh, ...cardPr
         <span>{t("client.app.onlineDevicesCannotBeRemoved")}<br />{t("client.app.signOutOnTheDeviceBeforeRemovingIt")}</span></p>
     </> : <div className="devices-empty"><Smartphone size={40} aria-hidden /><h3>{t("client.app.noDevicesYet")}</h3>
       <p>{t("client.app.signInWithTheSameAccountOnYourComputerTo")}</p></div>}
-  </div>;
+    </div>
+  </>;
 }

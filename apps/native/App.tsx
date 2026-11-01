@@ -490,6 +490,7 @@ function OpenAiAuthAccountDrawer({
 }
 
 function DeviceManagementPage({
+  onBack,
   session,
   accounts,
   providers,
@@ -506,6 +507,7 @@ function DeviceManagementPage({
   onSwitchProviderGroup,
   onSetOpenAiAuthAccount,
 }: {
+  onBack: () => void;
   session: AuthSession;
   accounts: AccountSummary[];
   providers: RemoteProviderSummary[];
@@ -554,6 +556,7 @@ function DeviceManagementPage({
 
   return <>
     <DeviceManagementList
+      onBack={onBack}
       devices={sortedDevices}
       accounts={accounts}
       providers={providers}
@@ -1294,13 +1297,15 @@ function AppContent() {
       onLogout={handleLogout} totpManager={totpManager} />,
     }}>
     {activePage === 'downloads' && <DownloadManagerPage session={session} onBack={() => setActivePage('discover')} />}
-    {isDiscoveryPage(activePage) && !['downloads', 'token-summary', 'lounge', 'port-mappings'].includes(activePage)
+    {isDiscoveryPage(activePage)
+      && !['downloads', 'token-summary', 'lounge', 'port-mappings', 'devices'].includes(activePage)
       && <DiscoveryBackButton onBack={() => setActivePage('discover')} />}
     {activePage === 'port-mappings'
       && <PortMappingPage devices={devices} onBack={() => setActivePage('discover')} />}
     {activePage === 'lounge' && <LoungePage controller={lounge.controller} onBack={() => setActivePage('discover')} />}
     {activePage === 'devices'
         ? <DeviceManagementPage session={session} accounts={accounts} providers={providers} devices={devices}
+          onBack={() => setActivePage('discover')}
           refreshing={syncingServer} deletingDeviceId={deletingDeviceId}
           switchingAccountId={switchingAccountId} switchingProvider={switchingProvider}
           switchingOpenAiAuth={switchingOpenAiAuth} onRefresh={refreshServerData}

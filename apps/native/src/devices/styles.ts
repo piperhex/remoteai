@@ -9,13 +9,6 @@ export const deviceColors = {
 export const useStyles = createThemedStyles((color) => ({
   page: { flex: 1, backgroundColor: color(deviceColors.canvas, 'canvas') },
   scroll: { padding: 20, paddingTop: 12, paddingBottom: 32 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  heading: { ...textMetrics(22, 32), flex: 1, color: color(deviceColors.ink, 'ink'), fontWeight: '700' },
-  subtitle: { ...textMetrics(13, 20), color: color(deviceColors.muted, 'muted'), marginBottom: 10 },
-  refresh: {
-    width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12,
-    borderWidth: 1, borderColor: color('#bfe9dc', 'border'), backgroundColor: color(deviceColors.mint, 'accentSoft'),
-  },
   summary: { flexDirection: 'row', gap: 8, marginBottom: 14 },
   stat: {
     flex: 1, minWidth: 0, minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 8,
