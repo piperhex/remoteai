@@ -60,7 +60,7 @@
   "market.invalid": "Check the URL, models and prices. Models and multipliers must be unique; prices must be non-negative. Long-context prices require a threshold.",
   "market.missing": "This entry is unavailable, or the server does not support the market yet.",
   "market.added": "Added without activating. You can edit it in your Providers.",
-  "market.addInfo": "Review the address and models and use your own key. Adding creates a new configuration. Existing configurations and later customizations stay unchanged by market updates.",
+  "market.addInfo": "Review the models and use your own API key. Adding creates a separate configuration without changing existing Providers or applying later market updates.",
   "market.statsNotice": "Usage counts distinct accounts with a successfully added, cloud-synced Provider. Anonymous or unsynced local additions are excluded. Manual order takes priority, followed by usage.",
   "market.users": "{count} users",
   "market.manualOrder": "Display order (optional)",

@@ -1,8 +1,24 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import type { MarketItem, MarketPage, MarketRequest } from '../../../shared/provider-market/types';
 
 const emptyTier = (multiplier: number) => ({ multiplier, input: null, output: null, cachedInput: null,
   longContextThreshold: null, longContext: { input: null, output: null, cachedInput: null } });
+
+export async function expectMarketDialogLayout(page: Page) {
+  const viewport = page.viewportSize()!;
+  const content = page.locator('.provider-market-modal .ant-modal-content');
+  const body = page.locator('.provider-market-modal .ant-modal-body');
+  await expect(content).toBeVisible();
+  const frame = (await content.boundingBox())!;
+  const scrollFrame = (await body.boundingBox())!;
+  expect(frame.width).toBeCloseTo(viewport.width * .85, 0);
+  expect(frame.height).toBeCloseTo(viewport.height * .85, 0);
+  expect(frame.x).toBeCloseTo(viewport.width * .075, 0);
+  expect(frame.y).toBeCloseTo(viewport.height * .075, 0);
+  expect(scrollFrame.x + scrollFrame.width).toBeCloseTo(frame.x + frame.width, 0);
+  expect(await content.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+  expect(await body.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+}
 
 export function fixtureItem(): MarketItem {
   return { id: '11111111-1111-4111-8111-111111111111', ownerId: 'alice', official: false,

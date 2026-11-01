@@ -16,22 +16,24 @@ export function MarketDetailTitle({ item }: { item: MarketItem }) {
   </span>;
 }
 
-export function MarketDetail({ item, t, showTitle = true, scriptControl }: {
-  item: MarketItem; t: MarketText; showTitle?: boolean; scriptControl?: ReactNode;
+export function MarketDetail({ item, t, showTitle = true, showConnectionSettings = true, scriptControl }: {
+  item: MarketItem; t: MarketText; showTitle?: boolean; showConnectionSettings?: boolean; scriptControl?: ReactNode;
 }) {
   return <article className="pm-detail">
     {showTitle && <div className="pm-row"><h2><MarketDetailTitle item={item} /></h2>
       <Tag>{t(item.official ? 'market.official' : 'market.community')}</Tag></div>}
     {item.official && <p>{t('market.officialNote')}</p>}
     {item.description && <p className="pm-description">{item.description}</p>}
-    <strong>{t('market.destination')}</strong><code className="pm-destination">{item.baseUrl}</code>
-    {item.pageLink && <section className="pm-page-link">
-      <strong>{t('market.pageSettings')}</strong><code className="pm-destination">{item.pageLink.url}</code>
-      {item.pageLink.query && <p>{t('market.pageQuery')}: <code>{item.pageLink.query}</code></p>}
-      {Object.keys(item.pageLink.headers).length > 0 && <>
-        <strong>{t('market.pageHeaders')}</strong><pre>{JSON.stringify(item.pageLink.headers, null, 2)}</pre>
-      </>}
-    </section>}
+    {showConnectionSettings && <>
+      <strong>{t('market.destination')}</strong><code className="pm-destination">{item.baseUrl}</code>
+      {item.pageLink && <section className="pm-page-link">
+        <strong>{t('market.pageSettings')}</strong><code className="pm-destination">{item.pageLink.url}</code>
+        {item.pageLink.query && <p>{t('market.pageQuery')}: <code>{item.pageLink.query}</code></p>}
+        {Object.keys(item.pageLink.headers).length > 0 && <>
+          <strong>{t('market.pageHeaders')}</strong><pre>{JSON.stringify(item.pageLink.headers, null, 2)}</pre>
+        </>}
+      </section>}
+    </>}
     <p>{t('market.unit', { currency: item.currency })}</p>
     {item.models.map((model) => <section className="pm-model" key={model.id}>
       <h3>{model.id} <small>{model.protocol}</small></h3>

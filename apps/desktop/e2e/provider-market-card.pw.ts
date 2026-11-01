@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { fixtureItem, setupMarket } from './provider-market-support';
+import { expectMarketDialogLayout, fixtureItem, setupMarket } from './provider-market-support';
 
 async function openMenu(page: Page) {
   await page.getByRole('button', { name: 'More actions', exact: true }).click();
@@ -74,6 +74,8 @@ for (const mode of ['local', 'hosted']) {
         { waitUntil: 'domcontentloaded' });
       await page.locator('.provider-market-button').first().click();
       const card = page.locator('.pm-card').first();
+      await expect(card).toBeVisible();
+      await expectMarketDialogLayout(page);
       const more = card.getByRole('button', { name: '更多操作', exact: true });
       const title = await card.locator('.pm-card-title').boundingBox();
       const actions = await more.boundingBox();
@@ -87,6 +89,10 @@ for (const mode of ['local', 'hosted']) {
       const bounds = await card.boundingBox();
       await card.click({ position: { x: 12, y: bounds!.height - 12 } });
       await expect(page.locator('.pm-install')).toBeVisible();
+      await expectMarketDialogLayout(page);
+      await expect(page.locator('.pm-detail .pm-page-link')).toHaveCount(0);
+      await expect(page.getByText('请求将发送到', { exact: true })).toHaveCount(0);
+      await expect(page.getByText(fixtureItem().baseUrl, { exact: true })).toHaveCount(0);
       await page.locator('.pm-install').scrollIntoViewIfNeeded();
       const keyInput = page.locator('.pm-install input');
       await expect(keyInput).toBeInViewport();
@@ -108,6 +114,28 @@ for (const mode of ['local', 'hosted']) {
       await expect(page.getByRole('dialog')).toHaveCount(0);
     });
   }
+
+  test(`${mode}: long names, descriptions and model IDs wrap in a narrow dialog`, async ({ page }, info) => {
+    const item = fixtureItem();
+    item.name = 'Provider'.repeat(9);
+    item.description = 'Details'.repeat(40);
+    item.models[0].id = 'model'.repeat(24);
+    await setupMarket(page, mode, true, async () => ({ items: [item], total: 1 }));
+    await page.setViewportSize({ width: 640, height: 720 });
+    await page.goto(`/e2e/provider-market-harness.html?mode=${mode}${mode === 'hosted' ? '&dark=1' : ''}`,
+      { waitUntil: 'domcontentloaded' });
+    await page.locator('.provider-market-button').first().click();
+    await expect(page.locator('.pm-card')).toBeVisible();
+    await expectMarketDialogLayout(page);
+    const title = await page.locator('.pm-card-title > span:last-child').boundingBox();
+    expect(title!.height).toBeGreaterThan(36);
+    await page.screenshot({ path: info.outputPath(`${mode}-narrow-market-wrapping.png`) });
+    await page.locator('.pm-card-title').click();
+    await expect(page.locator('.pm-install')).toBeVisible();
+    await expectMarketDialogLayout(page);
+    await expect(page.locator('.ant-modal-footer button')).toBeInViewport();
+    await page.screenshot({ path: info.outputPath(`${mode}-narrow-add-wrapping.png`) });
+  });
 }
 
 test('public cards remain clickable without exposing maintenance actions', async ({ page }) => {

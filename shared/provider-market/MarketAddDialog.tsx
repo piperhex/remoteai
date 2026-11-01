@@ -16,7 +16,7 @@ export function MarketAddDialog({ item, t, busy, error, mode = 'local', onAdd, o
     {t(mode === 'download' ? 'market.webAnonymousAdd' : 'market.add')}</Button>;
   return <Modal open title={<div className="pm-row"><MarketDetailTitle item={item} />
     <Tag>{t(item.official ? 'market.official' : 'market.community')}</Tag></div>}
-    width={1040} className="provider-market-modal pm-add-modal" footer={addButton ?? null}
+    width="85vw" centered className="provider-market-modal pm-add-modal" footer={addButton ?? null}
     onCancel={onClose} keyboard={!busy} maskClosable={!busy}
     closable={{ disabled: busy, 'aria-label': t('market.close') }}>
     <div className="provider-market">
@@ -28,7 +28,8 @@ export function MarketAddDialog({ item, t, busy, error, mode = 'local', onAdd, o
         {mode === 'cloud' && <p>{t('market.webAddInfo')}</p>}
       </section>}
       {error}
-      <MarketDetail item={item} t={t} showTitle={false} scriptControl={onAdd && mode !== 'download'
+      <MarketDetail item={item} t={t} showTitle={false} showConnectionSettings={false}
+        scriptControl={onAdd && mode !== 'download'
         ? <Checkbox checked={scriptEnabled} disabled={busy}
           onChange={event => setScriptEnabled(event.target.checked)}>{t('market.enableScript')}</Checkbox> : null} />
     </div>

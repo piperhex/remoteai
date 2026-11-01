@@ -20,7 +20,7 @@ export function MarketView({ client, language, initialId, onClose }: {
   if (market.selected) return <MarketAddDialog key={`${market.selected.id}:${market.identity?.userId ?? ''}`}
     item={market.selected} t={t} busy={market.busy} error={error} onClose={() => market.setSelected(null)}
     onAdd={client.add ? market.add : undefined} mode={client.addition?.(market.identity)} />;
-  return <Modal open title={t('market.title')} footer={null} width={1040}
+  return <Modal open centered title={t('market.title')} footer={null} width="85vw"
     className="provider-market-modal" onCancel={onClose} closable={{ 'aria-label': t('market.close') }}>
     <div className="provider-market">
     <p>{t('market.intro')}</p>

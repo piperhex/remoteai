@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
-import { fixtureItem, setupMarket } from './provider-market-support';
+import { expectMarketDialogLayout, fixtureItem, setupMarket } from './provider-market-support';
 import type { MarketPage, MarketRequest } from '../../../shared/provider-market/types';
 
 type ListRequest = Extract<MarketRequest, { type: 'list' }>;
@@ -39,6 +39,8 @@ for (const mode of ['local', 'hosted']) {
     await openMarket(page, mode);
     const cards = page.locator('.pm-card');
     await expect(cards).toHaveCount(PAGE_SIZE);
+    await expectMarketDialogLayout(page);
+    expect(await page.locator('.ant-modal-body').evaluate(node => node.scrollHeight > node.clientHeight)).toBe(true);
     await expect(page.getByRole('button', { name: 'Previous', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Next', exact: true })).toHaveCount(0);
     const card = await cards.first().boundingBox();
