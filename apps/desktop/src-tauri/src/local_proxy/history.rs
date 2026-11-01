@@ -1,23 +1,32 @@
-static PROXY_HISTORY: OnceLock<ProxyHistoryStore> = OnceLock::new();
+static PROXY_HISTORY: OnceLock<Arc<ProxyHistoryStore>> = OnceLock::new();
 static PROXY_HISTORY_INITIALIZATION: Mutex<()> = Mutex::new(());
 static PROXY_HISTORY_SAVE_FAILED: AtomicBool = AtomicBool::new(false);
 
 fn ensure_proxy_history<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
-    if PROXY_HISTORY.get().is_some() {
+    if history_persistence::SHUTTING_DOWN.load(Ordering::Acquire) {
+        return Err(history_error_message(ProxyHistoryError::Lock));
+    }
+    if history_persistence::WRITER.get().is_some() {
         return Ok(());
     }
     let _initialization = PROXY_HISTORY_INITIALIZATION
         .lock()
         .map_err(|_| "Conversation history is unavailable".to_string())?;
-    if PROXY_HISTORY.get().is_some() {
+    if history_persistence::SHUTTING_DOWN.load(Ordering::Acquire) {
+        return Err(history_error_message(ProxyHistoryError::Lock));
+    }
+    if history_persistence::WRITER.get().is_some() {
         return Ok(());
+    }
+    if let Some(store) = PROXY_HISTORY.get() {
+        return history_persistence::start(Arc::clone(store)).map_err(history_error_message);
     }
     let root = app
         .path()
         .app_data_dir()
         .map_err(|_| "Conversation history is unavailable".to_string())?
         .join("proxy-history");
-    let store = ProxyHistoryStore::open(&root).map_err(history_error_message)?;
+    let store = Arc::new(ProxyHistoryStore::open(&root).map_err(history_error_message)?);
     let restored = store.sessions().map_err(history_error_message)?;
     let mut sessions = proxy_sessions()
         .lock()
@@ -26,9 +35,10 @@ fn ensure_proxy_history<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<(), Str
         sessions.entry(session.id.clone()).or_insert(session);
     }
     PROXY_HISTORY
-        .set(store)
+        .set(Arc::clone(&store))
         .map_err(|_| history_error_message(ProxyHistoryError::Lock))?;
-    Ok(())
+    drop(sessions);
+    history_persistence::start(store).map_err(history_error_message)
 }
 
 fn history_error_message(error: ProxyHistoryError) -> String {
@@ -47,12 +57,14 @@ fn check_proxy_history_save() -> Result<(), String> {
 }
 
 fn persist_proxy_session(session_id: &str, request_id: Option<u64>) {
-    let Some(store) = PROXY_HISTORY.get() else {
-        return;
-    };
-    if let Err(error) = store.save_with(|| capture_proxy_history_snapshot(session_id, request_id)) {
+    let result = history_persistence::with_writer(|writer| {
+        writer
+            .map(|writer| writer.enqueue(session_id, request_id))
+            .transpose()
+    });
+    if result.is_err() {
+        // Stream readers must not perform even error-log I/O. Polling surfaces this latch.
         PROXY_HISTORY_SAVE_FAILED.store(true, Ordering::Relaxed);
-        log_proxy_error!("{}", history_error_message(error));
     }
 }
 

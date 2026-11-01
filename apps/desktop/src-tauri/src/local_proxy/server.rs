@@ -364,6 +364,18 @@ fn serve_request<R: Runtime>(app: tauri::AppHandle<R>, mut request: Request, ori
             return;
         }
     }
+    // Declared before the session guard, so its final write precedes lease release.
+    let _history_request = if captures_conversation {
+        match history_persistence::enter() {
+            Ok(lease) => lease,
+            Err(error) => {
+                respond_error(request, 503, error);
+                return;
+            }
+        }
+    } else {
+        None
+    };
     // Snapshot only this caller's speed; later toggles cannot change in-flight requests or retries.
     let tier = match origin {
         RequestOrigin::External => proxy_service_tier(),
@@ -375,14 +387,20 @@ fn serve_request<R: Runtime>(app: tauri::AppHandle<R>, mut request: Request, ori
         body,
         Some(tier),
     );
-    let session = begin_tracked_proxy_session(ProxySessionRequest {
+    let session = match begin_tracked_proxy_session(ProxySessionRequest {
         method: &method,
         path: request_path(&url),
         headers: &headers,
         remote_address,
         service_tier: effective_proxy_service_tier(&body, None),
         body: &body,
-    });
+    }) {
+        Ok(session) => session,
+        Err(error) => {
+            respond_error(request, 503, error);
+            return;
+        }
+    };
     let result = handle_proxy_request(
         &app,
         &method,

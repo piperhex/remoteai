@@ -65,14 +65,24 @@ pub(crate) async fn codex_gui_terminal_command(
 
 /// Defer the first exit until shells and their consoles have closed off the Windows UI thread.
 pub(crate) fn defer_exit(app: &AppHandle, api: &tauri::ExitRequestApi) -> bool {
-    let state = app.state::<Arc<TerminalState>>().inner().clone();
-    if state.exiting.swap(true, Ordering::AcqRel) {
+    static EXIT_READY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    if EXIT_READY.load(Ordering::Acquire) {
         return false;
     }
     api.prevent_exit();
+    let state = app.state::<Arc<TerminalState>>().inner().clone();
+    if state.exiting.swap(true, Ordering::AcqRel) {
+        return true;
+    }
     let app = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
+        if !crate::local_proxy::history_persistence::shutdown() {
+            state.exiting.store(false, Ordering::Release);
+            return;
+        }
+        crate::update_peers::checkpoint_shutdown();
         state.shutdown();
+        EXIT_READY.store(true, Ordering::Release);
         app.exit(0);
     });
     true

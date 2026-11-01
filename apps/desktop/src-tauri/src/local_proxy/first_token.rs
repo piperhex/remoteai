@@ -61,6 +61,7 @@ fn record(context: &ProxySessionFirstResponseContext) {
             request.first_token_time_ms.get_or_insert(elapsed);
         }
     }
+    // Enqueue only an invalidation; even overflow never waits for SQLite here.
     super::persist_proxy_session(&context.session_id, Some(context.request_id));
 }
 

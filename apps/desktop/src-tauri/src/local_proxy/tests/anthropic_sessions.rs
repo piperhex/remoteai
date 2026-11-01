@@ -22,6 +22,7 @@ fn tracked_anthropic_test_request(
         service_tier: None,
     })
     .unwrap()
+    .unwrap()
 }
 
 fn remove_anthropic_test_sessions(ids: &[String]) {

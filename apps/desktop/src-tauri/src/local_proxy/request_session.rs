@@ -16,9 +16,9 @@ fn tracks_proxy_session(method: &Method, path: &str, body: &[u8]) -> bool {
 
 fn begin_tracked_proxy_session(
     request: ProxySessionRequest<'_>,
-) -> Option<ProxySessionRequestGuard> {
+) -> Result<Option<ProxySessionRequestGuard>, String> {
     if !tracks_proxy_session(request.method, request.path, request.body) {
-        return None;
+        return Ok(None);
     }
     let mut headers = std::borrow::Cow::Borrowed(request.headers);
     if is_anthropic_messages_endpoint(request.path) && proxy_session_id(request.headers).is_none() {
@@ -27,12 +27,11 @@ fn begin_tracked_proxy_session(
             anthropic_request_session_id(request.headers, request.body),
         ));
     }
-    Some(begin_proxy_session_request(
-        &headers,
-        request.remote_address,
-        request.body,
-        request.service_tier,
-    ))
+    history_persistence::begin(ProxySessionRequest {
+        headers: &headers,
+        ..request
+    })
+    .map(Some)
 }
 
 const MAX_ANTHROPIC_SESSION_IDENTITY_BYTES: usize = 4_096;

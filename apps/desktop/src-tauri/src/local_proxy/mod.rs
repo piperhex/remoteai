@@ -34,6 +34,8 @@ mod gui_routing;
 pub(crate) mod gui_runtime;
 pub(crate) mod gui_speed;
 pub(crate) mod gui_system_prompts;
+pub(crate) mod history_persistence;
+mod history_writer;
 mod inline_reasoning;
 pub(crate) mod lan_keys;
 mod lan_usage_capture;
@@ -157,6 +159,9 @@ mod tests {
     include!("tests/conversation.rs");
     include!("tests/image_usage.rs");
     include!("tests/history.rs");
+    include!("tests/history_queue.rs");
+    include!("tests/history_queue_stress.rs");
+    include!("tests/history_queue_responsiveness.rs");
     include!("tests/service_tier_db.rs");
     include!("tests/service_tier_capture.rs");
     include!("tests/provider_service_tier.rs");
