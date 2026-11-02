@@ -37,12 +37,12 @@ for (const mode of ['local', 'remote', 'web']) {
     const cloud = new LoungeContactsFixture();
     cloud.users = [{ id: 'bob', account: 'bob@example.test' }, { id: 'carol', account: 'carol@example.test' }];
     await enter(page, mode, cloud);
-    await expect(page.locator('.lounge-people-list .lounge-person')).toHaveCount(2);
+    await expect(page.locator('.lounge-people-list').getByRole('button', { name: /^与 .+ 私聊$/ })).toHaveCount(2);
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     try {
       const other = await context.newPage();
       await enter(other, mode, cloud);
-      await expect(other.locator('.lounge-people-list .lounge-person')).toHaveCount(2);
+      await expect(other.locator('.lounge-people-list').getByRole('button', { name: /^与 .+ 私聊$/ })).toHaveCount(2);
       await expect(other.locator('.lounge-message')).toHaveCount(0);
       await expect(other.locator('.lounge-avatar-unread')).toHaveCount(0);
       await other.getByRole('button', { name: '与 bob 私聊', exact: true }).click();
@@ -50,7 +50,7 @@ for (const mode of ['local', 'remote', 'web']) {
       await expect(other.locator('.lounge-message')).toHaveCount(0);
       cloud.users.push({ id: 'dana', account: 'dana@example.test' }); cloud.changed();
       for (const device of [page, other]) {
-        await expect(device.locator('.lounge-people-list .lounge-person')).toHaveCount(3);
+        await expect(device.locator('.lounge-people-list').getByRole('button', { name: /^与 .+ 私聊$/ })).toHaveCount(3);
       }
       await other.screenshot({ path: `../../.codex-tmp/lounge-cloud-contacts-${mode}.png`, animations: 'disabled' });
     } finally { await context.close(); }
@@ -64,7 +64,7 @@ for (const mode of ['local', 'remote', 'web']) {
     cloud.users = [{ id: 'carol', account: 'carol@example.test' }]; cloud.fail = false;
     await page.getByRole('alert').getByRole('button', { name: '重试', exact: true }).click();
     await expect(page.getByRole('alert')).toBeHidden();
-    await expect(page.locator('.lounge-people-list .lounge-person')).toHaveCount(2);
+    await expect(page.locator('.lounge-people-list').getByRole('button', { name: /^与 .+ 私聊$/ })).toHaveCount(2);
     await page.getByRole('button', { name: '与 bob 私聊', exact: true }).click();
     await expect(page.locator('.lounge-text')).toHaveText('本机消息保留');
   });

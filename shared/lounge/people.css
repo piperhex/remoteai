@@ -22,7 +22,9 @@
 .lounge-new-chat-mobile .lounge-new-chat-people { max-height: none; }
 .lounge-people input { width: 100%; min-width: 0; border: 1px solid var(--app-border, var(--line, #e6e8ec));
   border-radius: 7px; padding: 8px; background: transparent; color: inherit; font: inherit; box-sizing: border-box; }
-.lounge-people-list { overflow-y: auto; min-height: 0; flex: 1; }
+.lounge-people-list { overflow-y: auto; overscroll-behavior: contain; min-height: 0; flex: 1;
+  margin-inline: -12px; padding-inline: 12px; }
+.lounge-people-list > .lounge-person:first-child { margin-bottom: 8px; }
 .lounge-people-list > p { font-size: 12px; line-height: 1.7; max-width: 400px; }
 .lounge-person { display: flex; width: 100%; gap: 8px; padding: 10px 5px; border: 0; border-radius: 9px;
   background: transparent; color: inherit; align-items: center; text-align: start; cursor: pointer; }

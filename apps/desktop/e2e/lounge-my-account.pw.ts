@@ -16,7 +16,7 @@ for (const mode of ['local', 'remote', 'web']) {
     await expect(page.locator('.lounge-heading').getByRole('button', { name: '个人资料' })).toHaveCount(0);
     const position = await trigger.boundingBox();
     const list = page.locator('.lounge-sidebar .lounge-people-list');
-    await expect(list.getByRole('button')).toHaveCount(24);
+    await expect(list.getByRole('button', { name: /^与 .+ 私聊$/ })).toHaveCount(24);
     await list.evaluate(element => { element.scrollTop = element.scrollHeight; });
     expect(await trigger.boundingBox()).toEqual(position);
     await expect(list.getByRole('button').last()).toBeInViewport();

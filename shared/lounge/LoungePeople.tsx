@@ -37,17 +37,18 @@ export function LoungePeople({ state, controller, select, block, newChat, pin, p
       value={query} onChange={event => setQuery(event.target.value)} />
     {notifications.error && <p role="alert" className="lounge-notification-error">
       {t('client.lounge.notificationSaveFailed')}</p>}
-    <ThreadContextMenu overlayClassName="lounge-context-menu" open={menu === ''}
-      onOpenChange={open => setMenu(open ? '' : undefined)} menu={{ items: [notificationItem('')],
-        onClick: () => { setMenu(undefined); toggleNotifications(''); } }}>
-    <button type="button" className={`lounge-person${!state.conversation ? ' is-selected' : ''}`}
-      aria-current={!state.conversation ? 'page' : undefined} onClick={() => select()}>
-      <span className="lounge-unread-avatar"><span className="lounge-avatar"><MessageCircle size={22} /></span>
-        <LoungeUnreadBadge count={state.unreadByConversation['']} /></span>
-      <span className="lounge-person-copy">{t('client.lounge.groupChat')}</span>
-      {muted('') && <BellOff size={14} className="lounge-pin" aria-label={t('client.lounge.notificationsMuted')} />}
-    </button></ThreadContextMenu>
     <div className="lounge-people-list">
+      <ThreadContextMenu overlayClassName="lounge-context-menu" open={menu === ''}
+        onOpenChange={open => setMenu(open ? '' : undefined)} menu={{ items: [notificationItem('')],
+          onClick: () => { setMenu(undefined); toggleNotifications(''); } }}>
+        <button type="button" className={`lounge-person${!state.conversation ? ' is-selected' : ''}`}
+          aria-current={!state.conversation ? 'page' : undefined} onClick={() => select()}>
+          <span className="lounge-unread-avatar"><span className="lounge-avatar"><MessageCircle size={22} /></span>
+            <LoungeUnreadBadge count={state.unreadByConversation['']} /></span>
+          <span className="lounge-person-copy">{t('client.lounge.groupChat')}</span>
+          {muted('') && <BellOff size={14} className="lounge-pin" aria-label={t('client.lounge.notificationsMuted')} />}
+        </button>
+      </ThreadContextMenu>
       {!contacts.length && <p>{t('client.lounge.noPeople')}</p>}
       {contacts.map(contact => <ThreadContextMenu key={contact.user.id} overlayClassName="lounge-context-menu"
         open={menu === contact.user.id} onOpenChange={open => setMenu(open ? contact.user.id : undefined)}

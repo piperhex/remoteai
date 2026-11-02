@@ -121,7 +121,8 @@
 .lounge-nav-icon .lounge-nav-badge { display: inline-flex !important; position: absolute; top: -9px; right: -12px;
   min-width: 17px; height: 17px; padding: 0 4px; box-sizing: border-box; justify-content: center; align-items: center;
   border-radius: 12px; background: #ef565e; color: #fff; font: 10px/1 sans-serif; }
-.lounge-desktop-main { display: flex; min-height: 0; flex: 1; padding: 0 !important; overflow: hidden; }
+.lounge-desktop-main { display: flex; min-height: 0; flex: 1; padding: 0 !important; overflow: hidden;
+  scrollbar-gutter: auto; }
 :root[data-theme="dark"] .lounge-page, :root[data-theme="dark"] .lounge-history {
   --lounge-bg: #202328; --lounge-paper: #2b2f35;
 }

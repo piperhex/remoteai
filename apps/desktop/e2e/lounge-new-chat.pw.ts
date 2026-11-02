@@ -36,7 +36,7 @@ for (const mode of ['local', 'remote', 'web']) {
     await newChat.click(); await input.fill('bob@EXAMPLE.test'); await input.press('Enter');
     await expect(dialog).toBeHidden();
     expect(relay.lookups.slice(-2)).toEqual(['BOB', 'bob@EXAMPLE.test']);
-    await expect(page.locator('.lounge-people-list .lounge-person')).toHaveCount(1);
+    await expect(page.locator('.lounge-people-list').getByRole('button', { name: /^与 .+ 私聊$/ })).toHaveCount(1);
     await page.reload(); await relay.ready();
     await page.getByRole('button', { name: '在线交流', exact: true }).click();
     await expect(page.getByRole('button', { name: '与 bob 私聊', exact: true })).toBeVisible();
@@ -103,7 +103,7 @@ for (const mode of ['local', 'remote', 'web']) {
     await expect(rows).toHaveCount(0);
     await expect(dialog.getByRole('button', { name: '清空记录', exact: true })).toBeDisabled();
     await dialog.getByRole('button', { name: '取消', exact: true }).click();
-    await expect(page.locator('.lounge-people-list .lounge-person')).toHaveCount(3);
+    await expect(page.locator('.lounge-people-list').getByRole('button', { name: /^与 .+ 私聊$/ })).toHaveCount(3);
     await page.reload(); await relay.ready();
     await page.getByRole('button', { name: '在线交流', exact: true }).click(); await newChat.click();
     await expect(rows).toHaveCount(0);
