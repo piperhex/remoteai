@@ -133,6 +133,7 @@ function DesktopLoungePage({ controller, onLogin, mobile = false }: {
             className={`lounge-message${own ? ' is-own' : ''}${navigation.highlight === historyKey(message)
               ? ' is-highlighted' : ''}`}>
             <LoungeAvatar user={message.sender}
+              onProfile={state.conversation ? () => showProfile(message.sender) : undefined}
               onMention={!own ? () => composer.current?.mention(message.sender) : undefined}
               onDirect={!own && state.directAvailable ? () => select(message.sender) : undefined} />
             <div className="lounge-message-main">
@@ -172,6 +173,7 @@ function DesktopLoungePage({ controller, onLogin, mobile = false }: {
       send={draft => controller.send({ ...draft, to: state.conversation || undefined })}
       onHistory={() => setHistoryOpen(true)} />
     <LoungeHistory open={historyOpen} close={() => setHistoryOpen(false)} controller={controller}
+      profile={state.conversation ? user => { setHistoryOpen(false); showProfile(user); } : undefined}
       mention={user => { setHistoryOpen(false); composer.current?.mention(user); }}
       preview={setPreview} reply={quote} direct={select} locate={locate} navigationError={navigation.error} />
     {avatarOpen && state.user && <LoungeAvatarSettings user={state.user} controller={controller}
