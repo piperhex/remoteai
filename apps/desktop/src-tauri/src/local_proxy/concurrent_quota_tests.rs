@@ -6,6 +6,26 @@ use crate::models::{ManagerStateFile, UsageWindow};
 use crate::storage::{managed_auth_path, save_usage, usage_path, Paths};
 use std::{fs, path::PathBuf, time::Duration};
 
+#[test]
+fn concurrent_authentication_retry_excludes_failed_accounts_until_a_fresh_usage_success() {
+    for status in [401, 403] {
+        let fixture = RoutingFixture::new();
+        let mut failed = quota_response(&fixture.account_ids[0]);
+        failed.status = status;
+        assert!(exclude_response(&failed).unwrap());
+        assert_eq!(fixture.select(None).unwrap(), fixture.account_ids[1]);
+        record_usage_refresh(
+            &fixture.account_ids[0],
+            Instant::now(),
+            &remaining_usage(50.0),
+        )
+        .unwrap();
+        let mut eligible = fixture.account_ids.to_vec();
+        retain_available(&mut eligible).unwrap();
+        assert_eq!(eligible, fixture.account_ids);
+    }
+}
+
 fn remaining_usage(remaining: f64) -> UsageSummary {
     UsageSummary {
         primary: Some(UsageWindow {
@@ -144,7 +164,7 @@ fn ordinary_rate_limits_and_nonconcurrent_credentials_are_not_excluded() {
     response.body = UpstreamBody::Buffered(br#"{"error":{"type":"tokens"}}"#.to_vec());
     assert!(!exclude_response(&response).unwrap());
     response.body = UpstreamBody::Buffered(br#"{"error":{"type":"usage_limit_reached"}}"#.to_vec());
-    response.status = 403;
+    response.status = 400;
     assert!(!exclude_response(&response).unwrap());
     response.status = 429;
     response
@@ -152,7 +172,10 @@ fn ordinary_rate_limits_and_nonconcurrent_credentials_are_not_excluded() {
         .as_mut()
         .unwrap()
         .concurrent_request_started_at = None;
-    assert!(!exclude_response(&response).unwrap());
+    for status in [401, 403, 429] {
+        response.status = status;
+        assert!(!exclude_response(&response).unwrap());
+    }
     response.token_usage_account = None;
     assert!(!exclude_response(&response).unwrap());
     assert!(quota_state().unwrap().is_available(&id));

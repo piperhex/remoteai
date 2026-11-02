@@ -106,7 +106,7 @@ fn switch_exhausted_account(
     let Some(account) = response.token_usage_account.as_ref() else {
         return false;
     };
-    if !is_official_quota_exhaustion(response) {
+    if !account_failure::requires_account_failover(response) {
         return false;
     }
     quota_retry
@@ -118,7 +118,7 @@ fn switch_exhausted_account(
     {
         return false;
     }
-    // Exhaustion needs a different account, even if the transient-rate-limit budget has
+    // Quota exhaustion and rejected credentials need a different account, even if the retry budget has
     // expired. Retry a successful switch immediately, before any backoff or auto-disable.
     let event = UpstreamQuotaEvent::Retry {
         exhausted_account_ids: quota_retry.exhausted_account_ids.clone(),

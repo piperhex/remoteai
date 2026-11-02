@@ -249,7 +249,7 @@ fn official_credentials<R: Runtime>(
     app: &tauri::AppHandle<R>,
     client: &Client,
     options: OfficialCredentialOptions<'_>,
-) -> Result<OfficialProxyCredentials, String> {
+) -> Result<OfficialProxyCredentials, account_failure::CredentialError> {
     let request_started_at = Instant::now();
     let OfficialCredentialOptions {
         purpose,
@@ -304,7 +304,8 @@ fn official_credentials<R: Runtime>(
         return Err(format!(
             "Managed proxy credential does not match the selected account: selected={}, credential={}",
             credential_account_id, auth_account_id
-        ));
+        )
+        .into());
     }
     let (email, _, account_id, id) = account_fields(&auth)?;
     if should_mark_proxy_session_concurrent_account(
@@ -325,7 +326,9 @@ fn official_credentials<R: Runtime>(
     if matches!(purpose, OfficialCredentialPurpose::ImageGeneration)
         && is_agent_identity_auth(&auth)
     {
-        return Err("Select a non-Agent Identity OAuth account for image generation".to_string());
+        return Err("Select a non-Agent Identity OAuth account for image generation"
+            .to_string()
+            .into());
     }
     if is_agent_identity_auth(&auth) {
         let expected = auth.clone();
@@ -346,7 +349,11 @@ fn official_credentials<R: Runtime>(
         // hot switch.  Refresh only the managed credential for the account it started with.
         diagnostic_event(json!({ "event": "official_token_refresh_started",
             "idHash": short_hash_str(&credential_account_id) }));
-        refresh_or_reload_managed_auth(client, &paths, &credential_account_id, &mut auth)?;
+        refresh_or_reload_managed_auth(client, &paths, &credential_account_id, &mut auth)
+            .map_err(|error| account_failure::CredentialError::Refresh {
+                error,
+                account: token_usage_account.clone(),
+            })?;
         diagnostic_event(json!({ "event": "official_token_refresh_finished",
             "idHash": short_hash_str(&credential_account_id) }));
     }

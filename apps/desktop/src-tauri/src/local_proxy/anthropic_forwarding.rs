@@ -54,7 +54,7 @@ fn forward_anthropic_official<R: tauri::Runtime>(
     context: AnthropicOfficialContext<'_>,
 ) -> Result<UpstreamPayload, String> {
     let client = http_client()?;
-    let credentials = official_credentials(
+    let credentials = match official_credentials(
         app,
         &client,
         OfficialCredentialOptions {
@@ -62,7 +62,10 @@ fn forward_anthropic_official<R: tauri::Runtime>(
             session_id: context.session_id,
             account_id_override: context.account_id_override,
         },
-    )?;
+    ) {
+        Ok(credentials) => credentials,
+        Err(error) => return error.into_response(),
+    };
     let request: Value = serde_json::from_slice(&body)
         .map_err(|error| request_error::RequestError::json(request_error::Stage::Request, &error).wire())?;
     validate_anthropic_official_search(&request).map_err(|error| error.to_string())?;

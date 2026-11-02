@@ -3,6 +3,8 @@ use reqwest::blocking::{Client, Response};
 use serde_json::{json, Value};
 
 mod credits;
+mod token_refresh;
+pub(crate) use token_refresh::{refresh_tokens, refresh_tokens_classified, TokenRefreshError};
 
 use crate::{
     auth::{account_fields, decode_jwt, token_string},
@@ -31,33 +33,6 @@ pub(crate) fn token_expiring(auth: &Value) -> bool {
         return false;
     };
     exp <= Utc::now().timestamp() + 300
-}
-
-pub(crate) fn refresh_tokens(client: &Client, auth: &mut Value) -> Result<(), String> {
-    let refresh_token = token_string(auth, "refresh_token")
-        .ok_or_else(|| "登录已过期，且 auth.json 中没有 refresh_token；请重新登录".to_string())?
-        .to_string();
-    let response = client
-        .post(format!("{ISSUER}/oauth/token"))
-        .header("Content-Type", "application/json")
-        .header("originator", ORIGINATOR)
-        .json(&json!({
-            "client_id": CLIENT_ID,
-            "grant_type": "refresh_token",
-            "refresh_token": refresh_token,
-        }))
-        .send()
-        .map_err(|error| format!("刷新登录凭据失败：{error}"))?;
-    if !response.status().is_success() {
-        return Err(format!(
-            "刷新登录凭据失败（HTTP {}），请重新登录",
-            response.status()
-        ));
-    }
-    let payload: Value = response
-        .json()
-        .map_err(|error| format!("解析刷新响应失败：{error}"))?;
-    apply_refreshed_tokens(auth, &payload, Utc::now())
 }
 
 fn apply_refreshed_tokens(

@@ -36,7 +36,7 @@ fn forward_official_upstream<R: Runtime>(
     let client = http_client()?;
     let upstream_endpoint = upstream_endpoint_for_codex_request(url);
     let credential_purpose = official_credential_purpose(request_path(&upstream_endpoint), &body);
-    let mut credentials = official_credentials(
+    let mut credentials = match official_credentials(
         app,
         &client,
         OfficialCredentialOptions {
@@ -44,7 +44,10 @@ fn forward_official_upstream<R: Runtime>(
             session_id,
             account_id_override,
         },
-    )?;
+    ) {
+        Ok(credentials) => credentials,
+        Err(error) => return error.into_response(),
+    };
     diagnostic_event(json!({
         "event": "official_credentials_ready",
         "account": diagnostic_account(&credentials.token_usage_account)

@@ -197,7 +197,7 @@ struct TokenUsageValues {
     total_tokens: Option<u64>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct TokenUsageAccount {
     account_id: String,
     account_email: String,

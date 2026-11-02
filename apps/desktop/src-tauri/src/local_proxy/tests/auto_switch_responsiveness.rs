@@ -1,5 +1,11 @@
 #[test]
 fn active_quota_switch_keeps_session_request_polling_responsive() {
+    for status in [401, 403, 429] {
+        assert_active_account_switch_keeps_polling_responsive(status);
+    }
+}
+
+fn assert_active_account_switch_keeps_polling_responsive(status: u16) {
     let session_id = format!("quota-switch-{}", uuid::Uuid::new_v4());
     let headers = vec![("thread-id".to_string(), session_id.clone())];
     let guard = begin_proxy_session_request(&headers, None, br#"{"input":"hello"}"#, None);
@@ -12,7 +18,7 @@ fn active_quota_switch_keeps_session_request_polling_responsive() {
             Duration::from_secs(1),
             || {
                 requests += 1;
-                Ok(official_payload(if requests == 1 { 429 } else { 200 }, 0))
+                Ok(official_payload(if requests == 1 { status } else { 200 }, 0))
             },
             |_, event| {
                 assert!(matches!(event, UpstreamQuotaEvent::Retry { .. }));

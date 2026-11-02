@@ -34,7 +34,7 @@ use crate::{
     aggregate_api::{self, AggregateApiConfig},
     aggregate_scheduler,
     auth::{account_fields, is_agent_identity_auth, token_string, validate_auth},
-    codex_api::{refresh_tokens, token_expiring, ORIGINATOR},
+    codex_api::{token_expiring, ORIGINATOR},
     models::{
         AccountSummary, AccountTokenUsageTotals, AppSettings, DailyTokenUsage, ImageModelTarget,
         ImageRouteKind, LocalProxyStatus, ManagerStateFile, ProviderApiFormat,

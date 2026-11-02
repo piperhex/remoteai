@@ -10,6 +10,7 @@ macro_rules! log_proxy_error {
     }};
 }
 
+mod account_failure;
 mod aggregate_capacity;
 mod anthropic_reasoning;
 mod anthropic_stream;
@@ -173,6 +174,8 @@ mod tests {
     include!("tests/token_usage_capture.rs");
     include!("tests/official_service_tier_capture.rs");
     include!("tests/auto_switch_retry.rs");
+    include!("tests/authentication_retry.rs");
+    include!("tests/authentication_http.rs");
     include!("tests/retry_target.rs");
     include!("tests/auto_switch_responsiveness.rs");
     include!("tests/anthropic_sessions.rs");

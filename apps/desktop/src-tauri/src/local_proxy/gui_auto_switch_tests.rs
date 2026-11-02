@@ -9,6 +9,9 @@ use serde_json::{json, Value};
 use std::fs;
 use tauri::test::MockRuntime;
 
+#[path = "gui_auto_switch_auth_tests.rs"]
+mod authentication_tests;
+
 const TEST_APP_PREFIX: &str = "com.codex-switch.gui-auto-test.";
 const SELECTION_FILE: &str = "codex-gui-account.json";
 const SETTINGS_FILE: &str = "codex-gui-auto-switch.json";

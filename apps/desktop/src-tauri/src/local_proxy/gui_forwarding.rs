@@ -42,7 +42,7 @@ pub(super) fn forward<R: Runtime>(
             context(&request, &attempt.target, started_at);
             send(&request, &attempt)
         },
-        |_, event| advance(&request, &attempt, event),
+        |response, event| advance(&request, &attempt, response, event),
     );
     let target = attempt.into_inner().target;
     let diagnostic = proxy_diagnostic_entry(
@@ -150,6 +150,7 @@ fn context<R: Runtime>(
 fn advance<R: Runtime>(
     request: &GuiProxyRequest<'_, R>,
     attempt: &RefCell<Attempt>,
+    response: &UpstreamPayload,
     event: UpstreamQuotaEvent,
 ) -> bool {
     let UpstreamQuotaEvent::Retry {
@@ -158,7 +159,12 @@ fn advance<R: Runtime>(
     else {
         return false;
     };
-    let next = gui_auto_switch::after_quota(
+    let switch = if account_failure::is_authentication_failure(response) {
+        gui_auto_switch::after_authentication_failure
+    } else {
+        gui_auto_switch::after_quota
+    };
+    let next = switch(
         request.app,
         &attempt.borrow().route,
         request.session_id,

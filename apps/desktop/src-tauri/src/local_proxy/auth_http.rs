@@ -17,7 +17,7 @@ fn refresh_or_reload_managed_auth(
     paths: &Paths,
     account_id: &str,
     auth: &mut Value,
-) -> Result<(), String> {
+) -> Result<(), crate::codex_api::TokenRefreshError> {
     let expected = auth.clone();
     let current = read_json(&managed_auth_path(paths, account_id))?;
     if current != expected {
@@ -25,7 +25,7 @@ fn refresh_or_reload_managed_auth(
         validate_auth(auth)?;
         return Ok(());
     }
-    if let Err(error) = refresh_tokens(client, auth) {
+    if let Err(error) = crate::codex_api::refresh_tokens_classified(client, auth) {
         let current = read_json(&managed_auth_path(paths, account_id))?;
         if current == expected {
             return Err(error);

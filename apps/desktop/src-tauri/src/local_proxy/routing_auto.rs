@@ -23,12 +23,13 @@ fn try_switch_official_account_after_quota<R: Runtime>(
             observed_attempt_generation: account.auto_switch_attempt_generation,
             failed_account_id: &account.account_id,
             exhausted_account_ids,
+            allow_quota_reset: !account_failure::is_authentication_failure(response),
         },
     ) {
         Ok(switched) => switched,
         Err(error) => {
             log_proxy_error!(
-                "failed to automatically switch official account after quota exhaustion: {error}"
+                "failed to automatically switch official account after upstream rejection: {error}"
             );
             false
         }
@@ -44,6 +45,7 @@ struct AutoSwitchRequest<'a> {
     observed_attempt_generation: u64,
     failed_account_id: &'a str,
     exhausted_account_ids: &'a HashSet<String>,
+    allow_quota_reset: bool,
 }
 
 fn auto_switch_official_account<R: Runtime>(
@@ -63,6 +65,7 @@ fn auto_switch_official_account<R: Runtime>(
                 app,
                 request.failed_account_id,
                 request.exhausted_account_ids,
+                request.allow_quota_reset,
             )
         },
     )?;
@@ -83,6 +86,7 @@ fn try_auto_switch_official_account<R: Runtime>(
     app: &tauri::AppHandle<R>,
     failed_account_id: &str,
     exhausted_account_ids: &HashSet<String>,
+    allow_quota_reset: bool,
 ) -> Result<AutoSwitchAttempt, String> {
     let paths = resolve_paths(app)?;
     let state = try_read_state(&paths)?;
@@ -104,7 +108,7 @@ fn try_auto_switch_official_account<R: Runtime>(
     let accounts = crate::commands::list_accounts_blocking(app.clone())?;
     if !accounts
         .iter()
-        .any(|account| account.id == current_id && account.auto_switch_enabled)
+        .any(|account| can_leave_failed_account(account, &current_id, exhausted_account_ids))
     {
         return Ok(AutoSwitchAttempt::Unchanged);
     }
@@ -185,7 +189,13 @@ fn try_auto_switch_official_account<R: Runtime>(
     {
         return Ok(AutoSwitchAttempt::Unchanged);
     }
-    match auto_reset::restore(app) {
+    // Reset cards restore quota, not login credentials.
+    let restored = if allow_quota_reset {
+        auto_reset::restore(app)
+    } else {
+        Ok(Vec::new())
+    };
+    match restored {
         Ok(restored) if !restored.is_empty() => {
             let latest = try_read_state(&paths)?;
             if automatic_switch_is_blocked(&latest)
@@ -235,6 +245,17 @@ fn automatic_switch_is_blocked(state: &ManagerStateFile) -> bool {
         || state.concurrent_account_routing_enabled
         || state.active_provider_id.is_some()
         || state.active_provider_group.is_some()
+}
+
+fn can_leave_failed_account(
+    account: &AccountSummary,
+    current_id: &str,
+    failed_account_ids: &HashSet<String>,
+) -> bool {
+    // Background usage refresh may already have disabled this account. Exclusion
+    // prevents selecting it again; it must not pin an in-flight request to it.
+    account.id == current_id
+        && (account.auto_switch_enabled || failed_account_ids.contains(current_id))
 }
 
 fn retain_untried_auto_switch_accounts(
@@ -402,6 +423,7 @@ pub(crate) fn maybe_switch_official_account_below_threshold<R: Runtime>(
             observed_attempt_generation,
             failed_account_id: &current_id,
             exhausted_account_ids: &HashSet::new(),
+            allow_quota_reset: true,
         },
     )
 }

@@ -352,9 +352,27 @@ pub(super) fn after_quota<R: Runtime>(
     session: Option<&str>,
     failed: &HashSet<String>,
 ) -> Result<Option<Route>, AutoSwitchError> {
+    after_failure(app, route, ChoiceRequest { session, failed }, true)
+}
+
+pub(super) fn after_authentication_failure<R: Runtime>(
+    app: &AppHandle<R>,
+    route: &Route,
+    session: Option<&str>,
+    failed: &HashSet<String>,
+) -> Result<Option<Route>, AutoSwitchError> {
+    after_failure(app, route, ChoiceRequest { session, failed }, false)
+}
+
+fn after_failure<R: Runtime>(
+    app: &AppHandle<R>,
+    route: &Route,
+    request: ChoiceRequest<'_>,
+    quota_exhausted: bool,
+) -> Result<Option<Route>, AutoSwitchError> {
     let latest = initial(app)?;
     if !latest.config.settings.enabled
-        || !latest.config.settings.switch_on_quota_exhaustion
+        || (quota_exhausted && !latest.config.settings.switch_on_quota_exhaustion)
         || latest.config.revision != route.config.revision
         || !matches!(route.selection, GuiAccountSelection::Account(_))
     {
@@ -362,7 +380,7 @@ pub(super) fn after_quota<R: Runtime>(
     }
     if latest.seed.revision != route.seed.revision {
         let reusable = match &latest.selection {
-            GuiAccountSelection::Account(id) => !failed.contains(id),
+            GuiAccountSelection::Account(id) => !request.failed.contains(id),
             GuiAccountSelection::Provider(_) | GuiAccountSelection::Aggregate(_) => true,
             GuiAccountSelection::None => false,
         };
@@ -371,7 +389,7 @@ pub(super) fn after_quota<R: Runtime>(
     if !remember_exhaustion(app, route)? {
         return Ok(None);
     }
-    match choose(app, route.clone(), ChoiceRequest { session, failed }) {
+    match choose(app, route.clone(), request) {
         Ok(next) if next.selection != route.selection => Ok(Some(next)),
         Ok(_) | Err(AutoSwitchError::Changed | AutoSwitchError::NoAccount) => Ok(None),
         Err(error) => Err(error),

@@ -1,4 +1,4 @@
-use super::{is_official_quota_exhaustion, reported_quota_windows_have_remaining, UpstreamPayload};
+use super::{account_failure, reported_quota_windows_have_remaining, UpstreamPayload};
 use crate::models::UsageSummary;
 use std::{
     collections::HashMap,
@@ -85,7 +85,7 @@ pub(super) fn exclude_response(response: &UpstreamPayload) -> Result<bool, Strin
     let Some(request_started_at) = account.concurrent_request_started_at else {
         return Ok(false);
     };
-    if !is_official_quota_exhaustion(response) {
+    if !account_failure::requires_account_failover(response) {
         return Ok(false);
     }
     quota_state()?.exclude(&account.account_id, request_started_at, Instant::now());
