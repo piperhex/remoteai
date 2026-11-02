@@ -9,6 +9,8 @@ import { chunks } from '../../../../shared/remote-chat/framing';
 import { guiComposer } from '../pages/codexGui/composerBridge';
 import { composerThreadId } from '../../../../shared/remote-chat/composer';
 import { guiSidebar } from '../pages/codexGui/sidebarBridge';
+import { GROUPS_OPERATION } from '../../../../shared/chat/groups/model';
+import { remoteGroups } from './groups';
 import { historyDelta, parseHistoryVersion } from '../../../../shared/remote-chat/historySync';
 import { RemoteImages } from './images';
 import { parseHistoryWindow, sliceHistory } from '../../../../shared/remote-chat/historyPage';
@@ -225,6 +227,7 @@ export class ChatOperations {
   private async run(request: RpcRequest, mode: ConnectionMode, owner: string): Promise<unknown> {
     if (request.method === 'connect') return this.connect(request.body);
     const body = { ...object(request.body) };
+    if (request.method === 'request' && body.operation === GROUPS_OPERATION) return remoteGroups(body);
     if (request.method === 'request' && ['editMessage', 'deleteMessage'].includes(String(body.operation))) {
       return this.images.prepare(await changeRemoteMessage(body), String(body.threadId));
     }

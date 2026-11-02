@@ -13,6 +13,8 @@ import { ChatProjectActions } from './ChatProjectActions';
 import { useProjectActions } from '../../../../shared/remote-chat/client/useProjectActions';
 import { useThreadActions } from '../../../../shared/remote-chat/client/useThreadActions';
 import { palette, useStyles } from './styles';
+import { NativeGroups } from './groups/NativeGroups';
+import { useGrouping } from '../../../../shared/chat/groups/context';
 
 interface Props {
   state: ChatState; controller: ChatController; newChat: (project?: ChatProject) => void;
@@ -20,10 +22,17 @@ interface Props {
   active?: boolean;
 }
 
-export function ChatThreads({ state, controller, newChat, openSearch, select, profileMenu, active = true }: Props) {
+export function ChatThreads(props: Props) {
+  useLanguage();
+  return <NativeGroups active={props.active ?? true} grouping={props.state.sidebar.grouping} client={props.controller.groups}
+    translate={t} ready={props.state.ready}><ChatThreadsContent {...props} /></NativeGroups>;
+}
+
+function ChatThreadsContent({ state, controller, newChat, openSearch, select, profileMenu, active = true }: Props) {
   const styles = useStyles();
   const listStyles = useListStyles();
   const color = useThemeColor();
+  const grouping = useGrouping();
   useLanguage();
   const [footerHeight, setFooterHeight] = useState(0);
   const actions = useThreadActions(state, controller);
@@ -31,6 +40,9 @@ export function ChatThreads({ state, controller, newChat, openSearch, select, pr
   return <View style={styles.fill}>
     <View style={listStyles.header}>
       <Text style={listStyles.heading}>{t("client.app.chat")}</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('client.groups.manage')}
+        style={listStyles.search} onPress={grouping?.openManager}>
+        <Feather name="layers" size={21} color={color(palette.ink, 'ink')} /></Pressable>
       <Pressable accessibilityRole="button" style={listStyles.filter} disabled={state.loading}
         onPress={() => { void controller.list({ archived: !state.archived }); }}>
         <Text style={listStyles.filterText}>

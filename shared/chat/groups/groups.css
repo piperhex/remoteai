@@ -1,0 +1,24 @@
+.chat-custom-group-menu { max-width: min(400px, calc(100vw - 24px)); }
+.chat-custom-group-menu .ant-dropdown-menu { max-height: 65vh; overflow-y: auto; }
+.chat-custom-group-menu .ant-dropdown-menu-title-content { white-space: normal; overflow-wrap: anywhere; }
+.chat-custom-group-menu .ant-dropdown-menu-item > svg,
+.ant-dropdown-menu-submenu-title > svg { margin-inline-end: 8px; flex-shrink: 0; }
+.chat-group-editor { display: flex; flex-direction: column; gap: 18px; padding-top: 12px; }
+.chat-group-editor label { display: flex; flex-direction: column; gap: 6px; }
+.chat-group-editor .ant-select { width: 100%; }
+.chat-group-editor small, .chat-group-member-name small { opacity: .65; }
+.chat-group-upload { position: relative; cursor: pointer; padding: 6px 12px; border: 1px solid #8885; border-radius: 6px; }
+.chat-group-upload input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.chat-group-picker { display: flex; flex-direction: column; gap: 6px; max-height: 65vh; overflow: auto; }
+.chat-group-picker button { height: auto; min-height: 36px; white-space: normal; text-align: start; }
+.chat-group-batch { margin: 14px 0; }
+.chat-group-destination { min-width: 180px; max-width: 320px; }
+.chat-group-member-name { overflow-wrap: anywhere; }
+.chat-group-member-name small { display: block; }
+.chat-group-manager .ant-table-cell { overflow-wrap: anywhere; }
+.chat-custom-group-heading { display: flex; align-items: center; gap: 7px; width: 100%; padding: 8px;
+  border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; font-size: 12px;
+  text-align: start; cursor: pointer; }
+.chat-custom-group-heading:hover, .chat-custom-group-heading:focus-visible { background: var(--green-soft, #8881); }
+.chat-custom-group-heading > svg { flex-shrink: 0; }
+.chat-custom-group-heading span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

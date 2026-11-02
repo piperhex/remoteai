@@ -27,11 +27,13 @@ export function ChatThreadContextMenu({ thread, state, actions, onFork, onOpenPr
         : Boolean(reason(action === 'pin' ? pin : action === 'archive' ? archive : action)) }),
     ...(hint ? [{ key: 'hint', disabled: true, label: <span role="alert">{displayText(hint)}</span> }] : []),
   ];
-  return <ThreadContextMenu open={current} disabled={!state.ready || state.sending}
+  return <ThreadContextMenu groupTarget={{ kind: 'thread', id: thread.id }}
+    open={current} disabled={!state.ready || state.sending}
     onOpenChange={(open, info) => {
       if (info.source === 'menu') return;
       if (open) actions.open(thread); else actions.close();
     }} menu={{ items, onClick: ({ key }) => {
+      if (key.startsWith('moveGroup:') || key === 'manageGroups') actions.close();
       if (key === 'rename' || key === 'delete') actions.changeView(key);
       if (key === 'archive') void actions.submit(archive);
       if (key === 'pin') void actions.submit(pin);

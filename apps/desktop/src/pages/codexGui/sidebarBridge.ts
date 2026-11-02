@@ -31,7 +31,7 @@ export class SidebarBridge {
       if (previous?.threads === state.threads && previous.threadReadState === state.threadReadState
         && previous.projectOverrides === state.projectOverrides && previous.projects === state.projects
         && previous.pendingRequest === state.pendingRequest && previous.pins === state.pins
-        && previous.pinnedProjects === state.pinnedProjects) return;
+        && previous.pinnedProjects === state.pinnedProjects && previous.grouping === state.grouping) return;
       previous = state;
       state.threads.forEach((thread) => this.known.set(thread.id, thread));
       this.publish(state);
@@ -50,10 +50,12 @@ export class SidebarBridge {
         running: thread.status?.type === 'active' || Boolean(state.conversations[id]?.activeTurn)
           || state.pendingRequest?.threadId === id }];
     }));
-    if (JSON.stringify([threads, state.threadReadState, state.pins, state.pinnedProjects])
+    const sameGroups = this.value.grouping === state.grouping
+      || JSON.stringify(this.value.grouping) === JSON.stringify(state.grouping);
+    if (sameGroups && JSON.stringify([threads, state.threadReadState, state.pins, state.pinnedProjects])
       === JSON.stringify([this.value.threads, this.value.readState, this.value.pins, this.value.pinnedProjects])
       && this.value.revision >= 0) return this.value;
-    this.value = { threads, pins: state.pins, pinnedProjects: state.pinnedProjects,
+    this.value = { threads, pins: state.pins, pinnedProjects: state.pinnedProjects, grouping: state.grouping,
       readState: state.threadReadState, revision: this.value.revision + 1 };
     this.listeners.forEach((listener) => listener(this.value));
     return this.value;

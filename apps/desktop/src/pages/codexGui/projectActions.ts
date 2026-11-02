@@ -3,6 +3,7 @@ import { guiApi } from "./api";
 import { savePreferences } from "./preferences";
 import { removeSavedProject } from "./projectCatalog";
 import type { GuiState, ListResponse, Thread } from "./types";
+import { forgetGroupedProject } from './groupActions';
 
 interface ProjectHost {
   getSnapshot: () => GuiState;
@@ -82,7 +83,8 @@ export class GuiProjects {
         return false;
       }
       removeSavedProject(path);
-      this.host.patch(removalPatch(state, path, lists.flat()));
+      this.host.patch({ ...removalPatch(state, path, lists.flat()),
+        grouping: forgetGroupedProject(state.grouping, path) });
       savePreferences(this.host.getSnapshot());
       return true;
     } catch {

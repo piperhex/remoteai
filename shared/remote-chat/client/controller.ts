@@ -18,6 +18,7 @@ import { HistoryCache } from './historyCache';
 import { ImageCache } from './imageCache';
 import { ThreadActions, threadMutationPatch, type ThreadMutation } from './threadActions';
 import { ProjectActions } from './projectActions';
+import { createRemoteGroups } from './groups';
 import { ThreadListRequests } from './threadListRequests';
 import { ThreadListCache } from './threadListCache';
 import { mergeThreadList } from './threadListSnapshot';
@@ -56,6 +57,8 @@ import { initialChatState, type ApprovalReply, type ChatProject, type ChatState,
 const SYNCHRONIZATION_RETRY_MS = 3000;
 
 export class ChatController {
+  readonly groups = createRemoteGroups({ ready: () => this.state.ready, generation: () => this.synchronization,
+    request: body => this.connection.request('request', body), apply: sidebar => this.applySidebar(sidebar) });
   readonly projectActions = new ProjectActions({ snapshot: () => this.state, update: patch => this.update(patch),
     generation: () => this.synchronization,
     request: body => this.connection.request('request', body), complete: sidebar => this.applySidebar(sidebar) });

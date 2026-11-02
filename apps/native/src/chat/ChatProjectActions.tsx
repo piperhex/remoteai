@@ -6,8 +6,10 @@ import { displayError, t, useLanguage } from '../i18n';
 import { createThemedStyles } from '../theme/styles';
 import { textMetrics } from '../theme/text';
 import { palette } from './styles';
+import { useGrouping } from '../../../../shared/chat/groups/context';
 
 export function ChatProjectActions({ actions }: { actions: ProjectActionsModel }) {
+  const groups = useGrouping();
   useLanguage();
   const styles = useStyles();
   if (!actions.target) return null;
@@ -24,6 +26,11 @@ export function ChatProjectActions({ actions }: { actions: ProjectActionsModel }
     ] : []}>
     <View style={styles.content}>
       {confirmRemove ? <Text style={styles.copy}>{t('client.projectActions.removeDescription')}</Text> : <>
+        {groups && <Pressable accessibilityRole="button" disabled={!groups.ready} style={styles.action}
+          onPress={() => { groups.setMoveTarget({ kind: 'project', id: target.cwd }); actions.close(); }}>
+          <Feather name="layers" size={20} style={styles.icon} />
+          <Text style={styles.label}>{t('client.groups.move')}</Text>
+        </Pressable>}
         <Pressable accessibilityRole="button" disabled={disabled} style={[styles.action, disabled && styles.disabled]}
           accessibilityLabel={t(pinned ? 'client.conversation.unpin' : 'client.conversation.pin')}
           onPress={() => { void actions.submit(pinned ? 'unpin' : 'pin'); }}>

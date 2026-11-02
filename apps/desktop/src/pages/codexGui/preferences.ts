@@ -1,5 +1,6 @@
 import type { GuiState, Settings, ThreadReadState } from "./types";
 import { ACCESS_OPTIONS } from "../../../../../shared/remote-chat/composer";
+import { loadGrouping } from './groupActions';
 
 const STORAGE_KEY = "codex-switch:gui";
 const DEFAULT_SETTINGS: Settings = { cwd: "", model: "", effort: "", access: "workspace-write" };
@@ -39,7 +40,7 @@ export function initialState(): GuiState {
   } catch { /* Preferences are optional; corrupted or unavailable storage uses defaults. */ }
   return { connection: "offline", threads: [], conversations: {}, queued: {}, selected, models: [], approvals: [],
     settings, loading: false, sending: false, archived: false, search: "", cursor: null, error: "", pins, projects,
-    projectOverrides, pinnedProjects, threadReadState };
+    projectOverrides, pinnedProjects, threadReadState, grouping: loadGrouping() };
 }
 
 export function savePreferences(state: GuiState) {

@@ -3,7 +3,7 @@ import { useGuiLanguage } from '../../i18n/useGuiLanguage';
 import { useMemo, useState, type ReactNode } from "react";
 import { App, Button, Input, Modal, Segmented, Spin } from "antd";
 import { ThreadContextMenu } from "../../../../../shared/chat/ThreadContextMenu";
-import { RefreshCw, Search } from "lucide-react";
+import { Layers, RefreshCw, Search } from "lucide-react";
 import { threadMenuItems } from "../../../../../shared/chat/threadMenuItems";
 import type { GuiController } from "./controller";
 import type { GuiState, Thread } from "./types";
@@ -24,16 +24,26 @@ import { useOpenProjectFolder } from "../../../../../shared/chat/useOpenProjectF
 import { FocusModeButton, type GuiFocusMode } from "./FocusModeButton";
 import { GuiNavigation, type GuiView } from "./GuiNavigation";
 import styles from "./styles.module.less";
+import { BrowserGroups } from '../../../../../shared/chat/groups/BrowserGroups';
+import { groupingTree, flattenGroupingTree } from '../../../../../shared/chat/groups/tree';
+import { GroupHeading } from '../../../../../shared/chat/groups/GroupHeading';
+import { useGrouping } from '../../../../../shared/chat/groups/context';
 
 export function threadTitle(thread: Thread) { return thread.name || thread.preview || uiText("client.workspaceSettings.newConversation"); }
 export { projectName } from "./projectCatalog";
 
-export function ThreadSidebar({ state, controller, accountPicker, focused, onToggleFocus,
+export function ThreadSidebar(props: Parameters<typeof ThreadSidebarContent>[0]) {
+  return <BrowserGroups grouping={props.state.grouping} client={props.controller.groups}
+    translate={uiText} ready={props.state.connection === 'ready'}><ThreadSidebarContent {...props} /></BrowserGroups>;
+}
+
+function ThreadSidebarContent({ state, controller, accountPicker, focused, onToggleFocus,
   view = "conversation", onNavigate = () => {}, scheduledTasksAvailable = true }: {
   state: GuiState; controller: GuiController; accountPicker: ReactNode;
   view?: GuiView; onNavigate?: (view: GuiView) => void; scheduledTasksAvailable?: boolean;
 } & GuiFocusMode) {
   const language = useGuiLanguage();
+  const grouping = useGrouping();
   const [searchOpen, setSearchOpen] = useState(false);
   const pagination = useThreadPagination({ state, controller, enabled: !searchOpen });
   const [renaming, setRenaming] = useState<Thread | null>(null);
@@ -46,8 +56,13 @@ export function ThreadSidebar({ state, controller, accountPicker, focused, onTog
     setSearchOpen(false);
     if (state.search) controller.filter("", state.archived);
   };
-  const groups = useMemo(() => threadGroups(state),
-    [state.threads, state.pins, state.projects, state.pinnedProjects, state.conversations, state.pendingRequest, language]);
+  const sections = useMemo(() => groupingTree(threadGroups(state).map(group => ({ ...group, data: group.threads })),
+    state.grouping), [state.threads, state.pins, state.projects, state.pinnedProjects, state.conversations,
+    state.pendingRequest, state.grouping, language]);
+  const scope = state.archived ? 'archived' : 'recent';
+  const collapsed = new Set(views.collapsed.filter(key => key.startsWith(`${scope}:`))
+    .map(key => key.slice(scope.length + 1)));
+  const groups = flattenGroupingTree(sections, state.search.trim() ? new Set() : collapsed);
   const renderThread = (thread: Thread) => {
     const running = isThreadRunning(state, thread);
     const busy = state.sending || Boolean(state.deleting);
@@ -61,7 +76,7 @@ export function ThreadSidebar({ state, controller, accountPicker, focused, onTog
           || state.connection !== 'ready';
         return running;
       } });
-    return <ThreadContextMenu key={thread.id}
+    return <ThreadContextMenu key={thread.id} groupTarget={{ kind: 'thread', id: thread.id }}
       menu={{ items, onClick: ({ key }) => {
         if (key === "pin") controller.pin(thread.id);
         if (key === "openProject") void openProject(thread.cwd);
@@ -85,6 +100,8 @@ export function ThreadSidebar({ state, controller, accountPicker, focused, onTog
     <div className={styles.sidebarHeading} data-tauri-drag-region={isDesktopApp || undefined}>
       <h2 className={styles.sidebarTitle} data-tauri-drag-region={isDesktopApp || undefined}>Codex GUI</h2>
       <div className={styles.sidebarActions} data-tauri-drag-region={isDesktopApp || undefined}>
+        <Button type="text" size="small" icon={<Layers size={15} />} aria-label={uiText('client.groups.manage')}
+          onClick={grouping?.openManager} />
         <FocusModeButton focused={focused} onToggleFocus={onToggleFocus} />
         <Button type="text" size="small" icon={<RefreshCw size={15} />} aria-label={uiText("client.workspaceActions.refreshConversations")}
           loading={state.loading} disabled={state.connection !== "ready"} onClick={() => void controller.refresh()} />
@@ -101,7 +118,13 @@ export function ThreadSidebar({ state, controller, accountPicker, focused, onTog
     <div className={styles.threadList} aria-busy={state.loading} {...pagination}>
       {groups.map((group) => {
         const key = `${state.archived ? "archived" : "recent"}:${group.id}`;
-        return <ThreadGroup key={key} label={group.label} pinned={group.pinned} threads={group.threads}
+        const custom = group.kind === 'group';
+        return <div key={key} style={{ paddingInlineStart: Math.min(group.depth, 8) * 14 }}>
+          {custom && <GroupHeading label={group.label} icon={group.icon}
+            collapsed={!state.search.trim() && collapsed.has(group.id)}
+            toggle={() => toggle('collapsed', key)} />}
+          <ThreadGroup label={group.label || uiText('client.groups.ungrouped')} pinned={Boolean(group.pinned)}
+          hideHeading={custom} threads={group.data}
           selected={view === "conversation" ? state.selected : null}
           collapsed={views.collapsed.includes(key)} expanded={views.expanded.includes(key)}
           filtering={Boolean(state.search.trim())} onToggle={(field) => toggle(field, key)}
@@ -113,7 +136,7 @@ export function ThreadSidebar({ state, controller, accountPicker, focused, onTog
             controller.newConversation();
             controller.setProject(group.cwd);
           } : undefined}
-          renderThread={renderThread} />;
+          renderThread={renderThread} /></div>;
       })}
       {!state.threads.length && <p className={styles.listEmpty}>{state.loading ? <Spin size="small" />
         : uiText(state.search ? "client.workspaceActions.noMatchingConversations" : "client.workspaceActions.noConversationsYet")}</p>}

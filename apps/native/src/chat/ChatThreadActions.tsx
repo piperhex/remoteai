@@ -7,8 +7,11 @@ import { BottomSheet } from '../components/BottomSheet';
 import { THREAD_NAME_LIMIT, type ThreadAction } from '../../../../shared/remote-chat/client/threadActions';
 import type { ThreadActionsModel } from '../../../../shared/remote-chat/client/useThreadActions';
 import { palette, useStyles } from './styles';
+import { useGrouping } from '../../../../shared/chat/groups/context';
+import { textMetrics } from '../theme/text';
 
 export function ChatThreadActions({ actions }: { actions: ThreadActionsModel }) {
+  const groups = useGrouping();
   const actionStyles = useActionStyles();
   const styles = useStyles();
   useLanguage();
@@ -28,6 +31,8 @@ export function ChatThreadActions({ actions }: { actions: ThreadActionsModel }) 
     ]}>
     <View style={actionStyles.content}>
       {view === 'menu' && <>
+        {groups && <Action label={t('client.groups.move')} icon="layers" disabled={!groups.ready}
+          onPress={() => { groups.setMoveTarget({ kind: 'thread', id: actions.target!.thread.id }); actions.close(); }} />}
         <Action label={t("client.projectBrowser.renamed")} icon="edit-2" disabled={!!reason('rename')} onPress={() => actions.changeView('rename')} />
         <Action label={actions.target.archived ? t("client.chat.restore") : t("client.threadActions.archive")} icon="archive" disabled={!!reason(archive)}
           onPress={() => { void actions.submit(archive); }} />
@@ -46,7 +51,7 @@ export function ChatThreadActions({ actions }: { actions: ThreadActionsModel }) 
 }
 
 function Action({ label, icon, disabled, danger, onPress }: {
-  label: string; icon: 'edit-2' | 'archive' | 'trash-2'; disabled: boolean; danger?: boolean; onPress: () => void;
+  label: string; icon: 'edit-2' | 'archive' | 'trash-2' | 'layers'; disabled: boolean; danger?: boolean; onPress: () => void;
 }) {
   const actionStyles = useActionStyles();
   const styles = useStyles();
@@ -62,8 +67,7 @@ const useActionStyles = createThemedStyles((color) => ({
   content: { gap: 8, paddingBottom: 12 },
   action: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 10 },
   // Leave room for Android's Chinese fallback font instead of using its exact measured bounds.
-  label: { flex: 1, minWidth: 0, fontSize: 16, lineHeight: 24, paddingVertical: 2,
-    includeFontPadding: true, textAlignVertical: 'center' },
+  label: { flex: 1, minWidth: 0, ...textMetrics(16, 24) },
   copy: { color: color(palette.ink, 'ink'), fontSize: 15, lineHeight: 24 },
   input: { borderWidth: 1, borderColor: color(palette.border, 'border'), borderRadius: 12, padding: 12, color: color(palette.ink, 'ink'), fontSize: 16 },
 }));

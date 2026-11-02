@@ -9,6 +9,7 @@ import { forkGuiConversation } from "./forkConversation";
 import { GuiMessageEditor } from "./editMessage";
 import { GuiGoals } from "./goals";
 import { GuiProjects } from "./projectActions";
+import { createGuiGroups } from './groupActions';
 import { GuiReadState } from "./threadReadState";
 import type { AttachmentReference } from "./attachmentTypes";
 import { deleteGuiThread } from "./deleteThread";
@@ -34,6 +35,7 @@ import type { Item, MessageInput, SkillReference } from "./types";
 import { isTextDelta, StreamFrame } from '../../../../../shared/chat/streamFrame';
 
 export class GuiController {
+  readonly groups = createGuiGroups({ snapshot: () => this.state, patch: patch => this.patch(patch) });
   readonly queueJournal: QueueJournal;
   constructor(storage?: QueueStorage, cacheBytes?: number) {
     this.conversationCache = new ConversationCache(cacheBytes);

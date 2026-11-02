@@ -20,7 +20,7 @@ export function ProjectGroupMenu({ path, label, state, controller, children }: {
       void message.success(<span className="compact-confirm-copy">{uiText("client.conversation.projectRemovedItsConversationsAreNowInRecent")}</span>);
     }
   };
-  return <ProjectContextMenu label={label} pinned={pinned} removing={state.removingProject === path}
+  return <ProjectContextMenu groupPath={path} label={label} pinned={pinned} removing={state.removingProject === path}
     removeDisabled={state.sending || Boolean(state.removingProject) || state.connection !== "ready"}
     onPin={() => controller.projectActions.pin(path)}
     onOpen={isDesktopApp ? () => void openProject(path) : undefined}

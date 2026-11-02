@@ -1,7 +1,7 @@
 import { displayText, uiText } from "../../../i18n/uiText";
 import type { ReactNode } from 'react';
 import { Button, Segmented } from 'antd';
-import { ChevronRight, Folder, Pin, RefreshCw, Search, SquarePen } from 'lucide-react';
+import { ChevronRight, Folder, Layers, Pin, RefreshCw, Search, SquarePen } from 'lucide-react';
 import { RemoteProjectMenu } from '../../../../../../shared/remote-chat/client/RemoteProjectMenu';
 import type { ChatSidebarActions } from '../../../../../web/src/chat/ConnectedChat';
 import type { ChatController, ChatState } from '../../../../../web/src/chat/types';
@@ -17,18 +17,28 @@ import { RemoteThreadDialogs, RemoteThreadMenu } from './RemoteThreadMenu';
 import styles from '../styles.module.less';
 import groupsStyle from '../ThreadGroup.module.less';
 import navigationStyle from '../GuiNavigation.module.less';
+import { BrowserGroups } from '../../../../../../shared/chat/groups/BrowserGroups';
+import { GroupHeading } from '../../../../../../shared/chat/groups/GroupHeading';
+import { useGrouping } from '../../../../../../shared/chat/groups/context';
 
-export function RemoteGuiSidebar({ state, controller, actions, accountPicker, focusMode }: {
+export function RemoteGuiSidebar(props: Parameters<typeof RemoteGuiSidebarContent>[0]) {
+  return <BrowserGroups grouping={props.state.sidebar.grouping} client={props.controller.groups}
+    translate={uiText} ready={props.state.ready}><RemoteGuiSidebarContent {...props} /></BrowserGroups>;
+}
+
+function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, focusMode }: {
   state: ChatState; controller: ChatController; actions: ChatSidebarActions;
   accountPicker: ReactNode; focusMode: GuiFocusMode;
 }) {
   const { groups: projectGroups, toggle, toggleCollapse } = useThreadGroups(state);
   const groups = projectGroups.map(group => ({
-    ...group, label: group.cwd ? group.label : uiText("client.chat.recent"),
+    ...group, label: group.kind === 'group' || group.cwd ? group.label
+      : uiText(group.id === 'ungrouped' ? 'client.groups.ungrouped' : 'client.chat.recent'),
   }));
   const threadActions = useThreadActions(state, controller);
+  const grouping = useGrouping();
   const renderHeading = (group: typeof groups[number]) => <button type="button" className={groupsStyle.heading}
-    aria-expanded={!group.collapsed} onClick={() => toggleCollapse(group.cwd)}>
+    aria-expanded={!group.collapsed} onClick={() => toggleCollapse(group.id)}>
     <span className={groupsStyle.icon} aria-hidden="true">
       <Folder size={14} className={groupsStyle.folder} />
       <ChevronRight size={14} className={groupsStyle.arrow} />
@@ -47,6 +57,8 @@ export function RemoteGuiSidebar({ state, controller, actions, accountPicker, fo
     <div className={styles.sidebarHeading} data-tauri-drag-region>
       <h2 className={styles.sidebarTitle} data-tauri-drag-region>Codex GUI</h2>
       <div className={styles.sidebarActions}>
+        <Button type="text" size="small" icon={<Layers size={15} />} aria-label={uiText('client.groups.manage')}
+          onClick={grouping?.openManager} />
         <FocusModeButton {...focusMode} />
         <Button type="text" size="small" icon={<RefreshCw size={15} />} aria-label={uiText("client.workspaceActions.refreshConversations")}
           loading={Boolean(state.listRefreshing)} disabled={!state.ready}
@@ -65,7 +77,11 @@ export function RemoteGuiSidebar({ state, controller, actions, accountPicker, fo
       disabled={!state.ready || state.loading}
       onChange={value => { void controller.list({ archived: value === 'archived' }); }} />
     <div className={styles.threadList} aria-busy={state.loading} {...pagination}>
-      {groups.map(group => <section className={groupsStyle.group} aria-label={group.label} key={group.cwd}>
+      {groups.map(group => <section className={groupsStyle.group} aria-label={group.label} key={group.id}
+        style={{ paddingInlineStart: Math.min(group.depth, 8) * 14,
+          ...(group.kind === 'group' ? { margin: '0 0 4px' } : {}) }}>
+        {group.kind === 'group' ? <GroupHeading label={group.label} icon={group.icon}
+          collapsed={group.collapsed} toggle={() => toggleCollapse(group.id)} /> :
         <div className={groupsStyle.header}>
           {group.cwd ? <RemoteProjectMenu cwd={group.cwd} label={group.label} state={state} controller={controller}
             translate={uiText} buttonClassName={groupsStyle.add}>{renderHeading(group)}</RemoteProjectMenu>
@@ -73,8 +89,9 @@ export function RemoteGuiSidebar({ state, controller, actions, accountPicker, fo
           {group.cwd && <button type="button" className={groupsStyle.add}
             aria-label={uiText("client.chat.startAChatIn", { value1: group.label })} disabled={state.sending}
             onClick={() => actions.newChat(group)}><SquarePen size={14} strokeWidth={1.6} /></button>}
-        </div>
-        <div className={groupsStyle.content} hidden={group.collapsed}>
+        </div>}
+        <div className={groupsStyle.content} hidden={group.collapsed}
+          style={group.kind === 'group' ? { paddingInlineStart: 42 } : undefined}>
           {group.data.map(thread => {
             const view = threadPresentation(thread, state.sidebar, displayText);
             const selected = state.selected?.id === thread.id;
@@ -92,7 +109,7 @@ export function RemoteGuiSidebar({ state, controller, actions, accountPicker, fo
             </RemoteThreadMenu>;
           })}
           {group.canToggle && <button type="button" className={groupsStyle.more}
-            aria-expanded={group.expanded} onClick={() => toggle(group.cwd)}>
+            aria-expanded={group.expanded} onClick={() => toggle(group.id)}>
             {group.expanded ? uiText("client.chat.collapse") : uiText("client.chat.showMore.83ad87")}</button>}
         </div>
       </section>)}

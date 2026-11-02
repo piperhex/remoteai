@@ -12,6 +12,8 @@ import { useThreadListScroll } from './useThreadListScroll';
 import type { ChatController } from './controller';
 import { palette, useStyles } from './styles';
 import { THREAD_LONG_PRESS_MS } from '../../../../shared/remote-chat/client/threadActions';
+import { useGrouping } from '../../../../shared/chat/groups/context';
+import { NativeGroupIcon } from './groups/GroupChoice';
 
 interface Props {
   state: ChatState; newChat: (project?: ChatProject) => void; select: (thread: Thread) => void;
@@ -28,32 +30,43 @@ export function ChatThreadList({ state, newChat, select, controller, bottomInset
   const styles = useStyles();
   const listStyles = useListStyles();
   const color = useThemeColor();
+  const grouping = useGrouping();
   useLanguage();
   const { groups, toggle, toggleCollapse } = useThreadGroups(state);
-  const layoutKey = JSON.stringify(groups.map(group => [group.cwd, group.data.length, group.canToggle]));
+  const layoutKey = JSON.stringify(groups.map(group => [group.id, group.data.length, group.canToggle]));
   const pagination = useThreadListScroll(state, controller, layoutKey);
   const ready = state.ready;
   return (
     <SectionList style={styles.fill} sections={groups.map(group =>
-      ({ ...group, label: group.cwd ? group.label : t("client.chat.recent") }))} keyExtractor={(thread) => thread.id}
+      ({ ...group, key: group.id, label: group.kind === 'group' || group.cwd
+        ? group.label : t(group.id === 'ungrouped' ? 'client.groups.ungrouped' : 'client.chat.recent') }))}
+      keyExtractor={(thread) => thread.id}
       contentContainerStyle={[listStyles.content, { paddingBottom: bottomInset + LIST_BOTTOM_SPACING }]}
       stickySectionHeadersEnabled={false} keyboardShouldPersistTaps="handled"
       refreshing={Boolean(state.listRefreshing)} onRefresh={() => { void controller.list(); }}
       onLayout={pagination.onLayout} onContentSizeChange={pagination.onContentSizeChange}
       onScroll={pagination.onScroll} scrollEventThrottle={16}
-      renderSectionHeader={({ section }) => <View style={styles.row}>
+      renderSectionHeader={({ section }) => <View style={[styles.row,
+        { paddingLeft: Math.min(section.depth, 6) * 12 }]}>
         <Pressable accessibilityRole="button" accessibilityState={{ expanded: !section.collapsed }}
-          accessibilityLabel={`${section.collapsed ? t("client.chat.expandProject") : t("client.chat.collapseProject")}：${section.label}`}
+          accessibilityLabel={section.kind === 'group'
+            ? t(section.collapsed ? 'client.groups.expand' : 'client.groups.collapse', { name: section.label })
+            : `${section.collapsed ? t("client.chat.expandProject") : t("client.chat.collapseProject")}：${section.label}`}
           accessibilityHint={section.cwd ? t('client.projectActions.longPressHint') : undefined}
           delayLongPress={THREAD_LONG_PRESS_MS}
-          onLongPress={section.cwd ? () => openProjectActions(section) : undefined}
-          accessibilityActions={section.cwd ? [{ name: 'longpress',
-            label: t('client.conversation.manageProject', { value1: section.label }) }] : undefined}
+          onLongPress={section.kind === 'group' ? grouping?.openManager
+            : section.cwd ? () => openProjectActions(section) : undefined}
+          accessibilityActions={section.kind === 'group' || section.cwd ? [{ name: 'longpress',
+            label: section.kind === 'group' ? t('client.groups.manage')
+              : t('client.conversation.manageProject', { value1: section.label }) }] : undefined}
           onAccessibilityAction={event => {
-            if (section.cwd && event.nativeEvent.actionName === 'longpress') openProjectActions(section);
+            if (event.nativeEvent.actionName !== 'longpress') return;
+            if (section.kind === 'group') grouping?.openManager();
+            else if (section.cwd) openProjectActions(section);
           }}
-          style={[listStyles.projectToggle, styles.fill]} onPress={() => toggleCollapse(section.cwd)}>
+          style={[listStyles.projectToggle, styles.fill]} onPress={() => toggleCollapse(section.id)}>
           <Feather name={section.collapsed ? 'chevron-right' : 'chevron-down'} size={14} color={color(palette.muted, 'muted')} />
+          {section.kind === 'group' && <NativeGroupIcon icon={section.icon} size={16} />}
           <Text numberOfLines={1} style={[listStyles.project, styles.fill]}>{section.label}</Text>
           {state.sidebar.pinnedProjects?.includes(section.cwd) && <Feather name="bookmark" size={12}
             accessibilityLabel={t('client.workspaceActions.pinned')} color={color(palette.muted, 'muted')} />}
@@ -64,10 +77,10 @@ export function ChatThreadList({ state, newChat, select, controller, bottomInset
       </View>}
       renderSectionFooter={({ section }) => section.canToggle ? <Pressable accessibilityRole="button"
         accessibilityLabel={`${section.expanded ? t("client.chat.collapse") : t("client.chat.showMore.83ad87")}：${section.label}`}
-        accessibilityState={{ expanded: section.expanded }} style={listStyles.more} onPress={() => toggle(section.cwd)}>
+        accessibilityState={{ expanded: section.expanded }} style={listStyles.more} onPress={() => toggle(section.id)}>
         <Text style={styles.subtitle}>{section.expanded ? t("client.chat.collapse") : t("client.chat.showMore.83ad87")}</Text>
       </Pressable> : null}
-      renderItem={({ item }) => {
+      renderItem={({ item, section }) => {
         const view = threadPresentation(item, state.sidebar, displayText);
         return <Pressable accessibilityRole="button" accessibilityLabel={view.title}
           accessibilityHint={t("client.mobile.longPressToManageConversation")} delayLongPress={THREAD_LONG_PRESS_MS}
@@ -76,7 +89,8 @@ export function ChatThreadList({ state, newChat, select, controller, bottomInset
           onAccessibilityAction={event => { if (event.nativeEvent.actionName === 'longpress') openActions(item); }}
           accessibilityState={{ selected: state.selected?.id === item.id }}
           disabled={(!ready && !state.cachedThreadIds?.includes(item.id)) || state.sending}
-          style={[listStyles.thread, state.selected?.id === item.id && listStyles.selected]}
+          style={[listStyles.thread, { marginLeft: Math.min(section.depth, 6) * 12 + (section.kind === 'group' ? 40 : 0) },
+            state.selected?.id === item.id && listStyles.selected]}
           onPress={() => select(item)}>
           <Text numberOfLines={1} style={listStyles.title}>{view.title}</Text>
           <View style={listStyles.status}>
@@ -110,7 +124,7 @@ const useListStyles = createThemedStyles((color) => ({
   thread: { minHeight: 46, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center',
     gap: 10, borderRadius: 10 },
   selected: { backgroundColor: color('#e6f8f1', 'canvas') },
-  title: { flex: 1, color: color(palette.ink, 'ink'), fontSize: 14, lineHeight: 22 },
+  title: { flex: 1, color: color(palette.ink, 'ink'), ...textMetrics(14, 22) },
   status: { width: 18, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: color('#a7b1ab', 'elevated') },
   more: { paddingHorizontal: 10, minHeight: 40, justifyContent: 'center' },

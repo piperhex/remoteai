@@ -11,6 +11,7 @@ export interface SidebarThread {
   running: boolean;
 }
 export interface SidebarSnapshot {
+  grouping?: import('../chat/groups/model').Grouping;
   revision: number;
   pins?: string[];
   pinnedProjects?: string[];

@@ -7,6 +7,7 @@ import { previewThreads, THREAD_GROUP_PREVIEW_COUNT } from "../../../../../share
 import styles from "./ThreadGroup.module.less";
 
 interface ThreadGroupProps {
+  hideHeading?: boolean;
   label: string;
   pinned: boolean;
   threads: Thread[];
@@ -23,7 +24,7 @@ interface ThreadGroupProps {
 }
 
 export function ThreadGroup({ label, pinned, threads, selected, collapsed, expanded, filtering,
-  creatingDisabled, onNewConversation, projectMenu, projectPinned, onToggle, renderThread }: ThreadGroupProps) {
+  creatingDisabled, onNewConversation, projectMenu, projectPinned, onToggle, renderThread, hideHeading }: ThreadGroupProps) {
   const contentId = useId();
   const isCollapsed = collapsed && !filtering;
   const showAll = expanded || filtering;
@@ -38,8 +39,8 @@ export function ThreadGroup({ label, pinned, threads, selected, collapsed, expan
     <span className={styles.label}>{label}</span>
     {projectPinned && <Pin size={12} className={styles.pin} aria-label={uiText("client.workspaceActions.pinned")} />}
   </button>;
-  return <section className={styles.group} aria-label={label}>
-    <div className={styles.header}>
+  return <section className={styles.group} aria-label={label} style={hideHeading ? { margin: 0 } : undefined}>
+    {!hideHeading && <div className={styles.header}>
       {projectMenu ? projectMenu(heading) : heading}
       {onNewConversation && <Tooltip title={uiText("client.workspaceActions.newConversation")} overlayStyle={{ maxWidth: 400 }}>
         <button type="button" className={styles.add} aria-label={uiText("client.chat.startAChatIn", { value1: label })}
@@ -47,8 +48,9 @@ export function ThreadGroup({ label, pinned, threads, selected, collapsed, expan
           <SquarePen size={14} strokeWidth={1.6} aria-hidden="true" />
         </button>
       </Tooltip>}
-    </div>
-    <div id={contentId} className={styles.content} hidden={isCollapsed}>
+    </div>}
+    <div id={contentId} className={styles.content} hidden={isCollapsed}
+      style={hideHeading ? { paddingInlineStart: 42 } : undefined}>
       {(showAll ? threads : previewThreads(threads, selected)).map(renderThread)}
       {threads.length > THREAD_GROUP_PREVIEW_COUNT && !filtering && <button type="button" className={styles.more}
         aria-expanded={showAll} aria-controls={contentId} onClick={() => onToggle("expanded")}>

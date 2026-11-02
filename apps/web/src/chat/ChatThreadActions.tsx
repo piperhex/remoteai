@@ -6,8 +6,11 @@ import { THREAD_NAME_LIMIT } from '../../../../shared/remote-chat/client/threadA
 import { t } from '../i18n';
 import { useDesktopLayout } from '../useDesktopLayout';
 import './thread-actions.css';
+import { useGrouping } from '../../../../shared/chat/groups/context';
+import { GroupIcon } from '../../../../shared/chat/groups/GroupIcon';
 
 export function ChatThreadActions({ actions }: { actions: ThreadActionsModel }) {
+  const groups = useGrouping();
   const desktop = useDesktopLayout();
   if (!actions.target || (desktop && actions.view === 'menu')) return null;
   const { view, name, busy, error, reason } = actions;
@@ -19,6 +22,9 @@ export function ChatThreadActions({ actions }: { actions: ThreadActionsModel }) 
     onBack={!desktop && view !== 'menu' && !busy ? () => actions.changeView('menu') : undefined}>
     <div className="chat-thread-actions" aria-busy={busy}>
       {view === 'menu' && <>
+        {groups && <button type="button" disabled={!groups.ready} onClick={() => {
+          groups.setMoveTarget({ kind: 'thread', id: actions.target!.thread.id }); actions.close();
+        }}><GroupIcon />{t('client.groups.move')}</button>}
         <button type="button" disabled={!!reason('rename')} onClick={() => actions.changeView('rename')}>
           <Pencil size={19} />{t("client.threadActions.renameChat")}</button>
         <button type="button" disabled={!!reason(archive)} onClick={() => void actions.submit(archive)}>

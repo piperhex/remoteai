@@ -5,9 +5,11 @@ import { isThreadRunning } from "./threadRunning";
 import { prioritizeRunningThreads } from "../../../../../shared/chat/threadOrder";
 
 export function threadGroups(state: GuiState) {
-  const pinned = state.threads.filter((thread) => state.pins.includes(thread.id));
+  const pinnedIds = new Set(state.threads.filter(thread => state.pins.includes(thread.id)
+    && !state.grouping.projects[thread.cwd]).map(thread => thread.id));
+  const pinned = state.threads.filter((thread) => pinnedIds.has(thread.id));
   const byProject = new Map<string, Thread[]>();
-  state.threads.filter((thread) => !state.pins.includes(thread.id)).forEach((thread) => {
+  state.threads.filter((thread) => !pinnedIds.has(thread.id)).forEach((thread) => {
     const key = thread.cwd || "";
     byProject.set(key, [...(byProject.get(key) ?? []), thread]);
   });

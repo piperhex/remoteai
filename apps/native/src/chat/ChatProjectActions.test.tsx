@@ -3,6 +3,8 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ChatProjectActions } from './ChatProjectActions';
 import { useProjectActions, type ProjectActionsModel } from '../../../../shared/remote-chat/client/useProjectActions';
 import { initialChatState } from './types';
+import { useGrouping } from '../../../../shared/chat/groups/context';
+vi.mock('../../../../shared/chat/groups/context', () => ({ useGrouping: vi.fn(() => null) }));
 
 const hooks = vi.hoisted(() => ({ cursor: 0, values: [] as unknown[] }));
 vi.mock('react', async original => ({ ...await original<typeof React>(),
@@ -22,7 +24,8 @@ vi.mock('react-native', () => ({ Pressable: 'Pressable', Text: 'Text', View: 'Vi
   Platform: { OS: 'android' }, StyleSheet: { create: <T,>(value: T) => value } }));
 vi.mock('@expo/vector-icons/Feather', () => ({ default: 'Icon' }));
 vi.mock('../components/BottomSheet', () => ({ BottomSheet: 'BottomSheet' }));
-beforeEach(() => { hooks.cursor = 0; hooks.values = []; vi.stubGlobal('React', React); });
+beforeEach(() => { hooks.cursor = 0; hooks.values = []; vi.stubGlobal('React', React);
+  vi.mocked(useGrouping).mockReturnValue(null); });
 afterEach(() => vi.unstubAllGlobals());
 
 interface NodeProps { children?: ReactNode; onPress?: () => void; disabled?: boolean }
@@ -60,6 +63,17 @@ it('disables busy and offline actions while preserving errors for retry', () => 
   expect(busy.props.actions.every((action: { disabled: boolean }) => action.disabled)).toBe(true);
   const failed = ChatProjectActions({ actions: model({ error: '操作未完成，请稍后重试。' }) })!;
   expect(nodes(failed).some(node => node.props.children === '操作未完成，请稍后重试。')).toBe(true);
+});
+
+it('opens the shared group picker with the project path and closes the action sheet', () => {
+  const setMoveTarget = vi.fn();
+  vi.mocked(useGrouping).mockReturnValue({ ready: true, setMoveTarget } as unknown as ReturnType<typeof useGrouping>);
+  const actions = model();
+  const sheet = ChatProjectActions({ actions })!;
+  nodes(sheet).find(node => nodes(node.props.children).some(child => child.props.children === '移动到分组')
+    && node.props.onPress)?.props.onPress?.();
+  expect(setMoveTarget).toHaveBeenCalledWith({ kind: 'project', id: '/project' });
+  expect(actions.close).toHaveBeenCalledOnce();
 });
 
 it('serializes project submissions, retains failed targets and rejects the recent group', async () => {

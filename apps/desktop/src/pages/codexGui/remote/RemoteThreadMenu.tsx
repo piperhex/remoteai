@@ -32,7 +32,7 @@ export function RemoteThreadMenu({ thread, state, controller, actions, onClose, 
     openProject: Boolean(cwd), openProjectDisabled: !state.ready,
     disabled: action => action === 'fork' ? Boolean(forkUnavailableReason(state, thread))
       : disabled(action === 'pin' ? pin : action === 'archive' ? archive : action) });
-  return <ThreadContextMenu menu={{ items,
+  return <ThreadContextMenu groupTarget={{ kind: 'thread', id: thread.id }} menu={{ items,
     onClick: ({ key }) => {
       if (key === 'pin') run(pin);
       if (key === 'openProject') void openProject(cwd);

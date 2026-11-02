@@ -195,6 +195,7 @@ export interface GuiState {
   pins: string[];
   projects: string[];
   pinnedProjects: string[];
+  grouping: import('../../../../../shared/chat/groups/model').Grouping;
   threadReadState: Record<string, ThreadReadState>;
   removingProject?: string;
   projectOverrides: Record<string, string>;

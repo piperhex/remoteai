@@ -3,8 +3,11 @@ import type { ProjectActionsModel } from '../../../../shared/remote-chat/client/
 import { AdaptiveSheet } from '../components/AdaptiveSheet';
 import { displayError, t } from '../i18n';
 import './thread-actions.css';
+import { useGrouping } from '../../../../shared/chat/groups/context';
+import { GroupIcon } from '../../../../shared/chat/groups/GroupIcon';
 
 export function ChatProjectActions({ actions }: { actions: ProjectActionsModel }) {
+  const groups = useGrouping();
   if (!actions.target) return null;
   const { target, pinned, confirmRemove, busy, error, reason } = actions;
   const disabled = busy || !!reason;
@@ -21,6 +24,9 @@ export function ChatProjectActions({ actions }: { actions: ProjectActionsModel }
             {t(busy ? 'client.conversation.removing' : 'client.conversation.removeProject')}</button>
         </div>
       </> : <>
+        {groups && <button type="button" disabled={!groups.ready} onClick={() => {
+          groups.setMoveTarget({ kind: 'project', id: target.cwd }); actions.close();
+        }}><GroupIcon />{t('client.groups.move')}</button>}
         <button type="button" disabled={disabled} onClick={() => void actions.submit(pinned ? 'unpin' : 'pin')}>
           {pinned ? <PinOff size={19} /> : <Pin size={19} />}
           {t(pinned ? 'client.conversation.unpin' : 'client.conversation.pin')}</button>

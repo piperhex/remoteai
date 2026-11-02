@@ -5,6 +5,9 @@ import { ChatThreadList } from './ChatThreadList';
 import type { ThreadActionsModel } from '../../../../shared/remote-chat/client/useThreadActions';
 import { initialChatState, type Thread } from './types';
 import type { ChatController } from './controller';
+import { useGrouping } from '../../../../shared/chat/groups/context';
+vi.mock('../../../../shared/chat/groups/context', () => ({ useGrouping: vi.fn(() => null) }));
+vi.mock('./groups/GroupChoice', () => ({ NativeGroupIcon: 'GroupIcon' }));
 
 vi.mock('react-native', () => ({ Pressable: 'Pressable', SectionList: 'SectionList', Text: 'Text',
   View: 'View', TextInput: 'TextInput', ActivityIndicator: 'Spinner', Platform: { OS: 'android' },
@@ -13,7 +16,7 @@ vi.mock('@expo/vector-icons/Feather', () => ({ default: 'Icon' }));
 vi.mock('../components/BottomSheet', () => ({ BottomSheet: 'BottomSheet' }));
 vi.mock('./useThreadListScroll', () => ({ useThreadListScroll: () => ({}) }));
 vi.mock('../../../../shared/remote-chat/client/useThreadGroups', () => ({ useThreadGroups: () => ({ groups: [] }) }));
-beforeEach(() => vi.stubGlobal('React', React));
+beforeEach(() => { vi.stubGlobal('React', React); vi.mocked(useGrouping).mockReturnValue(null); });
 afterEach(() => vi.unstubAllGlobals());
 
 const thread: Thread = { id: 'chat', name: '对话名称', preview: '', cwd: '', updatedAt: 1 };
@@ -33,7 +36,7 @@ it('opens native long-press actions without selecting a conversation and exposes
   const select = vi.fn(); const openActions = vi.fn();
   const list = ChatThreadList({ state: { ...initialChatState(), ready: true }, controller: {} as ChatController,
     newChat: vi.fn(), select, openActions, openProjectActions: vi.fn(), bottomInset: 0 });
-  const row = list.props.renderItem({ item: thread });
+  const row = list.props.renderItem({ item: thread, section: { depth: 0 } });
   row.props.onLongPress();
   expect(openActions).toHaveBeenCalledWith(thread);
   expect(select).not.toHaveBeenCalled();
@@ -69,6 +72,15 @@ it('disables empty names and busy confirmations while retaining errors for retry
   expect(busy.props.actions[1].loading).toBe(true);
   expect(busy.props.actions[0].disabled).toBe(true);
   expect(nodes(busy).some(node => node.props.children === actions.error)).toBe(true);
+});
+
+it('opens the same group picker for a conversation', () => {
+  const setMoveTarget = vi.fn();
+  vi.mocked(useGrouping).mockReturnValue({ ready: true, setMoveTarget } as unknown as ReturnType<typeof useGrouping>);
+  const actions = model();
+  nodes(ChatThreadActions({ actions })).find(node => node.props.label === '移动到分组')?.props.onPress?.();
+  expect(setMoveTarget).toHaveBeenCalledWith({ kind: 'thread', id: thread.id });
+  expect(actions.close).toHaveBeenCalledOnce();
 });
 
 vi.mock('react', async () => ({ ...await vi.importActual<typeof import('react')>('react'),

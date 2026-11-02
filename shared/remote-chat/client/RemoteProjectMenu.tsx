@@ -28,7 +28,7 @@ export function RemoteProjectMenu({ cwd, label, state, controller, translate, bu
         ? error.message : 'client.errors.theOperationFailedPleaseTryAgain')}</span>);
     }
   };
-  return <ProjectContextMenu label={label} pinned={pinned} removing={state.projectActionBusy === cwd}
+  return <ProjectContextMenu groupPath={cwd} label={label} pinned={pinned} removing={state.projectActionBusy === cwd}
     pinDisabled={disabled} removeDisabled={disabled} onPin={() => void run(pinned ? 'unpin' : 'pin')}
     onOpen={() => void openProject(cwd)} openDisabled={!state.ready}
     onRemove={() => void run('remove')} translate={translate} buttonClassName={buttonClassName}

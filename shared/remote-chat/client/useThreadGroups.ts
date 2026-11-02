@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { previewThreads, THREAD_GROUP_PREVIEW_COUNT } from '../../chat/threadGroupPreview';
 import { projectThreadGroups } from '../sidebar';
 import type { ChatState } from './types';
+import { groupingTree, flattenGroupingTree } from '../../chat/groups/tree';
 
 function toggleProject(previous: Set<string>, cwd: string) {
   const next = new Set(previous);
@@ -14,9 +15,11 @@ export function useThreadGroups(state: ChatState) {
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const filtering = Boolean(state.search.trim());
-  const groups = useMemo(() => projectThreadGroups(state.threads, state.sidebar).map((group) => {
-    const showAll = filtering || expanded.has(group.cwd);
-    const isCollapsed = collapsed.has(group.cwd);
+  const groups = useMemo(() => flattenGroupingTree(
+    groupingTree(projectThreadGroups(state.threads, state.sidebar), state.sidebar.grouping),
+    filtering ? new Set() : collapsed).map((group) => {
+    const showAll = filtering || expanded.has(group.id);
+    const isCollapsed = !filtering && collapsed.has(group.id);
     const visibleThreads = showAll ? group.data : previewThreads(group.data, state.selected?.id ?? null);
     return { ...group, expanded: showAll, collapsed: isCollapsed,
       canToggle: !isCollapsed && !filtering && group.data.length > THREAD_GROUP_PREVIEW_COUNT,
