@@ -1,5 +1,4 @@
 {
-  "client.downloads.workspace.subtitle": "查看传输状态，打开或保存文件",
   "client.downloads.workspace.search": "搜索文件名…",
   "client.downloads.workspace.clearSearch": "清除搜索",
   "client.downloads.workspace.filter": "筛选下载任务",
@@ -11,7 +10,6 @@
   "client.downloads.workspace.finishBatch": "完成管理",
   "client.downloads.workspace.selectedCount": "已选择 {count} 项",
   "client.downloads.workspace.noSearchResults": "没有找到匹配的文件，请换个名称试试。",
-  "client.downloads.workspace.retryHint": "下载中断后自动重试，最多 {count} 次。",
   "client.downloads.workspace.viewAll": "查看全部任务",
   "client.downloads.workspace.taskActions": "文件操作：{name}",
   "client.downloads.workspace.retry": "重试",

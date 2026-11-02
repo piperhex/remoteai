@@ -1,5 +1,4 @@
 {
-  "client.downloads.workspace.subtitle": "転送状況を確認し、ファイルを開く・保存する",
   "client.downloads.workspace.search": "ファイル名を検索…",
   "client.downloads.workspace.clearSearch": "検索をクリア",
   "client.downloads.workspace.filter": "ダウンロードを絞り込む",
@@ -11,7 +10,6 @@
   "client.downloads.workspace.finishBatch": "完了",
   "client.downloads.workspace.selectedCount": "{count} 件選択中",
   "client.downloads.workspace.noSearchResults": "一致するファイルがありません。別の名前で検索してください。",
-  "client.downloads.workspace.retryHint": "中断したダウンロードは最大 {count} 回まで自動で再試行します。",
   "client.downloads.workspace.viewAll": "すべてのタスクを表示",
   "client.downloads.workspace.taskActions": "ファイル操作：{name}",
   "client.downloads.workspace.retry": "再試行",

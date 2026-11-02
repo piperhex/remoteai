@@ -1,11 +1,10 @@
 import { useState, type ReactNode } from 'react';
-import { ArrowDownUp, ArrowLeft, ArrowRight, Check, Download, Info, LayoutGrid, Search, X } from 'lucide-react';
+import { ArrowDownUp, ArrowLeft, ArrowRight, Check, Download, LayoutGrid, Search, X } from 'lucide-react';
 import { displayError, displayText } from '../../i18n';
 import { downloadManager } from '../manager';
 import { DownloadBatchActions } from '../DownloadBatchActions';
 import type { DownloadTask } from '../types';
 import { useDownloadSelection } from '../../../../../shared/downloads/useDownloadSelection';
-import { MAX_DOWNLOAD_RETRIES } from '../../../../../shared/remote-chat/downloadRetry';
 import { ActiveDownloadCard, ReadyDownloadRow, type DownloadItemProps } from './DownloadTaskItem';
 import { isDownloadReady, visibleDownloads, type DownloadFilter, type DownloadSort,
   type DownloadText } from './downloadPresentation';
@@ -55,7 +54,6 @@ export function DownloadWorkspace({ tasks, owner, busy, error, run, removeTasks,
         aria-label={text('client.discovery.back')}><ArrowLeft size={22} /></button>}
       <div className="dw-title"><div><h1>{text('client.downloads.downloads')}</h1>
         <span className="dw-count">{text('client.downloads.tasks', { count: tasks.length })}</span></div>
-        <p>{text('client.downloads.workspace.subtitle')}</p>
       </div>
       <label className="dw-search"><Search size={20} aria-hidden />
         <input type="search" value={query} onChange={event => setQuery(event.target.value)}
@@ -116,10 +114,9 @@ export function DownloadWorkspace({ tasks, owner, busy, error, run, removeTasks,
       <p>{text(query ? 'client.downloads.workspace.noSearchResults'
         : 'client.downloads.openAFileInChatAndChooseDownloadToSee')}</p>
     </div>}
-    <footer className="dw-footer"><p><Info size={18} />
-      {text('client.downloads.workspace.retryHint', { count: MAX_DOWNLOAD_RETRIES })}</p>
-      {(filter !== 'all' || query) && <button type="button" onClick={reset}>
-        {text('client.downloads.workspace.viewAll')}<ArrowRight size={18} /></button>}
-    </footer>
+    {(filter !== 'all' || query) && <footer className="dw-footer">
+      <button type="button" onClick={reset}>
+        {text('client.downloads.workspace.viewAll')}<ArrowRight size={18} /></button>
+    </footer>}
   </section>;
 }

@@ -10,14 +10,12 @@ export interface MessageParams11 {
   "client.downloads.workspace.remainingSeconds": { "count": string | number };
   "client.downloads.workspace.retry": Record<string, never>;
   "client.downloads.workspace.retryAttempt": { "count": string | number; "total": string | number };
-  "client.downloads.workspace.retryHint": { "count": string | number };
   "client.downloads.workspace.search": Record<string, never>;
   "client.downloads.workspace.selectedCount": { "count": string | number };
   "client.downloads.workspace.sort": Record<string, never>;
   "client.downloads.workspace.sortName": Record<string, never>;
   "client.downloads.workspace.sortRecent": Record<string, never>;
   "client.downloads.workspace.sortSize": Record<string, never>;
-  "client.downloads.workspace.subtitle": Record<string, never>;
   "client.downloads.workspace.taskActions": { "name": string | number };
   "client.downloads.workspace.viewAll": Record<string, never>;
   "client.downloads.workspace.waitingRetry": Record<string, never>;
@@ -200,4 +198,6 @@ export interface MessageParams11 {
   "client.errorsAccounts.couldNotReadTheConfigurationMakeSureTheFileIs": Record<string, never>;
   "client.errorsAccounts.couldNotReadTheConversationDataRestoreItFromA": Record<string, never>;
   "client.errorsAccounts.couldNotReadTheSelectedFolder": { "value1": string | number };
+  "client.errorsAccounts.couldNotRefreshSignInCredentials": { "value1": string | number };
+  "client.errorsAccounts.couldNotRefreshSignInCredentialsHttpSignInAgain": { "value1": string | number };
 }

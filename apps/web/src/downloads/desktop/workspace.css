@@ -22,7 +22,6 @@
 .dw-title { flex: 1; min-width: 0; }
 .dw-title > div { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .dw-title h1 { margin: 0; font-size: 24px; font-weight: 650; line-height: 1.4; }
-.dw-title p { margin: 4px 0 0; color: var(--dw-muted); font-size: 13px; line-height: 1.6; }
 .dw-count { flex-shrink: 0; padding: 3px 8px; border-radius: 7px;
   background: color-mix(in srgb, var(--dw-muted) 10%, transparent); color: var(--dw-muted);
   font-size: 12px; line-height: 1.5; font-variant-numeric: tabular-nums; }
@@ -69,9 +68,9 @@
 .dw-empty { display: grid; justify-items: center; gap: 14px; padding: 80px 24px; text-align: center; color: var(--dw-muted); }
 .dw-empty h2 { margin: 0; color: var(--dw-ink); font-size: 16px; }
 .dw-empty p { max-width: 400px; margin: 0; line-height: 1.7; }
-.dw-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 20px;
+.dw-footer { display: flex; align-items: center; justify-content: flex-end; gap: 20px; margin-top: 20px;
   color: var(--dw-muted); font-size: 12px; }
-.dw-footer p, .dw-footer button { display: flex; align-items: center; gap: 10px; margin: 0; line-height: 1.7; }
+.dw-footer button { display: flex; align-items: center; gap: 10px; margin: 0; line-height: 1.7; }
 .dw-footer button { flex-shrink: 0; border: 0; background: transparent; color: var(--dw-accent); }
 .dw-task-menu { max-width: min(400px, calc(100vw - 32px)); }
 .dw-task-menu .ant-dropdown-menu-title-content { white-space: normal; overflow-wrap: anywhere; }

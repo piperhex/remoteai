@@ -1,5 +1,4 @@
 {
-  "client.downloads.workspace.subtitle": "Track transfers, open or save files",
   "client.downloads.workspace.search": "Search file names…",
   "client.downloads.workspace.clearSearch": "Clear search",
   "client.downloads.workspace.filter": "Filter downloads",
@@ -11,7 +10,6 @@
   "client.downloads.workspace.finishBatch": "Done",
   "client.downloads.workspace.selectedCount": "{count} selected",
   "client.downloads.workspace.noSearchResults": "No matching files. Try another name.",
-  "client.downloads.workspace.retryHint": "Interrupted downloads retry automatically, up to {count} times.",
   "client.downloads.workspace.viewAll": "View all tasks",
   "client.downloads.workspace.taskActions": "File actions: {name}",
   "client.downloads.workspace.retry": "Retry",

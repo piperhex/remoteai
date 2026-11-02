@@ -1,5 +1,4 @@
 {
-  "client.downloads.workspace.subtitle": "Следите за передачей, открывайте и сохраняйте файлы",
   "client.downloads.workspace.search": "Поиск по имени файла…",
   "client.downloads.workspace.clearSearch": "Очистить поиск",
   "client.downloads.workspace.filter": "Фильтр загрузок",
@@ -11,7 +10,6 @@
   "client.downloads.workspace.finishBatch": "Готово",
   "client.downloads.workspace.selectedCount": "Выбрано: {count}",
   "client.downloads.workspace.noSearchResults": "Файлы не найдены. Попробуйте другое имя.",
-  "client.downloads.workspace.retryHint": "При прерывании загрузки выполняется до {count} автоматических повторов.",
   "client.downloads.workspace.viewAll": "Все задачи",
   "client.downloads.workspace.taskActions": "Действия с файлом: {name}",
   "client.downloads.workspace.retry": "Повторить",
