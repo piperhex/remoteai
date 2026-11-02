@@ -8,7 +8,10 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const maxQueuedBytes = 12 * 1024 * 1024
+// A complete, bounded avatar subscription must fit even before its writer runs.
+// Retain two ordinary frame budgets for profile metadata and concurrent messages;
+// peers that accumulate more still close without blocking the shared hub lock.
+const maxQueuedBytes = maxWatchedContacts*((maxAvatarBytes+2)/3*4) + 2*maxFrameBytes
 
 type peer struct {
 	conn           *websocket.Conn
