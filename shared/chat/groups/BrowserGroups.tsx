@@ -5,12 +5,14 @@ import { groupOptions, groupPath, type ChatGroup } from './model';
 import { GroupIcon } from './GroupIcon';
 import { GroupEditor } from './GroupEditor';
 import { GroupMembers } from './GroupMembers';
+import { GroupCards } from './GroupCards';
 import './groups.css';
 
-export function BrowserGroups({ children, ...options }: Parameters<typeof useGroupingUI>[0] & { children: ReactNode }) {
+export function BrowserGroups({ children, mobile = false, ...options }: Parameters<typeof useGroupingUI>[0]
+  & { children: ReactNode; mobile?: boolean }) {
   const model = useGroupingUI(options);
   return <GroupingContext.Provider value={model}>{children}
-    {model.managerOpen && <GroupManager model={model} />}
+    {model.managerOpen && <GroupManager model={model} mobile={mobile} />}
     {model.moveTarget && <Modal open width={400} footer={null} title={model.translate('client.groups.move')}
       onCancel={() => { if (!model.busy) model.setMoveTarget(null); }}>
       <div className="chat-group-picker">
@@ -29,7 +31,7 @@ export function BrowserGroups({ children, ...options }: Parameters<typeof useGro
   </GroupingContext.Provider>;
 }
 
-function GroupManager({ model }: { model: GroupingUI }) {
+function GroupManager({ model, mobile }: { model: GroupingUI; mobile: boolean }) {
   const t = model.translate;
   const [editing, setEditing] = useState<ChatGroup | 'new' | null>(null);
   const [deleting, setDeleting] = useState<ChatGroup | null>(null);
@@ -42,7 +44,8 @@ function GroupManager({ model }: { model: GroupingUI }) {
       { key: 'groups', label: t('client.groups.groups'), children: <>
         <Button type="primary" disabled={model.busy || !model.ready}
           onClick={() => setEditing('new')}>{t('client.groups.create')}</Button>
-        <Table<ChatGroup> size="small" rowKey="id" dataSource={model.grouping.groups}
+        {mobile ? <GroupCards model={model} edit={setEditing} remove={setDeleting} />
+          : <Table<ChatGroup> size="small" rowKey="id" dataSource={model.grouping.groups}
           locale={{ emptyText: t('client.groups.empty') }} pagination={false} columns={[
             { title: t('client.groups.name'), render: (_, group) => <Space><GroupIcon icon={group.icon} />
               <span>{group.name}</span></Space> },
@@ -54,9 +57,9 @@ function GroupManager({ model }: { model: GroupingUI }) {
               <Button size="small" danger disabled={model.busy || !model.ready}
                 onClick={() => setDeleting(group)}>{t('client.groups.delete')}</Button>
             </Space> },
-          ]} />
+          ]} />}
       </> },
-      { key: 'members', label: t('client.groups.members'), children: <GroupMembers model={model} /> },
+      { key: 'members', label: t('client.groups.members'), children: <GroupMembers model={model} mobile={mobile} /> },
     ]} />
     {editing && <GroupEditor model={model} group={editing === 'new' ? undefined : editing}
       close={() => { setEditing(null); model.setError(''); }} />}

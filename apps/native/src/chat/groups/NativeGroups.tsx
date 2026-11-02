@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { GroupingContext, useGroupingUI, type GroupingUI } from '../../../../../shared/chat/groups/context';
-import { groupPath, type ChatGroup } from '../../../../../shared/chat/groups/model';
+import type { ChatGroup } from '../../../../../shared/chat/groups/model';
 import { BottomSheet } from '../../components/BottomSheet';
 import { SheetInset, SheetScrollView } from '../../components/SheetScrollView';
 import { displayError, t } from '../../i18n';
-import { GroupChoice, NativeGroupIcon } from './GroupChoice';
+import { GroupChoice } from './GroupChoice';
+import { GroupCards } from './GroupCards';
 import { GroupEditor } from './GroupEditor';
 import { GroupMembers } from './GroupMembers';
 import { useGroupStyles } from './styles';
@@ -41,27 +42,11 @@ function GroupManager({ model }: { model: GroupingUI }) {
       </Pressable>)}
     </View></SheetInset>
     {!!model.error && !editing && <Text accessibilityRole="alert" style={styles.error}>{displayError(model.error)}</Text>}
-    <SheetScrollView><View style={styles.body}>
+    <SheetScrollView key={tab}><View style={styles.body}>
       {tab === 'members' ? <GroupMembers model={model} /> : <>
         <Pressable accessibilityRole="button" style={styles.action} disabled={model.busy || !model.ready}
           onPress={() => setEditing('new')}><Text style={styles.text}>{t('client.groups.create')}</Text></Pressable>
-        {!model.grouping.groups.length && <Text style={styles.muted}>{t('client.groups.empty')}</Text>}
-        <ScrollView horizontal><View>
-          <View style={styles.line}>
-            <Text style={[styles.text, styles.cell]}>{t('client.groups.name')}</Text>
-            <Text style={[styles.text, styles.cell]}>{t('client.groups.parent')}</Text>
-          </View>
-          {model.grouping.groups.map(group => <View key={group.id} style={styles.line}>
-            <View style={[styles.cell, styles.row]}><NativeGroupIcon icon={group.icon} />
-              <Text style={styles.text}>{group.name}</Text></View>
-            <Text style={[styles.text, styles.cell]}>{group.parentId
-              ? groupPath(model.grouping.groups, group.parentId) : t('client.groups.root')}</Text>
-            <Pressable accessibilityRole="button" style={styles.action} disabled={model.busy || !model.ready}
-              onPress={() => setEditing(group)}><Text style={styles.text}>{t('client.groups.edit')}</Text></Pressable>
-            <Pressable accessibilityRole="button" style={styles.action} disabled={model.busy || !model.ready}
-              onPress={() => setDeleting(group)}><Text style={styles.error}>{t('client.groups.delete')}</Text></Pressable>
-          </View>)}
-        </View></ScrollView>
+        <GroupCards model={model} edit={setEditing} remove={setDeleting} />
       </>}
     </View></SheetScrollView>
     {editing && <GroupEditor model={model} group={editing === 'new' ? undefined : editing}

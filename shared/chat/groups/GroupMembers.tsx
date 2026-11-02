@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { Button, Input, Select, Space, Table, Tag } from 'antd';
 import type { GroupingUI } from './context';
 import { groupOptions, groupPath, memberGroup, type GroupMember } from './model';
+import { GroupMemberCards } from './GroupMemberCards';
 
-export function GroupMembers({ model }: { model: GroupingUI }) {
+export function GroupMembers({ model, mobile }: { model: GroupingUI; mobile: boolean }) {
   const t = model.translate;
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<React.Key[]>([]);
@@ -28,7 +29,8 @@ export function GroupMembers({ model }: { model: GroupingUI }) {
         loading={model.busy} onClick={() => void assign()}>{t('client.groups.apply')}</Button>
       <Button loading={model.loading} onClick={() => void model.reload()}>{t('client.workspaceActions.refreshConversations')}</Button>
     </Space>
-    <Table<GroupMember> size="small" rowKey={key} dataSource={rows} loading={model.loading}
+    {mobile ? <GroupMemberCards key={query} model={model} rows={rows} selected={selected} change={setSelected} />
+      : <Table<GroupMember> size="small" rowKey={key} dataSource={rows} loading={model.loading}
       rowSelection={{ selectedRowKeys: selected, onChange: keys => setSelected(keys),
         getCheckboxProps: () => ({ disabled: model.busy || model.loading }) }}
       pagination={{ pageSize: 20, showSizeChanger: false }} scroll={{ x: 580 }} columns={[
@@ -40,6 +42,6 @@ export function GroupMembers({ model }: { model: GroupingUI }) {
           const id = memberGroup(model.grouping, row);
           return <span>{id ? groupPath(model.grouping.groups, id) : t('client.groups.ungrouped')}</span>;
         } },
-      ]} />
+      ]} />}
   </div>;
 }

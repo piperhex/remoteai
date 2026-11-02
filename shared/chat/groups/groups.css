@@ -22,3 +22,14 @@
 .chat-custom-group-heading:hover, .chat-custom-group-heading:focus-visible { background: var(--green-soft, #8881); }
 .chat-custom-group-heading > svg { flex-shrink: 0; }
 .chat-custom-group-heading span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-group-cards { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+.chat-group-card { border-radius: 12px; overflow-wrap: anywhere; }
+.chat-group-card[data-selected="true"] { border-color: var(--green, #0b8065); }
+.chat-group-card-heading { display: flex; align-items: center; gap: 10px; }
+.chat-group-card-heading > svg, .chat-group-card-heading > img { flex-shrink: 0; }
+.chat-group-card-heading strong { flex: 1; min-width: 0; }
+.chat-group-card-detail { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 10px; }
+.chat-group-card-detail > span:first-child, .chat-group-card-path { opacity: .7; }
+.chat-group-card-path { display: block; margin-top: 6px; }
+.chat-group-card-more.ant-btn { flex-shrink: 0; width: 44px; height: 44px; margin: -8px -8px -8px 0; }
+.chat-group-card .ant-checkbox-wrapper { align-items: flex-start; width: 100%; }

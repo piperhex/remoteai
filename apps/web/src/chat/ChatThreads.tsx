@@ -28,8 +28,9 @@ interface Props {
 
 export function ChatThreads(props: Props) {
   useLanguage();
+  const desktop = useDesktopLayout();
   return <BrowserGroups grouping={props.state.sidebar.grouping} client={props.controller.groups}
-    translate={t} ready={props.state.ready}><ChatThreadsContent {...props} /></BrowserGroups>;
+    translate={t} ready={props.state.ready} mobile={!desktop}><ChatThreadsContent {...props} /></BrowserGroups>;
 }
 
 function ChatThreadsContent({ state, controller, newChat, onClose, openSearch, profile, accountPicker }: Props) {

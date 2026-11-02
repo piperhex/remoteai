@@ -23,11 +23,12 @@ async function nodes() {
     [...match[1].matchAll(/([\w-]+)="([^"]*)"/g)].map(attribute => [attribute[1], attribute[2]])));
 }
 const matches = (node, label) => node['content-desc'] === label || node.text === label;
-async function find(label) {
+async function find(label, scroll = false) {
   for (let attempt = 0; attempt < 8; attempt++) {
     const found = (await nodes()).filter(value => matches(value, label));
     const node = found.find(value => value.class === 'android.widget.EditText') ?? found[0];
     if (node) return node;
+    if (scroll) await adb('shell', 'input', 'swipe', '540', '1850', '540', '900', '300');
     await delay(400);
   }
   assert.fail(`Missing native label: ${label}`);
@@ -36,7 +37,7 @@ const center = node => {
   const [left, top, right, bottom] = [...node.bounds.matchAll(/\d+/g)].map(value => Number(value[0]));
   return [Math.round((left + right) / 2), Math.round((top + bottom) / 2)].map(String);
 };
-async function tap(label) { await adb('shell', 'input', 'tap', ...center(await find(label))); }
+async function tap(label, scroll = false) { await adb('shell', 'input', 'tap', ...center(await find(label, scroll))); }
 async function hold(label) {
   const point = center(await find(label));
   await adb('shell', 'input', 'swipe', ...point, ...point, '800');
@@ -45,6 +46,10 @@ async function screenshot(name) {
   await delay(500);
   await adb('shell', 'screencap', '-p', '/sdcard/custom-groups.png');
   await adb('pull', '/sdcard/custom-groups.png', path.join(output, `${name}.png`));
+}
+async function dismissKeyboard() {
+  const keyboard = await adb('shell', 'dumpsys', 'input_method');
+  if (/mInputShown=true|isInputViewShown=true/.test(keyboard)) await adb('shell', 'input', 'keyevent', '4');
 }
 
 async function verify(scale) {
@@ -68,17 +73,34 @@ async function verify(scale) {
   await tap('新增分组');
   await tap('分组名称');
   await adb('shell', 'input', 'text', 'Plan');
-  const keyboard = await adb('shell', 'dumpsys', 'input_method');
-  if (/mInputShown=true|isInputViewShown=true/.test(keyboard)) await adb('shell', 'input', 'keyevent', '4');
+  await dismissKeyboard();
   await screenshot(`android-editor-${scale}`);
   await tap('保存');
-  await find('Plan');
+  await find('Plan', true);
   await screenshot(`android-groups-${scale}`);
+  await tap('Plan 的更多操作', true);
+  await find('编辑分组');
+  await find('删除分组');
+  await screenshot(`android-group-menu-${scale}`);
+  await tap('编辑分组');
+  await find('分组名称');
+  await dismissKeyboard();
+  await tap('取消');
+  await tap('Plan 的更多操作', true);
+  await tap('删除分组');
+  await find('删除“Plan”？');
+  await tap('取消');
   await tap('项目与对话');
-  await tap('选择 项目里的对话');
-  await tap('选择 其他项目的对话');
+  await tap('选择 项目里的对话', true);
+  await tap('选择 其他项目的对话', true);
+  await adb('shell', 'input', 'swipe', '540', '750', '540', '1900', '350');
+  await adb('shell', 'input', 'swipe', '540', '750', '540', '1900', '350');
   await tap('移动到分组');
   await tap('Plan');
+  await tap('搜索项目或对话');
+  await adb('shell', 'input', 'text', 'project');
+  await adb('shell', 'input', 'keyevent', '4');
+  await find('选择 项目里的对话', true);
   await screenshot(`android-members-${scale}`);
   await adb('shell', 'input', 'keyevent', '4');
   await find('折叠分组：Plan');
