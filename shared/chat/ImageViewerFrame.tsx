@@ -1,6 +1,7 @@
 import type { MouseEventHandler, ReactNode } from 'react';
 import { defaultText } from '../localization/messages';
 import { IMAGE_ZOOM_FACTOR, useImageGestures } from './useImageGestures';
+import { useImageBackdropDismiss } from './useImageBackdropDismiss';
 import './imageViewer.css';
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
 export function ImageViewerFrame({ src, description, close, translate = defaultText, naturalSize = false,
   onError, onContextMenu, renderToolbar, children }: Props) {
   const gestures = useImageGestures();
+  const backdrop = useImageBackdropDismiss(gestures.stageRef, close);
   const controls = <div className="cs-image-toolbar">
     <button type="button" aria-label={translate('client.shared.zoomOut')}
       onClick={() => gestures.zoom(1 / IMAGE_ZOOM_FACTOR)}>−</button>
@@ -32,7 +34,7 @@ export function ImageViewerFrame({ src, description, close, translate = defaultT
     className="cs-image-viewer" aria-label={description} onCancel={close}
     onWheel={event => event.stopPropagation()}>
     <div className={`cs-image-stage${naturalSize ? ' cs-image-stage-natural' : ''}`}
-      ref={gestures.stageRef} {...gestures.stageProps} onDragStart={event => event.preventDefault()}
+      ref={gestures.stageRef} {...gestures.stageProps} {...backdrop} onDragStart={event => event.preventDefault()}
       onContextMenu={onContextMenu}>
       <img src={src} alt={description} draggable={false} referrerPolicy="no-referrer"
         onError={onError} ref={gestures.imageRef} />

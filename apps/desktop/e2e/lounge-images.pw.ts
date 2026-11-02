@@ -104,7 +104,14 @@ for (const mode of ['local', 'remote', 'web', 'mobile']) {
     await expect(stage.locator('img')).toBeVisible();
     await expectFullscreenPreview(page, preview);
     await expectOriginalDownload(page, preview, portrait);
+    await page.mouse.click(page.viewportSize()!.width / 2, page.viewportSize()!.height / 2);
+    await expect(preview).toBeVisible();
     await page.screenshot({ path: test.info().outputPath(`${mode}-fullscreen-preview.png`) });
+    await page.mouse.click(20, 75);
+    await expect(preview).toBeHidden();
+    await page.screenshot({ path: test.info().outputPath(`${mode}-background-dismissed.png`) });
+    await page.locator('.lounge-message.is-own').getByRole('button', { name: '查看图片' }).click();
+    await expect(stage).toBeVisible();
     await stage.hover();
     await pinchAndPan(page, stage);
     await preview.getByRole('button', { name: '放大图片', exact: true }).click();
@@ -120,7 +127,7 @@ for (const mode of ['local', 'remote', 'web', 'mobile']) {
     await expect(stage).toBeVisible(); await stage.hover();
     await pinchAndPan(page, stage);
     await expectOriginalDownload(page, preview, portrait);
-    await preview.getByRole('button', { name: '关闭图片', exact: true }).click();
+    await page.mouse.click(20, 75);
     await expect(preview).toBeHidden();
     await expect(page.getByRole('dialog', { name: '历史记录', exact: true })).toBeVisible();
   });

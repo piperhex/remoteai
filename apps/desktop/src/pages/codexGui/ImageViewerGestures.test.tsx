@@ -16,6 +16,7 @@ const showModal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, '
 
 beforeEach(async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   frames = new Map();
   captures = new Set();
   let frameId = 0;

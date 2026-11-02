@@ -2,7 +2,7 @@ import { testBrowserLaunchOptions } from '../../scripts/test-browser.mjs';
 import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
-  testMatch: /(?:image-ai|local-image-preview|image-preview-toolbar|image-viewer-(?:drag|zoom))\.pw\.ts/,
+  testMatch: /(?:image-ai|local-image-preview|image-preview-toolbar|image-viewer-(?:drag|zoom|dismiss))\.pw\.ts/,
   workers: 1, timeout: 30_000,
   outputDir: '../../.codex-tmp/image-ai-playwright',
   use: {

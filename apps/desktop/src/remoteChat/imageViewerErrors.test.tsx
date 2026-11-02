@@ -14,6 +14,7 @@ let container: HTMLDivElement;
 
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   container = document.createElement('div');
   document.body.append(container);
