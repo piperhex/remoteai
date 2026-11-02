@@ -9,13 +9,23 @@ import type { AttachmentImageStore } from '../../../../shared/lounge/attachmentC
 
 export function nativeAttachmentImages(scope: string): AttachmentImageStore {
   const key = (id: string) => `lounge-image:${JSON.stringify([scope, id])}`;
-  return { sink: nativeAttachmentSink,
+  const store: AttachmentImageStore = { sink: nativeAttachmentSink,
     get: async id => {
       const uri = Storage.getItemSync(key(id));
       return uri && (await Files.getInfoAsync(uri)).exists ? uri : undefined;
     },
     put: async (id, uri) => { Storage.setItemSync(key(id), uri); },
   };
+  store.source = async id => {
+    const uri = await store.get(id);
+    if (!uri) return;
+    const info = await Files.getInfoAsync(uri);
+    if (!info.exists || info.isDirectory) return;
+    return { name: 'image', mime: 'application/octet-stream', size: info.size,
+      read: (position, length) => Files.readAsStringAsync(uri, { encoding: Files.EncodingType.Base64,
+        position, length }) };
+  };
+  return store;
 }
 
 export async function pickLoungeFile(): Promise<AttachmentSource | undefined> {

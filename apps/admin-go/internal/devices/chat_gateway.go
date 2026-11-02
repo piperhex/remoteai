@@ -152,6 +152,9 @@ func (g *ChatGateway) receive(client *peer, state *chatConnection, message platf
 		if state.identity.role == "lounge" && message["type"] == "attachment-connect" {
 			return g.connectAttachment(client, *state.identity, message)
 		}
+		if state.identity.role == "lounge" && message["type"] == "attachment-available" {
+			return g.sessions.attachmentAvailable(client, message)
+		}
 		return g.sessions.route(client, message)
 	}
 	identity, err := g.authenticate(message)

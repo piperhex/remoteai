@@ -34,6 +34,19 @@ type attachmentClaims struct {
 	jwt.RegisteredClaims
 }
 
+// Images belong to local history: signed recipient, blocking and deletion-generation checks
+// remain authoritative after seven days, including for images issued by older servers.
+// Ordinary file grants retain their original expiration requirement.
+func (value attachmentClaims) GetExpirationTime() (*jwt.NumericDate, error) {
+	if value.File.Kind == "image" {
+		return nil, nil
+	}
+	if value.ExpiresAt == nil {
+		return nil, errInvalid
+	}
+	return value.ExpiresAt, nil
+}
+
 func (h *hub) registerAttachments(deps *platform.Dependencies) {
 	h.attachmentPolicy = func() (map[string]interface{}, error) { return content.ReadChatPolicy(deps.DB) }
 	deps.LoungeAttachment = h.verifyAttachment
@@ -45,7 +58,7 @@ func (h *hub) verifyAttachment(token, viewer string) (string, string, string, er
 		return "", "", "", errInvalid
 	}
 	_, err := jwt.ParseWithClaims(token, &value, func(*jwt.Token) (interface{}, error) { return h.key, nil },
-		jwt.WithValidMethods([]string{"HS256"}), jwt.WithAudience("lounge-attachment"), jwt.WithExpirationRequired())
+		jwt.WithValidMethods([]string{"HS256"}), jwt.WithAudience("lounge-attachment"))
 	if err != nil || value.Subject == "" || value.Device == "" ||
 		(value.Recipient != "" && viewer != value.Recipient && viewer != value.Subject) {
 		return "", "", "", errInvalid

@@ -17,23 +17,24 @@ type desktopInfo struct {
 	assistance bool
 }
 type chatSessions struct {
-	lounge     map[*peer]loungePeer
-	mu         sync.Mutex
-	desktops   map[string]*peer
-	info       map[*peer]desktopInfo
-	sessions   map[string]*chatSession
-	hot        *hotSessions
-	onRelay    func(int)
-	deliver    func(relayDelivery, platform.JSON)
-	desktopICE func(string, time.Time) []platform.JSON
-	assistance map[string]*assistanceRequest
+	lounge      map[*peer]loungePeer
+	mu          sync.Mutex
+	desktops    map[string]*peer
+	info        map[*peer]desktopInfo
+	sessions    map[string]*chatSession
+	hot         *hotSessions
+	onRelay     func(int)
+	deliver     func(relayDelivery, platform.JSON)
+	desktopICE  func(string, time.Time) []platform.JSON
+	assistance  map[string]*assistanceRequest
+	attachments map[string]*attachmentSearch
 }
 
 func newChatSessions(relay func(int)) *chatSessions {
 	return &chatSessions{desktops: map[string]*peer{}, info: map[*peer]desktopInfo{},
 		lounge:   map[*peer]loungePeer{},
 		sessions: map[string]*chatSession{}, hot: newHotSessions(relay), onRelay: relay,
-		assistance: map[string]*assistanceRequest{}}
+		assistance: map[string]*assistanceRequest{}, attachments: map[string]*attachmentSearch{}}
 }
 
 func (s *chatSessions) setLimit(limit float64) {
@@ -222,6 +223,7 @@ func (s *chatSessions) disconnect(client *peer, revoke bool) {
 }
 
 func (s *chatSessions) disconnectLocked(client *peer, revoke bool) {
+	s.cancelAttachmentSearches(client)
 	delete(s.lounge, client)
 	s.hot.disconnect(client, revoke)
 	delete(s.info, client)

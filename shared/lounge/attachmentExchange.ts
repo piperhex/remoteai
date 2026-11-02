@@ -12,7 +12,7 @@ export class AttachmentExchange {
   private readonly requests: RpcRequest[] = [];
   private closed = false;
   constructor(private readonly options: {
-    fileId: string; source: () => AttachmentSource | undefined;
+    fileId: string; source: () => AttachmentSource | undefined | Promise<AttachmentSource | undefined>;
     send: (message: RpcMessage) => Promise<void>;
   }) {
     this.rpc = new ChatRpc({ send: options.send, prefix: 'attachment', event: () => {} });
@@ -34,7 +34,7 @@ export class AttachmentExchange {
   private async answer(message: RpcRequest) {
     try {
       const body = message.body as { protocol?: string; offset?: number; length?: number } | undefined;
-      const file = this.options.source();
+      const file = await this.options.source();
       if (message.method !== 'request' || !file || body?.protocol !== PROTOCOL || !Number.isSafeInteger(body.offset)
         || !Number.isSafeInteger(body.length) || body.offset! < 0 || body.length! < 1
         || body.length! > ATTACHMENT_CHUNK_BYTES || body.offset! + body.length! > file.size) {

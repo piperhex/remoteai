@@ -31,7 +31,8 @@ export class AttachmentConnection {
   private readonly pending = new Map<string, Pending>();
   constructor(private readonly options: {
     baseUrl: string; deviceId: string; transport: LoungeSyncTransport;
-    authorize: () => Promise<{ ticket: string }>; source: (id: string) => AttachmentSource | undefined;
+    authorize: () => Promise<{ ticket: string }>;
+    source: (id: string) => Promise<AttachmentSource | undefined>;
   }) {}
   start() { if (!this.active) { this.active = true; void this.connect(); } }
   private async connect() {
@@ -45,7 +46,7 @@ export class AttachmentConnection {
       this.socket = socket;
       socket.onopen = () => this.send({ type: 'authenticate', role: 'lounge', purpose: 'attachments',
         deviceId: this.options.deviceId, accessToken: ticket, publicKey: this.keys!.publicKey,
-        transportVersion: 2, binaryRelay: true });
+        transportVersion: 2, binaryRelay: true, attachmentRecovery: true });
       socket.onmessage = event => { if (this.socket === socket) this.receive(event.data); };
       socket.onclose = socket.onerror = () => { if (this.socket === socket) this.failed(); };
     } catch { if (this.active && epoch === this.epoch) this.failed(); }
@@ -66,6 +67,7 @@ export class AttachmentConnection {
     } catch { this.failed(); }
   }
   private control(frame: Record<string, unknown>) {
+    if (frame.type === 'attachment-locate') { void this.locate(frame); return; }
     if (frame.type === 'chat-policy') { setChatPolicy(frame.policy); return; }
     if (frame.type === 'sync-registered' || frame.type === 'auth-renewed') {
       clearTimeout(this.deadline); clearTimeout(this.renewal); this.ready = true;
@@ -79,6 +81,14 @@ export class AttachmentConnection {
     if (frame.type === 'signal') void peer.link.acceptSignal(frame.payload as Signal).catch(() => this.failed());
     if (frame.type === 'sync-lease' && typeof frame.expiresAt === 'number') peer.link.renew(frame.expiresAt);
     if (frame.type === 'peer-close') { peer.exchange.close(); peer.link.close(); this.peers.delete(id); }
+  }
+  private async locate(frame: Record<string, unknown>) {
+    if (typeof frame.id !== 'string' || typeof frame.fileId !== 'string') return;
+    const socket = this.socket;
+    const source = await this.options.source(frame.fileId).catch(() => undefined);
+    if (this.socket !== socket) return;
+    try { this.send({ type: 'attachment-available', id: frame.id, available: !!source }); }
+    catch { /* A disconnected socket will be registered again by the reconnect loop. */ }
   }
   private pair(frame: Record<string, unknown>) {
     const id = String(frame.sessionId), fileId = String(frame.fileId);

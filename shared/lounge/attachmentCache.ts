@@ -1,8 +1,10 @@
-import type { AttachmentSink, LoungeAttachment } from './attachments';
+import type { AttachmentSink, AttachmentSource, LoungeAttachment } from './attachments';
+import { imageAttachmentSource } from './imageAttachmentSource';
 export interface AttachmentImageStore {
   get: (id: string) => Promise<string | undefined>;
   put: (id: string, uri: string) => Promise<void>;
   sink: (file: LoungeAttachment) => Promise<AttachmentSink>;
+  source?: (id: string) => Promise<AttachmentSource | undefined>;
 }
 
 /** Images remain available offline in the receiving account's local archive. */
@@ -14,7 +16,7 @@ export function browserAttachmentImages(scope: string, sink: AttachmentImageStor
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => { opening = undefined; reject(request.error); };
   });
-  return { sink,
+  const store: AttachmentImageStore = { sink,
     get: async id => {
       const database = await open();
       return new Promise((resolve, reject) => {
@@ -33,4 +35,9 @@ export function browserAttachmentImages(scope: string, sink: AttachmentImageStor
       });
     },
   };
+  store.source = async id => {
+    const data = await store.get(id);
+    return data ? imageAttachmentSource(data) : undefined;
+  };
+  return store;
 }

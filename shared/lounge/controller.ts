@@ -447,13 +447,15 @@ export class LoungeController {
       this.update({ historyError: false });
     }
   }
-  send(draft: LoungeDraft): Promise<void> {
+  async send(draft: LoungeDraft): Promise<void> {
     if (draft.to && !this.state.directAvailable) return Promise.reject(new Error('client.lounge.directUnavailable'));
     if (this.state.policy.mutedUntil && Date.parse(this.state.policy.mutedUntil) > Date.now()) {
       return Promise.reject(new Error('client.lounge.muted'));
     }
-    try { draft = this.attachments.prepare(draft); }
-    catch (error) { return Promise.reject(error); }
+    const lifecycle = this.lifecycle;
+    draft = this.attachments.prepare(draft);
+    if (draft.attachments?.some(file => file.kind === 'image')) await this.attachments.persistImages(draft.attachments);
+    if (lifecycle !== this.lifecycle) throw new Error('client.lounge.sendFailed');
     if (draft.to) {
       const recipient = this.state.contacts.find(contact => contact.user.id === draft.to)?.user;
       if (!recipient) return Promise.reject(new Error('client.lounge.directUnavailable'));

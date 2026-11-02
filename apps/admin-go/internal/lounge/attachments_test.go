@@ -4,9 +4,80 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
+
+func historicalImageClaims() attachmentClaims {
+	return attachmentClaims{Device: uuid.NewString(), Recipient: uuid.NewString(),
+		File: attachment{ID: uuid.NewString(), Kind: "image"},
+		RegisteredClaims: jwt.RegisteredClaims{Subject: uuid.NewString(), Audience: []string{"lounge-attachment"},
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(-30 * 24 * time.Hour))}}
+}
+
+func signAttachment(t *testing.T, h *hub, claims attachmentClaims) string {
+	t.Helper()
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(h.key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return token
+}
+
+func TestHistoricalImageGrantsKeepPrivacyChecksAfterExpiration(t *testing.T) {
+	h := newHub([]byte("attachment-test-key"))
+	h.relationships = &memoryRelationships{blocks: map[string]map[string]bool{}}
+	policy := &attachmentGenerationPolicy{}
+	h.directPolicy = policy
+	claims := historicalImageClaims()
+	grant := signAttachment(t, h, claims)
+	if _, _, _, err := h.verifyAttachment(grant, claims.Recipient); err != nil {
+		t.Fatal("historical image expired", err)
+	}
+	if _, _, _, err := h.verifyAttachment(grant+"x", claims.Recipient); err == nil {
+		t.Fatal("bad signature accepted")
+	}
+	if _, _, _, err := h.verifyAttachment(grant, uuid.NewString()); err == nil {
+		t.Fatal("private image leaked")
+	}
+	policy.generation++
+	if _, _, _, err := h.verifyAttachment(grant, claims.Recipient); !errors.Is(err, errDirectReset) {
+		t.Fatal("deleted image remained accessible", err)
+	}
+	policy.generation--
+	if _, err := h.relationships.SetBlock(context.Background(),
+		blockChange{Actor: claims.Subject, Target: claims.Recipient, Blocked: true}); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := h.verifyAttachment(grant, claims.Recipient); err == nil {
+		t.Fatal("blocked image remained accessible")
+	}
+}
+
+func TestHistoricalImageGrantStillValidatesOtherClaimsAndFileExpiration(t *testing.T) {
+	for _, kind := range []string{"expired-file", "file-without-expiry", "audience", "not-before"} {
+		t.Run(kind, func(t *testing.T) {
+			h := newHub([]byte("attachment-test-key"))
+			h.relationships = &memoryRelationships{blocks: map[string]map[string]bool{}}
+			claims := historicalImageClaims()
+			switch kind {
+			case "expired-file":
+				claims.File.Kind = "file"
+			case "file-without-expiry":
+				claims.File.Kind, claims.ExpiresAt = "file", nil
+			case "audience":
+				claims.Audience = []string{"other"}
+			case "not-before":
+				claims.NotBefore = jwt.NewNumericDate(time.Now().Add(time.Hour))
+			}
+			if _, _, _, err := h.verifyAttachment(signAttachment(t, h, claims), claims.Recipient); err == nil {
+				t.Fatal("invalid grant accepted")
+			}
+		})
+	}
+}
 
 type attachmentGenerationPolicy struct {
 	directPolicyRepository

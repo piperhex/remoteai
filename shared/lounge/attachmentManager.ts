@@ -2,17 +2,8 @@ import { AttachmentConnection } from './attachmentConnection';
 import { authorize } from './authorize';
 import { ATTACHMENT_CHUNK_BYTES, MAX_ATTACHMENTS, checkAttachmentSize, parseAttachments, type AttachmentSource,
   type AttachmentSink, type LoungeAttachment } from './attachments';
-import { base64Bytes } from '../remote-chat/policy';
 import type { LoungeDraft, LoungeSession } from './types';
-
-export function imageAttachmentSource(data: string): AttachmentSource {
-  const comma = data.indexOf(',');
-  const mime = data.slice(5, data.indexOf(';'));
-  return { name: `image.${mime.split('/')[1]}`, mime, size: base64Bytes(data),
-    // Chunk boundaries are multiples of three bytes, so base64 slices stay independently decodable.
-    read: async (offset, length) => data.slice(comma + 1 + offset / 3 * 4,
-      comma + 1 + Math.ceil((offset + length) / 3) * 4) };
-}
+import { imageAttachmentSource } from './imageAttachmentSource';
 
 export class LoungeAttachmentManager {
   private readonly images = new Map<string, Promise<string>>();
@@ -24,13 +15,16 @@ export class LoungeAttachmentManager {
     this.device = randomId();
     if (session?.sync) this.connection = new AttachmentConnection({ baseUrl: session.baseUrl,
       deviceId: this.device, transport: session.sync, authorize: () => authorize(session),
-      source: id => this.sources.get(id) });
+      source: id => this.source(id) });
   }
   readonly device: string;
+  private async source(id: string) {
+    return this.sources.get(id) ?? await this.options.session?.attachmentImages?.source?.(id);
+  }
   /** The app binds its persistent download manager for the lifetime of the signed-in lounge. */
   enqueue?: (file: LoungeAttachment) => Promise<string>;
   async openReader(file: LoungeAttachment, signal?: AbortSignal) {
-    const source = file.device === this.device ? this.sources.get(file.id) : undefined;
+    const source = await this.source(file.id);
     if (signal?.aborted) throw new Error('client.lounge.fileUnavailable');
     if (source) return { read: source.read, close: () => {} };
     const connection = this.connection;
@@ -90,10 +84,16 @@ export class LoungeAttachmentManager {
     }
     return { ...rest, attachments, images: [] };
   }
+  async persistImages(files: LoungeAttachment[]) {
+    // Persist outgoing images before publication, including when the sender leaves the conversation immediately.
+    if (this.options.session?.attachmentImages) {
+      await Promise.all(files.filter(file => file.kind === 'image').map(file => this.image(file)));
+    }
+  }
   async download(file: LoungeAttachment, sink: AttachmentSink, options: {
     signal?: AbortSignal; progress?: (fraction: number) => void;
   } = {}) {
-    const source = file.device === this.device ? this.sources.get(file.id) : undefined;
+    const source = await this.source(file.id).catch(async error => { await sink.abort(); throw error; });
     if (source) {
       try {
         if (options.signal?.aborted) throw new Error('client.lounge.fileUnavailable');

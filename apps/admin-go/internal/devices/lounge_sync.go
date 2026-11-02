@@ -16,6 +16,7 @@ type loungePeer struct {
 	identity    chatIdentity
 	key         string
 	attachments bool
+	recovery    bool
 }
 
 // A lounge ticket grants only same-account history pairing, never control of a registered computer.
@@ -48,7 +49,8 @@ func (s *chatSessions) joinLounge(client *peer, identity chatIdentity, message p
 		return errors.New("too many lounge devices")
 	}
 	attachments := message["purpose"] == "attachments"
-	s.lounge[client] = loungePeer{identity, key, attachments}
+	s.lounge[client] = loungePeer{identity: identity, key: key, attachments: attachments,
+		recovery: attachments && message["attachmentRecovery"] == true}
 	client.send(platform.JSON{"type": "sync-registered", "expiresAt": identity.expires.UnixMilli()}, nil)
 	for other, info := range others {
 		if attachments || info.attachments {

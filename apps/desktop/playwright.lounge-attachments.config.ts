@@ -1,7 +1,8 @@
 import { defineConfig } from '@playwright/test';
 import lounge from './playwright.lounge.config';
 
-export default defineConfig({ ...lounge, testMatch: ['lounge-attachments.pw.ts', 'lounge-file-preview.pw.ts'],
+export default defineConfig({ ...lounge, testMatch: ['lounge-attachments.pw.ts', 'lounge-file-preview.pw.ts',
+  'lounge-image-recovery.pw.ts'],
   webServer: [
     { command: 'npx vite --config vite.lounge.config.ts --host 127.0.0.1 --port 1487 --strictPort',
       url: 'http://127.0.0.1:1487/e2e/lounge-harness.html', reuseExistingServer: !process.env.CI },

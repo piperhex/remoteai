@@ -30,13 +30,7 @@ func (s *chatSessions) pairAttachment(client *peer, request platform.JSON, ice [
 	if !ok || !viewer.attachments {
 		return errors.New("invalid attachment client")
 	}
-	count := 0
-	for _, session := range s.sessions {
-		if session.mobile == client || session.desktop == client {
-			count++
-		}
-	}
-	if count >= maxLoungeDevices {
+	if s.attachmentCount(client) >= maxLoungeDevices {
 		client.send(platform.JSON{"type": "attachment-unavailable", "id": request["id"]}, nil)
 		return nil
 	}
@@ -45,30 +39,47 @@ func (s *chatSessions) pairAttachment(client *peer, request platform.JSON, ice [
 			info.identity.device != request["device"] || source.closed.Load() || !info.identity.expires.After(time.Now()) {
 			continue
 		}
-		id := uuid.NewString()
-		sourceCount := 0
-		for _, session := range s.sessions {
-			if session.desktop == source || session.mobile == source {
-				sourceCount++
-			}
+		// Older clients only serve their original in-memory device; new clients confirm cached availability.
+		if !info.recovery && s.attachmentCount(source) < maxLoungeDevices {
+			s.pairAttachmentSource(client, source, request, ice)
+			return nil
 		}
-		if sourceCount >= maxLoungeDevices {
-			break
-		}
-		s.sessions[id] = &chatSession{id: id, owner: viewer.identity.owner, desktop: source, mobile: client,
-			started: time.Now(), relay: true}
-		expires := minExpiry(info.identity.expires, viewer.identity.expires)
-		send := func(target *peer, key string, desktop bool) {
-			frame := loungePair(id, key, desktop, loungePairOptions{expires, ice})
-			frame["type"], frame["id"] = "attachment-peer", request["id"]
-			frame["viewer"] = viewer.identity.owner
-			frame["fileId"] = request["fileId"]
-			target.send(frame, nil)
-		}
-		send(source, viewer.key, true)
-		send(client, info.key, false)
+	}
+	if s.findAttachment(client, request, ice) {
 		return nil
 	}
 	client.send(platform.JSON{"type": "attachment-unavailable", "id": request["id"]}, nil)
 	return nil
+}
+
+// Caller holds mu and has verified both peers and the signed attachment request.
+func (s *chatSessions) pairAttachmentSource(client, source *peer, request platform.JSON, ice []platform.JSON) {
+	viewer, info := s.lounge[client], s.lounge[source]
+	id := uuid.NewString()
+	s.sessions[id] = &chatSession{id: id, owner: viewer.identity.owner, desktop: source, mobile: client,
+		started: time.Now(), relay: true}
+	expires := minExpiry(info.identity.expires, viewer.identity.expires)
+	send := func(target *peer, key string, desktop bool) {
+		frame := loungePair(id, key, desktop, loungePairOptions{expires, ice})
+		frame["type"], frame["id"] = "attachment-peer", request["id"]
+		frame["viewer"], frame["fileId"] = viewer.identity.owner, request["fileId"]
+		target.send(frame, nil)
+	}
+	send(source, viewer.key, true)
+	send(client, info.key, false)
+}
+
+func (s *chatSessions) attachmentCount(client *peer) int {
+	count := 0
+	for _, session := range s.sessions {
+		if session.mobile == client || session.desktop == client {
+			count++
+		}
+	}
+	for _, search := range s.attachments {
+		if search.client == client || search.candidates[client] {
+			count++
+		}
+	}
+	return count
 }
