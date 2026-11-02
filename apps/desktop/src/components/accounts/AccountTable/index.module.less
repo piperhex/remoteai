@@ -208,9 +208,11 @@
   .official-context-settings-hint { margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.4; }
   .official-context-settings-list { max-height: 220px; margin-top: 10px; overflow: auto; }
   .official-context-settings-row { display: grid; grid-template-columns: minmax(0, 1fr) 104px 24px; gap: 6px; align-items: center; padding: 3px 0; }
-  .official-context-settings-row > span { overflow: hidden; color: var(--ink); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+  .official-context-settings-row > span:first-child {
+    overflow: hidden; color: var(--ink); font-size: 10px; text-overflow: ellipsis; white-space: nowrap;
+  }
   .official-context-settings-input { display: inline-flex; align-items: center; gap: 3px; }
-  .official-context-settings-input .ant-select { width: 86px; }
+  .official-context-settings-input .ant-select { width: 86px; height: auto; }
   .official-context-settings-input .ant-select-selector,
   .official-context-settings-input .ant-select-selection-search-input,
   .official-context-settings-input .ant-select-selection-item,

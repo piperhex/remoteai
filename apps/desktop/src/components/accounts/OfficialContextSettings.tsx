@@ -52,7 +52,8 @@ export function OfficialContextSettings({
                   <AutoComplete size="small" value={valuesK[model] ?? ""} options={contextOptions} disabled={saving}
                     onChange={(value) => onChange(model, value)}
                     onBlur={() => void onSave(model, valuesK[model] ?? "")}>
-                    <Input aria-label={model} inputMode="numeric" placeholder={defaultValuesK[model] ?? "—"} />
+                    <Input size="small" aria-label={model} inputMode="numeric"
+                      placeholder={defaultValuesK[model] ?? "—"} />
                   </AutoComplete>
                   <span>K</span>
                 </span>
