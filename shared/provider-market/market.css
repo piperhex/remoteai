@@ -26,6 +26,12 @@
   flex: 1; min-height: 0; padding: 0; overflow: auto; scrollbar-gutter: stable;
 }
 .provider-market-modal .ant-modal-body > .provider-market { padding: 8px 24px 24px; }
+.pm-catalog-modal.ant-modal .ant-modal-content {
+  background-image:
+    radial-gradient(ellipse at top left, color-mix(in srgb, var(--pm-accent) 9%, transparent), transparent 60%),
+    radial-gradient(ellipse at bottom right, color-mix(in srgb, var(--pm-accent) 6%, transparent), transparent 55%);
+}
+.pm-catalog-modal.ant-modal .ant-modal-header { background: transparent; }
 .pm-catalog-modal.ant-modal .ant-modal-body { overflow: hidden; scrollbar-gutter: auto; }
 .pm-catalog-modal .ant-modal-body > .pm-catalog {
   display: flex; flex-direction: column; gap: 0; height: 100%; padding: 0;
@@ -36,9 +42,6 @@
 .pm-catalog-scroll {
   flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable;
   display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 16px; padding: 0 24px 24px;
-  background:
-    radial-gradient(ellipse at top left, color-mix(in srgb, var(--pm-accent) 9%, transparent), transparent 60%),
-    radial-gradient(ellipse at bottom right, color-mix(in srgb, var(--pm-accent) 6%, transparent), transparent 55%);
 }
 .provider-market-modal.ant-modal .ant-modal-footer {
   flex: none; margin: 0; padding: 16px 24px;
