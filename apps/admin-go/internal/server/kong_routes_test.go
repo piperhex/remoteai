@@ -104,6 +104,7 @@ func TestKongRouteAuthenticationBoundaries(t *testing.T) {
 		"/sync/ssh-profiles/example", "/admin/api/users", "/devices", "/official-usage",
 		"/devices/00000000-0000-4000-8000-000000000000/screen-power",
 		"/remote-assistance", "/chat-push/status", "/admin/api/update-sharing", "/update-sharing/reports",
+		"/admin/api/provider-market/batch/delete", "/admin/api/provider-market/batch/review",
 		"/admin/api/update-sharing/daily", "/admin/api/update-sharing/failures"} {
 		_, route := matchKongRoute(services, path)
 		if !hasKongAccountJWT(route) {

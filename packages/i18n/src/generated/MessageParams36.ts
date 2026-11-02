@@ -108,6 +108,7 @@ export interface MessageParams36 {
   "login.webSessionConfirmButton": Record<string, never>;
   "login.webSessionConfirmDescription": Record<string, never>;
   "login.webSessionConfirmTitle": Record<string, never>;
+  "market.actions": Record<string, never>;
   "market.add": Record<string, never>;
   "market.added": Record<string, never>;
   "market.addInfo": Record<string, never>;
@@ -116,6 +117,7 @@ export interface MessageParams36 {
   "market.adminIntro": Record<string, never>;
   "market.all": Record<string, never>;
   "market.approve": Record<string, never>;
+  "market.automaticOrder": Record<string, never>;
   "market.back": Record<string, never>;
   "market.badgeColor": Record<string, never>;
   "market.badgeColor.blue": Record<string, never>;
@@ -128,6 +130,12 @@ export interface MessageParams36 {
   "market.balanceScript": Record<string, never>;
   "market.balanceUrl": Record<string, never>;
   "market.baseUrl": Record<string, never>;
+  "market.batchApprove": Record<string, never>;
+  "market.batchDelete": Record<string, never>;
+  "market.batchDeleteConfirm": { "count": string | number };
+  "market.batchReject": Record<string, never>;
+  "market.batchReviewConfirm": { "count": string | number };
+  "market.batchReviewEligibility": Record<string, never>;
   "market.browserAddress": Record<string, never>;
   "market.browserBack": Record<string, never>;
   "market.browserBlank": Record<string, never>;
@@ -149,6 +157,7 @@ export interface MessageParams36 {
   "market.cancel": Record<string, never>;
   "market.clearBadge": Record<string, never>;
   "market.clearOrder": Record<string, never>;
+  "market.clearSelection": Record<string, never>;
   "market.close": Record<string, never>;
   "market.community": Record<string, never>;
   "market.confirmDelete": Record<string, never>;
@@ -157,8 +166,10 @@ export interface MessageParams36 {
   "market.deleteConfirm": Record<string, never>;
   "market.description": Record<string, never>;
   "market.destination": Record<string, never>;
+  "market.displayOrder": Record<string, never>;
   "market.downloaded": Record<string, never>;
   "market.edit": Record<string, never>;
+  "market.editOrder": { "name": string | number };
   "market.empty": Record<string, never>;
   "market.enableScript": Record<string, never>;
   "market.forbidden": Record<string, never>;
@@ -189,15 +200,4 @@ export interface MessageParams36 {
   "market.officialNote": Record<string, never>;
   "market.output": Record<string, never>;
   "market.outputPrice": Record<string, never>;
-  "market.ownKey": Record<string, never>;
-  "market.pageHeaders": Record<string, never>;
-  "market.pageHint": Record<string, never>;
-  "market.pageQuery": Record<string, never>;
-  "market.pageRequired": Record<string, never>;
-  "market.pageSettings": Record<string, never>;
-  "market.pageUrl": Record<string, never>;
-  "market.permissionGroup": Record<string, never>;
-  "market.permissionManage": Record<string, never>;
-  "market.permissionManageDescription": Record<string, never>;
-  "market.permissionOrder": Record<string, never>;
 }
