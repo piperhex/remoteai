@@ -7,7 +7,10 @@ use crate::{
     storage::{self, Paths},
 };
 
-use super::policy::{can_start_window, WINDOW_SECONDS};
+use super::policy::{
+    can_start_window, needs_idle_confirmation, sliding_idle_confirmed, CONFIRMATION_SECONDS,
+    WINDOW_SECONDS,
+};
 
 const MAX_CONCURRENT_STARTS: usize = 4;
 const ATTEMPT_FILE: &str = "quota-window-sync.json";
@@ -60,9 +63,13 @@ fn start_if_idle<R: Runtime>(
         return Ok(());
     }
     // Cached quota is never sufficient authorization to spend an account's allowance.
-    let usage = commands::try_refresh_usage_blocking(app, id)?;
+    let confirmed_idle = confirm_idle_window(
+        || commands::try_refresh_usage_blocking(app, id),
+        || std::thread::sleep(std::time::Duration::from_secs(CONFIRMATION_SECONDS)),
+        || Utc::now().timestamp(),
+    )?;
     let now = Utc::now().timestamp();
-    if !can_start_window(&usage, now)
+    if !confirmed_idle
         || !enabled(app)?
         || storage::try_read_state(paths)?
             .disabled_account_ids
@@ -80,6 +87,25 @@ fn start_if_idle<R: Runtime>(
     let refreshed = commands::try_refresh_usage_blocking(app, id);
     consumed?;
     refreshed.map(|_| ())
+}
+
+fn confirm_idle_window(
+    mut refresh: impl FnMut() -> Result<crate::models::UsageSummary, String>,
+    wait: impl FnOnce(),
+    now: impl FnOnce() -> i64,
+) -> Result<bool, String> {
+    let first = refresh()?;
+    if can_start_window(&first, now()) {
+        return Ok(true);
+    }
+    if !needs_idle_confirmation(&first) {
+        return Ok(false);
+    }
+    // These are quota reads only. The pause distinguishes a moving idle placeholder
+    // from a fixed deadline without sending a speculative charged conversation.
+    wait();
+    let second = refresh()?;
+    Ok(sliding_idle_confirmed(&first, &second))
 }
 
 fn attempt_pending(paths: &Paths, id: &str, now: i64) -> Result<bool, String> {

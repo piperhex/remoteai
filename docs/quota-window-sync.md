@@ -11,11 +11,20 @@ For direct clients, a successful quota refresh also detects increased usage or a
 five-hour window. Initial imports and unchanged quota refreshes do not trigger synchronization.
 Direct-client detection therefore follows the existing quota-refresh cadence.
 
-An account is activated only after a fresh successful quota read confirms a 300-minute window
-with zero usage, full remaining allowance, and no future reset timestamp. A future reset means
-the account is already counting down, including when its reported usage rounds to zero. Unknown
-or invalid quota, disabled or expired accounts, and accounts with exhausted unexpired weekly
-allowances are skipped. Five-hour windows may be reported as either primary or secondary.
+An account is activated only after fresh successful quota reads confirm an idle 300-minute
+window with zero usage and full remaining allowance. A missing or expired reset can be checked
+with one read. An unused account can also report a future reset near the query time plus five
+hours: that deadline moves forward whenever usage is refreshed, so it is not evidence that the
+window has started. For these ambiguous windows, the worker waits at least three seconds and
+queries again. It activates the account only if the reset advances with the query time. A fixed
+future deadline is skipped even when reported usage rounds to zero. Failed or inconclusive
+confirmation reads do not authorize consumption. Unknown or invalid quota, disabled or expired
+accounts, and exhausted unexpired weekly allowances are also skipped. Five-hour windows may be
+reported as either primary or secondary.
+
+Refreshing a moving idle deadline does not count as account activity and cannot trigger another
+sweep. A newly fixed rounded-zero deadline can be detected through successive quota reads; proxy
+requests also trigger directly from token usage. Enabling the setting alone does not start a sweep.
 
 Activation reuses the existing short quota-consumption request and credential refresh handling.
 It spends a small amount of allowance. Up to four accounts are processed concurrently, with one
@@ -37,8 +46,10 @@ already sent may still finish.
 
 ## Verification
 
-- Rust tests cover idle/running/rounded-zero windows, unknown quota, weekly exhaustion,
-  direct-client detection, single-flight throttling, persisted attempt markers, and settings defaults.
+- Rust tests cover moving idle deadlines, fixed rounded-zero deadlines, sequential confirmation
+  queries, errors and new usage between queries, unknown quota, weekly exhaustion, direct-client
+  detection, single-flight throttling, persisted attempt markers, and settings defaults. Probe tests
+  pass service-shaped responses through the actual quota parser before exercising the worker.
 - A settings-storage regression test covers stale writes and disabling the feature.
 - `npx playwright test --config playwright.quota-window-sync.config.ts` from `apps/desktop`
   checks local IPC and hosted HTTP transports, persistence, load/save errors, cloud Web guidance,
@@ -49,6 +60,11 @@ already sent may still finish.
 Live service verification requires test accounts with an idle five-hour window. Confirm that using
 one account activates only the eligible others and that the service subsequently reports their
 reset times. Browser fixtures and unit tests cannot establish the provider's live quota semantics.
+
+To diagnose activation, compare the absolute reset time across multiple quota refreshes. A full
+five-hour countdown that restarts on every refresh is an idle placeholder; a running window keeps
+its absolute deadline while the countdown decreases. A remaining display of 100% alone cannot
+distinguish the two. User screenshots exposed the moving-reset case that the original tests missed.
 
 ## Interface screenshots
 
