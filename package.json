@@ -42,7 +42,7 @@
     "nx": "nx",
     "graph": "nx graph",
     "affected": "nx affected",
-    "stats:cloc": "cloc . --exclude-dir=.git,node_modules,dist,target,coverage,.nx,.idea,.codex-tmp,docs,public,resources,icons,gen --not-match-f=\"(package-lock\\.json|\\.min\\.(js|css)$)\" --exclude-ext=md",
+    "stats:cloc": "node scripts/stats-cloc.mjs",
     "release": "node scripts/tag-release.mjs",
     "release-beta": "node scripts/tag-release.mjs --beta",
     "check:i18n": "npm run check -w @remoteai/i18n",
