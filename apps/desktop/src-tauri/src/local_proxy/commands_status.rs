@@ -177,7 +177,11 @@ pub(crate) async fn get_official_model_context_settings<R: Runtime + 'static>(
     app: tauri::AppHandle<R>,
 ) -> Result<OfficialModelContextSettings, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        Ok(official_context_settings(&app, read_app_settings(&app)?))
+        let settings = official_context_settings(&app, read_app_settings(&app)?);
+        if settings.default_context_windows.is_empty() {
+            crate::official_models::request_context_defaults_refresh(app.clone());
+        }
+        Ok(settings)
     })
     .await
     .map_err(|error| format!("Official model context settings task failed: {error}"))?

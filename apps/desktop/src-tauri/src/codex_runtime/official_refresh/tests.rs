@@ -34,6 +34,14 @@ impl CacheFixture {
     }
 
     fn save(&self, catalog: serde_json::Value) -> Result<serde_json::Value, String> {
+        self.save_from(catalog, official_models::OfficialCatalogSource::LocalProxy)
+    }
+
+    fn save_from(
+        &self,
+        catalog: serde_json::Value,
+        source: official_models::OfficialCatalogSource,
+    ) -> Result<serde_json::Value, String> {
         official_models::save_source_catalog(
             &self.paths,
             official_models::OfficialCatalogUpdate {
@@ -41,6 +49,7 @@ impl CacheFixture {
                 catalog,
                 etag: None,
                 client_version: "0.152.0",
+                source,
             },
         )
     }
@@ -62,6 +71,62 @@ fn successful_catalog() -> serde_json::Value {
         },
         {"slug": "gpt-hidden", "visibility": "hide"}
     ]})
+}
+
+#[test]
+fn legacy_uniform_overrides_are_not_treated_as_official_context_defaults() {
+    let fixture = CacheFixture::new();
+    let overridden = json!({"models": [
+        {"slug": "first", "context_window": 600000, "max_context_window": 600000},
+        {"slug": "second", "context_window": 600000, "max_context_window": 600000}
+    ]});
+    crate::storage::write_json_atomic(
+        &fixture.root.join("official-models-cache.json"),
+        &overridden,
+    )
+    .unwrap();
+    assert!(official_models::cached_context_windows(&fixture.paths).is_empty());
+    fixture.save(overridden).unwrap();
+    assert!(official_models::cached_context_windows(&fixture.paths).is_empty());
+}
+
+#[test]
+fn proxy_refresh_preserves_upstream_defaults_across_saved_catalog_reloads() {
+    let fixture = CacheFixture::new();
+    let upstream = json!({"models": [
+        {"slug": "first", "context_window": 272000, "max_context_window": 1000000},
+        {"slug": "second", "context_window": 400000}
+    ]});
+    fixture
+        .save_from(upstream, official_models::OfficialCatalogSource::Upstream)
+        .unwrap();
+    fixture
+        .save(json!({"models": [
+            {"slug": "first", "context_window": 600000, "max_context_window": 600000},
+            {"slug": "second", "context_window": 600000, "max_context_window": 600000}
+        ]}))
+        .unwrap();
+    let defaults = official_models::cached_context_windows(&fixture.paths);
+    assert_eq!(defaults["first"], 272000);
+    assert_eq!(defaults["second"], 400000);
+    assert_eq!(
+        official_models::cached_source_catalog(&fixture.paths).unwrap()["models"][0]
+            ["context_window"],
+        600000
+    );
+
+    fixture
+        .save_from(
+            json!({"models": [
+                {"slug": "first", "context_window": 600000},
+                {"slug": "second", "context_window": 600000}
+            ]}),
+            official_models::OfficialCatalogSource::Upstream,
+        )
+        .unwrap();
+    assert!(official_models::cached_context_windows(&fixture.paths)
+        .values()
+        .all(|capacity| *capacity == 600000));
 }
 
 #[test]
@@ -134,6 +199,7 @@ fn a_late_response_from_the_previous_account_cannot_replace_the_new_catalog() {
             catalog: json!({"models": [{"slug": "new-pro-model"}]}),
             etag: None,
             client_version: "0.152.0",
+            source: official_models::OfficialCatalogSource::LocalProxy,
         },
     )
     .unwrap();

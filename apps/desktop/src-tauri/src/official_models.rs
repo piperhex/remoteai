@@ -18,8 +18,10 @@ use crate::{
 #[cfg(test)]
 mod admin_tests;
 mod client_version;
+mod context_defaults;
 pub(crate) use client_version::model_client_version;
 pub(crate) use client_version::MIN_CODEX_MODEL_CLIENT_VERSION;
+pub(crate) use context_defaults::request_context_defaults_refresh;
 
 const OFFICIAL_MODEL_CACHE_FILENAME: &str = "official-models-cache.json";
 static OFFICIAL_MODEL_REFRESH_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
@@ -40,15 +42,18 @@ pub(crate) fn cached_model_names(paths: &Paths) -> Vec<String> {
     cached_catalog(paths).models
 }
 
-/// Reads the last successful official response, including all model capabilities.
+/// Reads the most recently saved model catalog, which may include local proxy overrides.
 pub(crate) fn cached_source_catalog(paths: &Paths) -> Result<Value, String> {
     read_json(&cache_path(paths))
 }
 
-/// Original capacities from the last official response, before local context overrides.
+/// Only explicitly retained upstream capacities are safe to use as model defaults.
 pub(crate) fn cached_context_windows(paths: &Paths) -> BTreeMap<String, u64> {
     cached_source_catalog(paths)
-        .map(|catalog| context_windows_from_catalog(&catalog))
+        .ok()
+        .and_then(|catalog| {
+            serde_json::from_value(catalog["original_context_windows"].clone()).ok()
+        })
         .unwrap_or_default()
 }
 
@@ -76,6 +81,13 @@ pub(crate) struct OfficialCatalogUpdate<'a> {
     pub(crate) catalog: Value,
     pub(crate) etag: Option<String>,
     pub(crate) client_version: &'a str,
+    pub(crate) source: OfficialCatalogSource,
+}
+
+/// Local proxy responses already contain user overrides and cannot supply official defaults.
+pub(crate) enum OfficialCatalogSource {
+    Upstream,
+    LocalProxy,
 }
 
 /// Serializes cache writes and rejects responses belonging to an account that was replaced.
@@ -83,7 +95,7 @@ pub(crate) fn save_source_catalog(
     paths: &Paths,
     update: OfficialCatalogUpdate<'_>,
 ) -> Result<Value, String> {
-    let cache = model_cache_value(update.catalog, update.etag, update.client_version)?;
+    let mut cache = model_cache_value(update.catalog, update.etag, update.client_version)?;
     let _guard = OFFICIAL_MODEL_REFRESH_LOCK
         .get_or_init(|| Mutex::new(()))
         .lock()
@@ -93,6 +105,12 @@ pub(crate) fn save_source_catalog(
             "The selected account changed. Please refresh the model list again.".to_string(),
         );
     }
+    let defaults = match update.source {
+        OfficialCatalogSource::Upstream => context_windows_from_catalog(&cache),
+        OfficialCatalogSource::LocalProxy => cached_context_windows(paths),
+    };
+    cache["original_context_windows"] =
+        serde_json::to_value(defaults).map_err(|error| error.to_string())?;
     write_json_atomic(&cache_path(paths), &cache)?;
     Ok(cache)
 }
@@ -167,6 +185,7 @@ fn refresh_for_account_blocking<R: Runtime>(
             catalog: fetched.catalog,
             etag: fetched.etag,
             client_version: &client_version,
+            source: OfficialCatalogSource::Upstream,
         },
     )?;
     let catalog = catalog_from_value(&cache);

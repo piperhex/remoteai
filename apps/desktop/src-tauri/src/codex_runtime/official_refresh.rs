@@ -101,6 +101,7 @@ fn apply_success(target: &OfficialRefreshTarget, loaded: LoadedOfficialCatalog) 
                 catalog: loaded.catalog,
                 etag: loaded.etag,
                 client_version: &loaded.client_version,
+                source: official_models::OfficialCatalogSource::LocalProxy,
             },
         )
     });
