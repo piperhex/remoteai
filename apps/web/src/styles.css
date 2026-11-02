@@ -147,7 +147,10 @@ h1, h2, h3, .brand-lockup { font-family: "Manrope", "PingFang SC", "Microsoft Ya
 .desktop-sidebar nav button b { min-width: 21px; margin-left: auto; padding: 2px 5px; border-radius: 20px; color: #fff; background: var(--green); font-size: 10px; text-align: center; }
 .sidebar-profile { width: 100%; display: grid; grid-template-columns: 36px 1fr 18px; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 8px; border: 0; border-radius: 12px; color: var(--ink); background: transparent; cursor: pointer; text-align: left; }
 .sidebar-profile:hover { background: var(--app-canvas, #edf4f0); }
-.sidebar-profile > span { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 11px; color: var(--app-accent, #0e674f); background: var(--app-canvas, #dff3eb); font-size: 11px; font-weight: 800; }
+.sidebar-profile > .lounge-avatar {
+  width: 36px; height: 36px; flex: 0 0 36px; display: grid; place-items: center; border-radius: 11px;
+  color: var(--app-accent, #0e674f); background: var(--app-canvas, #dff3eb); font-size: 11px; font-weight: 800;
+}
 .sidebar-profile div { min-width: 0; }
 .sidebar-profile strong, .sidebar-profile small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sidebar-profile strong { font-size: 11px; }.sidebar-profile small { margin-top: 2px; color: var(--muted); font-size: 10px; }
