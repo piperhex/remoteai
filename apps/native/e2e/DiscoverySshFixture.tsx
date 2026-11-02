@@ -21,6 +21,14 @@ function createClient(mode: string): GuiToolsClient['terminal'] {
   const ssh = createSshFixture('Discovery', info => sessions.set(info.id, { info,
     events: [{ type: 'output', data: [...new TextEncoder().encode('SSH ready\r\n$ ')] }] }));
   const list = ssh.profiles.list;
+  const save = ssh.profiles.save;
+  let rejected = false;
+  ssh.profiles.save = async (profile, credentials) => {
+    if (profile.name === 'New-server' && !rejected) {
+      rejected = true; throw new Error('client.ssh.storageFailed');
+    }
+    return save(profile, credentials);
+  };
   ssh.profiles.list = async () => {
     if (mode === 'error') throw new Error('client.ssh.loadFailed');
     if (mode === 'empty') return [];

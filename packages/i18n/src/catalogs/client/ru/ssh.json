@@ -34,6 +34,8 @@
   "client.ssh.passwordAuth": "Пароль",
   "client.ssh.keyAuth": "Закрытый ключ",
   "client.ssh.createTitle": "Новое SSH-подключение",
+  "client.ssh.editTitle": "Редактирование SSH-подключения",
+  "client.ssh.editConnection": "Редактировать {name}",
   "client.ssh.createHint": "Подключитесь к серверу и начните сеанс терминала.",
   "client.ssh.manageHint": "Просматривайте, редактируйте и подключайте серверы в одном месте.",
   "client.ssh.serverSection": "Данные сервера",

@@ -2,13 +2,16 @@
   color: var(--app-ink, #181818); }
 .discovery-ssh-heading { padding: 0 20px 16px; }
 .discovery-ssh-heading h1 { margin: 0 0 8px; font-size: 24px; line-height: 1.5; }
+.discovery-ssh-title-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.discovery-ssh-title-row .ant-btn { min-height: 44px; height: auto; white-space: normal; }
 .discovery-ssh-device { display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
   padding: 0; border: 0; background: transparent; color: var(--app-muted, #777); font: inherit; cursor: pointer; }
 .discovery-ssh-content { display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 24px; }
 .discovery-ssh-section { display: flex; align-items: center; justify-content: space-between; gap: 12px;
   color: var(--app-muted, #777); font-size: 14px; }
-.discovery-ssh-connection { display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px;
-  border: 0; border-radius: 12px; color: inherit; background: var(--app-surface, #fff); font: inherit;
+.discovery-ssh-card { display: flex; align-items: center; border-radius: 12px; background: var(--app-surface, #fff); }
+.discovery-ssh-connection { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; padding: 16px 4px 16px 16px;
+  border: 0; border-radius: 12px; color: inherit; background: transparent; font: inherit;
   text-align: left; cursor: pointer; }
 .discovery-ssh-connection > svg { flex-shrink: 0; color: var(--app-accent, #07b775); }
 .discovery-ssh-connection > svg:last-child { color: var(--app-muted, #777); }
@@ -18,6 +21,10 @@
   color: var(--app-muted, #777); }
 .discovery-ssh-connection:active { opacity: .65; }
 .discovery-ssh-connection:disabled { opacity: .5; cursor: default; }
+.discovery-ssh-edit { display: grid; place-items: center; flex-shrink: 0; min-width: 48px; min-height: 48px;
+  border: 0; border-radius: 10px; background: transparent; color: var(--app-muted, #777); cursor: pointer; }
+.discovery-ssh-edit:active { opacity: .65; }
+.discovery-ssh-edit:disabled { opacity: .5; cursor: default; }
 .discovery-ssh-empty { padding: 32px 0; text-align: center; line-height: 1.6; }
 .discovery-ssh-hint, .discovery-ssh-empty p { color: var(--app-muted, #777); }
 .discovery-ssh > svg:first-child { color: var(--app-accent, #07b775); }

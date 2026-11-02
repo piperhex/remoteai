@@ -12,6 +12,7 @@ import { useThemeColor } from '../theme/store';
 import { ChatDevices } from '../chat/ChatDevices';
 import { ChatTerminal } from '../chat/ChatTerminal';
 import { SshQuickConnectSheet } from '../chat/terminal/SshQuickConnectSheet';
+import { SshConnectionSheet } from '../chat/terminal/SshConnectionSheet';
 import { SshButton } from '../chat/terminal/SshControls';
 import { BottomSheet } from '../components/BottomSheet';
 import { DiscoveryBackButton } from './DiscoveryPage';
@@ -23,12 +24,14 @@ export function SshPage({ client, connected, deviceName, devices, chooseDevice, 
   useLanguage();
   const styles = useStyles();
   const color = useThemeColor();
-  const { saved, profile, choose, close, panel } = useSshDiscovery(client, connected);
+  const { saved, profile, choose, close, panel, editor, edit, closeEditor } = useSshDiscovery(client, connected);
   const [picking, setPicking] = useState(false);
   return <View style={styles.page}>
     <DiscoveryBackButton onBack={onBack} />
-    <View style={styles.heading}><Text accessibilityRole="header" style={styles.title}>
-      {t('client.discovery.ssh')}</Text>
+    <View style={styles.heading}><View style={styles.titleRow}>
+      <Text accessibilityRole="header" style={styles.title}>{t('client.discovery.ssh')}</Text>
+      <SshButton label={t('client.ssh.createTitle')} onPress={() => edit()} />
+    </View>
       <Pressable accessibilityRole="button" accessibilityLabel={t('client.settings.chooseAComputer')}
         onPress={() => setPicking(true)} style={styles.device}>
         <Text style={styles.hint}>{deviceName || t('client.settings.chooseAComputer')}</Text>
@@ -42,20 +45,30 @@ export function SshPage({ client, connected, deviceName, devices, chooseDevice, 
       </View>
       {!connected && <Text style={styles.hint}>{t('client.discovery.sshComputerHint')}</Text>}
       {!!saved.error && <Text accessibilityRole="alert" style={styles.error}>{displayError(saved.error)}</Text>}
-      {saved.profiles.map(item => <Pressable key={item.id} accessibilityRole="button"
+      {saved.profiles.map(item => <View key={item.id} style={styles.row}>
+        <Pressable accessibilityRole="button"
         disabled={saved.loading || !!saved.error} onPress={() => choose(item)}
-        style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+        style={({ pressed }) => [styles.connection, pressed && styles.pressed]}>
         <Ionicons name="terminal-outline" size={24} color={color('#07b775', 'accent')} />
         <View style={styles.labels}><Text style={styles.name}>{item.name || sshLabel(item)}</Text>
           {!!item.name && <Text style={styles.hint}>{sshLabel(item)}</Text>}</View>
         <Ionicons name="chevron-forward" size={20} color={color('#777', 'muted')} />
-      </Pressable>)}
+        </Pressable>
+        <Pressable accessibilityRole="button"
+          accessibilityLabel={t('client.ssh.editConnection', { name: item.name || sshLabel(item) })}
+          disabled={saved.loading || !!saved.error} onPress={() => edit(item)}
+          style={({ pressed }) => [styles.edit, pressed && styles.pressed]}>
+          <Ionicons name="create-outline" size={22} color={color('#777', 'muted')} />
+        </Pressable>
+      </View>)}
       {!saved.loading && !saved.error && !saved.profiles.length && <View style={styles.empty}>
         <Text style={styles.name}>{t('client.ssh.noSavedConnections')}</Text>
         <Text style={styles.hint}>{t('client.ssh.emptyConnectionsHint')}</Text>
       </View>}
     </ScrollView>
     <ChatTerminal client={client} cwd="" active connected={connected} deviceName={deviceName} hideTrigger panel={panel} />
+    {editor && <SshConnectionSheet settingsOnly api={client.ssh} initial={editor.profile} cwd=""
+      connected={panel.adopt} dispose={client.close} close={closeEditor} />}
     {profile && connected && <SshQuickConnectSheet key={profile.id} api={client.ssh} profile={profile} cwd=""
       connected={panel.adopt} dispose={client.close} close={close} />}
     {profile && !connected && !picking && <BottomSheet visible title={profile.name || sshLabel(profile)}
@@ -72,11 +85,14 @@ const useStyles = createThemedStyles(color => ({
   page: { flex: 1, backgroundColor: color('#ededed', 'canvas') },
   heading: { paddingHorizontal: 20, paddingBottom: 16, gap: 8 },
   title: { ...textMetrics(24, 34), fontWeight: '600', color: color('#181818', 'ink') },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 },
   device: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 8, minHeight: 44 },
   section: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   content: { padding: 16, gap: 12, paddingBottom: 24 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 12,
+  row: { flexDirection: 'row', alignItems: 'center', borderRadius: 12,
     backgroundColor: color('#fff', 'surface') },
+  connection: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, paddingRight: 4 },
+  edit: { minWidth: 48, minHeight: 48, alignItems: 'center', justifyContent: 'center' },
   labels: { flex: 1, gap: 4 },
   name: { ...textMetrics(17, 26), color: color('#181818', 'ink'), fontWeight: '500' },
   hint: { ...textMetrics(14, 22), flexShrink: 1, color: color('#777', 'muted') },

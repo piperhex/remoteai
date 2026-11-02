@@ -34,6 +34,8 @@
   "client.ssh.passwordAuth": "Password",
   "client.ssh.keyAuth": "Private key",
   "client.ssh.createTitle": "New SSH connection",
+  "client.ssh.editTitle": "Edit SSH connection",
+  "client.ssh.editConnection": "Edit {name}",
   "client.ssh.createHint": "Connect to a remote server and start a terminal session.",
   "client.ssh.manageHint": "View, edit and connect to your servers in one place.",
   "client.ssh.serverSection": "Server details",

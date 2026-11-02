@@ -27,6 +27,13 @@
   font-size: 12px; font-weight: 400; line-height: 1.6; overflow-wrap: anywhere;
 }
 .ssh-dialog-layout { border-top: 1px solid var(--ssh-line); }
+.ssh-dialog-settings .ant-modal-content { display: flex; flex-direction: column; max-height: calc(100dvh - 48px); }
+.ssh-dialog-settings .ant-modal-header { flex-shrink: 0; }
+.ssh-dialog-settings.ant-modal .ant-modal-body { display: flex; min-height: 0; overflow: hidden; }
+.ssh-dialog-settings .ssh-dialog-layout { display: flex; min-height: 0; width: 100%; }
+.ssh-dialog-settings .ssh-connection-form { flex: 1; min-height: 0; }
+.ssh-dialog-settings .ssh-form-scroll { max-height: none; }
+.ssh-dialog-settings .ssh-dialog-actions { position: static; flex-shrink: 0; }
 .ssh-dialog-manager .ssh-dialog-layout { display: grid; grid-template-columns: 248px minmax(0, 1fr); }
 .ssh-connection-form { display: flex; flex-direction: column; min-width: 0; }
 .ssh-form-scroll {

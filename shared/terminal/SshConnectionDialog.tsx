@@ -12,8 +12,10 @@ import { remoteErrorText } from '../localization/errors';
 import './ssh-dialog.css';
 import { SshHostKeyDialog } from './SshHostKeyDialog';
 
-export function SshConnectionDialog({ api, initial, manage = false, projectCwd, close, connected, dispose, changed }: {
+export function SshConnectionDialog({ api, initial, manage = false, settingsOnly = false,
+  projectCwd, close, connected, dispose, changed }: {
   api: SshApi; initial?: SshProfile; manage?: boolean; projectCwd: string; close: () => void;
+  settingsOnly?: boolean;
   connected: (info: TerminalInfo) => void; dispose: (id: string) => Promise<void>; changed: () => void;
 }) {
   const [form] = Form.useForm<SshValues>();
@@ -24,7 +26,7 @@ export function SshConnectionDialog({ api, initial, manage = false, projectCwd, 
     connected, dispose, createId: () => crypto.randomUUID() });
   const { profiles, selected, busy, finished, error, trust, loading, tested, action } = connection;
   const disabled = busy || finished || loading;
-  const managing = manage || !!initial;
+  const managing = !settingsOnly && (manage || !!initial);
   useEffect(() => { if (finished) form.resetFields(); }, [finished, form]);
   useEffect(() => {
     if (trust || error || tested) feedback.current?.scrollIntoView({ block: 'nearest' });
@@ -50,16 +52,18 @@ export function SshConnectionDialog({ api, initial, manage = false, projectCwd, 
     '--ssh-subtle': token.colorFillAlter, '--ssh-line': token.colorBorderSecondary,
     '--ssh-text': token.colorText, '--ssh-muted': token.colorTextSecondary, '--ssh-error': token.colorError,
   } as CSSProperties;
-  const title = t(managing ? 'client.ssh.manage' : 'client.ssh.createTitle');
+  const title = t(settingsOnly && initial ? 'client.ssh.editTitle'
+    : managing ? 'client.ssh.manage' : 'client.ssh.createTitle');
   return <Modal open centered title={<div className="ssh-dialog-heading">
     <span className="ssh-dialog-symbol"><Terminal size={24} aria-hidden /></span>
     <span><span className="ssh-dialog-title">{title}</span>
       <span className="ssh-dialog-subtitle">
-        {t(managing ? 'client.ssh.manageHint' : 'client.ssh.createHint')}
+        {t(settingsOnly ? 'client.ssh.settingsCredentialsHint'
+          : managing ? 'client.ssh.manageHint' : 'client.ssh.createHint')}
       </span></span>
   </div>} width={managing ? 860 : 560} onCancel={close} footer={null} style={colors}
     maskClosable={!busy} closable={!busy} keyboard={!busy}
-    className={`ssh-dialog${managing ? ' ssh-dialog-manager' : ''}`}>
+    className={`ssh-dialog${managing ? ' ssh-dialog-manager' : ''}${settingsOnly ? ' ssh-dialog-settings' : ''}`}>
     <div className="ssh-dialog-layout">
       {managing && <SshProfileList profiles={profiles} selected={selected} disabled={disabled}
         loading={loading} choose={choose} />}
@@ -81,9 +85,9 @@ export function SshConnectionDialog({ api, initial, manage = false, projectCwd, 
           <div className="ssh-credentials-note"><ShieldCheck size={17} aria-hidden />
             <div><p>{t('client.ssh.settingsCredentialsHint')}</p>
               <p>{t('client.ssh.credentialsHint')}</p></div></div>
-          <Button className="ssh-test" icon={<PlugZap size={16} />} disabled={disabled}
+          {!settingsOnly && <Button className="ssh-test" icon={<PlugZap size={16} />} disabled={disabled}
             loading={action === 'test'} onClick={() => authenticate('test')}>
-            {t(trust ? 'client.ssh.trustAndTest' : 'client.ssh.testConnection')}</Button>
+            {t(trust ? 'client.ssh.trustAndTest' : 'client.ssh.testConnection')}</Button>}
           <div ref={feedback} aria-live="polite">
             {tested && <Alert showIcon type="success" message={t('client.ssh.testSucceeded')} />}
             {trust && !trust.previousFingerprints && <Alert showIcon type="warning" message={t('client.ssh.trustHost')}
@@ -94,7 +98,7 @@ export function SshConnectionDialog({ api, initial, manage = false, projectCwd, 
           </div>
         </div>
         <div className="ssh-dialog-actions">
-          {selected && <Popconfirm title={t('client.ssh.removeTitle')}
+          {selected && !settingsOnly && <Popconfirm title={t('client.ssh.removeTitle')}
             description={t('client.ssh.removeHint')} onConfirm={remove} disabled={disabled}
             okText={t('client.ssh.removeSaved')} cancelText={t('client.ssh.cancel')}
             okButtonProps={{ danger: true }} styles={{ root: { maxWidth: 400 } }}>
@@ -102,12 +106,12 @@ export function SshConnectionDialog({ api, initial, manage = false, projectCwd, 
               {t('client.ssh.removeSaved')}</Button>
           </Popconfirm>}
           <div className="ssh-submit-actions">
-            <Button disabled={busy} onClick={close}>{t('client.ssh.cancel')}</Button>
+            <Button aria-label={t('client.ssh.cancel')} disabled={busy} onClick={close}>{t('client.ssh.cancel')}</Button>
             {!finished && <>
-              <Button onClick={() => authenticate('submit')} loading={action === 'connect'}
+              {!settingsOnly && <Button onClick={() => authenticate('submit')} loading={action === 'connect'}
                 icon={<ArrowUpRight size={16} />}>
-                {t(trust ? 'client.ssh.trustAndConnect' : 'client.ssh.connect')}</Button>
-              <Button className="ssh-connect" type="primary" htmlType="submit"
+                {t(trust ? 'client.ssh.trustAndConnect' : 'client.ssh.connect')}</Button>}
+              <Button aria-label={t('client.ssh.saveSettings')} className="ssh-connect" type="primary" htmlType="submit"
                 loading={action === 'save'} icon={<Save size={16} />}>
                 {t(connection.preparingX11 ? 'client.ssh.x11Starting' : 'client.ssh.saveSettings')}</Button>
             </>}

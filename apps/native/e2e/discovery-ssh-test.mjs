@@ -10,7 +10,7 @@ const exec = promisify(execFile);
 const serial = process.env.ANDROID_SERIAL;
 assert.ok(serial, 'Set ANDROID_SERIAL to a physical Android device');
 const app = 'com.codexswitch.mobile.discoverysshtest';
-const output = fileURLToPath(new URL('../../../.codex-tmp/discovery-ssh-android/', import.meta.url));
+const output = fileURLToPath(new URL('../../../.codex-tmp/discovery-ssh-editor-android/', import.meta.url));
 const adb = async (...args) => (await exec('adb', ['-s', serial, ...args], {
   encoding: 'utf8', timeout: 30_000, windowsHide: true, maxBuffer: 8 * 1024 * 1024,
 })).stdout.trim();
@@ -38,6 +38,64 @@ async function tap(label) {
   await adb('shell', 'input', 'tap', String((left + right) >> 1), String((top + bottom) >> 1));
   await delay(400);
 }
+async function input(label, value) {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const current = await nodes();
+    const field = current.find(node => node.class === 'android.widget.EditText' && node['content-desc'] === label
+      && node.bounds !== '[0,0][0,0]');
+    if (field) {
+      const [left, top, right, bottom] = [...field.bounds.matchAll(/\d+/g)].map(item => Number(item[0]));
+      await adb('shell', 'input', 'tap', String((left + right) >> 1), String((top + bottom) >> 1));
+      await delay(500);
+      await adb('shell', 'input', 'keycombination', 'KEYCODE_CTRL_LEFT', 'KEYCODE_A');
+      // Debug Android builds interpret two rapidly injected R keys as Reload.
+      for (const character of value) {
+        await adb('shell', 'input', 'text', character); await delay(300);
+      }
+      await delay(500);
+      const entered = (await nodes()).find(node => node.class === 'android.widget.EditText'
+        && node['content-desc'] === label);
+      assert.equal(entered?.text, value, `Entered ${label}`);
+      if ((await adb('shell', 'dumpsys', 'input_method')).includes('mInputShown=true')) {
+        await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK'); await delay(400);
+      }
+      return;
+    }
+    const view = current.filter(node => node.scrollable === 'true').at(-1);
+    assert.ok(view, `Scrollable form for ${label}`);
+    const [left, top, right, bottom] = [...view.bounds.matchAll(/\d+/g)].map(item => Number(item[0]));
+    await adb('shell', 'input', 'swipe', String((left + right) >> 1), String(bottom - 30),
+      String((left + right) >> 1), String(top + 30), '300');
+  }
+  throw new Error(`Missing input ${label}`);
+}
+async function verifyEditor(scale) {
+  await tap('OFFLINE');
+  await tap('新建 SSH 连接'); await find('连接名称（可选）');
+  await screenshot(`android-light-ssh-create-${scale}`);
+  await input('连接名称（可选）', 'New-server');
+  await input('IP 或主机名', 'new.test'); await input('用户名', 'dev');
+  await tap('保存');
+  await find('连接配置未能保存到账号，请重试。');
+  await screenshot(`android-light-ssh-save-error-${scale}`);
+  await tap('保存'); await find('编辑 New-server');
+  await tap('编辑 New-server'); await find('编辑 SSH 连接');
+  await input('连接名称（可选）', 'Cancelled');
+  await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK'); await find('编辑 New-server');
+  await tap('编辑 Saved on Discovery'); await find('编辑 SSH 连接');
+  await input('连接名称（可选）', 'Saved-edited');
+  await screenshot(`android-light-ssh-edit-${scale}`);
+  await tap('保存'); await find('编辑 Saved-edited');
+  await tap('DARK'); await tap('编辑 Key server'); await find('编辑 SSH 连接');
+  await input('连接名称（可选）', 'Key-edited');
+  await screenshot(`android-dark-ssh-edit-key-${scale}`);
+  await tap('保存'); await find('编辑 Key-edited');
+  await screenshot(`android-dark-ssh-updated-list-${scale}`);
+  await tap('OFFLINE'); await tap('Key-edited'); await find('远程文件浏览');
+  await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
+  await tap('LIGHT');
+  console.log(`PASS Android add, retry, cancel, edit and preserved private key at scale ${scale}`);
+}
 async function screenshot(name) {
   const { stdout } = await exec('adb', ['-s', serial, 'exec-out', 'screencap', '-p'], {
     encoding: 'buffer', windowsHide: true, maxBuffer: 16 * 1024 * 1024,
@@ -52,20 +110,21 @@ async function verify(scale) {
   await screenshot(`android-light-discover-${scale}`);
   await tap('SSH'); await find('Saved on Discovery'); await find('Key server');
   await screenshot(`android-light-ssh-list-${scale}`);
-  await tap('Saved on Discovery'); await find('远程终端'); await find('切换横屏');
+  await verifyEditor(scale);
+  await tap('Saved-edited'); await find('远程终端'); await find('切换横屏');
   await screenshot(`android-light-ssh-terminal-${scale}`);
-  await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK'); await find('Saved on Discovery');
+  await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK'); await find('Saved-edited');
   await tap('Password server'); await find('密码');
   await screenshot(`android-light-ssh-login-${scale}`);
-  await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK'); await find('Saved on Discovery');
+  await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK'); await find('Saved-edited');
   await tap('DARK');
   await screenshot(`android-dark-ssh-list-${scale}`);
   await tap('EMPTY'); await find('还没有保存的连接');
   await screenshot(`android-dark-ssh-empty-${scale}`);
   await tap('ERROR'); await find('无法读取已保存的 SSH 连接，请检查网络后刷新。');
   await screenshot(`android-dark-ssh-error-${scale}`);
-  await tap('SAVED'); await find('Saved on Discovery');
-  await tap('OFFLINE'); await tap('Saved on Discovery'); await find('选择一台在线电脑以打开 SSH 终端。');
+  await tap('SAVED'); await find('Saved-edited');
+  await tap('OFFLINE'); await tap('Saved-edited'); await find('选择一台在线电脑以打开 SSH 终端。');
   await screenshot(`android-dark-ssh-offline-${scale}`);
   await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
   await tap('返回发现'); await find('SSH');

@@ -5,21 +5,23 @@ import { randomUUID } from 'expo-crypto';
 import type { SshApi } from '../../../../../shared/terminal/ssh';
 import type { TerminalInfo } from '../../../../../shared/terminal/types';
 import { sshLabel, type SshProfile } from '../../../../../shared/terminal/sshProfiles';
-import { newSshValues, useSshConnection } from '../../../../../shared/terminal/useSshConnection';
+import { newSshValues, useSshConnection, type SshValues } from '../../../../../shared/terminal/useSshConnection';
+import { validSshSettings } from '../../../../../shared/terminal/sshConnectionValues';
 import { BottomSheet } from '../../components/BottomSheet';
 import { t, displayError, useLanguage } from '../../i18n';
 import { useSshStyles } from './sshStyles';
 import { SshButton, SshField } from './SshControls';
 import { SshHostKeySheet } from './SshHostKeySheet';
 
-export function SshConnectionSheet({ api, cwd, connected, dispose, close }: {
+export function SshConnectionSheet({ api, cwd, connected, dispose, close, initial, settingsOnly = false }: {
   api: SshApi; cwd: string; connected: (info: TerminalInfo) => void;
   dispose: (id: string) => Promise<void>; close: () => void;
+  initial?: SshProfile; settingsOnly?: boolean;
 }) {
   useLanguage();
   const styles = useSshStyles();
-  const [values, setValues] = useState(newSshValues);
-  const connection = useSshConnection({ api, projectCwd: cwd, connected, dispose, close, createId: randomUUID });
+  const [values, setValues] = useState<SshValues>(() => initial ?? newSshValues());
+  const connection = useSshConnection({ api, initial, projectCwd: cwd, connected, dispose, close, createId: randomUUID });
   const { busy, finished, loading } = connection;
   const disabled = busy || finished || loading;
   const choose = (profile?: SshProfile) => setValues(connection.choose(profile));
@@ -28,27 +30,37 @@ export function SshConnectionSheet({ api, cwd, connected, dispose, close }: {
     setValues(previous => ({ ...previous, [key]: value }));
   };
   useEffect(() => { if (finished) setValues(newSshValues()); }, [finished]);
-  return <BottomSheet visible title={t('client.ssh.connection')} onClose={close} dismissible={!busy}
-    tall maxWidth={400} actions={finished ? [] : [{
+  const settingsTitle = initial ? 'client.ssh.editTitle' : 'client.ssh.createTitle';
+  const title = settingsOnly ? settingsTitle : 'client.ssh.connection';
+  const saveAction = { label: t('client.ssh.saveSettings'), onPress: () => connection.saveSettings(values),
+    loading: busy, disabled: disabled || !validSshSettings(values) };
+  return <BottomSheet visible title={t(title)} onClose={close} dismissible={!busy}
+    tall maxWidth={400} actions={finished ? [] : settingsOnly ? [saveAction] : [{
       label: t(connection.trust ? 'client.ssh.trustAndConnect' : 'client.ssh.connect'),
       onPress: () => connection.submit(values), loading: busy,
       disabled: disabled || !connection.canConnect(values),
     }]}>
+    {settingsOnly && !!connection.error && <View style={styles.content}>
+      <Text accessibilityRole="alert" style={styles.error}>{displayError(connection.error)}</Text>
+      <SshButton label={t('client.ssh.refresh')} disabled={busy || loading}
+        onPress={() => void connection.refresh()} />
+    </View>}
     <ScrollView showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-      <View style={styles.row}>
+      {!settingsOnly && <><View style={styles.row}>
         <SshButton label={t('client.ssh.new')} disabled={disabled} onPress={() => choose()} />
         <SshButton label={t('client.ssh.refresh')} disabled={busy || loading}
           onPress={() => void connection.refresh()} />
       </View>
-      {loading && <ActivityIndicator />}
       <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}
         style={styles.list} contentContainerStyle={styles.content}>
         {connection.profiles.map(profile => <SshButton key={profile.id} label={profile.name || sshLabel(profile)}
           selected={connection.selected?.id === profile.id} disabled={disabled} onPress={() => choose(profile)} />)}
       </ScrollView>
       {connection.selected && <SshButton label={t('client.ssh.removeSaved')} disabled={disabled}
-        onPress={() => void connection.remove().then(done => { if (done) setValues(newSshValues()); })} />}
+        onPress={() => void connection.remove().then(done => { if (done) setValues(newSshValues()); })} />}</>}
+      {loading && <ActivityIndicator />}
+      {settingsOnly && <Text style={styles.hint}>{t('client.ssh.settingsCredentialsHint')}</Text>}
       <SshField label={t('client.ssh.name')} value={values.name} maxLength={80} editable={!disabled}
         onChangeText={value => set('name', value)} />
       <SshField label={t('client.ssh.host')} value={values.host} maxLength={253} editable={!disabled}
@@ -75,7 +87,7 @@ export function SshConnectionSheet({ api, cwd, connected, dispose, close }: {
       {connection.trust && !connection.trust.previousFingerprints && <View>
         <Text style={styles.label}>{t('client.ssh.trustHost')}</Text>
         <Text selectable style={styles.hint}>{connection.trust.fingerprint}</Text></View>}
-      {!!connection.error && <Text accessibilityRole="alert" style={styles.error}>
+      {!settingsOnly && !!connection.error && <Text accessibilityRole="alert" style={styles.error}>
         {displayError(connection.error)}</Text>}
     </ScrollView>
     <SshHostKeySheet connection={connection} />

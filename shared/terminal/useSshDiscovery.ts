@@ -8,7 +8,10 @@ import type { SshProfile } from './sshProfiles';
 export function useSshDiscovery(client: GuiToolsClient['terminal'], connected: boolean) {
   const saved = useSshProfiles(client.ssh.profiles);
   const [profile, choose] = useState<SshProfile>();
+  const [editor, setEditor] = useState<{ profile?: SshProfile }>();
   const panel = useRemoteTerminalPanel({ client, cwd: '', connected });
   return { saved, profile, choose, close: () => choose(undefined),
+    editor, edit: (value?: SshProfile) => setEditor({ profile: value }),
+    closeEditor: () => { setEditor(undefined); void saved.refresh(); },
     panel: { ...panel, retry: panel.toggle } };
 }

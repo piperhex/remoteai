@@ -79,6 +79,8 @@ export interface MessageParams26 {
   "client.ssh.downloaded": Record<string, never>;
   "client.ssh.dropFilesOnly": Record<string, never>;
   "client.ssh.dropUpload": { "path": string | number };
+  "client.ssh.editConnection": { "name": string | number };
+  "client.ssh.editTitle": Record<string, never>;
   "client.ssh.empty": Record<string, never>;
   "client.ssh.emptyConnectionsHint": Record<string, never>;
   "client.ssh.fileContent": Record<string, never>;
@@ -198,6 +200,4 @@ export interface MessageParams26 {
   "client.ssh.zmodemReceiveTooLarge": Record<string, never>;
   "client.ssh.zmodemSelect": Record<string, never>;
   "client.ssh.zmodemSendTooLarge": Record<string, never>;
-  "client.taskReview.aProjectCheckIsAlreadyRunningWaitForItTo": Record<string, never>;
-  "client.taskReview.baseBranchLeaveBlankForDefault": Record<string, never>;
 }

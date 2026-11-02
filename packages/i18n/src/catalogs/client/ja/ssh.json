@@ -34,6 +34,8 @@
   "client.ssh.passwordAuth": "パスワード認証",
   "client.ssh.keyAuth": "秘密鍵認証",
   "client.ssh.createTitle": "SSH 接続を新規作成",
+  "client.ssh.editTitle": "SSH 接続を編集",
+  "client.ssh.editConnection": "{name} を編集",
   "client.ssh.createHint": "リモートサーバーに接続して、ターミナルを開始します。",
   "client.ssh.manageHint": "サーバーの確認・編集・接続をまとめて行えます。",
   "client.ssh.serverSection": "サーバー情報",
