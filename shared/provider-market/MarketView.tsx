@@ -26,7 +26,6 @@ export function MarketView({ client, language, initialId, onClose }: {
       onCancel={() => market.setEditor(null)} /> : null}
     className="provider-market-modal" onCancel={onClose} closable={{ 'aria-label': t('market.close') }}>
     <div className="provider-market">
-    <p>{t('market.intro')}</p>
     {error}
     {market.notice && <Alert type="success" showIcon message={t(market.notice)} />}
     {market.editor ? <MarketEditor key={market.editor === 'new' ? 'new' : market.editor.id}
@@ -35,13 +34,15 @@ export function MarketView({ client, language, initialId, onClose }: {
       onSave={market.save} onCancel={() => market.setEditor(null)} /> : <>
       <div className="pm-toolbar"><Segmented value={market.scope} disabled={market.busy}
         options={(['all', 'official', 'community', 'mine'] as const).map((value) => ({ value, label: t(`market.${value}`) }))}
-        onChange={(value) => market.selectScope(value as typeof market.scope)} />
-        <Space wrap><PublicProviderImport t={t} disabled={market.busy} select={market.setSelected}
+        onChange={(value) => market.selectScope(value as typeof market.scope)} /></div>
+      <div className="pm-toolbar pm-search-toolbar">
+        <Input.Search aria-label={t('market.search')} placeholder={t('market.search')}
+          allowClear onSearch={market.find} maxLength={160} />
+        <Space className="pm-search-actions" wrap>
+          <PublicProviderImport t={t} disabled={market.busy} select={market.setSelected}
           fail={() => market.setError('market.invalid')} />
           <Button type="primary" disabled={market.busy} onClick={() => market.identity
             ? market.setEditor('new') : market.setError('market.signIn')}>{t('market.publish')}</Button></Space></div>
-      <Input.Search aria-label={t('market.search')} placeholder={t('market.search')}
-        allowClear onSearch={market.find} maxLength={160} />
       <MarketFeed market={market} t={t} />
     </>}
   </div></Modal>;

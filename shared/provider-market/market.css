@@ -40,6 +40,9 @@
 .pm-toolbar { justify-content: space-between; align-items: center; }
 .pm-toolbar .ant-segmented, .pm-toolbar .ant-space, .pm-toolbar .ant-space-item { max-width: 100%; }
 .pm-toolbar .ant-segmented-group { flex-wrap: wrap; }
+.pm-search-toolbar { flex-wrap: nowrap; }
+.pm-search-toolbar > .ant-input-search { flex: 1; min-width: 0; }
+.pm-search-toolbar > .pm-search-actions { flex-shrink: 0; max-width: 70%; }
 .pm-toolbar .ant-btn, .provider-market-modal .ant-modal-footer .ant-btn {
   max-width: 100%; height: auto; min-height: 32px; white-space: normal;
 }
