@@ -67,6 +67,7 @@ export function ModelEditor({ value, currency, onChange, onRemove, t }: {
     onChange({ ...value, tiers: [...value.tiers, emptyTier(multiplier)] });
   };
   return <section className="pm-model-editor">
+    <svg className="pm-model-outline" aria-hidden="true" focusable="false"><rect x="1" y="1" rx="12" /></svg>
     {value.tiers.map((tier, index) => <TierEditor key={index} value={tier} currency={currency} t={t}
       onChange={(changed) => setTier(index, changed)}
       onRemove={value.tiers.length > 1 ? () => onChange({

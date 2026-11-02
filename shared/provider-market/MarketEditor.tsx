@@ -7,6 +7,8 @@ import { ModelEditor } from './ModelEditor';
 import { BalanceQueryEditor } from './BalanceQueryEditor';
 import { PageLinkEditor } from './PageLinkEditor';
 import { validPageLink } from './pageLink';
+import { ModelDiscoveryFields } from './ModelDiscoveryFields';
+import { MARKET_MODEL_LIMIT, type DiscoverMarketModels } from './modelDiscovery';
 import './providerBrowser.css';
 
 export function MarketEditorActions({ busy, t, onCancel, formId }: {
@@ -18,11 +20,13 @@ export function MarketEditorActions({ busy, t, onCancel, formId }: {
       {t('market.publishAction')}</Button></Space>;
 }
 
-export function MarketEditor({ initial, busy, t, onSave, onCancel, externalFormId, requiresReview = true }: {
+export function MarketEditor({ initial, busy, t, onSave, onCancel, externalFormId, requiresReview = true,
+  discoverModels }: {
   initial?: MarketDraft; busy: boolean; t: MarketText;
   onSave: (draft: MarketDraft, published: boolean) => Promise<void>; onCancel: () => void;
   externalFormId?: string;
   requiresReview?: boolean;
+  discoverModels?: DiscoverMarketModels;
 }) {
   const [value, setValue] = useState(() => initial ? publicDraft(initial) : emptyDraft());
   const [published, setPublished] = useState(() => initial && 'published' in initial ? Boolean(initial.published) : true);
@@ -42,8 +46,9 @@ export function MarketEditor({ initial, busy, t, onSave, onCancel, externalFormI
     <ConfigProvider componentDisabled={busy}><fieldset disabled={busy}>
       <label><span>{t('market.name')}</span><Input value={value.name} maxLength={80}
         aria-label={t('market.name')} onChange={(event) => setValue({ ...value, name: event.target.value })} /></label>
-      <label><span>{t('market.baseUrl')}</span><Input value={value.baseUrl} aria-label={t('market.baseUrl')}
-        onChange={(event) => setValue({ ...value, baseUrl: event.target.value.trim() })} /></label>
+      <ModelDiscoveryFields baseUrl={value.baseUrl} models={value.models} busy={busy} t={t}
+        discover={discoverModels} onBaseUrlChange={baseUrl => setValue(current => ({ ...current, baseUrl }))}
+        onModelsChange={models => setValue(current => ({ ...current, models }))} />
       <label><span>{t('market.description')}</span><Input.TextArea value={value.description} maxLength={4000}
         rows={3} aria-label={t('market.description')}
         onChange={(event) => setValue({ ...value, description: event.target.value })} /></label>
@@ -58,7 +63,7 @@ export function MarketEditor({ initial, busy, t, onSave, onCancel, externalFormI
           position === index ? changed : entry) })}
         onRemove={value.models.length > 1 ? () => setValue({ ...value,
           models: value.models.filter((_, position) => position !== index) }) : undefined} />)}
-      <Button disabled={value.models.length >= 64} onClick={() => setValue({
+      <Button disabled={value.models.length >= MARKET_MODEL_LIMIT} onClick={() => setValue({
         ...value, models: [...value.models, emptyModel()],
       })}>{t('market.addModel')}</Button>
       <BalanceQueryEditor value={value.balanceQuery ?? null} t={t}

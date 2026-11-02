@@ -17,6 +17,9 @@ export function desktopProviderMarket(
     invoke<MarketReply>('cloud_provider_market', { request, identity });
   return {
     identity, request,
+    discoverModels: ({ baseUrl, apiKey, protocol }) => invoke<string[]>('fetch_relay_models', {
+      request: { baseUrl, apiKey: apiKey.trim(), providerId: null, options: { apiFormat: protocol } },
+    }),
     add: async (item, key, expected) => {
       if (!sameIdentity(await identity(), expected)) throw new Error('market.signIn');
       const saved = await onSave(personalProviderFields(item, key), expected);

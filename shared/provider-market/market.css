@@ -135,7 +135,24 @@
 .pm-script-review pre { white-space: pre-wrap; max-height: 240px; overflow: auto; }
 .pm-code, .pm-script-review pre { font-family: ui-monospace, monospace; }
 .pm-loading { padding: 40px; text-align: center; }
-.pm-model-editor { container-type: inline-size; min-width: 0; display: grid; gap: 16px; }
+.pm-model-editor {
+  container-type: inline-size; position: relative; min-width: 0; display: grid; gap: 16px;
+  padding: 14px; border-radius: 12px;
+}
+.pm-model-outline { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.pm-model-outline rect {
+  width: calc(100% - 2px); height: calc(100% - 2px); fill: none;
+  stroke: color-mix(in srgb, currentColor 32%, transparent); stroke-width: 1; stroke-dasharray: 8 4 2 4;
+}
+.pm-model-discovery { display: grid; gap: 8px; min-width: 0; }
+.pm-service-row { display: flex; align-items: end; gap: 12px; }
+.pm-service-row > label { flex: 1; }
+.pm-service-row > .ant-btn { flex: none; }
+.pm-model-discovery summary { cursor: pointer; width: fit-content; font-size: 13px; }
+.pm-discovery-options { margin-top: 10px; }
+.pm-discovery-options .ant-select { width: 100%; min-width: 0; }
+.pm-discovery-notice { max-width: 400px; overflow-wrap: anywhere; font-size: 13px; }
+.pm-discovery-error { color: var(--ant-color-error, #d4380d); }
 .pm-tier-editor { display: grid; gap: 10px; min-width: 0; }
 .pm-editor-section {
   display: grid; gap: 12px; min-width: 0; padding: 14px 16px; border-radius: 10px;
@@ -172,6 +189,10 @@
   .pm-price-fields, .pm-long-context-fields { grid-template-columns: 1fr; }
 }
 @media (max-width: 600px) {
+  .pm-model-editor { padding: 10px; }
+  .pm-service-row { flex-wrap: wrap; }
+  .pm-service-row > label { flex-basis: 100%; }
+  .pm-service-row > .ant-btn { margin-inline-start: auto; }
   .pm-price-fields, .pm-prices { grid-template-columns: 1fr; }
   .pm-model { padding: 12px; }
 }

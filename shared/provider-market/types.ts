@@ -60,6 +60,7 @@ export type MarketRequest =
   | { type: 'usage'; id: string; providerId: string };
 export type MarketReply = MarketPage | MarketItem | { ok: boolean; counted?: boolean };
 export interface MarketClient {
+  discoverModels?: import('./modelDiscovery').DiscoverMarketModels;
   identity: () => Promise<MarketIdentity | null>;
   request: (request: MarketRequest, identity: MarketIdentity | null) => Promise<MarketReply>;
   add?: (item: MarketItem, apiKey: string, identity: MarketIdentity | null) => Promise<'added' | 'downloaded'>;

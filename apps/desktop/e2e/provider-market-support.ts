@@ -38,14 +38,23 @@ export function fixtureItem(): MarketItem {
 interface Call { command: string; args: Record<string, unknown> }
 export async function setupMarket(page: Page, mode: string, authenticated = true,
   list?: (request: Extract<MarketRequest, { type: 'list' }>) => Promise<MarketPage>) {
+  // External font availability must not hold the application load event open in UI fixtures.
+  await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: '' }));
   page.on('pageerror', (error) => console.log(`market page error: ${error.message}`));
   page.on('requestfailed', (request) => console.log(`market failed request: ${request.url()} ${request.failure()?.errorText}`));
   const saved: Record<string, unknown>[] = [];
   const publications: Record<string, unknown>[] = [];
   const removals: Record<string, unknown>[] = [];
+  const discoveryRequests: Record<string, unknown>[] = [];
+  let discover = async (_request: Record<string, unknown>): Promise<string[]> => ['model-z', 'model-new'];
   let item = fixtureItem();
   let userId = authenticated ? 'alice' : '';
   const exchange = async (call: Call): Promise<unknown> => {
+    if (call.command === 'fetch_relay_models') {
+      const request = call.args.request as Record<string, unknown>;
+      discoveryRequests.push(request);
+      return discover(request);
+    }
     if (call.command === 'get_cloud_auth_state') return { authenticated: !!userId,
       userId, baseUrl: 'http://127.0.0.1:1499' };
     if (call.command === 'cloud_provider_market') {
@@ -109,6 +118,8 @@ export async function setupMarket(page: Page, mode: string, authenticated = true
     }
     await route.fulfill({ json: item });
   });
-  return { saved, publications, removals, switchAccount: () => { userId = 'bob'; },
+  return { saved, publications, removals, discoveryRequests,
+    setDiscovery: (handler: typeof discover) => { discover = handler; },
+    switchAccount: () => { userId = 'bob'; },
     setItem: (value: MarketItem) => { item = value; } };
 }

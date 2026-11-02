@@ -32,7 +32,7 @@ export function MarketView({ client, language, initialId, onClose }: {
     <div className={`provider-market${market.editor ? '' : ' pm-catalog'}`}>
     {market.editor ? <>{feedback}<MarketEditor key={market.editor === 'new' ? 'new' : market.editor.id}
       initial={market.editor === 'new' ? undefined : market.editor} t={t} busy={market.busy}
-      externalFormId={editorFormId}
+      externalFormId={editorFormId} discoverModels={client.discoverModels}
       onSave={market.save} onCancel={() => market.setEditor(null)} /></> : <>
       <MarketToolbar market={market} t={t} />
       <div className="pm-catalog-scroll">{feedback}<MarketFeed market={market} t={t} /></div>

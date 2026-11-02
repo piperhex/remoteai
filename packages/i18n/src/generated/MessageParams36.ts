@@ -164,12 +164,17 @@ export interface MessageParams36 {
   "market.deleteConfirm": Record<string, never>;
   "market.description": Record<string, never>;
   "market.destination": Record<string, never>;
+  "market.discoveryHint": Record<string, never>;
+  "market.discoveryKey": Record<string, never>;
+  "market.discoveryOptions": Record<string, never>;
+  "market.discoveryProtocol": Record<string, never>;
   "market.displayOrder": Record<string, never>;
   "market.downloaded": Record<string, never>;
   "market.edit": Record<string, never>;
   "market.editOrder": { "name": string | number };
   "market.empty": Record<string, never>;
   "market.enableScript": Record<string, never>;
+  "market.fetchModels": Record<string, never>;
   "market.forbidden": Record<string, never>;
   "market.import": Record<string, never>;
   "market.independentPrices": Record<string, never>;
@@ -189,15 +194,10 @@ export interface MessageParams36 {
   "market.modelConfiguration": Record<string, never>;
   "market.modelPlaceholder": Record<string, never>;
   "market.models": Record<string, never>;
+  "market.modelsEmpty": Record<string, never>;
+  "market.modelsFetchFailed": Record<string, never>;
+  "market.modelsImported": { "count": string | number };
+  "market.modelsLimit": { "count": string | number };
   "market.moreActions": Record<string, never>;
   "market.multiplier": Record<string, never>;
-  "market.name": Record<string, never>;
-  "market.next": Record<string, never>;
-  "market.normal": Record<string, never>;
-  "market.official": Record<string, never>;
-  "market.officialNote": Record<string, never>;
-  "market.output": Record<string, never>;
-  "market.outputPrice": Record<string, never>;
-  "market.ownKey": Record<string, never>;
-  "market.pageHeaders": Record<string, never>;
 }

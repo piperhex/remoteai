@@ -74,3 +74,16 @@ it('rejects an addition made from a stale account without saving', async () => {
   })).rejects.toThrow('market.signIn');
   expect(save).not.toHaveBeenCalled();
 });
+
+it('reuses native model discovery without persisting or publishing the fetch key', async () => {
+  backend.invoke.mockClear().mockResolvedValue(['model-a']);
+  const save = vi.fn();
+  const client = desktopProviderMarket(save);
+  expect(await client.discoverModels!({ baseUrl: 'https://provider.example/v1',
+    apiKey: ' temporary-key ', protocol: 'anthropicMessages' })).toEqual(['model-a']);
+  expect(backend.invoke).toHaveBeenCalledExactlyOnceWith('fetch_relay_models', {
+    request: { baseUrl: 'https://provider.example/v1', apiKey: 'temporary-key',
+      providerId: null, options: { apiFormat: 'anthropicMessages' } },
+  });
+  expect(save).not.toHaveBeenCalled();
+});

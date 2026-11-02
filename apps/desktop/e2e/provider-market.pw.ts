@@ -88,11 +88,14 @@ test('publishes multiple models and independent tiers, and rejects stale identit
 test('admin changes only Provider order and clears manual priority', async ({ page }, info) => {
   const state = await setupMarket(page, 'admin');
   await page.goto('/e2e/provider-market-harness.html?mode=admin');
-  await page.getByRole('spinbutton', { name: 'Display order (optional)' }).fill('3');
-  await page.getByRole('button', { name: 'Save order', exact: true }).click();
+  const order = page.getByRole('spinbutton', { name: 'Change display order for Example Gateway', exact: true });
+  await order.fill('3');
+  await order.blur();
   await expect.poll(() => state.publications.length).toBe(1);
   expect(state.publications[0].sortOrder).toBe(3);
-  await page.getByRole('button', { name: 'Restore default order' }).click();
+  await expect(order).toBeEnabled();
+  await order.fill('');
+  await order.blur();
   await expect.poll(() => state.publications.length).toBe(2);
   expect(state.publications[1].sortOrder).toBeNull();
   await expect(page.getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0);
