@@ -11,5 +11,3 @@
 .lounge-name-readonly strong { font-weight: 500; overflow-wrap: anywhere; }
 .lounge-profile-email { color: var(--lounge-muted, var(--app-muted)); overflow-wrap: anywhere;
   font-size: 13px; line-height: 1.7; }
-.lounge-desktop-profile { --lounge-muted: var(--app-muted, #687c89); }
-.lounge-desktop-profile > h2 { overflow-wrap: anywhere; font-size: 18px; }

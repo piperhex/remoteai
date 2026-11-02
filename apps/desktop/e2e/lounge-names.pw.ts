@@ -9,8 +9,12 @@ async function enter(page: Page, mobile: boolean) {
   await page.locator('.discovery-lounge').click();
 }
 async function openContact(page: Page, mobile: boolean, name: string, touch = false) {
-  if (mobile) return button(page, `查看 ${name} 的资料`).click();
   const row = button(page, `与 ${name} 私聊`);
+  if (mobile) {
+    await row.click();
+    await page.locator('.lounge-heading-account').click();
+    return;
+  }
   if (touch) {
     const pointer = { pointerId: 2, pointerType: 'touch', isPrimary: true, button: 0 };
     await row.dispatchEvent('pointerdown', pointer);
@@ -19,9 +23,13 @@ async function openContact(page: Page, mobile: boolean, name: string, touch = fa
   } else await row.click({ button: 'right' });
   await page.getByRole('menuitem', { name: '个人资料', exact: true }).click();
 }
-async function closeProfile(page: Page, mobile: boolean) {
-  if (mobile) await button(page, '返回').click();
-  else await page.locator('.ant-modal-close').click();
+async function closeProfile(page: Page, mobile: boolean, saved = true) {
+  if (!mobile) return page.locator('.ant-modal-close').click();
+  await button(page, '返回').click();
+  if (!saved) return;
+  await expect(page.locator('.lounge-profile')).toBeHidden();
+  const back = button(page, '返回聊天列表');
+  if (await back.isVisible()) await back.click();
 }
 
 for (const mode of ['local', 'remote', 'web', 'mobile-320', 'mobile-390']) {
@@ -49,7 +57,7 @@ for (const mode of ['local', 'remote', 'web', 'mobile-320', 'mobile-390']) {
     await remark.fill('工作伙伴'); relay.names.reject = true; await remark.blur();
     await expect(page.getByRole('alert')).toHaveText('备注保存失败，请稍后重试。');
     await expect(remark).toHaveValue('工作伙伴');
-    await closeProfile(page, mobile);
+    await closeProfile(page, mobile, false);
     await expect(remark).toBeVisible();
     await expect(page.getByRole('alert')).toHaveText('备注保存失败，请稍后重试。');
     relay.names.reject = false; await button(page, '重试').click();

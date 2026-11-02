@@ -3,6 +3,8 @@
   "client.lounge.accountSettings": "設定",
   "client.lounge.nickname": "ニックネーム",
   "client.lounge.remark": "表示名の設定",
+  "client.lounge.clearNickname": "ニックネームをクリア",
+  "client.lounge.clearRemark": "表示名をクリア",
   "client.lounge.nameNotSet": "未設定",
   "client.lounge.nicknameHint": "ニックネームは他のユーザーにも表示されます。",
   "client.lounge.remarkHint": "この名前は自分にのみ表示され、他のデバイスにも同期されます。",

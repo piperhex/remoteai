@@ -3,6 +3,8 @@
   "client.lounge.accountSettings": "设置",
   "client.lounge.nickname": "昵称",
   "client.lounge.remark": "备注",
+  "client.lounge.clearNickname": "清空昵称",
+  "client.lounge.clearRemark": "清空备注",
   "client.lounge.nameNotSet": "未设置",
   "client.lounge.nicknameHint": "昵称会显示给其他用户。",
   "client.lounge.remarkHint": "备注仅你可见，会同步到你的其他设备。",

@@ -111,6 +111,8 @@ export interface MessageParams16 {
   "client.lounge.cancelReply": Record<string, never>;
   "client.lounge.chats": Record<string, never>;
   "client.lounge.chooseAvatar": Record<string, never>;
+  "client.lounge.clearNickname": Record<string, never>;
+  "client.lounge.clearRemark": Record<string, never>;
   "client.lounge.closePeople": Record<string, never>;
   "client.lounge.connected": Record<string, never>;
   "client.lounge.connecting": Record<string, never>;
@@ -198,6 +200,4 @@ export interface MessageParams16 {
   "client.lounge.nameAutosaveHint": Record<string, never>;
   "client.lounge.nameInvalid": { "limit": string | number };
   "client.lounge.nameLimit": { "limit": string | number };
-  "client.lounge.nameNotSet": Record<string, never>;
-  "client.lounge.nameRetry": Record<string, never>;
 }
