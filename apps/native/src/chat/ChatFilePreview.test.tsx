@@ -174,12 +174,15 @@ it('shows the same compact, accessible progress for file and image previews', ()
 });
 
 it.each(['./index.html', './INDEX.HTM'])('renders HTML files directly while retaining the download action: %s', path => {
-  state.text = { path, text: '<html><body>Preview</body></html>' };
+  state.text = { path: `F:/reports/${path.slice(2)}`, text: '<html><body>Preview</body></html>' };
   const preview = openFile(path);
   const component = preview.type as (props: typeof preview.props) => React.ReactElement;
   const sheet = component(preview.props);
   const nodes = descendants(sheet);
   expect(nodes.find(node => node.type === 'Html')?.props.text).toBe(state.text.text);
+  expect(nodes.find(node => node.type === 'Html')?.props.context).toEqual({
+    path: state.text.path, client: fileClient, threadId: providerProps.threadId,
+  });
   expect(nodes.some(node => node.type === 'Code')).toBe(false);
   expect((sheet.props as { actions: { label: string }[] }).actions[0].label).toBe('下载');
 });

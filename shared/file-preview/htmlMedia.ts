@@ -1,7 +1,5 @@
+import { HTML_IMAGE_PLACEHOLDER } from './htmlPlaceholder';
 type ResolveAsset = (source: string, base: string, attribute: string) => Promise<string>;
-const receivers = import.meta.glob<string>('./htmlMediaReceiver.js', {
-  eager: true, query: '?url&no-inline', import: 'default',
-});
 const MEDIA_WORKERS = 3;
 export interface HtmlMediaAsset { id: string; attribute: string; read: () => Promise<string> }
 export interface HtmlMediaUpdate { channel: string; id: string; attribute: string; value: string }
@@ -18,6 +16,7 @@ export function deferCssImage(options: {
 /** Media loads after the document is visible, without replacing its DOM or resetting its scripts. */
 export function deferHtmlMedia(options: {
   document: Document; base: string; resolve: ResolveAsset; channel: string; assets: HtmlMediaAsset[];
+  receiverUrl: string;
 }) {
   const { document, base, resolve, channel, assets } = options;
   for (const element of document.querySelectorAll('img, video, audio, source, track')) {
@@ -29,10 +28,16 @@ export function deferHtmlMedia(options: {
       element.removeAttribute(attribute);
       assets.push({ id, attribute, read: () => resolve(source, base, attribute) });
     }
+    if (element.tagName === 'IMG' && (element.hasAttribute('data-preview-src')
+      || element.hasAttribute('data-preview-srcset'))) {
+      element.setAttribute('src', HTML_IMAGE_PLACEHOLDER);
+      element.setAttribute('data-preview-placeholder', HTML_IMAGE_PLACEHOLDER);
+      element.setAttribute('aria-busy', 'true');
+    }
   }
   const script = document.createElement('script');
   // A same-origin external script also works under the desktop's strict script policy.
-  script.src = new URL(receivers['./htmlMediaReceiver.js'], window.location.href).href;
+  script.src = options.receiverUrl;
   script.dataset.channel = channel;
   document.head.prepend(script);
   return assets;

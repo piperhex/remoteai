@@ -86,7 +86,8 @@ function FilePreview({ file, threadId, ready, load, files, close }: PreviewProps
           lineNumbers copyLabel={t("client.chat.copyFileContents")} />
       </>}
     </SheetScrollView>}
-    {result && html && <ChatHtmlPreview text={result.text} />}
+    {result && html && <ChatHtmlPreview text={result.text}
+      context={threadId ? { path: result.path, client: files, threadId } : undefined} />}
     {result && markdown && <ChatMarkdownPreview text={result.text} line={file.line} />}
   </FilePreviewSheet>;
 }

@@ -1,8 +1,9 @@
 import { createThemedStyles } from '../theme/styles';
 import { t, useLanguage } from '../i18n';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { HtmlPreviewDocument } from './html/HtmlPreviewDocument';
+import type { HtmlFileContext } from './html/HtmlPreparation';
 import { SheetScrollView } from '../components/SheetScrollView';
 import { ChatCodeBlock } from './ChatCodeBlock';
 import { textMetrics } from '../theme/text';
@@ -13,12 +14,11 @@ export function isHtmlPath(path: string) {
   return /\.html?$/i.test(path);
 }
 
-export function ChatHtmlPreview({ text }: { text: string }) {
+export function ChatHtmlPreview({ text, context }: { text: string; context?: HtmlFileContext }) {
   const styles = useStyles();
   useLanguage();
   const [mode, setMode] = useState<'preview' | 'source'>('preview');
   const [failed, setFailed] = useState(false);
-  const source = useMemo(() => ({ html: text, baseUrl: 'about:blank' }), [text]);
   return <View style={styles.container}>
     <View style={styles.tabs} accessibilityRole="tablist">
       {PREVIEW_MODES.map(item => <Pressable key={item.value} accessibilityRole="tab"
@@ -36,14 +36,7 @@ export function ChatHtmlPreview({ text }: { text: string }) {
         <Text style={styles.tabText}>{t("client.mobile.retryPreview")}</Text>
       </Pressable>
     </View>}
-    {mode === 'preview' && !failed && <WebView source={source} style={styles.content} incognito
-      // Handle every navigation here so unsupported links never launch another app.
-      originWhitelist={['*']}
-      onShouldStartLoadWithRequest={({ url }) => url === 'about:blank' || url.startsWith('about:blank#')}
-      javaScriptEnabled domStorageEnabled={false} sharedCookiesEnabled={false} thirdPartyCookiesEnabled={false}
-      allowFileAccess={false} allowFileAccessFromFileURLs={false} allowUniversalAccessFromFileURLs={false}
-      setSupportMultipleWindows={false} javaScriptCanOpenWindowsAutomatically={false}
-      geolocationEnabled={false} mediaCapturePermissionGrantType="deny" mediaPlaybackRequiresUserAction
+    {mode === 'preview' && !failed && <HtmlPreviewDocument text={text} context={context}
       onError={() => setFailed(true)} />}
   </View>;
 }

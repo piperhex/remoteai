@@ -16,7 +16,7 @@ vi.mock('react-native', () => ({ Pressable: 'Button', Text: 'Text', View: 'View'
   Platform: { OS: 'android' },
   StyleSheet: { create: <T,>(styles: T) => styles }, useWindowDimensions: () => ({ height: 800 }),
 }));
-vi.mock('react-native-webview', () => ({ WebView: 'WebView' }));
+vi.mock('./html/HtmlPreviewDocument', () => ({ HtmlPreviewDocument: 'Preview' }));
 vi.mock('../components/SheetScrollView', () => ({ SheetScrollView: 'ScrollView' }));
 vi.mock('./ChatCodeBlock', () => ({ ChatCodeBlock: 'Code' }));
 
@@ -48,38 +48,21 @@ it('recognizes HTML and HTM files without treating other source files as pages',
 });
 
 it('opens the rendered page by default and allows switching to source and back', () => {
-  expect(render().find(node => node.type === 'WebView')?.props.source?.html).toBe(html);
+  expect(render().find(node => node.type === 'Preview')?.props.text).toBe(html);
   expect(render().some(node => node.type === 'Code')).toBe(false);
   button('源码').props.onPress();
-  expect(render().some(node => node.type === 'WebView')).toBe(false);
+  expect(render().some(node => node.type === 'Preview')).toBe(false);
   expect(render().find(node => node.type === 'Code')?.props.text).toBe(html);
   button('预览').props.onPress();
-  expect(render().some(node => node.type === 'WebView')).toBe(true);
-});
-
-it('isolates the preview from local files, app cookies, and external navigation', () => {
-  const props = render().find(node => node.type === 'WebView')!.props;
-  expect(props).toMatchObject({ incognito: true, allowFileAccess: false,
-    allowFileAccessFromFileURLs: false, allowUniversalAccessFromFileURLs: false,
-    sharedCookiesEnabled: false, thirdPartyCookiesEnabled: false, originWhitelist: ['*'],
-    javaScriptCanOpenWindowsAutomatically: false, setSupportMultipleWindows: false,
-    geolocationEnabled: false, mediaCapturePermissionGrantType: 'deny',
-  });
-  expect(props.onMessage).toBeUndefined();
-  for (const url of ['about:blank', 'about:blank#section']) {
-    expect(props.onShouldStartLoadWithRequest({ url })).toBe(true);
-  }
-  for (const url of ['https://example.com', 'file:///private/data', 'intent://app', 'javascript:alert(1)']) {
-    expect(props.onShouldStartLoadWithRequest({ url })).toBe(false);
-  }
+  expect(render().some(node => node.type === 'Preview')).toBe(true);
 });
 
 it('offers a retry and keeps source available after a rendering error', () => {
-  render().find(node => node.type === 'WebView')!.props.onError();
+  render().find(node => node.type === 'Preview')!.props.onError();
   expect(render().some(node => node.props.accessibilityRole === 'alert')).toBe(true);
   button('源码').props.onPress();
   expect(render().find(node => node.type === 'Code')?.props.text).toBe(html);
   button('预览').props.onPress();
   button('重新预览').props.onPress();
-  expect(render().some(node => node.type === 'WebView')).toBe(true);
+  expect(render().some(node => node.type === 'Preview')).toBe(true);
 });

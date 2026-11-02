@@ -15,6 +15,9 @@ it('shows the document before transferring media and continues past an unrespons
   const result = await prepareHtmlPreview({ path: '/index.html', load, signal: controller.signal,
     mediaChannel: 'test', text: '<h1>Report</h1><img src="stalled.png"><img src="ready.png">' });
   expect(result.html).toContain('<h1>Report</h1>');
+  const document = new DOMParser().parseFromString(result.html, 'text/html');
+  expect(document.querySelector('img')?.getAttribute('src')).toMatch(/^data:image\/svg\+xml,/);
+  expect(document.querySelector('img')?.getAttribute('aria-busy')).toBe('true');
   expect(load).not.toHaveBeenCalled();
   const update = vi.fn();
   const pending = loadHtmlMedia({ assets: result.media, signal: controller.signal, update });

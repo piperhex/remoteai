@@ -11,7 +11,9 @@ const root = fileURLToPath(new URL('../../../', import.meta.url));
 const output = path.join(root, '.codex-tmp/file-preview-android');
 const serial = process.env.ANDROID_SERIAL;
 assert.ok(serial, 'Set ANDROID_SERIAL to a physical test device');
-const scales = process.argv[2] ? [process.argv[2]] : ['1.0', '1.3'];
+const assetsOnly = process.argv.includes('--assets-only');
+const scaleArgument = process.argv.slice(2).find(value => !value.startsWith('--'));
+const scales = scaleArgument ? [scaleArgument] : ['1.0', '1.3'];
 assert.ok(scales.every(scale => ['1.0', '1.3'].includes(scale)), 'Supported font scales: 1.0 and 1.3');
 const app = 'com.codexswitch.mobile.filepreviewtest';
 const adb = async (...args) => (await exec('adb', ['-s', serial, ...args], {
@@ -21,7 +23,13 @@ const bounds = node => [...node.bounds.matchAll(/\d+/g)].map(value => Number(val
 const matches = (node, label) => node['content-desc'] === label || node.text === label;
 
 async function nodes() {
-  await adb('shell', 'uiautomator', 'dump', '/sdcard/file-preview-layout.xml');
+  const focus = await adb('shell', 'dumpsys', 'window');
+  assert.ok(focus.split('\n').some(line => line.includes('mCurrentFocus') && line.includes(app)),
+    'Preview test lost focus; another task may be using the device');
+  await adb('shell', 'uiautomator', 'dump', '/sdcard/file-preview-layout.xml').catch(error => {
+    // Some vendor ROMs kill the helper after it has successfully written the snapshot.
+    if (error.code !== 137 || !error.stdout?.includes('UI hierchary dumped to:')) throw error;
+  });
   const xml = await adb('shell', 'cat', '/sdcard/file-preview-layout.xml');
   return [...xml.matchAll(/<node\b([^>]*)>/g)].map(match => Object.fromEntries(
     [...match[1].matchAll(/([\w-]+)="([^"]*)"/g)].map(attribute => [attribute[1], attribute[2]])));
@@ -87,16 +95,40 @@ async function verifyText(scale, name, source) {
   await find(name);
 }
 
+async function verifyHtmlAssets(scale) {
+  await tap('相对资源.html');
+  // UIAutomator waits for animations to settle, which can outlast the loading indicator.
+  await delay(1500);
+  await screenshot(`html-assets-loading-${scale}`);
+  await find('资源加载成功');
+  await screenshot(`html-assets-ready-${scale}`);
+  await tap('保留预览状态');
+  await find('已点击');
+  await tap('源码');
+  await find('自动换行');
+  assert.ok(!(await nodes()).some(node => node.class === 'android.webkit.WebView'), 'Source replaces HTML');
+  await screenshot(`html-assets-source-${scale}`);
+  await tap('关闭文件');
+  await tap('缺失资源.html');
+  await find('部分图片或媒体未能加载，可以重新打开预览再试。');
+  await screenshot(`html-assets-missing-${scale}`);
+  await tap('关闭文件');
+}
+
 await mkdir(output, { recursive: true });
 const previousScale = await adb('shell', 'settings', 'get', 'system', 'font_scale');
-await adb('install', '-r', path.join(root, 'apps/native/android/app/build-file-preview/outputs/apk/debug/app-debug.apk'));
+if (!process.argv.includes('--skip-install')) {
+  await adb('install', '-r', path.join(root, 'apps/native/android/app/build-file-preview/outputs/apk/debug/app-debug.apk'));
+}
 try {
   const results = {};
   for (const scale of scales) {
     await adb('shell', 'settings', 'put', 'system', 'font_scale', scale);
     await adb('shell', 'am', 'force-stop', app);
     await adb('shell', 'am', 'start', '-W', '-n', `${app}/com.codexswitch.mobile.MainActivity`);
-    results[scale] = await verifyHtml(scale);
+    if (!assetsOnly) results[scale] = await verifyHtml(scale);
+    await verifyHtmlAssets(scale);
+    if (assetsOnly) { results[scale] = { assets: 'passed' }; continue; }
     await verifyText(scale, '说明文档.md', '原文');
     await verifyText(scale, '代码预览.ts');
     await tap('安装包.apk');
@@ -105,9 +137,12 @@ try {
     await tap('关闭文件');
   }
   await writeFile(path.join(output, 'result.json'), JSON.stringify({ passed: true, results }, null, 2));
-  console.log(`PASS: filled drawer, HTML/source state, fullscreen, scrolling, close/back at font scales ${scales.join(', ')}`);
+  console.log(`PASS: ${assetsOnly ? 'HTML assets, loading, source and missing-file states'
+    : 'filled drawer, HTML/source state, fullscreen, scrolling, close/back'} at font scales ${scales.join(', ')}`);
 } finally {
+  const focus = await adb('shell', 'dumpsys', 'window');
+  const focused = focus.split('\n').some(line => line.includes('mCurrentFocus') && line.includes(app));
   await adb('shell', 'settings', 'put', 'system', 'font_scale', previousScale);
   await adb('shell', 'am', 'force-stop', app);
-  await adb('shell', 'am', 'start', '-W', '-n', 'com.codexswitch.mobile/com.codexswitch.mobile.MainActivity');
+  if (focused) await adb('shell', 'am', 'start', '-W', '-n', 'com.codexswitch.mobile/com.codexswitch.mobile.MainActivity');
 }

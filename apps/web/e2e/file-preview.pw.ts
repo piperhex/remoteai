@@ -4,6 +4,52 @@ import { screenshot } from './chat-helpers';
 import { readFile } from 'node:fs/promises';
 import { dragSheet } from './sheet-drag';
 
+const HTML_FIXTURE_PATH = 'F:/preview test/页面/index.html';
+
+test('HTML assets show loading placeholders before remote images are ready', async ({ page }, info) => {
+  await page.goto(`e2e/file-preview-harness.html?assets&delay=1800&path=${encodeURIComponent(HTML_FIXTURE_PATH)}`);
+  const frame = page.frameLocator('.chat-html-frame');
+  const photo = frame.locator('#photo');
+  await expect(photo).toHaveAttribute('aria-busy', 'true');
+  await expect(photo).toHaveAttribute('src', /^data:image\/svg\+xml/);
+  await expect(page.getByRole('status').filter({ hasText: '正在加载图片' })).toBeVisible();
+  expect(await photo.evaluate(node => (node as HTMLImageElement).naturalWidth)).toBe(320);
+  await page.screenshot({ path: `../../.codex-tmp/html-assets-web-${info.project.name}-loading.png` });
+  await expect(frame.locator('#loaded')).toHaveText('资源加载成功');
+  await expect(photo).not.toHaveAttribute('aria-busy', 'true');
+  expect(await photo.evaluate(node => (node as HTMLImageElement).naturalWidth)).toBe(640);
+  await expect(frame.locator('body')).toHaveCSS('background-color', 'rgb(245, 247, 246)');
+  await frame.getByRole('button', { name: '保留预览状态' }).click();
+  await expect(frame.getByRole('button', { name: '已点击' })).toBeVisible();
+  await page.screenshot({ path: `../../.codex-tmp/html-assets-web-${info.project.name}-ready.png` });
+  await page.getByRole('button', { name: '源码', exact: true }).click();
+  await expect(page.locator('.chat-html-preview pre')).toContainText('images/preview%20image.svg');
+});
+
+test('HTML missing assets end loading and keep a readable document with a failure notice', async ({ page }) => {
+  await page.goto(`e2e/file-preview-harness.html?assets&missing&path=${encodeURIComponent(HTML_FIXTURE_PATH)}`);
+  await expect(page.getByRole('status').filter({ hasText: '部分' })).toBeVisible();
+  await expect(page.getByRole('status').filter({ hasText: '正在加载图片' })).toHaveCount(0);
+  await expect(page.frameLocator('.chat-html-frame').getByRole('heading', { name: '相对资源预览' })).toBeVisible();
+});
+
+test('HTML keeps the loading image until a slow network image is decoded', async ({ page }) => {
+  let release!: () => void;
+  const waiting = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/slow-photo.svg', async route => {
+    await waiting;
+    await route.fulfill({ contentType: 'image/svg+xml', body:
+      '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360"><rect width="640" height="360"/></svg>' });
+  });
+  await page.goto(`e2e/file-preview-harness.html?assets&external&path=${encodeURIComponent(HTML_FIXTURE_PATH)}`);
+  const frame = page.frameLocator('.chat-html-frame');
+  await expect(frame.locator('#photo')).toHaveAttribute('src', /^data:image\/svg\+xml,/);
+  await expect(page.getByRole('status').filter({ hasText: '正在加载图片' })).toBeVisible();
+  release();
+  await expect(frame.locator('#loaded')).toHaveText('资源加载成功');
+  await expect(page.getByRole('status').filter({ hasText: '正在加载图片' })).toHaveCount(0);
+});
+
 async function open(page: Page, path = 'verification.md') {
   await page.goto(`e2e/file-preview-harness.html?path=${encodeURIComponent(path)}`);
 }

@@ -142,6 +142,7 @@ function createAssetResolver(load: PreviewLoader, signal: AbortSignal, deferred:
  */
 export async function prepareHtmlPreview(options: {
   text: string; path: string; load: PreviewLoader; signal: AbortSignal; mediaChannel?: string;
+  mediaReceiverUrl?: string;
 }) {
   const { signal } = options;
   const media: HtmlMediaAsset[] = [];
@@ -154,7 +155,7 @@ export async function prepareHtmlPreview(options: {
   if (options.mediaChannel) deferHtmlMedia({ document, base, assets: media,
     resolve: (source, base, attribute) => attribute === 'srcset'
       ? rewriteSrcset(source, base, assets.resolve) : assets.resolve(source, base),
-    channel: options.mediaChannel });
+    channel: options.mediaChannel, receiverUrl: options.mediaReceiverUrl ?? '' });
   await rewriteDocument(document, base, assets);
   signal.throwIfAborted();
   return { html: '<!doctype html>\n' + document.documentElement.outerHTML, failed: assets.failed(),

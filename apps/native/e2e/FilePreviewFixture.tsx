@@ -9,6 +9,9 @@ import { ChatFileContext, ChatFileProvider } from '../src/chat/ChatFilePreview';
 import { textMetrics } from '../src/theme/text';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
 import { updateThemeMode } from '../src/theme/store';
+import { Buffer } from 'buffer';
+import { fromByteArray } from 'base64-js';
+import { HTML_FIXTURE_ASSETS, HTML_FIXTURE_DOCUMENT, HTML_FIXTURE_PATH } from '../../../shared/file-preview/htmlPreviewFixture';
 
 setInterfaceLanguage('zh');
 updateThemeMode('dark');
@@ -23,13 +26,29 @@ const samples: Record<string, string> = {
   '说明文档.md': '# 文件预览\n\n' + '中文内容可以完整阅读，长文档支持滚动。\n\n'.repeat(40) + '文档底部',
   '代码预览.ts': 'const ready = true;\n'.repeat(100),
   '安装包.apk': '',
+  '相对资源.html': HTML_FIXTURE_DOCUMENT,
+  '缺失资源.html': HTML_FIXTURE_DOCUMENT.replace('images/preview%20image.svg', 'missing.png'),
 };
+const opened = new Map<string, { text: string; mime: string }>();
 const client = {
-  open: async () => { throw new Error('Fixture does not download'); },
-  read: async () => { throw new Error('Fixture does not download'); },
-  close: async () => {},
+  open: async (_threadId: string, path: string) => {
+    const asset = HTML_FIXTURE_ASSETS[path.replace('F:/preview test/页面/', '')];
+    if (!asset) throw new Error('Fixture asset unavailable');
+    const id = `11111111-1111-4111-8111-${String(opened.size).padStart(12, '0')}`;
+    opened.set(id, asset);
+    return { id, size: Buffer.byteLength(asset.text), name: path.split('/').at(-1)!, mimeType: asset.mime };
+  },
+  read: async ({ id, offset, length }: { id: string; offset: number; length: number }) => {
+    const asset = opened.get(id)!;
+    if (asset.mime.startsWith('image/')) await new Promise(resolve => setTimeout(resolve, 6000));
+    return { offset, data: fromByteArray(Buffer.from(asset.text).subarray(offset, offset + length)) };
+  },
+  close: async (_threadId: string, id: string) => { opened.delete(id); },
 };
-const load = async (_threadId: string, path: string) => ({ path, text: samples[path.split(/[\\/]/).at(-1)!] });
+const load = async (_threadId: string, path: string) => ({
+  path: /资源\.html$/.test(path) ? HTML_FIXTURE_PATH : path, text: samples[path.split(/[\\/]/).at(-1)!],
+});
+const videos = { ...client, open: async () => { throw new Error('Fixture does not preview videos'); } };
 
 function Links() {
   const open = useContext(ChatFileContext);
@@ -42,7 +61,7 @@ function Links() {
 function FilePreviewFixture() {
   const [fontsReady] = useFonts(MaterialCommunityIcons.font);
   return <SafeAreaProvider><SafeAreaView style={{ flex: 1, backgroundColor: '#101719' }}>
-    {fontsReady && <ChatFileProvider threadId="preview-fixture" ready files={client} videos={client} load={load}>
+    {fontsReady && <ChatFileProvider threadId="preview-fixture" ready files={client} videos={videos} load={load}>
       <Links />
     </ChatFileProvider>}
   </SafeAreaView></SafeAreaProvider>;
