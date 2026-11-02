@@ -8,6 +8,7 @@ export function useFollowScroll(selected: string | null, active = true) {
   const content = useRef<HTMLDivElement>(null);
   const movement = useScrollMovement();
   const follow = useRef(true);
+  const lastSelected = useRef<string | null>();
   useVirtualScroll({ viewport, following: follow, movement });
   const [away, setAway] = useState(false);
   const [showJumpToLatest, setShowJumpToLatest] = useState(false);
@@ -31,9 +32,13 @@ export function useFollowScroll(selected: string | null, active = true) {
     setAway(true);
     updateScrollButton();
   }, [updateScrollButton]);
-  useLayoutEffect(() => { if (active) jumpToLatest(); }, [selected, active, jumpToLatest]);
+  useLayoutEffect(() => {
+    if (!active) return;
+    if (lastSelected.current !== selected || follow.current) jumpToLatest();
+    lastSelected.current = selected;
+  }, [selected, active, jumpToLatest]);
   useEffect(() => {
-    if (!content.current) return;
+    if (!active || !content.current) return;
     const observer = new ResizeObserver(() => {
       if (follow.current && viewport.current) {
         viewport.current.scrollTop = viewport.current.scrollHeight;
@@ -44,7 +49,7 @@ export function useFollowScroll(selected: string | null, active = true) {
     observer.observe(content.current, { box: 'border-box' });
     if (viewport.current) observer.observe(viewport.current);
     return () => observer.disconnect();
-  }, [movement, updateScrollButton]);
+  }, [active, movement, updateScrollButton]);
   const onScroll = (offsetChange: number) => {
     updateScrollButton();
     const node = viewport.current;

@@ -4,6 +4,7 @@ import type { AccountQuotaHistory, DailyTokenUsageBreakdown } from "../../types/
 import { startOfCalendar } from "./chartUtils";
 import { createDashboardLoader } from "./dashboardLoader";
 import { readDashboardQuery } from "./dashboardQuery";
+import { useViewActive } from '../../../../../shared/RetainedView';
 
 interface DashboardData {
   entries: TokenUsageEntry[];
@@ -21,6 +22,7 @@ interface DashboardData {
 interface DashboardOptions { weeks: number; refreshSeconds: number; thresholdTokens: number }
 
 export function useDashboardData({ weeks, refreshSeconds, thresholdTokens }: DashboardOptions) {
+  const enabled = useViewActive();
   const [data, setData] = useState<DashboardData>({
     entries: [], dailyUsage: [], breakdown: [], quotaHistory: [],
     error: false, analyticsError: false, quotaError: false, updatedAt: null,
@@ -29,8 +31,11 @@ export function useDashboardData({ weeks, refreshSeconds, thresholdTokens }: Das
   const [loading, setLoading] = useState(true);
   const scheduler = useRef(createDashboardLoader());
   const reload = useRef<() => void>(() => undefined);
+  const scope = `${weeks}:${thresholdTokens}`;
+  const previousScope = useRef(scope);
 
   useEffect(() => {
+    if (!enabled) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const interval = refreshSeconds * 1000;
@@ -53,14 +58,17 @@ export function useDashboardData({ weeks, refreshSeconds, thresholdTokens }: Das
         }
       }
     };
-    // Clear the previous scope immediately so it cannot be shown under a new range or threshold.
-    setData((current) => ({ ...current, dailyUsage: [], breakdown: [], quotaHistory: [], updatedAt: null,
-      startTs: Math.floor(startOfCalendar(weeks).getTime() / 1000), endTs: Math.floor(Date.now() / 1000) }));
-    setLoading(true);
+    // A tab round trip preserves charts; only a different range invalidates the displayed scope.
+    if (previousScope.current !== scope) {
+      previousScope.current = scope;
+      setLoading(true);
+      setData((current) => ({ ...current, dailyUsage: [], breakdown: [], quotaHistory: [], updatedAt: null,
+        startTs: Math.floor(startOfCalendar(weeks).getTime() / 1000), endTs: Math.floor(Date.now() / 1000) }));
+    }
     reload.current = () => { void scheduler.current(task); };
-    void scheduler.current(task, true);
+    void scheduler.current(() => task(interval), true);
     return () => { active = false; reload.current = () => undefined; clearTimeout(timer); };
-  }, [weeks, refreshSeconds, thresholdTokens]);
+  }, [enabled, weeks, refreshSeconds, thresholdTokens, scope]);
 
   const load = useCallback(() => reload.current(), []);
   return { ...data, loading, load };

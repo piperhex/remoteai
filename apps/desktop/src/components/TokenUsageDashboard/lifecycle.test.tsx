@@ -41,7 +41,7 @@ beforeEach(() => {
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
-it('performs no work before visiting; disposes on hide and refreshes on reopen', async () => {
+it('performs no work before visiting; retains on hide and refreshes on reopen', async () => {
   await render(false);
   await act(async () => vi.advanceTimersByTimeAsync(5100));
   expect(calls()).toEqual([0, 0, 0, 0]);
@@ -52,7 +52,7 @@ it('performs no work before visiting; disposes on hide and refreshes on reopen',
   expect(calls()).toEqual([6, 6, 6, 6]);
   await render(false);
   const pausedRenders = renders;
-  expect(mounted).toBe(0);
+  expect(mounted).toBe(1);
   await act(async () => vi.advanceTimersByTimeAsync(5100));
   expect(calls()).toEqual([6, 6, 6, 6]);
   expect(renders).toBe(pausedRenders);
@@ -61,7 +61,7 @@ it('performs no work before visiting; disposes on hide and refreshes on reopen',
   expect(latest.loading).toBe(false);
 });
 
-it('stops all charts and reads while the document is hidden, then refreshes', async () => {
+it('pauses reads while the document is hidden and retains the mounted dashboard', async () => {
   await render(true);
   await act(async () => {
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
@@ -71,7 +71,7 @@ it('stops all charts and reads while the document is hidden, then refreshes', as
   await act(async () => vi.advanceTimersByTimeAsync(5100));
   expect(calls()).toEqual([1, 1, 1, 1]);
   expect(renders).toBe(count);
-  expect(mounted).toBe(0);
+  expect(mounted).toBe(1);
   await act(async () => {
     Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
     document.dispatchEvent(new Event('visibilitychange'));

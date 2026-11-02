@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useTableScrollHeight } from '../../../hooks/useTableScrollHeight';
 import type { MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -340,7 +341,9 @@ export function AccountTable({
     ...accountGroups,
     ...accounts.map((account) => account.group),
   ].filter(Boolean))], [accountGroups, accounts]);
-  const tableWrapRef = useRef<HTMLDivElement>(null);
+  const { tableWrapRef, tableScrollY } = useTableScrollHeight(
+    '.account-table-toolbar', active && displayMode === 'table',
+  );
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [loadingAccountDetailsId, setLoadingAccountDetailsId] = useState<string | null>(null);
@@ -361,7 +364,6 @@ export function AccountTable({
   const [draggedColumn, setDraggedColumn] = useState<ReorderableAccountTableColumnKey | null>(null);
   const [dragTargetColumn, setDragTargetColumn] = useState<ReorderableAccountTableColumnKey | null>(null);
   const modelContextWindow = useGpt56SolContextWindow();
-  const [tableScrollY, setTableScrollY] = useState(0);
   const [accountTokenUsage, setAccountTokenUsage] = useState<AccountTokenUsageTotals[]>([]);
   const officialUsage = useOfficialUsage({ active, refreshSeconds: tokenUsageRefreshSeconds });
   const officialUsageById = useMemo(() => new Map(officialUsage.accounts.map((account) => [account.accountId, account])),
@@ -385,24 +387,6 @@ export function AccountTable({
   useEffect(() => {
     const showCardControls = active && displayMode === "cards";
     setCardTopbarHost(showCardControls ? document.getElementById("account-card-topbar-controls") : null);
-  }, [active, displayMode]);
-  useEffect(() => {
-    if (!active || displayMode !== "table") {
-      setTableScrollY(0);
-      return undefined;
-    }
-    const tableWrap = tableWrapRef.current;
-    if (!tableWrap) return undefined;
-
-    const updateScrollHeight = () => {
-      const headerHeight = tableWrap.querySelector(".ant-table-thead")?.getBoundingClientRect().height ?? 0;
-      const toolbarHeight = tableWrap.querySelector(".account-table-toolbar")?.getBoundingClientRect().height ?? 0;
-      setTableScrollY(Math.max(1, Math.floor(tableWrap.clientHeight - headerHeight - toolbarHeight)));
-    };
-    const observer = new ResizeObserver(updateScrollHeight);
-    observer.observe(tableWrap);
-    updateScrollHeight();
-    return () => observer.disconnect();
   }, [active, displayMode]);
   useEffect(() => {
     const closeContextMenu = (event: PointerEvent) => {
@@ -466,11 +450,12 @@ export function AccountTable({
     };
   }, [active, providers, tokenUsageRefreshSeconds]);
   useEffect(() => {
+    if (!active) return;
     if (!concurrentRoutingActive) {
       setAccountConversationCounts({});
       return undefined;
     }
-    let active = true;
+    let mounted = true;
     let refreshing = false;
     const refresh = async () => {
       if (refreshing) return;
@@ -485,7 +470,7 @@ export function AccountTable({
             counts[accountId] = (counts[accountId] ?? 0) + 1;
           }
         });
-        if (active) setAccountConversationCounts(counts);
+        if (mounted) setAccountConversationCounts(counts);
       } catch {
         // Keep the last successful counts while the proxy session list is unavailable.
       } finally {
@@ -495,10 +480,10 @@ export function AccountTable({
     void refresh();
     const timer = window.setInterval(() => void refresh(), 2_000);
     return () => {
-      active = false;
+      mounted = false;
       window.clearInterval(timer);
     };
-  }, [accounts, concurrentRoutingActive]);
+  }, [active, accounts, concurrentRoutingActive]);
   useEffect(() => {
     const accountIds = new Set(accounts.map((account) => account.id));
     setSelectedAccountIds((current) => {
@@ -1500,7 +1485,7 @@ export function AccountTable({
             onRefreshResetCredits={() => onLoadResetCredits(account.id, true)} language={language} t={t} />,
           onExpand: (expanded, account) => { if (expanded) void onLoadAccountDetails(account.id); },
         }}
-        scroll={tableScrollY ? { x: tableScrollX, y: tableScrollY } : { x: tableScrollX }} />
+        scroll={{ x: tableScrollX, y: tableScrollY }} />
     </div>
     {tableContextMenu}
     {accountOrderOpen && <AccountOrderModal accounts={orderedAccounts} privacyMode={privacyMode}

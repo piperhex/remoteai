@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { RetainedView } from '../../../../../shared/RetainedView';
 import { HelpAssistant } from "../helpAssistant/HelpAssistant";
 import { Button, ConfigProvider, Dropdown, Modal, theme as antdTheme } from "antd";
 import enUS from "antd/locale/en_US";
@@ -1425,7 +1426,7 @@ export function DashboardApp() {
           </section>
           <section id="account-panel-claudeCode" className="page-panel third-party-apps-page-panel"
             role="tabpanel" aria-labelledby="account-section-claudeCode" hidden={page !== "claudeCode"}>
-            {page === "claudeCode" && (
+            <RetainedView active={page === "claudeCode"}>
               <MemoThirdPartyAppsPage
                 settings={thirdPartyAppIntegration.settings}
                 saving={thirdPartyAppIntegration.saving}
@@ -1448,12 +1449,13 @@ export function DashboardApp() {
                 onRestart={(appId) => void thirdPartyAppIntegration.restart(appId)}
                 t={t}
               />
-            )}
+            </RetainedView>
           </section>
           <section className={`page-panel ${codexConfigStyles.panel}`} hidden={page !== "codexConfig"}>
             <CodexConfigPage active={page === "codexConfig"} homeKey={manager.info?.codexHome} />
           </section>
           <section className="page-panel" hidden={page !== "settings"}>
+            <RetainedView active={page === "settings"}>
             <MemoSettingsPage providers={providerManager.providers}
               cloudIdentity={cloud.state.authenticated && <CloudAccountIdentity controller={lounge.controller}
                 email={cloud.state.userEmail ?? ''} onDetails={openCloudAccount} />}
@@ -1541,17 +1543,23 @@ export function DashboardApp() {
               onOpenCodexHome={openCodexHome} onOpenAccountStore={openAccountStore} language={language}
               onExportLogs={() => void exportLogs()} exportingLogs={exportingLogs}
               onLanguageChange={setLanguage} t={t} />
+            </RetainedView>
           </section>
           <section className="page-panel" hidden={page !== "skills"}>
+            <RetainedView active={page === "skills"}>
             <MemoSkillsMarketPage active={page === "skills"} baseUrl={cloud.state.baseUrl}
               authenticated={cloud.state.authenticated} currentUserId={cloud.state.userId}
               onLogin={openCloudLogin} notify={notify} t={t} />
+            </RetainedView>
           </section>
           <section className="page-panel sessions-page-panel" hidden={page !== "sessions"}>
             {page === "sessions" && <MemoCodexThreadsPage language={language} notify={notify} />}
           </section>
           <CozeTab active={page === "coze"} />
           <section className={codexGuiStyles.panel} hidden={page !== "codexGui"}>
+            <RetainedView active={page === "codexGui"}
+              scope={JSON.stringify([cloud.state.authenticated, cloud.state.baseUrl, cloud.state.userId,
+                manager.info?.codexHome])}>
             <GuiWorkspace active={page === "codexGui"} notificationTarget={notificationTarget}
               plugins={{ baseUrl: cloud.state.baseUrl, authenticated: cloud.state.authenticated,
                 currentUserId: cloud.state.userId, onLogin: openCloudLogin, notify, t }}
@@ -1560,6 +1568,7 @@ export function DashboardApp() {
                 privacyMode={privacyMode.enabled}
                 providers={providerManager.providers}
                 loading={manager.loading || providerManager.loading} />
+            </RetainedView>
           </section>
           <section className="page-panel" hidden={page !== "systemPrompts"}>
             {page === "systemPrompts" && (
@@ -1579,6 +1588,7 @@ export function DashboardApp() {
           </section>
           <section id="account-panel-providers" className="page-panel providers-page-panel"
             role="tabpanel" aria-labelledby="account-section-providers" hidden={page !== "providers"}>
+            <RetainedView active={page === "providers"}>
             <MemoProvidersPage providers={providerManager.providers}
               aggregateApis={providerManager.aggregateApis} providerGroups={managedAccountGroups}
               accounts={manager.accounts}
@@ -1609,6 +1619,7 @@ export function DashboardApp() {
               privacyMode={privacyMode.enabled}
               tokenUsageRefreshSeconds={tokenUsagePreferences.refreshSeconds}
               language={language} t={t} />
+            </RetainedView>
           </section>
           <section className="page-panel token-dashboard-page" hidden={page !== "tokens"}>
             <TokenUsagePanel active={page === "tokens"} dark={themeMode.mode === "dark"} language={language}
@@ -1620,6 +1631,7 @@ export function DashboardApp() {
           </section>
           <section id="account-panel-accounts" className="page-panel accounts-page-panel"
             role="tabpanel" aria-labelledby="account-section-accounts" hidden={page !== "accounts"}>
+            <RetainedView active={page === "accounts"}>
             <MemoAccountsPage active={page === "accounts"}
               proxySpeedControl={proxySpeedControl}
               accounts={manager.accounts}
@@ -1663,6 +1675,7 @@ export function DashboardApp() {
               displayMode={accountDisplayMode.displayMode}
               tokenUsageRefreshSeconds={tokenUsagePreferences.refreshSeconds}
               language={language} t={t} />
+            </RetainedView>
           </section>
         </main>
 

@@ -1,5 +1,6 @@
 import { ProviderActions } from './ProviderActions';
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { useTableScrollHeight } from '../../../hooks/useTableScrollHeight';
 import type { Dispatch, SetStateAction } from "react";
 import { Button, Checkbox, Dropdown, Popconfirm, Space, Table, Tag, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -113,25 +114,6 @@ interface ProviderTableProps extends ProviderViewProps {
   setSelectedProviderIds: Dispatch<SetStateAction<string[]>>;
   bulkDeleteBusy: boolean;
   setBulkDeleteBusy: Dispatch<SetStateAction<boolean>>;
-}
-
-function useProviderTableScrollHeight() {
-  const tableWrapRef = useRef<HTMLDivElement>(null);
-  const [tableScrollY, setTableScrollY] = useState(0);
-  useEffect(() => {
-    const tableWrap = tableWrapRef.current;
-    if (!tableWrap) return undefined;
-    const updateScrollHeight = () => {
-      const headerHeight = tableWrap.querySelector(".ant-table-thead")?.getBoundingClientRect().height ?? 0;
-      const toolbarHeight = tableWrap.querySelector(".provider-table-toolbar")?.getBoundingClientRect().height ?? 0;
-      setTableScrollY(Math.max(1, Math.floor(tableWrap.clientHeight - headerHeight - toolbarHeight)));
-    };
-    const observer = new ResizeObserver(updateScrollHeight);
-    observer.observe(tableWrap);
-    updateScrollHeight();
-    return () => observer.disconnect();
-  }, []);
-  return { tableWrapRef, tableScrollY };
 }
 
 function ProviderImageModelControls(options: ProviderViewProps) {
@@ -272,7 +254,7 @@ export function ProviderTableView(options: ProviderTableProps) {
     setBulkDeleteBusy,
     t,
   } = options;
-  const { tableWrapRef, tableScrollY } = useProviderTableScrollHeight();
+  const { tableWrapRef, tableScrollY } = useTableScrollHeight('.provider-table-toolbar');
   const [hiddenColumns, setHiddenColumns] = useState<ProviderTableColumnKey[]>(loadHiddenColumns);
   const tokenCostDisplay = useTokenCostDisplaySettings();
   const providerIds = providers.map((provider) => provider.id);
@@ -358,7 +340,7 @@ export function ProviderTableView(options: ProviderTableProps) {
         provider.active ? "active-row" : "",
         !options.proxyRunning ? "proxy-required-row" : "",
       ].filter(Boolean).join(" ")}
-      pagination={false} scroll={tableScrollY ? { x: tableScrollX, y: tableScrollY } : { x: tableScrollX }} />
+      pagination={false} scroll={{ x: tableScrollX, y: tableScrollY }} />
   </div>;
 }
 

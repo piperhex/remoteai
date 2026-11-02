@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { init } from "echarts/core";
 import type { EChartsCoreOption as EChartsOption, EChartsType } from "echarts/core";
 import styles from "./index.module.less";
+import { useViewActive } from '../../../../../shared/RetainedView';
 
 interface EChartProps {
   option: EChartsOption;
@@ -41,11 +42,14 @@ function withLegendSelection(option: EChartsOption, chart: EChartsType) {
 }
 
 export function EChart({ option, label, className, preserveZoomKey, onZoomChange }: EChartProps) {
+  const active = useViewActive();
   const elementRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<EChartsType | null>(null);
   const zoomRef = useRef<ChartZoomRange | null>(null);
   const zoomKeyRef = useRef<string>();
   const zoomHandlerRef = useRef(onZoomChange);
+  const activity = useRef(active);
+  activity.current = active;
 
   useEffect(() => { zoomHandlerRef.current = onZoomChange; }, [onZoomChange]);
 
@@ -60,7 +64,9 @@ export function EChart({ option, label, className, preserveZoomKey, onZoomChange
       zoomRef.current = range;
       if (range) zoomHandlerRef.current?.(range);
     });
-    const observer = new ResizeObserver(() => chart.resize());
+    const observer = new ResizeObserver(() => {
+      if (activity.current && element.clientWidth && element.clientHeight) chart.resize();
+    });
     observer.observe(element);
     return () => {
       observer.disconnect();
@@ -74,7 +80,7 @@ export function EChart({ option, label, className, preserveZoomKey, onZoomChange
 
   useEffect(() => {
     const chart = chartRef.current;
-    if (!chart) return;
+    if (!chart || !active) return;
     const sameScope = preserveZoomKey !== undefined && zoomKeyRef.current === preserveZoomKey;
     if (!sameScope) zoomRef.current = null;
     zoomKeyRef.current = preserveZoomKey;
@@ -83,7 +89,14 @@ export function EChart({ option, label, className, preserveZoomKey, onZoomChange
     chart.setOption(withZoomRange(nextOption, zoomRef.current), {
       notMerge: true, lazyUpdate: preserveZoomKey === undefined,
     });
-  }, [option, preserveZoomKey]);
+  }, [active, option, preserveZoomKey]);
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    if (active) chart.resize();
+    else chart.getZr().animation.stop();
+  }, [active]);
 
   return <div ref={elementRef} className={`${styles.tokenEchart} ${className ? styles[className] : ""}`}
     role="img" aria-label={label} />;

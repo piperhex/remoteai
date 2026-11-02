@@ -16,10 +16,15 @@ export function useVisibleGuiState(controller: GuiController, active: boolean) {
     enabled ? controller.subscribe(listener) : () => {}, [controller, enabled]);
   const snapshot = useCallback(() => {
     if (enabled) last.current = controller.getSnapshot();
-    else if (Object.keys(last.current.conversations).length || Object.keys(last.current.queued).length
+    else if (Object.keys(last.current.conversations).some(id => id !== last.current.selected)
+      || Object.keys(last.current.queued).length
       || last.current.approvals.length) {
-      // A frozen full snapshot would keep evicted histories and sent attachments alive in a hidden page.
-      last.current = { ...last.current, conversations: {}, queued: {}, approvals: [] };
+      // Retain only the displayed conversation so navigation preserves its bounded message window.
+      // Other histories and queued attachments must remain eligible for controller eviction.
+      const { selected, conversations } = last.current;
+      const current = selected ? conversations[selected] : undefined;
+      last.current = { ...last.current, conversations: selected && current ? { [selected]: current } : {},
+        queued: {}, approvals: [] };
     }
     return last.current;
   }, [controller, enabled]);

@@ -8,6 +8,7 @@ import { formatEstimatedCost, type TokenCostDisplaySettings } from '../../utils/
 import { formatAvailableQuota } from '../../utils/officialQuota';
 import { useTokenCostDisplaySettings } from '../../hooks/useTokenCostDisplaySettings';
 import styles from './index.module.less';
+import { useViewActive } from '../../../../../shared/RetainedView';
 
 export function AvailableQuota({ account, language, settings }: {
   account?: OfficialAccountTotal; language: Language; settings: TokenCostDisplaySettings;
@@ -23,7 +24,8 @@ export function OfficialAccountUsage(props: {
 }) {
   const { language } = props;
   const settings = useTokenCostDisplaySettings();
-  const { accounts, data, error, loading } = useOfficialUsage({ ...props, active: true });
+  const active = useViewActive();
+  const { accounts, data, error, loading } = useOfficialUsage({ ...props, active });
   const labels = officialUsageLabels(language, settings.unit);
   const status = error ? 'unavailable' : data?.status;
   const columns = [

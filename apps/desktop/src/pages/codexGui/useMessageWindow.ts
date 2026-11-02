@@ -27,22 +27,20 @@ function hasNestedScroller(target: EventTarget, viewport: Element): boolean {
 
 export function useMessageWindow({ turns = EMPTY_TURNS, selected, active, viewport, movement,
   pauseFollowing, away }: Options) {
-  const [window, setWindow] = useState<{ selected: string | null; active: boolean; start?: MessageCursor }>(
-    { selected, active });
+  const [window, setWindow] = useState<{ selected: string | null; start?: MessageCursor }>({ selected });
   const [loading, setLoading] = useState(false);
   const frame = useRef<number>();
   const anchor = useRef<{ node: Element; top: number }>();
-  const current = window.selected === selected && window.active === active;
-  const start = current && active && away ? window.start : undefined;
-  const visibleTurns = active ? turns : EMPTY_TURNS;
-  const range = useMemo(() => messageWindow(visibleTurns, { start }), [visibleTurns, start]);
+  const current = window.selected === selected;
+  const start = current && away ? window.start : undefined;
+  const range = useMemo(() => messageWindow(turns, { start }), [turns, start]);
   const latest = useRef({ turns, range, selected, active });
   latest.current = { turns, range, selected, active };
 
   useLayoutEffect(() => {
     const changed = window.start?.turnId !== range.start?.turnId || window.start?.itemId !== range.start?.itemId;
     if (!current || (active && changed)) {
-      setWindow({ selected, active, start: active ? range.start : undefined });
+      setWindow({ selected, start: range.start });
     }
   }, [selected, active, current, window.start, range.start]);
 
@@ -91,7 +89,7 @@ export function useMessageWindow({ turns = EMPTY_TURNS, selected, active, viewpo
     if (!(direction === 'older' ? range.hasMore : range.hasNewer)) return false;
     return load(() => {
       const next = latest.current;
-      setWindow({ selected, active,
+      setWindow({ selected,
         start: messageWindow(next.turns, { start: next.range.start, [direction]: true }).start });
     });
   };

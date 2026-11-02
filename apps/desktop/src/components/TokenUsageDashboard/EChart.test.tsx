@@ -4,11 +4,13 @@ import { createRoot, type Root } from "react-dom/client";
 import type { EChartsCoreOption } from "echarts/core";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { EChart } from "./EChart";
+import { RetainedView } from '../../../../../shared/RetainedView';
 
 const chartMocks = vi.hoisted(() => ({ init: vi.fn() }));
 vi.mock("echarts/core", () => chartMocks);
 
 function createChart() {
+  const animation = { stop: vi.fn() };
   const getOption = vi.fn<() => EChartsCoreOption | undefined>();
   const listeners = new Map<string, () => void>();
   return {
@@ -23,6 +25,7 @@ function createChart() {
     emitZoom: () => listeners.get("datazoom")?.(),
     resize: vi.fn(),
     dispose: vi.fn(),
+    getZr: () => ({ animation }),
   };
 }
 
@@ -63,6 +66,26 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
+});
+
+it('keeps the chart and zoom on a tab round trip without drawing while hidden', async () => {
+  const render = (active: boolean, option = initialOption) => act(async () => root.render(
+    <RetainedView active={active}>
+      <EChart option={option} label="quota history" preserveZoomKey="account-a" />
+    </RetainedView>,
+  ));
+  await render(true);
+  const chart = charts[0];
+  await selectChartRange(chart);
+  await render(false);
+  const draws = chart.setOption.mock.calls.length;
+  await render(false, { ...initialOption });
+  expect(chart.setOption).toHaveBeenCalledTimes(draws);
+  expect(chart.getZr().animation.stop).toHaveBeenCalledOnce();
+  expect(chart.dispose).not.toHaveBeenCalled();
+  await render(true);
+  expect(charts).toHaveLength(1);
+  expect(chart.setOption.mock.lastCall?.[0].dataZoom).toEqual([{ type: 'inside', ...selectedRange }]);
 });
 
 afterEach(async () => {

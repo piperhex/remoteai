@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useViewActive } from '../../../../shared/RetainedView';
 import { createPortal } from "react-dom";
 import { Button, Card, Modal, Select, Space, Switch, Typography } from "antd";
 import { Play, RefreshCw, SquareTerminal } from "lucide-react";
@@ -124,6 +125,7 @@ function AppRow(props: AppRowProps) {
 }
 
 export function ThirdPartyAppsPage(props: ThirdPartyAppsPageProps) {
+  const active = useViewActive();
   const {
     settings, saving, proxyBusy, proxyRunning, proxyStartDisabledReason, hasProxyTarget, busy,
     onEnabledChange, onWriteCodexChange, onStartProxy, onOpenAccounts, onOpenProviders,
@@ -148,8 +150,8 @@ export function ThirdPartyAppsPage(props: ThirdPartyAppsPageProps) {
   };
 
   useEffect(() => {
-    setTopbarHost(document.getElementById("third-party-apps-topbar-actions"));
-  }, []);
+    setTopbarHost(active ? document.getElementById("third-party-apps-topbar-actions") : null);
+  }, [active]);
 
   return (
     <>

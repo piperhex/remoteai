@@ -5,6 +5,7 @@ import { usePageTransition, type PageAnimation } from '../../../../shared/naviga
 import { usePrimaryPageSwipe } from './usePrimaryPageSwipe';
 import { useDesktopLayout } from '../useDesktopLayout';
 import './pagePager.css';
+import { RetainedView } from '../../../../shared/RetainedView';
 
 interface Props {
   page: string; onChange: (page: PrimaryPage) => void;
@@ -56,7 +57,9 @@ export function PrimaryPagePager({ page, onChange, pages, children }: Props) {
             return <div key={key} data-primary-page={key}
               className={`primary-page-pane${incoming ? ' is-preview' : ''}`} hidden={!visible}
               aria-hidden={!active} {...(!active ? { inert: '' } : {})} style={position}>
-              {(visible || key === 'chat') && pages[key]}
+              <RetainedView active={visible || key === 'chat'} retain={desktop || key === 'chat'}>
+                {pages[key]}
+              </RetainedView>
             </div>;
           })}
           {children}

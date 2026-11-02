@@ -35,6 +35,20 @@ function Fixture() {
     pendingRequest={state.pendingRequest} />;
 }
 
+it('keeps message DOM mounted when its tab is hidden and shown again', async () => {
+  const value = { thread, turns: thread.turns!, activeTurn: null, error: '', tokens: 0 };
+  const render = (active: boolean) => act(async () => root.render(
+    <Messages selected={thread.id} value={value} active={active} />,
+  ));
+  await render(true);
+  const message = container.querySelector('[data-message-id="answer"]');
+  expect(message).not.toBeNull();
+  await render(false);
+  expect(container.querySelector('[data-message-id="answer"]')).toBe(message);
+  await render(true);
+  expect(container.querySelector('[data-message-id="answer"]')).toBe(message);
+});
+
 beforeEach(async () => {
   vi.resetAllMocks();
   localStorage.clear();

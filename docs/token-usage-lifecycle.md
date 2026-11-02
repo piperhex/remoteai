@@ -5,10 +5,11 @@ The older review baseline was rechecked against the working implementation befor
 
 ## Behavior and ownership
 
-- `DashboardApp` now mounts the lazy Token Usage panel only when selected and visible.
-  The standalone window uses the same boundary. Hidden/minimized windows dispose charts,
-  polling timers and subscriptions; reopening performs a fresh read. Visible unfocused
-  windows remain eligible to display data.
+- Updated 2026-11-02: `DashboardApp` mounts the lazy Token Usage panel on its first visible visit,
+  then retains chart instances and interaction state across tab changes. Hidden/minimized windows
+  pause polling, drawing and animation without disposing charts. Reopening reuses a fresh cached
+  snapshot or refreshes stale data. The standalone window uses the same boundary. Visible unfocused
+  windows remain eligible to display data. Measurements below describe the original November 1 implementation.
 - An unfocused Windows window can be hidden without document, focus or resize events.
   While Token Usage is selected, one native state-query pair runs at a time and schedules
   the next check one second after completion. Hidden windows retain these inexpensive

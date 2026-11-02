@@ -21,8 +21,11 @@ it('pauses hidden rendering while the controller continues work and immediately 
     expect(container.textContent).toBe('first');
     controller.getSnapshot().conversations.history = { thread: { id: 'history', cwd: '', preview: '', updatedAt: 1 },
       turns: [], activeTurn: null, error: '', tokens: 0 };
+    const selected = controller.getSnapshot().conversations.history;
+    controller.getSnapshot().selected = 'selected';
+    controller.getSnapshot().conversations.selected = selected;
     await act(async () => root.render(<View active={false} />));
-    expect(rendered.mock.lastCall?.[0].conversations).toEqual({});
+    expect(rendered.mock.lastCall?.[0].conversations).toEqual({ selected });
     rendered.mockClear();
     for (let index = 0; index < 100; index++) controller.report(`background ${index}`);
     expect(rendered).not.toHaveBeenCalled();
