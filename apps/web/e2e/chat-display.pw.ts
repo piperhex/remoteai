@@ -180,7 +180,8 @@ test('places image thumbnails above the bubble and keeps image-only messages fre
     await expect(images).toHaveCount(2);
     const image = (await images.last().boundingBox())!;
     const bubble = (await user.locator('.chat-user-message').boundingBox())!;
-    expect(image.width).toBeLessThanOrEqual(80);
+    expect(image.width).toBe(120);
+    expect(image.height).toBe(120);
     expect(image.y + image.height).toBeLessThan(bubble.y);
     expect(Math.abs(image.x + image.width - bubble.x - bubble.width)).toBeLessThan(2);
     await images.first().click();

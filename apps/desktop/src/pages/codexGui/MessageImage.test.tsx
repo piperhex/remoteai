@@ -8,12 +8,13 @@ import { RichText } from "./RichText";
 import { filePreviewApi } from "./filePreview/api";
 import { DetailsWorkspace } from "./DetailsWorkspace";
 
-vi.mock("./api", () => ({ guiApi: { request: vi.fn() } }));
+vi.mock("./api", () => ({ guiApi: { request: vi.fn(), subscribe: async () => () => {} } }));
 const image = "data:image/png;base64,iVBORw0KGgo=";
 let root: Root;
 let container: HTMLDivElement;
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   vi.resetAllMocks();
   container = document.createElement("div");
   root = createRoot(container);
@@ -67,6 +68,24 @@ it("reports failed reads and retries them without loading a local endpoint", asy
   await act(async () => container.querySelector("button")?.click());
   expect(guiApi.request).toHaveBeenCalledTimes(2);
   expect(container.querySelector("img")?.getAttribute("src")).toBe(image);
+});
+
+it('keeps the placeholder until browser decoding finishes, including a retry of the same URL', async () => {
+  await render('![Screenshot](https://example.test/picture.png)');
+  const status = () => container.querySelector('[role="status"]');
+  const thumbnail = () => container.querySelector('button[aria-busy]');
+  expect(status()?.textContent).toContain('正在加载图片');
+  expect(thumbnail()?.getAttribute('aria-busy')).toBe('true');
+  await act(async () => container.querySelector('img')!.dispatchEvent(new Event('load')));
+  expect(status()).toBeNull();
+  expect(thumbnail()?.getAttribute('aria-busy')).toBe('false');
+  await act(async () => container.querySelector('img')!.dispatchEvent(new Event('error')));
+  expect(status()?.textContent).toContain('图片加载失败');
+  await act(async () => container.querySelector('button')!.click());
+  expect(status()?.textContent).toContain('正在加载图片');
+  expect(thumbnail()?.getAttribute('aria-busy')).toBe('true');
+  await act(async () => container.querySelector('img')!.dispatchEvent(new Event('load')));
+  expect(status()).toBeNull();
 });
 
 it("previews local screenshot links while preserving ordinary file references", async () => {

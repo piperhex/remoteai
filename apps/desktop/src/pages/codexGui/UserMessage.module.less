@@ -3,8 +3,7 @@
 }
 
 .attachments {
-  --message-image-max-width: 80px;
-  --message-image-max-height: 80px;
+  --message-image-margin: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -100,16 +99,15 @@
 }
 
 .editorImage {
+  composes: size from "../../../../../shared/chat/imageThumbnail.module.css";
+  --message-image-margin: 0;
   position: relative;
-  width: 96px;
-  flex: 0 0 auto;
-  max-width: 100%;
   > button:first-child, > span { margin: 0; }
   > button:first-child {
     display: grid;
     place-items: center;
     width: 100%;
-    height: 96px;
+    height: 100%;
     img { width: 100%; height: 100%; object-fit: contain; }
   }
 

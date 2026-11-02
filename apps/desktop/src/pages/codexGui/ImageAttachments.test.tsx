@@ -37,6 +37,7 @@ function Fixture({ active = true, disabled = false, draftKey = "one" }: {
 
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   vi.clearAllMocks();
   const getComputedStyle = window.getComputedStyle;
   vi.spyOn(window, "getComputedStyle").mockImplementation((element) => getComputedStyle(element));

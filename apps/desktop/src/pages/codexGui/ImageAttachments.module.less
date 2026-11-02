@@ -1,6 +1,7 @@
 .attachments { display: flex; gap: 10px; padding: 3px 8px 12px; overflow-x: auto; }
 .card {
-  position: relative; width: 120px; height: 120px; flex: 0 0 120px; overflow: hidden;
+  composes: size from "../../../../../shared/chat/imageThumbnail.module.css";
+  position: relative; overflow: hidden;
   border: 1px solid var(--gui-border); border-radius: 16px; background: var(--panel);
   display: flex; align-items: center; justify-content: center;
   img { width: 100%; height: 100%; object-fit: contain; }

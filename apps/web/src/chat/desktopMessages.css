@@ -31,12 +31,9 @@
   .chat-message-region .chat-message-actions .chat-text-action:hover { background: var(--app-elevated, #edf1ef); }
   .chat-message-region .chat-message-actions .chat-text-action > span { display: none; }
   .chat-message-region .chat-sent-images {
+    --message-image-margin: 0;
     display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-bottom: 8px; max-width: 100%;
   }
-  .chat-message-region .chat-sent-images .chat-image {
-    width: auto; max-width: 80px; margin: 0; background: transparent;
-  }
-  .chat-message-region .chat-sent-images .chat-image img { width: auto; max-width: 80px; max-height: 80px; }
   .chat-message-region .cs-image-stage { display: flex; align-items: center; justify-content: center; }
   .chat-message-region .cs-image-stage img { width: auto; height: auto; max-width: 100%; max-height: 100%; }
   .chat-message-region .chat-markdown { font-size: var(--gui-font-size, 14px); line-height: 1.8; }

@@ -66,7 +66,8 @@ test("sent images sit above the text bubble and small originals retain their nat
   const first = (await thumbnails.first().boundingBox())!;
   const last = (await thumbnails.last().boundingBox())!;
   const bubble = (await message.getByText("检查这两张图片", { exact: true }).locator("..").boundingBox())!;
-  expect(first.width).toBeLessThanOrEqual(80);
+  expect(first.width).toBe(120);
+  expect(first.height).toBe(120);
   expect(first.y).toBe(last.y);
   expect(last.y + last.height).toBeLessThan(bubble.y);
   expect(Math.abs(last.x + last.width - (bubble.x + bubble.width))).toBeLessThan(2);

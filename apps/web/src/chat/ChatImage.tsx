@@ -10,37 +10,45 @@ import { ImagePreview } from '../../../desktop/src/pages/codexGui/ImagePreview';
 import { remoteImageBytes } from './remoteImageBytes';
 import { useDesktopLayout } from '../useDesktopLayout';
 import thumbnailStyles from '../../../../shared/chat/toolImageThumbnail.module.css';
+import { ImageThumbnail } from '../../../../shared/chat/ImageThumbnail';
 
 export const ChatImageContext = createContext<ImagePreviewOptions | null>(null);
 
 type ChatImageProps = { source?: string; description?: string; compact?: boolean };
 
 export function ChatImage(props: ChatImageProps) {
-  return <ViewportContent key={props.source} image>{() => <VisibleChatImage {...props} />}</ViewportContent>;
+  const desktop = useDesktopLayout();
+  const environment = useContext(FileEnvironmentContext);
+  const fixedImage = desktop || Boolean(environment);
+  return <ViewportContent key={props.source} image fixedImage={fixedImage}>
+    {() => <VisibleChatImage {...props} fixedImage={fixedImage} />}</ViewportContent>;
 }
 
-function VisibleChatImage({ source, description = t("client.chat.image"), compact }: {
-  source?: string; description?: string; compact?: boolean;
+function VisibleChatImage({ source, description = t("client.chat.image"), compact, fixedImage }: {
+  source?: string; description?: string; compact?: boolean; fixedImage: boolean;
 }) {
   useLanguage();
-  const desktop = useDesktopLayout();
   const environment = useContext(FileEnvironmentContext);
   const image = useChatImage(source, useContext(ChatImageContext));
   const [preview, setPreview] = useState(false);
-  if (image.failed) return <span className="chat-image-notice" role="status">
+  if (!fixedImage && image.failed) return <span className="chat-image-notice" role="status">
     {description}{t("client.chat.couldNotLoadImage")} <button type="button" className="chat-button" onClick={image.retry}>{t("client.terminal.retry")}</button>
   </span>;
-  if (image.loading || !image.url) return <span className="chat-image-notice" role="status">{t("client.chat.loadingImage")}</span>;
+  if (!fixedImage && (image.loading || !image.url)) {
+    return <span className="chat-image-notice" role="status">{t("client.chat.loadingImage")}</span>;
+  }
   return <>
-    <button type="button" className={`chat-image${compact ? ` ${thumbnailStyles.thumbnail}` : ''}`}
+    {fixedImage ? <ImageThumbnail key={image.key} url={image.url} description={description} failed={image.failed}
+      translate={t} retry={image.retry} onError={image.fail} onPreview={() => setPreview(true)} className="chat-image" />
+      : <button type="button" className={`chat-image${compact ? ` ${thumbnailStyles.thumbnail}` : ''}`}
       aria-label={t("client.chat.enlarge", { value1: description })} onClick={() => setPreview(true)}>
       <img key={image.key} src={image.url} alt={description} loading="lazy" decoding="async"
         referrerPolicy="no-referrer" onError={image.fail} />
-    </button>
-    {preview && (environment ? <ImagePreview key={image.key} thumbnail={image.url} description={description}
+    </button>}
+    {preview && image.url && (environment ? <ImagePreview key={image.key} thumbnail={image.url} description={description}
       load={image.original} prepare={remoteImageBytes} download={image.save ?? downloadChatImage}
       close={() => setPreview(false)} /> : <ImageViewer key={image.key} thumbnail={image.url} description={description}
-      inlineViewControls={desktop}
+      inlineViewControls={fixedImage}
       translate={displayText} load={image.original} download={image.save ?? downloadChatImage} close={() => setPreview(false)} />)}
   </>;
 }
