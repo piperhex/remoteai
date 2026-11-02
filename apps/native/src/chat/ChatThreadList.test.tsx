@@ -22,6 +22,8 @@ vi.mock('react-native', () => ({ Pressable: 'Pressable', SectionList: 'SectionLi
   View: 'View', ActivityIndicator: 'Spinner', Platform: { OS: 'android' },
   StyleSheet: { create: <T,>(value: T) => value } }));
 vi.mock('@expo/vector-icons/Feather', () => ({ default: 'Icon' }));
+vi.mock('../../../../shared/chat/groups/context', () => ({ useGrouping: () => null }));
+vi.mock('./groups/GroupChoice', () => ({ NativeGroupIcon: 'GroupIcon' }));
 vi.mock('./useThreadListScroll', () => ({ useThreadListScroll: () => ({}) }));
 beforeEach(() => { hooks.states = []; hooks.slot = 0; vi.stubGlobal('React', React); });
 afterEach(() => vi.unstubAllGlobals());

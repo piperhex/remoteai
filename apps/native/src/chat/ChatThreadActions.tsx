@@ -1,5 +1,6 @@
 import { displayError, displayText } from '../i18n/index';
 import { createThemedStyles } from '../theme/styles';
+import { useThemeColor } from '../theme/store';
 import { t, useLanguage } from '../i18n';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
@@ -55,8 +56,9 @@ function Action({ label, icon, disabled, danger, onPress }: {
 }) {
   const actionStyles = useActionStyles();
   const styles = useStyles();
+  const themeColor = useThemeColor();
   useLanguage();
-  const color = danger ? palette.danger : palette.ink;
+  const color = danger ? themeColor(palette.danger, 'danger') : themeColor(palette.ink, 'ink');
   return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress}
     style={[actionStyles.action, disabled && styles.disabled]}>
     <Feather name={icon} size={20} color={color} /><Text style={[actionStyles.label, { color }]}>{label}</Text>
