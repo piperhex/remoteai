@@ -1,7 +1,6 @@
 package providermarket
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/codex-switch/admin-go/internal/platform"
@@ -33,6 +32,11 @@ func Register(r *gin.Engine, deps *platform.Dependencies) error {
 }
 func (s service) list(c *gin.Context) {
 	c.Header("Cache-Control", "no-store")
+	page, err := listPagination(c)
+	if err != nil {
+		platform.Respond(c, nil, err)
+		return
+	}
 	query := queryItems(s.deps.DB.WithContext(c.Request.Context()))
 	switch c.FullPath() {
 	case "/provider-market/mine":
@@ -60,19 +64,11 @@ func (s service) list(c *gin.Context) {
 	if search != "" {
 		query = query.Where("draft->>'name' ILIKE ?", "%"+search+"%")
 	}
-	page, _ := strconv.Atoi(c.Query("page"))
-	if page < 1 {
-		page = 1
-	}
-	if page > 10000 {
-		platform.Respond(c, nil, invalid())
-		return
-	}
 	var total int64
-	err := query.Count(&total).Error
+	err = query.Count(&total).Error
 	rows := []item{}
 	if err == nil {
-		err = query.Order(marketOrder).Limit(40).Offset((page - 1) * 40).Find(&rows).Error
+		err = query.Order(marketOrder).Limit(page.size).Offset(page.offset).Find(&rows).Error
 	}
 	items := make([]presentation, 0, len(rows))
 	for _, row := range rows {

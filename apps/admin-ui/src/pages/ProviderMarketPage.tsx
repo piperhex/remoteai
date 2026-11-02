@@ -26,6 +26,7 @@ export function ProviderMarketPage({ api, canManage, canOrder, canReview = false
   const t = useMemo(() => marketText(language), [language]);
   const [data, setData] = useState<MarketPage>({ items: [], total: 0 });
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(MARKET_PAGE_SIZE);
   const [search, setSearch] = useState('');
   const [reviewStatus, setReviewStatus] = useState('all');
   const [refresh, setRefresh] = useState(0);
@@ -39,18 +40,18 @@ export function ProviderMarketPage({ api, canManage, canOrder, canReview = false
   useEffect(() => {
     let active = true;
     setLoading(true); setError(null);
-    const query = new URLSearchParams({ page: String(page), search, reviewStatus });
+    const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize), search, reviewStatus });
     void api<MarketPage>(`${ENDPOINT}?${query}`).then((result) => {
       const items = result.items.map(parseItem);
       if (active) {
         setData({ ...result, items });
         setSelectedKeys([]);
-        setPage(current => Math.min(current, Math.max(1, Math.ceil(result.total / MARKET_PAGE_SIZE))));
+        setPage(current => Math.min(current, Math.max(1, Math.ceil(result.total / pageSize))));
       }
     }).catch((reason) => { if (active) setError(marketError(reason)); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [api, page, search, reviewStatus, refresh]);
+  }, [api, page, pageSize, search, reviewStatus, refresh]);
   const mutate = async (path: string, method: string, body: unknown) => {
     if (lock.current) return false;
     lock.current = true; setBusy(true); setError(null);
@@ -68,10 +69,13 @@ export function ProviderMarketPage({ api, canManage, canOrder, canReview = false
       draft, published, revision: current?.revision ?? 0,
     });
   };
-  const changePage = (next: number) => { setSelectedKeys([]); setPage(next); };
-  return <div className="provider-market pm-admin-market" style={{ '--muted': token.colorTextSecondary,
+  const changePage = (next: number, size = pageSize) => {
+    setSelectedKeys([]); setPage(size === pageSize ? next : 1); setPageSize(size);
+  };
+  const className = `provider-market pm-admin-market${!editing && !selected ? ' pm-admin-list' : ''}`;
+  return <div className={className} style={{ '--muted': token.colorTextSecondary,
     '--border': token.colorBorderSecondary, '--panel': token.colorBgContainer } as CSSProperties}>
-    <h2>{t('market.title')}</h2><p>{t('market.adminIntro')}</p>
+    <p>{t('market.adminIntro')}</p>
     {error && <Alert type="error" message={t(error)} action={<Button disabled={busy}
       onClick={() => {
         if (error === 'market.conflict') { setEditing(null); setSelected(null); }
@@ -106,7 +110,7 @@ export function ProviderMarketPage({ api, canManage, canOrder, canReview = false
       <ProviderMarketBatchActions items={data.items.filter(item => selectedKeys.includes(item.id))}
         busy={busy || loading} canManage={canManage} canReview={canReview} t={t} error={error}
         mutate={mutate} onClear={() => setSelectedKeys([])} />
-      <ProviderMarketTable data={data} page={page} loading={loading} busy={busy} t={t}
+      <ProviderMarketTable data={data} page={page} pageSize={pageSize} loading={loading} busy={busy} t={t}
         canManage={canManage} canReview={canReview} canOrder={canOrder} canPromote={canPromote}
         selectedKeys={selectedKeys} onSelection={setSelectedKeys} onPage={changePage}
         onView={setSelected} onEdit={setEditing} mutate={mutate} />

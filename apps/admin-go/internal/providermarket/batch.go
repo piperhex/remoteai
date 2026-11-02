@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const maxBatchItems = 40
+const maxBatchItems = maxPageSize
 
 type itemRevision struct {
 	ID       string `json:"id"`
