@@ -8,6 +8,7 @@ export type HistoryDirection = 'initial' | 'older' | 'newer';
 export interface HistoryTimelineState {
   messages: LoungeMessage[]; hasOlder: boolean; hasNewer: boolean;
   loading?: HistoryDirection; error?: HistoryDirection;
+  newerArrived?: boolean;
 }
 type HistoryLoader = (query: HistoryQuery) => Promise<HistoryPage>;
 
@@ -17,20 +18,26 @@ export class HistoryTimeline {
   private listeners = new Set<() => void>();
   private generation = 0;
   private pending = false;
+  private refreshQueued = false;
   constructor(private readonly options: { load: HistoryLoader; query: string; conversation: string }) {}
   snapshot = () => this.state;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   start = () => {
-    this.generation++; this.pending = false;
+    this.generation++; this.pending = false; this.refreshQueued = false;
     this.update({ messages: [], hasOlder: false, hasNewer: false, loading: 'initial' });
     void this.load('initial');
   };
-  dispose = () => { this.generation++; this.pending = false; };
+  dispose = () => { this.generation++; this.pending = false; this.refreshQueued = false; };
+  refresh = () => {
+    if (this.pending) { this.refreshQueued = true; return; }
+    void this.load('initial');
+  };
   retry = () => { if (this.state.error) void this.load(this.state.error); };
   older = () => { if (this.state.hasOlder && !this.state.error) void this.load('older'); };
   newer = () => { if (this.state.hasNewer && !this.state.error) void this.load('newer'); };
   invalidateNewer = () => {
-    if (this.state.messages.length && !this.state.hasNewer) this.update({ ...this.state, hasNewer: true });
+    if (!this.state.messages.length) { this.refresh(); return; }
+    if (!this.state.hasNewer) this.update({ ...this.state, hasNewer: true, newerArrived: true });
   };
   private update(state: HistoryTimelineState) { this.state = state; this.listeners.forEach(listener => listener()); }
   private async load(direction: HistoryDirection) {
@@ -47,7 +54,12 @@ export class HistoryTimeline {
       if (generation === this.generation) this.accept(page, direction);
     } catch {
       if (generation === this.generation) this.update({ ...this.state, loading: undefined, error: direction });
-    } finally { if (generation === this.generation) this.pending = false; }
+    } finally {
+      if (generation === this.generation) {
+        this.pending = false;
+        if (this.refreshQueued) { this.refreshQueued = false; void this.load('initial'); }
+      }
+    }
   }
   private accept(page: HistoryPage, direction: HistoryDirection) {
     const previous = direction === 'initial' ? [] : this.state.messages;

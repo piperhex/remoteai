@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { LoungeController } from './controller';
 import { HistoryTimeline } from './historyTimeline';
 import { historyKey } from './archive';
 
 const SEARCH_DELAY_MS = 250;
 
-export function useHistoryTimeline(controller: LoungeController) {
+export function useHistoryTimeline(controller: LoungeController, preload = false) {
   const { conversation, historyRevision, messages: liveMessages } = useSyncExternalStore(controller.subscribe,
     controller.snapshot);
   const [query, setQuery] = useState('');
@@ -17,7 +17,14 @@ export function useHistoryTimeline(controller: LoungeController) {
   const timeline = useMemo(() => new HistoryTimeline({ query: search, conversation,
     load: options => controller.searchHistory(options) }), [controller, conversation, search]);
   useEffect(() => { timeline.start(); return timeline.dispose; }, [timeline]);
-  useEffect(() => { timeline.invalidateNewer(); }, [timeline, historyRevision]);
+  const observed = useRef<HistoryTimeline>();
+  useEffect(() => {
+    if (observed.current !== timeline) { observed.current = timeline; return; }
+    if (!preload) { timeline.invalidateNewer(); return; }
+    // Refresh the hidden first page after bursts of archive writes, ready for the next opening.
+    const timer = setTimeout(timeline.refresh, SEARCH_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [timeline, historyRevision, preload]);
   const state = useSyncExternalStore(timeline.subscribe, timeline.snapshot);
   const messages = useMemo(() => {
     const live = new Map(liveMessages.map(message => [historyKey(message), message]));

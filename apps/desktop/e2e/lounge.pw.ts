@@ -34,7 +34,8 @@ for (const width of [390, 320]) {
     await page.getByRole('textbox', { name: '搜索消息或账户' }).fill('Mobile');
     await expect(page.locator('.lounge-history-message')).toHaveCount(1);
     await page.screenshot({ path: `../../.codex-tmp/lounge-mobile-history-${width}.png`, animations: 'disabled' });
-    await page.locator('.ant-drawer-close').click(); await expect(input).toHaveValue('保留草稿');
+    await page.getByRole('button', { name: '返回聊天', exact: true }).click();
+    await expect(input).toHaveValue('保留草稿');
     relay.policy(true);
     await page.getByRole('button', { name: '管理 bob 的发言权限' }).click();
     await page.getByRole('spinbutton').fill('30'); await page.getByRole('button', { name: /^禁\s*言$/ }).click();
@@ -161,7 +162,7 @@ test('admin user settings grant lounge moderation and save an explicit mute dura
 });
 
 for (const mode of ['local', 'remote', 'web']) {
-  test(`${mode}: 48px avatar settings and searchable received history preserve the draft`, async ({ page }) => {
+  test(`${mode}: 128px avatar settings and searchable received history preserve the draft`, async ({ page }) => {
     const relay = await setupLounge(page, mode === 'web');
     await page.goto(mode === 'web' ? 'http://127.0.0.1:1486/web/' : `/e2e/lounge-harness.html?mode=${mode}`);
     await relay.ready();
@@ -172,14 +173,16 @@ for (const mode of ['local', 'remote', 'web']) {
     const preview = page.locator('.lounge-avatar-settings img');
     await expect(preview).toBeVisible();
     expect(await preview.evaluate((image: HTMLImageElement) => [image.naturalWidth, image.naturalHeight]))
-      .toEqual([48, 48]);
+      .toEqual([128, 128]);
     await page.getByRole('button', { name: /^保\s*存$/ }).click();
     const input = page.getByRole('textbox', { name: '消息', exact: true });
     await input.fill('HELLO 我的头像');
     await page.getByRole('button', { name: '发送', exact: true }).click();
     await expect(page.locator('.lounge-message.is-own .lounge-avatar img')).toBeVisible();
-    expect(relay.sent[0].avatar).toMatch(/^data:image\/png;base64,/);
-    expect(Buffer.from(relay.sent[0].avatar!.split(',')[1], 'base64').length).toBeLessThanOrEqual(16 * 1024);
+    const savedAvatar = await page.locator('.lounge-message.is-own .lounge-avatar img').getAttribute('src');
+    expect(savedAvatar).toMatch(/^data:image\/png;base64,/);
+    expect(Buffer.from(savedAvatar!.split(',')[1], 'base64').length).toBeLessThanOrEqual(80 * 1024);
+    expect(relay.sent[0].avatar).toBeUndefined();
     relay.push('喝杯咖啡 ☕', [pixel]);
     await input.fill('尚未发送的草稿');
     const historyButton = page.getByRole('button', { name: '历史记录', exact: true });
@@ -188,7 +191,7 @@ for (const mode of ['local', 'remote', 'web']) {
     expect(bounds!.x).toBeGreaterThan(composer!.x + composer!.width / 2);
     await historyButton.click();
     await expect.poll(async () => Math.round((await page.locator('.ant-drawer-content-wrapper').boundingBox())!.x))
-      .toBe(880);
+      .toBe(720);
     const search = page.getByRole('textbox', { name: '搜索消息或账户' });
     await search.fill('ＢＯＢ 咖啡');
     await expect(page.locator('.lounge-history-message')).toHaveCount(1);
@@ -232,7 +235,7 @@ for (const mode of ['local', 'remote', 'web']) {
   });
 }
 
-test('durable history searches beyond the recent 200 and isolates accounts with cursor pagination', async ({ page }) => {
+test('durable history searches beyond the recent 200 and isolates accounts with preloaded scrolling', async ({ page }) => {
   const relay = await setupLounge(page);
   await page.goto('/e2e/lounge-harness.html'); await relay.ready();
   relay.push('old-only-keyword', [pixel]);
@@ -242,14 +245,16 @@ test('durable history searches beyond the recent 200 and isolates accounts with 
   await expect(page.getByText('old-only-keyword', { exact: true })).toHaveCount(0);
   await openLoungeAction(page, '历史记录');
   // Receiving the burst does not mean its serialized local archive writes have finished.
-  await expect(page.locator('.lounge-history-message')).toHaveCount(50, { timeout: 15_000 });
+  await expect(page.locator('.lounge-history-message .lounge-text').first())
+    .toHaveText(/^bulk-\d+$/, { timeout: 30_000 });
   const first = await page.locator('.lounge-history-message .lounge-text').allTextContents();
-  await page.getByRole('button', { name: '下一页' }).click();
+  const historyScroll = page.locator('.lounge-history-list .rc-virtual-list-holder');
+  await historyScroll.evaluate(node => { node.scrollTop = node.scrollHeight; node.dispatchEvent(new Event('scroll')); });
   await expect.poll(() => page.locator('.lounge-history-message .lounge-text').first().textContent())
     .not.toBe(first[0]);
   const second = await page.locator('.lounge-history-message .lounge-text').allTextContents();
   expect(second.some(text => first.includes(text))).toBe(false);
-  await page.getByRole('button', { name: '上一页' }).click();
+  await historyScroll.evaluate(node => { node.scrollTop = 0; node.dispatchEvent(new Event('scroll')); });
   await expect(page.locator('.lounge-history-message .lounge-text').first()).toHaveText(first[0]);
   const search = page.getByRole('textbox', { name: '搜索消息或账户' });
   await search.fill('ＢＯＢ old-only');

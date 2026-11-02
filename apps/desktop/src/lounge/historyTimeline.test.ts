@@ -85,3 +85,24 @@ it('places one date marker at the oldest message of each day without changing me
   expect(rows.map(row => row.message.id)).toEqual(['0003', '0002', '0001']);
   expect(rows.map(row => !!row.date)).toEqual([true, false, true]);
 });
+
+it('coalesces background refreshes during a pending read and keeps the refreshed first page', async () => {
+  let finish: (page: HistoryPage) => void = () => {};
+  const load = vi.fn().mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }))
+    .mockResolvedValue({ messages: [message(2)] });
+  const timeline = new HistoryTimeline({ load, query: '', conversation: '' });
+  timeline.start(); timeline.refresh(); timeline.refresh();
+  expect(load).toHaveBeenCalledTimes(1);
+  finish({ messages: [message(1)] }); await settle();
+  expect(load).toHaveBeenCalledTimes(2);
+  expect(timeline.snapshot().messages.map(value => value.id)).toEqual(['0002']);
+});
+
+it('refreshes an initially empty history when new messages arrive and cancels queued work on disposal', async () => {
+  const load = vi.fn().mockResolvedValueOnce({ messages: [] }).mockResolvedValue({ messages: [message(1)] });
+  const timeline = new HistoryTimeline({ load, query: '', conversation: '' });
+  timeline.start(); await settle(); timeline.invalidateNewer(); await settle();
+  expect(timeline.snapshot().messages).toHaveLength(1);
+  timeline.refresh(); timeline.refresh(); timeline.dispose(); await settle();
+  expect(load).toHaveBeenCalledTimes(3);
+});
