@@ -188,7 +188,7 @@
   "table.modelContextWindowSaveError": "Could not save the context window. Try again.",
   "table.modelContextGlobal": "Official models context",
   "table.modelContextSettings": "Model context settings",
-  "table.modelContextSettingsHint": "Model settings take priority. Models without a setting use the global value.",
+  "table.modelContextSettingsHint": "Set the context capacity for each model individually.",
   "table.modelContextRemove": "Remove model override",
   "table.modelContextAddPlaceholder": "Model name",
   "table.modelContextAdd": "Add",

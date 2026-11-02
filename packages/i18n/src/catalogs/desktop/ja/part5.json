@@ -188,7 +188,7 @@
   "table.modelContextWindowSaveError": "コンテキストウィンドウを保存できませんでした。もう一度試してください。",
   "table.modelContextGlobal": "公式モデルのコンテキスト",
   "table.modelContextSettings": "モデルのコンテキスト設定",
-  "table.modelContextSettingsHint": "モデルの設定が優先されます。設定がないモデルはグローバル値を使用します。",
+  "table.modelContextSettingsHint": "モデルごとにコンテキスト容量を設定できます。",
   "table.modelContextRemove": "モデルのオーバーライドを削除",
   "table.modelContextAddPlaceholder": "モデル名",
   "table.modelContextAdd": "追加",

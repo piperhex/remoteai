@@ -7,6 +7,7 @@ import { GPT_5_6_SOL_CONTEXT_WINDOW_OPTIONS_K } from "../../hooks/useGpt56SolCon
 interface OfficialContextSettingsProps {
   models: string[];
   valuesK: Record<string, string>;
+  defaultValuesK: Record<string, string>;
   saving: boolean;
   onSave: (model: string, valueK: string) => Promise<boolean>;
   onChange: (model: string, valueK: string) => void;
@@ -17,6 +18,7 @@ interface OfficialContextSettingsProps {
 export function OfficialContextSettings({
   models,
   valuesK,
+  defaultValuesK,
   saving,
   onSave,
   onChange,
@@ -47,10 +49,11 @@ export function OfficialContextSettings({
               <div className="official-context-settings-row" key={model}>
                 <span title={model}>{model}</span>
                 <span className="official-context-settings-input">
-                  <AutoComplete size="small" value={valuesK[model] ?? ""} options={contextOptions}
-                    placeholder="—" disabled={saving}
+                  <AutoComplete size="small" value={valuesK[model] ?? ""} options={contextOptions} disabled={saving}
                     onChange={(value) => onChange(model, value)}
-                    onBlur={() => void onSave(model, valuesK[model] ?? "")} />
+                    onBlur={() => void onSave(model, valuesK[model] ?? "")}>
+                    <Input aria-label={model} inputMode="numeric" placeholder={defaultValuesK[model] ?? "—"} />
+                  </AutoComplete>
                   <span>K</span>
                 </span>
                 <Tooltip title={t("table.modelContextRemove")}>

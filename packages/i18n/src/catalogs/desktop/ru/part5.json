@@ -188,7 +188,7 @@
   "table.modelContextWindowSaveError": "Не удалось сохранить размер контекста. Повторите попытку.",
   "table.modelContextGlobal": "Контекст официальных моделей",
   "table.modelContextSettings": "Настройки контекста модели",
-  "table.modelContextSettingsHint": "Настройка модели имеет приоритет. Если она не задана, используется общее значение.",
+  "table.modelContextSettingsHint": "Размер контекста можно задать отдельно для каждой модели.",
   "table.modelContextRemove": "Удалить настройку для модели",
   "table.modelContextAddPlaceholder": "Название модели",
   "table.modelContextAdd": "Добавить",

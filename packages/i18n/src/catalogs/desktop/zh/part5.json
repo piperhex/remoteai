@@ -188,7 +188,7 @@
   "table.modelContextWindowSaveError": "上下文长度保存失败，请重试。",
   "table.modelContextGlobal": "官方模型上下文",
   "table.modelContextSettings": "模型上下文设置",
-  "table.modelContextSettingsHint": "优先使用模型单独设置的容量，未设置的模型使用全局值。",
+  "table.modelContextSettingsHint": "可为每个模型单独设置上下文容量。",
   "table.modelContextRemove": "移除模型单独设置",
   "table.modelContextAddPlaceholder": "模型名称",
   "table.modelContextAdd": "添加",

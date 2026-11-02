@@ -190,24 +190,20 @@
   }
   .model-context-window-control {
     display: inline-flex; align-items: center; gap: 4px; padding: 3px 5px;
-    border-radius: 8px; background: color-mix(in srgb, var(--green) 8%, transparent);
+    border-radius: 8px; background: #fff;
   }
-  .model-context-window-control .ant-select { width: 72px; }
-  .model-context-window-control .ant-select-selector { min-height: 24px !important; }
-  .model-context-window-control .ant-select-selector,
-  .model-context-window-control .ant-select-selection-search-input,
-  .model-context-window-control .ant-select-selection-item,
-  .model-context-window-control .ant-select-selection-placeholder { font-size: 11px !important; }
   .model-context-window-control .table-icon-button { width: 24px; height: 24px; padding: 0; }
   .official-context-settings {
     width: min(360px, calc(100vw - 32px));
     max-width: 400px;
     padding: 12px;
-    border: 1px solid color-mix(in srgb, var(--green) 16%, transparent);
+    border: 1px solid var(--line);
     border-radius: 10px;
-    background: color-mix(in srgb, var(--green) 7%, var(--panel));
-    box-shadow: 0 8px 24px rgb(20 55 45 / 12%);
+    background: #fff;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
   }
+  :root[data-theme="dark"] .model-context-window-control,
+  :root[data-theme="dark"] .official-context-settings { background: var(--panel); }
   .official-context-settings-title { color: var(--ink); font-size: 12px; font-weight: 700; }
   .official-context-settings-hint { margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.4; }
   .official-context-settings-list { max-height: 220px; margin-top: 10px; overflow: auto; }

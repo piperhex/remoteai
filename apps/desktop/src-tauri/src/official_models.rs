@@ -1,5 +1,5 @@
 use std::{
-    collections::HashSet,
+    collections::{BTreeMap, HashSet},
     fs,
     path::PathBuf,
     sync::{Mutex, OnceLock},
@@ -44,6 +44,31 @@ pub(crate) fn cached_model_names(paths: &Paths) -> Vec<String> {
 pub(crate) fn cached_source_catalog(paths: &Paths) -> Result<Value, String> {
     read_json(&cache_path(paths))
 }
+
+/// Original capacities from the last official response, before local context overrides.
+pub(crate) fn cached_context_windows(paths: &Paths) -> BTreeMap<String, u64> {
+    cached_source_catalog(paths)
+        .map(|catalog| context_windows_from_catalog(&catalog))
+        .unwrap_or_default()
+}
+
+fn context_windows_from_catalog(catalog: &Value) -> BTreeMap<String, u64> {
+    catalog["models"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|entry| {
+            let model = entry["slug"].as_str().or_else(|| entry["id"].as_str())?;
+            let capacity = ["context_window", "max_context_window"]
+                .iter()
+                .find_map(|key| entry[key].as_u64().filter(|value| *value > 0))?;
+            (!model.trim().is_empty()).then(|| (model.to_string(), capacity))
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod context_tests;
 
 /// Replaces the saved official catalog only after a successful, nonempty response.
 pub(crate) struct OfficialCatalogUpdate<'a> {

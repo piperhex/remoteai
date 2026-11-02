@@ -145,6 +145,7 @@ pub(crate) async fn set_gpt_5_6_sol_context_window<R: Runtime + 'static>(
 pub(crate) struct OfficialModelContextSettings {
     pub(crate) global_context_window: u64,
     pub(crate) model_context_windows: std::collections::BTreeMap<String, u64>,
+    pub(crate) default_context_windows: std::collections::BTreeMap<String, u64>,
     pub(crate) models: Vec<String>,
 }
 
@@ -152,8 +153,11 @@ fn official_context_settings<R: Runtime>(
     app: &tauri::AppHandle<R>,
     settings: AppSettings,
 ) -> OfficialModelContextSettings {
-    let mut models = resolve_paths(app)
-        .map(|paths| crate::official_models::cached_model_names(&paths))
+    let (mut models, default_context_windows) = resolve_paths(app)
+        .map(|paths| (
+            crate::official_models::cached_model_names(&paths),
+            crate::official_models::cached_context_windows(&paths),
+        ))
         .unwrap_or_default();
     for model in settings.official_model_context_windows.keys() {
         if !models.contains(model) {
@@ -163,6 +167,7 @@ fn official_context_settings<R: Runtime>(
     OfficialModelContextSettings {
         global_context_window: settings.gpt_5_6_sol_context_window,
         model_context_windows: settings.official_model_context_windows,
+        default_context_windows,
         models,
     }
 }

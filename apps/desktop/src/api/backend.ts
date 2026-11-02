@@ -3645,6 +3645,7 @@ export function subscribeToProviderEvents(onProvidersChanged: () => void | Promi
 export interface OfficialModelContextSettings {
   globalContextWindow: number;
   modelContextWindows: Record<string, number>;
+  defaultContextWindows?: Record<string, number>;
   models: string[];
 }
 

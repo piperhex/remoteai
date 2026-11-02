@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import {
-  AutoComplete,
   Button,
   Checkbox,
   Dropdown,
@@ -22,12 +21,7 @@ import {
 } from "../../../api/backend";
 import type { Language, Translate } from "../../../i18n";
 import type { AccountDisplayMode } from "../../../hooks/useAccountDisplayMode";
-import {
-  DEFAULT_GPT_5_6_SOL_CONTEXT_WINDOW_K,
-  GPT_5_6_SOL_CONTEXT_WINDOW_OPTIONS_K,
-  type ModelContextWindowError,
-  useGpt56SolContextWindow,
-} from "../../../hooks/useGpt56SolContextWindow";
+import { useGpt56SolContextWindow } from "../../../hooks/useGpt56SolContextWindow";
 import type {
   Account,
   AccountDetailsDraft,
@@ -149,16 +143,6 @@ interface AccountTableProps {
 
 const HIDDEN_COLUMNS_STORAGE_KEY = "codex-switch:account-table-hidden-columns";
 const GROUP_COLUMN_PREFERENCE_STORAGE_KEY = "codex-switch:account-table-group-column-preference";
-const GPT_5_6_SOL_CONTEXT_WINDOW_OPTIONS = GPT_5_6_SOL_CONTEXT_WINDOW_OPTIONS_K.map((value) => ({
-  label: `${value}K`,
-  value: String(value),
-}));
-
-function modelContextWindowTooltipKey(error: ModelContextWindowError) {
-  if (error === "invalid") return "table.modelContextWindowInvalid" as const;
-  if (error === "save") return "table.modelContextWindowSaveError" as const;
-  return "table.modelContextWindowTooltip" as const;
-}
 
 const ACCOUNT_TABLE_COLUMN_KEYS = [
   "account",
@@ -1157,20 +1141,13 @@ export function AccountTable({
             if (accountId !== activeAccount?.id) onSwitch(accountId);
           }} />
       </span>
-      <Tooltip title={t(modelContextWindowTooltipKey(modelContextWindow.error))}
+      <Tooltip title={t(modelContextWindow.error
+        ? "table.modelContextWindowSaveError" : "table.modelContextWindowTooltip")}
         styles={{ root: { maxWidth: 400 } }}>
         <span className="model-context-window-control">
-          <span>{t("table.modelContextGlobal")}{language === "zh" ? "：" : ": "}</span>
-          <AutoComplete value={modelContextWindow.valueK}
-            options={GPT_5_6_SOL_CONTEXT_WINDOW_OPTIONS}
-            placeholder={DEFAULT_GPT_5_6_SOL_CONTEXT_WINDOW_K}
-            aria-label={t("table.modelContextWindow")}
-            disabled={modelContextWindow.saving}
-            status={modelContextWindow.error ? "error" : undefined}
-            onChange={modelContextWindow.updateValueK}
-            onBlur={() => void modelContextWindow.saveValueK(modelContextWindow.valueK)} />
-          <span>K</span>
+          <span>{t("table.modelContextGlobal")}</span>
           <OfficialContextSettings models={modelContextWindow.models}
+            defaultValuesK={modelContextWindow.defaultValuesK}
             valuesK={modelContextWindow.modelValuesK} saving={modelContextWindow.saving}
             onSave={modelContextWindow.saveModelValueK} onChange={modelContextWindow.updateModelValueK}
             onClear={modelContextWindow.clearModelValue} t={t} />
