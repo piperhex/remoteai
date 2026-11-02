@@ -2,7 +2,6 @@ package lounge
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -91,7 +90,7 @@ func (h *hub) relayDirect(sender *peer, input incoming, target account) bool {
 		return false
 	}
 	profile := sender.user
-	data, err := json.Marshal(message{Type: "message", ID: input.ID, Sender: profile, Text: input.Text,
+	frames, err := encodeMessage(message{Type: "message", ID: input.ID, Sender: profile, Text: input.Text,
 		Images: input.Images, Attachments: input.Attachments, Reply: input.Reply,
 		Recipient: &target, Receipts: input.Receipts, Generation: input.Generation,
 		SentAt: time.Now().UTC().Format(time.RFC3339Nano)})
@@ -102,7 +101,7 @@ func (h *hub) relayDirect(sender *peer, input incoming, target account) bool {
 	for client := range h.clients {
 		if h.activeLocked(client) && client.direct && (!input.Receipts || client.receipts) &&
 			client.user.ID == target.ID && !client.blocks[sender.user.ID] {
-			delivered = client.enqueue(data) || delivered
+			delivered = client.enqueue(frames.forPeer(client)) || delivered
 		}
 	}
 	if !delivered {
@@ -111,7 +110,7 @@ func (h *hub) relayDirect(sender *peer, input incoming, target account) bool {
 	}
 	for client := range h.clients {
 		if h.activeLocked(client) && client.direct && (!input.Receipts || client.receipts) && client.user.ID == sender.user.ID {
-			client.enqueue(data)
+			client.enqueue(frames.forPeer(client))
 		}
 	}
 	return true

@@ -86,7 +86,7 @@ func (h *hub) receive(client *peer, input incoming) bool {
 		client.enqueue([]byte(`{"type":"pong"}`))
 		return true
 	case "profile-watch":
-		return h.watchProfiles(client, input.Watch)
+		return h.watchProfiles(client, input)
 	case "watch":
 		return h.watch(client, input.Watch)
 	case "sync-contacts":
@@ -185,6 +185,7 @@ func (h *hub) authorize(client *peer, input incoming) bool {
 	client.direct = input.Direct
 	client.receipts = input.Receipts
 	client.groupAcks = input.GroupAcks
+	client.avatarCache = input.AvatarCache && h.profiles != nil
 	client.applyRelationships(privacy)
 	h.clients[client] = true
 	h.indexContactPeerLocked(client)
@@ -200,6 +201,10 @@ func (h *hub) authorize(client *peer, input incoming) bool {
 }
 
 func (h *hub) sendReadyLocked(client *peer, value policy, privacy relationships, muted []string) bool {
+	user := client.user
+	if client.avatarCache {
+		user = withoutAvatar(user)
+	}
 	data, err := json.Marshal(struct {
 		Type                 string    `json:"type"`
 		User                 account   `json:"user"`
@@ -217,9 +222,10 @@ func (h *hub) sendReadyLocked(client *peer, value policy, privacy relationships,
 		NotificationSettings bool      `json:"notificationSettings"`
 		MutedConversations   []string  `json:"mutedConversations"`
 		Attachments          bool      `json:"attachments"`
-	}{"ready", client.user, value, h.onlineForLocked(value.Moderator), true, privacy.Blocked, true,
+		AvatarCache          bool      `json:"avatarCache"`
+	}{"ready", user, value, h.onlineForLocked(value.Moderator), true, privacy.Blocked, true,
 		h.profiles != nil, h.directPolicy != nil, h.accountLookup != nil, h.names != nil, h.savedContacts != nil,
-		h.directPolicy != nil, h.notifications != nil, muted, h.attachmentPolicy != nil})
+		h.directPolicy != nil, h.notifications != nil, muted, h.attachmentPolicy != nil, client.avatarCache})
 	if err != nil {
 		return false
 	}

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { LoungeDirectDelivery } from '../../../../shared/lounge/directDelivery';
 import { historyKey, historyPage } from '../../../../shared/lounge/archive';
 import { mergeDelivery, needsDeliveryWork } from '../../../../shared/lounge/delivery';
-import type { LoungeMessage } from '../../../../shared/lounge/types';
+import type { LoungeAccount, LoungeMessage } from '../../../../shared/lounge/types';
 
 const alice = { id: 'alice', account: 'alice@example.test' };
 const bob = { id: 'bob', account: 'bob@example.test' };
@@ -10,7 +10,7 @@ const instances: LoungeDirectDelivery[] = [];
 beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-28T00:00:00Z')); });
 afterEach(() => { instances.forEach(instance => instance.stop()); instances.length = 0; vi.useRealTimers(); });
 const settle = async () => { for (let i = 0; i < 100; i++) await Promise.resolve(); };
-function fixture(self = alice, rows = new Map<string, LoungeMessage>()) {
+function fixture(self: LoungeAccount = alice, rows = new Map<string, LoungeMessage>()) {
   const state = { online: true, readable: false, connected: true, allowed: true };
   const fresh: LoungeMessage[] = [];
   const transmit = vi.fn<(frame: Record<string, unknown>) => boolean>(() => true);
@@ -32,6 +32,16 @@ it('does not revive a rejected opening from a stale write by another window', ()
     { direction: 'outgoing', status: 'pending', retry: true });
   expect(merged?.status).toBe('rejected');
   expect(needsDeliveryWork(merged)).toBe(false);
+});
+
+it('keeps avatars in local history but omits them from private sends and retries', async () => {
+  const avatar = 'data:image/png;base64,AAAA';
+  const { engine, transmit, rows } = fixture({ ...alice, avatar });
+  await engine.send({ text: 'hello', images: [], to: bob.id }, 'cached', bob);
+  await vi.advanceTimersByTimeAsync(6000);
+  expect(transmit.mock.calls.length).toBeGreaterThan(1);
+  for (const [frame] of transmit.mock.calls) expect(frame).not.toHaveProperty('avatar');
+  expect(rows.get('["alice","cached"]')?.sender.avatar).toBe(avatar);
 });
 
 it('retries the same message after five seconds only while the peer is online, until a client receipt arrives', async () => {

@@ -23,30 +23,32 @@ const (
 )
 
 type incoming struct {
-	Attachments  []attachment `json:"attachments,omitempty"`
-	Conversation *string      `json:"conversation"`
-	Muted        *bool        `json:"muted"`
-	Type         string       `json:"type"`
-	Ticket       string       `json:"ticket"`
-	ID           string       `json:"id"`
-	Text         string       `json:"text"`
-	Query        string       `json:"query"`
-	Cursor       string       `json:"cursor"`
-	Images       []string     `json:"images"`
-	Avatar       string       `json:"avatar"`
-	Nickname     string       `json:"nickname"`
-	Remark       string       `json:"remark"`
-	UserID       string       `json:"userId"`
-	Minutes      *int         `json:"minutes"`
-	Reply        *replyQuote  `json:"reply,omitempty"`
-	To           string       `json:"to,omitempty"`
-	Blocked      *bool        `json:"blocked"`
-	Watch        []string     `json:"watch"`
-	Direct       bool         `json:"direct"`
-	Receipts     bool         `json:"receipts"`
-	GroupAcks    bool         `json:"groupAcks"`
-	Status       string       `json:"status"`
-	Generation   int64        `json:"generation,omitempty"`
+	AvatarCache    bool              `json:"avatarCache"`
+	AvatarVersions map[string]string `json:"avatarVersions"`
+	Attachments    []attachment      `json:"attachments,omitempty"`
+	Conversation   *string           `json:"conversation"`
+	Muted          *bool             `json:"muted"`
+	Type           string            `json:"type"`
+	Ticket         string            `json:"ticket"`
+	ID             string            `json:"id"`
+	Text           string            `json:"text"`
+	Query          string            `json:"query"`
+	Cursor         string            `json:"cursor"`
+	Images         []string          `json:"images"`
+	Avatar         string            `json:"avatar"`
+	Nickname       string            `json:"nickname"`
+	Remark         string            `json:"remark"`
+	UserID         string            `json:"userId"`
+	Minutes        *int              `json:"minutes"`
+	Reply          *replyQuote       `json:"reply,omitempty"`
+	To             string            `json:"to,omitempty"`
+	Blocked        *bool             `json:"blocked"`
+	Watch          []string          `json:"watch"`
+	Direct         bool              `json:"direct"`
+	Receipts       bool              `json:"receipts"`
+	GroupAcks      bool              `json:"groupAcks"`
+	Status         string            `json:"status"`
+	Generation     int64             `json:"generation,omitempty"`
 }
 
 type account struct {

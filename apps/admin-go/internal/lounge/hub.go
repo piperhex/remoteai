@@ -23,6 +23,8 @@ type peer struct {
 	direct         bool
 	receipts       bool
 	groupAcks      bool
+	avatarCache    bool
+	avatarVersions map[string]string // Guarded by hub.mu; bounded by profileWatch.
 	blocks         map[string]bool
 	blockedBy      map[string]bool
 	watching       map[string]bool
@@ -142,7 +144,7 @@ func (h *hub) broadcast(sender *peer, input incoming) {
 		}
 		sender.enqueue(ack)
 	}
-	data, err := json.Marshal(message{Type: "message", ID: input.ID, Sender: profile,
+	frames, err := encodeMessage(message{Type: "message", ID: input.ID, Sender: profile,
 		Text: input.Text, Images: input.Images, Attachments: input.Attachments, Reply: input.Reply, SentAt: sentAt})
 	if err != nil {
 		return
@@ -153,7 +155,7 @@ func (h *hub) broadcast(sender *peer, input incoming) {
 			continue
 		}
 		if authenticated && client.expires.After(time.Now()) && !client.blocks[sender.user.ID] {
-			client.enqueue(data)
+			client.enqueue(frames.forPeer(client))
 		}
 	}
 }

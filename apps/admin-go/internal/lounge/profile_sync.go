@@ -18,19 +18,22 @@ func (h *hub) readProfiles(ids []string) ([]avatarProfile, error) {
 }
 
 func sendProfiles(client *peer, profiles []avatarProfile) {
+	updates := profileUpdates(client, profiles)
 	// Keep even maximum-size avatars below the client's 6 MiB frame limit.
 	const profilesPerFrame = 32
-	for len(profiles) > profilesPerFrame {
-		sendProfileBatch(client, profiles[:profilesPerFrame])
-		profiles = profiles[profilesPerFrame:]
+	for len(updates) > profilesPerFrame {
+		sendProfileBatch(client, updates[:profilesPerFrame])
+		updates = updates[profilesPerFrame:]
 	}
-	sendProfileBatch(client, profiles)
+	if len(updates) > 0 || !client.avatarCache {
+		sendProfileBatch(client, updates)
+	}
 }
 
-func sendProfileBatch(client *peer, profiles []avatarProfile) {
+func sendProfileBatch(client *peer, profiles []cachedAvatarProfile) {
 	data, err := json.Marshal(struct {
-		Type     string          `json:"type"`
-		Profiles []avatarProfile `json:"profiles"`
+		Type     string                `json:"type"`
+		Profiles []cachedAvatarProfile `json:"profiles"`
 	}{"profiles", profiles})
 	if err == nil {
 		client.enqueue(data)
@@ -38,8 +41,9 @@ func sendProfileBatch(client *peer, profiles []avatarProfile) {
 }
 
 // Subscriptions live only on the connection and do not expose presence or an account directory.
-func (h *hub) watchProfiles(client *peer, ids []string) bool {
-	if h.profiles == nil || len(ids) > maxWatchedContacts {
+func (h *hub) watchProfiles(client *peer, input incoming) bool {
+	ids := input.Watch
+	if h.profiles == nil || len(ids) > maxWatchedContacts || len(input.AvatarVersions) > maxWatchedContacts {
 		return false
 	}
 	watching := make(map[string]bool, len(ids))
@@ -62,6 +66,7 @@ func (h *hub) watchProfiles(client *peer, ids []string) bool {
 	}
 	h.mu.Lock()
 	defer h.mu.Unlock()
+	watchAvatarVersions(client, input)
 	client.profileWatch = watching
 	sendProfiles(client, profiles)
 	if h.names != nil {

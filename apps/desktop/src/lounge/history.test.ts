@@ -16,7 +16,7 @@ describe('local lounge history', () => {
     expect(searchLoungeHistory(messages, '').map(item => item.id)).toEqual(['three', 'two', 'one']);
     expect(messages[0].id).toBe('one');
   });
-  it('keeps avatar preferences separate by account and server, and removes reset avatars', () => {
+  it('keeps avatar preferences separate by account and server, and retains reset markers', () => {
     localStorage.clear();
     const store = browserAvatarStore('https://one.test/');
     const avatar = 'data:image/png;base64,AAAA';
@@ -24,7 +24,7 @@ describe('local lounge history', () => {
     expect(browserAvatarStore('https://one.test').load('alice')).toBe(avatar);
     expect(store.load('bob')).toBeUndefined();
     expect(browserAvatarStore('https://two.test').load('alice')).toBeUndefined();
-    store.save('alice', ''); expect(store.load('alice')).toBeUndefined();
+    store.save('alice', ''); expect(store.load('alice')).toBe('');
   });
   it('discards remote avatar URLs while preserving the received message', () => {
     const input = message('safe', 'content'); input.sender.avatar = 'https://tracking.example/avatar';

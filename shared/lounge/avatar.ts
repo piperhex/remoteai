@@ -17,13 +17,12 @@ export function browserAvatarStore(baseUrl: string): LoungeAvatarStore {
   const key = (userId: string) => `remoteai:lounge:avatar:${JSON.stringify([baseUrl.replace(/\/+$/, ''), userId])}`;
   return {
     load(userId) {
-      try { const value = localStorage.getItem(key(userId)); return avatarData(value) ? value : undefined; }
+      try { const value = localStorage.getItem(key(userId)); return value === '' || avatarData(value) ? value : undefined; }
       catch { return undefined; }
     },
     save(userId, avatar) {
       try {
-        if (avatar) localStorage.setItem(key(userId), avatar);
-        else localStorage.removeItem(key(userId));
+        localStorage.setItem(key(userId), avatar);
       } catch { throw new Error('client.lounge.avatarSaveFailed'); }
     },
   };

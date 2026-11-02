@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoungeController } from '../../../../shared/lounge/controller';
 import { browserAvatarStore } from '../../../../shared/lounge/avatar';
+import { loungeAvatarVersion } from '../../../../shared/lounge/avatarCache';
 
 class Socket {
   static OPEN = 1;
@@ -39,6 +40,38 @@ beforeEach(async () => {
 afterEach(() => { controller.stop(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('application lifetime lounge', () => {
+  it('loads cached avatars on reconnect, repairs misses and persists remote resets', async () => {
+    const store = browserAvatarStore('https://example.test');
+    const avatar = 'data:image/png;base64,AAAA';
+    store.save('self', avatar);
+    const socket = Socket.instances[0];
+    const ready = () => socket.frame({ type: 'ready', profiles: true, avatarCache: true,
+      user: { id: 'self', account: 'alice@example.test' } });
+    ready();
+    expect(controller.snapshot().user?.avatar).toBe(avatar);
+    expect(JSON.parse(socket.send.mock.calls.at(-1)![0])).toEqual({ type: 'profile-watch', watch: ['self'],
+      avatarVersions: { self: loungeAvatarVersion(avatar) } });
+    socket.message('first');
+    expect(JSON.parse(socket.send.mock.calls.at(-1)![0])).toMatchObject({ watch: ['self', 'other'],
+      avatarVersions: { self: loungeAvatarVersion(avatar) } });
+    socket.frame({ type: 'profiles', profiles: [{ id: 'other', avatar }] });
+    const requests = socket.send.mock.calls.length;
+    socket.message('second');
+    expect(socket.send.mock.calls).toHaveLength(requests);
+    expect(controller.snapshot().messages.every(message => message.sender.avatar === avatar)).toBe(true);
+    expect(store.load('other')).toBe(avatar);
+    ready();
+    expect(JSON.parse(socket.send.mock.calls.at(-1)![0]).avatarVersions)
+      .toEqual({ self: loungeAvatarVersion(avatar), other: loungeAvatarVersion(avatar) });
+    socket.frame({ type: 'profiles', profiles: [{ id: 'self', avatar: '' }, { id: 'other', avatar: '' }] });
+    ready();
+    expect(controller.snapshot().user?.avatar).toBeUndefined();
+    expect(controller.snapshot().messages.every(message => !message.sender.avatar)).toBe(true);
+    expect(store.load('other')).toBe('');
+    expect(JSON.parse(socket.send.mock.calls.at(-1)![0]).avatarVersions)
+      .toEqual({ self: loungeAvatarVersion(''), other: loungeAvatarVersion('') });
+  });
+
   it('looks up unknown accounts without adding contacts until selected and refuses unsupported servers', async () => {
     const socket = Socket.instances[0]; socket.ready();
     const abort = new AbortController();
@@ -88,7 +121,7 @@ describe('application lifetime lounge', () => {
     expect(controller.snapshot().user?.avatar).toBe(avatar);
     const sending = controller.send({ text: 'private message', images: [] });
     const frame = JSON.parse(socket.send.mock.calls.at(-1)![0]);
-    expect(frame.avatar).toBe(avatar);
+    expect(frame).not.toHaveProperty('avatar');
     socket.message(frame.id, true); await sending;
     ready(avatar); expect(controller.snapshot().user?.avatar).toBe(avatar);
     expect(JSON.stringify(localStorage)).not.toContain('private message');
@@ -96,7 +129,7 @@ describe('application lifetime lounge', () => {
     expect(controller.snapshot().user?.avatar).toBeUndefined();
     browserAvatarStore('https://example.test').save('self', avatar);
     ready(); expect(controller.snapshot().user?.avatar).toBeUndefined();
-    expect(browserAvatarStore('https://example.test').load('self')).toBeUndefined();
+    expect(browserAvatarStore('https://example.test').load('self')).toBe('');
   });
   it('keeps the accepted profile when saving fails and refuses local-only saves', async () => {
     const socket = Socket.instances[0]; socket.ready();
@@ -135,7 +168,7 @@ describe('application lifetime lounge', () => {
     const socket = Socket.instances[0];
     expect(String(socket.url)).toBe('wss://example.test/lounge/socket');
     socket.onopen?.(); expect(socket.send).toHaveBeenCalledWith(
-      '{"type":"authenticate","ticket":"ticket","direct":true,"receipts":true,"groupAcks":true}');
+      '{"type":"authenticate","ticket":"ticket","direct":true,"receipts":true,"groupAcks":true,"avatarCache":true}');
     socket.ready(); socket.message('one'); socket.message('one'); socket.message('own', true);
     expect(controller.snapshot().unread).toBe(1);
     expect(controller.snapshot().messages).toHaveLength(2);
@@ -152,7 +185,7 @@ describe('application lifetime lounge', () => {
     await vi.advanceTimersByTimeAsync(1000); await settle();
     const next = Socket.instances[1]; next.onopen?.(); next.ready();
     expect(next.send.mock.calls).toEqual([
-      ['{"type":"authenticate","ticket":"ticket","direct":true,"receipts":true,"groupAcks":true}']]);
+      ['{"type":"authenticate","ticket":"ticket","direct":true,"receipts":true,"groupAcks":true,"avatarCache":true}']]);
     expect(controller.snapshot().messages).toHaveLength(1);
   });
   it('acknowledges only the authenticated sender echo and keeps renewal on the same connection', async () => {

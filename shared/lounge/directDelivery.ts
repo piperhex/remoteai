@@ -195,7 +195,7 @@ export class LoungeDirectDelivery {
   private transmitMessage(message: LoungeMessage) {
     this.host.transmit({ type: 'message', id: message.id, to: message.recipient!.id, receipts: true,
       text: message.text, images: message.images, attachments: message.attachments,
-      reply: message.reply, avatar: message.sender.avatar ?? '',
+      reply: message.reply,
       generation: message.generation ?? 0 });
   }
   private transmitReceipt(message: LoungeMessage) {

@@ -2,6 +2,7 @@ import { avatarData, type LoungeAvatarStore } from './avatar';
 import type { LoungeAccount, LoungeMessage, LoungeSnapshot } from './types';
 import { LoungeNames } from './names';
 import { accountLabel } from './accountLabel';
+import { LoungeAvatarCache } from './avatarCache';
 
 const MAX_PROFILES = 200;
 
@@ -14,16 +15,20 @@ function mapChanged<T>(values: T[], transform: (value: T) => T): T[] {
 export class LoungeProfiles {
   readonly names = new LoungeNames();
   available = false;
-  private avatars = new Map<string, string>();
+  private readonly avatars: LoungeAvatarCache;
+  private cached = false;
   private watched = '';
+
+  constructor(store?: LoungeAvatarStore) { this.avatars = new LoungeAvatarCache(store); }
 
   clear() { this.avatars.clear(); this.names.clear(); this.disconnect(); }
   disconnect() { this.watched = ''; this.available = false; this.names.available = false; }
-  ready(user: LoungeAccount, available: boolean, namesAvailable = false) {
+  ready(user: LoungeAccount, available: boolean, namesAvailable = false, avatarCache = false) {
     this.names.ready(user, namesAvailable);
     this.available = available;
+    this.cached = available && avatarCache;
     this.watched = '';
-    if (available) this.avatars.set(user.id, avatarData(user.avatar) ? user.avatar : '');
+    if (available && !this.cached) this.avatars.set(user.id, avatarData(user.avatar) ? user.avatar : '');
   }
   receive(input: unknown) {
     if (!this.available || !Array.isArray(input) || input.length > MAX_PROFILES) return false;
@@ -37,8 +42,9 @@ export class LoungeProfiles {
     user = this.names.user(user);
     const account = accountLabel(user.account);
     if (account !== user.account) user = { ...user, account };
-    if (!this.avatars.has(user.id)) return user;
-    const avatar = this.avatars.get(user.id) || undefined;
+    const cached = this.avatars.get(user.id);
+    if (!cached) return user;
+    const avatar = cached.avatar || undefined;
     return avatar === user.avatar ? user : { ...user, avatar };
   }
   message = (message: LoungeMessage): LoungeMessage => {
@@ -60,20 +66,16 @@ export class LoungeProfiles {
         return user === contact.user ? contact : { ...contact, user };
       }) };
   }
-  cache(user: LoungeAccount | undefined, store?: LoungeAvatarStore) {
-    if (!user || !this.avatars.has(user.id)) return;
-    // The server has already accepted this value. A failed offline cache must not undo the save.
-    try { store?.save(user.id, this.avatars.get(user.id) ?? ''); } catch { /* Best-effort offline cache. */ }
-  }
   watch(socket: WebSocket, state: LoungeSnapshot) {
     if (!this.available) return;
-    const ids = [...new Set([state.conversation, ...state.contacts.map(contact => contact.user.id).reverse()])]
-      .filter(id => id && id !== state.user?.id).slice(0, MAX_PROFILES);
+    const ids = [...new Set([this.cached ? state.user?.id ?? '' : '', state.conversation,
+      ...state.contacts.map(contact => contact.user.id).reverse()])]
+      .filter(id => id && (this.cached || id !== state.user?.id)).slice(0, MAX_PROFILES);
     const serialized = JSON.stringify(ids);
     if (serialized === this.watched || !ids.length && !this.watched) return;
-    const retained = new Set([...ids, state.user?.id]);
-    for (const id of this.avatars.keys()) if (!retained.has(id)) this.avatars.delete(id);
-    socket.send(JSON.stringify({ type: 'profile-watch', watch: ids }));
+    this.avatars.retain([...ids, state.user?.id ?? '']);
+    socket.send(JSON.stringify({ type: 'profile-watch', watch: ids,
+      ...(this.cached ? { avatarVersions: this.avatars.versions(ids) } : {}) }));
     this.watched = serialized;
   }
 }

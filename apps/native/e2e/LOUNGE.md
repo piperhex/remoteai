@@ -8,6 +8,12 @@ connection stays mounted while navigating other pages. Mobile operating systems 
 the app in the background; returning resumes or reconnects without downloading missed messages.
 The lounge does not request notifications or send system alerts.
 
+Avatar caches are persistent and scoped by server and user ID. Modern clients negotiate `avatarCache`,
+omit pictures from chat messages, and advertise SHA-256 content versions when subscribing to profiles.
+Only missing or changed pictures are synchronized; an empty avatar is cached as an explicit reset.
+Legacy servers and clients retain the previous profile protocol. Browser coverage is in
+`apps/desktop/e2e/lounge-avatar-cache.pw.ts` for desktop local/remote, desktop Web and mobile Web.
+
 ## Mobile layout
 
 The chat header combines back navigation, the conversation title, member status and the Chats entry.
@@ -44,7 +50,13 @@ node apps/native/e2e/lounge-test.mjs
 Set `LOUNGE_AVATAR_ONLY=1` to run the focused avatar checks using the same fixture and font scales.
 They cover server save failures, successful saves, external profile updates, resets, fresh installs,
 reconnection with stale caches, and the translated settings copy. Server tests separately validate
-48×48 PNG uploads, metadata stripping, PostgreSQL persistence and account isolation.
+128×128 PNG uploads, metadata stripping, PostgreSQL persistence and account isolation.
+
+For the cache protocol, build with `-I ../e2e/lounge-avatar-cache.init.gradle` instead and run
+`node apps/native/e2e/lounge-avatar-cache-test.mjs` with `ANDROID_SERIAL` set. This uses the separate
+`com.codexswitch.mobile.avatarcachetest` app and port 1499. It verifies first synchronization, persisted
+cache reuse after restart, remote reset/change propagation and outgoing messages without avatar data.
+Inspect `.codex-tmp/lounge-avatar-cache-native/*.png` for the corresponding native screen states.
 
 Set `LOUNGE_CONTACTS_ONLY=1` to verify cloud contact restoration with empty local data, live contact additions,
 opening private chats and back navigation at font scales 1.0 and 1.3. The fixture never downloads chat content.

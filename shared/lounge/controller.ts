@@ -51,7 +51,7 @@ export class LoungeController {
   private watched = '';
   private readonly directState = new LoungeDirectState();
   private historyEpoch = 0;
-  private readonly profiles = new LoungeProfiles();
+  private readonly profiles: LoungeProfiles;
   private readonly delivery: LoungeDirectDelivery;
   private readonly transport = new LoungeDeliveryTransport();
   private readonly accountLookup = new LoungeAccountLookup();
@@ -60,6 +60,7 @@ export class LoungeController {
   readonly attachments: LoungeAttachmentManager;
 
   constructor(private readonly session?: LoungeSession, private readonly runtime: LoungeRuntime = browserLoungeRuntime) {
+    this.profiles = new LoungeProfiles(session?.avatars);
     this.attachments = new LoungeAttachmentManager({ session, randomId: runtime.randomId });
     this.state = { status: session ? 'connecting' : 'signed-out', messages: [], unread: 0,
       policy: { moderator: false, mutedUntil: null }, historyRevision: 0, historyError: false,
@@ -205,7 +206,8 @@ export class LoungeController {
       this.renewalStarted = Date.now();
       socket.onopen = () => {
         if (this.socket === socket) socket.send(JSON.stringify({
-          type: 'authenticate', ticket: credentials.ticket, direct: true, receipts: true, groupAcks: true }));
+          type: 'authenticate', ticket: credentials.ticket, direct: true, receipts: true,
+          groupAcks: true, avatarCache: true }));
       };
       socket.onmessage = event => { if (this.socket === socket) this.receive(event.data); };
       socket.onerror = () => { if (this.socket === socket) { this.disconnect(); this.schedule(); } };
@@ -221,7 +223,7 @@ export class LoungeController {
       const credentials = await authorize(this.session);
       if (socket !== this.socket || !this.running) return;
       socket.send(JSON.stringify({ type: 'authenticate', ticket: credentials.ticket,
-        direct: true, receipts: true, groupAcks: true }));
+        direct: true, receipts: true, groupAcks: true, avatarCache: true }));
       this.renewalStarted = Date.now();
     } catch { if (this.socket === socket) { this.disconnect(); this.schedule(); } }
     finally { this.renewing = false; }
@@ -288,8 +290,7 @@ export class LoungeController {
       if (!user || typeof user.id !== 'string' || typeof user.account !== 'string') return;
       this.authorized = Date.now(); this.attempt = 0; this.renewalStarted = 0;
       this.attachments.ready(frame.attachments === true);
-      this.profiles.ready(user, frame.profiles === true, frame.names === true);
-      this.profiles.cache(user, this.session?.avatars);
+      this.profiles.ready(user, frame.profiles === true, frame.names === true, frame.avatarCache === true);
       this.directState.resetAvailable = frame.directReset === true;
       this.update({ status: 'connected', user, historyRevision: this.state.historyRevision + 1,
         attachmentsAvailable: frame.attachments === true,
@@ -455,7 +456,7 @@ export class LoungeController {
       if (!recipient) return Promise.reject(new Error('client.lounge.directUnavailable'));
       return this.delivery.send(draft, this.runtime.randomId(), recipient);
     }
-    return this.submit({ type: 'message', ...draft, avatar: this.state.user?.avatar ?? '' }, draft);
+    return this.submit({ type: 'message', ...draft }, draft);
   }
   async setAvatar(avatar: string): Promise<void> {
     if (!this.state.user || !this.profiles.available) throw new Error('client.lounge.avatarSaveFailed');
@@ -469,7 +470,6 @@ export class LoungeController {
   private receiveProfiles(input: unknown, names = false) {
     if (!(names ? this.profiles.names.receive(input as Record<string, unknown>) : this.profiles.receive(input))) return;
     this.recent = this.recent.map(this.profiles.message);
-    this.profiles.cache(this.state.user, this.session?.avatars);
     const previous = this.state.contacts;
     this.update({ historyRevision: this.state.historyRevision + 1 });
     this.state.contacts.forEach((contact, index) => {
