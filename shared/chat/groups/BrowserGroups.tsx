@@ -36,9 +36,9 @@ function GroupManager({ model, mobile }: { model: GroupingUI; mobile: boolean })
   const [editing, setEditing] = useState<ChatGroup | 'new' | null>(null);
   const [deleting, setDeleting] = useState<ChatGroup | null>(null);
   return <Modal open width={880} footer={null} title={t('client.groups.manage')}
-    onCancel={() => { if (!model.busy) model.setManagerOpen(false); }}
+    onCancel={() => { if (!model.busy) model.closeManager(); }}
     className="chat-group-manager" styles={{ body: { maxHeight: '75vh', overflowY: 'auto' } }}>
-    {model.error && !editing && <Alert type="error" showIcon
+    {model.error && !editing && <Alert type="error" showIcon style={{ maxWidth: 400 }}
       message={t(model.error as Parameters<typeof t>[0])} />}
     <Tabs items={[
       { key: 'groups', label: t('client.groups.groups'), children: <>

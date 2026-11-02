@@ -45,6 +45,13 @@ refresh: async () => {}, filter: (_: string, archived: boolean) => patch({ archi
 pin() {}, newConversation() {}, setProject() {}, select: async () => {},
 projectActions: { pin() {}, remove: async () => true },
 } as unknown as GuiController;
+if (params.has('failure')) {
+  local.groups.members = async () => {
+    const delay = Number(params.get('delay') ?? 0);
+    if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+    throw new Error(params.get('failure') === 'legacy' ? '当前手机端暂不支持此操作。' : 'fixture load failed');
+  };
+}
 const bridge = new SidebarBridge(); bridge.attach(local);
 const remote = new ChatController(events => ({
   start() { events.mode('relay'); events.ready(); }, stop() {},

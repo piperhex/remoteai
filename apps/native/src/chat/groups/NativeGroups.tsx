@@ -33,7 +33,7 @@ function GroupManager({ model }: { model: GroupingUI }) {
   const [editing, setEditing] = useState<ChatGroup | 'new' | null>(null);
   const [deleting, setDeleting] = useState<ChatGroup | null>(null);
   return <BottomSheet visible tall fillHeight fullWidthContent title={t('client.groups.manage')} maxWidth={880}
-    dismissible={!model.busy} onClose={() => model.setManagerOpen(false)}>
+    dismissible={!model.busy} onClose={model.closeManager}>
     <SheetInset><View style={styles.row}>
       {(['groups', 'members'] as const).map(value => <Pressable key={value} accessibilityRole="tab"
         accessibilityState={{ selected: tab === value }} onPress={() => setTab(value)}
@@ -41,7 +41,9 @@ function GroupManager({ model }: { model: GroupingUI }) {
         <Text style={styles.text}>{t(value === 'groups' ? 'client.groups.groups' : 'client.groups.members')}</Text>
       </Pressable>)}
     </View></SheetInset>
-    {!!model.error && !editing && <Text accessibilityRole="alert" style={styles.error}>{displayError(model.error)}</Text>}
+    {!!model.error && !editing && <SheetInset>
+      <Text accessibilityRole="alert" style={styles.error}>{displayError(model.error)}</Text>
+    </SheetInset>}
     <SheetScrollView key={tab}><View style={styles.body}>
       {tab === 'members' ? <GroupMembers model={model} /> : <>
         <Pressable accessibilityRole="button" style={styles.action} disabled={model.busy || !model.ready}

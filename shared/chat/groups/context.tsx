@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { MessageTranslator } from '../../localization/messages';
-import { EMPTY_GROUPING, type GroupClient, type Grouping, type GroupMember, type GroupMutation,
+import { EMPTY_GROUPING, GROUPS_UNSUPPORTED_ERROR, type GroupClient, type Grouping, type GroupMember, type GroupMutation,
   type GroupTarget } from './model';
 
 export function useGroupingUI(options: {
@@ -31,8 +31,16 @@ export function useGroupingUI(options: {
     try {
       const result = await options.client.members();
       if (generation.current === current) setMembers(result);
-    } catch { if (generation.current === current) setError('client.groups.loadFailed'); }
+    } catch (failure) {
+      if (generation.current === current) setError(failure instanceof Error
+        && failure.message === GROUPS_UNSUPPORTED_ERROR ? GROUPS_UNSUPPORTED_ERROR : 'client.groups.loadFailed');
+    }
     finally { if (generation.current === current) setLoading(false); }
+  };
+  const closeManager = () => {
+    // A dismissed manager owns its load errors, including replies that arrive after closing.
+    generation.current += 1;
+    setManagerOpen(false); setError(''); setLoading(false);
   };
   const openManager = () => { setMoveTarget(null); setManagerOpen(true); void reload(); };
   const assign = async (targets: GroupTarget[], groupId: string | null) => {
@@ -40,7 +48,7 @@ export function useGroupingUI(options: {
     if (success) setMoveTarget(null);
     return success;
   };
-  return { ...options, grouping: options.grouping ?? EMPTY_GROUPING, managerOpen, setManagerOpen,
+  return { ...options, grouping: options.grouping ?? EMPTY_GROUPING, managerOpen, closeManager,
     moveTarget, setMoveTarget, busy, error, setError, members, loading, reload, run, assign, openManager };
 }
 

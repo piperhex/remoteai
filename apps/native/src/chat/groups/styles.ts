@@ -7,7 +7,7 @@ export const useGroupStyles = createThemedStyles(color => ({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8 },
   text: { ...textMetrics(14, 22), color: color(palette.ink, 'ink'), flexShrink: 1 },
   muted: { ...textMetrics(12, 18), color: color(palette.muted, 'muted'), flexShrink: 1 },
-  error: { ...textMetrics(14, 22), color: color(palette.danger, 'danger'), flexShrink: 1 },
+  error: { ...textMetrics(14, 22), color: color(palette.danger, 'danger'), flexShrink: 1, maxWidth: 400 },
   action: { minHeight: 44, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8,
     borderWidth: 1, borderColor: color(palette.border, 'border'), justifyContent: 'center' },
   input: { ...textMetrics(15, 22), color: color(palette.ink, 'ink'), borderWidth: 1,

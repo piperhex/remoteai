@@ -2,7 +2,8 @@ import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 import { useFonts } from 'expo-font';
 import Feather from '@expo/vector-icons/Feather';
-import { useEffect, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { ChatController } from '../../../shared/remote-chat/client/controller';
 import { emptyGrouping, type Grouping, type GroupMutation } from '../../../shared/chat/groups/model';
@@ -10,10 +11,12 @@ import { mutateGrouping } from '../../../shared/chat/groups/mutations';
 import { ChatThreads } from '../src/chat/ChatThreads';
 import type { ChatController as NativeController } from '../src/chat/controller';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
+import { textMetrics } from '../src/theme/text';
 
 setInterfaceLanguage('zh');
 
-function createController() {
+type FailureMode = 'none' | 'legacy' | 'delayed';
+function createController(failure: FailureMode) {
   const threads = [{ id: 'one', name: '项目里的对话', cwd: '/project', preview: '', updatedAt: 2 },
     { id: 'two', name: '其他项目的对话', cwd: '/other', preview: '', updatedAt: 1 }];
   let grouping: Grouping = { ...emptyGrouping(), groups: [
@@ -31,6 +34,10 @@ function createController() {
       const input = body as { operation: string; action?: string; mutation: GroupMutation };
       if (input.operation === 'list') return { data: threads, nextCursor: null, sidebar: sidebar() } as T;
       if (input.operation === 'guiGroups') {
+        if (failure !== 'none') {
+          if (failure === 'delayed') await new Promise(resolve => setTimeout(resolve, 6000));
+          throw new Error('当前手机端暂不支持此操作。');
+        }
         if (input.action === 'members') return [
           { kind: 'project', id: '/project', title: '项目文件夹中文显示测试', cwd: '/project' },
           { kind: 'project', id: '/other', title: '其他项目', cwd: '/other' },
@@ -44,11 +51,17 @@ function createController() {
 }
 
 function Fixture() {
-  const [controller] = useState(createController);
+  const [failure, setFailure] = useState<FailureMode>('none');
+  const controller = useMemo(() => createController(failure), [failure]);
   const state = useSyncExternalStore(controller.subscribe, controller.snapshot);
   const [fontsReady] = useFonts(Feather.font);
   useEffect(() => { controller.start(); return () => controller.stop(); }, [controller]);
   return <SafeAreaProvider><SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={{ flexDirection: 'row', gap: 12, paddingHorizontal: 16 }}>
+      {(['none', 'legacy', 'delayed'] as const).map(mode => <Pressable key={mode}
+        accessibilityRole="button" accessibilityLabel={`fixture-${mode}`} onPress={() => setFailure(mode)}
+        style={{ padding: 8 }}><Text style={textMetrics(14, 22)}>{mode}</Text></Pressable>)}
+    </View>
     {fontsReady && <ChatThreads state={state} controller={controller as NativeController}
       newChat={() => {}} select={() => {}} openSearch={() => {}} profileMenu={null} />}
   </SafeAreaView></SafeAreaProvider>;

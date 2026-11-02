@@ -1,4 +1,5 @@
 export const GROUPS_OPERATION = 'guiGroups';
+export const GROUPS_UNSUPPORTED_ERROR = 'client.errors.updateRemoteAiOnYourComputerAndTryAgain';
 export const GROUP_ICON_SIZE = 128;
 export const GROUP_NAME_LIMIT = 80;
 export const GROUP_LIMIT = 200;
