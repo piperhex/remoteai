@@ -1,7 +1,13 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Folder, HardDrive, Monitor } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, Folder, HardDrive, House, Monitor } from 'lucide-react';
 import { samePath, textKey, type ExplorerEntry, type ExplorerProps } from './model';
 import type { ExplorerState } from './useExplorer';
+
+const SHORTCUTS = [
+  { key: 'home', Icon: House },
+  { key: 'desktop', Icon: Monitor },
+  { key: 'downloads', Icon: Download },
+] as const;
 
 function Drive({ entry, props, state, busy }: {
   entry: ExplorerEntry; props: ExplorerProps; state: ExplorerState; busy: boolean;
@@ -42,6 +48,15 @@ function Drive({ entry, props, state, busy }: {
 export function ExplorerSidebar({ props, state, busy }: { props: ExplorerProps; state: ExplorerState; busy: boolean }) {
   const projects = [...new Map((props.projects ?? []).map(project => [project.cwd, project])).values()];
   return <aside className="pe-sidebar" aria-label={props.t(textKey('computer'))}>
+    <div className="pe-shortcuts">
+      {SHORTCUTS.map(({ key, Icon }) => {
+        const path = state.shortcuts?.[key];
+        return <button type="button" key={key} title={path ?? undefined} disabled={busy || !path}
+          aria-current={path && samePath(state.directory, path) ? 'location' : undefined}
+          onClick={() => { if (path) state.navigate(path); }}>
+          <Icon size={19} aria-hidden="true" /><span>{props.t(textKey(key))}</span></button>;
+      })}
+    </div>
     <button type="button" className="pe-computer" disabled={busy} onClick={() => state.navigate('')}
       aria-current={!state.directory ? 'location' : undefined}>
       <ChevronDown size={14} /><Monitor size={20} /><span>{props.t(textKey('computer'))}</span></button>

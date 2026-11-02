@@ -26,6 +26,24 @@ struct DirectoryListing {
     parent: Option<String>,
     entries: Vec<Entry>,
     truncated: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    shortcuts: Option<DirectoryShortcuts>,
+}
+
+#[derive(Serialize)]
+struct DirectoryShortcuts {
+    home: Option<String>,
+    desktop: Option<String>,
+    downloads: Option<String>,
+}
+
+fn directory_shortcuts() -> DirectoryShortcuts {
+    // OS known folders preserve redirected Windows folders and Linux XDG preferences.
+    DirectoryShortcuts {
+        home: dirs::home_dir().as_deref().map(execution_path),
+        desktop: dirs::desktop_dir().as_deref().map(execution_path),
+        downloads: dirs::download_dir().as_deref().map(execution_path),
+    }
 }
 
 pub(super) async fn list(directory: String, include_files: bool) -> Result<GuiResponse> {
@@ -47,6 +65,7 @@ fn browse_entries(directory: &str, include_files: bool) -> Result<DirectoryListi
                 .map(|path| entry(path, true))
                 .collect(),
             truncated: false,
+            shortcuts: Some(directory_shortcuts()),
         });
     }
     if directory.len() > MAX_PATH_BYTES || directory.chars().any(char::is_control) {
@@ -60,6 +79,7 @@ fn browse_entries(directory: &str, include_files: bool) -> Result<DirectoryListi
         parent: Some(directory.parent().map(execution_path).unwrap_or_default()),
         entries,
         truncated,
+        shortcuts: None,
     })
 }
 

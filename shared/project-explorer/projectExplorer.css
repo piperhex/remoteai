@@ -53,6 +53,8 @@
 .pe-sidebar button { justify-content: flex-start; text-align: left; width: 100%; min-width: 0; min-height: 36px; }
 .pe-sidebar button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pe-sidebar button[aria-current=location] { background: var(--pe-selected); }
+.pe-shortcuts { padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--pe-border); }
+.pe-sidebar .pe-shortcuts button { padding-left: 28px; }
 .pe-drive { display: flex; align-items: center; }
 .pe-drive .pe-expand { flex: 0 0 23px; padding: 3px; justify-content: center; }
 .pe-drive > button:last-child { padding-left: 5px; }

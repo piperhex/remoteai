@@ -29,14 +29,17 @@ export interface MessageParams22 {
   "client.projectExplorer.cutReady": Record<string, never>;
   "client.projectExplorer.delete": Record<string, never>;
   "client.projectExplorer.descending": Record<string, never>;
+  "client.projectExplorer.desktop": Record<string, never>;
   "client.projectExplorer.details": Record<string, never>;
   "client.projectExplorer.disk": { "drive": string | number };
+  "client.projectExplorer.downloads": Record<string, never>;
   "client.projectExplorer.empty": Record<string, never>;
   "client.projectExplorer.extraLarge": Record<string, never>;
   "client.projectExplorer.file": Record<string, never>;
   "client.projectExplorer.fileType": { "extension": string | number };
   "client.projectExplorer.folder": Record<string, never>;
   "client.projectExplorer.forward": Record<string, never>;
+  "client.projectExplorer.home": Record<string, never>;
   "client.projectExplorer.items": { "count": string | number };
   "client.projectExplorer.large": Record<string, never>;
   "client.projectExplorer.list": Record<string, never>;
@@ -197,7 +200,4 @@ export interface MessageParams22 {
   "client.remoteDesktop.fps.c207a1": Record<string, never>;
   "client.remoteDesktop.frameRate": Record<string, never>;
   "client.remoteDesktop.getRemoteClipboard": Record<string, never>;
-  "client.remoteDesktop.hideConnectionStats": Record<string, never>;
-  "client.remoteDesktop.hideKeyboard": Record<string, never>;
-  "client.remoteDesktop.hideTheRemoteComputerSScreenWhileYouContinueTo": Record<string, never>;
 }

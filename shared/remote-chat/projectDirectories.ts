@@ -10,6 +10,8 @@ export interface ProjectDirectoriesResponse {
   parent: string | null;
   entries: ProjectDirectory[];
   truncated: boolean;
+  /** Known folders on the host computer; older hosts may omit them. */
+  shortcuts?: Partial<Record<'home' | 'desktop' | 'downloads', string | null>>;
 }
 export interface ProjectPickerProps {
   title?: string;

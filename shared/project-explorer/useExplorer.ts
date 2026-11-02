@@ -18,6 +18,7 @@ export function useExplorer({ load, cwd = '' }: Pick<ExplorerProps, 'load' | 'cw
   const directory = history.paths[history.index];
   const [result, setResult] = useState<ProjectDirectoriesResponse>();
   const [roots, setRoots] = useState<ExplorerEntry[]>([]);
+  const [shortcuts, setShortcuts] = useState<ProjectDirectoriesResponse['shortcuts']>({});
   const [rootsError, setRootsError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -34,7 +35,9 @@ export function useExplorer({ load, cwd = '' }: Pick<ExplorerProps, 'load' | 'cw
     let cancelled = false;
     setRootsError(false);
     void load('').then(value => {
-      if (!cancelled) setRoots(value.entries.map(entry => ({ ...entry, directory: true })));
+      if (cancelled) return;
+      setRoots(value.entries.map(entry => ({ ...entry, directory: true })));
+      setShortcuts(value.shortcuts ?? {});
     }).catch(() => { if (!cancelled) setRootsError(true); });
     return () => { cancelled = true; };
   }, [load, revision]);
@@ -66,7 +69,7 @@ export function useExplorer({ load, cwd = '' }: Pick<ExplorerProps, 'load' | 'cw
     ...entry, directory: entry.directory !== false,
   })), query, hidden, sort, descending });
   const selection = entries.find(entry => entry.path === selected);
-  return { directory: result?.directory ?? directory, result, roots, rootsError, loading, error, entries,
+  return { directory: result?.directory ?? directory, result, roots, shortcuts, rootsError, loading, error, entries,
     selection, selected, setSelected, query, setQuery: (value: string) => { setQuery(value); setSelected(''); },
     view, setView, sort, setSort, descending, setDescending, hidden, setHidden, details, setDetails,
     navigate, travel, canBack: history.index > 0, canForward: history.index < history.paths.length - 1,

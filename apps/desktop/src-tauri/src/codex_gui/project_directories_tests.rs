@@ -70,6 +70,41 @@ fn computer_root_is_navigation_only() {
 }
 
 #[test]
+fn root_shortcuts_use_host_known_folders_without_changing_drive_entries() {
+    let listing = browse("").unwrap();
+    let shortcuts = listing.shortcuts.as_ref().unwrap();
+    assert_eq!(
+        shortcuts.home,
+        dirs::home_dir().as_deref().map(execution_path)
+    );
+    assert_eq!(
+        shortcuts.desktop,
+        dirs::desktop_dir().as_deref().map(execution_path)
+    );
+    assert_eq!(
+        shortcuts.downloads,
+        dirs::download_dir().as_deref().map(execution_path)
+    );
+    let paths: Vec<_> = listing
+        .entries
+        .iter()
+        .map(|entry| entry.path.clone())
+        .collect();
+    assert_eq!(
+        paths,
+        directory_roots()
+            .iter()
+            .map(|path| execution_path(path))
+            .collect::<Vec<_>>()
+    );
+    let home = shortcuts.home.as_ref().unwrap();
+    let child = serde_json::to_value(browse(home).unwrap()).unwrap();
+    assert!(child.get("shortcuts").is_none());
+    let root = serde_json::to_value(listing).unwrap();
+    assert!(root["shortcuts"].get("home").is_some());
+}
+
+#[test]
 fn bounds_large_folder_listings() {
     let root = std::env::temp_dir().join(format!("csw-project-picker-{}", uuid::Uuid::new_v4()));
     fs::create_dir(&root).unwrap();

@@ -2,6 +2,9 @@ import type { ProjectDirectoriesResponse, ProjectDirectory } from '../../../shar
 import type { EntryRequest } from '../../../shared/project-browser/entryActions';
 
 export const explorerRoot = 'D:/jiutian-projects/backend/zczd-wms-b';
+export const explorerShortcuts = {
+  home: 'C:/Users/RemoteUser', desktop: 'D:/Cloud/Desktop', downloads: 'D:/Downloads',
+};
 const folders = ['.git', '.idea', '.qoder', '.trae', '.workbuddy', 'doc', 'docs', 'logs', 'reports',
   'scripts', 'sql', 'target', 'tools', 'wms-api', 'wms-biz'];
 const entries: ProjectDirectory[] = folders.map((name, index) => ({ name, path: `${explorerRoot}/${name}`,
@@ -10,6 +13,7 @@ entries.push(...['.gitignore', 'pom.xml', 'README.md', 'start-dev.bat'].map((nam
   name, path: `${explorerRoot}/${name}`, directory: false, modified: 1793268120, size: [280, 1876, 7230, 1200][index],
 })));
 const directories = new Map<string, ProjectDirectory[]>([
+  ...Object.values(explorerShortcuts).map(path => [path, []] as [string, ProjectDirectory[]]),
   ['', ['C:/', 'D:/'].map(path => ({ name: path, path, directory: true }))],
   ['C:/', [{ name: 'Users', path: 'C:/Users', directory: true }]],
   ['D:/', [{ name: 'jiutian-projects', path: 'D:/jiutian-projects', directory: true }]],
@@ -25,6 +29,7 @@ async function listing(directory: string, includeFiles: boolean): Promise<Projec
   const value = directories.get(directory);
   if (!value) throw new Error('unavailable');
   return { directory, parent: directory ? parent(directory) : null,
+    shortcuts: directory ? undefined : explorerShortcuts,
     entries: value.filter(entry => includeFiles || entry.directory), truncated: false };
 }
 
