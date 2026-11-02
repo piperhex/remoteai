@@ -14,6 +14,7 @@ import { LoungeReplyPreview } from './LoungeReplyPreview';
 import { sendError } from '../../../../shared/lounge/contacts';
 import { useComposerDraft, type ComposerDraftState } from '../../../../shared/lounge/useComposerDraft';
 import { LoungeSheet } from './LoungeSheet';
+import { LoungeComposerAction } from './LoungeComposerAction';
 import { LoungeEmojiPanel } from './LoungeEmojiPanel';
 import { useLoungeEmoji } from './useLoungeEmoji';
 import { LoungeImageAttachments } from './LoungeImageAttachments';
@@ -104,20 +105,15 @@ export function LoungeComposer({ connected, send, onHistory, reply, cancelReply,
     {!!error && <Text accessibilityRole="alert" style={styles.error}>{displayText(error)}</Text>}
     {notice && <Text style={styles.muted}>{t('client.lounge.stillImage')}</Text>}
     {emoji.open && <LoungeEmojiPanel height={emoji.panelHeight} insert={emoji.insert} />}
-    {extras && <LoungeSheet title={t('client.lounge.more')} close={() => setExtras(false)}>
+    {extras && <LoungeSheet title={t('client.lounge.more')} close={() => setExtras(false)} actions>
       <View style={styles.extraActions}>
         {direct && filesAvailable && <LoungeFileButton send={send} disabled={!connected || busy}
           close={() => setExtras(false)} />}
-        <Pressable accessibilityRole="button" accessibilityHint={t('client.lounge.mobileImageHint',
-          { size: imageLimit / 1024 / 1024 })}
-          disabled={busy || processing} style={styles.extraAction}
-          onPress={() => { setExtras(false); void addImages(); }}>
-          <Ionicons name="image-outline" size={24} color={color('#456c96', 'info')} />
-          <Text style={styles.chatsLabel}>{t('client.lounge.addImage')}</Text></Pressable>
-        <Pressable accessibilityRole="button" style={styles.extraAction}
-          onPress={() => { setExtras(false); onHistory(); }}>
-          <Ionicons name="time-outline" size={24} color={color('#456c96', 'info')} />
-          <Text style={styles.chatsLabel}>{t('client.lounge.history')}</Text></Pressable>
+        <LoungeComposerAction icon="image-outline" label={t('client.lounge.addImage')}
+          hint={t('client.lounge.mobileImageHint', { size: imageLimit / 1024 / 1024 })}
+          disabled={busy || processing} onPress={() => { setExtras(false); void addImages(); }} />
+        <LoungeComposerAction icon="time-outline" label={t('client.lounge.history')}
+          onPress={() => { setExtras(false); onHistory(); }} />
         {extraActions(() => setExtras(false))}
       </View>
     </LoungeSheet>}

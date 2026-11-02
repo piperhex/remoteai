@@ -141,10 +141,29 @@
 .lounge-info-row p { font-size: 12px; color: var(--lounge-muted); line-height: 1.7; margin: 0; }
 .lounge-sheet-done { width: 100%; min-height: 44px; margin-top: 18px; border: 0; border-radius: 13px;
   background: var(--lounge-blue-bg); color: var(--lounge-blue); }
-.lounge-extra-actions { display: flex; flex-wrap: wrap; gap: 14px; padding: 16px 0; }
+.lounge-composer-sheet { --lounge-action-bg: #f0f4f7; --lounge-action-text: #46536b; --lounge-handle: #bdcadb; }
+:root[data-theme="dark"] .lounge-composer-sheet {
+  --lounge-action-bg: var(--lounge-input); --lounge-action-text: var(--lounge-text); --lounge-handle: #809099;
+}
+.lounge-composer-sheet .ant-drawer-content { border-radius: 30px 30px 0 0; }
+.lounge-composer-sheet .ant-drawer-header { padding: 0; border: 0; }
+.lounge-composer-sheet .ant-drawer-header-title { justify-content: center; }
+.lounge-composer-sheet .ant-drawer-title { position: absolute; width: 1px; height: 1px;
+  padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.lounge-composer-sheet .ant-drawer-close { display: flex; justify-content: center; align-items: flex-start;
+  width: 64px; min-height: 40px; margin: 0; padding: 11px 0 0; background: transparent; }
+.lounge-action-sheet-handle { width: 40px; height: 6px; border-radius: 3px; background: var(--lounge-handle); }
+.lounge-composer-sheet .ant-drawer-body { padding: 0 20px max(48px, env(safe-area-inset-bottom)); }
+.lounge-extra-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.lounge-extra-actions > .lounge-file-control { min-width: 0; }
 .lounge-extra-actions button { display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 10px; width: 88px; min-height: 88px; padding: 10px 6px; border: 0; border-radius: 18px;
-  background: var(--lounge-input); color: var(--lounge-blue); font-size: 12px; }
+  gap: 6px; width: 100%; min-width: 0; min-height: 96px; padding: 12px 6px; border: 0; border-radius: 18px;
+  background: var(--lounge-action-bg); color: var(--lounge-action-text); font-size: 14px; font-weight: 500;
+  line-height: 24px; text-align: center; overflow-wrap: anywhere; }
+.lounge-extra-actions button > svg { box-sizing: content-box; width: 24px; height: 24px; flex-shrink: 0;
+  padding: 10px; border-radius: 50%; background: var(--lounge-blue-bg); color: var(--lounge-blue); }
+.lounge-extra-actions button:active { background: var(--lounge-input); }
+.lounge-composer-sheet button:focus-visible { outline: 2px solid var(--lounge-blue); outline-offset: -2px; }
 @media (max-width: 359px) {
   .lounge-mobile-heading { padding-left: 0; padding-right: 8px; gap: 2px; }
   .lounge-mobile .lounge-mobile-heading h1 { font-size: 16px; }

@@ -7,8 +7,8 @@ import { t } from '../i18n';
 import { useLoungeStyles } from './styles';
 import { useLoungeColor } from './theme';
 
-export function LoungeSheet({ title, close, children, keyboardAware = false }: {
-  title: ReactNode; close: () => void; children: ReactNode; keyboardAware?: boolean;
+export function LoungeSheet({ title, close, children, keyboardAware = false, actions = false }: {
+  title: ReactNode; close: () => void; children: ReactNode; keyboardAware?: boolean; actions?: boolean;
 }) {
   const styles = useLoungeStyles();
   const color = useLoungeColor();
@@ -18,12 +18,17 @@ export function LoungeSheet({ title, close, children, keyboardAware = false }: {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <Pressable style={styles.sheetBackdrop} onPress={close} accessibilityLabel={t('client.lounge.cancel')}
         accessibilityRole="button" />
-      <View style={[styles.sheet, { paddingBottom: Math.max(24, insets.bottom) }]} accessibilityViewIsModal>
-        <View style={styles.sheetHandle} />
+      <View style={[styles.sheet, actions && styles.actionSheet,
+        { paddingBottom: Math.max(actions ? 48 : 24, insets.bottom) }]} accessibilityViewIsModal
+        accessibilityLabel={actions && typeof title === 'string' ? title : undefined}>
+        {actions ? <Pressable style={styles.actionSheetDismiss} onPress={close}
+          accessibilityRole="button" accessibilityLabel={t('client.lounge.cancel')}>
+          <View style={styles.actionSheetHandle} />
+        </Pressable> : <><View style={styles.sheetHandle} />
         <View style={styles.sheetHeader}>
           {typeof title === 'string' ? <Text accessibilityRole="header" style={styles.title}>{title}</Text> : title}
           <Pressable style={styles.iconButton} accessibilityRole="button" accessibilityLabel={t('client.lounge.cancel')}
-            onPress={close}><Ionicons name="close" size={22} color={color('#687c89', 'muted')} /></Pressable></View>
+            onPress={close}><Ionicons name="close" size={22} color={color('#687c89', 'muted')} /></Pressable></View></>}
         <ScrollView keyboardShouldPersistTaps="handled">{children}</ScrollView>
       </View>
     </KeyboardAvoidingView>

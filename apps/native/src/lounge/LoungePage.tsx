@@ -7,6 +7,7 @@ import { useMobileLounge } from '../../../../shared/lounge/useMobileLounge';
 import { getLocale, t, useLanguage } from '../i18n';
 import { LoungeMessage } from './LoungeMessage';
 import { LoungeComposer } from './LoungeComposer';
+import { LoungeComposerAction } from './LoungeComposerAction';
 import { LoungeAvatarSettings, LoungeModeration } from './LoungeDialogs';
 import { LoungePreview } from './LoungePreview';
 import { LoungeHistory } from './LoungeHistory';
@@ -100,19 +101,13 @@ export function LoungePage({ controller, onBack }: { controller: LoungeControlle
         connected={state.status === 'connected' && !model.muted && (!state.conversation || state.directAvailable)}
         send={draft => controller.send({ ...draft, to: state.conversation || undefined })}
         onHistory={() => model.setHistory(true)} extraActions={close => <>
-          <Pressable accessibilityRole="button" style={styles.extraAction}
-            onPress={() => { close(); model.setSheet('about'); }}>
-            <Ionicons name="information-circle-outline" size={24} color={color('#456c96', 'info')} />
-            <Text style={styles.chatsLabel}>{t('client.lounge.about')}</Text></Pressable>
-          <Pressable accessibilityRole="button" style={styles.extraAction}
-            onPress={() => { close(); model.setAvatar(true); }}>
-            <Ionicons name="person-circle-outline" size={24} color={color('#456c96', 'info')} />
-            <Text style={styles.chatsLabel}>{t('client.lounge.avatarSettings')}</Text></Pressable>
-          {contact && state.directAvailable && <Pressable accessibilityRole="button" style={styles.extraAction}
-            onPress={() => { close(); model.setBlocking(contact.user); }}>
-            <Ionicons name="ban-outline" size={24} color={color('#456c96', 'info')} />
-            <Text style={styles.chatsLabel}>{t(state.blocked.includes(contact.user.id)
-              ? 'client.lounge.unblockUser' : 'client.lounge.blockUser')}</Text></Pressable>}
+          <LoungeComposerAction icon="information-circle-outline" label={t('client.lounge.about')}
+            onPress={() => { close(); model.setSheet('about'); }} />
+          <LoungeComposerAction icon="person-circle-outline" label={t('client.lounge.avatarSettings')}
+            onPress={() => { close(); model.setAvatar(true); }} />
+          {contact && state.directAvailable && <LoungeComposerAction icon="ban-outline"
+            label={t(state.blocked.includes(contact.user.id) ? 'client.lounge.unblockUser' : 'client.lounge.blockUser')}
+            onPress={() => { close(); model.setBlocking(contact.user); }} />}
         </>} />
     </>}
     <LoungeSyncNotice failed={state.deviceSyncError} controller={controller} />

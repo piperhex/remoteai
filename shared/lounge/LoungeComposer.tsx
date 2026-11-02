@@ -1,5 +1,5 @@
 import { useEffect, useImperativeHandle, useRef, useState, type ClipboardEvent, type ReactNode, type Ref } from 'react';
-import { ArrowUp, History, ImagePlus, Keyboard, Plus, Send, Smile } from 'lucide-react';
+import { ArrowUp, Clock3, History, Image, ImagePlus, Keyboard, Plus, Send, Smile } from 'lucide-react';
 import { displayText as t } from '../localization/messages';
 import { MAX_IMAGES, MAX_TEXT, type LoungeDraft } from './types';
 import { LoungeFileButton } from './LoungeFileButton';
@@ -177,15 +177,15 @@ export function LoungeComposer({ connected, send, onHistory, mobile = false, rep
         {mobile ? <ArrowUp size={22} /> : <><Send size={16} />{t(busy ? 'client.lounge.sending' : 'client.lounge.send')}</>}
       </button></footer>
     {mobile && emojiOpen && <MobileLoungeEmojiPanel height={emojiHeight} insert={insertEmoji} />}
-    {mobile && extras && <MobileLoungeSheet title={t('client.lounge.more')} close={() => setExtras(false)}>
+    {mobile && extras && <MobileLoungeSheet title={t('client.lounge.more')} close={() => setExtras(false)} actions>
       <div className="lounge-extra-actions">
         {direct && filesAvailable && <LoungeFileButton send={send} disabled={!connected || busy}
           close={() => setExtras(false)} />}
         <button type="button" disabled={busy || processing} onClick={() => {
           setExtras(false); picker.current?.click();
-        }}><ImagePlus size={24} />{t('client.lounge.addImage')}</button>
+        }}><Image size={24} />{t('client.lounge.addImage')}</button>
         <button type="button" onClick={() => { setExtras(false); onHistory(); }}>
-          <History size={24} />{t('client.lounge.history')}</button>
+          <Clock3 size={24} />{t('client.lounge.history')}</button>
         {extraActions?.(() => setExtras(false))}
       </div>
     </MobileLoungeSheet>}

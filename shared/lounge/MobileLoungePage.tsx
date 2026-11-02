@@ -1,7 +1,7 @@
 import { accountName } from './names';
 import { LoungeSyncNotice } from './LoungeSyncNotice';
 import { useRef, useSyncExternalStore } from 'react';
-import { ArrowDown, Ban, ChevronLeft, Info, MessagesSquare, UserRound } from 'lucide-react';
+import { ArrowDown, Ban, ChevronLeft, CircleUserRound, Info, MessagesSquare } from 'lucide-react';
 import { displayText as t } from '../localization/messages';
 import { getInterfaceLanguage, subscribeInterfaceLanguage } from '../localization/interfaceLanguage';
 import type { LoungeController } from './controller';
@@ -54,7 +54,7 @@ export function MobileLoungePage({ controller, onBack }: { controller: LoungeCon
           <button type="button" className="lounge-about-trigger" onClick={() => { close(); model.setSheet('about'); }}>
             <Info size={24} />{t('client.lounge.about')}</button>
           <button type="button" onClick={() => { close(); model.setAvatar(true); }}>
-            <UserRound size={24} />{t('client.lounge.avatarSettings')}</button>
+            <CircleUserRound size={24} />{t('client.lounge.avatarSettings')}</button>
           {contact && state.directAvailable && <button type="button" onClick={() => {
             close(); model.setBlocking(contact.user);
           }}><Ban size={24} />{t(state.blocked.includes(contact.user.id)
