@@ -26,6 +26,20 @@
   flex: 1; min-height: 0; padding: 0; overflow: auto; scrollbar-gutter: stable;
 }
 .provider-market-modal .ant-modal-body > .provider-market { padding: 8px 24px 24px; }
+.pm-catalog-modal.ant-modal .ant-modal-body { overflow: hidden; scrollbar-gutter: auto; }
+.pm-catalog-modal .ant-modal-body > .pm-catalog {
+  display: flex; flex-direction: column; gap: 0; height: 100%; padding: 0;
+}
+.pm-market-controls {
+  flex: none; display: grid; gap: 16px; padding: 8px 24px 16px; overflow: hidden; scrollbar-gutter: stable;
+}
+.pm-catalog-scroll {
+  flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable;
+  display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 16px; padding: 0 24px 24px;
+  background:
+    radial-gradient(ellipse at top left, color-mix(in srgb, var(--pm-accent) 9%, transparent), transparent 60%),
+    radial-gradient(ellipse at bottom right, color-mix(in srgb, var(--pm-accent) 6%, transparent), transparent 55%);
+}
 .provider-market-modal.ant-modal .ant-modal-footer {
   flex: none; margin: 0; padding: 16px 24px;
   border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent); text-align: end;
@@ -53,10 +67,31 @@
 }
 .pm-card-title { background: none; border: 0; color: inherit; text-align: start; font-size: 18px;
   font-weight: 700; cursor: pointer; padding: 0; margin-bottom: 12px; }
-.pm-card { position: relative; }
+.pm-card {
+  position: relative; background: var(--pm-surface, #fff);
+  border-color: color-mix(in srgb, currentColor 12%, transparent);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 4%), inset 0 1px 0 rgb(255 255 255 / 22%);
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+@supports ((backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px))) {
+  .pm-card {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--pm-surface, #fff) 82%, transparent),
+      color-mix(in srgb, var(--pm-surface, #fff) 60%, transparent));
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+  }
+}
+@media (hover: hover) {
+  .pm-card:has(.pm-card-title:enabled):hover {
+    border-color: var(--pm-accent, #4096ff);
+    box-shadow: 0 6px 20px color-mix(in srgb, var(--pm-accent, #4096ff) 12%, transparent),
+      inset 0 1px 0 rgb(255 255 255 / 28%);
+  }
+}
+.pm-card:focus-within { border-color: var(--pm-accent, #4096ff); }
+@media (prefers-reduced-motion: reduce) { .pm-card { transition: none; } }
 /* Stretch the native button over the card while keeping menu controls separate. */
 .pm-card-header .pm-card-title::after { content: ''; position: absolute; inset: 0; border-radius: 12px; }
-.pm-card-title:enabled:hover { color: #4096ff; }
+.pm-card-title:enabled:hover { color: var(--pm-accent, #4096ff); }
 .pm-card-header .pm-card-title:focus-visible { outline: none; }
 .pm-card-header .pm-card-title:focus-visible::after { outline: 2px solid #4096ff; outline-offset: 2px; }
 .pm-card-title:disabled { cursor: wait; }

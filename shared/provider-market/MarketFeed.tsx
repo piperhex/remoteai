@@ -14,7 +14,7 @@ export function MarketFeed({ market, t }: { market: ReturnType<typeof useMarket>
     if (!end || !canLoad) return;
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) market.loadMore();
-    }, { root: end.closest('.provider-market-modal .ant-modal-body'),
+    }, { root: end.closest('.pm-catalog-scroll'),
       rootMargin: `0px 0px ${PRELOAD_DISTANCE}px 0px` });
     observer.observe(end);
     return () => observer.disconnect();

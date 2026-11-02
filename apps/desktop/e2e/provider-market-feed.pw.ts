@@ -18,7 +18,7 @@ async function openMarket(page: Page, mode: string) {
 }
 
 async function nearBottom(page: Page) {
-  await page.locator('.provider-market-modal .ant-modal-body').evaluate((node) => {
+  await page.locator('.pm-catalog-scroll').evaluate((node) => {
     node.scrollTop = node.scrollHeight - node.clientHeight - 120;
   });
 }
@@ -40,7 +40,7 @@ for (const mode of ['local', 'hosted']) {
     const cards = page.locator('.pm-card');
     await expect(cards).toHaveCount(PAGE_SIZE);
     await expectMarketDialogLayout(page);
-    expect(await page.locator('.ant-modal-body').evaluate(node => node.scrollHeight > node.clientHeight)).toBe(true);
+    expect(await page.locator('.pm-catalog-scroll').evaluate(node => node.scrollHeight > node.clientHeight)).toBe(true);
     await expect(page.getByRole('button', { name: 'Previous', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Next', exact: true })).toHaveCount(0);
     const card = await cards.first().boundingBox();
