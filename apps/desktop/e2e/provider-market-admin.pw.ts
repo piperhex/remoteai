@@ -32,14 +32,15 @@ for (const dark of [false, true]) {
     await page.getByRole('button', { name: '保存角标', exact: true }).click();
     await expect.poll(() => state.publications.length).toBe(3);
     expect(state.publications[2]).toMatchObject({ badge: { text: '限时优惠', tone: 'orange' }, revision: 4 });
-    await expect(page.locator('.pm-card .pm-marketing-badge')).toHaveText('限时优惠');
-    await expect(page.locator('.pm-card .pm-marketing-badge')).toBeInViewport();
+    await expect(page.locator('.ant-table .pm-marketing-badge')).toHaveText('限时优惠');
+    await page.locator('.ant-table .pm-marketing-badge').scrollIntoViewIfNeeded();
+    await expect(page.locator('.ant-table .pm-marketing-badge')).toBeInViewport();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: info.outputPath(`admin-${dark ? 'dark-narrow' : 'light-wide'}-approved-badge.png`) });
     await page.getByRole('button', { name: '营销角标', exact: true }).click();
     await page.getByRole('button', { name: '移除角标', exact: true }).click();
     await expect.poll(() => state.publications.length).toBe(4);
-    await expect(page.locator('.pm-card .pm-marketing-badge')).toHaveCount(0);
+    await expect(page.locator('.ant-table .pm-marketing-badge')).toHaveCount(0);
   });
 }
 
@@ -47,7 +48,7 @@ test('admin read permission does not expose review or badge actions', async ({ p
   const state = await setupMarket(page, 'admin');
   state.setItem({ ...fixtureItem(), reviewStatus: 'pending' });
   await page.goto('/e2e/provider-market-harness.html?mode=admin&readOnly=1');
-  await expect(page.locator('.pm-card')).toHaveCount(1);
+  await expect(page.locator('.ant-table tbody tr[data-row-key]')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Marketing badge', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'View and review', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Example Gateway', exact: true }).click();

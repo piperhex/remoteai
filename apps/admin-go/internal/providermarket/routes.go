@@ -27,6 +27,8 @@ func Register(r *gin.Engine, deps *platform.Dependencies) error {
 	a.PATCH("/:id/order", deps.RequirePermissions("admin.provider-market.order"), s.order)
 	a.PATCH("/:id/review", deps.RequirePermissions("admin.provider-market.review"), s.review)
 	a.PATCH("/:id/badge", deps.RequirePermissions("admin.provider-market.promote"), s.badge)
+	a.POST("/batch/delete", deps.RequirePermissions("admin.provider-market.manage"), s.batchDelete)
+	a.POST("/batch/review", deps.RequirePermissions("admin.provider-market.review"), s.batchReview)
 	return nil
 }
 func (s service) list(c *gin.Context) {
@@ -101,7 +103,7 @@ func (s service) save(official bool) gin.HandlerFunc {
 		platform.Respond(c, present(value), err)
 	}
 }
-func (s service) remove(official bool) gin.HandlerFunc {
+func (s service) remove(admin bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var body struct {
 			Revision int64 `json:"revision"`
@@ -110,8 +112,14 @@ func (s service) remove(official bool) gin.HandlerFunc {
 			platform.Respond(c, nil, invalid())
 			return
 		}
+		if admin {
+			err := mutateBatch(s.deps.DB.WithContext(c.Request.Context()),
+				[]itemRevision{{ID: c.Param("id"), Revision: body.Revision}}, deleteMarketItem)
+			platform.Respond(c, gin.H{"ok": err == nil}, err)
+			return
+		}
 		_, err := mutate(s.deps.DB.WithContext(c.Request.Context()), change{ID: c.Param("id"),
-			Owner: platform.User(c).ID, Official: official, Delete: true, Input: saveInput{Revision: body.Revision}})
+			Owner: platform.User(c).ID, Delete: true, Input: saveInput{Revision: body.Revision}})
 		platform.Respond(c, gin.H{"ok": err == nil}, err)
 	}
 }
