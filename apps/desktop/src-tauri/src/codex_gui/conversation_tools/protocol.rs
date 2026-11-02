@@ -9,6 +9,19 @@ pub(super) const MAX_MESSAGE_BYTES: usize = 64_000;
 pub(super) const SERVER_NAME: &str = "codex_gui";
 pub(super) const TOOLS: &str = include_str!("tools.json");
 
+pub(super) fn tools() -> Result<Value> {
+    let mut tools: Value = serde_json::from_str(TOOLS)?;
+    let browser: Value = serde_json::from_str(include_str!("browser_tools.json"))?;
+    tools["tools"].as_array_mut().ok_or(Error::Invalid)?.extend(
+        browser["tools"]
+            .as_array()
+            .ok_or(Error::Invalid)?
+            .iter()
+            .cloned(),
+    );
+    Ok(tools)
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(super) struct Create {
@@ -130,10 +143,18 @@ pub(super) fn parse(params: &Value) -> Result<Tool> {
 }
 
 pub(super) fn tool_result(result: Result<Value>) -> Value {
-    let (failed, value) = match result {
+    let (failed, mut value) = match result {
         Ok(value) => (value.get("error").is_some(), value),
         Err(error) => (true, json!({"error": error.to_string()})),
     };
-    json!({"isError": failed, "content": [{"type": "text", "text": value.to_string()}],
+    let image = value
+        .get_mut("result")
+        .and_then(Value::as_object_mut)
+        .and_then(|result| result.remove("image"));
+    let mut content = vec![json!({"type":"text","text":value.to_string()})];
+    if let Some(image) = image.filter(|image| image["mimeType"] == "image/jpeg") {
+        content.push(json!({"type":"image","mimeType":image["mimeType"],"data":image["data"]}));
+    }
+    json!({"isError": failed, "content": content,
         "structuredContent": value})
 }

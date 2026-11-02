@@ -10,6 +10,7 @@ pub(crate) fn handle_page_load(webview: &Webview, payload: &PageLoadPayload<'_>)
     }
     let app = webview.app_handle().clone();
     tauri::async_runtime::spawn_blocking(move || {
+        super::automation::hide_all(&app);
         for (label, view) in app.webviews() {
             if label.starts_with(super::LABEL_PREFIX) {
                 if let Err(error) = view.close() {

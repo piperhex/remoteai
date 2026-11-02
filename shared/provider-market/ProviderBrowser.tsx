@@ -1,16 +1,18 @@
-import { useEffect, useRef, useState, type ComponentType } from 'react';
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, Globe, Maximize2, Minimize2, Plus, RotateCw, X } from 'lucide-react';
 import { marketText, type MarketText } from './i18n';
 import type { Language } from '@remoteai/i18n';
 import { pageUrl } from './pageLink';
 import type { BrowserAction, BrowserTab } from './browserState';
+import { BrowserTabs } from './BrowserTabs';
 import './providerBrowser.css';
 
 export interface BrowserSurfaceProps {
   tab: BrowserTab; active: boolean; command: { sequence: number; action: BrowserAction } | null;
   onNavigate: (url: string) => void; t: MarketText;
   onPopup: (url: string) => void;
+  hideForModal?: boolean;
 }
 export interface BrowserWindowProps {
   open: boolean; tabs: BrowserTab[]; activeId: string; language: Language;
@@ -20,9 +22,9 @@ export interface BrowserWindowProps {
   commands: Record<string, BrowserSurfaceProps['command']>; Surface: ComponentType<BrowserSurfaceProps>;
 }
 
-function BrowserToolbar({ tab, fullscreen, toggleFullscreen, navigate, action, t }: {
+function BrowserToolbar({ tab, fullscreen, toggleFullscreen, navigate, action, t, actions }: {
   tab?: BrowserTab; fullscreen: boolean; toggleFullscreen: () => void;
-  navigate: (url: string) => void; action: (action: BrowserAction) => void; t: MarketText;
+  navigate: (url: string) => void; action: (action: BrowserAction) => void; t: MarketText; actions?: ReactNode;
 }) {
   const [address, setAddress] = useState(tab?.url ?? '');
   const [invalid, setInvalid] = useState(false);
@@ -45,6 +47,7 @@ function BrowserToolbar({ tab, fullscreen, toggleFullscreen, navigate, action, t
         placeholder="https://example.com" spellCheck={false} autoComplete="off" />
       <button type="submit" aria-label={t('market.visitPage')}><ArrowRight size={16} /></button>
     </form>
+    {actions}
     <button aria-label={t(fullscreen ? 'market.browserRestore' : 'market.browserFullscreen')}
       title={t(fullscreen ? 'market.browserRestore' : 'market.browserFullscreen')} onClick={toggleFullscreen}>
       {fullscreen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}</button>
@@ -52,8 +55,37 @@ function BrowserToolbar({ tab, fullscreen, toggleFullscreen, navigate, action, t
   </div>;
 }
 
-export function ProviderBrowser(props: BrowserWindowProps) {
+/** Browser chrome shared by the Provider dialog and the conversation sidebar. */
+export function BrowserContents(props: BrowserWindowProps & {
+  fullscreen: boolean; toggleFullscreen: () => void; embedded?: boolean; actions?: ReactNode;
+  onPageNavigate?: (id: string, url: string) => void; history?: ReactNode;
+}) {
   const { tabs, activeId, open, Surface, commands } = props;
+  const t = marketText(props.language);
+  const tab = tabs.find((entry) => entry.id === activeId);
+  const [menuOpen, setMenuOpen] = useState(false);
+  return <>
+    <div className="pm-browser-titlebar">{props.history}
+    <BrowserTabs tabs={tabs} activeId={activeId} visible={open} t={t}
+      select={props.onSelect} close={props.onCloseTab} menuChanged={setMenuOpen} />
+    <button aria-label={t('market.browserNewTab')} title={t('market.browserNewTab')}
+      onClick={props.onNewTab}><Plus size={17} /></button>
+    {!props.embedded && <button aria-label={t('market.close')} title={t('market.close')}
+      onClick={props.onClose}><X size={19} /></button>}</div>
+    <BrowserToolbar tab={tab} fullscreen={props.fullscreen} toggleFullscreen={props.toggleFullscreen}
+      navigate={(url) => { if (tab) props.onNavigate(tab.id, url); }}
+      action={(action) => { if (tab) props.onAction(tab.id, action); }} t={t} actions={props.actions} />
+    <div className="pm-browser-pages">{tabs.map((entry) => <div key={entry.id} id={`page-${entry.id}`}
+      role="tabpanel" className="pm-browser-page" hidden={entry.id !== activeId}>
+      <Surface tab={entry} active={open && entry.id === activeId && !menuOpen} command={commands[entry.id] ?? null}
+        hideForModal={props.embedded} onNavigate={(url) => (props.onPageNavigate ?? props.onNavigate)(entry.id, url)}
+        onPopup={(url) => props.onPopup(entry.id, url)} t={t} />
+    </div>)}</div>
+  </>;
+}
+
+export function ProviderBrowser(props: BrowserWindowProps) {
+  const { open } = props;
   const [fullscreen, setFullscreen] = useState(false);
   const t = marketText(props.language);
   const dialog = useRef<HTMLElement>(null);
@@ -63,7 +95,6 @@ export function ProviderBrowser(props: BrowserWindowProps) {
     dialog.current?.focus();
     return () => { previous?.focus(); };
   }, [open]);
-  const tab = tabs.find((entry) => entry.id === activeId);
   return createPortal(<div className="pm-browser-backdrop" hidden={!open}>
     <section ref={dialog} role="dialog" aria-modal="true" aria-label={t('market.browserTitle')} tabIndex={-1}
       className={`pm-browser${fullscreen ? ' pm-browser-fullscreen' : ''}`} onKeyDown={(event) => {
@@ -76,26 +107,7 @@ export function ProviderBrowser(props: BrowserWindowProps) {
           if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
         }
       }}>
-      <div className="pm-browser-titlebar"><div className="pm-browser-tabs" role="tablist"
-        aria-label={t('market.browserTabs')}>
-        {tabs.map((entry) => <div className={`pm-browser-tab${entry.id === activeId ? ' active' : ''}`} key={entry.id}>
-          <button role="tab" aria-selected={entry.id === activeId} aria-controls={`page-${entry.id}`}
-            onClick={() => props.onSelect(entry.id)} title={entry.title || t('market.browserNewTab')}>
-            <Globe size={14} /><span>{entry.title || t('market.browserNewTab')}</span></button>
-          <button aria-label={t('market.browserCloseTab', { name: entry.title || t('market.browserNewTab') })}
-            onClick={() => props.onCloseTab(entry.id)}><X size={14} /></button>
-        </div>)}
-      </div><button aria-label={t('market.browserNewTab')} title={t('market.browserNewTab')}
-        onClick={props.onNewTab}><Plus size={17} /></button>
-      <button aria-label={t('market.close')} title={t('market.close')} onClick={props.onClose}><X size={19} /></button></div>
-      <BrowserToolbar tab={tab} fullscreen={fullscreen} toggleFullscreen={() => setFullscreen((value) => !value)}
-        navigate={(url) => { if (tab) props.onNavigate(tab.id, url); }}
-        action={(action) => { if (tab) props.onAction(tab.id, action); }} t={t} />
-      <div className="pm-browser-pages">{tabs.map((entry) => <div key={entry.id} id={`page-${entry.id}`}
-        role="tabpanel" className="pm-browser-page" hidden={entry.id !== activeId}>
-        <Surface tab={entry} active={open && entry.id === activeId} command={commands[entry.id] ?? null}
-          onNavigate={(url) => props.onNavigate(entry.id, url)} onPopup={(url) => props.onPopup(entry.id, url)} t={t} />
-      </div>)}</div>
+      <BrowserContents {...props} fullscreen={fullscreen} toggleFullscreen={() => setFullscreen(value => !value)} />
     </section>
   </div>, document.body);
 }

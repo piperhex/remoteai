@@ -13,7 +13,7 @@ function browserFeedback(state: { url: string; unsupported: boolean; needsDeskto
   return null;
 }
 
-export function ProviderBrowserSurface({ tab, active, command, onNavigate, onPopup, t }: BrowserSurfaceProps) {
+export function ProviderBrowserSurface({ tab, active, command, onNavigate, onPopup, t, hideForModal }: BrowserSurfaceProps) {
   const host = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
@@ -32,12 +32,13 @@ export function ProviderBrowserSurface({ tab, active, command, onNavigate, onPop
       setUnsupported(String(reason).includes('market.browserHeadersUnsupported')); setFailed(true);
     });
     let frame = 0;
+    let modalVisible = false;
     const sync = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const current = state.current;
         const bounds = element.getBoundingClientRect();
-        const visible = current.active && !document.hidden && bounds.width > 0 && bounds.height > 0;
+        const visible = current.active && !modalVisible && !document.hidden && bounds.width > 0 && bounds.height > 0;
         if (!current.tab.url) return;
         session.update({ url: current.tab.url, headers: current.tab.headers,
           headerOrigin: current.tab.headerOrigin, visible,
@@ -54,17 +55,29 @@ export function ProviderBrowserSurface({ tab, active, command, onNavigate, onPop
     });
     void unlisten.catch(() => setFailed(true));
     const observer = new ResizeObserver(sync); observer.observe(element);
+    const checkModal = () => {
+      const visible = Boolean(hideForModal) && [...document.querySelectorAll('[aria-modal="true"]')]
+        .some(dialog => dialog.getClientRects().length > 0);
+      if (visible !== modalVisible) { modalVisible = visible; sync(); }
+    };
+    const overlays = new MutationObserver(checkModal);
+    overlays.observe(document.body, { childList: true, subtree: true, attributes: true,
+      attributeFilter: ['style', 'class', 'aria-modal'] });
+    checkModal();
     window.addEventListener('resize', sync);
+    window.addEventListener('scroll', sync, true);
+    document.addEventListener('animationend', sync, true);
     document.addEventListener('visibilitychange', sync);
     sync();
     return () => {
-      refresh.current = undefined; cancelAnimationFrame(frame); observer.disconnect();
+      refresh.current = undefined; cancelAnimationFrame(frame); observer.disconnect(); overlays.disconnect();
       window.removeEventListener('resize', sync); document.removeEventListener('visibilitychange', sync);
+      window.removeEventListener('scroll', sync, true); document.removeEventListener('animationend', sync, true);
       // Listener registration failure is already surfaced above; cleanup has nothing to remove then.
       void unlisten.then((stop) => stop()).catch(() => {});
       void session.close().catch((error) => console.error('Provider browser close failed', error));
     };
-  }, [desktop, tab.id, attempt]);
+  }, [desktop, tab.id, attempt, hideForModal]);
   useEffect(() => { refresh.current?.(); }, [active, tab.url]);
   useEffect(() => {
     if (!command || command.sequence === lastCommand.current) return;

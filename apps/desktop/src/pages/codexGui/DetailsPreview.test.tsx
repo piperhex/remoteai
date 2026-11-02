@@ -6,10 +6,14 @@ import { DetailsWorkspace } from "./DetailsWorkspace";
 import { ConversationChangesButton } from "./ConversationChangesButton";
 import { MessageLink } from "./MessageLink";
 import { filePreviewApi, type FilePreviewData } from "./filePreview/api";
-import { websitePreviewApi } from "./filePreview/websiteApi";
+import { invoke } from '@tauri-apps/api/core';
 import { DetailsContext } from "./detailsContext";
 
-vi.mock("@tauri-apps/api/core", () => ({ isTauri: () => true, invoke: vi.fn() }));
+vi.mock("@tauri-apps/api/core", () => ({ isTauri: () => true, invoke: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn().mockResolvedValue(() => {}) }));
+const websitePreviewApi = {
+  sync: vi.fn(), close: vi.fn(),
+};
 let root: Root;
 let host: HTMLDivElement;
 const data: FilePreviewData = { sessionId: "first", name: "readme.md", path: "./readme.md", kind: "markdown",
@@ -36,8 +40,13 @@ beforeEach(async () => {
   vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue(new DOMRect(0, 0, 1200, 800));
   vi.spyOn(filePreviewApi, "open").mockResolvedValue(data);
   vi.spyOn(filePreviewApi, "close").mockResolvedValue();
-  vi.spyOn(websitePreviewApi, "sync").mockResolvedValue();
-  vi.spyOn(websitePreviewApi, "close").mockResolvedValue();
+  websitePreviewApi.sync.mockClear(); websitePreviewApi.close.mockClear();
+  vi.mocked(invoke).mockImplementation(async (command, args) => {
+    const data = args as { request?: object; id?: string };
+    if (command === 'provider_browser_sync') websitePreviewApi.sync(data.request);
+    if (command === 'provider_browser_close') websitePreviewApi.close(data.id);
+    return undefined;
+  });
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
   await act(async () => root.render(<Fixture />));
 });

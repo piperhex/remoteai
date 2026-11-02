@@ -154,13 +154,13 @@ test("web links use the same sidebar with explicit browser and reload actions", 
   await page.getByRole("link", { name: "查看网页" }).click();
   const sidebar = page.getByRole("dialog", { name: "预览详情" });
   await expect(sidebar).toBeVisible();
-  const frame = page.frameLocator('iframe[title="网页预览"]');
+  const frame = page.frameLocator('.pm-browser-page:not([hidden]) iframe');
   await expect(frame.getByRole("heading", { name: "HTML 预览" })).toBeVisible();
   await frame.getByRole("button", { name: "试一试" }).click();
   await expect(frame.getByRole("button", { name: "已点击" })).toBeVisible();
   expect(context.pages()).toHaveLength(1);
   await expect(page.getByRole("button", { name: "在浏览器中打开" })).toBeVisible();
-  await page.getByRole("button", { name: "重新加载网页" }).click();
+  await page.getByRole("button", { name: "刷新", exact: true }).click();
   await expect(frame.getByRole("button", { name: "试一试" })).toBeVisible();
   await page.getByRole("tab", { name: "文件更改" }).click();
   await expect(page.getByText("暂无文件更改", { exact: true })).toBeVisible();

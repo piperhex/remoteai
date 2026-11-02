@@ -139,17 +139,23 @@ export interface MessageParams36 {
   "market.browserAddress": Record<string, never>;
   "market.browserBack": Record<string, never>;
   "market.browserBlank": Record<string, never>;
+  "market.browserCaptureUnsupported": Record<string, never>;
   "market.browserCloseTab": { "name": string | number };
   "market.browserFailed": Record<string, never>;
   "market.browserForward": Record<string, never>;
   "market.browserFullscreen": Record<string, never>;
   "market.browserHeadersDesktop": Record<string, never>;
   "market.browserHeadersUnsupported": Record<string, never>;
+  "market.browserHiddenTabs": Record<string, never>;
   "market.browserInvalidUrl": Record<string, never>;
+  "market.browserLimit": Record<string, never>;
+  "market.browserMoreTabs": Record<string, never>;
   "market.browserNewTab": Record<string, never>;
   "market.browserReload": Record<string, never>;
   "market.browserRestore": Record<string, never>;
+  "market.browserStaleReference": Record<string, never>;
   "market.browserTabs": Record<string, never>;
+  "market.browserTabUnavailable": Record<string, never>;
   "market.browserTitle": Record<string, never>;
   "market.browserWebNotice": Record<string, never>;
   "market.cachedInput": Record<string, never>;
@@ -194,10 +200,4 @@ export interface MessageParams36 {
   "market.missingPrice": Record<string, never>;
   "market.model": Record<string, never>;
   "market.modelConfiguration": Record<string, never>;
-  "market.modelPlaceholder": Record<string, never>;
-  "market.models": Record<string, never>;
-  "market.modelsEmpty": Record<string, never>;
-  "market.modelsFetchFailed": Record<string, never>;
-  "market.modelsImported": { "count": string | number };
-  "market.modelsLimit": { "count": string | number };
 }

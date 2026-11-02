@@ -3,6 +3,8 @@ import { message } from "antd";
 import { uiText } from "../../../i18n/uiText";
 import { filePreviewApi, type FilePreviewData } from "./api";
 import { FileEnvironmentContext } from '../fileEnvironment';
+import { useWebsiteTabs } from './useWebsiteTabs';
+import type { ManagedBrowserTab } from '../../../../../../shared/browser/automation';
 
 export type FilePreviewTarget = Parameters<typeof filePreviewApi.open>[0];
 /** Already resolved URLs belong to the viewing computer, including when revisiting history. */
@@ -34,6 +36,10 @@ function append(history: History, target: Target): History {
 export function usePreviewHistory({ onOpen, onNavigate }: { onOpen: () => void; onNavigate: () => void }) {
   const environment = useContext(FileEnvironmentContext);
   const api = environment?.previews ?? filePreviewApi;
+  const websites = useWebsiteTabs();
+  const resetWebsites = websites.reset;
+  const openWebsiteTab = websites.open;
+  const adoptWebsite = websites.adopt;
   // Retain targets only: old file URLs belong to released sessions and must be reopened when revisited.
   const history = useRef(EMPTY_HISTORY);
   const request = useRef(0);
@@ -44,11 +50,16 @@ export function usePreviewHistory({ onOpen, onNavigate }: { onOpen: () => void; 
     request.current += 1; pending.current = false; setLoading(false);
   }, []);
   const reset = useCallback(() => {
-    history.current = EMPTY_HISTORY; setPreview(null);
-  }, []);
+    history.current = EMPTY_HISTORY; setPreview(null); resetWebsites();
+  }, [resetWebsites]);
   const visit = useCallback(async (target: Target, index?: number) => {
     const id = ++request.current;
     onOpen();
+    if (target.kind === 'website') {
+      openWebsiteTab(target.url, target.resolved);
+      history.current = index === undefined ? append(history.current, target) : { ...history.current, index };
+      pending.current = false; setLoading(false); setPreview(target); onNavigate(); return true;
+    }
     if (sameTarget(history.current.entries[history.current.index], target)) {
       pending.current = false; setLoading(false); onNavigate(); return true;
     }
@@ -62,9 +73,6 @@ export function usePreviewHistory({ onOpen, onNavigate }: { onOpen: () => void; 
         if (id !== request.current) { release(); return true; }
         if (!data) return false;
         next = { kind: "file", data, release };
-      } else if (target.kind === 'website' && environment && !target.resolved) {
-        next = { kind: 'website', url: await environment.resolveWebsite(target.url) };
-        if (id !== request.current) return true;
       } else next = target;
       history.current = index === undefined ? append(history.current, target) : { ...history.current, index };
       setPreview(next); onNavigate();
@@ -75,7 +83,7 @@ export function usePreviewHistory({ onOpen, onNavigate }: { onOpen: () => void; 
     } finally {
       if (id === request.current) { pending.current = false; setLoading(false); }
     }
-  }, [onOpen, onNavigate, api, environment]);
+  }, [onOpen, onNavigate, api, openWebsiteTab]);
   const openFile = useCallback((file: FilePreviewTarget) => visit({ kind: "file", file }), [visit]);
   const openRemoteFile = useCallback((file: FilePreviewTarget) => visit({ kind: "remoteFile", file }), [visit]);
   const openWebsite = useCallback((url: string, options: WebsitePreviewOptions = {}) => {
@@ -83,6 +91,9 @@ export function usePreviewHistory({ onOpen, onNavigate }: { onOpen: () => void; 
       content: uiText("client.conversation.couldNotOpenTheLinkPleaseTryAgainShortly"), style: { maxWidth: 400, marginInline: "auto" },
     }); });
   }, [visit]);
+  const openManagedWebsite = useCallback((tab: ManagedBrowserTab) => {
+    cancel(); onOpen(); adoptWebsite(tab); setPreview({ kind: 'website', url: tab.url }); onNavigate();
+  }, [cancel, onOpen, adoptWebsite, onNavigate]);
   const navigate = useCallback(async (direction: -1 | 1) => {
     if (pending.current) return;
     const index = history.current.index + direction;
@@ -99,7 +110,8 @@ export function usePreviewHistory({ onOpen, onNavigate }: { onOpen: () => void; 
   useEffect(() => {
     if (preview?.kind === "file") return preview.release;
   }, [preview]);
-  return { preview, openFile, openRemoteFile, openWebsite, cancel, reset, navigation: {
+  return { preview, websites, openFile, openRemoteFile, openWebsite, openManagedWebsite, cancel, reset,
+    hasFileHistory: history.current.entries.some(target => target.kind !== 'website'), navigation: {
     loading, canGoBack: !loading && history.current.index > 0,
     canGoForward: !loading && history.current.index < history.current.entries.length - 1,
     back: () => { void navigate(-1); }, forward: () => { void navigate(1); },

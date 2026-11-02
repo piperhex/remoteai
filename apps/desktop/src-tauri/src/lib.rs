@@ -157,6 +157,7 @@ pub fn run() {
         .manage(AppState::default())
         .manage(coze::CozeState::default())
         .manage(codex_gui::GuiState::default())
+        .manage(provider_browser::automation::State::default())
         .manage(codex_gui::dropped_files::DroppedFilesState::default())
         .manage(gui_terminal::ssh_drop::SshDropState::default())
         .manage(codex_gui::file_preview::PreviewSessions::default())
@@ -464,6 +465,8 @@ pub fn run() {
             provider_browser::provider_browser_sync,
             provider_browser::provider_browser_action,
             provider_browser::provider_browser_close,
+            provider_browser::automation::codex_gui_browser,
+            provider_browser::automation::codex_gui_browser_place,
             codex_gui::file_preview::website::codex_gui_close_website_preview,
             codex_gui::undo::codex_gui_undo,
             codex_gui::deletion::codex_gui_delete_thread,

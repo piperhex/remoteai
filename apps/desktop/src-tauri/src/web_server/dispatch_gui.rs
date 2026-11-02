@@ -3,6 +3,9 @@ fn dispatch_gui_command(app: AppHandle, command: &str, args: Value) -> Result<Va
     use tauri::Manager;
 
     match command {
+        "codex_gui_browser" => serialize(block_on(crate::provider_browser::automation::codex_gui_browser(
+            app, argument(&args, "request")?,
+        ))),
         "codex_gui_dictation_prepare" => serialize(block_on(codex_gui::dictation::codex_gui_dictation_prepare(
             app.clone(), app.state::<GuiState>(),
         ))),

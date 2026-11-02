@@ -16,12 +16,25 @@
 .pm-browser button:focus-visible, .pm-browser input:focus-visible { outline: 2px solid var(--accent, #6175db); }
 .pm-browser-titlebar { display: flex; align-items: center; gap: 6px; padding: 8px 10px 0;
   background: var(--surface-secondary, #eef1f6); }
-.pm-browser-tabs { display: flex; align-items: end; gap: 6px; overflow-x: auto; min-width: 0; flex: 1; }
-.pm-browser-tab { display: flex; align-items: center; min-width: 130px; max-width: 230px; border-radius: 9px 9px 0 0;
+.pm-browser-tabs-bar { display: flex; flex: 1; min-width: 0; position: relative; align-items: center; }
+.pm-browser-tabs { display: flex; align-items: end; gap: 6px; overflow-x: auto; min-width: 0; flex: 1;
+  scrollbar-width: none; overscroll-behavior-x: contain; }
+.pm-browser-tabs::-webkit-scrollbar { display: none; }
+.pm-browser-tabs-bar[data-clipped-left=true] .pm-browser-tabs {
+  mask-image: linear-gradient(to right, transparent, #000 12px); }
+.pm-browser-tab { display: flex; flex-shrink: 0; align-items: center;
+  min-width: 130px; max-width: min(230px, 100%); border-radius: 9px 9px 0 0;
   padding: 3px 4px; border: 1px solid transparent; }
 .pm-browser-tab.active { background: var(--panel-bg, #fff); border-color: var(--border, #dce1e8); border-bottom-color: transparent; }
 .pm-browser-tab > button:first-child { min-width: 0; flex-shrink: 1; }
 .pm-browser-tab span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-browser-tab svg { flex-shrink: 0; }
+.pm-browser .pm-browser-tabs-more { border-left: 1px solid var(--border, #dce1e8); border-radius: 0; margin-left: 4px; }
+.pm-browser-tabs-menu { width: 300px; max-width: min(400px, calc(100vw - 16px)); z-index: 1700; }
+.pm-browser-tabs-menu .ant-dropdown-menu { max-height: min(440px, 60vh); overflow-y: auto; }
+.pm-browser-tabs-menu-item { display: flex; align-items: center; gap: 8px; }
+.pm-browser-tabs-menu-item > span { flex: 1; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.pm-browser-tabs-menu-item > svg { flex-shrink: 0; }
 .pm-browser-toolbar { position: relative; display: flex; gap: 6px; padding: 10px; align-items: center;
   border-bottom: 1px solid var(--border, #dce1e8); }
 .pm-browser-toolbar form { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;

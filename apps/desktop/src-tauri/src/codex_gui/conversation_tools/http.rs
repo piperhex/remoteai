@@ -161,7 +161,7 @@ pub(super) fn dispatch(message: Value, execute: impl FnOnce(Value) -> Result<Val
                 Preserve requestId and arguments on retries; never replay uncertain sends with a new ID."}),
         ),
         Some("ping") => Ok(json!({})),
-        Some("tools/list") => serde_json::from_str(protocol::TOOLS).map_err(Error::from),
+        Some("tools/list") => protocol::tools(),
         Some("tools/call") => Ok(protocol::tool_result(execute(message["params"].clone()))),
         _ => Err(Error::Invalid),
     };

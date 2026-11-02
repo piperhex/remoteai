@@ -1,4 +1,5 @@
 //! Unprivileged browser tabs hosted inside the Provider list window.
+pub(crate) mod automation;
 mod lifecycle;
 mod platform;
 pub(crate) use lifecycle::handle_page_load;

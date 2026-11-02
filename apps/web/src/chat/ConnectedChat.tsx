@@ -37,6 +37,7 @@ import { ChatRetryProvider } from '../../../../shared/remote-chat/ChatRetryProvi
 import { ChatQuotesProvider } from './ChatQuotes';
 import { ChatFileReferencesProvider } from '../../../../shared/chat/ChatFileReferences';
 import { ChatDetailsWorkspace } from './ChatDetailsWorkspace';
+import { ChatBrowserProvider } from './ChatBrowserProvider';
 import { ChatTerminalLayout } from './ChatTerminalLayout';
 import { ConversationChangesButton } from '../../../desktop/src/pages/codexGui/ConversationChangesButton';
 import { ChatAsyncQuestions } from './ChatAsyncQuestions';
@@ -170,6 +171,7 @@ export function ConnectedChat({ chat, device, devices, active, scope, email, cho
     <ChatAttachmentMetadata controller={controller} ready={ready} threadId={state.selected?.id ?? null}>
     <ChatFileContext.Provider value={{ threadId: state.selected?.id ?? null, ready, client: controller.files,
       load: controller.textPreview }}>
+    <ChatBrowserProvider controller={controller}>
     <ChatDetailsWorkspace selected={state.selected?.id ?? null} active={active} enabled={showDesktopDiffs}>
     <ChatFileReferencesProvider>
     <ChatQuotesProvider scope={state.selected?.id ?? null} sending={state.sending}
@@ -231,7 +233,7 @@ export function ConnectedChat({ chat, device, devices, active, scope, email, cho
       select={thread => { setSearching(false); drawerMotion.closeDrawer(); void controller.select(thread); }} />}
     {pickingDevice && <ChatDevices chooseLocal={chooseLocal} devices={devices} onClose={() => setPickingDevice(false)}
       refresh={deviceRefresh} choose={(id) => { chooseDevice(id); setPickingDevice(false); }} />}
-  </ChatQuotesProvider></ChatFileReferencesProvider></ChatDetailsWorkspace>
+  </ChatQuotesProvider></ChatFileReferencesProvider></ChatDetailsWorkspace></ChatBrowserProvider>
   </ChatFileContext.Provider></ChatAttachmentMetadata></ChatImageContext.Provider></ImageAiContext.Provider>
   </DesktopUsageContext.Provider>;
 }

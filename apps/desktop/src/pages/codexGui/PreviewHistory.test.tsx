@@ -13,7 +13,8 @@ let host: HTMLDivElement;
 let session = 0;
 const button = (label: string) => host.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!;
 const click = (label: string) => act(async () => button(label).click());
-const heading = () => host.querySelector('section header strong')?.textContent;
+const heading = () => host.querySelector('section header strong')?.textContent
+  ?? host.querySelector('.website-preview-browser')?.getAttribute('aria-label');
 const file = (name: string): FilePreviewData => ({ sessionId: String(++session), name, path: `/${name}`,
   kind: "markdown", text: `# ${name}`, url: `http://localhost/${name}` });
 

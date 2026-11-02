@@ -3,11 +3,12 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { DiffPanelEntry } from "./detailsContext";
 import { usePreviewHistory } from "./filePreview/usePreviewHistory";
 import type { WorkspaceTabs } from "../../../../../shared/chat/workspaceDrawer";
+import { useManagedBrowserTabs } from './filePreview/useManagedBrowserTabs';
 
 const EMPTY_CHANGES: DiffPanelEntry = { id: "conversation-changes", get title() { return uiText("client.chat.fileChanges.049e14"); }, files: [] };
 
-export function useDetailsPanel({ selected, enabled, remoteFiles = false, drawer }: {
-  selected: string | null; enabled: boolean; remoteFiles?: boolean; drawer: WorkspaceTabs;
+export function useDetailsPanel({ selected, enabled, active, remoteFiles = false, drawer }: {
+  selected: string | null; enabled: boolean; active: boolean; remoteFiles?: boolean; drawer: WorkspaceTabs;
 }) {
   const [entry, setEntry] = useState<DiffPanelEntry | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -23,9 +24,17 @@ export function useDetailsPanel({ selected, enabled, remoteFiles = false, drawer
     if (diff) setViewId(value => value + 1);
   }, [openTab]);
   const revealPreview = useCallback(() => reveal(false), [reveal]);
-  const { preview, navigation, openFile, openRemoteFile, openWebsite, cancel, reset } = usePreviewHistory({
+  const { preview, websites, navigation, hasFileHistory, openFile, openRemoteFile, openWebsite,
+    openManagedWebsite, cancel, reset }
+    = usePreviewHistory({
     onOpen: rememberOpener, onNavigate: revealPreview,
   });
+  const closeManagedWebsite = useCallback((id: string) => {
+    if (websites.tabs.length === 1 && websites.tabs[0].id === id) hide();
+    websites.remove(id);
+  }, [websites.tabs, websites.remove, hide]);
+  useManagedBrowserTabs({ threadId: selected, active: enabled && active,
+    open: openManagedWebsite, close: closeManagedWebsite });
   const visible = drawer.visible && enabled
     && Boolean((showingChanges && entry) || (drawer.selected === "preview" && preview));
   const open = useCallback((next: DiffPanelEntry) => {
@@ -51,7 +60,7 @@ export function useDetailsPanel({ selected, enabled, remoteFiles = false, drawer
     openRemoteFile: remoteFiles ? openRemoteFile : undefined, visible, showingChanges }),
   [open, update, close, openFile, openRemoteFile, remoteFiles, openWebsite, setConversationChanges,
     visible, showingChanges]);
-  return { context, entry, preview, navigation, showingChanges, visible, viewId, expanded, setExpanded,
+  return { context, entry, preview, websites, navigation, hasFileHistory, showingChanges, visible, viewId, expanded, setExpanded,
     showChanges: () => { if (!entry) setEntry(changes.current); cancel(); openTab("changes"); },
     showPreview: () => { cancel(); openTab("preview"); } };
 }

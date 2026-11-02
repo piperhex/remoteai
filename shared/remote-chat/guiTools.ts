@@ -29,6 +29,7 @@ export interface RemoteCliStatus {
   error: string;
 }
 export const GUI_TOOL_OPERATIONS = new Set([
+  'guiBrowser',
   PROJECT_LIST_OPERATION, PROJECT_SELECT_OPERATION,
   'guiCliStatus', 'guiCliRelease', 'guiCliInstall', 'guiReconnect',
   'guiTerminalList', 'guiTerminalOpen', 'guiTerminalRead', 'guiTerminalWrite', 'guiTerminalResize', 'guiTerminalClose',
@@ -59,6 +60,8 @@ export function createGuiToolsClient(request: <T>(body: object) => Promise<T>,
       request<SshFileReply>({ operation: 'guiTerminalSshFiles', id, request: input }),
   };
   return {
+    browser: (input: import('../browser/automation').BrowserRequest) =>
+      request<import('../browser/automation').BrowserReply>({ operation: 'guiBrowser', request: input }),
     projectBrowser: createProjectBrowserClient(request, projectDownloads(request)),
     files: createGuiFilesClient(request, stream),
     projects: {

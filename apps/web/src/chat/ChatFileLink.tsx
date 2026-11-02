@@ -28,6 +28,7 @@ function FilePreviewLink({ path, line, children }: { path: string; line?: number
 
 export function ChatFileLink({ href, children }: { href?: string; children?: ReactNode }) {
   const context = useContext(ChatFileContext);
+  const panel = useContext(DetailsContext);
   const environment = useContext(FileEnvironmentContext);
   const file = context?.basePath ? previewReference(href ?? '', context.basePath) : parseFileReference(href ?? '');
   if (environment) return file ? <FileMenu {...file} preview>{children}</FileMenu>
@@ -36,5 +37,6 @@ export function ChatFileLink({ href, children }: { href?: string; children?: Rea
     path={file.path} line={file.line}>
     {children}</FilePreviewLink>;
   if (!href || !/^https?:\/\//i.test(href)) return <span>{children}</span>;
+  if (panel) return <MessageLink href={href}>{children}</MessageLink>;
   return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
 }

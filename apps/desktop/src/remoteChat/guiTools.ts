@@ -38,6 +38,7 @@ async function install(version: string) {
 
 export async function guiToolRequest(body: Record<string, unknown>) {
   switch (body.operation) {
+    case 'guiBrowser': return invoke('codex_gui_browser', { request: body.request });
     case PROJECT_LIST_OPERATION: return readRemoteProjects();
     case PROJECT_SELECT_OPERATION: return selectRemoteProject(body);
     case 'guiGitWorkspace': return workspaceRequest(body.request);

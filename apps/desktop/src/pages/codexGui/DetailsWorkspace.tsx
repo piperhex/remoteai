@@ -35,7 +35,7 @@ export function DetailsWorkspace({ selected, active, children, enabled = true, c
   const workspace = useMemo(() => ({ active, tabs: drawer.tabs }), [active, drawer.tabs]);
   const closeButton = useRef<HTMLButtonElement>(null);
   const panelId = useId();
-  const panel = useDetailsPanel({ selected, enabled, remoteFiles: Boolean(renderRemoteFile), drawer: drawer.tabs });
+  const panel = useDetailsPanel({ selected, enabled, active, remoteFiles: Boolean(renderRemoteFile), drawer: drawer.tabs });
   const { entry, preview, viewId, expanded, showingChanges } = panel;
   const showingPreview = drawer.tabs.selected === "preview";
   const tool = drawer.tabs.entries.find(tab => tab.id === drawer.tabs.selected);
@@ -101,13 +101,17 @@ export function DetailsWorkspace({ selected, active, children, enabled = true, c
             title={entry.title} status={entry.status}
             initialOpen continuous />
         </div>}
-        {preview && <div hidden={!showingPreview} className={styles.preview}>
+        {preview && preview.kind !== 'website' && <div hidden={!showingPreview} className={styles.preview}>
           {preview.kind === "file" && <FilePreviewPanel key={preview.data.sessionId} data={preview.data}
             active={visible && showingPreview} navigation={panel.navigation} />}
           {preview.kind === "remoteFile" && renderRemoteFile?.({ target: preview.file,
             active: visible && showingPreview, navigation: panel.navigation })}
-          {preview.kind === "website" && <WebsitePreview key={preview.url} url={preview.url}
-            active={visible && showingPreview} resizing={resize.dragging} navigation={panel.navigation} />}
+        </div>}
+        {panel.websites.tabs.length > 0 && <div hidden={!showingPreview || preview?.kind !== 'website'}
+          className={styles.preview}>
+          <WebsitePreview browser={panel.websites} active={active && visible && showingPreview && preview?.kind === 'website'}
+            resizing={resize.dragging} navigation={panel.hasFileHistory ? panel.navigation : undefined} expanded={expanded}
+            toggleExpanded={() => panel.setExpanded(!expanded)} onClose={panel.context.close} />
         </div>}
         <div ref={drawer.setContent} hidden={!tool} className={styles.toolContent} />
       </aside>}

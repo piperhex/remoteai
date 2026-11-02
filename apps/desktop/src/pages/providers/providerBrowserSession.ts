@@ -17,7 +17,7 @@ export function nativeBrowserSession(id: string, onError: (reason: unknown) => v
       try {
         await invoke('provider_browser_sync', { request: { ...request, id,
           navigate: request.navigate && request.url !== lastUrl } });
-        lastUrl = request.url;
+        if (request.visible) lastUrl = request.url;
       } catch (reason) { pending = undefined; if (!closed) onError(reason); }
     }
   };

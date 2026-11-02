@@ -8,6 +8,8 @@ export interface BrowserTab {
   headers: Record<string, string>;
   history: string[];
   historyIndex: number;
+  /** Present only for conversation-owned tabs controlled by the built-in browser tools. */
+  automationThread?: string;
 }
 export type BrowserAction = 'back' | 'forward' | 'reload';
 

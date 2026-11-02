@@ -1,4 +1,5 @@
 //! Built-in, authenticated MCP transport for GUI conversation operations.
+mod browser_tools;
 mod http;
 mod journal;
 mod operations;
@@ -30,6 +31,8 @@ pub(super) enum Error {
     Changed,
     #[error(transparent)]
     Gui(#[from] super::GuiError),
+    #[error(transparent)]
+    Browser(#[from] crate::provider_browser::automation::Error),
 }
 
 impl From<serde_json::Error> for Error {
@@ -76,6 +79,12 @@ pub(super) fn shutdown(app: &AppHandle) {
 }
 
 async fn execute(app: AppHandle, params: Value) -> Result<Value> {
+    if matches!(
+        params["name"].as_str(),
+        Some("gui_browser_open" | "gui_browser_use")
+    ) {
+        return browser_tools::execute(app, params).await;
+    }
     let tool = protocol::parse(&params)?;
     let state = app.state::<GuiState>();
     let client = connected(&state).await?;
