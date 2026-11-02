@@ -3,8 +3,9 @@ import { WebView } from 'react-native-webview';
 import type { FileClient } from '../../../../../shared/remote-chat/fileDownload';
 import { htmlPreparationDocument } from './htmlPreparation.generated';
 import { nativeHtmlAsset } from './nativeHtmlAsset';
+import { readHtmlImageLinks, type HtmlImageLink } from '../../../../../shared/file-preview/htmlImageLinks';
 
-export interface PreparedHtml { html: string; failed: boolean }
+export interface PreparedHtml { html: string; failed: boolean; imageLinks?: HtmlImageLink[] }
 export interface HtmlFileContext { path: string; client: FileClient; threadId: string }
 
 /** Only this inert parser has a native bridge; the rendered document uses a separate WebView without one. */
@@ -23,7 +24,7 @@ export function HtmlPreparation({ text, context, complete, fail }: {
     if (reply.type === 'ready') {
       view.current?.injectJavaScript(`window.prepareHtml(${JSON.stringify({ text, path: context.path })}); true;`);
     } else if (reply.type === 'prepared' && typeof reply.html === 'string') {
-      complete({ html: reply.html, failed: reply.failed === true });
+      complete({ html: reply.html, failed: reply.failed === true, imageLinks: readHtmlImageLinks(reply.imageLinks) });
     } else if (reply.type === 'error') fail();
     else if (reply.type === 'asset' && Number.isSafeInteger(reply.id) && typeof reply.path === 'string') {
       const asset = await nativeHtmlAsset({ ...context, path: reply.path, signal: controller.signal })

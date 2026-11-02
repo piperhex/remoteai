@@ -12,6 +12,7 @@ import { updateThemeMode } from '../src/theme/store';
 import { Buffer } from 'buffer';
 import { fromByteArray } from 'base64-js';
 import { HTML_FIXTURE_ASSETS, HTML_FIXTURE_DOCUMENT, HTML_FIXTURE_PATH } from '../../../shared/file-preview/htmlPreviewFixture';
+import { statusBarTestImage } from './modalStatusBarImage';
 
 setInterfaceLanguage('zh');
 updateThemeMode('dark');
@@ -27,21 +28,25 @@ const samples: Record<string, string> = {
   '代码预览.ts': 'const ready = true;\n'.repeat(100),
   '安装包.apk': '',
   '相对资源.html': HTML_FIXTURE_DOCUMENT,
-  '缺失资源.html': HTML_FIXTURE_DOCUMENT.replace('images/preview%20image.svg', 'missing.png'),
+  '缺失资源.html': HTML_FIXTURE_DOCUMENT.replaceAll('images/preview%20image.svg', 'missing.png'),
+  'PNG 资源.html': HTML_FIXTURE_DOCUMENT.replaceAll('images/preview%20image.svg', 'images/original.png'),
 };
-const opened = new Map<string, { text: string; mime: string }>();
+const opened = new Map<string, { bytes: Uint8Array; mime: string }>();
 const client = {
   open: async (_threadId: string, path: string) => {
-    const asset = HTML_FIXTURE_ASSETS[path.replace('F:/preview test/页面/', '')];
+    const fixture = HTML_FIXTURE_ASSETS[path.replace('F:/preview test/页面/', '')];
+    const asset = path.endsWith('/images/original.png')
+      ? { bytes: Buffer.from(statusBarTestImage.split(',')[1], 'base64'), mime: 'image/png' }
+      : fixture && { bytes: Buffer.from(fixture.text), mime: fixture.mime };
     if (!asset) throw new Error('Fixture asset unavailable');
     const id = `11111111-1111-4111-8111-${String(opened.size).padStart(12, '0')}`;
     opened.set(id, asset);
-    return { id, size: Buffer.byteLength(asset.text), name: path.split('/').at(-1)!, mimeType: asset.mime };
+    return { id, size: asset.bytes.length, name: path.split('/').at(-1)!, mimeType: asset.mime };
   },
   read: async ({ id, offset, length }: { id: string; offset: number; length: number }) => {
     const asset = opened.get(id)!;
     if (asset.mime.startsWith('image/')) await new Promise(resolve => setTimeout(resolve, 6000));
-    return { offset, data: fromByteArray(Buffer.from(asset.text).subarray(offset, offset + length)) };
+    return { offset, data: fromByteArray(asset.bytes.subarray(offset, offset + length)) };
   },
   close: async (_threadId: string, id: string) => { opened.delete(id); },
 };

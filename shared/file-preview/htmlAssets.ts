@@ -1,6 +1,7 @@
 import { checkPreviewSize, filePreviewKind, PREVIEW_BYTE_LIMIT, type PreviewLoader } from './kinds';
 import { loadHtmlAsset } from './htmlAssetLoad';
 import { deferCssImage, deferHtmlMedia, type HtmlMediaAsset } from './htmlMedia';
+import { prepareHtmlImageLinks } from './htmlImageLinks';
 
 const MAX_ASSETS = 256;
 const EMPTY_ASSET = 'data:,';
@@ -152,6 +153,7 @@ export async function prepareHtmlPreview(options: {
   const base = new URL(document.querySelector('base[href]')?.getAttribute('href') ?? '', fileUrl).href;
   // A file base is useful to the resolver, but not loadable in a browser iframe.
   document.querySelectorAll('base').forEach(element => element.remove());
+  const imageLinks = prepareHtmlImageLinks(document, source => localReference(source, base));
   if (options.mediaChannel) deferHtmlMedia({ document, base, assets: media,
     resolve: (source, base, attribute) => attribute === 'srcset'
       ? rewriteSrcset(source, base, assets.resolve) : assets.resolve(source, base),
@@ -159,5 +161,5 @@ export async function prepareHtmlPreview(options: {
   await rewriteDocument(document, base, assets);
   signal.throwIfAborted();
   return { html: '<!doctype html>\n' + document.documentElement.outerHTML, failed: assets.failed(),
-    media, hasFailed: assets.failed };
+    media, imageLinks, hasFailed: assets.failed };
 }

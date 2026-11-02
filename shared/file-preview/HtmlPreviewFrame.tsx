@@ -4,6 +4,8 @@ import type { PreviewLoader } from './kinds';
 import { prepareHtmlPreview } from './htmlAssets';
 import { loadHtmlMedia, type HtmlMediaUpdate } from './htmlMedia';
 import receiverUrl from './htmlMediaReceiver.js?url&no-inline';
+import { findHtmlImageLink, type HtmlImageLink } from './htmlImageLinks';
+import { HtmlImagePreview } from './HtmlImagePreview';
 
 type PreparedPreview = Awaited<ReturnType<typeof prepareHtmlPreview>> & {
   channel: string; controller: AbortController;
@@ -16,12 +18,13 @@ export function HtmlPreviewFrame({ text, path, load, className }: {
   const [result, setResult] = useState<PreparedPreview>();
   const [failed, setFailed] = useState(false);
   const [loadingMedia, setLoadingMedia] = useState(false);
+  const [image, setImage] = useState<HtmlImageLink>();
   const frame = useRef<HTMLIFrameElement>(null);
   const started = useRef<PreparedPreview>();
   useEffect(() => {
     const controller = new AbortController();
     const channel = crypto.randomUUID();
-    setResult(undefined); setFailed(false); setLoadingMedia(false);
+    setResult(undefined); setFailed(false); setLoadingMedia(false); setImage(undefined);
     void prepareHtmlPreview({ text, path, load, signal: controller.signal, mediaChannel: channel,
       mediaReceiverUrl: new URL(receiverUrl, window.location.href).href }).then(value => {
       if (!controller.signal.aborted) {
@@ -51,6 +54,10 @@ export function HtmlPreviewFrame({ text, path, load, className }: {
       if (event.source !== frame.current?.contentWindow || event.data?.channel !== result?.channel) return;
       if (event.data?.type === 'ready') loadMedia();
       if (event.data?.type === 'loaded') { setLoadingMedia(false); if (event.data.failed) setFailed(true); }
+      if (event.data?.type === 'image') {
+        const link = findHtmlImageLink(result?.imageLinks, event.data.url);
+        if (link) setImage(link);
+      }
     };
     window.addEventListener('message', ready);
     return () => window.removeEventListener('message', ready);
@@ -63,5 +70,6 @@ export function HtmlPreviewFrame({ text, path, load, className }: {
     <iframe ref={frame} title={t('client.downloads.htmlPreview')}
       srcDoc={result.html} sandbox="allow-scripts"
       referrerPolicy="no-referrer" className={className} />
+    {image && <HtmlImagePreview key={image.url} link={image} load={load} close={() => setImage(undefined)} />}
   </>;
 }

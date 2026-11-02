@@ -22,7 +22,7 @@ Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configur
 
 const files: Record<string, string> = {
   [HTML_FIXTURE_PATH]: params.has('external')
-    ? HTML_FIXTURE_DOCUMENT.replace('images/preview%20image.svg', new URL('slow-photo.svg', location.href).href)
+    ? HTML_FIXTURE_DOCUMENT.replaceAll('images/preview%20image.svg', new URL('slow-photo.svg', location.href).href)
     : HTML_FIXTURE_DOCUMENT,
   'F:/remote/docs/handoff.md': markdown + '\n\n[后续文档](next.md#L3)',
   'F:/remote/docs/next.md': '# 后续文档\n\n这是同一台远程电脑上的文件。',

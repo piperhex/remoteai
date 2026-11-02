@@ -104,6 +104,7 @@ async function verifyHtmlAssets(scale) {
   await screenshot(`html-assets-ready-${scale}`);
   await tap('保留预览状态');
   await find('已点击');
+  await verifyImageLink(scale);
   await tap('源码');
   await find('自动换行');
   assert.ok(!(await nodes()).some(node => node.class === 'android.webkit.WebView'), 'Source replaces HTML');
@@ -113,6 +114,33 @@ async function verifyHtmlAssets(scale) {
   await find('部分图片或媒体未能加载，可以重新打开预览再试。');
   await screenshot(`html-assets-missing-${scale}`);
   await tap('关闭文件');
+  await tap('PNG 资源.html');
+  await find('资源加载成功');
+  await tap('保留预览状态');
+  await verifyImageLink(`png-${scale}`);
+  await tap('关闭文件');
+}
+
+async function verifyImageLink(scale) {
+  await tap('相邻图片');
+  await delay(1500);
+  await screenshot(`html-link-loading-${scale}`);
+  await find('关闭图片');
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const tree = await nodes();
+    if (tree.some(node => node.class === 'android.webkit.WebView')
+      && !tree.some(node => matches(node, '正在加载原图…'))) break;
+    await delay(400);
+  }
+  assert.ok(!(await nodes()).some(node => matches(node, '正在加载原图…')), 'The original finishes decoding');
+  await screenshot(`html-link-opened-${scale}`);
+  await tap('关闭图片');
+  await find('已点击');
+  await screenshot(`html-link-returned-${scale}`);
+  await tap('相邻图片');
+  await find('关闭图片');
+  await adb('shell', 'input', 'keyevent', '4');
+  await find('已点击');
 }
 
 await mkdir(output, { recursive: true });

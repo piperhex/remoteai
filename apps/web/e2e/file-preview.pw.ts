@@ -6,6 +6,27 @@ import { dragSheet } from './sheet-drag';
 
 const HTML_FIXTURE_PATH = 'F:/preview test/页面/index.html';
 
+test('HTML image links open the original and return to the same document', async ({ page }, info) => {
+  await page.goto(`e2e/file-preview-harness.html?assets&delay=700&path=${encodeURIComponent(HTML_FIXTURE_PATH)}`);
+  const frame = page.frameLocator('.chat-html-frame');
+  await expect(frame.locator('#loaded')).toHaveText('资源加载成功');
+  await frame.getByRole('button', { name: '保留预览状态' }).click();
+  await frame.getByAltText('相邻图片').click();
+  const viewer = page.getByRole('dialog', { name: '相邻图片' });
+  await expect(viewer).toBeVisible();
+  await expect(viewer.getByText('正在加载原图…', { exact: true })).toBeVisible();
+  await page.screenshot({ path: `../../.codex-tmp/html-links-web-${info.project.name}-loading.png` });
+  await expect(viewer.locator('img')).toHaveAttribute('src', /^blob:/);
+  await expect.poll(() => viewer.locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(640);
+  await viewer.getByRole('button', { name: '放大图片', exact: true }).click();
+  await page.screenshot({ path: `../../.codex-tmp/html-links-web-${info.project.name}-opened.png` });
+  await viewer.getByRole('button', { name: '关闭图片', exact: true }).click();
+  await expect(viewer).toHaveCount(0);
+  await expect(frame.getByRole('button', { name: '已点击' })).toBeVisible();
+  await expect(frame.locator('#photo')).toHaveAttribute('src', /^data:image\/svg\+xml/);
+  await page.screenshot({ path: `../../.codex-tmp/html-links-web-${info.project.name}-returned.png` });
+});
+
 test('HTML assets show loading placeholders before remote images are ready', async ({ page }, info) => {
   await page.goto(`e2e/file-preview-harness.html?assets&delay=1800&path=${encodeURIComponent(HTML_FIXTURE_PATH)}`);
   const frame = page.frameLocator('.chat-html-frame');

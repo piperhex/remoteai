@@ -76,6 +76,13 @@
   }
 
   window.addEventListener('load', deferLoad, true);
+  document.addEventListener('click', event => {
+    if (event.defaultPrevented || !(event.target instanceof Element)) return;
+    const anchor = event.target.closest('a[data-preview-image-link]');
+    if (!anchor || anchor.href !== anchor.dataset.previewImageLink) return;
+    event.preventDefault();
+    parent.postMessage({ channel, type: 'image', url: anchor.href }, '*');
+  });
   window.addEventListener('message', event => {
     if (!channel || event.source !== parent || event.data?.channel !== channel) return;
     if (event.data.type === 'complete') void complete();

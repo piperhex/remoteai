@@ -33,6 +33,14 @@ async function checkPreviews(page: Page) {
     .evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(200);
   expect(await page.evaluate(() => document.body.dataset.escaped)).toBeUndefined();
   await page.screenshot({ path: test.info().outputPath('html-preview.png') });
+  await panel(page).frameLocator('iframe').getByAltText('HTML asset').click();
+  const imagePreview = page.getByRole('dialog', { name: 'HTML asset' });
+  await expect(imagePreview).toBeVisible();
+  await expect(imagePreview.locator('img')).toHaveAttribute('src', /^blob:/);
+  await expect.poll(() => imagePreview.locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(200);
+  await page.screenshot({ path: test.info().outputPath('html-linked-image.png') });
+  await imagePreview.getByRole('button', { name: '关闭图片', exact: true }).click();
+  await expect(panel(page).frameLocator('iframe').getByRole('heading', { name: 'HTML preview' })).toBeVisible();
   await row(page, 'image.svg').click();
   await expect.poll(() => panel(page).locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(200);
   await row(page, 'sound.wav').click();

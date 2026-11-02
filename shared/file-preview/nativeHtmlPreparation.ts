@@ -30,7 +30,7 @@ host.prepareHtml = async input => {
   try {
     // DOMParser keeps the supplied document inert. Its scripts never run in this privileged WebView.
     const result = await prepareHtmlPreview({ ...input, load, signal: new AbortController().signal });
-    send({ type: 'prepared', html: result.html, failed: result.failed });
+    send({ type: 'prepared', html: result.html, failed: result.failed, imageLinks: result.imageLinks });
   } catch { send({ type: 'error' }); }
 };
 send({ type: 'ready' });

@@ -5,6 +5,8 @@ import { t } from '../../i18n';
 import { textMetrics } from '../../theme/text';
 import { useThemeColor } from '../../theme/store';
 import { HtmlPreparation, type HtmlFileContext, type PreparedHtml } from './HtmlPreparation';
+import { findHtmlImageLink, type HtmlImageLink } from '../../../../../shared/file-preview/htmlImageLinks';
+import { HtmlImagePreview } from './HtmlImagePreview';
 
 export function HtmlPreviewDocument({ text, context, onError }: {
   text: string; context?: HtmlFileContext; onError: () => void;
@@ -12,7 +14,9 @@ export function HtmlPreviewDocument({ text, context, onError }: {
   const color = useThemeColor();
   const [prepared, setPrepared] = useState<PreparedHtml>();
   const [loading, setLoading] = useState(true);
-  useEffect(() => { setPrepared(undefined); setLoading(true); }, [text, context?.path, context?.client, context?.threadId]);
+  const [image, setImage] = useState<HtmlImageLink | null>(null);
+  useEffect(() => { setPrepared(undefined); setLoading(true); setImage(null); },
+    [text, context?.path, context?.client, context?.threadId]);
   const source = useMemo(() => ({ html: prepared?.html ?? text, baseUrl: 'about:blank' }), [prepared, text]);
   const preparing = Boolean(context && !prepared);
   return <View style={{ flex: 1 }}>
@@ -22,7 +26,11 @@ export function HtmlPreviewDocument({ text, context, onError }: {
     {!preparing && <WebView source={source} style={{ flex: 1 }} incognito
       // The untrusted page has no native message bridge or access to device files.
       originWhitelist={['*']}
-      onShouldStartLoadWithRequest={({ url }) => url === 'about:blank' || url.startsWith('about:blank#')}
+      onShouldStartLoadWithRequest={({ url }) => {
+        const link = findHtmlImageLink(prepared?.imageLinks, url);
+        if (link && context) setImage(link);
+        return url === 'about:blank' || url.startsWith('about:blank#');
+      }}
       javaScriptEnabled domStorageEnabled={false} sharedCookiesEnabled={false} thirdPartyCookiesEnabled={false}
       allowFileAccess={false} allowFileAccessFromFileURLs={false} allowUniversalAccessFromFileURLs={false}
       setSupportMultipleWindows={false} javaScriptCanOpenWindowsAutomatically={false}
@@ -35,5 +43,6 @@ export function HtmlPreviewDocument({ text, context, onError }: {
       <Text style={{ ...textMetrics(14, 21), maxWidth: 400, color: color('#708078', 'muted') }}>
         {t('client.chat.loadingFile')}</Text>
     </View>}
+    {image && context && <HtmlImagePreview link={image} context={context} close={() => setImage(null)} />}
   </View>;
 }

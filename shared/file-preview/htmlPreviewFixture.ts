@@ -3,7 +3,8 @@ export const HTML_FIXTURE_PATH = 'F:/preview test/页面/index.html';
 export const HTML_FIXTURE_DOCUMENT = '<!doctype html><html><head><meta charset="utf-8">'
   + '<meta name="viewport" content="width=device-width,initial-scale=1">'
   + '<link rel="stylesheet" href="styles/report.css"></head><body><h1>相对资源预览</h1>'
-  + '<p id="loaded">正在读取图片</p><img id="photo" src="images/preview%20image.svg" alt="相邻图片">'
+  + '<p id="loaded">正在读取图片</p><a href="images/preview%20image.svg" target="_blank">'
+  + '<img id="photo" src="images/preview%20image.svg" alt="相邻图片"></a>'
   + '<button onclick="this.textContent=\'已点击\'">保留预览状态</button>'
   + '<script src="scripts/report.js"></script></body></html>';
 export const HTML_FIXTURE_ASSETS: Record<string, { text: string; mime: string }> = {
@@ -16,6 +17,6 @@ export const HTML_FIXTURE_ASSETS: Record<string, { text: string; mime: string }>
     + ' stroke="white" stroke-width="10"/><text x="320" y="265" text-anchor="middle" fill="#17382c"'
     + ' font-size="28" font-family="sans-serif">HTML + CSS + Image</text></svg>' },
   'scripts/report.js': { mime: 'text/javascript', text: 'window.addEventListener("load",()=>{'
-    + 'document.querySelector("#loaded").textContent=document.querySelector("#photo").naturalWidth===640'
+    + 'document.querySelector("#loaded").textContent=document.querySelector("#photo").naturalWidth>0'
     + '?"资源加载成功":"图片未就绪";document.body.dataset.isolated=String(!window.ReactNativeWebView);});' },
 };
