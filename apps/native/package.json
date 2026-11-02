@@ -1,6 +1,6 @@
 {
   "name": "@codex-switch/native",
-  "version": "2.1.12",
+  "version": "2.1.13",
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
