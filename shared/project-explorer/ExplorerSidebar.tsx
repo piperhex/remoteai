@@ -59,7 +59,7 @@ export function ExplorerSidebar({ props, state, busy }: { props: ExplorerProps; 
     </div>
     <button type="button" className="pe-computer" disabled={busy} onClick={() => state.navigate('')}
       aria-current={!state.directory ? 'location' : undefined}>
-      <ChevronDown size={14} /><Monitor size={20} /><span>{props.t(textKey('computer'))}</span></button>
+      <ChevronDown size={14} /><Monitor size={19} /><span>{props.t(textKey('computer'))}</span></button>
     {state.rootsError && <button type="button" onClick={state.refresh}>{props.t('client.terminal.retry')}</button>}
     {state.roots.map(entry => <Drive key={entry.path} entry={entry} props={props} state={state} busy={busy} />)}
     {!!projects.length && <><h3>{props.t(textKey('recent'))}</h3>
