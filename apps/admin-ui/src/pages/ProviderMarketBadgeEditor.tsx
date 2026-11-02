@@ -26,6 +26,6 @@ export function ProviderMarketBadgeEditor({ badge, busy, t, onSave }: {
           onClick={() => void save({ text: text.trim(), tone })}>{t('market.saveBadge')}</Button>
           <Button disabled={busy || !badge} onClick={() => void save(null)}>{t('market.clearBadge')}</Button></Space>
       </div>}>
-    <Button disabled={busy}>{t('market.marketingBadge')}</Button>
+    <Button size="small" disabled={busy}>{t('market.marketingBadge')}</Button>
   </Popover>;
 }

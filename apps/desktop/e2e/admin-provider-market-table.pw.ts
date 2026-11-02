@@ -87,6 +87,7 @@ test('readers and reviewers only see actions their permissions allow', async ({ 
   await setupAdminTable(page, { role: 'read' });
   await expect(page.locator('tbody tr[data-row-key]')).toHaveCount(6);
   await expect(page.getByRole('checkbox')).toHaveCount(0);
+  await expect(page.getByRole('spinbutton')).toHaveCount(0);
   await expect(page.getByRole('button', { name: '批量删除', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '批量通过', exact: true })).toHaveCount(0);
 });
@@ -112,17 +113,63 @@ test('English and Russian copy work offline after language switching', async ({ 
   await page.screenshot({ path: info.outputPath('russian.png'), fullPage: true });
 });
 
-test('row ordering remains editable and can return to automatic order', async ({ page }) => {
+for (const dark of [false, true]) {
+  test(`inline order ${dark ? 'dark narrow' : 'light wide'} saves on blur with consistent actions`, async ({ page }, info) => {
+    await page.setViewportSize({ width: dark ? 760 : 1600, height: 1000 });
+    const state = await setupAdminTable(page, { dark });
+    const input = page.getByRole('spinbutton', { name: '调整 魔力方舟 的展示顺序', exact: true });
+    await expect(input).toHaveAttribute('placeholder', '自动排序');
+    await input.fill('2');
+    expect(state.mutations).toHaveLength(0);
+    await input.press('Tab');
+    await expect.poll(() => state.mutations.length).toBe(1);
+    await expect(input).toBeEnabled();
+    await expect(input).toHaveValue('2');
+    expect(state.mutations[0].body).toEqual({ sortOrder: 2, revision: 1 });
+    await input.focus();
+    await input.press('Tab');
+    expect(state.mutations).toHaveLength(1);
+    const actions = input.locator('xpath=ancestor::tr').locator('td:last-child .ant-btn');
+    const styles = await actions.evaluateAll(buttons => buttons.map(button => {
+      const style = getComputedStyle(button);
+      return [style.height, style.fontSize, style.paddingInline, style.borderRadius, style.borderStyle];
+    }));
+    expect(styles).toHaveLength(3);
+    expect(styles[1]).toEqual(styles[0]);
+    expect(styles[2]).toEqual(styles[0]);
+    await actions.last().scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath('inline-order-saved-actions.png'), animations: 'disabled' });
+    await input.fill('');
+    await input.press('Tab');
+    await expect.poll(() => state.mutations.length).toBe(2);
+    await expect(input).toBeEnabled();
+    await expect(input).toHaveValue('');
+    expect(state.mutations[1].body).toEqual({ sortOrder: null, revision: 2 });
+    await input.fill('0');
+    await input.press('Tab');
+    await expect.poll(() => state.mutations.length).toBe(3);
+    await expect(input).toBeEnabled();
+    expect(state.mutations[2].body).toEqual({ sortOrder: 0, revision: 3 });
+    state.setConflict(true);
+    await input.fill('8');
+    await input.press('Tab');
+    await expect(page.getByRole('alert')).toContainText('内容已更新');
+    await expect(input).toHaveValue('0');
+    await page.screenshot({ path: info.outputPath('inline-order-conflict.png'), animations: 'disabled' });
+  });
+}
+
+test('inline order normalizes integer bounds before saving on blur', async ({ page }) => {
   const state = await setupAdminTable(page);
-  await page.getByRole('button', { name: '调整 魔力方舟 的展示顺序', exact: true }).click();
-  await page.getByRole('spinbutton', { name: '展示序号（可留空）' }).fill('2');
-  await page.getByRole('button', { name: '保存顺序', exact: true }).click();
-  await expect(page.getByRole('button', { name: '调整 魔力方舟 的展示顺序', exact: true })).toHaveText('2');
-  expect(state.mutations[0].body).toEqual({ sortOrder: 2, revision: 1 });
-  await page.getByRole('button', { name: '调整 魔力方舟 的展示顺序', exact: true }).click();
-  await page.getByRole('button', { name: '恢复默认排序', exact: true }).click();
-  await expect(page.getByRole('button', { name: '调整 魔力方舟 的展示顺序', exact: true })).toHaveText('自动排序');
-  expect(state.mutations[1].body).toEqual({ sortOrder: null, revision: 2 });
+  const input = page.getByRole('spinbutton', { name: '调整 魔力方舟 的展示顺序', exact: true });
+  for (const [index, [typed, saved]] of [['-1', 0], ['1000001', 1_000_000], ['2.6', 3]].entries()) {
+    await input.fill(String(typed));
+    await input.press('Tab');
+    await expect.poll(() => state.mutations.length).toBe(index + 1);
+    await expect(input).toBeEnabled();
+    expect(state.mutations[index].body).toEqual({ sortOrder: saved, revision: index + 1 });
+    await expect(input).toHaveValue(String(saved));
+  }
 });
 
 test('bulk requests lock selection and prevent duplicate submission', async ({ page }) => {

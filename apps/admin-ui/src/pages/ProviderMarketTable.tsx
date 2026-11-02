@@ -1,6 +1,6 @@
 import type { Key } from 'react';
-import { useState } from 'react';
-import { Button, InputNumber, Popconfirm, Popover, Space, Table, Tag } from 'antd';
+import { useRef, useState } from 'react';
+import { Button, InputNumber, Popconfirm, Space, Table, Tag } from 'antd';
 import type { TableColumnsType } from 'antd';
 import type { MarketItem, MarketPage } from '../../../../shared/provider-market/types';
 import type { MarketText } from '../../../../shared/provider-market/i18n';
@@ -23,26 +23,29 @@ interface Props {
 function OrderEditor({ item, busy, t, mutate }: {
   item: MarketItem; busy: boolean; t: MarketText; mutate: MarketMutation;
 }) {
-  const [open, setOpen] = useState(false);
   const [value, setValue] = useState(item.sortOrder);
-  const save = async (sortOrder: number | null) => {
-    if (await mutate(`${MARKET_ENDPOINT}/${item.id}/order`, 'PATCH', { sortOrder, revision: item.revision })) {
-      setOpen(false);
+  const draft = useRef(item.sortOrder);
+  const saving = useRef(false);
+  const change = (next: number | null) => { draft.current = next; setValue(next); };
+  const save = async () => {
+    const sortOrder = draft.current;
+    if (busy || saving.current || sortOrder === item.sortOrder) return;
+    saving.current = true;
+    try {
+      const saved = await mutate(`${MARKET_ENDPOINT}/${item.id}/order`, 'PATCH', {
+        sortOrder, revision: item.revision,
+      });
+      if (!saved) change(item.sortOrder);
+    } finally {
+      saving.current = false;
     }
   };
-  return <Popover open={open} onOpenChange={next => { if (!busy) setOpen(next); }} trigger="click"
-    title={t('market.manualOrder')} overlayStyle={{ maxWidth: 400 }} content={<Space direction="vertical">
-      <InputNumber min={0} max={1_000_000} precision={0} value={value} disabled={busy}
-        aria-label={t('market.manualOrder')} placeholder={t('market.manualOrder')} onChange={setValue}
-        style={{ width: 220 }} />
-      <Space wrap><Button type="primary" disabled={busy} onClick={() => void save(value)}>
-        {t('market.saveOrder')}</Button>
-        <Button disabled={busy || item.sortOrder === null} onClick={() => void save(null)}>
-          {t('market.clearOrder')}</Button></Space>
-    </Space>}>
-    <Button type="link" disabled={busy} aria-label={t('market.editOrder', { name: item.name })}>
-      {item.sortOrder ?? t('market.automaticOrder')}</Button>
-  </Popover>;
+  // Let InputNumber normalize precision and bounds before its blur reaches this wrapper.
+  return <div onBlur={() => void save()}>
+    <InputNumber min={0} max={1_000_000} precision={0} value={value} disabled={busy} size="small"
+      aria-label={t('market.editOrder', { name: item.name })} placeholder={t('market.automaticOrder')}
+      onChange={change} style={{ width: '100%' }} />
+  </div>;
 }
 
 function RowActions({ item, props }: { item: MarketItem; props: Props }) {
@@ -76,7 +79,8 @@ export function ProviderMarketTable(props: Props) {
       render: (_, item) => <MarketStatus item={item} t={t} /> },
     { title: t('market.userCount'), dataIndex: 'userCount', width: 100, align: 'right' },
     { title: t('market.displayOrder'), key: 'order', width: 140, render: (_, item) => canOrder
-      ? <OrderEditor key={`${item.id}:${item.revision}`} item={item} busy={busy} t={t} mutate={props.mutate} />
+      ? <OrderEditor key={`${item.id}:${item.revision}`} item={item} busy={busy || loading} t={t}
+        mutate={props.mutate} />
       : item.sortOrder ?? t('market.automaticOrder') },
     { title: t('market.actions'), key: 'actions', width: 320,
       render: (_, item) => <RowActions item={item} props={props} /> },
