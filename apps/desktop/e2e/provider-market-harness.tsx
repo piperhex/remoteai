@@ -16,6 +16,7 @@ import { browserProviders } from './provider-browser-fixture';
 import { iconProviders } from './provider-icons-fixture';
 import { providerWebsiteOrigin } from '../../../shared/provider-market/providerWebsite';
 import { ChatDesktopAccountPicker } from '../../web/src/chat/ChatDesktopAccountPicker';
+import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
 import 'antd/dist/reset.css';
 import '../src/styles.css';
 
@@ -47,9 +48,11 @@ const adminApi = async <T,>(path: string, options?: RequestInit): Promise<T> => 
 function Harness() {
   const language = useLanguage();
   const [beats, setBeats] = useState(0);
+  const algorithms = [dark ? theme.darkAlgorithm : theme.defaultAlgorithm];
+  if (mode === 'local' || mode === 'hosted') algorithms.push(theme.compactAlgorithm);
   useEffect(() => { const timer = setInterval(() => setBeats((n) => n + 1), 50);
     return () => clearInterval(timer); }, []);
-  return <ConfigProvider theme={{ algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm,
+  return <ConfigProvider theme={{ algorithm: algorithms,
     token: { motion: false } }}><App><main className={mode === 'local' || mode === 'hosted' ? 'providers-main' : ''}
       style={{ padding: 24, height: '100vh', display: 'flex', flexDirection: 'column' }}>
     <output data-testid="beats">{beats}</output>
@@ -82,4 +85,4 @@ function Harness() {
       onSwitchAccount={yes} onSwitchProvider={yes} onSwitchProviderGroup={yes} />}
   </main></App></ConfigProvider>;
 }
-createRoot(document.getElementById('root')!).render(<Harness />);
+createRoot(document.getElementById('root')!).render(<ApplicationTypography><Harness /></ApplicationTypography>);
