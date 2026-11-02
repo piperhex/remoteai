@@ -122,6 +122,9 @@
 .pm-card > .ant-space { display: flex; margin-block: 6px; }
 .pm-muted { opacity: .68; font-size: 13px; }
 .pm-editor, .pm-editor fieldset, .pm-detail, .pm-install, .pm-balance-editor { display: grid; gap: 16px; }
+.pm-api-key { display: grid; gap: 6px; min-width: 0; }
+.pm-api-key-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.pm-api-key-heading .ant-btn { max-width: 100%; height: auto; white-space: normal; }
 .pm-editor fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 .provider-market label:not(.ant-checkbox-wrapper) { display: grid; gap: 6px; min-width: 0; }
 .pm-row > label { flex: 1 1 180px; }

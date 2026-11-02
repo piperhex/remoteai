@@ -138,6 +138,7 @@
   "market.pageHint": "打开页面时会附加这些参数和请求头。发布后所有人都能查看，请勿填写私人密钥或密码。",
   "market.pageRequired": "请填写有效的页面地址，并检查查询字符串和请求头。",
   "market.visitPage": "前往页面",
+  "market.visitHomepage": "前往 Provider 首页",
   "market.browserTitle": "Provider 浏览器",
   "market.browserBack": "后退",
   "market.browserForward": "前进",

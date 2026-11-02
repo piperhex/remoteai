@@ -138,6 +138,7 @@
   "market.pageHint": "ページを開く際にこれらのパラメーターとヘッダーを送信します。公開後は誰でも閲覧できるため、個人のキーやパスワードを入力しないでください。",
   "market.pageRequired": "有効なページ URL を入力し、クエリ文字列とヘッダーを確認してください。",
   "market.visitPage": "ページを開く",
+  "market.visitHomepage": "Provider のホームページを開く",
   "market.browserTitle": "Provider ブラウザー",
   "market.browserBack": "戻る",
   "market.browserForward": "進む",

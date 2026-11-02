@@ -259,7 +259,7 @@ export function ProvidersPage({
         <Space size={[8, 8]} wrap>
           <ProviderAddMenu onAddPreset={() => setShowPresetModal(true)} onAddOpenAi={openCreateOpenAi}
             onAddProvider={openCreate} t={t} />
-          <MarketLauncher client={marketClient} language={language} />
+          <MarketLauncher client={marketClient} language={language} onOpenPage={browser.openMarketItem} />
           <Button className="provider-topbar-button" icon={<Network size={14} />}
             onClick={() => setShowAggregateManager(true)}>
             {t("providers.aggregate.manage")}
@@ -285,7 +285,7 @@ export function ProvidersPage({
           <Space size={[8, 8]} wrap>
             <ProviderAddMenu onAddPreset={() => setShowPresetModal(true)} onAddOpenAi={openCreateOpenAi}
               onAddProvider={openCreate} t={t} />
-            <MarketLauncher client={marketClient} language={language} />
+            <MarketLauncher client={marketClient} language={language} onOpenPage={browser.openMarketItem} />
             <Button icon={<Network size={14} />} onClick={() => setShowAggregateManager(true)}>
               {t("providers.aggregate.manage")}
             </Button>

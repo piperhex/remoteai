@@ -2,7 +2,7 @@ import { useId, useMemo, type CSSProperties } from 'react';
 import { Alert, Button, Modal, theme } from 'antd';
 import type { Language } from '@remoteai/i18n';
 import { marketText } from './i18n';
-import type { MarketClient } from './types';
+import type { MarketClient, MarketItem } from './types';
 import { useMarket } from './useMarket';
 import { MarketAddDialog } from './MarketAddDialog';
 import { MarketEditor, MarketEditorActions } from './MarketEditor';
@@ -10,8 +10,9 @@ import { MarketToolbar } from './MarketToolbar';
 import { MarketFeed } from './MarketFeed';
 import './market.css';
 
-export function MarketView({ client, language, initialId, onClose }: {
+export function MarketView({ client, language, initialId, onOpenPage, onClose }: {
   client: MarketClient; language: Language; initialId?: string; onClose: () => void;
+  onOpenPage?: (item: MarketItem) => void;
 }) {
   const t = useMemo(() => marketText(language), [language]);
   const { token } = theme.useToken();
@@ -22,7 +23,7 @@ export function MarketView({ client, language, initialId, onClose }: {
   const feedback = <>{error}{market.notice && <Alert type="success" showIcon message={t(market.notice)} />}</>;
   if (market.selected) return <MarketAddDialog key={`${market.selected.id}:${market.identity?.userId ?? ''}`}
     item={market.selected} t={t} busy={market.busy} error={error} onClose={() => market.setSelected(null)}
-    onAdd={client.add ? market.add : undefined} mode={client.addition?.(market.identity)} />;
+    onAdd={client.add ? market.add : undefined} mode={client.addition?.(market.identity)} onOpenPage={onOpenPage} />;
   return <Modal open centered title={t('market.title')} width="85vw"
     footer={market.editor ? <MarketEditorActions formId={editorFormId} t={t} busy={market.busy}
       onCancel={() => market.setEditor(null)} /> : null}

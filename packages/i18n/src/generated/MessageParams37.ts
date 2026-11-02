@@ -75,6 +75,7 @@ export interface MessageParams37 {
   "market.userCount": Record<string, never>;
   "market.users": { "count": string | number };
   "market.viewDetails": Record<string, never>;
+  "market.visitHomepage": Record<string, never>;
   "market.visitPage": Record<string, never>;
   "market.webAddInfo": Record<string, never>;
   "market.webAnonymousAdd": Record<string, never>;
@@ -199,5 +200,4 @@ export interface MessageParams37 {
   "providers.aggregate.manage": Record<string, never>;
   "providers.aggregate.manageTitle": Record<string, never>;
   "providers.aggregate.members": Record<string, never>;
-  "providers.aggregate.membersPlaceholder": Record<string, never>;
 }

@@ -138,6 +138,7 @@
   "market.pageHint": "These parameters and headers are sent when opening the page. Published settings are public; do not include private keys or passwords.",
   "market.pageRequired": "Enter a valid page URL and check the query string and headers.",
   "market.visitPage": "Visit page",
+  "market.visitHomepage": "Visit Provider homepage",
   "market.browserTitle": "Provider browser",
   "market.browserBack": "Back",
   "market.browserForward": "Forward",

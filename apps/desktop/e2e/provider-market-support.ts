@@ -46,10 +46,12 @@ export async function setupMarket(page: Page, mode: string, authenticated = true
   const publications: Record<string, unknown>[] = [];
   const removals: Record<string, unknown>[] = [];
   const discoveryRequests: Record<string, unknown>[] = [];
+  const browserRequests: Record<string, unknown>[] = [];
   let discover = async (_request: Record<string, unknown>): Promise<string[]> => ['model-z', 'model-new'];
   let item = fixtureItem();
   let userId = authenticated ? 'alice' : '';
   const exchange = async (call: Call): Promise<unknown> => {
+    if (call.command === 'provider_browser_sync') browserRequests.push(call.args.request as Record<string, unknown>);
     if (call.command === 'fetch_relay_models') {
       const request = call.args.request as Record<string, unknown>;
       discoveryRequests.push(request);
@@ -88,7 +90,7 @@ export async function setupMarket(page: Page, mode: string, authenticated = true
     if (authenticated) localStorage.setItem('codex-switch.web.session.v1', JSON.stringify({
       baseUrl: location.origin, email: 'alice@test.invalid', accessToken: 'fixture', refreshToken: 'fixture',
     }));
-    if (mode === 'local') Object.assign(window, { __TAURI_INTERNALS__: {
+    if (mode === 'local') Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: {
       invoke: (command: string, args: Record<string, unknown>) =>
         (window as unknown as { marketInvoke: (command: string, args: Record<string, unknown>) => Promise<unknown> })
           .marketInvoke(command, args), transformCallback: () => 1, unregisterCallback: () => {},
@@ -118,7 +120,7 @@ export async function setupMarket(page: Page, mode: string, authenticated = true
     }
     await route.fulfill({ json: item });
   });
-  return { saved, publications, removals, discoveryRequests,
+  return { saved, publications, removals, discoveryRequests, browserRequests,
     setDiscovery: (handler: typeof discover) => { discover = handler; },
     switchAccount: () => { userId = 'bob'; },
     setItem: (value: MarketItem) => { item = value; } };

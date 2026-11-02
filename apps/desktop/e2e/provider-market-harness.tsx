@@ -50,7 +50,8 @@ function Harness() {
   useEffect(() => { const timer = setInterval(() => setBeats((n) => n + 1), 50);
     return () => clearInterval(timer); }, []);
   return <ConfigProvider theme={{ algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-    token: { motion: false } }}><App><main style={{ padding: 24 }}>
+    token: { motion: false } }}><App><main className={mode === 'local' || mode === 'hosted' ? 'providers-main' : ''}
+      style={{ padding: 24, height: '100vh', display: 'flex', flexDirection: 'column' }}>
     <output data-testid="beats">{beats}</output>
     {mode === 'local' || mode === 'hosted' ? <>
       <div id="provider-topbar-actions" />
