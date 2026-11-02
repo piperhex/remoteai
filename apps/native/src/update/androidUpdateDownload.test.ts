@@ -57,7 +57,24 @@ beforeEach(() => {
   native.listen.mockReturnValue({ remove: native.remove });
 });
 
-afterEach(() => { vi.useRealTimers(); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+
+describe('Android update checks after the release rename', () => {
+  it.each(['RemoteAI', 'CodexSwitch'])('checks and preserves the %s APK download metadata', async brand => {
+    const name = `${brand}-android-v2.1.13.apk`;
+    const url = `https://github.com/piperhex/remoteai/releases/download/v2.1.13/${name}`;
+    const sha256 = 'a'.repeat(64);
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({
+      tag_name: 'v2.1.13', html_url: 'https://github.com/piperhex/remoteai/releases/tag/v2.1.13',
+      assets: [{ name, browser_download_url: url, size: 100, digest: `sha256:${sha256}` }],
+    }) }));
+    const update = await import('./appUpdate');
+    const result = await update.checkForAppUpdate();
+    expect(result.updateAvailable).toBe(true);
+    expect(result.release.version).toBe('2.1.13');
+    expect(result.release.androidAsset).toEqual({ name, downloadUrl: url, size: 100, sha256 });
+  });
+});
 
 describe('Android update recovery after restarting the app', () => {
   it('restores system download bytes after restart, updates speed, and offers the completed APK', async () => {

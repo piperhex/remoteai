@@ -7,6 +7,7 @@ import ruRU from "antd/locale/ru_RU";
 import jaJP from "antd/locale/ja_JP";
 import { CalendarClock, Check, CircleHelp, PanelLeftClose, PanelLeftOpen, Play, Plus, RefreshCw, RotateCcw, ShieldCheck } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { findAndroidReleaseAsset } from "../../../../../shared/app-update/androidRelease";
 import {
   chooseAndExportDiagnosticLogs,
   copyWebProxyLanApiKey,
@@ -936,9 +937,7 @@ export function DashboardApp() {
       const release = await response.json() as {
         assets?: Array<{ name?: string; browser_download_url?: string }>;
       };
-      const apkUrl = release.assets?.find((asset) => (
-        /^CodexSwitch-android-.+\.apk$/i.test(asset.name ?? "")
-      ))?.browser_download_url;
+      const apkUrl = findAndroidReleaseAsset(release.assets)?.browser_download_url;
       openExternalUrl(apkUrl ?? releasePageUrl);
     } catch {
       openExternalUrl(releasePageUrl);

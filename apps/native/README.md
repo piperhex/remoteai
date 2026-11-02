@@ -64,7 +64,10 @@ npm run ios -w @codex-switch/native
 
 `npm run export:android -w @codex-switch/native` 可在不启动模拟器的情况下校验 Android JS bundle。
 
-每个版本 tag 的 GitHub Release 会构建 `CodexSwitch-android.apk`，以及未签名的 iOS Release `.app.zip`。iOS 压缩包用于 CI 构建验证；如需安装到真机或提交 App Store，仍需在 CI 中配置 Apple 证书与 provisioning profile 以导出签名 IPA。
+每个版本 tag 的 GitHub Release 会构建 `RemoteAI-android-v<版本>.apk`，以及未签名的
+`RemoteAI-ios-unsigned.app.zip`。更新检索同时兼容旧版 `CodexSwitch-android-*.apk`。
+Android 应用标识保持 `com.codexswitch.mobile`，确保已有安装可以正常升级。
+iOS 压缩包用于 CI 构建验证；如需安装到真机或提交 App Store，仍需在 CI 中配置 Apple 证书与 provisioning profile 以导出签名 IPA。
 
 本地交付 Android 安装包请在仓库根目录运行 `npm run build:apk`。该命令重新构建四种架构的原生依赖，
 避免复用模拟器构建留下的 JNI 复制结果；Expo 的 `prebuild --clean` 本身不会清理依赖模块的构建输出。

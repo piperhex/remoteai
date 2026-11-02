@@ -7,6 +7,7 @@ import { getAndroidDownloadSnapshot } from './androidDownloadStatus';
 import { downloadSharedAndroidUpdate, downloadOfficialAndroidUpdate,
   cancelNativeAndroidUpdate, nativeUpdatePath, verifyAndroidPackage } from './androidSharedDownload';
 import { compareAppVersions, versionFromReleaseMetadata } from '../../../../shared/app-update/version';
+import { findAndroidReleaseAsset } from '../../../../shared/app-update/androidRelease';
 import { subscribeAndroidDownloadProgress, type AndroidDownloadProgress } from './androidDownloadProgress';
 import { prepareUpdateNotifications } from './androidUpdateNotifications';
 import { AndroidDownloadReporting } from './androidDownloadReporting';
@@ -100,13 +101,7 @@ function numberValue(value: unknown) {
 }
 
 function androidAssetFrom(value: unknown): AndroidReleaseAsset | null {
-  if (!Array.isArray(value)) return null;
-  const assets = value as GitHubReleaseAsset[];
-  const asset = assets.find((candidate) => {
-    const name = textValue(candidate.name);
-    const contentType = textValue(candidate.content_type);
-    return /\.apk$/i.test(name) && (/android/i.test(name) || contentType === APK_MIME_TYPE);
-  });
+  const asset = findAndroidReleaseAsset(value);
   if (!asset) return null;
   const name = textValue(asset.name);
   const downloadUrl = textValue(asset.browser_download_url);

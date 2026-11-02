@@ -12,8 +12,8 @@ const INSTALLERS = [
   "Codex.Switch_1.2.3_macos-x64.dmg",
   "Codex.Switch_1.2.3_linux-amd64.deb",
   "Codex.Switch_1.2.3_linux-amd64.AppImage",
-  "CodexSwitch-android-v1.2.3.apk",
-  "CodexSwitch-ios-unsigned.app.zip",
+  "RemoteAI-android-v1.2.3.apk",
+  "RemoteAI-ios-unsigned.app.zip",
 ];
 
 function fixture(body = "Release notes") {
@@ -49,6 +49,19 @@ test("groups installable release assets by platform and architecture", () => {
   assert.doesNotMatch(body, /untagged-draft/);
   assert.match(body, /\/releases\/download\/v1\.2\.3\//);
   assert.match(body, /## 更新内容\n\nRelease notes$/);
+  assert.match(body, /\/RemoteAI-android-v1\.2\.3\.apk\)/);
+  assert.match(body, /\/RemoteAI-ios-unsigned\.app\.zip\)/);
+});
+
+test("keeps download links compatible with legacy mobile release names", () => {
+  const release = fixture();
+  for (const asset of release.assets) {
+    asset.name = asset.name.replace("RemoteAI-", "CodexSwitch-");
+    asset.browser_download_url = asset.browser_download_url.replace("RemoteAI-", "CodexSwitch-");
+  }
+  const body = createReleaseBody(release);
+  assert.match(body, /\/CodexSwitch-android-v1\.2\.3\.apk\)/);
+  assert.match(body, /\/CodexSwitch-ios-unsigned\.app\.zip\)/);
 });
 
 test("replaces its generated section without duplicating release notes", () => {

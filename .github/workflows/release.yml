@@ -502,6 +502,11 @@ jobs:
       - name: Type-check native app
         run: npm run check -w @codex-switch/native
 
+      - name: Test Android update discovery
+        run: >-
+          npm run test -w @codex-switch/native --
+          src/update/androidRelease.test.ts src/update/androidUpdateDownload.test.ts
+
       - name: Generate Android project
         working-directory: apps/native
         run: npm run prebuild:android
@@ -546,13 +551,15 @@ jobs:
       - name: Prepare APK asset
         env:
           TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-        run: cp apps/native/android/app/build/outputs/apk/release/app-release.apk "apps/native/CodexSwitch-android-${TAG_NAME}.apk"
+        run: >-
+          cp apps/native/android/app/build/outputs/apk/release/app-release.apk
+          "apps/native/RemoteAI-android-${TAG_NAME}.apk"
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CodexSwitch-android-apk-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-          path: apps/native/CodexSwitch-android-*.apk
+          name: RemoteAI-android-apk-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          path: apps/native/RemoteAI-android-*.apk
           if-no-files-found: error
 
       - name: Upload APK to GitHub Release
@@ -562,7 +569,7 @@ jobs:
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
           draft: ${{ needs.create-release.outputs.release_draft }}
-          files: apps/native/CodexSwitch-android-*.apk
+          files: apps/native/RemoteAI-android-*.apk
           fail_on_unmatched_files: true
 
   native-ios:
@@ -641,13 +648,13 @@ jobs:
         run: >-
           ditto -c -k --sequesterRsrc --keepParent
           build/Build/Products/Release-iphoneos/RemoteAI.app
-          CodexSwitch-ios-unsigned.app.zip
+          RemoteAI-ios-unsigned.app.zip
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
-          name: CodexSwitch-ios-unsigned-app
-          path: apps/native/CodexSwitch-ios-unsigned.app.zip
+          name: RemoteAI-ios-unsigned-app
+          path: apps/native/RemoteAI-ios-unsigned.app.zip
           if-no-files-found: error
 
       - name: Upload iOS build to GitHub Release
@@ -657,7 +664,7 @@ jobs:
         with:
           tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
           draft: ${{ needs.create-release.outputs.release_draft }}
-          files: apps/native/CodexSwitch-ios-unsigned.app.zip
+          files: apps/native/RemoteAI-ios-unsigned.app.zip
           fail_on_unmatched_files: true
 
   dream-skin-resources:

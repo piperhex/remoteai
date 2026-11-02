@@ -1,3 +1,5 @@
+import { findAndroidReleaseAsset } from "../../../../shared/app-update/androidRelease";
+
 const LATEST_RELEASE_API = "https://api.github.com/repos/piperhex/remoteai/releases/latest";
 
 interface GitHubReleaseAsset {
@@ -19,9 +21,7 @@ export async function getLatestAndroidApkUrl() {
   }
 
   const release = await response.json() as GitHubRelease;
-  const apk = release.assets?.find((asset) =>
-    asset.name?.toLowerCase().endsWith(".apk") && asset.browser_download_url
-  );
+  const apk = findAndroidReleaseAsset(release.assets);
 
   if (!apk?.browser_download_url) {
     throw new Error("The latest GitHub release does not contain an APK");
