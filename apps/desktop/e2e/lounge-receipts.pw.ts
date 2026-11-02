@@ -61,6 +61,7 @@ for (const mode of ['local', 'remote', 'web', 'mobile']) {
     await selectBob(); await expect(page.getByText('deduplicated-private', { exact: true })).toHaveCount(1);
     await openLoungeAction(page, '历史记录');
     await page.getByRole('textbox', { name: '搜索消息或账户' }).fill('ack-retry');
-    await expect(page.locator('.lounge-history').getByRole('img', { name: '对方已阅读', exact: true })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: '历史记录', exact: true })
+      .getByRole('img', { name: '对方已阅读', exact: true })).toBeVisible();
   });
 }

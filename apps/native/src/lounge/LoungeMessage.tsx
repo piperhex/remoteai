@@ -14,17 +14,20 @@ import { LoungeSender } from './LoungeSender';
 import type { LoungeReply } from '../../../../shared/lounge/reply';
 import type { LoungeController } from '../../../../shared/lounge/controller';
 import type { MenuAnchor } from '../../../../shared/lounge/messageMenuLayout';
+import { HISTORY_MESSAGE_FONT_SIZE, useHistoryStyles } from './historyStyles';
 
 const MESSAGE_AVATAR_TOUCH_PADDING = 7;
 
 export function LoungeAvatar({ user, size, onDirect, onProfile, onLongPress, onMention }: {
-  user: LoungeAccount; size?: 'small' | 'profile'; onDirect?: () => void;
+  user: LoungeAccount; size?: 'small' | 'profile' | 'history'; onDirect?: () => void;
   onProfile?: () => void; onLongPress?: () => void; onMention?: () => void;
 }) {
   const styles = useLoungeStyles();
+  const historyStyles = useHistoryStyles();
   const mentionPending = useRef(false);
-  const small = size === 'small';
-  const avatarStyle = [styles.avatar, small && styles.messageAvatar, size === 'profile' && styles.profileAvatar];
+  const small = size === 'small' || size === 'history';
+  const avatarStyle = [styles.avatar, small && styles.messageAvatar, size === 'profile' && styles.profileAvatar,
+    size === 'history' && historyStyles.avatar];
   const avatar = user.avatar ? <Image source={{ uri: user.avatar }}
     style={avatarStyle} />
     : <View style={avatarStyle}>
@@ -60,37 +63,49 @@ interface Props {
   direct?: () => void; block?: () => void; blocked?: boolean;
   profile?: () => void; mention?: () => void;
   controller: LoungeController; locate?: (reference: LoungeReply) => void; highlighted?: boolean;
+  history?: boolean;
 }
 export function LoungeMessage({ message, own, manage, preview, onImageLoad, reply, direct, block, blocked,
-  profile, mention, controller, locate, highlighted }: Props) {
+  profile, mention, controller, locate, highlighted, history = false }: Props) {
   const styles = useLoungeStyles();
+  const historyStyles = useHistoryStyles();
   const [menu, setMenu] = useState<MenuAnchor>();
   const bubble = useRef<View>(null);
   const [availableWidth, setAvailableWidth] = useState(0);
   const { fontScale } = useWindowDimensions();
-  const minWidth = Math.min(availableWidth, messageMinimumWidth(message.text, fontScale));
+  const minWidth = Math.min(availableWidth,
+    messageMinimumWidth(message.text, fontScale, history ? HISTORY_MESSAGE_FONT_SIZE : undefined));
+  const timestamp = new Date(message.sentAt).toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' });
   const openMenu = reply ? () => bubble.current?.measureInWindow((x, y, width, height) => {
     if (width && height) setMenu({ x, y, width, height });
   }) : undefined;
-  return <View style={[styles.message, own && styles.own, highlighted && styles.highlighted]}>
-    <LoungeAvatar user={message.sender} size="small" onDirect={direct} onProfile={profile} onMention={mention} />
+  return <View style={[styles.message, own && styles.own, highlighted && styles.highlighted,
+    history && historyStyles.message]}>
+    <LoungeAvatar user={message.sender} size={history ? 'history' : 'small'} onDirect={direct}
+      onProfile={profile} onMention={mention} />
     <View style={[styles.messageMain, own && styles.ownMain]}
       onLayout={event => setAvailableWidth(event.nativeEvent.layout.width)}>
       <LoungeSender user={message.sender} manage={!own && manage ? () => manage(message.sender) : undefined} />
       <Pressable ref={bubble} onLongPress={openMenu} style={[styles.bubble, own && styles.ownBubble,
+        history && historyStyles.bubble, history && own && historyStyles.ownBubble,
         { minWidth }, message.reply && styles.quotedBubble,
         !message.text.trim() && !message.reply && styles.imageOnly]}>
         {message.reply && <LoungeReplyPreview reply={message.reply} controller={controller}
           locate={locate} onLongPress={openMenu} />}
-        {!!message.text && <Text selectable={!reply} onLongPress={openMenu} style={styles.messageText}>{message.text}</Text>}
+        {!!message.text && <Text selectable={!reply} onLongPress={openMenu}
+          style={[styles.messageText, history && historyStyles.messageText]}>{message.text}</Text>}
         {message.attachments?.map(file => <LoungeAttachment key={file.id} file={file}
           controller={controller} preview={preview} onLoad={onImageLoad} onLongPress={openMenu} />)}
         {message.images.map((uri, index) => <LoungeImage key={index} uri={uri} preview={preview}
           onLongPress={openMenu} onLoad={onImageLoad} />)}
       </Pressable>
-      <Text style={styles.messageTime}>{new Date(message.sentAt).toLocaleTimeString(getLocale(),
-        { hour: '2-digit', minute: '2-digit' })}</Text>
-      <LoungeDeliveryStatus delivery={message.delivery} />
+      {history ? <View style={historyStyles.footer}>
+        <Text style={historyStyles.time}>{timestamp}</Text>
+        <LoungeDeliveryStatus delivery={message.delivery} inline />
+      </View> : <>
+        <Text style={styles.messageTime}>{timestamp}</Text>
+        <LoungeDeliveryStatus delivery={message.delivery} />
+      </>}
     </View>
     {menu && reply && <LoungeMessageActions anchor={menu} message={message} reply={reply} close={() => setMenu(undefined)}
       direct={direct} block={block} blocked={blocked} />}

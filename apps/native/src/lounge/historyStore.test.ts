@@ -1,7 +1,7 @@
 import { beforeAll, afterAll, expect, it, vi } from 'vitest';
 import initSqlJs, { type Database, type BindParams } from 'sql.js';
 import { nativeLoungeHistory } from './historyStore';
-import { historyScope, recentMessages } from '../../../../shared/lounge/archive';
+import { historyPosition, historyScope, recentMessages } from '../../../../shared/lounge/archive';
 import { orderedDirectContacts } from '../../../../shared/lounge/contacts';
 import type { LoungeMessage } from '../../../../shared/lounge/types';
 
@@ -29,6 +29,22 @@ afterAll(() => state.db?.close());
 const store = () => nativeLoungeHistory('https://cloud.test/', 'Alice@example.test');
 const message = (id: string): LoungeMessage => ({ type: 'message', id, text: `hello ${id}`, images: [],
   sender: { id: 'bob', account: 'Bob@example.test' }, sentAt: '2026-10-28T00:00:00Z' });
+
+it('pages toward newer records with exclusive cursors, account isolation and search filters', async () => {
+  const history = nativeLoungeHistory('https://cloud.test', 'timeline');
+  for (let index = 0; index < 90; index++) {
+    const value = { ...message(String(index).padStart(3, '0')), conversation: 'bob' };
+    await history.save(value);
+  }
+  await history.save({ ...message('other-room'), conversation: 'carol' });
+  const page = await history.page({ query: 'hello', conversation: 'bob', after: historyPosition(message('030')), limit: 20 });
+  expect(page.messages.map(value => Number(value.id))).toEqual(Array.from({ length: 20 }, (_, index) => 50 - index));
+  expect(page.next?.key).toBe(historyPosition(message('050')).key);
+  const next = await history.page({ query: 'hello', conversation: 'bob', after: page.next, limit: 20 });
+  expect(next.messages.map(value => Number(value.id))).toEqual(Array.from({ length: 20 }, (_, index) => 70 - index));
+  expect((await nativeLoungeHistory('https://cloud.test', 'other-timeline')
+    .page({ query: '', after: historyPosition(message('030')) })).messages).toEqual([]);
+});
 
 it('upgrades legacy contact ordering from archived messages and retains pins across restart per account', async () => {
   const account = 'legacy-order';

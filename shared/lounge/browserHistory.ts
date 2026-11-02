@@ -69,10 +69,11 @@ async function search(scope: string, query: HistoryQuery) {
   const finished = complete(transaction);
   const terms = historyTerms(query.query);
   const upper = query.before ? [scope, query.before.time, query.before.key] : [scope, Number.MAX_SAFE_INTEGER, []];
-  const range = IDBKeyRange.bound([scope, -Number.MAX_SAFE_INTEGER, ''], upper, false, !!query.before);
+  const lower = query.after ? [scope, query.after.time, query.after.key] : [scope, -Number.MAX_SAFE_INTEGER, ''];
+  const range = IDBKeyRange.bound(lower, upper, !!query.after, !!query.before);
   const values: LoungeMessage[] = [];
   let bytes = 0;
-  const cursor = transaction.objectStore(META).index('timeline').openCursor(range, 'prev');
+  const cursor = transaction.objectStore(META).index('timeline').openCursor(range, query.after ? 'next' : 'prev');
   cursor.onsuccess = () => {
     const row = cursor.result;
     if (!row || values.length > historyPageLimit(query) || bytes > RECENT_BYTE_LIMIT) return;

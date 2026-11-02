@@ -418,11 +418,14 @@ export class LoungeController {
       if (query.conversation !== undefined && (message.conversation ?? '') !== query.conversation) return false;
       if (query.pendingOnly && !needsDeliveryWork(message.delivery)) return false;
       const position = historyPosition(message);
+      if (query.after && (position.time < query.after.time
+        || position.time === query.after.time && position.key <= query.after.key)) return false;
       return !query.before || position.time < query.before.time
         || position.time === query.before.time && position.key < query.before.key;
     }).sort((a, b) => {
       const first = historyPosition(a); const second = historyPosition(b);
-      return second.time - first.time || (first.key < second.key ? 1 : -1);
+      const order = second.time - first.time || (first.key < second.key ? 1 : -1);
+      return query.after ? -order : order;
     });
     return historyPage(matches.map(this.profiles.message), query);
   }

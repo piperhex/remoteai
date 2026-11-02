@@ -28,6 +28,7 @@ import { verifyNativeAccountPrivacy } from './lounge-account-privacy-check.mjs';
 import { verifyNativeGestures } from './lounge-gestures-check.mjs';
 import { verifyNativeLoungeScroll } from './lounge-scroll-check.mjs';
 import { verifyNativePrivateScroll } from './lounge-private-scroll-check.mjs';
+import { verifyNativeHistory } from './lounge-history-check.mjs';
 
 const exec = promisify(execFile);
 const root = fileURLToPath(new URL('../../../', import.meta.url));
@@ -266,7 +267,7 @@ try {
     await adb('shell', 'am', 'force-stop', app);
     await adb('shell', 'pm', 'clear', app);
     await adb('shell', 'am', 'start', '-W', '-n', `${app}/com.codexswitch.mobile.MainActivity`);
-    await find('在线交流'); if (scale === 1.3) await tap('Light fixture');
+    await find('在线交流'); if (scale === 1.3 && process.env.LOUNGE_HISTORY_ONLY !== '1') await tap('Light fixture');
     await find('1'); await screenshot(`discovery-${scale}`);
     if (process.env.LOUNGE_SETTINGS_AVATAR_ONLY === '1') {
       await verifyNativeSettingsAvatar({ tap, find, screenshot, image, scale, saves: () => avatarSaves,
@@ -277,6 +278,10 @@ try {
       continue;
     }
     await tap('在线交流'); await find('搜索聊天');
+    if (process.env.LOUNGE_HISTORY_ONLY === '1') {
+      await verifyNativeHistory({ tap, find, nodes, adb, screenshot, broadcast, scale, longPress, hideKeyboard, image, sent });
+      continue;
+    }
     if (process.env.LOUNGE_PRIVATE_SCROLL_ONLY === '1') {
       await verifyNativePrivateScroll({ adb, tap, find, nodes, screenshot, scale, broadcast, incoming, image });
       continue;
@@ -421,7 +426,7 @@ try {
     await tap('消息'); await adb('shell', 'input', 'text', 'Draft');
     await hideKeyboard();
     await tap('添加内容'); await tap('历史记录'); await tap('搜索消息或账户'); await adb('shell', 'input', 'text', unique);
-    await find('本页 1 条记录'); await hideKeyboard(); await screenshot(`history-${scale}`);
+    await find(unique); await hideKeyboard(); await screenshot(`history-${scale}`);
     await find('查看原消息');
     await tap('返回聊天'); await find('Draft');
     broadcast(incoming('私聊入口测试'));
@@ -486,12 +491,12 @@ try {
     assert.ok(!(await nodes()).some(node => node.text === '1'), 'Restored messages must not add unread');
     await tap('在线交流'); await tap('群聊');
     await tap('添加内容'); await tap('历史记录'); await tap('搜索消息或账户');
-    await adb('shell', 'input', 'text', unique); await find('本页 1 条记录'); await find(unique);
+    await adb('shell', 'input', 'text', unique); await find(unique);
     await find('查看原消息');
     await hideKeyboard(); await screenshot(`offline-restart-${scale}`);
     await tap('返回聊天'); await tap('聊天'); await tap('与 bob 私聊');
     await tap('添加内容'); await tap('历史记录'); await tap('搜索消息或账户'); await adb('shell', 'input', 'text', `Private-${unique}`);
-    await find('本页 1 条记录'); await find('对方已阅读');
+    await find(`Private-${unique}`); await find('对方已阅读');
     await hideKeyboard(); await screenshot(`private-offline-${scale}`);
     assert.equal(sockets.clients.size, 0, 'Search must work without a connection');
     console.log(`PASS native lounge at font scale ${scale}: history survives offline restart; discovery, send, moderation`);

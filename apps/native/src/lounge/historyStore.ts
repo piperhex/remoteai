@@ -54,9 +54,14 @@ async function search(db: SQLiteDatabase, scope: string, query: HistoryQuery) {
     conditions.push('(time < ? OR (time = ? AND key < ?))');
     parameters.push(query.before.time, query.before.time, query.before.key);
   }
+  if (query.after) {
+    conditions.push('(time > ? OR (time = ? AND key > ?))');
+    parameters.push(query.after.time, query.after.time, query.after.key);
+  }
   // Select keys first so image-heavy pages never allocate the full matched payload set.
+  const order = query.after ? 'ASC' : 'DESC';
   const rows = await db.getAllAsync<{ key: string }>(
-    `SELECT key FROM messages WHERE ${conditions.join(' AND ')} ORDER BY time DESC, key DESC LIMIT ?`,
+    `SELECT key FROM messages WHERE ${conditions.join(' AND ')} ORDER BY time ${order}, key ${order} LIMIT ?`,
     ...parameters, historyPageLimit(query) + 1);
   const messages: LoungeMessage[] = [];
   let bytes = 0;

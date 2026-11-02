@@ -34,6 +34,7 @@
     "@noble/curves": "^1.9.7",
     "@noble/hashes": "^1.8.0",
     "@reduxjs/toolkit": "^2.8.2",
+    "@remoteai/i18n": "0.1.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
     "antd": "^5.29.3",
@@ -43,6 +44,7 @@
     "lucide-react": "^0.468.0",
     "mermaid": "^11.16.0",
     "pdfjs-dist": "5.4.624",
+    "rc-virtual-list": "^3.19.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
@@ -51,7 +53,6 @@
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
-    "@remoteai/i18n": "0.1.0",
     "zmodem.js": "^0.1.10"
   },
   "devDependencies": {

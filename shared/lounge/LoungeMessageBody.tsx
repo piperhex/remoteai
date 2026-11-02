@@ -7,10 +7,12 @@ import { LoungeDeliveryStatus } from './LoungeDeliveryStatus';
 import type { LoungeController } from './controller';
 import type { LoungeReply } from './reply';
 
-export function LoungeMessageBody({ message, preview, onImageLoad, actions, controller, locate, mobile }: {
+export function LoungeMessageBody({ message, preview, onImageLoad, actions, controller, locate, mobile,
+  showDelivery = true }: {
   message: LoungeMessage; preview: (source: string) => void; onImageLoad?: () => void;
   actions?: LoungeMessageMenuActions;
   mobile?: boolean;
+  showDelivery?: boolean;
   controller?: LoungeController; locate?: (reference: LoungeReply) => void;
 }) {
   const bubble = <div className={`lounge-bubble${!message.text.trim() && message.images.length && !message.reply
@@ -26,5 +28,5 @@ export function LoungeMessageBody({ message, preview, onImageLoad, actions, cont
     </button>)}
   </div>;
   return <>{actions ? <LoungeMessageMenu mobile={mobile} message={message} {...actions}>{bubble}</LoungeMessageMenu> : bubble}
-    <LoungeDeliveryStatus delivery={message.delivery} /></>;
+    {showDelivery && <LoungeDeliveryStatus delivery={message.delivery} />}</>;
 }

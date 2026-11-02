@@ -116,12 +116,12 @@ for (const mode of ['local', 'remote', 'web', 'mobile']) {
     await expect(preview.locator('.cs-image-toolbar')).toContainText('120%');
     await page.keyboard.press('Escape'); await expect(preview).toBeHidden();
     await openLoungeAction(page, '历史记录');
-    await page.locator('.lounge-history').getByRole('button', { name: '查看图片' }).click();
+    await page.getByRole('dialog', { name: '历史记录', exact: true }).getByRole('button', { name: '查看图片' }).click();
     await expect(stage).toBeVisible(); await stage.hover();
     await pinchAndPan(page, stage);
     await expectOriginalDownload(page, preview, portrait);
     await preview.getByRole('button', { name: '关闭图片', exact: true }).click();
     await expect(preview).toBeHidden();
-    await expect(page.locator('.lounge-history')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: '历史记录', exact: true })).toBeVisible();
   });
 }

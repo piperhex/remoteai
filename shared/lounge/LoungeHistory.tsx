@@ -11,8 +11,16 @@ import { useLoungeHistory } from './useLoungeHistory';
 import type { LoungeController } from './controller';
 import type { LoungeAccount, LoungeMessage } from './types';
 import type { LoungeReply } from './reply';
+import { MobileLoungeHistory } from './MobileLoungeHistory';
 
-export function LoungeHistory({ controller, open, close, preview, reply, direct, profile, mention, locate,
+export type LoungeHistoryProps = Parameters<typeof DesktopLoungeHistory>[0];
+
+export function LoungeHistory(props: LoungeHistoryProps) {
+  if (props.mobile) return props.open ? <MobileLoungeHistory {...props} /> : null;
+  return <DesktopLoungeHistory {...props} />;
+}
+
+function DesktopLoungeHistory({ controller, open, close, preview, reply, direct, profile, mention, locate,
   navigationError, mobile = false }: {
   controller: LoungeController; open: boolean; close: () => void; preview: (source: string) => void;
   reply: (message: LoungeMessage) => void; direct: (user: LoungeAccount) => void;

@@ -6,7 +6,8 @@ export const RECENT_MESSAGE_LIMIT = 200;
 export const RECENT_BYTE_LIMIT = 24 * 1024 * 1024;
 export interface HistoryCursor { time: number; key: string }
 export interface HistoryQuery {
-  query: string; before?: HistoryCursor; limit?: number; conversation?: string; pendingOnly?: boolean;
+  query: string; before?: HistoryCursor; after?: HistoryCursor;
+  limit?: number; conversation?: string; pendingOnly?: boolean;
 }
 export interface HistoryPage { messages: LoungeMessage[]; next?: HistoryCursor }
 export interface LoungeHistoryStore {
@@ -61,9 +62,10 @@ export function historyPage(values: unknown[], query: HistoryQuery): HistoryPage
     if (!message) continue;
     bytes += messageBytes(message);
     if (messages.length && (messages.length >= historyPageLimit(query) || bytes > RECENT_BYTE_LIMIT)) {
-      return { messages, next: historyPosition(messages[messages.length - 1]) };
+      const next = historyPosition(messages[messages.length - 1]);
+      return { messages: query.after ? messages.reverse() : messages, next };
     }
     messages.push(message);
   }
-  return { messages };
+  return { messages: query.after ? messages.reverse() : messages };
 }
