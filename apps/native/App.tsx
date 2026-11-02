@@ -600,7 +600,7 @@ function DeviceManagementPage({
 }
 
 type AppPage = 'port-mappings' | 'accounts' | 'devices' | 'chat' | 'discover' | 'totp' | 'admin' | 'settings' | 'about'
-  | 'token-summary' | 'downloads' | 'lounge';
+  | 'token-summary' | 'downloads' | 'lounge' | 'ssh';
 const DEFAULT_APP_PAGE: AppPage = 'chat';
 
 function DeviceSwitchDrawer({ account, devices, switching, onClose, onSwitch }: {
@@ -1275,7 +1275,9 @@ function AppContent() {
       chat: activePage === 'token-summary' ? styles.app : styles.chatCanvas,
       accounts: accountStyles.page, discover: styles.discoveryCanvas, settings: styles.settingsCanvas,
     }} pages={{
-    chat: <ChatPage session={session} devices={devices} active={activePage === 'chat' || activePage === 'token-summary'}
+    chat: <ChatPage session={session} devices={devices}
+      active={activePage === 'chat' || activePage === 'token-summary' || activePage === 'ssh'}
+      sshDiscovery={activePage === 'ssh'} closeSshDiscovery={() => setActivePage('discover')}
       openAccounts={openAccounts}
       devicesLoaded={devicesLoaded}
       tokenSummary={activePage === 'token-summary'} closeTokenSummary={() => setActivePage('discover')}
@@ -1299,7 +1301,7 @@ function AppContent() {
     }}>
     {activePage === 'downloads' && <DownloadManagerPage session={session} onBack={() => setActivePage('discover')} />}
     {isDiscoveryPage(activePage)
-      && !['downloads', 'token-summary', 'lounge', 'port-mappings', 'totp', 'devices'].includes(activePage)
+      && !['downloads', 'token-summary', 'lounge', 'port-mappings', 'totp', 'devices', 'ssh'].includes(activePage)
       && <DiscoveryBackButton onBack={() => setActivePage('discover')} />}
     {activePage === 'port-mappings'
       && <PortMappingPage devices={devices} onBack={() => setActivePage('discover')} />}

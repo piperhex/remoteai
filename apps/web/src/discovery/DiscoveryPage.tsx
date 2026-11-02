@@ -1,11 +1,13 @@
-import { BarChart3, ChevronLeft, ChevronRight, Coffee, Download, Server, ShieldCheck } from 'lucide-react';
+import { BarChart3, ChevronLeft, ChevronRight, Coffee, Download, Server, ShieldCheck, Terminal } from 'lucide-react';
 import { discoveryEntries, type DiscoveryPage as DiscoveryDestination } from '../../../../shared/navigation/discovery';
 import { t, useLanguage } from '../i18n';
 import { DownloadCountIcon } from '../downloads/DownloadCountIcon';
 import { LoungeIcon } from '../../../../shared/lounge/LoungeIcon';
 import './styles.css';
 
-const entryIcons = { lounge: Coffee, devices: Server, totp: ShieldCheck, downloads: Download, 'token-summary': BarChart3 };
+const entryIcons = {
+  lounge: Coffee, devices: Server, ssh: Terminal, totp: ShieldCheck, downloads: Download, 'token-summary': BarChart3,
+};
 
 export function DiscoveryPage({ owner, loungeUnread = 0, onOpen }: {
   owner?: string;

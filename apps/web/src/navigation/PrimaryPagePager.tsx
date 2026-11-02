@@ -44,13 +44,14 @@ export function PrimaryPagePager({ page, onChange, pages, children }: Props) {
   usePrimaryPageSwipe(page, navigate, progress);
   const onNext = useCallback(() => navigate('accounts'), [navigate]);
   const chatSwipe = useMemo(() => ({ ...progress, onNext }), [progress, onNext]);
-  const primary = PRIMARY_PAGES.some(key => key === page);
+  const displayedPage = page === 'ssh' ? 'chat' : page;
+  const primary = PRIMARY_PAGES.some(key => key === displayedPage);
   return <PageSwipeContext.Provider value={chatSwipe}>
     <PagePreviewContext.Provider value={preview?.page}>
       <div className={`primary-page-viewport${primary ? ' is-primary' : ''}`}>
         <div ref={track} className={`primary-page-track${preview ? ' is-swiping' : ''}`}>
           {PRIMARY_PAGES.map((key, index) => {
-            const active = key === page;
+            const active = key === displayedPage;
             const incoming = key === preview?.page;
             const visible = active || incoming;
             const position = { '--primary-page-left': `${index * 100}%` } as CSSProperties;

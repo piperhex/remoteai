@@ -11,6 +11,7 @@ import { LoungeUnread } from '../lounge/LoungeMessage';
 const entryIcons = {
   lounge: 'cafe-outline',
   devices: 'server-outline',
+  ssh: 'terminal-outline',
   'port-mappings': 'swap-horizontal-outline',
   totp: 'shield-checkmark-outline',
   downloads: 'download-outline',

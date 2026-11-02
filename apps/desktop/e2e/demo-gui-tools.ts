@@ -3,6 +3,7 @@ import { TerminalOutput } from '../src/remoteChat/terminalOutput';
 import { terminalBelongsToProject } from '../../../shared/remote-chat/terminalProject';
 import { demoGitTools } from './demo-git-tools';
 import { demoTaskReview } from './demo-task-review';
+import type { SshConnect } from '../../../shared/terminal/ssh';
 
 let version = '0.155.0';
 let completedAt = 0;
@@ -22,6 +23,16 @@ export function demoGuiTools(input: Record<string, unknown>) {
   if (input.operation === 'guiReconnect') return {};
   if (input.operation === 'guiTerminalList') return [...terminals.values()].map(session => session.info)
     .filter(info => typeof input.cwd !== 'string' || terminalBelongsToProject(info, input.cwd));
+  if (input.operation === 'guiTerminalSshProbe') return 'SHA256:fixture';
+  if (input.operation === 'guiTerminalSshOpen') {
+    const request = input.request as SshConnect;
+    const info = { id: crypto.randomUUID(), cwd: '', projectCwd: String(input.cwd ?? ''), shell: 'SSH',
+      ssh: { ...request.endpoint, username: request.username } };
+    const output = new TerminalOutput();
+    output.push({ type: 'output', data: [...new TextEncoder().encode('SSH ready\r\n$ ')] });
+    terminals.set(info.id, { info, output });
+    return info;
+  }
   if (input.operation === 'guiTerminalOpen') {
     const id = crypto.randomUUID();
     const info = { id, cwd: String(input.cwd || '/remote'), projectCwd: String(input.cwd ?? ''), shell: 'Remote bash' };

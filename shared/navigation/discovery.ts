@@ -2,6 +2,7 @@ export const discoveryEntries = [
   { page: 'lounge', label: 'client.lounge.title' },
   { page: 'port-mappings', label: 'client.portForwarding.portMapping' },
   { page: 'devices', label: 'client.app.devices' },
+  { page: 'ssh', label: 'client.discovery.ssh' },
   { page: 'totp', label: 'client.discovery.twoFactor' },
   { page: 'downloads', label: 'client.downloads.downloads' },
   { page: 'token-summary', label: 'client.chat.tokenSummary' },

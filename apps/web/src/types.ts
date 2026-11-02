@@ -106,7 +106,7 @@ export interface ResetCreditsSummary {
 }
 
 export type AppPage = "chat" | "accounts" | "discover" | "devices" | "totp" | "downloads" | "lounge"
-  | "token-summary" | "settings";
+  | "token-summary" | "settings" | "ssh";
 export type TotpAlgorithm = "SHA1" | "SHA256" | "SHA512";
 
 export interface TotpEntry {

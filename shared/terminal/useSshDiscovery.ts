@@ -1,0 +1,14 @@
+import { useState } from 'react';
+import type { GuiToolsClient } from '../remote-chat/guiTools';
+import { useRemoteTerminalPanel } from '../remote-chat/useRemoteTerminalPanel';
+import { useSshProfiles } from './useSshProfiles';
+import type { SshProfile } from './sshProfiles';
+
+/** Discovery shares the selected computer's transport without opening a local shell first. */
+export function useSshDiscovery(client: GuiToolsClient['terminal'], connected: boolean) {
+  const saved = useSshProfiles(client.ssh.profiles);
+  const [profile, choose] = useState<SshProfile>();
+  const panel = useRemoteTerminalPanel({ client, cwd: '', connected });
+  return { saved, profile, choose, close: () => choose(undefined),
+    panel: { ...panel, retry: panel.toggle } };
+}

@@ -1,0 +1,23 @@
+.discovery-ssh-page { flex: 1; min-height: 0; overflow-y: auto; background: var(--app-canvas, #ededed);
+  color: var(--app-ink, #181818); }
+.discovery-ssh-heading { padding: 0 20px 16px; }
+.discovery-ssh-heading h1 { margin: 0 0 8px; font-size: 24px; line-height: 1.5; }
+.discovery-ssh-device { display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+  padding: 0; border: 0; background: transparent; color: var(--app-muted, #777); font: inherit; cursor: pointer; }
+.discovery-ssh-content { display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 24px; }
+.discovery-ssh-section { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  color: var(--app-muted, #777); font-size: 14px; }
+.discovery-ssh-connection { display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px;
+  border: 0; border-radius: 12px; color: inherit; background: var(--app-surface, #fff); font: inherit;
+  text-align: left; cursor: pointer; }
+.discovery-ssh-connection > svg { flex-shrink: 0; color: var(--app-accent, #07b775); }
+.discovery-ssh-connection > svg:last-child { color: var(--app-muted, #777); }
+.discovery-ssh-connection > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.discovery-ssh-connection strong { display: block; font-size: 17px; font-weight: 500; line-height: 1.6; }
+.discovery-ssh-connection small { display: block; margin-top: 4px; font-size: 14px; line-height: 1.6;
+  color: var(--app-muted, #777); }
+.discovery-ssh-connection:active { opacity: .65; }
+.discovery-ssh-connection:disabled { opacity: .5; cursor: default; }
+.discovery-ssh-empty { padding: 32px 0; text-align: center; line-height: 1.6; }
+.discovery-ssh-hint, .discovery-ssh-empty p { color: var(--app-muted, #777); }
+.discovery-ssh > svg:first-child { color: var(--app-accent, #07b775); }

@@ -78,6 +78,8 @@ export interface MessageParams10 {
   "client.dictation.voiceTranscriptionIsCurrentlyUnavailableForThisAccount": Record<string, never>;
   "client.dictation.yourSessionExpiredSignInAgainAndRetry": Record<string, never>;
   "client.discovery.back": Record<string, never>;
+  "client.discovery.ssh": Record<string, never>;
+  "client.discovery.sshComputerHint": Record<string, never>;
   "client.discovery.title": Record<string, never>;
   "client.discovery.twoFactor": Record<string, never>;
   "client.downloads.activeCount": { "count": string | number };
@@ -198,6 +200,4 @@ export interface MessageParams10 {
   "client.downloads.tooManyDownloadsPleaseTryAgainShortly": Record<string, never>;
   "client.downloads.totalDuration": { "duration": string | number };
   "client.downloads.updateDownloadedTapToOpenTheAppAndInstall": Record<string, never>;
-  "client.downloads.verifying": Record<string, never>;
-  "client.downloads.viewGroupedOperationsActivities": { "value1": string | number };
 }

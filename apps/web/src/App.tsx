@@ -361,7 +361,7 @@ function AppShell() {
     { key: "logout", label: t("client.app.signOut"), danger: true, icon: <LogOut size={16} />, onClick: () => void dispatch(signOut()) },
   ];
 
-  const pageDescriptions: Record<Exclude<AppPage, 'chat' | 'downloads' | 'lounge' | 'token-summary'>, string> = {
+  const pageDescriptions: Record<Exclude<AppPage, 'chat' | 'downloads' | 'lounge' | 'token-summary' | 'ssh'>, string> = {
     accounts: t("client.app.welcomeBackYourAccountsAtAGlance"),
     discover: t('client.discovery.title'),
     devices: t("client.app.viewAndControlYourDesktopDevices"), totp: t("client.app.manageAndSyncYour2faCodes"), settings: t("client.app.managePreferencesAndAccountSecurity"),
@@ -372,7 +372,7 @@ function AppShell() {
   const otherPages = {
     lounge: <LoungePage controller={lounge.controller} mobile={!desktopLayout}
       onBack={() => dispatch(pageChanged('discover'))} />,
-    discover: discoveryPage, 'token-summary': discoveryPage,
+    discover: discoveryPage, 'token-summary': discoveryPage, ssh: null,
     downloads: session && <DownloadManagerPage owner={downloadOwner(session)}
       onBack={() => dispatch(pageChanged('discover'))} />,
     accounts: <AccountsPage />, devices: <DevicesPage />,
@@ -381,7 +381,7 @@ function AppShell() {
   };
   const pageTitle = page === 'devices' ? t('client.app.devices')
     : page === 'totp' ? t('client.discovery.twoFactor') : navItems.find(item => item.key === page)?.label;
-  const shellClass = ['app-shell', page === 'chat' && 'chat-active',
+  const shellClass = ['app-shell', (page === 'chat' || page === 'ssh') && 'chat-active',
     page === 'lounge' && 'lounge-active',
     (page === 'discover' || page === 'token-summary') && 'discovery-active',
     !menuVisible && 'main-menu-collapsed'].filter(Boolean).join(' ');
@@ -433,7 +433,7 @@ function AppShell() {
       </Tooltip>
     </aside>
     <div className="content-shell">
-      {page !== 'chat' && page !== 'downloads' && page !== 'lounge' && page !== 'token-summary'
+      {page !== 'chat' && page !== 'downloads' && page !== 'lounge' && page !== 'token-summary' && page !== 'ssh'
         && <header className="desktop-topbar"><div>
         <span>{pageTitle}</span><strong>{pageDescriptions[page]}</strong></div>
         <div>{page === 'totp' && <TotpSyncSwitch enabled={totpManager.cloudSyncEnabled}
@@ -448,12 +448,13 @@ function AppShell() {
         <PrimaryPagePager page={page} onChange={changePrimaryPage} pages={{
           chat: session && <ChatPage key={session.baseUrl + session.email} session={session} devices={devices}
             openAccounts={openAccounts}
-            active={page === 'chat'} tokenSummary={page === 'token-summary'}
+            active={page === 'chat' || page === 'ssh'} tokenSummary={page === 'token-summary'}
+            sshDiscovery={page === 'ssh'} closeSshDiscovery={() => dispatch(pageChanged('discover'))}
             closeTokenSummary={() => dispatch(pageChanged('discover'))} />,
           accounts: otherPages.accounts, discover: discoveryPage, settings: otherPages.settings,
         }}>
         {isDiscoveryPage(page)
-          && !['downloads', 'token-summary', 'lounge', 'totp', 'devices'].includes(page)
+          && !['downloads', 'token-summary', 'lounge', 'totp', 'devices', 'ssh'].includes(page)
           && <DiscoveryBackButton onBack={() => dispatch(pageChanged('discover'))} />}
         {page !== 'chat' && page !== 'accounts' && page !== 'discover' && page !== 'settings' && otherPages[page]}
         </PrimaryPagePager>
