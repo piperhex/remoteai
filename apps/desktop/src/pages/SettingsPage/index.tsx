@@ -20,6 +20,7 @@ import { KeyboardShortcutsCard } from "../settings/KeyboardShortcutsCard";
 import styles from "./index.module.less";
 import { TokenCostSettingsCard } from "../../components/TokenCostUnitSettings";
 import { ProjectBrowserSettingsCard } from '../settings/ProjectBrowserSettingsCard';
+import { CodexStatusSettingsCard } from '../settings/CodexStatusSettingsCard';
 
 interface SettingsSectionProps {
   children: ReactNode;
@@ -78,6 +79,7 @@ export function SettingsPage(settings: SettingsPageProps) {
         description={settings.t("settings.sections.system.description")}>
         <SystemSettingsCards settings={settings} />
         <ProjectBrowserSettingsCard />
+        <CodexStatusSettingsCard />
         <ChatGptEnhancementsCard t={settings.t} />
       </SettingsSection>
       <SettingsSection id="settings-shortcuts" title={settings.t("settings.sections.shortcuts.title")}

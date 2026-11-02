@@ -28,6 +28,8 @@ export interface ComposerProps {
   projectPicker?: ReactNode;
   connectionInfo?: ReactNode;
   cliVersion?: string | null;
+  readServiceStatus?: import('../../../../shared/codex-status/status').ReadCodexServiceStatus;
+  serviceStatusConnected?: boolean;
   suggestions?: PromptSuggestionSource;
   connection: ChatConnectionProps;
   readClipboardImages?: () => Promise<File[]>;

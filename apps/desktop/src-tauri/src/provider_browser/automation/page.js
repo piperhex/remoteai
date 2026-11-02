@@ -16,7 +16,9 @@
         refs.set(reference, element);
         const field = element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement
           || element instanceof HTMLSelectElement;
+        const bounds = element.getBoundingClientRect();
         return { reference, role: element.getAttribute('role') || element.tagName.toLowerCase(),
+          bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
           name: label(element), type: element.getAttribute('type') || undefined,
           value: field && !['password', 'file', 'hidden'].includes(element.type) ? element.value : undefined,
           disabled: Boolean(element.disabled), href: element instanceof HTMLAnchorElement ? element.href : undefined };

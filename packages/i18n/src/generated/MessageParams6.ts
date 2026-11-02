@@ -21,6 +21,17 @@ export interface MessageParams6 {
   "client.cliImport.unableToWriteInstallationFilesCheckThatTheDiskIs": Record<string, never>;
   "client.cliImport.useAVerificationFileFromTheSameReleaseIfProvided": Record<string, never>;
   "client.cliImport.verifyingAndImportingFilesPleaseWait": Record<string, never>;
+  "client.codexStatus.disrupted": Record<string, never>;
+  "client.codexStatus.disruptedHint": Record<string, never>;
+  "client.codexStatus.open": { "status": string | number };
+  "client.codexStatus.operational": Record<string, never>;
+  "client.codexStatus.operationalHint": Record<string, never>;
+  "client.codexStatus.refreshHint": { "max": string | number; "min": string | number; "minutes": string | number };
+  "client.codexStatus.refreshMinutes": Record<string, never>;
+  "client.codexStatus.settingsTitle": Record<string, never>;
+  "client.codexStatus.title": Record<string, never>;
+  "client.codexStatus.unknown": Record<string, never>;
+  "client.codexStatus.unknownHint": Record<string, never>;
   "client.composer.aConversationNeedsYourApprovalClickToReview": Record<string, never>;
   "client.composer.addAFolderThatCodexCanReadAndEdit": Record<string, never>;
   "client.composer.addFile": Record<string, never>;
@@ -189,15 +200,4 @@ export interface MessageParams6 {
   "client.configHelp.adjustDesktopTerminalAudioAndNotificationPreferences": Record<string, never>;
   "client.configHelp.adjustTerminalAppearanceNotificationsAndKeyboardShortcuts": Record<string, never>;
   "client.configHelp.advancedSettings": Record<string, never>;
-  "client.configHelp.all": Record<string, never>;
-  "client.configHelp.always": Record<string, never>;
-  "client.configHelp.appearanceAndNotifications": Record<string, never>;
-  "client.configHelp.askOnFailure": Record<string, never>;
-  "client.configHelp.askWhenNeeded": Record<string, never>;
-  "client.configHelp.basic": Record<string, never>;
-  "client.configHelp.chatgptLogin": Record<string, never>;
-  "client.configHelp.checkTheConfiguration": Record<string, never>;
-  "client.configHelp.chooseAModelProviderOrEnterTheNameOfAnother": Record<string, never>;
-  "client.configHelp.chooseCachedResultsLiveSearchOrDisableWebSearch": Record<string, never>;
-  "client.configHelp.chooseHowYouAreAskedToApproveActions": Record<string, never>;
 }

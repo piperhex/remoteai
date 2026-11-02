@@ -15,6 +15,7 @@ export interface BrowserSurfaceProps {
   hideForModal?: boolean;
 }
 export interface BrowserWindowProps {
+  title?: string;
   open: boolean; tabs: BrowserTab[]; activeId: string; language: Language;
   onSelect: (id: string) => void; onCloseTab: (id: string) => void; onNewTab: () => void; onClose: () => void;
   onNavigate: (id: string, url: string) => void; onAction: (id: string, action: BrowserAction) => void;
@@ -96,7 +97,7 @@ export function ProviderBrowser(props: BrowserWindowProps) {
     return () => { previous?.focus(); };
   }, [open]);
   return createPortal(<div className="pm-browser-backdrop" hidden={!open}>
-    <section ref={dialog} role="dialog" aria-modal="true" aria-label={t('market.browserTitle')} tabIndex={-1}
+    <section ref={dialog} role="dialog" aria-modal="true" aria-label={props.title ?? t('market.browserTitle')} tabIndex={-1}
       className={`pm-browser${fullscreen ? ' pm-browser-fullscreen' : ''}`} onKeyDown={(event) => {
         if (event.key === 'Escape') { event.stopPropagation(); fullscreen ? setFullscreen(false) : props.onClose(); }
         if (event.key === 'Tab') {

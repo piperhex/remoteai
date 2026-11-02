@@ -33,9 +33,10 @@ import { useGlobalFontSize } from '../../../../shared/appearance/fontSize';
 import { AccountAvatarButton } from '../../../../shared/lounge/AccountAvatarButton';
 import { accountLabel } from '../../../../shared/lounge/accountLabel';
 import type { LoungeController } from '../../../../shared/lounge/controller';
+import { StatusRefreshSettings } from '../../../../shared/codex-status/StatusRefreshSettings';
 
 type Panel = 'profile' | 'refresh' | 'totp' | 'password' | 'about'
-  | 'desktop' | 'theme' | 'language' | 'files' | 'font' | 'petDock' | null;
+  | 'desktop' | 'theme' | 'language' | 'files' | 'font' | 'petDock' | 'codexStatus' | null;
 
 export function SettingsPage({ totpManager, loungeController }: {
   totpManager: ReturnType<typeof useTotpVault>; loungeController: LoungeController;
@@ -86,6 +87,8 @@ export function SettingsPage({ totpManager, loungeController }: {
             onClick={() => setPanel('files')} />
           <SettingsRow label={t("client.settings.autoRefreshUsage")} value={t("client.settings.minutes", { value1: minutes })} icon={RefreshCw}
             onClick={() => setPanel('refresh')} />
+          {desktop && <SettingsRow label={t('client.codexStatus.settingsTitle')} icon={RefreshCw}
+            onClick={() => setPanel('codexStatus')} />}
           <SettingsRow label={t(desktop ? 'client.app.2faKeys' : 'client.settings.twoFactorKeyCloudSync')}
             value={totpManager.cloudSyncEnabled ? t("client.settings.on") : t("client.settings.off")} icon={ShieldCheck}
             onClick={() => setPanel('totp')} />
@@ -122,6 +125,10 @@ export function SettingsPage({ totpManager, loungeController }: {
     </AdaptiveSheet>
     <AdaptiveSheet open={panel === 'font'} title={t('client.appearance.globalFontSize')} onClose={close} width={480}>
       <GlobalFontSettings t={t} />
+    </AdaptiveSheet>
+    <AdaptiveSheet open={panel === 'codexStatus'} title={t('client.codexStatus.settingsTitle')}
+      onClose={close} width={400}>
+      <div className="settings-sync"><StatusRefreshSettings t={t} /></div>
     </AdaptiveSheet>
     <AdaptiveSheet open={panel === 'profile'} onClose={close} width={400} title={t("client.settings.profile")}>
       <dl className="settings-profile-details"><dt>{t("client.app.email")}</dt><dd>{email}</dd><dt>{t("client.settings.role")}</dt><dd>{role}</dd></dl>

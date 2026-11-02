@@ -33,6 +33,7 @@ import { readTokenSummary } from './tokenSummary';
 import { CONTEXT_READ_OPERATION, CONTEXT_WRITE_OPERATION } from '../../../../shared/remote-chat/contextSettings';
 import { contextSettingsRequest } from './contextSettings';
 import { GUI_TOOL_OPERATIONS } from '../../../../shared/remote-chat/guiTools';
+import { CODEX_STATUS_OPERATION } from '../../../../shared/codex-status/status';
 import { GUI_FILE_OPERATIONS } from '../../../../shared/remote-chat/files';
 import { RemoteFiles } from './files';
 import { guiToolRequest } from './guiTools';
@@ -86,6 +87,7 @@ function terminalLinkRequest(request: RpcRequest): Cached['terminalLink'] {
     action: udpActions[String(stream.type)] ?? stream.type };
 }
 const READ_OPERATIONS = new Set([
+  CODEX_STATUS_OPERATION,
   'projectFileRead',
   'projectFileBlame',
   'guiFileApplications', 'guiFilePreviewClose', 'guiFilePreviewHost', 'guiFilePreviewText', 'guiResourceClose',

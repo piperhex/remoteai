@@ -10,7 +10,10 @@ export type BrowserCommand = { action: 'list' | 'snapshot' | 'screenshot' | 'bac
 export interface BrowserRequest { threadId: string; tabId?: string; command: BrowserCommand }
 export interface BrowserReply {
   tabs?: ManagedBrowserTab[]; tab?: ManagedBrowserTab;
-  result?: { url?: string; title?: string; image?: { mimeType: string; data: string } };
+  result?: { url?: string; title?: string; image?: { mimeType: string; data: string };
+    viewport?: { width: number; height: number };
+    elements?: { reference: string; role: string; name: string; disabled?: boolean;
+      bounds?: { x: number; y: number; width: number; height: number } }[] };
 }
 export interface BrowserClient {
   native: boolean;

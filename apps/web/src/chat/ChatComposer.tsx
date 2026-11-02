@@ -220,6 +220,7 @@ export function ChatComposer(props: ComposerProps) {
       </div>
     </form>
     <ComposerFooter desktop={desktop} cliVersion={props.cliVersion}
+      readServiceStatus={props.readServiceStatus} statusActive={active} statusConnected={props.serviceStatusConnected}
       usage={usageSnapshot.usage} metrics={metrics}
       connectionInfo={props.connectionInfo} />
     {active && !busy && editing && <ChatImageEditor key={editing.id} image={editing}

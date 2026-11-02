@@ -1,4 +1,6 @@
 import { invoke } from '../api/backend';
+import { CODEX_STATUS_OPERATION } from '../../../../shared/codex-status/status';
+import { readCodexServiceStatus } from '../api/codexServiceStatus';
 import { guiApi } from '../pages/codexGui/api';
 import { getGuiController } from '../pages/codexGui/session';
 import { subscribeGuiEvent } from '../pages/codexGui/webEvents';
@@ -38,6 +40,7 @@ async function install(version: string) {
 
 export async function guiToolRequest(body: Record<string, unknown>) {
   switch (body.operation) {
+    case CODEX_STATUS_OPERATION: return readCodexServiceStatus();
     case 'guiBrowser': return invoke('codex_gui_browser', { request: body.request });
     case PROJECT_LIST_OPERATION: return readRemoteProjects();
     case PROJECT_SELECT_OPERATION: return selectRemoteProject(body);

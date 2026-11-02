@@ -25,6 +25,7 @@ mod codex_gui;
 mod codex_home;
 mod codex_notification;
 mod codex_runtime;
+mod codex_service_status;
 mod codex_settings;
 mod codex_usage_cost_rates;
 mod codex_usage_summary;
@@ -445,6 +446,7 @@ pub fn run() {
             cloud::cloud_lounge_ticket,
             cloud::remote_assistance,
             codex_gui::releases::codex_gui_cli_status,
+            codex_service_status::get_codex_service_status,
             codex_gui::releases::codex_gui_cli_release,
             codex_gui::releases::updates::codex_gui_cli_check,
             codex_gui::releases::updates::codex_gui_cli_prepare,

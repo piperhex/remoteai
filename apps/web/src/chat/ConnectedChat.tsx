@@ -128,6 +128,8 @@ export function ConnectedChat({ chat, device, devices, active, scope, email, cho
     <ChatComposer suggestions={remotePromptSuggestion(state, controller.suggestNextPrompt, { scope })}
       dictation={controller.dictation}
       cliVersion={cliVersion === undefined ? installer.version : cliVersion}
+      readServiceStatus={controller.guiTools.serviceStatus}
+      serviceStatusConnected={state.mode === 'direct' || state.mode === 'relay'}
       recoveredEdit={controller.messageEditor.recoveredDrafts.get(state.selected?.id ?? '')}
       consumeRecoveredEdit={() => controller.messageEditor.recoveredDrafts.delete(state.selected?.id ?? '')}
       connectionInfo={<ChatConnectionInfo state={state} controller={controller} device={device} active={active}

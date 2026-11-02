@@ -1,4 +1,6 @@
 import { displayText } from '../../i18n/uiText';
+import { CodexVersionStatus } from '../../../../../shared/codex-status/CodexVersionStatus';
+import { readCodexServiceStatus } from '../../api/codexServiceStatus';
 import { uiText } from "../../i18n/uiText";
 import {
   forwardRef, useContext, useEffect, useImperativeHandle, useRef, useState, type ReactNode,
@@ -185,7 +187,7 @@ export const Composer = forwardRef<ComposerHandle, {
       </div>
     </div>
     <div className={`${styles.composerHint} cs-usage-footer-container`}>
-      <span>Codex{cliVersion ? ` ${cliVersion}` : ''}</span>
+      <CodexVersionStatus version={cliVersion} read={readCodexServiceStatus} active={active} t={uiText} />
       <ConversationTokenStatus threadId={state.selected} metrics={metrics}
         turns={current?.turns} active={active && state.connection === 'ready'} usage={usageSnapshot.usage} /></div>
     {dialog === "files" && <ComposerFilesDialog onAdd={addAttachments} onImages={() => fileInput.current?.click()}

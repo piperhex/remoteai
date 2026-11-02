@@ -19,6 +19,7 @@ import requestErrors from '../src/catalogs/client/zh/requestErrors.json';
 import chatQuota from '../src/catalogs/client/zh/chatQuota.json';
 import chatCredits from '../src/catalogs/client/zh/chatCredits.json';
 import chatSettings from '../src/catalogs/client/zh/chatSettings.json';
+import codexStatus from '../src/catalogs/client/zh/codexStatus.json';
 import sheet from '../src/catalogs/client/zh/sheet.json';
 import projectBrowserFiles from '../src/catalogs/client/zh/projectBrowserFiles.json';
 import projectEditorWindow from '../src/catalogs/client/zh/projectEditorWindow.json';
@@ -66,6 +67,7 @@ const additions = new Set(['client.chat.usePlugin',
   ...Object.keys(chatQuota),
   ...Object.keys(chatCredits),
   ...Object.keys(chatSettings),
+  ...Object.keys(codexStatus),
   ...Object.keys(sheet),
   ...Object.keys(projectBrowserFiles),
   ...Object.keys(projectEditorWindow),
