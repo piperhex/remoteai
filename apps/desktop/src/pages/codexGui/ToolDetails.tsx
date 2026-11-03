@@ -12,6 +12,7 @@ import { ToolText } from "./ToolText";
 import { CollaborationDetails } from "./CollaborationDetails";
 import { isCollaborationActivity } from "./collaborationActivity";
 import { CommandOutput } from "../../../../../shared/chat/CommandOutput";
+import { toolResultPresentation } from "../../../../../shared/chat/toolResult";
 
 function record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -38,25 +39,25 @@ function OutputPart({ value }: { value: unknown }) {
 }
 
 function ToolResult({ item }: { item: Item }) {
-  const result = record(item.result);
-  const content = item.contentItems ?? (Array.isArray(result?.content) ? result.content : undefined);
-  const structured = result?.structuredContent;
+  const { content, structured, hasStructured, rawText } = toolResultPresentation(item);
   return <>
     {item.arguments != null && <DeferredDetails className={styles.payload} summary={<summary>{uiText("client.chat.input")}</summary>}>
       {() => <><ToolText text={serialized(item.arguments) ?? ""} />
         <CopyButton text={serialized(item.arguments) ?? ""} label={uiText("client.workspaceActions.copyToolInput")} /></>}
     </DeferredDetails>}
     {item.progress?.map((text, index) => <p key={index}>{text}</p>)}
+    {hasStructured && <ToolText text={JSON.stringify(structured, null, 2) ?? ""} showCopy={false} />}
     {content?.map((part, index) => <OutputPart key={index} value={part} />)}
-    {structured != null && <DeferredDetails className={styles.payload} summary={<summary>{uiText("client.mobile.structuredResult")}</summary>}>
-      {() => <ToolText text={serialized(structured) ?? ""} />}</DeferredDetails>}
-    {!content && item.result != null && <OutputPart value={item.result} />}
-    {item.output != null && <OutputPart value={item.output} />}
+    {!hasStructured && !content && item.result != null && <OutputPart value={item.result} />}
+    {!hasStructured && item.output != null && <OutputPart value={item.output} />}
     {item.error != null && <div className={styles.failure} role="status">
       {typeof record(item.error)?.message === "string" ? String(record(item.error)?.message) : uiText("client.chat.theToolFailedPleaseTryAgain")}
     </div>}
     {item.result == null && item.output == null && !content && !item.error && <p className={styles.emptyBody}>
       {item.status === "inProgress" ? uiText("client.chat.waitingForToolOutput") : uiText("client.chat.theToolReturnedNoText")}</p>}
+    {hasStructured && <div className={styles.outputActions}>
+      <CopyButton text={rawText} label={uiText("client.chat.copyRawData")} showLabel />
+    </div>}
   </>;
 }
 

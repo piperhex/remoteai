@@ -1,6 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { Conversation } from '../src/pages/codexGui/types';
 
+test.beforeEach(async ({ page }) => {
+  await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());
+});
+
 const IMAGE_COUNT = 180;
 type Mode = 'local' | 'remote' | 'web';
 const modes: Mode[] = ['local', 'remote', 'web'];
@@ -78,7 +82,7 @@ for (const mode of modes) {
     expect(await page.locator('img').count()).toBeLessThan(20);
   });
 
-  test(`${mode}: collapsed tools and nested payloads never fetch images`, async ({ page }) => {
+  test(`${mode}: structured data is visible when a tool opens and never treated as an image block`, async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 780 });
     const value = history();
     value.activeTurn = null;
@@ -98,7 +102,8 @@ for (const mode of modes) {
       : page.locator('[data-message-id="tool"] .chat-activity');
     await tool.click();
     expect(requests).toHaveLength(0);
-    expect(await page.locator('pre, img').count()).toBe(0);
+    await expect(page.locator('pre')).toContainText('C:/captures/structured.png');
+    await expect(page.locator('img')).toHaveCount(0);
     await page.screenshot({ path: `../../.codex-tmp/image-history-${mode}-collapsed.png` });
     const input = page.locator('details').filter({ has: page.locator(':scope > summary',
       { hasText: /^(查看输入|输入)$/ }) });
@@ -106,22 +111,11 @@ for (const mode of modes) {
     await expect(input).toContainText('DEFERRED_INPUT');
     await input.locator(':scope > summary').click();
     await expect(input.locator('pre')).toHaveCount(0);
-    const structured = page.locator('details').filter({ has: page.locator(':scope > summary',
-      { hasText: /^(查看结构化结果|结构化结果)$/ }) });
-    await structured.locator(':scope > summary').click();
-    if (mode === 'local') {
-      // Local structured results are intentionally shown as JSON, with no preview request.
-      await expect(structured).toContainText('C:/captures/structured.png');
-      expect(requests).toHaveLength(0);
-    } else {
-      await expect(structured.locator('img')).toBeVisible();
-      expect(requests).toEqual(['C:/captures/structured.png']);
-    }
+    await expect(page.getByRole('button', { name: '复制原始数据', exact: true })).toHaveCount(1);
+    expect(requests).toHaveLength(0);
     await page.screenshot({ path: `../../.codex-tmp/image-history-${mode}-expanded.png` });
     await page.getByRole('button', { name: 'Theme', exact: true }).click();
     await page.screenshot({ path: `../../.codex-tmp/image-history-${mode}-expanded-dark.png` });
-    await structured.locator(':scope > summary').click();
-    await expect(structured.locator('pre, img')).toHaveCount(0);
     await tool.click();
     await expect(page.locator('pre, img')).toHaveCount(0);
   });

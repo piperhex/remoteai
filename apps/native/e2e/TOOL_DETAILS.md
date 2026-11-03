@@ -19,13 +19,11 @@ From the repository root, set `ANDROID_SERIAL` to the connected phone and run:
 node apps/native/e2e/tool-details-test.mjs
 ```
 
-The runner checks paragraph spacing, inline copy actions, clipboard contents,
-input/structured-result sheets, back/close, both themes, literal output and full
-copy from the last page. Screenshots and measurements go to
+The runner checks immediately visible structured data, the bottom raw-data copy entry,
+complete clipboard contents, input sheets, back/close, both themes, system font scales
+1.0 and 1.3, literal output and full copy from the last page. It restores the original
+font scale on exit. Screenshots and measurements go to
 `.codex-tmp/tool-details/`.
-
-Validated on Android 14, model `2109119BC`, at 1080 × 2400 and 440 dpi. The
-reported two-part output loses two 52dp copy-toolbar rows (104dp total).
 
 Web coverage uses the same reported payload. From `apps/web` run:
 
@@ -33,5 +31,5 @@ Web coverage uses the same reported payload. From `apps/web` run:
 npx playwright test --config playwright.chat.config.ts tool-details.pw.ts
 ```
 
-This covers 390px mobile and 1280px desktop layouts, full copy, nested payload
-disclosures, literal output and pagination.
+This covers 390px mobile and 1280px desktop layouts, direct structured results, raw copy,
+input disclosures, literal output and pagination.

@@ -19,8 +19,9 @@ async function toggle(node: HTMLDetailsElement, open = true) {
 
 it("defers tool screenshots and serialization through each closed layer and releases closed content", async () => {
   const serialize = vi.fn(() => ({ hidden: "structured output" }));
+  const serializeInput = vi.fn(() => ({ input: "tool input" }));
   const item: Item = { id: "tool", type: "mcpToolCall", tool: "capture", status: "completed",
-    arguments: { toJSON: serialize }, result: { content: [{ type: "image", mimeType: "image/png", data: "iVBORw0KGgo=" }],
+    arguments: { toJSON: serializeInput }, result: { content: [{ type: "image", mimeType: "image/png", data: "iVBORw0KGgo=" }],
       structuredContent: { toJSON: serialize } } };
   await act(async () => root.render(<TurnMessage turn={{ id: "turn", status: "completed", items: [item] }}
     running={false} active />));
@@ -33,10 +34,13 @@ it("defers tool screenshots and serialization through each closed layer and rele
   expect(serialize).not.toHaveBeenCalled();
   await toggle(tool);
   expect(container.querySelector("img")).not.toBeNull();
-  expect(serialize).not.toHaveBeenCalled();
+  expect(serialize).toHaveBeenCalledTimes(1);
+  expect(container.textContent).toContain("structured output");
+  expect(serializeInput).not.toHaveBeenCalled();
   const payload = container.querySelectorAll("details")[2];
   await toggle(payload);
-  expect(serialize).toHaveBeenCalled();
+  expect(serializeInput).toHaveBeenCalled();
+  expect(container.textContent).toContain("tool input");
   expect(group.open).toBe(true);
   expect(tool.open).toBe(true);
   await toggle(tool, false);

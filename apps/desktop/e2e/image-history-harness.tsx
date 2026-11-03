@@ -10,6 +10,8 @@ import { ChatController } from '../../../shared/remote-chat/client/controller';
 import { initialChatState } from '../../../shared/remote-chat/client/types';
 import { setThemeMode } from '../../web/src/theme/preference';
 import type { Conversation } from '../src/pages/codexGui/types';
+import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
+import { guiFontStyle, useGuiFontSize } from '../../../shared/appearance/fontSize';
 import styles from '../src/pages/codexGui/styles.module.less';
 import '../../web/src/styles.css';
 import '../../web/src/chat/chat.css';
@@ -32,6 +34,7 @@ const load = async (threadId: string, source: string, original?: boolean) => {
 };
 
 function Harness() {
+  const fontSize = useGuiFontSize();
   const [value, setValue] = useState<Conversation>();
   const [dark, setDark] = useState(false);
   useEffect(() => {
@@ -51,10 +54,12 @@ function Harness() {
   const state = { ...initialChatState(), ready: true, selected: thread };
   const footer = <div className={mode === 'local' ? styles.composerWrap : 'chat-composer'}>
     <input aria-label="消息" placeholder="输入消息…" style={{ padding: 12, width: '100%' }} /></div>;
-  return <ConfigProvider theme={{ algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm }}><App>
+  const algorithm = [dark ? theme.darkAlgorithm : theme.defaultAlgorithm,
+    ...mode === 'web' ? [] : [theme.compactAlgorithm]];
+  return <ApplicationTypography><ConfigProvider theme={{ algorithm }}><App>
     <main className={mode === 'local' ? `${styles.page} ${styles.collapsed}`
-      : `chat-page ${mode === 'remote' ? 'gui-remote-workspace' : ''}`}
-      style={{ height: '100vh' }}>
+      : `chat-page ${mode === 'remote' ? `gui-remote-workspace ${styles.page} ${styles.collapsed}` : ''}`}
+      style={{ height: '100vh', ...guiFontStyle(fontSize) }}>
       <div className={mode === 'local' ? styles.workspace : 'chat-conversation'}>
         <header style={{ padding: 12 }}><strong>Codex GUI · {mode}</strong>
           <button onClick={() => setDark(!dark)}>Theme</button></header>
@@ -67,7 +72,7 @@ function Harness() {
           </FileEnvironmentContext.Provider>}
       </div>
     </main>
-  </App></ConfigProvider>;
+  </App></ConfigProvider></ApplicationTypography>;
 }
 
 createRoot(document.getElementById('root')!).render(<Harness />);

@@ -8,23 +8,25 @@ import { HighlightedCode } from './ChatCodeHighlight';
 import { SelectableChatText } from './SelectableChatText';
 import { useCodePagination } from './useCodePagination';
 import { SwipeSafeScrollView } from '../navigation/SwipeGestureBoundary';
+import { textMetrics } from '../theme/text';
 
 interface Props {
   text: string; label?: string; language?: string; lineNumbers?: boolean; copyLabel?: string; replyCopy?: CopyAction;
+  showCopy?: boolean; defaultWrap?: boolean;
 }
 
 /** Limit native text layout work while keeping the entire output available to read and copy. */
 export function ChatCodeBlock({ text, label = t("client.chat.code"), language = '', lineNumbers = false,
-  copyLabel = t("client.chat.copyCode"), replyCopy }: Props) {
+  copyLabel = t("client.chat.copyCode"), replyCopy, showCopy = true, defaultWrap = false }: Props) {
   const styles = useStyles();
   const codeStyles = useCodeStyles();
   useLanguage();
   const { limit, ...pagination } = useCodePagination(text.length);
-  const [wrap, setWrap] = useState(false);
+  const [wrap, setWrap] = useState(defaultWrap);
   const visible = text.slice(0, limit);
   const displayed = lineNumbers
     ? visible.split('\n').map((line, index) => `${index + 1}  ${line}`).join('\n') : visible;
-  const actions = [{ text, label: copyLabel }, ...replyCopy ? [replyCopy] : []];
+  const actions = [...showCopy ? [{ text, label: copyLabel }] : [], ...replyCopy ? [replyCopy] : []];
   const content = <SelectableChatText style={[styles.code, codeStyles.content]} copy={actions} layoutKey={displayed}>
     <HighlightedCode text={displayed.trimEnd() || t("client.chat.emptyFile")} language={language} />
   </SelectableChatText>;
@@ -46,7 +48,7 @@ const useCodeStyles = createThemedStyles((color) => ({
     borderColor: color(palette.border, 'border'), overflow: 'hidden', marginVertical: 12 },
   toolbar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5, paddingHorizontal: 12,
     borderBottomWidth: 1, borderBottomColor: color(palette.border, 'border') },
-  label: { color: color(palette.muted, 'muted'), fontSize: 12, lineHeight: 19 },
+  label: { color: color(palette.muted, 'muted'), ...textMetrics(12, 19) },
   action: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 4 },
   selected: { color: color(palette.green, 'accent') },
   viewport: { maxHeight: 600 },

@@ -24,7 +24,7 @@ async function nodes() {
   const xml = await adb('shell', 'cat', '/sdcard/tool-details-layout.xml');
   await writeFile(path.join(output, 'latest.xml'), xml);
   return [...xml.matchAll(/<node\b([^>]*)>/g)].map(match => Object.fromEntries(
-    [...match[1].matchAll(/([\w-]+)="([^"]*)"/g)].map(value => [value[1], decode(value[2])])));
+    [...match[1].matchAll(/([\w-]+)=(["'])(.*?)\2/g)].map(value => [value[1], decode(value[3])])));
 }
 
 async function find(label) {
@@ -45,18 +45,20 @@ async function screenshot(name) {
   await adb('pull', '/sdcard/tool-details-result.png', path.join(output, `${name}.png`));
 }
 
-async function verifyCompact(name) {
+async function verifyStructured(name) {
   const tree = await nodes();
-  const paragraphs = reported.result.content.map(part =>
-    tree.find(node => node.text.startsWith(part.text)));
-  assert.ok(paragraphs.every(Boolean), 'Both reported output paragraphs remain complete');
-  const [first, second] = paragraphs.map(bounds);
-  const copies = tree.filter(node => node['content-desc'] === '复制完整内容');
-  assert.equal(copies.length, 2, 'Each output retains its copy action');
-  assert.ok(copies.every(node => !node.text), 'Copy actions do not add visible label rows');
-  assert.ok(second[1] - first[3] < (first[3] - first[1]) * 2, 'No standalone toolbar gap between paragraphs');
+  const structured = tree.find(node => node.text?.includes('"elements": 100'));
+  assert.ok(structured, 'Structured data is readable without opening another sheet');
+  assert.ok(reported.result.content.every(part => !tree.some(node => node.text?.includes(part.text))),
+    'Raw text is not duplicated above the structured result');
+  assert.ok(!tree.some(node => matches(node, '查看结构化结果')), 'No nested structured-result disclosure');
+  const copies = tree.filter(node => node['content-desc'] === '复制原始数据');
+  assert.equal(copies.length, 1, 'Only one raw copy entry');
+  const contentBounds = bounds(structured);
+  const copyBounds = bounds(copies[0]);
+  assert.ok(copyBounds[1] >= contentBounds[3], 'Raw copy entry is below the structured result');
   await screenshot(name);
-  return { first, second, copies: copies.map(bounds) };
+  return { contentBounds, copyBounds };
 }
 
 async function verifyNested() {
@@ -64,10 +66,7 @@ async function verifyNested() {
   await find('复制输入');
   await screenshot('input');
   await tap('关闭输入');
-  await tap('查看结构化结果');
-  await find('复制结构化结果');
-  await screenshot('structured');
-  await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
+  await find('复制原始数据');
   await find('关闭使用工具');
 }
 
@@ -85,21 +84,24 @@ async function scrollTo(label) {
 }
 
 await mkdir(output, { recursive: true });
+const originalFontScale = (await adb('shell', 'settings', 'get', 'system', 'font_scale')).trim();
+try {
+await adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0');
 await adb('install', '-r', path.join(root,
   'apps/native/android/app/build/outputs/apk/release/tool-details-fixture.apk'));
 await adb('shell', 'am', 'force-stop', applicationId);
 await adb('shell', 'am', 'start', '-W', '-n', `${applicationId}/com.codexswitch.mobile.MainActivity`);
 await find('关闭使用工具');
-const light = await verifyCompact('fixed-light');
+const light = await verifyStructured('android-light-font-1');
 await verifyNested();
-await tap('复制完整内容');
+await tap('复制原始数据');
 await find('已复制');
 await tap('关闭使用工具');
 await tap('检查复制内容');
-await find(reported.result.content[0].text);
+await find(JSON.stringify(reported.result, null, 2));
 await tap('切换主题');
 await tap('reported');
-const dark = await verifyCompact('fixed-dark');
+const dark = await verifyStructured('android-dark-font-1');
 await tap('返回上一层');
 await tap('literal');
 await find('<div>literal output</div>\n**keep these characters**');
@@ -109,7 +111,7 @@ await tap('long');
 await scrollTo('下一段');
 await tap('下一段');
 await scrollTo('复制完整内容');
-assert.ok((await nodes()).some(node => node.text.includes('OUTPUT_END')), 'The final page remains readable');
+assert.ok((await nodes()).some(node => node.text?.includes('OUTPUT_END')), 'The final page remains readable');
 await screenshot('last-page');
 await tap('复制完整内容');
 await find('已复制');
@@ -119,10 +121,21 @@ const copied = (await nodes()).find(node => node['resource-id'] === 'copied-outp
 assert.ok(copied?.length > 8_000 && copied.endsWith('OUTPUT_END'), 'Paging still copies the complete output');
 await tap('切换主题');
 await tap('reported');
+await adb('shell', 'settings', 'put', 'system', 'font_scale', '1.3');
+await find('复制原始数据');
+const enlarged = await verifyStructured('android-light-font-1.3');
+await tap('返回上一层');
+await tap('切换主题');
+await tap('reported');
+await verifyStructured('android-dark-font-1.3');
 const pid = (await adb('shell', 'pidof', applicationId)).trim();
 assert.match(pid, /^\d+$/);
 const errors = await adb('logcat', '-d', '-t', '1000', `--pid=${pid}`, '-s', 'ReactNativeJS:E', 'AndroidRuntime:E');
 assert.doesNotMatch(errors, /FATAL EXCEPTION|TypeError|ReferenceError/);
-await writeFile(path.join(output, 'result.json'), JSON.stringify({ serial, light, dark, passed: true,
-  cases: ['compact output', 'nested payloads', 'copy', 'dark theme', 'literal text', 'paging full copy'] }, null, 2));
-console.log('PASS: real Android tool details, nested sheets, full copy, themes and pagination');
+await writeFile(path.join(output, 'result.json'), JSON.stringify({ serial, light, dark, enlarged, passed: true,
+  cases: ['direct structured output', 'input sheet', 'raw copy', 'themes', 'literal text', 'paging full copy',
+    'font scales 1.0 and 1.3'] }, null, 2));
+console.log('PASS: real Android structured results, raw copy, input sheet, themes, fonts and pagination');
+} finally {
+  await adb('shell', 'settings', 'put', 'system', 'font_scale', originalFontScale);
+}

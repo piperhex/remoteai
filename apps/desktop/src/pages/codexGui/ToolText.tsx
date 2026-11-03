@@ -8,8 +8,8 @@ const COPY_ACTION_THRESHOLD = 8_000;
 const MAX_FORMATTED_TOOL_CHARACTERS = 100_000;
 
 /** The enclosing disclosure owns mounting; an open output always contains the complete text. */
-export function ToolText({ text, markdown = false, className }: {
-  text: string; markdown?: boolean; className?: string;
+export function ToolText({ text, markdown = false, className, showCopy = true }: {
+  text: string; markdown?: boolean; className?: string; showCopy?: boolean;
 }) {
   // Keep very large logs complete without blocking the UI on Markdown parsing.
   const formatMarkdown = markdown && text.length <= MAX_FORMATTED_TOOL_CHARACTERS;
@@ -18,7 +18,7 @@ export function ToolText({ text, markdown = false, className }: {
       tabIndex={0} role="region" aria-label={uiText("client.workspaceActions.toolContent")}>
       {formatMarkdown ? <RichText text={text} /> : <pre className={className}><CompletePlainText text={text} /></pre>}
     </div>
-    {text.length > COPY_ACTION_THRESHOLD && <div className={styles.outputActions}>
+    {showCopy && text.length > COPY_ACTION_THRESHOLD && <div className={styles.outputActions}>
       <CopyButton text={text} label={uiText("client.mobile.copyFullContent")} />
     </div>}
   </>;

@@ -5,7 +5,9 @@ import { useDiffText } from "../../../../../shared/chat/diffText";
 
 const COPY_FEEDBACK_MS = 1800;
 
-export function CopyButton({ text, label = "client.chat.copyMessage" }: { text: string | (() => string); label?: string }) {
+export function CopyButton({ text, label = "client.chat.copyMessage", showLabel = false }: {
+  text: string | (() => string); label?: string; showLabel?: boolean;
+}) {
   const t = useDiffText();
   const [copied, setCopied] = useState(false);
   useEffect(() => {
@@ -14,10 +16,11 @@ export function CopyButton({ text, label = "client.chat.copyMessage" }: { text: 
     return () => clearTimeout(timer);
   }, [copied]);
   return <Button type="text" size="small" aria-label={t(copied ? "client.chat.copied" : label)}
+    style={showLabel ? { color: "inherit" } : undefined}
     icon={copied ? <Check size={14} /> : <Copy size={14} />}
     onClick={() => void navigator.clipboard.writeText(typeof text === "function" ? text() : text)
       .then(() => setCopied(true)).catch(() => {
         setCopied(false);
         void message.error({ content: t("client.chat.copyFailedSelectTheTextAndCopyItManually"), style: { maxWidth: 400, marginInline: "auto" } });
-      })} />;
+      })}>{showLabel ? t(copied ? "client.chat.copied" : label) : undefined}</Button>;
 }

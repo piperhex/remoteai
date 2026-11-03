@@ -28,8 +28,7 @@ test("defers closed history and renders complete tool output on expansion", asyn
   await expect(page.locator("img")).toHaveCount(0);
   await page.locator('[data-message-id="capture"] > details > summary').click();
   await expect(page.getByAltText("工具返回的图片")).toHaveCount(1);
-  await expect(page.locator("pre")).toHaveCount(0);
-  await page.getByText("结构化结果", { exact: true }).click();
+  await expect(page.locator("pre")).toHaveCount(1);
   expect((await page.locator("pre").textContent())!.length).toBeGreaterThan(100_000);
   await page.locator('[data-message-id="long"] > details > summary').click();
   const log = page.locator('[data-message-id="long"]');

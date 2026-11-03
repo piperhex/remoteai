@@ -11,6 +11,8 @@ import { ChatAudio } from './ChatAudio';
 import { toolOutputText } from './toolOutput';
 import { useStyles } from './styles';
 import type { Item } from './types';
+import { toolResultPresentation } from '../../../../shared/chat/toolResult';
+import { CopyTextButton } from './CopyTextButton';
 
 export function toolRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -39,7 +41,7 @@ function OutputPart({ value }: { value: unknown }) {
   return <ChatCodeBlock text={serialized(value)} label={t("client.chat.result")} copyLabel={t("client.chat.copyResult")} />;
 }
 
-/** Inputs and structured payloads use a drawer, like other expandable mobile content. */
+/** Inputs remain optional details; returned structured data is shown in the tool result itself. */
 function Payload({ title, value }: { title: string; value: unknown }) {
   const styles = useStyles();
   useLanguage();
@@ -59,19 +61,20 @@ function Payload({ title, value }: { title: string; value: unknown }) {
 export function ChatToolResult({ item }: { item: Item }) {
   const styles = useStyles();
   useLanguage();
-  const result = toolRecord(item.result);
-  const content = item.contentItems ?? (Array.isArray(result?.content) ? result.content : undefined);
+  const { content, structured, hasStructured, rawText } = toolResultPresentation(item);
   const error = toolRecord(item.error)?.message;
   return <View style={{ gap: 12 }}>
     {item.arguments != null && <Payload title={t("client.chat.input")} value={item.arguments} />}
     {item.progress?.map((text, index) => <ChatToolText key={index} text={text} prose />)}
+    {hasStructured && <ChatCodeBlock text={JSON.stringify(structured, null, 2) ?? ''} language="json"
+      label={t("client.mobile.structuredResult")} showCopy={false} defaultWrap />}
     {content?.map((part, index) => <OutputPart key={index} value={part} />)}
-    {result?.structuredContent != null && <Payload title={t("client.mobile.structuredResult")} value={result.structuredContent} />}
-    {!content && item.result != null && <OutputPart value={item.result} />}
-    {item.output != null && <OutputPart value={item.output} />}
+    {!hasStructured && !content && item.result != null && <OutputPart value={item.result} />}
+    {!hasStructured && item.output != null && <OutputPart value={item.output} />}
     {item.error != null && <Text style={styles.error}>
       {typeof error === 'string' ? error : t("client.chat.theToolFailedPleaseTryAgain")}</Text>}
     {item.result == null && item.output == null && !content && !item.error && <Text style={styles.subtitle}>
       {item.status === 'inProgress' ? t("client.chat.waitingForToolOutput") : t("client.chat.theToolReturnedNoText")}</Text>}
+    {hasStructured && <CopyTextButton text={rawText} label={t("client.chat.copyRawData")} variant="labeled" />}
   </View>;
 }

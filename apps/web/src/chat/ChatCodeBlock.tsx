@@ -15,9 +15,9 @@ const LANGUAGE_LABELS: Record<string, string> = {
 };
 
 export function ChatCodeBlock({ text, language = '', label, copyLabel = t("client.chat.copyCode"), copyText = text,
-  desktop = false, wrapMode = 'toggle' }: {
+  desktop = false, wrapMode = 'toggle', showCopy = true }: {
   text: string; language?: string; label?: string; copyLabel?: string; copyText?: string; desktop?: boolean;
-  wrapMode?: 'toggle' | 'always';
+  wrapMode?: 'toggle' | 'always'; showCopy?: boolean;
 }) {
   useLanguage();
   const environment = useContext(FileEnvironmentContext);
@@ -34,7 +34,7 @@ export function ChatCodeBlock({ text, language = '', label, copyLabel = t("clien
       {desktop && wrapMode === 'toggle' && <button type="button" className="chat-code-wrap"
         aria-label={t("client.projectBrowser.wrapLines")} aria-pressed={wrapped}
         onClick={() => setWrapped(value => !value)}><WrapText size={15} /></button>}
-      <ChatCopyButton text={copyText} label={copyLabel} /></header>
+      {showCopy && <ChatCopyButton text={copyText} label={copyLabel} />}</header>
     <pre className={desktop && wrapMode === 'toggle' && !wrapped ? 'chat-code-unwrapped' : undefined}
       tabIndex={0} onScroll={event => {
       const node = event.currentTarget;

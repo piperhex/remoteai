@@ -6,7 +6,7 @@ import { copyText } from '../components/copyText';
 const COPY_FEEDBACK_MS = 2000;
 
 export function ChatCopyButton({ text, label = t("client.projectBrowser.copied"), iconOnly = false }: {
-  text: string; label?: string; iconOnly?: boolean;
+  text: string | (() => string); label?: string; iconOnly?: boolean;
 }) {
   useLanguage();
   const [copied, setCopied] = useState(false);
@@ -16,7 +16,8 @@ export function ChatCopyButton({ text, label = t("client.projectBrowser.copied")
     return () => window.clearTimeout(timer);
   }, [copied]);
   const copy = async () => {
-    const success = await copyText(label.replace(/^(复制|Copy\s*)/, '') || t("client.chat.content"), text,
+    const success = await copyText(label.replace(/^(复制|Copy\s*)/, '') || t("client.chat.content"),
+      typeof text === 'function' ? text() : text,
       { successToast: !iconOnly });
     if (iconOnly) setCopied(success);
   };

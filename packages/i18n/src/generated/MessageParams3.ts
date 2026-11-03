@@ -138,6 +138,7 @@ export interface MessageParams3 {
   "client.chat.copyInput": Record<string, never>;
   "client.chat.copyMessage": Record<string, never>;
   "client.chat.copyOutput": Record<string, never>;
+  "client.chat.copyRawData": Record<string, never>;
   "client.chat.copyReply": Record<string, never>;
   "client.chat.copyResult": Record<string, never>;
   "client.chat.copySource": Record<string, never>;
@@ -199,5 +200,4 @@ export interface MessageParams3 {
   "client.chat.estimated": Record<string, never>;
   "client.chat.estimatedCost": Record<string, never>;
   "client.chat.every6Hours": Record<string, never>;
-  "client.chat.exitCode": Record<string, never>;
 }

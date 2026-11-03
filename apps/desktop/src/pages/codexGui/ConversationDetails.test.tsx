@@ -110,7 +110,8 @@ it("renders tool inputs, rich outputs, search results, failures, and inline imag
   ]);
   await openDetails();
   expect(container.textContent).toContain('"query": "test"');
-  expect(container.querySelector("strong")?.textContent).toBe("工具结果");
+  expect(container.textContent).toContain('"count": 1');
+  expect(container.textContent).not.toContain("工具结果");
   expect(container.textContent).toContain("工具执行失败");
   expect(container.textContent).toContain("查询二");
   expect(container.querySelector('a[href="https://example.com/docs"]')).not.toBeNull();

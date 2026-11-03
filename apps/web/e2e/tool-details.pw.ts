@@ -1,31 +1,32 @@
 import { expect, test } from '@playwright/test';
 import reported from '../../../shared/chat/toolDetailsFixture.json' with { type: 'json' };
 
-test('keeps tool output compact and copies the complete result', async ({ page, context }, info) => {
+test.beforeEach(async ({ page }) => {
+  await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());
+});
+
+test('shows structured data immediately and copies the complete raw result at the bottom', async ({ page, context }, info) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.goto('e2e/tool-details-harness.html');
-  const outputs = page.locator('.chat-tool-markdown');
-  await expect(outputs).toHaveCount(2);
-  for (const output of await outputs.all()) {
-    const copy = output.getByRole('button', { name: '复制完整内容' });
-    const content = output.locator('.chat-markdown');
-    const textBounds = (await content.boundingBox())!;
-    const copyBounds = (await copy.boundingBox())!;
-    expect(copyBounds.y).toBeLessThan(textBounds.y + textBounds.height);
-    expect(copyBounds.x).toBeGreaterThanOrEqual(textBounds.x + textBounds.width);
-    expect(await output.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
-    await expect(copy).toHaveText('');
-  }
-  await outputs.first().getByRole('button', { name: '复制完整内容' }).click();
-  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText()))
-    .toBe(reported.result.content[0].text);
-  await page.screenshot({ path: info.outputPath('tool-details.png') });
+  const content = page.locator('.chat-code-block');
+  await expect(content).toHaveCount(1);
+  await expect(content).toContainText('"elements": 100');
+  await expect(page.locator('.chat-tool-markdown')).toHaveCount(0);
+  const copy = page.getByRole('button', { name: '复制原始数据', exact: true });
+  await expect(copy).toHaveCount(1);
+  const contentBounds = (await content.boundingBox())!;
+  const copyBounds = (await copy.boundingBox())!;
+  expect(copyBounds.y).toBeGreaterThanOrEqual(contentBounds.y + contentBounds.height);
+  expect(await content.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+  await copy.click();
+  await expect.poll(() => page.evaluate(async () => (await navigator.clipboard.readText()).replace(/\r\n/g, '\n')))
+    .toBe(JSON.stringify(reported.result, null, 2));
+  await expect(page.locator('.adm-toast-main')).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath('structured-result.png'), animations: 'disabled' });
   await page.getByText('查看输入', { exact: true }).click();
   await expect(page.locator('details').first()).toContainText('"pid": 4296');
-  await page.getByText('查看结构化结果', { exact: true }).click();
-  await expect(page.locator('details').last()).toContainText('"elements": 100');
   await page.getByRole('button', { name: '返回上一层' }).click();
-  await expect(outputs).toHaveCount(0);
+  await expect(content).toHaveCount(0);
 });
 
 test('keeps literal output and full-copy behavior while paging', async ({ page, context }) => {
@@ -46,4 +47,23 @@ test('keeps literal output and full-copy behavior while paging', async ({ page, 
   expect(copied).toMatch(/OUTPUT_END$/);
   await page.getByRole('button', { name: '上一段', exact: true }).click();
   await expect(page.getByRole('button', { name: '上一段', exact: true })).toBeDisabled();
+});
+
+test('keeps structured data readable with enlarged fonts and changes copy language offline', async ({ page }, info) => {
+  await page.goto('e2e/tool-details-harness.html?font=20&theme=dark');
+  const block = page.locator('.chat-code-block');
+  await expect(block).toContainText('"elements": 100');
+  await expect(page.getByRole('button', { name: '复制原始数据', exact: true })).toBeVisible();
+  expect(await block.evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath('structured-dark-font-20.png'), animations: 'disabled' });
+  await page.getByRole('button', { name: '关闭', exact: true }).click();
+  await page.context().setOffline(true);
+  await page.getByRole('button', { name: 'English', exact: true }).click();
+  await page.getByRole('button', { name: 'reported', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Copy raw data', exact: true })).toBeVisible();
+  await expect(block).toContainText('Structured result');
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await page.getByRole('button', { name: '中文', exact: true }).click();
+  await page.getByRole('button', { name: 'reported', exact: true }).click();
+  await expect(page.getByRole('button', { name: '复制原始数据', exact: true })).toBeVisible();
 });

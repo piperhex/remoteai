@@ -9,6 +9,7 @@ import { BottomSheet } from '../components/BottomSheet';
 import { copyText, saveTextFile } from './copyText';
 import { palette, useStyles } from './styles';
 import { Toast } from '../components/AppToast';
+import { textMetrics } from '../theme/text';
 
 export interface CopyAction { text: string; label: string }
 export const INLINE_COPY_WIDTH = 30;
@@ -16,7 +17,7 @@ const INLINE_BASELINE_OFFSET = 4;
 
 interface ExportRequest { text: string; reason: 'too-large' | 'failed' }
 
-function useTextCopy(text: string) {
+function useTextCopy(text: string | (() => string)) {
   const [status, setStatus] = useState('');
   const [request, setRequest] = useState<ExportRequest | null>(null);
   const [saving, setSaving] = useState(false);
@@ -40,10 +41,11 @@ function useTextCopy(text: string) {
     if (busy.current) return;
     busy.current = true;
     try {
-      const result = await copyText(text);
+      const value = typeof text === 'function' ? text() : text;
+      const result = await copyText(value);
       if (!mounted.current) return;
       if (result === 'copied') notice("client.chat.copied");
-      else if (Platform.OS === 'android') { setError(''); setRequest({ text, reason: result }); }
+      else if (Platform.OS === 'android') { setError(''); setRequest({ text: value, reason: result }); }
       else notice("client.app.couldNotCopyPleaseTryAgain");
     } finally { busy.current = false; }
   };
@@ -63,7 +65,7 @@ function useTextCopy(text: string) {
 }
 
 export function CopyTextButton({ text, label = t("client.projectBrowser.copied"), variant = 'inline' }: {
-  text: string; label?: string; variant?: 'inline' | 'labeled' | 'icon';
+  text: string | (() => string); label?: string; variant?: 'inline' | 'labeled' | 'icon';
 }) {
   const copyStyles = useCopyStyles();
   const color = useThemeColor();
@@ -92,7 +94,7 @@ const useCopyStyles = createThemedStyles((color) => ({
   actionButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 8 },
   // Keep the touch area below the icon so its height does not add space after the reply.
   iconButton: { width: 32, justifyContent: 'center', alignItems: 'flex-start' },
-  label: { color: color(palette.muted, 'muted'), fontSize: 14 },
+  label: { color: color(palette.muted, 'muted'), ...textMetrics(14, 20), flexShrink: 1 },
   // Explicit dimensions let Android lay out this view as one inline attachment in a TextView.
   inline: { width: INLINE_COPY_WIDTH, height: 20 },
   // The inline view ends at the text baseline; the icon's visible bottom also needs the font's descent.
