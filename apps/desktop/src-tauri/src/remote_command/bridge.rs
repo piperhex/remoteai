@@ -134,6 +134,9 @@ pub(super) fn call(root: &Path, id: &str, token: &str, request: &ToolRequest) ->
         .build()
         .map_err(|_| RemoteError::Connection)?
         .post(format!("http://127.0.0.1:{}/", endpoint.port))
+        // Each client makes one call. Release the server's keep-alive reader so a burst
+        // cannot occupy its read workers while later commands wait for a connection.
+        .header(reqwest::header::CONNECTION, "close")
         .header("X-Csw-Home", id)
         .header("Authorization", token)
         .json(request)
