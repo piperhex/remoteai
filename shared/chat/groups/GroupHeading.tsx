@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ChevronRight, MoreHorizontal } from 'lucide-react';
 import { ThreadContextMenu } from '../ThreadContextMenu';
 import { useGrouping } from './context';
 import { GroupIcon } from './GroupIcon';
@@ -15,8 +15,11 @@ export function GroupHeading({ id, label, icon, collapsed, toggle }: {
       onClick: () => groups?.openManager() }] }}>
       <button type="button" className="chat-custom-group-heading" aria-expanded={!collapsed}
         aria-label={title} onClick={toggle}>
-        {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-        <GroupIcon icon={icon} /><span>{label}</span>
+        <span className="chat-custom-group-toggle-icon" aria-hidden="true">
+          <GroupIcon icon={icon} size={14} />
+          <ChevronRight size={14} className="chat-custom-group-chevron" />
+        </span>
+        <span>{label}</span>
       </button>
     </ThreadContextMenu>
     <button type="button" className="chat-custom-group-heading" style={{ width: 'auto' }}
