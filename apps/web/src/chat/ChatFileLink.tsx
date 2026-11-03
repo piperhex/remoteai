@@ -7,6 +7,7 @@ import { isDownloadOnlyFile } from './ChatDownloadFile';
 import { FileEnvironmentContext } from '../../../desktop/src/pages/codexGui/fileEnvironment';
 import { MessageLink } from '../../../desktop/src/pages/codexGui/MessageLink';
 import { FileMenu } from '../../../desktop/src/pages/codexGui/FileMenu';
+import { chatBrowserResource } from './chatBrowserResource';
 
 export const ChatFileContext = createContext<FilePreviewContext | null>(null);
 
@@ -15,7 +16,9 @@ function FilePreviewLink({ path, line, children }: { path: string; line?: number
   const panel = useContext(DetailsContext);
   const [preview, setPreview] = useState(false);
   const open = () => {
-    if (panel?.openRemoteFile && !isDownloadOnlyFile(path)) {
+    if (panel?.openResource) {
+      panel.openResource(chatBrowserResource(path, context, line));
+    } else if (panel?.openRemoteFile && !isDownloadOnlyFile(path)) {
       void panel.openRemoteFile({ path, line, threadId: context.threadId });
     } else setPreview(true);
   };

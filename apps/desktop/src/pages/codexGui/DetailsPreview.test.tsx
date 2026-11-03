@@ -25,6 +25,7 @@ function Fixture({ selected = "first", active = true }: { selected?: string; act
     <ConversationChangesButton />
     <MessageLink href="./readme.md">Readme</MessageLink>
     <MessageLink href="./second.md">Second</MessageLink>
+    <MessageLink href="./third.md">Third</MessageLink>
     <MessageLink href="https://example.com/page">Website</MessageLink>
   </DetailsWorkspace>;
 }
@@ -56,7 +57,8 @@ afterEach(async () => {
 
 it("shares one drawer with file changes and keeps the file view when switching tabs", async () => {
   await click("预览文件：./readme.md");
-  expect(preview()?.textContent).toContain("readme.md");
+  expect(host.querySelector('.website-preview-browser [role="tab"][aria-selected="true"]')?.textContent)
+    .toContain('readme.md');
   const source = [...host.querySelectorAll("button")].find(button => button.textContent === "源码")!;
   await act(async () => source.click());
   await click("查看文件更改");
@@ -91,17 +93,18 @@ it("offers to open changes after switching away from a conversation with an open
   expect(host.querySelector("aside")?.hidden).toBe(false);
 });
 
-it("releases replaced files and cancels pending reads when changing conversations", async () => {
+it("retains file tabs and releases their sessions and pending reads when changing conversations", async () => {
   await click("预览文件：./readme.md");
   vi.mocked(filePreviewApi.open).mockResolvedValueOnce({ ...data, sessionId: "second", name: "second.md" });
   await click("预览文件：./second.md");
-  expect(filePreviewApi.close).toHaveBeenCalledWith("first");
+  expect(filePreviewApi.close).not.toHaveBeenCalled();
   let resolve!: (value: FilePreviewData) => void;
   vi.mocked(filePreviewApi.open).mockReturnValueOnce(new Promise(done => { resolve = done; }));
-  await click("预览文件：./readme.md");
+  await click("预览文件：./third.md");
   await act(async () => root.render(<Fixture selected="other" />));
   await act(async () => resolve({ ...data, sessionId: "late" }));
   expect(preview()).toBeNull();
+  expect(filePreviewApi.close).toHaveBeenCalledWith("first");
   expect(filePreviewApi.close).toHaveBeenCalledWith("second");
   expect(filePreviewApi.close).toHaveBeenCalledWith("late");
 });
@@ -113,7 +116,8 @@ it("keeps the latest click when different file reads finish out of order", async
   vi.mocked(filePreviewApi.open).mockResolvedValueOnce({ ...data, sessionId: "second", name: "second.md" });
   await click("预览文件：./second.md");
   await act(async () => resolve(data));
-  expect(preview()?.textContent).toContain("second.md");
+  expect(host.querySelector('.website-preview-browser [role="tab"][aria-selected="true"]')?.textContent)
+    .toContain('second.md');
   expect(filePreviewApi.close).toHaveBeenCalledWith("first");
 });
 
@@ -125,7 +129,7 @@ it("opens websites in the same drawer and hides their native content on minimize
   await nextFrame();
   expect(event.defaultPrevented).toBe(true);
   expect(host.querySelectorAll("aside")).toHaveLength(1);
-  expect(filePreviewApi.close).toHaveBeenCalledWith("first");
+  expect(filePreviewApi.close).not.toHaveBeenCalled();
   expect(websitePreviewApi.sync).toHaveBeenLastCalledWith(expect.objectContaining({
     url: "https://example.com/page", visible: true,
   }));

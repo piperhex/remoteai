@@ -39,6 +39,9 @@ function BrowserToolbar({ tab, fullscreen, toggleFullscreen, navigate, action, t
       disabled={!tab?.url} onClick={() => action('reload')}><RotateCw size={17} /></button>
     <form onSubmit={(event) => {
       event.preventDefault();
+      if (tab?.url.startsWith('file:') && address.trim() === tab.url) {
+        setInvalid(false); action('reload'); return;
+      }
       const url = pageUrl(address.trim());
       setInvalid(!url);
       if (url) navigate(url.toString());

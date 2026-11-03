@@ -84,7 +84,8 @@ it('keeps nested paths and preview history on the selected remote computer', asy
   expect(context.load).toHaveBeenLastCalledWith('remote-thread', 'F:/remote/docs/next.md', expect.any(Object));
   expect(host.querySelector('[data-details-panel]')?.textContent).toContain('引用位置：第 3 行');
   await click(host.querySelector<HTMLButtonElement>('button[aria-label="返回上一页"]')!);
-  expect(context.load).toHaveBeenLastCalledWith('remote-thread', path, expect.any(Object));
+  expect(context.load).toHaveBeenCalledTimes(2);
+  expect(host.querySelector('.pm-browser-page:not([hidden])')?.textContent).toContain('验证报告');
 });
 
 it('keeps read errors inside the preview with download available instead of opening an application menu', async () => {

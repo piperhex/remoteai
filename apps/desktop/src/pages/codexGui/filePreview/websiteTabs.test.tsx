@@ -51,6 +51,39 @@ it('does not restore closed tabs or previous conversations when a pending addres
   expect(tabs.tabs).toEqual([]); expect(tabs.activeId).toBe('');
 });
 
+it('keeps resource sessions through tab switches, reuses their tabs and releases each exactly once', async () => {
+  const first = { key: 'first', title: 'first.html', url: 'file:///first.html', render: () => null, release: vi.fn() };
+  const second = { key: 'second', title: 'second.pdf', url: 'file:///second.pdf', render: () => null, release: vi.fn() };
+  await act(async () => { tabs.openResource(first); tabs.openResource(second); });
+  const firstId = tabs.tabs[0].id;
+  await act(async () => tabs.selectResource('first'));
+  await act(async () => tabs.openResource(first));
+  expect(tabs.activeId).toBe(firstId);
+  expect(first.release).not.toHaveBeenCalled(); expect(second.release).not.toHaveBeenCalled();
+  const duplicate = { ...first, release: vi.fn() };
+  await act(async () => tabs.openResource(duplicate));
+  expect(tabs.tabs).toHaveLength(2); expect(duplicate.release).toHaveBeenCalledOnce();
+  await act(async () => tabs.onCloseTab(firstId));
+  expect(first.release).toHaveBeenCalledOnce(); expect(second.release).not.toHaveBeenCalled();
+  await act(async () => tabs.reset());
+  expect(first.release).toHaveBeenCalledOnce(); expect(second.release).toHaveBeenCalledOnce();
+});
+
+it('can return from a website to a file resource without resolving a local file as a remote URL', async () => {
+  await act(async () => tabs.openResource({ key: 'file', title: 'demo.html', url: 'file:///demo.html', render: () => null }));
+  const id = tabs.activeId;
+  await act(async () => tabs.onNavigate(id, 'https://example.test'));
+  await act(async () => resolves.get('https://example.test')!('https://example.test'));
+  expect(tabs.tabs[0].url).toBe('https://example.test');
+  await act(async () => tabs.onAction(id, 'back'));
+  expect(tabs.tabs[0].url).toBe('file:///demo.html');
+  expect(tabs.tabs[0].title).toBe('demo.html');
+  await act(async () => tabs.onNavigate(id, 'https://pending.test'));
+  await act(async () => tabs.selectResource('file'));
+  await act(async () => resolves.get('https://pending.test')!('https://pending.test'));
+  expect(tabs.tabs[0].url).toBe('file:///demo.html');
+});
+
 it('parks a native tab only after its previous placement has completed', async () => {
   let finish!: () => void;
   vi.mocked(invoke).mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; }));

@@ -25,7 +25,7 @@ export function useDetailsPanel({ selected, enabled, active, remoteFiles = false
   }, [openTab]);
   const revealPreview = useCallback(() => reveal(false), [reveal]);
   const { preview, websites, navigation, hasFileHistory, openFile, openRemoteFile, openWebsite,
-    openManagedWebsite, cancel, reset }
+    openManagedWebsite, openResource, cancel, reset }
     = usePreviewHistory({
     onOpen: rememberOpener, onNavigate: revealPreview,
   });
@@ -56,9 +56,9 @@ export function useDetailsPanel({ selected, enabled, active, remoteFiles = false
     reset(); setEntry(null); setExpanded(false);
     return cancel;
   }, [selected, enabled, reset, cancel]);
-  const context = useMemo(() => ({ open, update, close, openFile, openWebsite, setConversationChanges,
+  const context = useMemo(() => ({ open, update, close, openFile, openWebsite, openResource, setConversationChanges,
     openRemoteFile: remoteFiles ? openRemoteFile : undefined, visible, showingChanges }),
-  [open, update, close, openFile, openRemoteFile, remoteFiles, openWebsite, setConversationChanges,
+  [open, update, close, openFile, openRemoteFile, remoteFiles, openWebsite, openResource, setConversationChanges,
     visible, showingChanges]);
   return { context, entry, preview, websites, navigation, hasFileHistory, showingChanges, visible, viewId, expanded, setExpanded,
     showChanges: () => { if (!entry) setEntry(changes.current); cancel(); openTab("changes"); },

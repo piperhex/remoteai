@@ -9,6 +9,7 @@ import { DetailsContext } from "./detailsContext";
 import { FileEnvironmentContext } from './fileEnvironment';
 import { isDownloadOnlyFile } from '../../../../../shared/remote-chat/filePreview';
 import { animateDownloadToNavigation, type DownloadOrigin } from '../../../../web/src/downloads/downloadFeedback';
+import { downloadBrowserResource } from './filePreview/downloadResource';
 
 const FEEDBACK_STYLE = { maxWidth: 400, marginInline: "auto" };
 
@@ -66,9 +67,13 @@ export function useFileMenu(target: FileReference) {
     flight.current = true; setBusy(true); setOpen(false);
     try {
       const file = { ...target, threadId };
-      const remotePreview = environment && !isDownloadOnlyFile(target.path) ? panel?.openRemoteFile : undefined;
+      if (panel?.openResource && isDownloadOnlyFile(target.path, { mediaPreview: true })) {
+        panel.openResource(downloadBrowserResource(file)); return;
+      }
+      const remotePreview = environment && !isDownloadOnlyFile(target.path, { mediaPreview: true })
+        ? panel?.openRemoteFile : undefined;
       try {
-        if (panel && await panel.openFile(file)) return;
+        if (panel && await panel.openFile(file, { browser: true })) return;
       } catch (error) {
         // Older peers and unavailable preview tunnels still support ordinary remote file reads.
         if (!remotePreview) throw error;
@@ -81,5 +86,6 @@ export function useFileMenu(target: FileReference) {
     } finally { flight.current = false; setBusy(false); }
   };
   return { open, setOpen, applications, desktop, remote: Boolean(environment), downloadOnly,
-    canPreview: !downloadOnly && (desktop || isHostedWebApp), loading, failed, busy, perform, preview };
+    canPreview: (!downloadOnly || Boolean(panel?.openResource)) && (desktop || isHostedWebApp),
+    loading, failed, busy, perform, preview };
 }

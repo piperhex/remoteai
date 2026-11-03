@@ -187,14 +187,14 @@ it("previews Markdown resources directly and preserves the original menu on righ
   expect(item("打开文件")).toBeTruthy();
 });
 
-it("opens the original menu for unsupported files and prevents duplicate preview requests", async () => {
-  let resolve!: (data: FilePreviewData | null) => void;
-  vi.mocked(filePreviewApi.open).mockReturnValue(new Promise(done => { resolve = done; }));
+it("opens unsupported files in one browser download tab without preview reads", async () => {
   await act(async () => root.render(<DetailsWorkspace selected="thread-one" active>
     <FileMenu path="archive.zip" preview>归档</FileMenu></DetailsWorkspace>));
   await click(trigger()); await click(trigger());
-  expect(filePreviewApi.open).toHaveBeenCalledOnce();
-  await act(async () => resolve(null));
-  expect(item("打开文件")).toBeTruthy();
+  expect(filePreviewApi.open).not.toHaveBeenCalled();
+  expect(host.querySelectorAll('.website-preview-browser [role="tab"]')).toHaveLength(1);
+  expect(host.querySelector('.resource-download-card')?.textContent).toContain('archive.zip');
+  await click(host.querySelector<HTMLButtonElement>('.resource-download-button')!);
+  expect(fileApi.perform).toHaveBeenCalledWith({ path: 'archive.zip', threadId: null }, { type: 'saveAs' });
   expect(trigger().disabled).toBe(false);
 });

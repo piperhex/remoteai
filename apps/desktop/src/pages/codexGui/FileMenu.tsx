@@ -7,6 +7,7 @@ import { useFileMenu } from "./useFileMenu";
 import { FileApplicationIcon } from "./FileApplicationIcon";
 import styles from "./FileMenu.module.less";
 import { downloadOrigin } from '../../../../web/src/downloads/downloadFeedback';
+import { useThreadLongPress } from '../../../../../shared/chat/useThreadLongPress';
 
 // Submenus may overlap the parent when two columns cannot fit in a narrow window.
 const SUBMENU_PLACEMENTS: MenuProps["builtinPlacements"] = {
@@ -19,6 +20,7 @@ export function FileMenu({ path, line, column, children, className, onReview, pr
 }) {
   const target = { path, ...(line && { line }), ...(column && { column }) };
   const menu = useFileMenu(target);
+  const gesture = useThreadLongPress(() => menu.setOpen(true), { enabled: !menu.busy });
   const previewsFile = preview && menu.canPreview && !onReview;
   const openApplication = (application: string) => { void menu.perform({ type: "open", application }); };
   const vscode = menu.applications.find((application) => application.id === "vscode");
@@ -70,7 +72,7 @@ export function FileMenu({ path, line, column, children, className, onReview, pr
     menu={{ items, triggerSubMenuAction: "hover", builtinPlacements: SUBMENU_PLACEMENTS,
       expandIcon: <ChevronRight size={14} aria-hidden="true" />,
       onClick: () => menu.setOpen(false) }} disabled={menu.busy}>
-    <button type="button" className={className ?? styles.link}
+    <button {...gesture} type="button" className={className ?? styles.link}
       aria-label={onReview ? uiText("client.composer.viewChangesTo", { value1: path }) : uiText("client.desktopGuiErrors.message", { value1: uiText(previewsFile ? "client.composer.previewFile" : "client.projectBrowser.fileActions"), value2: path })}
       onClick={() => {
         if (onReview) { menu.setOpen(false); onReview(); }

@@ -11,6 +11,12 @@ import { remoteImageBytes } from './remoteImageBytes';
 import { useDesktopLayout } from '../useDesktopLayout';
 import thumbnailStyles from '../../../../shared/chat/toolImageThumbnail.module.css';
 import { ImageThumbnail } from '../../../../shared/chat/ImageThumbnail';
+import { DetailsContext } from '../../../desktop/src/pages/codexGui/detailsContext';
+import { ChatFileContext } from './ChatFileLink';
+import { parseFileReference } from '../../../../shared/chat/fileReference';
+import { chatBrowserResource } from './chatBrowserResource';
+import { imageBrowserResource } from '../../../desktop/src/pages/codexGui/filePreview/imageResource';
+import { useFileMenu } from '../../../desktop/src/pages/codexGui/useFileMenu';
 
 export const ChatImageContext = createContext<ImagePreviewOptions | null>(null);
 
@@ -31,6 +37,17 @@ function VisibleChatImage({ source, description = t("client.chat.image"), compac
   const environment = useContext(FileEnvironmentContext);
   const image = useChatImage(source, useContext(ChatImageContext));
   const [preview, setPreview] = useState(false);
+  const panel = useContext(DetailsContext);
+  const files = useContext(ChatFileContext);
+  const file = source ? parseFileReference(source) : undefined;
+  const menu = useFileMenu(file ?? { path: '' });
+  const open = () => {
+    if (!fixedImage || !panel?.openResource || !source) { setPreview(true); return; }
+    if (file && environment) { void menu.preview(); return; }
+    if (file && files) { panel.openResource(chatBrowserResource(file.path, files)); return; }
+    panel.openResource(imageBrowserResource({ key: JSON.stringify([files?.threadId, source]),
+      title: description, source, load: image.original }));
+  };
   if (!fixedImage && image.failed) return <span className="chat-image-notice" role="status">
     {description}{t("client.chat.couldNotLoadImage")} <button type="button" className="chat-button" onClick={image.retry}>{t("client.terminal.retry")}</button>
   </span>;
@@ -39,9 +56,9 @@ function VisibleChatImage({ source, description = t("client.chat.image"), compac
   }
   return <>
     {fixedImage ? <ImageThumbnail key={image.key} url={image.url} description={description} failed={image.failed}
-      translate={t} retry={image.retry} onError={image.fail} onPreview={() => setPreview(true)} className="chat-image" />
+      translate={t} retry={image.retry} onError={image.fail} onPreview={open} className="chat-image" />
       : <button type="button" className={`chat-image${compact ? ` ${thumbnailStyles.thumbnail}` : ''}`}
-      aria-label={t("client.chat.enlarge", { value1: description })} onClick={() => setPreview(true)}>
+      aria-label={t("client.chat.enlarge", { value1: description })} onClick={open}>
       <img key={image.key} src={image.url} alt={description} loading="lazy" decoding="async"
         referrerPolicy="no-referrer" onError={image.fail} />
     </button>}

@@ -60,9 +60,10 @@ it('uses the shared drawer and resolves nested files and images beside the remot
   await click('Next');
   expect(environment.previews.open).toHaveBeenLastCalledWith({ path: 'F:/remote/docs/next.md',
     line: 3, threadId: 'remote-thread' });
-  expect(button('源码').getAttribute('aria-pressed')).toBe('true');
+  expect(host.querySelector('.pm-browser-page:not([hidden]) [aria-pressed="true"]')?.textContent).toBe('源码');
   await click('返回上一页');
-  expect(environment.previews.open).toHaveBeenLastCalledWith({ path: 'F:/remote/docs/guide.md', threadId: 'remote-thread' });
+  expect(environment.previews.open).toHaveBeenCalledTimes(2);
+  expect(host.querySelector('.pm-browser-page:not([hidden])')?.textContent).toContain('Remote guide');
 });
 
 it('shares table, code, review directives and image renderers in remote messages', async () => {
@@ -97,14 +98,16 @@ it('keeps forwarded local addresses distinct from remote URLs throughout preview
   await click('Remote website');
   expect(host.querySelector('iframe')?.src).toBe('http://127.0.0.1:54322/remote');
   await click('Forwarded website');
-  expect(host.querySelector('iframe')?.src).toBe('http://127.0.0.1:13000/');
+  expect(host.querySelector<HTMLIFrameElement>('.pm-browser-page:not([hidden]) iframe')?.src)
+    .toBe('http://127.0.0.1:13000/');
   expect(environment.resolveWebsite).toHaveBeenCalledTimes(1);
-  await click('返回上一页');
-  expect(host.querySelector('iframe')?.src).toBe('http://127.0.0.1:54322/remote');
-  expect(environment.resolveWebsite).toHaveBeenCalledTimes(2);
-  await click('前往下一页');
-  expect(host.querySelector('iframe')?.src).toBe('http://127.0.0.1:13000/');
-  expect(environment.resolveWebsite).toHaveBeenCalledTimes(2);
+  await click('Remote website');
+  expect(host.querySelector<HTMLIFrameElement>('.pm-browser-page:not([hidden]) iframe')?.src)
+    .toBe('http://127.0.0.1:54322/remote');
+  await click('Forwarded website');
+  expect(host.querySelector<HTMLIFrameElement>('.pm-browser-page:not([hidden]) iframe')?.src)
+    .toBe('http://127.0.0.1:13000/');
+  expect(environment.resolveWebsite).toHaveBeenCalledTimes(1);
 });
 
 it.each([
@@ -112,21 +115,20 @@ it.each([
 ] as const)('uses the same %s preview content for %s files', async (kind, extension) => {
   vi.mocked(environment.previews.open).mockResolvedValue({ ...file, kind, text: null });
   await render(`[Media](F:/remote/media.${extension})`); await click('Media');
-  const media = host.querySelector(kind === 'pdf' ? 'object' : kind);
-  expect(media?.getAttribute(kind === 'pdf' ? 'data' : 'src')).toBe(file.url);
+  if (kind === 'pdf') expect(host.querySelector('[data-resource-pdf]')).not.toBeNull();
+  else expect(host.querySelector(kind)?.getAttribute('src')).toBe(file.url);
 });
 
 it.each(['msi', 'EXE', 'zip', 'docx', 'BIN'])(
-  'only offers a local download for remote %s files without previewing or discovering applications', async extension => {
+  'shows a browser download card for remote %s files without previewing or discovering applications', async extension => {
     const path = `F:/remote/release.${extension}`;
     await render(`[Download](${path})`); await click('Download');
-    const items = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-    expect(items.map(item => item.textContent)).toEqual(['下载到本机…']);
-    expect(document.querySelector('[role="separator"]')).toBeNull();
+    expect(host.querySelector('.resource-download-card')?.textContent).toContain(`release.${extension}`);
+    expect(host.querySelector('.website-preview-browser')).not.toBeNull();
     expect(environment.previews.open).not.toHaveBeenCalled();
     expect(environment.actions.applications).not.toHaveBeenCalled();
     expect(environment.actions.perform).not.toHaveBeenCalled();
-    await act(async () => items[0].click());
+    await click('下载');
     expect(environment.actions.perform).toHaveBeenCalledExactlyOnceWith(
       { path, threadId: 'remote-thread' }, { type: 'saveAs' },
     );
