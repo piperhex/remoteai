@@ -7,6 +7,7 @@ use std::{
 };
 
 use crate::codex_gui::upload_policy::UploadPolicyStore;
+use crate::remote_websocket::backoff::ReconnectBackoff;
 use serde_json::json;
 use std::sync::Arc;
 use tungstenite::{stream::MaybeTlsStream, Error as SocketError, Message, WebSocket};
@@ -22,9 +23,14 @@ use super::{
 
 type Socket = WebSocket<MaybeTlsStream<TcpStream>>;
 type Dial = sync_mpsc::Receiver<Result<Socket, ChatError>>;
+#[path = "runtime_socket.rs"]
+mod socket;
 #[path = "runtime_worker.rs"]
 mod worker;
 pub(super) use worker::run;
+#[cfg(test)]
+#[path = "runtime_backoff_tests.rs"]
+mod backoff_tests;
 #[path = "runtime_bulk.rs"]
 mod binary;
 #[cfg(test)]
@@ -36,7 +42,6 @@ mod recovery;
 #[path = "runtime_tests.rs"]
 mod tests;
 const POLL_INTERVAL: Duration = Duration::from_millis(20);
-const RECONNECT_DELAY: Duration = Duration::from_millis(1500);
 const PING_INTERVAL: Duration = Duration::from_secs(20);
 const RECEIVE_TIMEOUT: Duration = Duration::from_secs(60);
 const AUTH_TIMEOUT: Duration = Duration::from_secs(10);
@@ -60,6 +65,7 @@ pub(super) struct Runtime {
     generation: u64,
     sessions: Sessions,
     retry_at: Instant,
+    backoff: ReconnectBackoff,
     times: ConnectionTimes,
     registered: bool,
     binary_relay: bool,
@@ -82,6 +88,7 @@ impl Default for Runtime {
             generation: 0,
             sessions: Sessions::default(),
             retry_at: now,
+            backoff: ReconnectBackoff::new(1500),
             registered: false,
             binary_relay: false,
             binary_bulk: false,
@@ -130,6 +137,7 @@ impl Runtime {
             {
                 if request.reset {
                     self.reset();
+                    self.schedule_retry();
                 } else if self.socket.is_some() {
                     self.disconnect();
                 }
@@ -185,7 +193,7 @@ impl Runtime {
             return;
         }
         // Older coordinators still require a resumable reconnect to extend their expiry timer.
-        self.disconnect();
+        self.clear_connection();
     }
 
     fn emit(&mut self, event: Event) {
@@ -200,14 +208,23 @@ impl Runtime {
         {
             // Resume credentials are unsafe after dropping application frames. Start a fresh session.
             self.reset();
+            self.schedule_retry();
         }
     }
 
     fn disconnect(&mut self) {
+        self.clear_connection();
+        self.schedule_retry();
+    }
+
+    fn schedule_retry(&mut self) {
+        self.retry_at = Instant::now() + self.backoff.next();
+    }
+
+    fn clear_connection(&mut self) {
         self.socket = None;
         self.generation += 1;
         self.registered = false;
-        self.retry_at = Instant::now() + RECONNECT_DELAY;
         // Pairing may have arrived while the WebView was paused. Such peers do not yet have
         // usable encryption keys and must not be claimed on a replacement connection.
         for session_id in self.sessions.disconnected() {
@@ -230,7 +247,6 @@ impl Runtime {
         if let Err(error) = self.tcp_authority.clear() {
             eprintln!("TCP paths reset: {error}");
         }
-        self.retry_at = Instant::now() + RECONNECT_DELAY;
         if let Some(bridge) = self.bridge.as_mut() {
             bridge.reset(self.generation);
         }
@@ -259,7 +275,10 @@ impl Runtime {
             return;
         }
         if self.read().is_err() {
-            self.disconnect();
+            // A permanent close already reset sessions and scheduled this failure once.
+            if self.socket.is_some() {
+                self.disconnect();
+            }
             return;
         }
         let now = Instant::now();
@@ -276,77 +295,6 @@ impl Runtime {
                 self.disconnect();
             }
         }
-    }
-
-    fn start_dial(&mut self) {
-        if self.socket.is_some()
-            || self.dial.is_some()
-            || self.bridge.is_none()
-            || Instant::now() < self.retry_at
-        {
-            return;
-        }
-        let Some(config) = self.config.as_ref() else {
-            return;
-        };
-        let url = config.websocket_url.clone();
-        let (sender, receiver) = sync_mpsc::channel();
-        self.dial = Some((self.generation, receiver));
-        // DNS, proxy CONNECT and TLS may block. Control commands remain responsive while dialing.
-        thread::spawn(move || {
-            let socket = dial(&url);
-            // A closed receiver means the host stopped while the connection was being established.
-            if sender.send(socket).is_err() {
-                eprintln!("remote chat: canceled connection attempt");
-            }
-        });
-    }
-
-    fn finish_dial(&mut self) {
-        let Some((generation, receiver)) = &self.dial else {
-            return;
-        };
-        let result = match receiver.try_recv() {
-            Ok(result) => result,
-            Err(sync_mpsc::TryRecvError::Empty) => return,
-            Err(sync_mpsc::TryRecvError::Disconnected) => Err(ChatError::Transport),
-        };
-        let generation = *generation;
-        self.dial = None;
-        if generation != self.generation || self.bridge.is_none() {
-            return;
-        }
-        match result.and_then(|socket| self.authenticate(socket)) {
-            Ok(()) => {}
-            Err(_) => self.disconnect(),
-        }
-    }
-
-    fn authenticate(&mut self, mut socket: Socket) -> Result<(), ChatError> {
-        self.auth_renewal = super::auth_renewal::AuthRenewal::default();
-        self.binary_relay = false;
-        self.binary_bulk = false;
-        let config = self.config.as_ref().ok_or(ChatError::Transport)?;
-        let frame = json!({ "type": "authenticate", "role": "desktop", "transportVersion": 2,
-            "binaryRelay": true, "fileBulkV1": true,
-            "tcpPunch": true,
-            "nativeTraversal": true,
-            "remoteAssistance": cfg!(any(windows, target_os = "macos")),
-            "accessToken": config.access_token, "deviceId": config.device_id,
-            "sessions": self.sessions.authentication() });
-        socket
-            .send(Message::Text(frame.to_string().into()))
-            .map_err(|_| ChatError::Transport)?;
-        let now = Instant::now();
-        self.times = ConnectionTimes {
-            opened: now,
-            received: now,
-            pinged: now,
-        };
-        self.socket = Some(socket);
-        // Resume notifications can precede `registered`; their encrypted probes must be writable.
-        self.emit(Event::Ready);
-        Ok(())
     }
 
     fn read(&mut self) -> Result<(), ChatError> {
@@ -366,6 +314,7 @@ impl Runtime {
             Ok(Message::Close(frame)) => {
                 if frame.is_some_and(|frame| matches!(u16::from(frame.code), 4000 | 4001)) {
                     self.reset();
+                    self.schedule_retry();
                 }
                 return Err(ChatError::Transport);
             }
@@ -406,6 +355,7 @@ impl Runtime {
             .map_err(|_| ChatError::InvalidFrame)?;
         if message["type"] == "registered" {
             self.registered = true;
+            self.backoff.reset();
         } else {
             let data = if message["type"] == "peer-open" {
                 let config = self.config.as_ref().ok_or(ChatError::Transport)?;
@@ -460,27 +410,4 @@ impl Runtime {
             .send(message)
             .map_err(|_| ChatError::Transport)
     }
-}
-
-fn dial(url: &str) -> Result<Socket, ChatError> {
-    let (mut socket, _) =
-        crate::remote_websocket::connect_remote_websocket(url).map_err(|_| ChatError::Transport)?;
-    let stream = match socket.get_mut() {
-        MaybeTlsStream::Plain(stream) => stream,
-        MaybeTlsStream::Rustls(stream) => &mut stream.sock,
-        _ => return Err(ChatError::Transport),
-    };
-    stream
-        .set_read_timeout(Some(POLL_INTERVAL))
-        .map_err(|_| ChatError::Transport)?;
-    stream
-        .set_write_timeout(Some(Duration::from_secs(5)))
-        .map_err(|_| ChatError::Transport)?;
-    socket.set_config(|config| {
-        config.max_message_size = Some(FRAME_LIMIT);
-        config.max_frame_size = Some(FRAME_LIMIT);
-        config.max_write_buffer_size = 2 * FRAME_LIMIT;
-        config.write_buffer_size = 0;
-    });
-    Ok(socket)
 }

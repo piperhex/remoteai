@@ -20,7 +20,7 @@ function harness(authorize = vi.fn(async () => session)) {
   const ready = vi.fn();
   const error = vi.fn();
   const retryAt = vi.fn();
-  const connection = new ChatConnection({ deviceId: 'pc', authorize, mode, ready, error, retryAt, event: vi.fn(),
+  const connection = new ChatConnection({ deviceId: 'pc', retryRandom: () => 1, authorize, mode, ready, error, retryAt, event: vi.fn(),
     randomBytes: (length) => new Uint8Array(length).fill(1),
     createPeer: () => ({ offer: async () => undefined, accept: async () => undefined, close() {} }),
   });
@@ -30,6 +30,19 @@ function harness(authorize = vi.fn(async () => session)) {
 
 beforeEach(() => { vi.useFakeTimers(); Socket.instances = []; vi.stubGlobal('WebSocket', Socket); });
 afterEach(() => { setChatPolicy(DEFAULT_CHAT_POLICY); vi.useRealTimers(); vi.unstubAllGlobals(); });
+
+it('increases retry delays through repeated socket opens without authenticated pairing', async () => {
+  const { connection, retryAt } = harness();
+  await vi.advanceTimersByTimeAsync(0);
+  for (const delay of [1500, 3000, 6000, 12000, 24000, 30000, 30000]) {
+    const count = Socket.instances.length;
+    Socket.instances.at(-1)!.onopen?.(); Socket.instances.at(-1)!.onclose?.({ code: 4001 });
+    expect(retryAt).toHaveBeenLastCalledWith(Date.now() + delay);
+    await vi.advanceTimersByTimeAsync(delay - 1); expect(Socket.instances).toHaveLength(count);
+    await vi.advanceTimersByTimeAsync(1); expect(Socket.instances).toHaveLength(count + 1);
+  }
+  connection.stop(); expect(vi.getTimerCount()).toBe(0);
+});
 
 it('applies coordinator settings without treating them as a session frame', async () => {
   const { connection, error } = harness();

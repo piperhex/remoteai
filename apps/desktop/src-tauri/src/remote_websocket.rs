@@ -1,4 +1,5 @@
 //! Shared cloud WebSocket dialing, including the application's HTTP proxy configuration.
+pub(crate) mod backoff;
 use base64::Engine;
 use std::{
     io::{Read, Write},

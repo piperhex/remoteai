@@ -20,7 +20,8 @@ impl Runtime {
         eprintln!("remote chat: IPC delivery stalled or failed; waiting for a fresh host");
         self.reset();
         self.bridge = None;
-        self.dial = None;
+        // Retain the receiver until its worker exits. A replacement host must not overlap
+        // a still-running DNS/TLS attempt; its obsolete generation will be discarded.
         self.health.transport_failed();
     }
 }

@@ -1,5 +1,6 @@
 /** Platform lifecycle used by the persistent chat connection. */
 export interface LoungeRuntime {
+  retryRandom?: () => number;
   isVisible: () => boolean;
   subscribe: (wake: () => void) => () => void;
   randomId: () => string;

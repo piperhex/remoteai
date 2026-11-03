@@ -1,7 +1,6 @@
 use std::{
     io::ErrorKind,
     net::TcpStream,
-    thread,
     time::{Duration, Instant},
 };
 
@@ -119,29 +118,14 @@ enum ServerMessage {
     },
 }
 
-pub(crate) fn start<R: Runtime>(app: tauri::AppHandle<R>) {
-    thread::spawn(move || {
-        let mut update_peers = crate::update_peers::Bridge::new(&app);
-        loop {
-            match crate::cloud::remote_control_config(&app) {
-                Ok(Some(config)) => {
-                    if let Err(error) = run_connection(&app, config, &mut update_peers) {
-                        eprintln!("remote account control disconnected: {error}");
-                    }
-                }
-                Ok(None) => update_peers.signed_out(),
-                Err(error) => eprintln!("remote account control is unavailable: {error}"),
-            }
-            update_peers.disconnected();
-            thread::sleep(Duration::from_secs(3));
-        }
-    });
-}
+mod reconnect;
+pub(crate) use reconnect::start;
 
 fn run_connection<R: Runtime>(
     app: &tauri::AppHandle<R>,
     config: RemoteControlConfig,
     update_peers: &mut crate::update_peers::Bridge,
+    backoff: &mut crate::remote_websocket::backoff::ReconnectBackoff,
 ) -> Result<(), String> {
     update_peers.server(&config.websocket_url);
     let (mut socket, _) = connect_remote_websocket(&config.websocket_url)?;
@@ -310,7 +294,7 @@ fn run_connection<R: Runtime>(
                         command_id,
                         GuiAccountSelection::Provider(provider_id),
                     )?,
-                    ServerMessage::Authenticated { .. } => {}
+                    ServerMessage::Authenticated { .. } => backoff.reset(),
                 }
             }
             Ok(Message::Ping(payload)) => {

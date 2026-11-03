@@ -7,6 +7,7 @@ import { setChatPolicy } from '../remote-chat/policy';
 import { AttachmentExchange } from './attachmentExchange';
 import type { AttachmentSource, LoungeAttachment } from './attachments';
 import type { LoungeSyncTransport } from './syncConnection';
+import { ReconnectBackoff } from '../realtime/reconnectBackoff';
 
 const CONNECT_MS = 20_000;
 const RENEW_MS = 4 * 60_000;
@@ -18,6 +19,7 @@ interface Pending {
 
 /** Existing transport v2 starts on relay, upgrades to P2P and keeps relay heartbeats alive as fallback. */
 export class AttachmentConnection {
+  private readonly backoff: ReconnectBackoff;
   private socket?: ChatSocket;
   private keys?: ReturnType<typeof keyPair>;
   private active = false;
@@ -33,9 +35,11 @@ export class AttachmentConnection {
     baseUrl: string; deviceId: string; transport: LoungeSyncTransport;
     authorize: () => Promise<{ ticket: string }>;
     source: (id: string) => Promise<AttachmentSource | undefined>;
-  }) {}
+  }) { this.backoff = new ReconnectBackoff({ initialMs: 2000, random: options.transport.retryRandom }); }
   start() { if (!this.active) { this.active = true; void this.connect(); } }
+  retryNow() { if (this.active && this.retry) { this.reset(); void this.connect(); } }
   private async connect() {
+    if (!this.active) return;
     const epoch = ++this.epoch;
     this.deadline = setTimeout(() => this.failed(), CONNECT_MS);
     try {
@@ -71,6 +75,7 @@ export class AttachmentConnection {
     if (frame.type === 'chat-policy') { setChatPolicy(frame.policy); return; }
     if (frame.type === 'sync-registered' || frame.type === 'auth-renewed') {
       clearTimeout(this.deadline); clearTimeout(this.renewal); this.ready = true;
+      this.backoff.reset();
       this.renewal = setTimeout(() => void this.renew(), RENEW_MS); return;
     }
     if (frame.type === 'attachment-peer') { this.pair(frame); return; }
@@ -113,6 +118,7 @@ export class AttachmentConnection {
     if (!frame.desktop) void peer.link.offer();
   }
   async open(file: LoungeAttachment, signal?: AbortSignal): Promise<TransferPeer> {
+    if (!signal?.aborted) this.retryNow();
     const started = Date.now();
     while (this.active && !this.ready && Date.now() - started < CONNECT_MS) {
       if (signal?.aborted) throw new Error('client.lounge.fileUnavailable');
@@ -152,11 +158,13 @@ export class AttachmentConnection {
   }
   private failed() {
     if (!this.active) return;
-    this.reset(); this.retry = setTimeout(() => void this.connect(), 2000);
+    this.reset();
+    this.retry = setTimeout(() => { this.retry = undefined; void this.connect(); }, this.backoff.next());
   }
   private reset() {
     this.epoch++; this.ready = false;
     clearTimeout(this.retry); clearTimeout(this.renewal); clearTimeout(this.deadline);
+    this.retry = undefined;
     const socket = this.socket; this.socket = undefined;
     if (socket) { socket.onopen = socket.onmessage = socket.onclose = socket.onerror = null; socket.close(); }
     for (const peer of this.peers.values()) { peer.exchange.close(); peer.link.close(); }
