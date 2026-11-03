@@ -1,6 +1,7 @@
 package devices
 
 import (
+	"context"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -105,20 +106,25 @@ func (g *ChatGateway) publishTraffic() {
 		}
 	}
 	g.mu.Unlock()
-	usage := map[string]chattraffic.Usage{}
+	owners := make([]string, 0, len(clients))
+	for _, client := range clients {
+		owners = append(owners, client.owner)
+	}
+	ctx, cancel := platform.DatabaseContext(context.Background())
+	defer cancel()
+	usage, err := chattraffic.ReadUsages(g.service.deps.DB.WithContext(ctx), owners, time.Now())
+	// Session byte counters remain available even if the persistent usage snapshot fails.
+	defer g.sessions.publishTraffic()
+	if err != nil {
+		return
+	}
 	for _, client := range clients {
 		value, found := usage[client.owner]
 		if !found {
-			var err error
-			value, err = chattraffic.ReadUsage(g.service.deps.DB, client.owner, time.Now())
-			if err != nil {
-				continue
-			}
-			usage[client.owner] = value
+			continue
 		}
 		client.client.send(platform.JSON{"type": "relay-usage", "usage": value}, nil)
 	}
-	g.sessions.publishTraffic()
 }
 
 func (s *chatSessions) publishTraffic() {

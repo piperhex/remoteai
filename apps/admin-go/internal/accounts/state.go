@@ -117,23 +117,9 @@ func sortAccounts(items []object) {
 }
 
 func (s *service) list(owner, device string, editable bool) (interface{}, error) {
-	result, err := s.cached(owner, "accounts")
+	result, err := s.effectiveCached(owner)
 	if err != nil {
 		return nil, err
-	}
-	if result == nil {
-		result, err = s.effective(owner)
-		if err != nil {
-			return nil, err
-		}
-		if err = s.cache(owner, "accounts", result); err != nil {
-			return nil, err
-		}
-	} else {
-		result["accounts"] = objects(result["accounts"])
-		if result["deletedAccountIds"] == nil {
-			result["deletedAccountIds"] = []string{}
-		}
 	}
 	activeID := ""
 	useDevice := deviceIDPattern.MatchString(device)
@@ -170,7 +156,7 @@ func mobile(row object) object {
 }
 
 func (s *service) summary(owner string, editable, web bool) (interface{}, error) {
-	result, err := s.effective(owner)
+	result, err := s.effectiveCached(owner)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +194,7 @@ func (s *service) effectiveByID(owner, id string) (object, error) {
 }
 
 func (s *service) details(owner, id string) (interface{}, error) {
-	row, err := s.effectiveByID(owner, id)
+	row, err := s.cachedAccount(owner, id)
 	if err != nil {
 		return nil, err
 	}

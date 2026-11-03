@@ -1,10 +1,13 @@
 package content
 
 import (
+	"context"
 	"errors"
 	"github.com/codex-switch/admin-go/internal/platform"
+	"github.com/codex-switch/admin-go/internal/readcache"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"log/slog"
 	"math"
 	"regexp"
 	"sort"
@@ -243,7 +246,7 @@ func ReadChatPolicy(db *gorm.DB) (map[string]interface{}, error) {
 	return parseChatPolicy(row.Policy)
 }
 func (s *service) titleSettings(c *gin.Context) {
-	policy, err := ReadChatPolicy(s.deps.DB)
+	policy, err := CachedChatPolicy(s.deps)
 	platform.Respond(c, policy["titleSettings"], err)
 }
 func (s *service) chatPolicy(c *gin.Context) {
@@ -275,6 +278,11 @@ func (s *service) updateChatPolicy(c *gin.Context) {
 			},
 		)
 	})
+	if err == nil {
+		if cacheErr := readcache.Invalidate(context.Background(), s.deps.Redis, chatPolicyCacheKey); cacheErr != nil {
+			slog.Warn("chat policy cache invalidation will expire shortly", "error", cacheErr)
+		}
+	}
 	if err == nil && s.deps.RemoteCommandPolicyChanged != nil {
 		s.deps.RemoteCommandPolicyChanged()
 	}

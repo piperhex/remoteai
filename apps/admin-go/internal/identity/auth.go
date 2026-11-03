@@ -67,18 +67,9 @@ func (s *service) authenticate(c *gin.Context) (*platform.Principal, error) {
 	if id == "" {
 		return nil, platform.NewError(401, "User is disabled or no longer exists")
 	}
-	var u user
 	ctx, cancel := platform.DatabaseContext(c.Request.Context())
 	defer cancel()
-	db := s.deps.DB.WithContext(ctx)
-	err = db.Where("id = ? AND disabled = ?", id, false).First(&u).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, platform.NewError(401, "User is disabled or no longer exists")
-	}
-	if err != nil {
-		return nil, err
-	}
-	return principal(db, &u)
+	return s.currentPrincipal(ctx, id)
 }
 
 var lifetimePattern = regexp.MustCompile(

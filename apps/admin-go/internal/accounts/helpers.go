@@ -166,6 +166,10 @@ func (s *service) invalidate(owner string, providers bool) error {
 	if providers {
 		prefix = "sync:providers:"
 	}
-	return s.deps.Redis.Del(context.Background(), prefix+owner).Err()
+	keys := []string{prefix + owner}
+	if !providers {
+		keys = append(keys, effectiveCacheKey(owner))
+	}
+	return s.deps.Redis.Del(context.Background(), keys...).Err()
 }
 func newID() string { return uuid.NewString() }

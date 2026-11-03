@@ -29,32 +29,41 @@ func (h *hub) direct(sender *peer, input incoming) {
 		h.reject(sender, input.ID, "client.lounge.directUnavailable")
 		return
 	}
-	mutual, err := h.admitDirect(ctx, sender.user.ID, input)
+	admission, err := h.admitDirect(ctx, sender.user.ID, input)
 	if err != nil {
 		h.rejectDirect(sender, input, err)
 		return
 	}
-	if h.relayDirect(sender, input, target) && mutual {
+	if h.relayDirect(sender, input, target) && admission.Mutual {
 		h.savedContactsChanged(sender.user.ID, target.ID)
 	}
-	h.sendDirectPermissions(sender.user.ID, []string{target.ID})
-	h.sendDirectPermissions(target.ID, []string{sender.user.ID})
+	if admission.Changed {
+		h.sendDirectPermissions(sender.user.ID, []string{target.ID})
+		h.sendDirectPermissions(target.ID, []string{sender.user.ID})
+	}
 }
 
-func (h *hub) admitDirect(ctx context.Context, sender string, input incoming) (bool, error) {
+func (h *hub) admitDirect(ctx context.Context, sender string, input incoming) (directAdmission, error) {
 	if h.directPolicy == nil {
-		return false, nil
+		return directAdmission{}, nil
 	}
 	permission, err := h.directPermission(sender, input)
 	if err != nil {
-		return false, err
+		return directAdmission{}, err
+	}
+	if store, ok := h.directPolicy.(interface {
+		AdmitMessage(context.Context, directPermission) (directAdmission, error)
+	}); ok {
+		return store.AdmitMessage(ctx, permission)
 	}
 	if store, ok := h.directPolicy.(interface {
 		AdmitWithContact(context.Context, directPermission) (bool, error)
 	}); ok {
-		return store.AdmitWithContact(ctx, permission)
+		mutual, err := store.AdmitWithContact(ctx, permission)
+		return directAdmission{Mutual: mutual, Changed: err == nil}, err
 	}
-	return false, h.directPolicy.Admit(ctx, permission)
+	err = h.directPolicy.Admit(ctx, permission)
+	return directAdmission{Changed: err == nil}, err
 }
 
 func (h *hub) rejectDirect(sender *peer, input incoming, err error) {

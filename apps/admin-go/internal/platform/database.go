@@ -72,8 +72,9 @@ func OpenDependencies(config Config) (*Dependencies, error) {
 		return nil, fmt.Errorf("invalid REDIS_PORT")
 	}
 	client := redis.NewClient(&redis.Options{
-		Addr:     net.JoinHostPort(config.Get("REDIS_HOST", "127.0.0.1"), strconv.Itoa(redisPort)),
-		Password: config.Get("REDIS_PASSWORD", "")})
+		ContextTimeoutEnabled: true,
+		Addr:                  net.JoinHostPort(config.Get("REDIS_HOST", "127.0.0.1"), strconv.Itoa(redisPort)),
+		Password:              config.Get("REDIS_PASSWORD", "")})
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := client.Ping(ctx).Err(); err != nil {

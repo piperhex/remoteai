@@ -2,11 +2,14 @@ package content
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/codex-switch/admin-go/internal/platform"
+	"github.com/codex-switch/admin-go/internal/readcache"
 	"github.com/codex-switch/admin-go/internal/updatesharing"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -22,7 +25,7 @@ func (s *service) updateSharingRoutes(r *gin.Engine) {
 }
 
 func (s *service) readUpdateSharing(c *gin.Context) {
-	settings, err := updatesharing.Read(s.deps.DB)
+	settings, err := updatesharing.ReadCached(s.deps)
 	platform.Respond(c, settings, err)
 }
 
@@ -66,5 +69,10 @@ func (s *service) saveUpdateSharing(c *gin.Context) {
 		return audit(tx, platform.User(c), auditOptions{Action: "update-sharing.update",
 			TargetType: "update-sharing", TargetID: "current", Metadata: settings})
 	})
+	if err == nil {
+		if cacheErr := readcache.Invalidate(context.Background(), s.deps.Redis, updatesharing.CacheKey); cacheErr != nil {
+			slog.Warn("download sharing cache invalidation will expire shortly", "error", cacheErr)
+		}
+	}
 	platform.Respond(c, settings, err)
 }

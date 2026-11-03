@@ -51,6 +51,9 @@ func (s *service) upsertAccounts(options writeOptions, incoming []object) (inter
 					Where(`"ownerId" = ? AND "deviceId" = ?`, options.Owner, options.Device).
 					Updates(object{"activeAccountId": row["id"], "lastSeenAt": now()}).
 					Error
+				if err == nil {
+					platform.InvalidateDeviceDirectory(s.deps, options.Owner)
+				}
 				break
 			}
 		}

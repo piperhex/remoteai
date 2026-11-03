@@ -48,7 +48,7 @@ func (value attachmentClaims) GetExpirationTime() (*jwt.NumericDate, error) {
 }
 
 func (h *hub) registerAttachments(deps *platform.Dependencies) {
-	h.attachmentPolicy = func() (map[string]interface{}, error) { return content.ReadChatPolicy(deps.DB) }
+	h.attachmentPolicy = func() (map[string]interface{}, error) { return content.CachedChatPolicy(deps) }
 	deps.LoungeAttachment = h.verifyAttachment
 }
 

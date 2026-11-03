@@ -13,7 +13,7 @@ func (g *ControlGateway) applyUpdateSharingPolicy(client *peer, message platform
 	if message["type"] == "update-peer-done" || g.service == nil {
 		return true
 	}
-	settings, err := updatesharing.Read(g.service.deps.DB)
+	settings, err := updatesharing.ReadCached(g.service.deps)
 	if err != nil {
 		slog.Warn("Could not read download sharing settings", "error", err)
 		settings.Scope = updatesharing.Off

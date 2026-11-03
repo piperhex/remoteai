@@ -103,6 +103,7 @@ func (g *ControlGateway) remove(c *gin.Context) {
 		platform.Respond(c, nil, err)
 		return
 	}
+	platform.InvalidateDeviceDirectory(g.service.deps, owner)
 	g.broadcast(owner, platform.JSON{"type": "device-removed", "deviceId": id})
 	c.Status(204)
 }
@@ -192,6 +193,7 @@ func (g *ControlGateway) saveCommand(previous *Device, spec commandSpec, value s
 	if err != nil {
 		return nil, err
 	}
+	platform.InvalidateDeviceDirectory(g.service.deps, previous.OwnerID)
 	device, err := g.service.owned(previous.OwnerID, previous.DeviceID)
 	if err != nil {
 		return nil, err

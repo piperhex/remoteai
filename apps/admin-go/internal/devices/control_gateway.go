@@ -150,7 +150,7 @@ func (g *ControlGateway) receive(client *peer, message platform.JSON, timer *tim
 		result = errors.New(detail)
 	}
 	pending.result <- result
-	return g.service.touch(session.device)
+	return g.service.touch(session.owner, session.device)
 }
 
 func javascriptTruthy(value interface{}) bool {
@@ -320,7 +320,7 @@ func (g *ControlGateway) disconnect(client *peer) {
 	if !wasCurrent {
 		return
 	}
-	if err := g.service.touch(session.device); err != nil {
+	if err := g.service.touch(session.owner, session.device); err != nil {
 		slog.Warn("device last seen update failed", "error", err)
 	}
 	g.broadcast(session.owner, platform.JSON{"type": "device-offline", "deviceId": session.device,

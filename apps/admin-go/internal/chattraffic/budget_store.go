@@ -29,16 +29,12 @@ func allocate(db *gorm.DB, owner string, required int) (budget, error) {
 		if err := lockUser(tx, owner); err != nil {
 			return err
 		}
-		usage, err := ReadUsage(tx, owner, now)
+		usage, reserved, err := readCreditUsage(tx, owner, now)
 		if err != nil {
 			return err
 		}
 		if !Allowed(usage, required) {
 			return ErrQuota
-		}
-		reserved, err := outstandingCredit(tx, owner, MonthStart(now))
-		if err != nil {
-			return err
 		}
 		usage.MonthUsedBytes += reserved
 		if !Allowed(usage, required) {

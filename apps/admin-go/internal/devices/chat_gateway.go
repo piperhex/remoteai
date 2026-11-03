@@ -174,7 +174,7 @@ func (g *ChatGateway) receive(client *peer, state *chatConnection, message platf
 	// Serialize handshake snapshots with saved-policy broadcasts so stale reads cannot follow a new policy.
 	g.policyMu.Lock()
 	defer g.policyMu.Unlock()
-	policy, err := content.ReadChatPolicy(g.service.deps.DB)
+	policy, err := content.CachedChatPolicy(g.service.deps)
 	if err != nil {
 		return err
 	}
@@ -318,7 +318,7 @@ func (g *ChatGateway) refreshPolicy() {
 	if !active {
 		return
 	}
-	policy, err := content.ReadChatPolicy(g.service.deps.DB)
+	policy, err := content.CachedChatPolicy(g.service.deps)
 	if err != nil {
 		slog.Warn("chat policy refresh will be retried", "error", err)
 		return

@@ -35,9 +35,7 @@ func (Device) TableName() string { return "remote_devices" }
 type Service struct{ deps *platform.Dependencies }
 
 func (s *Service) list(owner string) ([]Device, error) {
-	devices := []Device{}
-	err := s.deps.DB.Where(`"ownerId" = ?`, owner).Order(`"lastSeenAt" DESC, name ASC`).Find(&devices).Error
-	return devices, err
+	return s.cachedDirectory(owner)
 }
 
 func (s *Service) owned(owner, id string) (*Device, error) {
@@ -92,6 +90,9 @@ func (s *Service) register(owner string, input platform.JSON) (*Device, error) {
 	mergeDeviceState(device, input)
 	device.LastSeenAt = time.Now().UTC().Truncate(time.Millisecond)
 	err = s.deps.DB.Save(device).Error
+	if err == nil {
+		platform.InvalidateDeviceDirectory(s.deps, owner)
+	}
 	return device, err
 }
 
@@ -151,9 +152,13 @@ func supportedCapability(name string) bool {
 	}
 }
 
-func (s *Service) touch(id string) error {
-	return s.deps.DB.Model(&Device{}).Where(`"deviceId" = ?`, id).
+func (s *Service) touch(owner, id string) error {
+	err := s.deps.DB.Model(&Device{}).Where(`"ownerId" = ? AND "deviceId" = ?`, owner, id).
 		Updates(map[string]interface{}{"lastSeenAt": time.Now().UTC().Truncate(time.Millisecond)}).Error
+	if err == nil {
+		platform.InvalidateDeviceDirectory(s.deps, owner)
+	}
+	return err
 }
 
 func (s *Service) providers(owner string) ([]platform.JSON, error) {

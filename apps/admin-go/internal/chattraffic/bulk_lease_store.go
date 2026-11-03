@@ -24,15 +24,6 @@ type bulkLease struct {
 	State                                        string
 }
 
-func outstandingCredit(db *gorm.DB, owner string, month time.Time) (int64, error) {
-	var held int64
-	err := db.Raw(`SELECT
-      COALESCE((SELECT SUM(bytes) FROM chat_relay_budgets WHERE user_id=? AND hour_start>=? AND NOT closed),0)
-      + COALESCE((SELECT SUM(reserved) FROM chat_relay_bulk_leases WHERE user_id=? AND hour_start>=?
-        AND state<>'closed'),0)`, owner, month, owner, month).Scan(&held).Error
-	return held, err
-}
-
 func reserveBulkLease(db *gorm.DB, lease bulkLease) (bulkLease, error) {
 	err := db.Transaction(func(tx *gorm.DB) error {
 		if err := lockUser(tx, lease.UserID); err != nil {
@@ -61,16 +52,12 @@ func reserveBulkLease(db *gorm.DB, lease bulkLease) (bulkLease, error) {
 }
 
 func authorizeBulkLease(db *gorm.DB, lease bulkLease) error {
-	usage, err := ReadUsage(db, lease.UserID, lease.HourStart)
+	usage, held, err := readCreditUsage(db, lease.UserID, lease.HourStart)
 	if err != nil {
 		return err
 	}
 	if !Allowed(usage, int(lease.Bytes)) {
 		return ErrQuota
-	}
-	held, err := outstandingCredit(db, lease.UserID, MonthStart(lease.HourStart))
-	if err != nil {
-		return err
 	}
 	usage.MonthUsedBytes += held
 	if !Allowed(usage, int(lease.Bytes)) {
