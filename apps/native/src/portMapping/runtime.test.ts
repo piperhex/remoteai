@@ -42,6 +42,21 @@ it('persists aliases separately without changing or uploading mapping configurat
   expect((await setup(fixture.saved, fixture.documents).start('one')).aliases.get(id)).toBe('');
 });
 
+it('discovers idle remote edits without opening a tunnel and refreshes immediately on reconnection', async () => {
+  vi.useFakeTimers();
+  const fixture = setup(); const runtime = await fixture.start('one');
+  const mapping = { id: 'cloud', remotePort: 80, localPort: 8080 };
+  fixture.documents.set('one', { revision: 1, mappings: [mapping] });
+  await vi.advanceTimersByTimeAsync(59_999);
+  expect(runtime.service.snapshot()).toEqual([]);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(runtime.service.snapshot()[0]).toMatchObject({ id: 'cloud', enabled: false });
+  expect(fixture.connections.get('one')!.start).not.toHaveBeenCalled();
+  fixture.documents.set('one', { revision: 2, mappings: [] });
+  fixture.connections.get('one')!.setReady(true); await flush();
+  expect(runtime.service.snapshot()).toEqual([]);
+});
+
 function setup(saved = new Map<string, string>(), documents = new Map<string, MappingDocument>()) {
   const storage: MappingStorage = { getItem: key => saved.get(key) ?? null,
     setItem: (key, value) => { saved.set(key, value); } };

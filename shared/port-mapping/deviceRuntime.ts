@@ -3,6 +3,7 @@ import { readPortMappings, savePortMappings, type MappingStorage, type PortMappi
 import { MappingSync, type MappingExchange } from './sync';
 import type { TunnelFactory } from './types';
 import { LocalMappingAliases } from './localAliases';
+import type { MappingSyncEnvironment } from './syncPolling';
 
 export interface MappingConnection {
   files: ForwardingClient;
@@ -25,6 +26,7 @@ export class DeviceMappingRuntime {
   constructor(readonly connection: MappingConnection, private readonly options: {
     scope: string; storage: MappingStorage; createId: () => string; createTunnel: TunnelFactory;
     exchange: MappingExchange; validateTarget: (target: Omit<PortMapping, 'id'>, id?: string) => void;
+    environment?: MappingSyncEnvironment;
   }) {
     this.enabledKey = 'codex-port-mapping-enabled:' + options.scope;
     this.aliases = new LocalMappingAliases(options.storage, options.scope);
@@ -38,7 +40,13 @@ export class DeviceMappingRuntime {
   start = () => {
     this.service.activate();
     this.demanded = false;
-    this.disconnect = this.connection.subscribe(() => this.service.setConnected(this.connection.snapshot().ready));
+    let ready = this.connection.snapshot().ready;
+    this.disconnect = this.connection.subscribe(() => {
+      const next = this.connection.snapshot().ready;
+      this.service.setConnected(next);
+      if (next && !ready) this.sync.requestRefresh();
+      ready = next;
+    });
     this.unsubscribe = this.service.subscribe(this.reconcile);
     this.stopSync = this.sync.start();
     this.reconcile();

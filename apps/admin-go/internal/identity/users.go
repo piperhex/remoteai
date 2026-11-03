@@ -226,7 +226,7 @@ func (s *service) deleteUser(c *gin.Context) (interface{}, error) {
 			return nil, err
 		}
 	}
-	if err = s.deps.DB.Delete(u).Error; err != nil {
+	if err = s.deleteUserRecord(u); err != nil {
 		return nil, err
 	}
 	return gin.H{
