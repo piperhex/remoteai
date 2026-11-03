@@ -12,6 +12,8 @@ import { FileEnvironmentContext, type FileEnvironment } from '../src/pages/codex
 import { fileApi } from '../src/pages/codexGui/fileApi';
 import { filePreviewApi } from '../src/pages/codexGui/filePreview/api';
 import { websitePreviewApi } from '../src/pages/codexGui/filePreview/websiteApi';
+import { exchangeMappingFixture, mappingFixtureScope } from './port-mapping-sync-fixture';
+import type { MappingDocument } from '../../../shared/port-mapping/sync';
 
 setGuiLanguage('zh');
 const listeners = new Map<string, () => void>();
@@ -42,13 +44,16 @@ const fixture = { resources, openedPorts, openedUdpPorts, targetUrls, clipboard,
   resolvedUrls, failBrowser: false };
 websitePreviewApi.sync = async request => { previewUrls.push(request.url); };
 websitePreviewApi.close = async () => {};
-const environment: FileEnvironment = { remote: true, actions: fileApi, previews: filePreviewApi,
+const environment: FileEnvironment = { remote: new URLSearchParams(location.search).get('mode') !== 'local',
+  actions: fileApi, previews: filePreviewApi,
   resolveWebsite: async url => { resolvedUrls.push(url); throw new Error('Already forwarded URLs must stay local'); },
   image: () => null };
 Object.defineProperty(navigator, 'clipboard', { configurable: true,
   value: { writeText: async (text: string) => { clipboard.push(text); } } });
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: {
-  invoke: async (command: string, args: { request: { type: string; port: number; scope: string }; url?: string }) => {
+  invoke: async (command: string, args: { request: { type: string; port: number; scope: string }; url?: string;
+    deviceId: string; document?: MappingDocument }) => {
+    if (command === 'sync_port_mappings') return exchangeMappingFixture(args);
     if (command === 'plugin:opener|open_url') {
       if (fixture.failBrowser) throw new Error('Private browser failure');
       browserUrls.push(args.url!); return;
@@ -84,7 +89,7 @@ function Harness() {
     <main data-dark={dark}>
       <header className="toolbar"><strong>{device}</strong>
         {['Office PC', 'Home PC'].map(name => <div key={name} hidden={device !== name}>
-          <PortForwarding client={client} scope={`port-forwarding-e2e/${name}`} connected={connected}
+          <PortForwarding client={client} scope={mappingFixtureScope(name)} connected={connected}
             active={device === name} />
         </div>)}
         <GuiRemoteDesktop client={desktopClient(async () => { throw new Error('Fixture'); })}

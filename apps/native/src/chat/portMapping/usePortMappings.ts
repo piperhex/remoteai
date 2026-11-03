@@ -12,6 +12,7 @@ import type { AuthSession } from '../../types';
 import { mappingSyncScope, type MappingDocument } from '../../../../../shared/port-mapping/sync';
 import { useMappingSync } from '../../../../../shared/port-mapping/useMappingSync';
 import { useDeviceMapping } from '../../../../../shared/port-mapping/deviceRegistry';
+import { nativeMappingEnvironment } from '../../portMapping/syncEnvironment';
 
 const storage = { getItem: (key: string) => Storage.getItemSync(key),
   setItem: (key: string, value: string) => Storage.setItemSync(key, value) };
@@ -40,9 +41,14 @@ export function usePortMappings(options: {
       `/devices/${encodeURIComponent(identity.deviceId)}/port-mappings`,
       document ? { method: 'PUT', body: JSON.stringify(document) } : {});
   }, [scope, options.session, managed]);
-  const syncStatus = useMappingSync(service, { scope, storage, exchange });
+  const syncStatus = useMappingSync(service, { scope, storage, exchange, connected,
+    environment: nativeMappingEnvironment });
   useEffect(() => { if (!managed) service.setConnected(connected); }, [service, connected, managed]);
-  useEffect(() => managed ? undefined : service.dispose, [service, managed]);
+  useEffect(() => {
+    if (managed) return;
+    service.activate();
+    return service.dispose;
+  }, [service, managed]);
   useEffect(() => { if (!managed) savePortMappings(scope, entries, storage); }, [scope, entries, managed]);
   return { entries, service, syncStatus: managed ? managedSync : syncStatus,
     connected: managed ? managedConnection.ready : connected };

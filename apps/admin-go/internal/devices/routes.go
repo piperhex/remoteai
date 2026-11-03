@@ -104,6 +104,7 @@ func (g *ControlGateway) remove(c *gin.Context) {
 		return
 	}
 	platform.InvalidateDeviceDirectory(g.service.deps, owner)
+	platform.InvalidatePortMappings(g.service.deps, owner, id)
 	g.broadcast(owner, platform.JSON{"type": "device-removed", "deviceId": id})
 	c.Status(204)
 }
