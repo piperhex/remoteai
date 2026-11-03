@@ -1,7 +1,6 @@
 package devices
 
 import (
-	"context"
 	"errors"
 	"log/slog"
 	"sync"
@@ -34,8 +33,7 @@ type ChatGateway struct {
 	connections map[*peer]*chatConnection
 	policy      platform.JSON
 	ice         []platform.JSON
-	done        chan struct{}
-	stopped     chan struct{}
+	maintenance *chatMaintenance
 	stun        *stunServer
 	tcp         *tcpPunchServer
 	media       *mediarelay.Proxy
@@ -60,7 +58,7 @@ func newChatGateway(service *Service) (*ChatGateway, error) {
 		connections: map[*peer]*chatConnection{}, policy: platform.JSON{"relayMaxMbPerSecond": float64(-1),
 			"relayMaxFramesPerSecond": float64(
 				-1,
-			)}, ice: ice, done: make(chan struct{}), stopped: make(chan struct{}), stun: stun}
+			)}, ice: ice, maintenance: newChatMaintenance(), stun: stun}
 	service.deps.FlushTraffic = traffic.flush
 	if service.deps.Config.Get("CHAT_BULK_LEASES_ENABLED", "false") == "true" {
 		gateway.bulkMeter = chattraffic.NewBulkMeter(gateway.meter)
@@ -71,19 +69,21 @@ func newChatGateway(service *Service) (*ChatGateway, error) {
 	gateway.sessions.hot.nativeConfig = native
 	service.deps.ChatPolicyChanged = gateway.refreshPolicy
 	if err := gateway.startMediaRelay(); err != nil {
+		gateway.maintenance.cancel()
 		if stun != nil {
 			stun.close()
 		}
 		return nil, err
 	}
 	if err := gateway.startTCPPunch(); err != nil {
+		gateway.maintenance.cancel()
 		if stun != nil {
 			stun.close()
 		}
 		gateway.media.Close()
 		return nil, err
 	}
-	go gateway.maintain()
+	gateway.maintenance.start(gateway.maintenanceTasks())
 	return gateway, nil
 }
 
@@ -276,41 +276,10 @@ func (g *ChatGateway) disconnect(client *peer) {
 	g.sessions.disconnect(client, false)
 }
 
-func (g *ChatGateway) maintain() {
-	defer close(g.stopped)
-	timer := time.NewTicker(5 * time.Second)
-	defer timer.Stop()
-	credentials := time.NewTicker(desktopCredentialLifetime / 2)
-	defer credentials.Stop()
-	for {
-		select {
-		case <-g.done:
-			return
-		case <-credentials.C:
-			g.refreshDesktopICE()
-		case <-timer.C:
-			g.sessions.prune()
-			if g.bulkMeter != nil {
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				if err := g.bulkMeter.ReconcileExpired(ctx); err != nil {
-					slog.Warn("bulk lease reconciliation will be retried", "error", err)
-				}
-				cancel()
-			}
-			if err := g.meter.Flush(); err != nil {
-				slog.Warn("relay accounting settlement will be retried", "error", err)
-			}
-			g.publishTraffic()
-			g.refreshPolicy()
-			if err := g.traffic.flush(); err != nil {
-				slog.Warn("chat traffic flush will be retried", "error", err)
-			}
-		}
-	}
-}
-
 func (g *ChatGateway) refreshPolicy() {
-	g.policyMu.Lock()
+	if !g.lockPolicyForRefresh() {
+		return
+	}
 	defer g.policyMu.Unlock()
 	g.mu.Lock()
 	active := len(g.connections) > 0
@@ -318,7 +287,7 @@ func (g *ChatGateway) refreshPolicy() {
 	if !active {
 		return
 	}
-	policy, err := content.CachedChatPolicy(g.service.deps)
+	policy, err := content.CachedChatPolicyContext(g.maintenanceContext(), g.service.deps)
 	if err != nil {
 		slog.Warn("chat policy refresh will be retried", "error", err)
 		return
@@ -365,10 +334,10 @@ func (runtime *Runtime) Close() error {
 	}
 	runtime.control.mu.Unlock()
 	g := runtime.chat
+	g.maintenance.cancel()
 	g.media.Close()
 	g.tcp.close()
-	close(g.done)
-	<-g.stopped
+	g.maintenance.stop()
 	g.mu.Lock()
 	for client, state := range g.connections {
 		state.timer.Stop()
