@@ -46,6 +46,11 @@ enum ServerMessage {
         #[serde(rename = "commandId")]
         command_id: String,
         request: crate::remote_command::CommandRequest,
+        #[serde(
+            rename = "concurrencyLimit",
+            default = "crate::remote_command::default_concurrency_limit"
+        )]
+        concurrency_limit: usize,
     },
     RemoteCommandCancel {
         #[serde(rename = "commandId")]
@@ -231,7 +236,18 @@ fn run_connection<R: Runtime>(
                     ServerMessage::RemoteCommand {
                         command_id,
                         request,
-                    } => commands.request(command_id, request),
+                        concurrency_limit,
+                    } => {
+                        if let Some(reply) =
+                            commands.request(command_id, request, concurrency_limit)
+                        {
+                            socket
+                                .send(Message::Text(reply.to_string().into()))
+                                .map_err(|error| {
+                                    format!("Could not send command status: {error}")
+                                })?;
+                        }
+                    }
                     ServerMessage::RemoteCommandCancel { command_id } => {
                         commands.cancel(&command_id)
                     }

@@ -1,4 +1,12 @@
 export default [
+  { key: 'remoteCommands', title: ['远程命令', 'Remote commands'],
+    hint: ['保存后对后续命令生效，正在执行的命令不受影响。',
+      'Changes apply to subsequent commands after saving. Running commands are not interrupted.'], fields: [
+    { key: 'remoteCommandConcurrencyLimit', label: ['远程命令并发上限', 'Concurrent remote command limit'],
+      hint: ['默认 5 条，可设为 1–32 条。每个发起连接和每台目标电脑分别计数，任一达到上限时需等待。',
+        'Default: 5; range: 1–32. Each initiating connection and target computer is counted separately. '
+        + 'Wait when either reaches the limit.'], unit: ['条', 'commands'] },
+  ] },
   { key: 'lounge', title: ['在线交流', 'Community chat'],
     hint: ['设置每个文件或每张图片的大小上限，保存后生效。',
       'Set the size limit for each file or image. Changes apply after saving.'], fields: [

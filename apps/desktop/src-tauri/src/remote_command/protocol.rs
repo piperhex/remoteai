@@ -5,6 +5,11 @@ pub(super) const MAX_COMMAND_BYTES: usize = 16 * 1024;
 pub(super) const MAX_OUTPUT_BYTES: usize = 64 * 1024;
 pub(super) const MAX_TIMEOUT_SECONDS: u64 = 60;
 pub(super) const REQUEST_BYTES: u64 = 32 * 1024;
+pub(super) const MAX_CONCURRENT_COMMANDS: usize = 32;
+
+pub(crate) fn default_concurrency_limit() -> usize {
+    5
+}
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
