@@ -77,16 +77,17 @@ func (g *ControlGateway) forwardRemoteCommand(
 		sendRemoteResult(client, request, nil, "电脑已离线，请打开电脑端后重试。")
 		return
 	}
-	for _, pending := range g.commands {
-		if pending.client == client || pending.desktop == desktop {
-			sendRemoteResult(client, request, nil, "电脑正在执行另一条远程命令，请稍后重试。")
-			return
-		}
+	limit := g.remoteCommandLimit()
+	if g.remoteCommandBusy(client, owner, id, limit) {
+		client.send(platform.JSON{"type": "remote-command-result", "requestId": request,
+			"error": remoteCommandBusyMessage, "errorCode": "client.remoteCommand.busy"}, nil)
+		return
 	}
 	command := uuid.NewString()
 	timer := time.AfterFunc(remoteCommandTimeout, func() { g.expireRemoteCommand(command) })
 	g.commands[command] = pendingRemoteCommand{owner, id, request, client, desktop, timer}
-	desktop.send(platform.JSON{"type": "remote-command", "commandId": command, "request": input}, nil)
+	desktop.send(platform.JSON{"type": "remote-command", "commandId": command, "request": input,
+		"concurrencyLimit": limit}, nil)
 }
 
 type remoteCommandOutput struct {

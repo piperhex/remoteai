@@ -9,6 +9,8 @@ function SettingField({ field, language }: { field: PolicyField; language: 0 | 1
   const { min, max } = CHAT_POLICY_FIELDS[field.key];
   const unlimited = min === -1;
   const toggle = field.key === 'fileBulkEnabled';
+  // Keep invalid command values visible so Form can explain them instead of silently clamping or rounding.
+  const validateCommandLimit = field.key === 'remoteCommandConcurrencyLimit';
   const numericMessage = max === undefined
     ? (language === 0 ? interpolateCopy(inlineCopy["value1_ec362808"], { value1: String(min) }) : interpolateCopy(inlineCopy["Enter_a_whole_number_of_e9226f3c"], { value1: String(min) }))
     : (language === 0 ? interpolateCopy(inlineCopy["value1value2_ebe594d5"], { value1: String(min), value2: String(max) }) : interpolateCopy(inlineCopy["Enter_a_whole_number_from_c2f31bd1"], { value1: String(min), value2: String(max) }));
@@ -27,8 +29,9 @@ function SettingField({ field, language }: { field: PolicyField; language: 0 | 1
       { validator: (_, value: unknown) => unlimited && value === 0
         ? Promise.reject(new Error(message)) : Promise.resolve() }]}>
       {toggle ? <Switch id={field.key} aria-label={field.label[language]} />
-        : <InputNumber id={field.key} aria-label={field.label[language]} min={min} max={max}
-          precision={0} addonAfter={field.unit[language]} controls={false} />}
+        : <InputNumber id={field.key} aria-label={field.label[language]}
+          min={validateCommandLimit ? undefined : min} max={validateCommandLimit ? undefined : max}
+          precision={validateCommandLimit ? undefined : 0} addonAfter={field.unit[language]} controls={false} />}
     </Form.Item>
   </div>;
 }

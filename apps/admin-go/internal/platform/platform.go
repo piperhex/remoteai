@@ -43,16 +43,17 @@ type Principal struct {
 }
 
 type Dependencies struct {
-	LoungeIdentity    func(string) (string, time.Time, error)
-	LoungeAttachment  func(string, string) (string, string, string, error)
-	LoungeGenerations func(context.Context, string, []string) (map[string]int64, error)
-	DB                *gorm.DB
-	Redis             *redis.Client
-	Config            Config
-	Authenticate      func(*gin.Context) (*Principal, error)
-	FlushTraffic      func() error
-	ReadBandwidth     func() bandwidth.Snapshot
-	ChatPolicyChanged func()
+	LoungeIdentity             func(string) (string, time.Time, error)
+	LoungeAttachment           func(string, string) (string, string, string, error)
+	LoungeGenerations          func(context.Context, string, []string) (map[string]int64, error)
+	DB                         *gorm.DB
+	Redis                      *redis.Client
+	Config                     Config
+	Authenticate               func(*gin.Context) (*Principal, error)
+	FlushTraffic               func() error
+	ReadBandwidth              func() bandwidth.Snapshot
+	ChatPolicyChanged          func()
+	RemoteCommandPolicyChanged func()
 }
 
 func User(c *gin.Context) *Principal {

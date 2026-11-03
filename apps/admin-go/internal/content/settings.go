@@ -141,6 +141,10 @@ type policyField struct {
 // DefaultChatSessionLimit applies when older settings omit the per-computer connection limit.
 const DefaultChatSessionLimit = 5
 
+// Remote command limits bound processes and result buffers on the desktop host.
+const DefaultRemoteCommandConcurrencyLimit = 5
+const MaxRemoteCommandConcurrencyLimit = 32
+
 // Reserve RPC capacity for chat while two file downloads are active.
 const maxFileDownloadWindowSize = 12
 
@@ -149,6 +153,7 @@ var policyFields = []policyField{
 	{Name: "loungeGroupImageMaxMb", Minimum: 1, Default: 1, Optional: true},
 	{Name: "loungeDirectImageMaxMb", Minimum: 1, Default: 1, Optional: true},
 	{Name: "chatSessionLimit", Minimum: 1, Default: DefaultChatSessionLimit, Optional: true},
+	{Name: "remoteCommandConcurrencyLimit", Minimum: 1, Default: DefaultRemoteCommandConcurrencyLimit, Optional: true},
 	{Name: "p2pNegotiationTimeoutSeconds", Minimum: 1, Default: 45, Optional: true},
 	{Name: "p2pRetryIntervalSeconds", Minimum: 1, Default: 10, Optional: true},
 	{Name: "p2pDisconnectGraceSeconds", Minimum: 1, Default: 10, Optional: true},
@@ -209,6 +214,7 @@ func parseChatPolicy(record map[string]interface{}) (map[string]interface{}, err
 			math.Abs(number) > 9007199254740991 ||
 			number < field.Minimum ||
 			(field.Name == "fileDownloadWindowSize" && number > maxFileDownloadWindowSize) ||
+			(field.Name == "remoteCommandConcurrencyLimit" && number > MaxRemoteCommandConcurrencyLimit) ||
 			(field.Name == "fileBulkEnabled" && number > 1) ||
 			(field.Default == -1 && number == 0) {
 			return nil, errors.New("invalid chat limit")
@@ -269,6 +275,9 @@ func (s *service) updateChatPolicy(c *gin.Context) {
 			},
 		)
 	})
+	if err == nil && s.deps.RemoteCommandPolicyChanged != nil {
+		s.deps.RemoteCommandPolicyChanged()
+	}
 	if err == nil && s.deps.ChatPolicyChanged != nil {
 		s.deps.ChatPolicyChanged()
 	}

@@ -16,7 +16,7 @@ use std::{
     time::Duration,
 };
 
-const MAX_REQUESTS: usize = 4;
+const MAX_REQUESTS: usize = super::protocol::MAX_CONCURRENT_COMMANDS;
 
 #[derive(Deserialize)]
 struct Endpoint {

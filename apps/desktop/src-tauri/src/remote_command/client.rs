@@ -78,9 +78,13 @@ fn receive(
             deadline = Instant::now() + RESULT_TIMEOUT;
         }
         if sent && message["type"] == "remote-command-result" && message["requestId"] == id {
+            let error = match message["errorCode"].as_str() {
+                Some("client.remoteCommand.busy") => Value::String(super::messages::busy().into()),
+                _ => message["error"].clone(),
+            };
             return Ok(json!({"deviceId":match &request {
                 ToolRequest::Execute { request } => &request.device_id, _ => current_device,
-            }, "data":message["data"], "error":message["error"]}));
+            }, "data":message["data"], "error":error}));
         }
     }
 }

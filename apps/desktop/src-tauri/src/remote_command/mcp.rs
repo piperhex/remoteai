@@ -1,13 +1,10 @@
 use super::{
     bridge,
-    protocol::{ExecuteRequest, ToolRequest, REQUEST_BYTES},
+    protocol::{ExecuteRequest, ToolRequest},
     state, RemoteError, Result,
 };
 use serde_json::{json, Value};
-use std::{
-    io::{self, BufRead, Read, Write},
-    path::Path,
-};
+use std::{io, path::Path};
 
 const TOOLS: &str = include_str!("../../resources/codex-switch-remote-command/tools.json");
 
@@ -15,35 +12,9 @@ pub(super) fn run(root: &Path, id: &str) -> Result<()> {
     let record = state::read(root, id)?
         .filter(|record| record.enabled)
         .ok_or(RemoteError::Disabled)?;
-    let mut input = io::stdin().lock();
-    let mut output = io::stdout().lock();
-    loop {
-        let mut line = String::new();
-        let count = Read::take(&mut input, REQUEST_BYTES + 1)
-            .read_line(&mut line)
-            .map_err(|_| RemoteError::Connection)?;
-        if count == 0 {
-            return Ok(());
-        }
-        if count as u64 > REQUEST_BYTES {
-            return Err(RemoteError::InvalidRequest);
-        }
-        let request: Value =
-            serde_json::from_str(&line).map_err(|_| RemoteError::InvalidRequest)?;
-        let Some(request_id) = request.get("id") else {
-            continue;
-        };
-        let response = match dispatch(root, id, &record.token, &request) {
-            Ok(result) => json!({"jsonrpc":"2.0", "id":request_id, "result":result}),
-            Err(error) => json!({"jsonrpc":"2.0", "id":request_id,
-                "error":{"code":-32602,"message":error.to_string()}}),
-        };
-        serde_json::to_writer(&mut output, &response).map_err(|_| RemoteError::Connection)?;
-        output
-            .write_all(b"\n")
-            .and_then(|()| output.flush())
-            .map_err(|_| RemoteError::Connection)?;
-    }
+    super::mcp_stream::run(io::stdin().lock(), io::stdout(), |request| {
+        dispatch(root, id, &record.token, request)
+    })
 }
 
 fn dispatch(root: &Path, id: &str, token: &str, request: &Value) -> Result<Value> {
@@ -109,3 +80,7 @@ fn tool_result(result: Result<Value>) -> Value {
 #[cfg(test)]
 #[path = "protocol_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "mcp_pipeline_tests.rs"]
+mod pipeline_tests;

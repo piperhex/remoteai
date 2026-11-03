@@ -2,6 +2,7 @@ import inlineCopy from '@remoteai/i18n/copy/inline/admin/pages/ChatSettingsPage'
 import { useEffect, useState } from 'react';
 import { App, Button, Form, Space, Typography, theme } from 'antd';
 import type { ChatPolicy } from '../../../../shared/remote-chat/policy';
+import { parseChatPolicy } from '../../../../shared/chat/chatPolicy';
 import { useI18n } from '../i18n-context';
 import { ChatSettingsFields } from './ChatSettingsFields';
 import './ChatSettingsPage.css';
@@ -25,7 +26,7 @@ export function ChatSettingsPage({ api, canManage }: Props) {
     let cancelled = false;
     setLoading(true);
     void api<ChatPolicy>('/admin/api/chat-settings').then((policy) => {
-      if (!cancelled) { form.setFieldsValue(policy); setLoaded(true); }
+      if (!cancelled) { form.setFieldsValue(parseChatPolicy(policy)); setLoaded(true); }
     }).catch(() => {
       if (!cancelled) message.error(zh ? inlineCopy["text_e1b8864d"] : inlineCopy["Unable_to_load_chat_settings_de7244dd"]);
     }).finally(() => { if (!cancelled) setLoading(false); });

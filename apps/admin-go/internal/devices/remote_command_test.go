@@ -46,6 +46,7 @@ func TestRemoteCommandsRequireSameOwnerAndExactTargetSocket(t *testing.T) {
 
 func TestRemoteCommandsCancelOnDisconnectAndTimeoutAndLimitConcurrency(t *testing.T) {
 	g := newControlGateway(nil)
+	g.commandLimit.Store(1)
 	caller, desktop, second := queuedPeer(), queuedPeer(), queuedPeer()
 	g.sockets["owner:device"] = desktop
 	input := remoteCommandInput{Command: "whoami", Shell: "auto", TimeoutSeconds: 30}

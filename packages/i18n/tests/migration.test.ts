@@ -1,4 +1,5 @@
 import loungeAttachments from '../src/catalogs/client/zh/loungeAttachments.json';
+import remoteCommand from '../src/catalogs/client/zh/remoteCommand.json';
 import { createHash } from 'node:crypto';
 import { expect, it } from 'vitest';
 import { resources as client } from '../src/catalogs/client';
@@ -53,6 +54,7 @@ const baselines = {
 
 // New complete templates added after migration are covered by the catalog completeness checks.
 const additions = new Set(['client.chat.usePlugin',
+  ...Object.keys(remoteCommand),
   ...Object.keys(gitConflicts),
   ...Object.keys(gitActivity),
   ...Object.keys(discovery),

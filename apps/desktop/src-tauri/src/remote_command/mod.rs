@@ -7,6 +7,8 @@ mod executor;
 pub(crate) mod host;
 mod install;
 mod mcp;
+mod mcp_stream;
+mod messages;
 mod platform;
 pub(crate) mod project_check;
 mod protocol;
@@ -15,6 +17,7 @@ mod state;
 mod windows_job;
 
 pub(crate) use automatic::setup_gui;
+pub(crate) use protocol::default_concurrency_limit;
 pub(crate) use protocol::CommandRequest;
 use std::{path::PathBuf, sync::Mutex};
 
@@ -41,7 +44,7 @@ pub(crate) enum RemoteError {
     Connection,
     #[error("等待结果超时，命令可能已执行。请先检查状态，再决定是否重试。")]
     Timeout,
-    #[error("电脑正在执行另一条远程命令，请稍后重试。")]
+    #[error("{}", messages::busy())]
     Busy,
     #[error("命令无法启动，请检查工作目录和所用命令。")]
     Execution,

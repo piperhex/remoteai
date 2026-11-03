@@ -1,6 +1,22 @@
 use super::ServerMessage;
 
 #[test]
+fn remote_commands_accept_configured_and_legacy_concurrency_limits() {
+    for limit in [None, Some(1), Some(8), Some(32)] {
+        let mut input = serde_json::json!({"type":"remote-command","commandId":"command-1",
+            "request":{"command":"whoami","cwd":null}});
+        if let Some(limit) = limit {
+            input["concurrencyLimit"] = limit.into();
+        }
+        let message = serde_json::from_value::<ServerMessage>(input).unwrap();
+        assert!(
+            matches!(message, ServerMessage::RemoteCommand { concurrency_limit, .. }
+            if concurrency_limit == limit.unwrap_or(5) as usize)
+        );
+    }
+}
+
+#[test]
 fn parses_monitor_power_without_a_desktop_session() {
     let message = serde_json::from_str::<ServerMessage>(
         r#"{"type":"screen-power","commandId":"screen-1","action":"off"}"#,

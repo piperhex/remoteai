@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"regexp"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/codex-switch/admin-go/internal/platform"
@@ -30,17 +31,24 @@ type ControlGateway struct {
 	pending              map[string]pendingCommand
 	updates              map[string]pendingAppUpdate
 	commands             map[string]pendingRemoteCommand
+	commandPolicyMu      sync.Mutex
+	commandLimit         atomic.Int64
 	accountUsage         map[string]pendingAccountUsage
 	updatePeers          *updatePeerTracker
 	updateCluster        *updatePeerCluster
 }
 
 func newControlGateway(service *Service) *ControlGateway {
-	return &ControlGateway{service: service, sessions: map[*peer]controlSession{}, sockets: map[string]*peer{},
+	gateway := &ControlGateway{service: service, sessions: map[*peer]controlSession{}, sockets: map[string]*peer{},
 		subscribers: map[string]map[*peer]bool{}, pending: map[string]pendingCommand{},
 		updates: map[string]pendingAppUpdate{}, commands: map[string]pendingRemoteCommand{},
 		accountUsage: map[string]pendingAccountUsage{},
 		updatePeers:  newUpdatePeerTracker(service), updateCluster: newUpdatePeerCluster(service)}
+	if service != nil && service.deps != nil {
+		gateway.refreshRemoteCommandPolicy()
+		service.deps.RemoteCommandPolicyChanged = gateway.refreshRemoteCommandPolicy
+	}
+	return gateway
 }
 
 func (g *ControlGateway) serve(c *gin.Context) {

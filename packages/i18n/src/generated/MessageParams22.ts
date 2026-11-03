@@ -128,6 +128,7 @@ export interface MessageParams22 {
   "client.remoteAssistance.thisInvitationHasAlreadyBeenHandledRefreshAndTryAgain": Record<string, never>;
   "client.remoteAssistance.thisInvitationHasEnded": Record<string, never>;
   "client.remoteAssistance.wouldLikeYouToControlThisComputerAndHelpResolve": Record<string, never>;
+  "client.remoteCommand.busy": Record<string, never>;
   "client.remoteDesktop.aClipboardTransferIsInProgressPleaseWait": Record<string, never>;
   "client.remoteDesktop.adjustHowYourRemoteDesktopLooks": Record<string, never>;
   "client.remoteDesktop.adjustingTheDisplay": Record<string, never>;
@@ -199,5 +200,4 @@ export interface MessageParams22 {
   "client.remoteDesktop.decode": Record<string, never>;
   "client.remoteDesktop.deviceFingerprint": Record<string, never>;
   "client.remoteDesktop.display": Record<string, never>;
-  "client.remoteDesktop.displaySettings": Record<string, never>;
 }
