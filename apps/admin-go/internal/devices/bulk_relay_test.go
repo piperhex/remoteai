@@ -107,7 +107,7 @@ func TestBulkQueuesShareAccountBudgetAndReleaseExactlyOnce(t *testing.T) {
 func TestBulkDrainReleasesQueuedMemory(t *testing.T) {
 	client := &peer{bulkQueue: make(chan outputFrame, 2)}
 	client.binaryBulk.Store(true)
-	client.sendBulk(outputFrame{bytes: bulkRecord(1)}, "bulk-drain-test")
+	client.trySendBulk(outputFrame{bytes: bulkRecord(1)}, "bulk-drain-test")
 	if client.bulkBuffered.Load() == 0 {
 		t.Fatal("did not reserve queue bytes")
 	}

@@ -11,9 +11,13 @@ import (
 
 type bulkWriter struct {
 	session string
-	meter   *chattraffic.BulkMeter
+	meter   bulkTrafficMeter
 	scope   chattraffic.BulkLeaseScope
 	failure func()
+}
+
+type bulkTrafficMeter interface {
+	Transmit(context.Context, chattraffic.BulkLeaseScope, []chattraffic.BulkWrite) error
 }
 
 // Drain only records already queued, never wait to build a batch. Each batch is smaller than
@@ -25,6 +29,7 @@ func (p *peer) collectBulk(first outputFrame) []outputFrame {
 		select {
 		case frame := <-p.bulkQueue:
 			if frame.lease == nil || frame.lease.scope != first.lease.scope || frame.lease.session != first.lease.session ||
+				frame.sessionDone != first.sessionDone || frame.sourceDone != first.sourceDone ||
 				size+len(frame.bytes) > bulkConnectionQueue {
 				p.pendingBulk = &frame
 				return frames
@@ -47,29 +52,45 @@ func (p *peer) writeBulkBatch(first outputFrame) bool {
 	}()
 	writes := make([]chattraffic.BulkWrite, 0, len(frames))
 	for _, frame := range frames {
-		writes = append(writes, chattraffic.BulkWrite{Bytes: len(frame.bytes), Write: func() error {
-			if p.closed.Load() {
-				return errors.New("closed download socket")
-			}
-			// This is the sole socket writer. Service a bounded control quantum between records.
-			if err := p.writeBulkControl(); err != nil {
-				return err
-			}
-			frame.guard = nil
-			err := p.writeFrame(frame)
-			if err != nil {
-				p.terminate()
-			}
-			return err
-		}})
+		if frame.cancelled() {
+			continue
+		}
+		writes = append(writes, p.bulkWrite(frame))
+	}
+	if len(writes) == 0 {
+		return !p.closed.Load()
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*heartbeatInterval)
 	defer cancel()
 	if err := first.lease.meter.Transmit(ctx, first.lease.scope, writes); err != nil {
+		if errors.Is(err, errRelaySkipped) {
+			return !p.closed.Load()
+		}
 		slog.Warn("bulk lease stopped", "error", err)
 		first.lease.failure()
 	}
 	return !p.closed.Load()
+}
+
+func (p *peer) bulkWrite(frame outputFrame) chattraffic.BulkWrite {
+	return chattraffic.BulkWrite{Bytes: len(frame.bytes), Write: func() error {
+		if frame.cancelled() {
+			return errRelaySkipped
+		}
+		if p.closed.Load() {
+			return errors.New("closed download socket")
+		}
+		// This is the sole socket writer. Service a bounded control quantum between records.
+		if err := p.writeBulkControl(); err != nil {
+			return err
+		}
+		frame.guard = nil
+		err := p.writeFrame(frame)
+		if err != nil && !errors.Is(err, errRelaySkipped) {
+			p.terminate()
+		}
+		return err
+	}}
 }
 
 func (p *peer) writeBulkControl() error {

@@ -192,7 +192,8 @@ func (s *chatSessions) routeLegacy(client *peer, message platform.JSON) error {
 		}
 		frame := platform.JSON{"type": "relay", "sessionId": id, "payload": payload}
 		if s.deliver != nil {
-			s.deliver(relayDelivery{session.owner, id, client, target, &session.traffic, client == session.desktop, ""}, frame)
+			s.deliver(relayDelivery{owner: session.owner, sessionID: id, source: client, target: target,
+				traffic: &session.traffic, fromDesktop: client == session.desktop}, frame)
 		} else {
 			target.send(frame, s.onRelay)
 		}

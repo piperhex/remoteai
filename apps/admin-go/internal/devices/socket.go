@@ -21,31 +21,35 @@ const authTimeout = 10 * time.Second
 const chatBufferLimit = 2 * 1024 * 1024
 
 type outputFrame struct {
-	sourceDone <-chan struct{}
-	lease      *bulkWriter
-	release    func()
-	kind       int
-	bytes      []byte
-	sent       func(int)
-	guard      func(int, func() error) error
+	sourceDone  <-chan struct{}
+	sessionDone <-chan struct{}
+	reservation *bulkReservation
+	lease       *bulkWriter
+	release     func()
+	kind        int
+	bytes       []byte
+	sent        func(int)
+	guard       func(int, func() error) error
 }
 type peer struct {
-	writerID     string
-	pendingBulk  *outputFrame
-	serviceHost  atomic.Bool
-	binaryRelay  atomic.Bool
-	binaryBulk   atomic.Bool
-	bulkBuffered atomic.Int64
-	bulkQueue    chan outputFrame
-	bulkQueueMu  sync.Mutex
-	diagnostics  *chatDiagnostics
-	conn         *websocket.Conn
-	queue        chan outputFrame
-	done         chan struct{}
-	closeOnce    sync.Once
-	buffered     atomic.Int64
-	alive        atomic.Bool
-	closed       atomic.Bool
+	bulkDispatchMu sync.Mutex
+	bulkDispatch   *bulkDispatch
+	writerID       string
+	pendingBulk    *outputFrame
+	serviceHost    atomic.Bool
+	binaryRelay    atomic.Bool
+	binaryBulk     atomic.Bool
+	bulkBuffered   atomic.Int64
+	bulkQueue      chan outputFrame
+	bulkQueueMu    sync.Mutex
+	diagnostics    *chatDiagnostics
+	conn           *websocket.Conn
+	queue          chan outputFrame
+	done           chan struct{}
+	closeOnce      sync.Once
+	buffered       atomic.Int64
+	alive          atomic.Bool
+	closed         atomic.Bool
 }
 
 var upgrader = websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }}
@@ -152,7 +156,13 @@ func (p *peer) writeLoop() {
 }
 
 func (p *peer) writeFrame(frame outputFrame) error {
+	if frame.cancelled() {
+		return errRelaySkipped
+	}
 	write := func() error {
+		if frame.cancelled() {
+			return errRelaySkipped
+		}
 		// Start the network timeout after any wait for accounting storage or a fresh quota grant.
 		if err := p.conn.SetWriteDeadline(time.Now().Add(heartbeatInterval)); err != nil {
 			return err
@@ -166,7 +176,7 @@ func (p *peer) writeFrame(frame outputFrame) error {
 		err = write()
 	}
 	if errors.Is(err, errRelaySkipped) {
-		return nil
+		return err
 	}
 	if err == nil && frame.sent != nil {
 		frame.sent(len(frame.bytes))
@@ -185,7 +195,7 @@ func (p *peer) writeQueued(frame outputFrame, bulk bool) bool {
 	if !bulk {
 		p.buffered.Add(-int64(len(frame.bytes)))
 	}
-	if err != nil {
+	if err != nil && !errors.Is(err, errRelaySkipped) {
 		p.diagnostics.log("chat write failed")
 		p.terminate()
 		return false
@@ -216,6 +226,7 @@ func (p *peer) close(code int, reason string) {
 	p.closeOnce.Do(func() {
 		p.closed.Store(true)
 		close(p.done)
+		notifyBulkQueues()
 		// Callers may own a gateway/session lock. Mark closed immediately and perform
 		// the bounded close handshake separately, at most once per connection.
 		go func() {
@@ -234,6 +245,7 @@ func (p *peer) terminate() {
 		p.closed.Store(true)
 		_ = p.conn.Close()
 		close(p.done)
+		notifyBulkQueues()
 	})
 }
 

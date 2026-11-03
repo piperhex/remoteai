@@ -100,6 +100,11 @@ func (g *ChatGateway) serve(c *gin.Context) {
 	g.connections[client] = state
 	g.mu.Unlock()
 	defer g.disconnect(client)
+	g.readChat(client, state)
+}
+
+func (g *ChatGateway) readChat(client *peer, state *chatConnection) {
+	conn := client.conn
 	for {
 		kind, reader, err := conn.NextReader()
 		var data []byte

@@ -96,56 +96,29 @@ func reserveBulkQueue(owner string, bytes int) (func(), bool) {
 	}, true
 }
 
-func (p *peer) sendBulk(frame outputFrame, owner string) {
-	if p == nil {
-		return
-	}
-	timer := time.NewTimer(bulkQueueWaitTimeout)
-	defer timer.Stop()
-	for {
-		select {
-		case <-frame.sourceDone:
-			return
-		default:
-		}
-		// Subscribe before checking capacity so a concurrent release cannot be missed.
-		bulkQueues.Lock()
-		changed := bulkQueues.changed
-		bulkQueues.Unlock()
-		if p.trySendBulk(frame, owner) {
-			return
-		}
-		// Waiting in the source reader propagates TCP backpressure without another frame queue.
-		select {
-		case <-changed:
-		case <-p.done:
-			return
-		case <-frame.sourceDone:
-			return
-		case <-timer.C:
-			p.close(4008, "Download receiver stalled")
-			return
-		}
-	}
-}
-
 func (p *peer) trySendBulk(frame outputFrame, owner string) bool {
-	p.bulkQueueMu.Lock()
-	defer p.bulkQueueMu.Unlock()
-	if p.closed.Load() || !p.binaryBulk.Load() {
+	if p == nil {
+		frame.releaseBulk()
 		return true
 	}
-	bytes := int64(len(frame.bytes))
-	if p.bulkBuffered.Load()+bytes > bulkConnectionQueue || len(p.bulkQueue) == cap(p.bulkQueue) {
+	p.bulkQueueMu.Lock()
+	defer p.bulkQueueMu.Unlock()
+	if p.closed.Load() || !p.binaryBulk.Load() || frame.cancelled() {
+		frame.releaseBulk()
+		return true
+	}
+	if len(p.bulkQueue) == cap(p.bulkQueue) {
 		return false
 	}
-	release, ok := reserveBulkQueue(owner, len(frame.bytes))
-	if !ok {
+	if frame.reservation == nil {
+		frame.reservation = p.reserveBulk(owner, len(frame.bytes))
+		if frame.reservation == nil {
+			return false
+		}
+	} else if !frame.reservation.move(p) {
 		return false
 	}
-	p.bulkBuffered.Add(bytes)
-	var once sync.Once
-	frame.release = func() { once.Do(func() { p.bulkBuffered.Add(-bytes); release() }) }
+	frame.release = frame.reservation.release
 	frame.kind = websocket.BinaryMessage
 	// Producers share bulkQueueMu; the writer can only free slots after the capacity check.
 	p.bulkQueue <- frame

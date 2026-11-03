@@ -60,7 +60,7 @@ func TestBulkSocketPrioritizesControlAndAuthorizesBeforeWritingWireBytes(t *test
 			done: make(chan struct{})}
 		p.alive.Store(true)
 		p.binaryBulk.Store(true)
-		p.sendBulk(outputFrame{bytes: wire, guard: func(size int, write func() error) error {
+		p.trySendBulk(outputFrame{bytes: wire, guard: func(size int, write func() error) error {
 			charged <- size
 			return write()
 		}}, "bulk-socket-test")

@@ -12,6 +12,7 @@ import (
 )
 
 type hotSession struct {
+	bulkDone                 chan struct{}
 	id, token, owner, device string
 	traffic                  sessionTraffic
 	desktop                  chatEndpoint
@@ -121,6 +122,7 @@ func (s *hotSessions) register(client *peer, identity chatIdentity, input interf
 			}
 			s.sessions[claim.id] = session
 		}
+		session.cancelBulk()
 		session.desktop = chatEndpoint{client, identity.expires}
 		s.ready(session)
 	}
@@ -220,6 +222,7 @@ func (s *hotSessions) resume(input hotJoin, value interface{}) error {
 	session.tcp = s.tcpConfig != nil && input.tcp && input.message["tcpPunch"] == true
 	session.native = session.native && input.native && input.message["nativeTraversal"] == true
 	previous := session.mobile
+	session.cancelBulk()
 	session.mobile = &chatEndpoint{input.client, input.identity.expires}
 	if previous != nil && previous.socket != input.client {
 		previous.socket.close(4000, "Connection resumed")
@@ -343,8 +346,12 @@ func (s *hotSessions) prepareRelay(session *hotSession, target *peer, message pl
 		return func() { target.send(frame, onRelay) }, nil
 	}
 	deliver := s.deliver
-	endpoints := relayDelivery{session.owner, session.id, source, target, &session.traffic,
-		source == session.desktop.socket, session.device}
+	if session.bulkDone == nil {
+		session.bulkDone = make(chan struct{})
+	}
+	endpoints := relayDelivery{owner: session.owner, sessionID: session.id, source: source, target: target,
+		traffic: &session.traffic, fromDesktop: source == session.desktop.socket, device: session.device,
+		sessionDone: session.bulkDone}
 	return func() { deliver(endpoints, frame) }, nil
 }
 
@@ -357,6 +364,7 @@ func (s *hotSessions) disconnect(client *peer, revoke bool) {
 			s.remove(session)
 			continue
 		}
+		session.cancelBulk()
 		target := session.desktop.socket
 		if client == target {
 			target = nil
@@ -385,6 +393,7 @@ func (s *hotSessions) prune() {
 }
 
 func (s *hotSessions) remove(session *hotSession) {
+	session.cancelBulk()
 	delete(s.sessions, session.id)
 	sockets := []*peer{session.desktop.socket}
 	if session.mobile != nil {
