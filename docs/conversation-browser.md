@@ -22,7 +22,14 @@ The authenticated `codex_gui` MCP server advertises:
 
 Read a snapshot before element actions and use its exact references. A later snapshot invalidates old
 references; navigation and detached elements also invalidate them. `type` replaces field text. Password
-values are excluded from snapshots. Screenshots are MCP image blocks. `dispatched` acknowledges input
+values are excluded from snapshots. Screenshots are MCP image blocks and include a durable local image
+reference in `result.screenshot.path` plus `result.screenshot.markdown`. Tool images appear in execution
+details, not automatically in the final answer. When delivering a requested screenshot, embed the returned
+Markdown image once with descriptive alt text; do not append a duplicate file link. Captures are saved in
+the host's application data `browser-screenshots` directory and remain usable after the tab closes.
+Only MCP screenshot requests save files; local/remote preview polling remains memory-only. The existing
+authenticated image-preview transport serves these references in desktop local, desktop remote and web chat.
+`dispatched` acknowledges input
 delivery only; models must inspect the result. No arbitrary JavaScript tool is exposed.
 
 For example, after opening a page, pass `{"action":"snapshot"}`. Use the returned input reference in
@@ -69,3 +76,13 @@ the ignored Rust test `provider_browser::automation::tests::opens_conversation_b
 start `node e2e/website-tabs-bridge.mjs`, then run `node e2e/website-tabs-remote-native.mjs`.
 These scripts exercise actual native pages and write screenshots to `.codex-tmp/website-tabs-native`.
 Stop the test window, bridge and fixture servers afterward.
+
+For screenshot delivery, start the same Vite and fixture servers, run the ignored Rust test
+`codex_gui::conversation_tools::browser_capture_smoke::opens_browser_capture_tool`, then run
+`node e2e/browser-capture-native.mjs`. It uses the test window's CDP port 9335 to exercise the MCP tool
+path, compares saved bytes with the image block, closes the tab and checks the image still exists.
+It also confirms that preview polling does not produce saved-image metadata. Run
+`npx playwright test --config playwright.browser-capture.config.ts` to render that exact saved image
+through local, remote and web reply components at 1440/light and 1024/dark. The browser test mocks
+the transport only, so it does not establish connectivity to a second physical computer.
+Results and screenshots are in `.codex-tmp/browser-capture` and `.codex-tmp/browser-capture-parity`.

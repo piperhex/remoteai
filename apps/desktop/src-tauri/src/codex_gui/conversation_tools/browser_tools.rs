@@ -39,7 +39,12 @@ pub(super) async fn execute(app: AppHandle, params: Value) -> Result<Value> {
     {
         return Err(Error::Invalid);
     }
-    automation::execute(app, request)
+    let screenshot = matches!(request.action, Action::Screenshot);
+    let mut response = automation::execute(app.clone(), request)
         .await
-        .map_err(Error::Browser)
+        .map_err(Error::Browser)?;
+    if screenshot {
+        response = super::screenshot_artifact::attach(app, response).await?;
+    }
+    Ok(response)
 }

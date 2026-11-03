@@ -1,9 +1,12 @@
 //! Built-in, authenticated MCP transport for GUI conversation operations.
+#[cfg(all(test, windows))]
+mod browser_capture_smoke;
 mod browser_tools;
 mod http;
 mod journal;
 mod operations;
 mod protocol;
+mod screenshot_artifact;
 mod selection;
 mod summaries;
 #[cfg(test)]
