@@ -13,7 +13,12 @@ const chatPolicyCacheKey = "client-read:v1:chat-policy"
 // CachedChatPolicy shares settings across sockets and instances. Readers receive independent maps.
 // Five seconds matches the existing policy refresh cadence, including invalidation outages.
 func CachedChatPolicy(deps *platform.Dependencies) (map[string]interface{}, error) {
-	ctx, cancel := platform.DatabaseContext(context.Background())
+	return CachedChatPolicyContext(context.Background(), deps)
+}
+
+// CachedChatPolicyContext also allows gateway shutdown to cancel a periodic refresh.
+func CachedChatPolicyContext(parent context.Context, deps *platform.Dependencies) (map[string]interface{}, error) {
+	ctx, cancel := platform.DatabaseContext(parent)
 	defer cancel()
 	return readcache.Load(ctx, readcache.Options{Client: deps.Redis, Key: chatPolicyCacheKey,
 		Lifetime: 5 * time.Second}, func(ctx context.Context) (map[string]interface{}, error) {

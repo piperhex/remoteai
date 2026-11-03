@@ -104,11 +104,17 @@ pub(super) fn put_remote_accounts<R: Runtime>(
     credentials: &mut CloudCredentials,
 ) -> Result<usize, String> {
     let accounts = collect_local_accounts(app)?;
-    for account in &accounts {
-        upsert_remote_account_payload(app, client, settings, credentials, account)?;
-    }
+    let uploaded = upload_sync_records(
+        SyncUpload {
+            app,
+            client,
+            settings,
+            credentials,
+        },
+        SyncRecords::Accounts(&accounts),
+    )?;
     settings.cloud_last_sync_at = Some(Utc::now().to_rfc3339());
-    Ok(accounts.len())
+    Ok(uploaded)
 }
 
 pub(super) fn put_remote_providers<R: Runtime>(
@@ -131,10 +137,15 @@ pub(super) fn put_remote_provider_records<R: Runtime>(
     credentials: &mut CloudCredentials,
 ) -> Result<usize, String> {
     let providers = collect_local_providers(app)?;
-    for provider in &providers {
-        upsert_remote_provider_payload(app, client, settings, credentials, provider)?;
-    }
-    Ok(providers.len())
+    upload_sync_records(
+        SyncUpload {
+            app,
+            client,
+            settings,
+            credentials,
+        },
+        SyncRecords::Providers(&providers),
+    )
 }
 
 #[tauri::command]

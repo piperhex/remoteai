@@ -96,8 +96,10 @@ it('keeps both simultaneous eighth mappings, avoids invalid retries and still sy
   expect(second.sync.snapshot()).toContain('多出的映射已保留在本机');
   const uploads = () => cloud.exchange.mock.calls.filter(([input]) => input !== undefined);
   const uploadCount = uploads().length;
+  const requestCount = cloud.exchange.mock.calls.length;
   await vi.advanceTimersByTimeAsync(15_000);
   expect(uploads()).toHaveLength(uploadCount);
+  expect(cloud.exchange).toHaveBeenCalledTimes(requestCount);
   expect(uploads().every(([input]) => input!.mappings.length <= MAX_PORT_MAPPINGS)).toBe(true);
   await first.service.edit('base-0', { remotePort: 6000, localPort: 16000 }); await flush();
   await second.sync.refresh();

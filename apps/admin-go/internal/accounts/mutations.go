@@ -12,6 +12,7 @@ func (s *service) upsertAccounts(options writeOptions, incoming []object) (inter
 			return nil, err
 		}
 	}
+	// Bindings and metadata permissions are always checked against current database state.
 	bound, err := s.boundAccounts(options.Owner)
 	if err != nil {
 		return nil, err
@@ -22,104 +23,58 @@ func (s *service) upsertAccounts(options writeOptions, incoming []object) (inter
 	}
 	for _, row := range incoming {
 		if system, ok := byID[str(row["id"])]; ok {
-			if err = s.updateBound(options, system, row); err != nil {
+			if err = s.updateBoundMetadata(options, system, row); err != nil {
 				return nil, err
 			}
 		}
 	}
+	changed := false
 	err = s.deps.DB.Transaction(func(tx *gorm.DB) error {
-		for _, row := range incoming {
-			if _, ok := byID[str(row["id"])]; ok {
-				continue
-			}
-			if e := saveIncomingAccount(tx, options.Owner, row); e != nil {
-				return e
-			}
-		}
-		return nil
+		var e error
+		changed, e = saveAccountBatch(tx, options.Owner, incoming, byID)
+		return e
 	})
 	if err != nil {
 		return nil, err
 	}
-	if err = s.invalidate(options.Owner, false); err != nil {
-		return nil, err
-	}
-	if deviceIDPattern.MatchString(options.Device) {
-		for _, row := range incoming {
-			if row["active"] == true {
-				err = s.deps.DB.Table("remote_devices").
-					Where(`"ownerId" = ? AND "deviceId" = ?`, options.Owner, options.Device).
-					Updates(object{"activeAccountId": row["id"], "lastSeenAt": now()}).
-					Error
-				if err == nil {
-					platform.InvalidateDeviceDirectory(s.deps, options.Owner)
-				}
-				break
-			}
+	if changed {
+		if err = s.invalidate(options.Owner, false); err != nil {
+			return nil, err
 		}
 	}
-	return object{"count": len(incoming)}, err
+	return object{"count": len(incoming)}, s.updateSyncDevice(options, incoming)
 }
 
-func saveIncomingAccount(tx *gorm.DB, owner string, in object) error {
-	row := account{}
-	err := tx.Where(`"ownerId" = ? AND "accountId" = ?`, owner, in["id"]).First(&row).Error
-	var old *account
-	if err == nil {
-		old = &row
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-	merged, active, err := mergeAccount(old, owner, in)
-	if err != nil || merged == nil {
-		return err
-	}
-	if active && merged.Active {
-		err = tx.Model(&account{}).Where(`"ownerId" = ?`, owner).
-			Updates(object{"active": false, "updatedAt": now()}).Error
-		if err != nil {
-			return err
-		}
-	}
-	return tx.Save(merged).Error
-}
-
-func (s *service) updateBound(options writeOptions, system systemAccount, in object) error {
+func (s *service) updateBoundMetadata(options writeOptions, system systemAccount, in object) error {
 	changed := system.Note != str(in["note"]) || system.ExpiresAt != str(in["expiresAt"])
 	if changed && !options.Editable && options.RejectMetadata {
 		return platform.NewError(403, "You cannot edit official account notes or expiration dates")
 	}
 	if changed && options.Editable {
-		if _, err := s.updateSystem(system.ID, object{"note": in["note"], "expiresAt": in["expiresAt"]}, ""); err != nil {
-			return err
-		}
-	}
-	if !has(in, "privateDetails") || in["privateDetails"] == nil {
-		return nil
-	}
-	row := account{}
-	err := s.deps.DB.Where(`"ownerId" = ? AND "accountId" = ?`, options.Owner, in["id"]).First(&row).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		merged, _, e := mergeAccount(nil, options.Owner, in)
-		if e != nil {
-			return e
-		}
-		return s.deps.DB.Save(merged).Error
-	}
-	if err != nil {
+		_, err := s.updateSystem(system.ID, object{"note": in["note"], "expiresAt": in["expiresAt"]}, "")
 		return err
 	}
-	old := versions(row.FieldModifiedAt, iso(row.LastModifiedAt), accountFields)
-	next := versions(obj(in["fieldModifiedAt"]), in["lastModifiedAt"], accountFields)
-	if !newer(next["privateDetails"], old["privateDetails"]) {
+	return nil
+}
+
+func (s *service) updateSyncDevice(options writeOptions, incoming []object) error {
+	if !deviceIDPattern.MatchString(options.Device) {
 		return nil
 	}
-	row.PrivateDetails = preserveAccountAlias(obj(in["privateDetails"]), row.PrivateDetails)
-	old["privateDetails"] = next["privateDetails"]
-	row.FieldModifiedAt = old
-	row.LastModifiedAt = date(latest(old))
-	row.DeletedAt = nil
-	return s.deps.DB.Save(&row).Error
+	for _, row := range incoming {
+		if row["active"] != true {
+			continue
+		}
+		result := s.deps.DB.Table("remote_devices").
+			Where(`"ownerId" = ? AND "deviceId" = ?`, options.Owner, options.Device).
+			Where(`"activeAccountId" IS DISTINCT FROM ?`, row["id"]).
+			Updates(object{"activeAccountId": row["id"], "lastSeenAt": now()})
+		if result.Error == nil && result.RowsAffected > 0 {
+			platform.InvalidateDeviceDirectory(s.deps, options.Owner)
+		}
+		return result.Error
+	}
+	return nil
 }
 
 func (s *service) deleteAccount(owner, id string) (interface{}, error) {

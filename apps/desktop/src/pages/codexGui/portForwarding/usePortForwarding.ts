@@ -16,9 +16,9 @@ export function usePortForwarding(options: { client: ForwardingClient; scope: st
       identity: { baseUrl: identity.baseUrl, userId: identity.account }, deviceId: identity.deviceId, document,
     });
   }, [scope]);
-  const syncStatus = useMappingSync(service, { scope, storage: localStorage, exchange });
+  const syncStatus = useMappingSync(service, { scope, storage: localStorage, exchange, connected });
   useEffect(() => { service.setConnected(connected); }, [service, connected]);
-  useEffect(() => service.dispose, [service]);
+  useEffect(() => { service.activate(); return service.dispose; }, [service]);
   useEffect(() => { savePortMappings(scope, entries); }, [scope, entries]);
   return { entries, service, syncStatus };
 }

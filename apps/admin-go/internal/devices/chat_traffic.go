@@ -93,7 +93,7 @@ func (g *ChatGateway) deliverRelay(delivery relayDelivery, frame platform.JSON) 
 	delivery.target.sendGuarded(frame, sent, guard)
 }
 
-func (g *ChatGateway) publishTraffic() {
+func (g *ChatGateway) publishUsage(parent context.Context) error {
 	type connection struct {
 		client *peer
 		owner  string
@@ -110,13 +110,11 @@ func (g *ChatGateway) publishTraffic() {
 	for _, client := range clients {
 		owners = append(owners, client.owner)
 	}
-	ctx, cancel := platform.DatabaseContext(context.Background())
+	ctx, cancel := platform.DatabaseContext(parent)
 	defer cancel()
 	usage, err := chattraffic.ReadUsages(g.service.deps.DB.WithContext(ctx), owners, time.Now())
-	// Session byte counters remain available even if the persistent usage snapshot fails.
-	defer g.sessions.publishTraffic()
 	if err != nil {
-		return
+		return err
 	}
 	for _, client := range clients {
 		value, found := usage[client.owner]
@@ -125,6 +123,7 @@ func (g *ChatGateway) publishTraffic() {
 		}
 		client.client.send(platform.JSON{"type": "relay-usage", "usage": value}, nil)
 	}
+	return nil
 }
 
 func (s *chatSessions) publishTraffic() {
