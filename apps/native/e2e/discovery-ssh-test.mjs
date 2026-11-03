@@ -123,7 +123,7 @@ async function verify(scale) {
   await tap('ERROR'); await find('无法读取已保存的 SSH 连接，请检查网络后刷新。');
   await screenshot(`android-dark-ssh-error-${scale}`);
   await tap('SAVED'); await find('Saved-edited');
-  await find('从手机直接连接服务器，无需电脑在线。');
+  await find('新建');
   assert.ok(!(await nodes()).some(node => node['content-desc'] === '选择电脑'));
   await tap('Saved-edited'); await find('远程终端');
   await screenshot(`android-dark-ssh-direct-${scale}`);

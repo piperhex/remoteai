@@ -12,6 +12,7 @@ import { ChatDevices } from '../chat/ChatDevices';
 import { ChatTerminal } from '../chat/ChatTerminal';
 import { ChatTerminalLayout } from '../chat/ChatTerminalLayout';
 import { DiscoveryBackButton } from './DiscoveryPage';
+import { useMobilePageThemeColor } from '../theme/useMobilePageThemeColor';
 import './ssh.css';
 
 export function SshPage({ client, connected, deviceName, devices, chooseDevice, onBack }: {
@@ -19,6 +20,7 @@ export function SshPage({ client, connected, deviceName, devices, chooseDevice, 
   devices: RemoteDevice[]; chooseDevice: (id: string) => void; onBack: () => void;
 }) {
   useLanguage();
+  useMobilePageThemeColor('#ededed');
   const { saved, profile, choose, close, panel, editor, edit, closeEditor } = useSshDiscovery(client, connected);
   const [picking, setPicking] = useState(false);
   return <section className="discovery-ssh-page" aria-label={t('client.discovery.ssh')}>
@@ -35,7 +37,6 @@ export function SshPage({ client, connected, deviceName, devices, chooseDevice, 
         {deviceName ? t('client.discovery.sshViaComputer', { name: deviceName })
           : t('client.settings.chooseAComputer')}<ChevronDown size={18} />
       </button>
-      <p className="discovery-ssh-hint">{t('client.discovery.sshWebHint')}</p>
     </div>
     <div className="discovery-ssh-content">
       <div className="discovery-ssh-section"><span>{t('client.ssh.savedConnections')}</span>

@@ -32,14 +32,13 @@ export function SshPage({ client, onBack }: {
         </Pressable>
       </View>
     </View>
-    <View style={styles.heading}>
-      <Text style={styles.hint}>{t('client.discovery.sshDirectHint')}</Text>
-      {panel.tabs.length > 0 && <SshButton label={t('client.projectBrowser.terminal')} onPress={panel.toggle} />}
-    </View>
     <ScrollView contentContainerStyle={styles.content} refreshControl={
       <RefreshControl refreshing={saved.loading} onRefresh={() => void saved.refresh()} />}>
       <View style={styles.section}><Text style={styles.hint}>{t('client.ssh.savedConnections')}</Text>
-        <SshButton label={t('client.ssh.refresh')} disabled={saved.loading} onPress={() => void saved.refresh()} />
+        <View style={styles.actions}>
+          {panel.tabs.length > 0 && <SshButton label={t('client.projectBrowser.terminal')} onPress={panel.toggle} />}
+          <SshButton label={t('client.ssh.refresh')} disabled={saved.loading} onPress={() => void saved.refresh()} />
+        </View>
       </View>
       {!!saved.error && <Text accessibilityRole="alert" style={styles.error}>{displayError(saved.error)}</Text>}
       {saved.profiles.map(item => <View key={item.id} style={styles.row}>
@@ -79,8 +78,8 @@ const useStyles = createThemedStyles(color => ({
   title: { ...textMetrics(18, 28), fontWeight: '600', textAlign: 'center', color: color('#181818', 'ink') },
   create: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, minHeight: 48 },
   createLabel: { ...textMetrics(16, 24), flexShrink: 1, color: color('#07b775', 'accent') },
-  heading: { paddingHorizontal: 20, paddingBottom: 16, gap: 8 },
-  section: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  section: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   content: { padding: 16, gap: 12, paddingBottom: 24 },
   row: { flexDirection: 'row', alignItems: 'center', borderRadius: 12,
     backgroundColor: color('#fff', 'surface') },

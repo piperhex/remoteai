@@ -1,6 +1,6 @@
 .discovery-ssh-page { flex: 1; min-height: 0; overflow-y: auto; background: var(--app-canvas, #ededed);
   color: var(--app-ink, #181818); }
-.discovery-ssh-heading { padding: 0 20px 16px; }
+.discovery-ssh-heading { padding: 0 20px; }
 .discovery-ssh-header { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center; min-height: 48px; padding-block: 6px; }
 .discovery-ssh-header h1 { margin: 0; padding-block: 2px; font-size: 18px; font-weight: 600;

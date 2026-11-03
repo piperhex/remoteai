@@ -52,7 +52,7 @@ async function verify(scale) {
   const result = JSON.parse(await readFile(`${output}/native-result.json`, 'utf8'));
   assert.equal(result.passed, true);
   await tap('LIGHT'); await tap('SSH');
-  await find('从手机直接连接服务器，无需电脑在线。');
+  await find('新建');
   assert.ok(!(await nodes()).some(node => node['content-desc'] === '选择电脑'));
   await screenshot(`android-light-direct-list-font-${scale}`);
   await tap('SSH password server'); await find('信任并连接');
@@ -67,7 +67,8 @@ async function verify(scale) {
   await tap('返回发现'); await find('SSH'); await tap('SSH');
   await tap('终端'); await find('远程文件浏览');
   await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
-  await tap('DARK'); await screenshot(`android-dark-direct-list-font-${scale}`);
+  await tap('返回发现'); await tap('DARK'); await tap('SSH');
+  await screenshot(`android-dark-direct-list-font-${scale}`);
   await tap('SSH key server'); await find('远程文件浏览');
   await screenshot(`android-dark-direct-key-terminal-font-${scale}`);
   await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');

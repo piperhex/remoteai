@@ -4,7 +4,5 @@
   "client.discovery.back": "Назад к обзору",
   "client.discovery.ssh": "SSH",
   "client.discovery.sshComputerHint": "Выберите компьютер в сети, чтобы открыть терминал SSH.",
-  "client.discovery.sshDirectHint": "Подключайтесь к серверу прямо с телефона. Компьютер не требуется.",
-  "client.discovery.sshViaComputer": "Подключение через {name}",
-  "client.discovery.sshWebHint": "Веб-версия подключается через компьютер. Для прямого подключения с телефона используйте мобильное приложение."
+  "client.discovery.sshViaComputer": "Подключение через {name}"
 }

@@ -1,12 +1,12 @@
 import 'react-native-gesture-handler';
 import { createThemedStyles } from './src/theme/styles';
-import { loadTheme, useThemeMode, useThemeColor } from './src/theme/preference';
+import { loadTheme, useThemeColor } from './src/theme/preference';
+import { ThemeStatusBar } from './src/theme/ThemeStatusBar';
 import { t, useLanguage } from './src/i18n';
 import { loadLanguage } from './src/i18n/preference';
 import { LoginLanguagePicker } from './src/settings/LanguagePicker';
 import './src/chat/backgroundConnection';
 import { mergeRemoteModelState, type RemoteModelTarget } from '../../shared/remote-chat/modelTarget';
-import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { Component, useCallback, useEffect, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from 'react';
 import {
@@ -1270,7 +1270,7 @@ function AppContent() {
     <SafeAreaView edges={showBottomNavigation ? ['left', 'right'] : ['left', 'right', 'bottom']}
     style={[styles.app, activePage === 'totp' && totpPageStyles.page,
     activePage === 'accounts' && accountStyles.page,
-    activePage === 'discover' && styles.discoveryCanvas,
+    (activePage === 'discover' || activePage === 'ssh') && styles.discoveryCanvas,
     activePage === 'chat' && styles.chatCanvas,
     (activePage === 'settings' || activePage === 'about' || activePage === 'downloads') && styles.settingsCanvas]}>
     <ThemeStatusBar />
@@ -1330,11 +1330,6 @@ function AppContent() {
     {showBottomNavigation && <BottomNavigation activePage={activePage}
       owner={session ? downloadOwner(session) : undefined} loungeUnread={lounge.state.unread} onChange={setActivePage} />}
   </SafeAreaView></MappingProvider>;
-}
-
-function ThemeStatusBar() {
-  const mode = useThemeMode();
-  return <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />;
 }
 
 export default function App() {

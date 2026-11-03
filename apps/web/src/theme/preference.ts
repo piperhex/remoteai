@@ -4,14 +4,18 @@ import { darkColors, isThemePreference, resolveThemeMode,
 
 export const THEME_KEY = 'codex-switch.web.theme.v1';
 const listeners = new Set<() => void>();
-const subscribe = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
+export const subscribeTheme = (listener: () => void) => {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+};
 let mode: ThemeMode = 'light';
 let preference: ThemePreference = 'system';
 const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+export const browserThemeColor = () => mode === 'dark' ? darkColors.canvas : '#f4f7f5';
 export const getThemeMode = () => mode;
-export const useThemeMode = () => useSyncExternalStore(subscribe, getThemeMode, getThemeMode);
+export const useThemeMode = () => useSyncExternalStore(subscribeTheme, getThemeMode, getThemeMode);
 export const getThemePreference = () => preference;
-export const useThemePreference = () => useSyncExternalStore(subscribe, getThemePreference, getThemePreference);
+export const useThemePreference = () => useSyncExternalStore(subscribeTheme, getThemePreference, getThemePreference);
 
 function applyTheme(next: ThemeMode) {
   mode = next;
@@ -23,8 +27,7 @@ function applyTheme(next: ThemeMode) {
     if (next === 'dark') root.style.setProperty(`--app-${role}`, color);
     else root.style.removeProperty(`--app-${role}`);
   }
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content',
-    next === 'dark' ? darkColors.canvas : '#f4f7f5');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', browserThemeColor());
   listeners.forEach(listener => listener());
 }
 

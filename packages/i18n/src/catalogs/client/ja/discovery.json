@@ -4,7 +4,5 @@
   "client.discovery.back": "見つけるに戻る",
   "client.discovery.ssh": "SSH",
   "client.discovery.sshComputerHint": "SSH ターミナルを開くには、オンラインのパソコンを選択してください。",
-  "client.discovery.sshDirectHint": "スマートフォンからサーバーに直接接続します。パソコンは不要です。",
-  "client.discovery.sshViaComputer": "{name} 経由で接続",
-  "client.discovery.sshWebHint": "Web 版はパソコン経由で接続します。スマートフォンから直接接続するにはモバイルアプリをご利用ください。"
+  "client.discovery.sshViaComputer": "{name} 経由で接続"
 }

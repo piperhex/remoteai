@@ -11,6 +11,7 @@ import { DiscoveryPage } from '../src/discovery/DiscoveryPage';
 import { BottomNavigation } from '../src/discovery/BottomNavigation';
 import { updateThemeMode, useThemeColor } from '../src/theme/store';
 import { textMetrics } from '../src/theme/text';
+import { ThemeStatusBar } from '../src/theme/ThemeStatusBar';
 import { reportDirectSshFailure, verifyDirectSsh } from './direct-ssh-checks';
 
 setInterfaceLanguage('zh');
@@ -31,11 +32,12 @@ function Fixture() {
     return () => { mounted = false; void dispose?.(); };
   }, []);
   return <SafeAreaProvider><SafeAreaView style={{ flex: 1, backgroundColor: color('#ededed', 'canvas') }}>
-    <View style={{ flexDirection: 'row' }}>
+    <ThemeStatusBar />
+    {page !== 'ssh' && <><View style={{ flexDirection: 'row' }}>
       <Button title="Light" onPress={() => updateThemeMode('light')} />
       <Button title="Dark" onPress={() => updateThemeMode('dark')} />
     </View>
-    <Text style={{ ...textMetrics(12, 18), color: color('#777', 'muted') }}>{status}</Text>
+    <Text style={{ ...textMetrics(12, 18), color: color('#777', 'muted') }}>{status}</Text></>}
     {fonts && connection && (page === 'ssh'
       ? <SshPage client={connection.client} onBack={() => setPage('discover')} />
       : <DiscoveryPage onOpen={setPage} />)}
