@@ -14,7 +14,10 @@ for (const entry of cases) {
   test(`${entry.name}: dismisses failed and pending group loads without a second dialog`, async ({ page }) => {
     await page.setViewportSize({ width: entry.width, height: 844 });
     const url = `/e2e/custom-groups-harness.html?mode=${entry.mode}&failure=${entry.failure}`;
-    const open = () => page.getByRole('button', { name: '管理分组', exact: true }).first().click();
+    const open = async () => {
+      await page.getByRole('button', { name: '管理分组', exact: true }).first().click();
+      if (entry.width > 600) await page.getByRole('tab', { name: '项目与对话' }).click();
+    };
     const dialog = page.getByRole('dialog', { name: '管理分组', exact: true });
     const close = () => dialog.getByRole('button', { name: 'Close', exact: true }).click();
     await page.goto(url);

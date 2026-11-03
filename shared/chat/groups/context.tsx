@@ -4,7 +4,7 @@ import { EMPTY_GROUPING, GROUPS_UNSUPPORTED_ERROR, type GroupClient, type Groupi
   type GroupTarget } from './model';
 
 export function useGroupingUI(options: {
-  grouping?: Grouping; client: GroupClient; translate: MessageTranslator; ready: boolean;
+  grouping?: Grouping; client: GroupClient; translate: MessageTranslator; ready: boolean; lazyMembers?: boolean;
 }) {
   const [managerOpen, setManagerOpen] = useState(false);
   const [moveTarget, setMoveTarget] = useState<GroupTarget | null>(null);
@@ -43,7 +43,10 @@ export function useGroupingUI(options: {
     generation.current += 1;
     setManagerOpen(false); setError(''); setLoading(false);
   };
-  const openManager = () => { setMoveTarget(null); setManagerOpen(true); void reload(); };
+  const openManager = () => {
+    setMoveTarget(null); setManagerOpen(true);
+    if (!options.lazyMembers) void reload();
+  };
   const assign = async (targets: GroupTarget[], groupId: string | null) => {
     const success = await run({ action: 'assign', targets, groupId });
     if (success) setMoveTarget(null);

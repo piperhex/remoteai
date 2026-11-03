@@ -235,6 +235,8 @@ export type Request =
   | { operation: "skills"; cwd?: string }
   | { operation: "models"; cursor?: string; cacheOnly?: boolean }
   | { operation: "list"; cursor?: string; archived: boolean; search?: string; limit?: number; force?: boolean }
+  | ({ operation: "groupMembersPage"; projects: { path: string; name: string }[];
+      projectOverrides: Record<string, string> } & import('../../../../../shared/chat/groups/model').GroupMembersQuery)
   | { operation: "start"; cwd?: string; model?: string; access: AccessMode }
   | { operation: "fork"; threadId: string; turnId: string; access: AccessMode; cwd?: string }
   | { operation: "resume"; threadId: string; access: AccessMode; cwd?: string }

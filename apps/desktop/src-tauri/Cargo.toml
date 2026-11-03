@@ -87,7 +87,7 @@ uuid = { version = "1", features = ["v4"] }
 zip = { version = "2", default-features = false, features = ["deflate"] }
 zstd = "0.13"
 xcap = "=0.9.8"
-rusqlite = { version = "0.32.1", default-features = false, features = ["bundled"] }
+rusqlite = { version = "0.32.1", default-features = false, features = ["bundled", "functions"] }
 sysinfo = "0.37"
 
 [dev-dependencies]

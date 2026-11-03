@@ -4,6 +4,7 @@ import type { GroupingUI } from './context';
 import type { ChatGroup } from './model';
 import { GroupEditor } from './GroupEditor';
 import { GroupMembers } from './GroupMembers';
+import { PagedGroupMembers } from './PagedGroupMembers';
 import { GroupCards } from './GroupCards';
 import { GroupTable } from './GroupTable';
 import { GroupDeleteDialog } from './GroupDeleteDialog';
@@ -37,7 +38,8 @@ export function GroupManager({ model, mobile }: { model: GroupingUI; mobile: boo
           onClick={() => setEditing('new')}>{t('client.groups.create')}</Button>
         <GroupCards model={model} edit={setEditing} remove={group => setDeleting([group])} />
       </> : <GroupTable model={model} edit={setEditing} remove={setDeleting} /> },
-      { key: 'members', label: t('client.groups.members'), children: <GroupMembers model={model} mobile={mobile} /> },
+      { key: 'members', label: t('client.groups.members'), children: mobile
+        ? <GroupMembers model={model} /> : <PagedGroupMembers model={model} /> },
     ]} />
     {editing && <GroupEditor model={model} group={editing === 'new' ? undefined : editing}
       close={() => { setEditing(null); model.setError(''); }} />}

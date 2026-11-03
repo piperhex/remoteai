@@ -10,7 +10,7 @@ import { SidebarDrag, type SidebarDragOptions } from './SidebarDrag';
 
 export function BrowserGroups({ children, mobile = false, drag, ...options }: Parameters<typeof useGroupingUI>[0]
   & { children: ReactNode; mobile?: boolean; drag?: SidebarDragOptions }) {
-  const model = useGroupingUI(options);
+  const model = useGroupingUI({ ...options, lazyMembers: !mobile });
   return <GroupingContext.Provider value={model}><SidebarDrag options={mobile ? undefined : drag}>
     {children}</SidebarDrag>
     {model.managerOpen && <GroupManager model={model} mobile={mobile} />}

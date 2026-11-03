@@ -3,6 +3,7 @@ import { type GroupClient, type Grouping, type GroupMember } from '../../../../.
 import type { GuiState, ListResponse, Thread } from './types';
 import { guiApi } from './api';
 import { readProjects, projectName } from './projectCatalog';
+import { readMembersPage, readMembersQuery } from '../../../../../shared/chat/groups/memberPaging';
 
 const STORAGE_KEY = 'codex-switch:gui-custom-groups';
 
@@ -50,6 +51,15 @@ async function allThreads(archived: boolean): Promise<Thread[]> {
 
 export function createGuiGroups(host: { snapshot: () => GuiState; patch: (patch: Partial<GuiState>) => void }): GroupClient {
   return {
+    membersPage: async query => {
+      const state = host.snapshot();
+      const saved = readProjects();
+      const paths = new Set([...state.projects, ...saved.map(project => project.path),
+        ...Object.keys(state.grouping.projects)]);
+      const projects = [...paths].filter(Boolean).map(path => ({ path, name: projectName(path) }));
+      return readMembersPage(await guiApi.request({ operation: 'groupMembersPage', ...readMembersQuery(query),
+        projects, projectOverrides: state.projectOverrides }));
+    },
     mutate: async mutation => {
       const grouping = mutateGrouping(host.snapshot().grouping, mutation);
       saveGrouping(grouping);

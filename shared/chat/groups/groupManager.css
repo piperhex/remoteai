@@ -26,7 +26,31 @@
 .chat-group-manager-desktop .ant-tabs-ink-bar { height: 3px; }
 .chat-group-manager-desktop .ant-tabs-tab-active { font-weight: 600; }
 .chat-group-manager-desktop .ant-alert { flex-shrink: 0; }
-.chat-group-manager-desktop .chat-group-members { overflow: auto; padding-top: 20px; }
+.chat-group-manager-desktop .chat-group-members {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  padding-top: 20px;
+}
+.chat-group-members-paged > .ant-input-search,
+.chat-group-members-paged > .chat-group-batch { flex-shrink: 0; }
+.chat-group-members-paged .ant-alert { max-width: 400px; margin-bottom: 12px; }
+.chat-group-members-table { flex: 1; background: var(--group-surface); }
+.chat-group-members-table .chat-group-member-name { overflow-wrap: anywhere; }
+.chat-group-members-footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 16px;
+  color: var(--group-muted);
+}
+.chat-group-members-pagination { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.chat-group-members-pagination > .ant-select { min-width: 110px; }
 .chat-group-table-panel { display: flex; flex: 1; min-height: 0; flex-direction: column; }
 .chat-group-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px 0; }
 .chat-group-selection, .chat-group-tools { display: flex; align-items: center; gap: 18px; }
@@ -43,7 +67,7 @@
 .chat-group-toolbar .ant-btn-primary { box-shadow: none; }
 .chat-group-delete.ant-btn-dangerous:not(:disabled) { background: var(--group-danger-bg); border-color: transparent; }
 .chat-group-delete.ant-btn-dangerous:hover:not(:disabled) { border-color: currentColor; }
-.chat-group-table-scroll { min-height: 0; overflow: auto; border-radius: 12px; }
+.chat-group-table-scroll { flex: 1; min-height: 0; overflow: auto; border-radius: 12px; }
 .chat-group-table-scroll .ant-table { min-width: 620px; }
 .chat-group-manager-desktop .ant-table-thead > tr > th { background: var(--group-header); font-weight: 600; }
 .chat-group-manager-desktop .ant-table-thead > tr > th::before { display: none; }

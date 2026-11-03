@@ -1,5 +1,7 @@
 #[derive(Debug, thiserror::Error)]
 pub(super) enum GuiError {
+    #[error("client.groups.loadFailed")]
+    GroupMembers,
     #[error("这条补充消息暂不支持单独删除，以免删除之前的消息。")]
     MessageDeleteBoundary,
     #[error("暂时无法加载 Coze 内容，请先从左侧打开 Coze 并发布需要使用的内容。")]

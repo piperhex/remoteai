@@ -17,7 +17,8 @@ fn current_model_provider(config_path: &Path) -> String {
         .unwrap_or_else(|| "openai".to_string())
 }
 
-fn latest_state_db(codex_home: &Path) -> Option<PathBuf> {
+/// Locate the newest metadata schema within the caller's already resolved Codex home.
+pub(crate) fn latest_state_db(codex_home: &Path) -> Option<PathBuf> {
     fs::read_dir(codex_home)
         .ok()?
         .filter_map(Result::ok)

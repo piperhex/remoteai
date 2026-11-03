@@ -1,5 +1,6 @@
 import { GROUPS_OPERATION, GROUPS_UNSUPPORTED_ERROR, type GroupClient } from '../../chat/groups/model';
 import type { SidebarSnapshot } from '../sidebar';
+import { readMembersPage, readMembersQuery } from '../../chat/groups/memberPaging';
 
 export function createRemoteGroups(context: {
   ready: () => boolean; generation: () => number;
@@ -22,6 +23,16 @@ export function createRemoteGroups(context: {
   };
   return {
     members: () => request({ action: 'members' }),
+    membersPage: async query => {
+      try { return readMembersPage(await request({ action: 'membersPage', query: readMembersQuery(query) })); }
+      catch (failure) {
+        // Group-aware hosts from before paging interpret unknown actions as a missing mutation.
+        if (failure instanceof Error && failure.message === 'client.groups.invalid') {
+          throw new Error(GROUPS_UNSUPPORTED_ERROR);
+        }
+        throw failure;
+      }
+    },
     mutate: async mutation => context.apply(await request<SidebarSnapshot>({ mutation })),
   };
 }

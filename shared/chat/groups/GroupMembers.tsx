@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Button, Input, Select, Space, Table, Tag, theme } from 'antd';
+import { Button, Input, Select, Space, theme } from 'antd';
 import { CircleMinus } from 'lucide-react';
 import type { GroupingUI } from './context';
-import { groupOptions, groupPath, memberGroup, type GroupMember } from './model';
+import { groupOptions, type GroupMember } from './model';
 import { GroupMemberCards } from './GroupMemberCards';
 
-export function GroupMembers({ model, mobile }: { model: GroupingUI; mobile: boolean }) {
+export function GroupMembers({ model }: { model: GroupingUI }) {
   const t = model.translate;
   const { token } = theme.useToken();
   const [query, setQuery] = useState('');
@@ -32,19 +32,6 @@ export function GroupMembers({ model, mobile }: { model: GroupingUI; mobile: boo
         loading={model.busy} onClick={() => void assign()}>{t('client.groups.apply')}</Button>
       <Button loading={model.loading} onClick={() => void model.reload()}>{t('client.workspaceActions.refreshConversations')}</Button>
     </Space>
-    {mobile ? <GroupMemberCards key={query} model={model} rows={rows} selected={selected} change={setSelected} />
-      : <Table<GroupMember> size="small" rowKey={key} dataSource={rows} loading={model.loading}
-      rowSelection={{ selectedRowKeys: selected, onChange: keys => setSelected(keys),
-        getCheckboxProps: () => ({ disabled: model.busy || model.loading }) }}
-      pagination={{ pageSize: 20, showSizeChanger: false }} scroll={{ x: 580 }} columns={[
-        { title: t('client.groups.type'), width: 90, render: (_, row) =>
-          t(row.kind === 'project' ? 'client.groups.project' : 'client.groups.thread') },
-        { title: t('client.groups.title'), render: (_, row) => <div className="chat-group-member-name">
-          <span>{row.title}</span>{row.archived && <Tag>{t('client.chat.archived')}</Tag>}<small>{row.cwd}</small></div> },
-        { title: t('client.groups.groups'), width: 180, render: (_, row) => {
-          const id = memberGroup(model.grouping, row);
-          return <span>{id ? groupPath(model.grouping.groups, id) : t('client.groups.ungrouped')}</span>;
-        } },
-      ]} />}
+    <GroupMemberCards key={query} model={model} rows={rows} selected={selected} change={setSelected} />
   </div>;
 }

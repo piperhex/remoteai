@@ -1,4 +1,9 @@
 {
+  "client.groups.emptyMembers": "Проектов и чатов пока нет",
+  "client.groups.noMatchingMembers": "Подходящие проекты и чаты не найдены",
+  "client.groups.pageSize": "Размер страницы",
+  "client.groups.itemsPerPage": "{count} / стр.",
+  "client.groups.totalMembers": "Всего: {count}",
   "client.groups.remove": "Убрать из группы",
   "client.groups.move": "Переместить в группу",
   "client.groups.manage": "Управление группами",

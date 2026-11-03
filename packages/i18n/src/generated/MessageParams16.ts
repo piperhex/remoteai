@@ -35,6 +35,7 @@ export interface MessageParams16 {
   "client.groups.duplicateName": Record<string, never>;
   "client.groups.edit": Record<string, never>;
   "client.groups.empty": Record<string, never>;
+  "client.groups.emptyMembers": Record<string, never>;
   "client.groups.expand": { "name": string | number };
   "client.groups.groups": Record<string, never>;
   "client.groups.icon": Record<string, never>;
@@ -42,12 +43,15 @@ export interface MessageParams16 {
   "client.groups.iconHint": Record<string, never>;
   "client.groups.inherited": Record<string, never>;
   "client.groups.invalid": Record<string, never>;
+  "client.groups.itemsPerPage": { "count": string | number };
   "client.groups.loadFailed": Record<string, never>;
   "client.groups.manage": Record<string, never>;
   "client.groups.members": Record<string, never>;
   "client.groups.move": Record<string, never>;
   "client.groups.name": Record<string, never>;
+  "client.groups.noMatchingMembers": Record<string, never>;
   "client.groups.noResults": Record<string, never>;
+  "client.groups.pageSize": Record<string, never>;
   "client.groups.parent": Record<string, never>;
   "client.groups.project": Record<string, never>;
   "client.groups.projectCount": Record<string, never>;
@@ -63,6 +67,7 @@ export interface MessageParams16 {
   "client.groups.selected": { "count": string | number };
   "client.groups.thread": Record<string, never>;
   "client.groups.title": Record<string, never>;
+  "client.groups.totalMembers": { "count": string | number };
   "client.groups.type": Record<string, never>;
   "client.groups.ungrouped": Record<string, never>;
   "client.groups.upload": Record<string, never>;
@@ -195,9 +200,4 @@ export interface MessageParams16 {
   "client.lounge.downloadFailed": Record<string, never>;
   "client.lounge.downloadFile": Record<string, never>;
   "client.lounge.draftPreview": { "text": string | number };
-  "client.lounge.duration": Record<string, never>;
-  "client.lounge.durationHint": Record<string, never>;
-  "client.lounge.editAvatar": Record<string, never>;
-  "client.lounge.emoji": Record<string, never>;
-  "client.lounge.empty": Record<string, never>;
 }

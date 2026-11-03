@@ -1,4 +1,9 @@
 {
+  "client.groups.emptyMembers": "暂无项目或对话",
+  "client.groups.noMatchingMembers": "没有找到匹配的项目或对话",
+  "client.groups.pageSize": "每页条数",
+  "client.groups.itemsPerPage": "每页 {count} 条",
+  "client.groups.totalMembers": "共 {count} 项",
   "client.groups.move": "移动到分组",
   "client.groups.remove": "取消分组",
   "client.groups.manage": "管理分组",

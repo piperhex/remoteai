@@ -21,6 +21,8 @@ import 'antd/dist/reset.css';
 import '../src/styles.css';
 import '../../web/src/chat/chat.css';
 import '../../web/src/chat/thread-actions.css';
+import { groupRequests, manyThreads, membersFixture, type FixtureThread } from './group-members-fixture';
+import type { GroupMembersQuery } from '../../../shared/chat/groups/model';
 
 const params = new URLSearchParams(location.search);
 setInterfaceLanguage((params.get('lang') ?? 'zh') as 'zh');
@@ -34,6 +36,7 @@ const threads = [
   { id: 'research', name: '交互体验研究', preview: '', cwd: '/workspace/research', updatedAt: 1 },
   ...(params.has('restore') ? [{ id: 'loose', name: '无项目对话', preview: '', cwd: '', updatedAt: 1 }] : []),
 ];
+const catalogThreads: FixtureThread[] = [...threads, ...(params.has('paging') ? manyThreads() : [])];
 let state = { ...initialState(), connection: 'ready' as const, threads };
 state.threads = threads.map(thread => ({ ...thread, cwd: state.projectOverrides[thread.id] ?? thread.cwd }));
 if (!state.grouping.groups.length && !localStorage.getItem('custom-group-fixture-initialized')) {
@@ -53,7 +56,8 @@ if (!state.grouping.groups.length && !localStorage.getItem('custom-group-fixture
 }
 const listeners = new Set<() => void>();
 const patch = (value: Partial<typeof state>) => { state = { ...state, ...value }; listeners.forEach(listener => listener()); };
-guiApi.request = async request => (request.operation === 'list'
+guiApi.request = async request => (request.operation === 'groupMembersPage'
+  ? membersFixture(request, catalogThreads) : request.operation === 'list'
   ? { data: request.archived ? [] : state.threads, nextCursor: null }
   : request.operation === 'projectDirectories' ? { directory: request.directory, entries: [] } : {}) as never;
 const local = { getSnapshot: () => state, subscribe: (listener: () => void) => {
@@ -72,19 +76,24 @@ moveThreadToProject: async (threadId: string, cwd: string) => {
   await selectGuiProject(local, { threadId, cwd, removeFromGroup: true });
 },
 } as unknown as GuiController;
+const fullMembers = local.groups.members;
+local.groups.members = () => { groupRequests.full++; return fullMembers(); };
 if (params.has('failure')) {
-  local.groups.members = async () => {
+  const fail = async () => {
     const delay = Number(params.get('delay') ?? 0);
     if (delay) await new Promise(resolve => setTimeout(resolve, delay));
     throw new Error(params.get('failure') === 'legacy' ? '当前手机端暂不支持此操作。' : 'fixture load failed');
   };
+  local.groups.members = fail;
+  local.groups.membersPage = fail;
 }
 const bridge = new SidebarBridge(); bridge.attach(local);
 const remote = new ChatController(events => ({
   start() { events.mode('relay'); events.ready(); }, stop() {},
   async request<T>(method: string, value?: unknown): Promise<T> {
     if (method === 'connect') return [] as T;
-    const body = value as { operation: string; action?: string; mutation?: Parameters<typeof local.groups.mutate>[0] };
+    const body = value as { operation: string; action?: string; query?: GroupMembersQuery;
+      mutation?: Parameters<typeof local.groups.mutate>[0] };
     if (body.operation === 'list') return { data: state.threads, nextCursor: null, sidebar: bridge.snapshot() } as T;
     if (body.operation === 'guiProjectSelect') {
       const project = await selectGuiProject(local, body);
@@ -92,6 +101,7 @@ const remote = new ChatController(events => ({
     }
     if (body.operation === 'guiGroups') {
       if (body.action === 'members') return await local.groups.members() as T;
+      if (body.action === 'membersPage') return await local.groups.membersPage!(body.query!) as T;
       await local.groups.mutate(body.mutation!); return bridge.snapshot() as T;
     }
     return { data: [], nextCursor: null } as T;

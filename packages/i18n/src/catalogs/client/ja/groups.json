@@ -1,4 +1,9 @@
 {
+  "client.groups.emptyMembers": "プロジェクトや会話はまだありません",
+  "client.groups.noMatchingMembers": "一致するプロジェクトや会話はありません",
+  "client.groups.pageSize": "表示件数",
+  "client.groups.itemsPerPage": "{count}件 / ページ",
+  "client.groups.totalMembers": "全{count}件",
   "client.groups.remove": "グループ分けを解除",
   "client.groups.move": "グループに移動",
   "client.groups.manage": "グループを管理",

@@ -33,3 +33,22 @@ it('preserves unrelated request failures instead of suggesting an update', async
   const client = createRemoteGroups({ generation: () => 1, ready: () => true, request, apply: vi.fn() });
   await expect(client.members()).rejects.toBe(failure);
 });
+
+it('pages on the host and rejects stale page replies after switching computers', async () => {
+  let generation = 1;
+  const page = { data: [], total: 0, page: 1, pageSize: 50 };
+  const request = vi.fn().mockResolvedValue(page);
+  const client = createRemoteGroups({ generation: () => generation, ready: () => true, request, apply: vi.fn() });
+  const query = { page: 1, pageSize: 50, search: 'archived' };
+  await expect(client.membersPage!(query)).resolves.toEqual(page);
+  expect(request).toHaveBeenCalledExactlyOnceWith({ operation: 'guiGroups', action: 'membersPage', query });
+  request.mockImplementation(async () => { generation++; return page; });
+  await expect(client.membersPage!(query)).rejects.toThrow('connectToYourComputerFirst');
+});
+
+it('asks to update old group hosts instead of silently fetching their entire history', async () => {
+  const request = vi.fn().mockRejectedValue(new Error('client.groups.invalid'));
+  const client = createRemoteGroups({ generation: () => 1, ready: () => true, request, apply: vi.fn() });
+  await expect(client.membersPage!({ page: 1, pageSize: 20, search: '' })).rejects.toThrow(GROUPS_UNSUPPORTED_ERROR);
+  expect(request).toHaveBeenCalledOnce();
+});

@@ -1,4 +1,9 @@
 {
+  "client.groups.emptyMembers": "No projects or conversations yet",
+  "client.groups.noMatchingMembers": "No matching projects or conversations",
+  "client.groups.pageSize": "Page size",
+  "client.groups.itemsPerPage": "{count} / page",
+  "client.groups.totalMembers": "{count} items",
   "client.groups.move": "Move to group",
   "client.groups.remove": "Remove from group",
   "client.groups.manage": "Manage groups",

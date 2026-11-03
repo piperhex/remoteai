@@ -13,6 +13,8 @@ export interface Grouping {
 }
 export interface GroupTarget { kind: 'project' | 'thread'; id: string }
 export interface GroupMember extends GroupTarget { title: string; cwd: string; archived?: boolean }
+export interface GroupMembersQuery { page: number; pageSize: number; search: string }
+export interface GroupMembersPage { data: GroupMember[]; total: number; page: number; pageSize: number }
 export type GroupMutation =
   | { action: 'create'; group: ChatGroup }
   | { action: 'edit'; id: string; name: string; parentId: string | null; icon?: string }
@@ -21,6 +23,7 @@ export type GroupMutation =
 export interface GroupClient {
   mutate: (mutation: GroupMutation) => Promise<void>;
   members: () => Promise<GroupMember[]>;
+  membersPage?: (query: GroupMembersQuery) => Promise<GroupMembersPage>;
 }
 export const emptyGrouping = (): Grouping => ({ groups: [], projects: {}, threads: {} });
 export const EMPTY_GROUPING = emptyGrouping();

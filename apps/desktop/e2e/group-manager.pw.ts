@@ -74,6 +74,7 @@ for (const mode of ['local', 'remote', 'web']) {
     await page.getByRole('button', { name: '管理分组', exact: true }).first().click();
     await expect(row('设计')).toHaveCount(0);
     await dialog.getByRole('tab', { name: '项目与对话' }).click();
+    await dialog.getByRole('searchbox', { name: '搜索项目或对话' }).fill('design-0');
     await expect(dialog.getByRole('row').filter({ hasText: 'design-0' })).toContainText('工作');
     await page.screenshot({ path: `${output}/${mode}-members.png`, animations: 'disabled' });
   });
