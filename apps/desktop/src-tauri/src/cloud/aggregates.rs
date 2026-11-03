@@ -70,7 +70,7 @@ pub(super) fn sync_aggregates<R: Runtime>(
     }
     let remote: AggregateSyncPayload = serde_json::from_slice(&bytes)
         .map_err(|_| "Invalid aggregate sync response".to_string())?;
-    let changed = aggregate_sync::apply(&paths, remote)?;
+    let changed = with_cloud_session(app, credentials, || aggregate_sync::apply(&paths, remote))?;
     if changed > 0 {
         crate::aggregate_api::refresh_targets(app, &paths)?;
         app.emit("aggregate-apis-changed", ())

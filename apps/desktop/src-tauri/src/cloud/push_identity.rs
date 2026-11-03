@@ -94,19 +94,16 @@ pub(crate) fn push_access_token(
     app: &tauri::AppHandle,
     expected: &PushIdentity,
 ) -> Result<Option<String>, String> {
-    let _guard = lock_cloud_credentials()?;
-    let mut settings = read_app_settings(app)?;
+    let (mut settings, mut credentials) = cloud_snapshot(app)?;
     if identity(app, &settings)?.as_ref() != Some(expected) {
         return Ok(None);
     }
-    let mut credentials = read_cloud_credentials(app);
     let Some(token) = credentials.access_token.as_ref() else {
         return Ok(None);
     };
     if access_token_expires_soon(token) {
         refresh_cloud_token(app, &api_client()?, &mut settings, &mut credentials)?;
-        write_app_settings(app, &settings)?;
-        write_cloud_credentials(app, &credentials)?;
+        persist_cloud_sync(app, &settings, &credentials)?;
     }
     Ok(credentials.access_token)
 }

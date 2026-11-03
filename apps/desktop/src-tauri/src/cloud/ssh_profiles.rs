@@ -158,9 +158,9 @@ fn exchange<R: Runtime>(
 ) -> Result<SshProfileReply, ProfileError> {
     let fetch_credentials = matches!(&request, SshProfileRequest::Credentials { .. });
     let (method, path, body) = request_parts(request)?;
-    let _guard = lock_cloud_credentials().map_err(|_| ProfileError::Unavailable)?;
-    let mut settings = read_app_settings(app).map_err(|_| ProfileError::Unavailable)?;
-    let mut credentials = read_cloud_credentials(app);
+
+    let (mut settings, mut credentials) =
+        cloud_snapshot(app).map_err(|_| ProfileError::Unavailable)?;
     if base_url(&settings).ok() != Some(identity.base_url.as_str())
         || settings.cloud_user_id.as_deref() != Some(&identity.user_id)
         || !cloud_state(&settings, &credentials).authenticated
@@ -188,7 +188,7 @@ fn exchange<R: Runtime>(
 }
 
 fn read_response(
-    response: reqwest::blocking::Response,
+    response: CloudResponse,
     fetch_credentials: bool,
 ) -> Result<SshProfileReply, ProfileError> {
     if matches!(

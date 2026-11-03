@@ -5,14 +5,11 @@ pub(crate) async fn cloud_push_accounts<R: Runtime>(
     app: tauri::AppHandle<R>,
 ) -> Result<CloudSyncResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let uploaded = put_remote_accounts(&app, &client, &mut settings, &mut credentials)?
             + put_remote_providers(&app, &client, &mut settings, &mut credentials)?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         Ok(CloudSyncResult {
             uploaded,
             downloaded: 0,
@@ -35,9 +32,9 @@ pub(super) fn pull_remote_account<R: Runtime>(
         .iter()
         .any(|account_id| account_id == id);
     let changed = if deleted {
-        apply_remote_account_deletion(app, id)?
+        with_cloud_session(app, credentials, || apply_remote_account_deletion(app, id))?
     } else if let Some(account) = remote.accounts.into_iter().find(|account| account.id == id) {
-        apply_remote_account(app, &account)?
+        with_cloud_session(app, credentials, || apply_remote_account(app, &account))?
     } else {
         false
     };
@@ -59,13 +56,10 @@ pub(crate) async fn cloud_pull_account<R: Runtime>(
     id: String,
 ) -> Result<CloudSyncResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let result = pull_remote_account(&app, &client, &mut settings, &mut credentials, &id)?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         Ok(result)
     })
     .await
@@ -79,10 +73,8 @@ pub(crate) async fn cloud_push_account<R: Runtime>(
     restore_deleted: bool,
 ) -> Result<CloudSyncResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         if restore_deleted {
             restore_remote_account_if_deleted(RestoreRemoteAccountOptions {
                 app: &app,
@@ -93,8 +85,7 @@ pub(crate) async fn cloud_push_account<R: Runtime>(
             })?;
         }
         put_remote_account(&app, &client, &mut settings, &mut credentials, &id)?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         Ok(CloudSyncResult {
             uploaded: 1,
             downloaded: 0,
@@ -109,13 +100,10 @@ pub(crate) async fn cloud_push_providers<R: Runtime>(
     app: tauri::AppHandle<R>,
 ) -> Result<CloudSyncResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let uploaded = put_remote_providers(&app, &client, &mut settings, &mut credentials)?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         Ok(CloudSyncResult {
             uploaded,
             downloaded: 0,
@@ -132,10 +120,8 @@ pub(crate) async fn cloud_push_provider<R: Runtime>(
     identity: Option<GuiCloudIdentity>,
 ) -> Result<CloudSyncResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         if let Some(identity) = identity {
             if base_url(&settings).ok() != Some(identity.base_url.as_str())
                 || settings.cloud_user_id.as_deref() != Some(&identity.user_id)
@@ -145,8 +131,7 @@ pub(crate) async fn cloud_push_provider<R: Runtime>(
             }
         }
         put_remote_provider(&app, &client, &mut settings, &mut credentials, &id)?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         Ok(CloudSyncResult {
             uploaded: 1,
             downloaded: 0,
@@ -162,13 +147,10 @@ pub(crate) async fn cloud_delete_account<R: Runtime>(
     id: String,
 ) -> Result<CloudSyncResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         delete_remote_account(&app, &client, &mut settings, &mut credentials, &id)?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         Ok(CloudSyncResult {
             uploaded: 0,
             downloaded: 0,
@@ -183,10 +165,8 @@ pub(crate) async fn cloud_list_deleted_accounts<R: Runtime>(
     app: tauri::AppHandle<R>,
 ) -> Result<Vec<DeletedCloudAccount>, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let response = cloud_request(
             &app,
             &client,
@@ -202,8 +182,7 @@ pub(crate) async fn cloud_list_deleted_accounts<R: Runtime>(
         let payload: DeletedCloudAccountsResponse = response
             .json()
             .map_err(|error| format!("Cloud recycle bin response is invalid: {error}"))?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         Ok(payload.accounts)
     })
     .await
@@ -216,10 +195,8 @@ pub(crate) async fn cloud_restore_deleted_account<R: Runtime>(
     id: String,
 ) -> Result<CloudSyncResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let restored = restore_remote_account_if_deleted(RestoreRemoteAccountOptions {
             app: &app,
             client: &client,
@@ -236,10 +213,9 @@ pub(crate) async fn cloud_restore_deleted_account<R: Runtime>(
             .into_iter()
             .find(|account| account.id == id)
             .ok_or_else(|| "The restored account is not available for download".to_string())?;
-        apply_remote_account(&app, &account)?;
+        with_cloud_session(&app, &credentials, || apply_remote_account(&app, &account))?;
         settings.cloud_last_sync_at = Some(Utc::now().to_rfc3339());
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         app.emit("accounts-changed", ())
             .map_err(|error| error.to_string())?;
         crate::system_tray::refresh_menu(&app);
@@ -257,10 +233,8 @@ pub(crate) async fn cloud_list_deleted_providers<R: Runtime>(
     app: tauri::AppHandle<R>,
 ) -> Result<Vec<DeletedCloudProvider>, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let response = cloud_request(
             &app,
             &client,
@@ -279,8 +253,7 @@ pub(crate) async fn cloud_list_deleted_providers<R: Runtime>(
         let payload: DeletedCloudProvidersResponse = response
             .json()
             .map_err(|error| format!("Cloud provider recycle bin response is invalid: {error}"))?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         Ok(payload.providers)
     })
     .await
@@ -293,10 +266,8 @@ pub(crate) async fn cloud_restore_deleted_provider<R: Runtime>(
     id: String,
 ) -> Result<CloudSyncResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let encoded_id = url::form_urlencoded::byte_serialize(id.as_bytes()).collect::<String>();
         let response = cloud_request(
             &app,
@@ -316,10 +287,11 @@ pub(crate) async fn cloud_restore_deleted_provider<R: Runtime>(
             .into_iter()
             .find(|provider| provider.id == id)
             .ok_or_else(|| "The restored provider is not available for download".to_string())?;
-        apply_remote_provider(&app, &provider)?;
+        with_cloud_session(&app, &credentials, || {
+            apply_remote_provider(&app, &provider)
+        })?;
         settings.cloud_last_sync_at = Some(Utc::now().to_rfc3339());
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         app.emit("providers-changed", ())
             .map_err(|error| error.to_string())?;
         crate::system_tray::refresh_menu(&app);
@@ -338,13 +310,10 @@ pub(crate) async fn cloud_delete_provider<R: Runtime>(
     id: String,
 ) -> Result<CloudSyncResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         delete_remote_provider(&app, &client, &mut settings, &mut credentials, &id)?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         Ok(CloudSyncResult {
             uploaded: 0,
             downloaded: 0,
@@ -359,10 +328,8 @@ pub(crate) async fn cloud_sync_accounts<R: Runtime>(
     app: tauri::AppHandle<R>,
 ) -> Result<CloudSyncResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let local_ids = collect_local_accounts(&app)?
             .into_iter()
             .map(|account| account.id)
@@ -374,13 +341,16 @@ pub(crate) async fn cloud_sync_accounts<R: Runtime>(
         let remote_accounts = get_remote_accounts(&app, &client, &mut settings, &mut credentials)?;
         let mut downloaded = 0;
         for account_id in &remote_accounts.deleted_account_ids {
-            if apply_remote_account_deletion(&app, account_id)? {
+            if with_cloud_session(&app, &credentials, || {
+                apply_remote_account_deletion(&app, account_id)
+            })? {
                 downloaded += 1;
             }
         }
         for account in remote_accounts.accounts {
             let is_new = !local_ids.contains(&account.id);
-            let applied = apply_remote_account(&app, &account)?;
+            let applied =
+                with_cloud_session(&app, &credentials, || apply_remote_account(&app, &account))?;
             if is_new || applied {
                 downloaded += 1;
             }
@@ -389,13 +359,17 @@ pub(crate) async fn cloud_sync_accounts<R: Runtime>(
         let remote_providers =
             get_remote_providers(&app, &client, &mut settings, &mut credentials)?;
         for provider_id in &remote_providers.deleted_provider_ids {
-            if apply_remote_provider_deletion(&app, provider_id)? {
+            if with_cloud_session(&app, &credentials, || {
+                apply_remote_provider_deletion(&app, provider_id)
+            })? {
                 providers_downloaded += 1;
             }
         }
         for provider in remote_providers.providers {
             let is_new = !local_provider_ids.contains(&provider.id);
-            let applied = apply_remote_provider(&app, &provider)?;
+            let applied = with_cloud_session(&app, &credentials, || {
+                apply_remote_provider(&app, &provider)
+            })?;
             if is_new || applied {
                 providers_downloaded += 1;
             }
@@ -403,8 +377,7 @@ pub(crate) async fn cloud_sync_accounts<R: Runtime>(
         downloaded += providers_downloaded;
         let uploaded = put_remote_accounts(&app, &client, &mut settings, &mut credentials)?
             + put_remote_providers(&app, &client, &mut settings, &mut credentials)?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         if downloaded > 0 {
             app.emit("accounts-changed", ())
                 .map_err(|error| error.to_string())?;
