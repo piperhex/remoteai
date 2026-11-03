@@ -35,5 +35,11 @@
   "client.groups.saved": "グループを更新しました",
   "client.groups.inherited": "プロジェクトから継承",
   "client.groups.expand": "グループを展開：{name}",
-  "client.groups.collapse": "グループを折りたたむ：{name}"
+  "client.groups.collapse": "グループを折りたたむ：{name}",
+  "client.groups.searchGroups": "グループを検索…",
+  "client.groups.projectCount": "プロジェクト数",
+  "client.groups.actions": "操作",
+  "client.groups.batchDelete": "まとめて削除",
+  "client.groups.batchDeleteTitle": "選択した {count} 件のグループを削除しますか？",
+  "client.groups.noResults": "一致するグループがありません"
 }

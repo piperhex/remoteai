@@ -35,5 +35,11 @@
   "client.groups.saved": "Groups updated",
   "client.groups.inherited": "Inherited from project",
   "client.groups.expand": "Expand group: {name}",
-  "client.groups.collapse": "Collapse group: {name}"
+  "client.groups.collapse": "Collapse group: {name}",
+  "client.groups.searchGroups": "Search groups…",
+  "client.groups.projectCount": "Projects",
+  "client.groups.actions": "Actions",
+  "client.groups.batchDelete": "Delete selected",
+  "client.groups.batchDeleteTitle": "Delete {count} selected groups?",
+  "client.groups.noResults": "No matching groups"
 }

@@ -35,5 +35,11 @@
   "client.groups.saved": "分组已更新",
   "client.groups.inherited": "跟随项目",
   "client.groups.expand": "展开分组：{name}",
-  "client.groups.collapse": "折叠分组：{name}"
+  "client.groups.collapse": "折叠分组：{name}",
+  "client.groups.searchGroups": "搜索分组…",
+  "client.groups.projectCount": "项目数",
+  "client.groups.actions": "操作",
+  "client.groups.batchDelete": "批量删除",
+  "client.groups.batchDeleteTitle": "删除选中的 {count} 个分组？",
+  "client.groups.noResults": "没有找到匹配的分组"
 }

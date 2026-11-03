@@ -15,6 +15,7 @@ import { SidebarBridge } from '../src/pages/codexGui/sidebarBridge';
 import { ChatController } from '../../../shared/remote-chat/client/controller';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
 import { setThemeMode } from '../../web/src/theme/preference';
+import { DEFAULT_THEME_COLOR } from '../src/utils/theme';
 import styles from '../src/pages/codexGui/styles.module.less';
 import 'antd/dist/reset.css';
 import '../src/styles.css';
@@ -105,7 +106,7 @@ function Harness() {
   const focusMode = { focused: false, onToggleFocus() {} };
   const actions = { newChat() {}, onClose() {}, openSearch() {} };
   return <ConfigProvider theme={{ algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-    token: { motion: false } }}><App>
+    token: { motion: false, colorPrimary: params.get('color') ?? DEFAULT_THEME_COLOR } }}><App>
     <main className={mode === 'web' ? 'chat-page' : styles.page} style={{ height: '100vh', display: 'flex' }}>
       {mode === 'local' ? <ThreadSidebar state={localState} controller={local} accountPicker={null} {...focusMode} />
         : mode === 'remote' ? <RemoteGuiSidebar state={remoteState} controller={remote} actions={actions}

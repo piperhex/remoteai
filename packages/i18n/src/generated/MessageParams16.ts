@@ -23,7 +23,10 @@ export interface MessageParams16 {
   "client.gitMessage.tooManyFilesSelectedSelectFewerFilesAndGenerateAgain": Record<string, never>;
   "client.gitMessage.writeACommitMessageOrPressTabToGenerateWith": Record<string, never>;
   "client.gitMessage.writeACommitMessageOrTapGenerateWithAi": Record<string, never>;
+  "client.groups.actions": Record<string, never>;
   "client.groups.apply": Record<string, never>;
+  "client.groups.batchDelete": Record<string, never>;
+  "client.groups.batchDeleteTitle": { "count": string | number };
   "client.groups.collapse": { "name": string | number };
   "client.groups.create": Record<string, never>;
   "client.groups.delete": Record<string, never>;
@@ -44,14 +47,17 @@ export interface MessageParams16 {
   "client.groups.members": Record<string, never>;
   "client.groups.move": Record<string, never>;
   "client.groups.name": Record<string, never>;
+  "client.groups.noResults": Record<string, never>;
   "client.groups.parent": Record<string, never>;
   "client.groups.project": Record<string, never>;
+  "client.groups.projectCount": Record<string, never>;
   "client.groups.remove": Record<string, never>;
   "client.groups.resetIcon": Record<string, never>;
   "client.groups.root": Record<string, never>;
   "client.groups.saved": Record<string, never>;
   "client.groups.saveFailed": Record<string, never>;
   "client.groups.search": Record<string, never>;
+  "client.groups.searchGroups": Record<string, never>;
   "client.groups.select": { "name": string | number };
   "client.groups.selectAll": Record<string, never>;
   "client.groups.selected": { "count": string | number };
@@ -194,10 +200,4 @@ export interface MessageParams16 {
   "client.lounge.editAvatar": Record<string, never>;
   "client.lounge.emoji": Record<string, never>;
   "client.lounge.empty": Record<string, never>;
-  "client.lounge.emptyHint": Record<string, never>;
-  "client.lounge.ephemeral": Record<string, never>;
-  "client.lounge.fileActions": { "name": string | number };
-  "client.lounge.fileLimitHint": { "size": string | number };
-  "client.lounge.fileOnlineHint": Record<string, never>;
-  "client.lounge.fileProgress": { "percent": string | number };
 }

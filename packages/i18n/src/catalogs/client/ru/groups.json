@@ -35,5 +35,11 @@
   "client.groups.saved": "Группы обновлены",
   "client.groups.inherited": "Как у проекта",
   "client.groups.expand": "Развернуть группу: {name}",
-  "client.groups.collapse": "Свернуть группу: {name}"
+  "client.groups.collapse": "Свернуть группу: {name}",
+  "client.groups.searchGroups": "Поиск групп…",
+  "client.groups.projectCount": "Проекты",
+  "client.groups.actions": "Действия",
+  "client.groups.batchDelete": "Удалить выбранные",
+  "client.groups.batchDeleteTitle": "Удалить выбранные группы ({count})?",
+  "client.groups.noResults": "Подходящих групп не найдено"
 }
