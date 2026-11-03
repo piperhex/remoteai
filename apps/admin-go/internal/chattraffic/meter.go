@@ -102,10 +102,15 @@ func (meter *Meter) retire(ctx context.Context, value budget) error {
 
 // Flush also recovers allocations from stopped processes. Only expired grants are touched.
 func (meter *Meter) Flush() error {
+	return meter.FlushContext(context.Background())
+}
+
+// FlushContext preserves the settlement deadline while allowing maintenance shutdown to interrupt storage waits.
+func (meter *Meter) FlushContext(parent context.Context) error {
 	if meter.redis == nil {
 		return ErrState
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), settlementTimeout)
+	ctx, cancel := context.WithTimeout(parent, settlementTimeout)
 	defer cancel()
 	if err := meter.flushGate.lock(ctx); err != nil {
 		return err

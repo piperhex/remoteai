@@ -1,21 +1,24 @@
 package devices
 
 import (
+	"context"
 	"sync"
 	"time"
 
 	"github.com/codex-switch/admin-go/internal/bandwidth"
+	"github.com/codex-switch/admin-go/internal/platform"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type trafficCounter struct {
-	bandwidth   *bandwidth.Monitor
-	db          *gorm.DB
-	reporter    string
-	mu, flushMu sync.Mutex
-	totals      map[time.Time]int64
-	pending     map[time.Time]bool
+	bandwidth *bandwidth.Monitor
+	db        *gorm.DB
+	reporter  string
+	mu        sync.Mutex
+	flushGate chan struct{}
+	totals    map[time.Time]int64
+	pending   map[time.Time]bool
 }
 
 func newTrafficCounter(db *gorm.DB) *trafficCounter {
@@ -23,6 +26,7 @@ func newTrafficCounter(db *gorm.DB) *trafficCounter {
 		bandwidth: bandwidth.New(),
 		db:        db,
 		reporter:  uuid.NewString(),
+		flushGate: make(chan struct{}, 1),
 		totals:    map[time.Time]int64{},
 		pending:   map[time.Time]bool{},
 	}
@@ -41,8 +45,25 @@ func (counter *trafficCounter) record(bytes int) {
 }
 
 func (counter *trafficCounter) flush() error {
-	counter.flushMu.Lock()
-	defer counter.flushMu.Unlock()
+	return counter.flushContext(context.Background())
+}
+
+func (counter *trafficCounter) flushContext(parent context.Context) error {
+	ctx, cancel := platform.DatabaseContext(parent)
+	defer cancel()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case counter.flushGate <- struct{}{}:
+	}
+	defer func() { <-counter.flushGate }()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return counter.flushPending(ctx)
+}
+
+func (counter *trafficCounter) flushPending(ctx context.Context) error {
 	counter.mu.Lock()
 	snapshot := map[time.Time]int64{}
 	for hour := range counter.pending {
@@ -52,7 +73,7 @@ func (counter *trafficCounter) flush() error {
 	if len(snapshot) == 0 {
 		return nil
 	}
-	err := counter.db.Transaction(func(tx *gorm.DB) error {
+	err := counter.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		for hour, bytes := range snapshot {
 			if err := tx.Exec(`INSERT INTO chat_relay_traffic (reporter_id, hour_start, bytes) VALUES (?, ?, ?)
 				ON CONFLICT (hour_start, reporter_id) DO UPDATE SET bytes = GREATEST(chat_relay_traffic.bytes, EXCLUDED.bytes)`,
