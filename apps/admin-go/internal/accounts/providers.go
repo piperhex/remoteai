@@ -34,34 +34,24 @@ func (s *service) providers(owner string) (object, error) {
 }
 
 func (s *service) upsertProviders(owner string, incoming []object) (interface{}, error) {
+	changed := false
 	err := s.deps.DB.Transaction(func(tx *gorm.DB) error {
-		for _, in := range incoming {
-			if e := saveIncomingProvider(tx, owner, in); e != nil {
-				return e
-			}
-		}
-		return nil
+		var e error
+		changed, e = saveProviderBatch(tx, owner, incoming)
+		return e
 	})
 	if err != nil {
 		return nil, err
 	}
-	return object{"count": len(incoming)}, s.invalidate(owner, true)
+	if changed {
+		err = s.invalidate(owner, true)
+	}
+	return object{"count": len(incoming)}, err
 }
 
 func saveIncomingProvider(tx *gorm.DB, owner string, in object) error {
-	row := provider{}
-	err := tx.Where(`"ownerId" = ? AND "providerId" = ?`, owner, in["id"]).First(&row).Error
-	var existing *provider
-	if err == nil {
-		existing = &row
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-	merged, err := mergeProvider(existing, owner, in)
-	if err != nil || merged == nil {
-		return err
-	}
-	return tx.Save(merged).Error
+	_, err := saveProviderBatch(tx, owner, []object{in})
+	return err
 }
 
 func (s *service) deleteProvider(owner, id string) (interface{}, error) {
