@@ -13,6 +13,7 @@ import { listenUdp } from '../chat/portMapping/udpListener';
 import { adminRequest } from '../api/client';
 import type { AuthSession, RemoteDevice } from '../types';
 import { withMappingBackground } from './background';
+import { nativeMappingEnvironment } from './syncEnvironment';
 
 const storage = { getItem: (key: string) => Storage.getItemSync(key),
   setItem: (key: string, value: string) => Storage.setItemSync(key, value) };
@@ -22,6 +23,7 @@ export function createNativeMappingRegistry(session: AuthSession) {
     withMappingBackground(createMappingConnection(events =>
       new MobileChatConnection({ session, deviceId, ...events }))),
     { scope: JSON.stringify([session.baseUrl, session.email, deviceId]), storage, createId: randomUUID,
+      environment: nativeMappingEnvironment,
       createTunnel: (connection, options) => protocolTunnel(options.protocol, {
         tcp: () => new NativeMappingTunnel(connection, options),
         udp: () => new UdpMappingTunnel(connection, options, listenUdp),

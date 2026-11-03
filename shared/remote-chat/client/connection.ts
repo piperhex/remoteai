@@ -10,6 +10,7 @@ import { RelayQuota, RELAY_QUOTA_MESSAGE } from '../relayUsage';
 import { hasUpload, uploadProgress, type UploadProgress } from '../uploadProgress';
 import { authorizationError, CONNECTION_ERRORS, socketConnectionError } from '../connectionErrors';
 import { SessionRenewal } from './sessionRenewal';
+import { ReconnectBackoff } from '../../realtime/reconnectBackoff';
 import { PublicEndpointObserver } from '../publicEndpointObserver';
 import { downloadBulkClient } from './bulkClient';
 import { MappingStreamClient } from '../../port-mapping/streamClient';
@@ -33,6 +34,7 @@ export interface ConnectionEvents {
 }
 
 interface ConnectionOptions extends ConnectionEvents {
+  retryRandom?: () => number;
   mappingStreamsEnabled?: boolean;
   registerMappingStream?: import('../../port-mapping/streamClient').MappingStreamBridge;
   binaryBulk?: boolean;
@@ -84,7 +86,7 @@ export class ChatConnection {
   private timer?: ReturnType<typeof setTimeout>;
   private connectTimer?: ReturnType<typeof setTimeout>;
   private socketErrorTimer?: ReturnType<typeof setTimeout>;
-  private attempt = 0;
+  private readonly backoff: ReconnectBackoff;
   private resumeUnavailableReplies = 0;
   private generation = 0;
   private active = false;
@@ -97,7 +99,9 @@ export class ChatConnection {
   private leaseTimer?: ReturnType<typeof setTimeout>;
   private readonly renewal = new SessionRenewal(() => this.renewAuthorization());
 
-  constructor(private readonly options: ConnectionOptions) {}
+  constructor(private readonly options: ConnectionOptions) {
+    this.backoff = new ReconnectBackoff({ initialMs: 1500, random: options.retryRandom });
+  }
 
   start() {
     if (this.active) return;
@@ -115,6 +119,7 @@ export class ChatConnection {
   }
 
   private async connect() {
+    if (!this.active) return;
     this.options.stage?.('login');
     this.options.retryAt?.(null);
     const generation = ++this.generation;
@@ -188,7 +193,6 @@ export class ChatConnection {
     this.resumeUnavailableReplies += 1;
     // Give the PC one retry to restore its session; a lost session needs a fresh pairing.
     if (this.resumeUnavailableReplies < MAX_RESUME_UNAVAILABLE_REPLIES) return true;
-    this.attempt = 0;
     return false;
   }
 
@@ -202,7 +206,8 @@ export class ChatConnection {
     this.disconnected();
   }
 
-  private retrySocket() {
+  private retrySocket(immediate = false) {
+    this.socketAuthenticated = false;
     clearTimeout(this.authRenewalTimer);
     this.generation += 1;
     clearTimeout(this.connectTimer);
@@ -211,7 +216,10 @@ export class ChatConnection {
     const socket = this.socket;
     this.socket = undefined;
     socket?.close();
-    this.schedule();
+    if (immediate && this.active) {
+      clearTimeout(this.timer); this.timer = undefined;
+      void this.connect();
+    } else this.schedule();
   }
 
   private lease(expiresAt: unknown) {
@@ -245,7 +253,7 @@ export class ChatConnection {
     }
     // Keep the data channel, cipher and pending RPCs while authenticating a replacement coordinator socket.
     this.link?.setRelayAvailable(false);
-    this.retrySocket();
+    this.retrySocket(true);
   }
 
   private async receive(data: string, keys: ReturnType<typeof keyPair>) {
@@ -281,7 +289,7 @@ export class ChatConnection {
       this.resumeUnavailableReplies = 0;
       this.lease(message.expiresAt);
       clearTimeout(this.connectTimer);
-      this.attempt = 0;
+      this.backoff.reset();
       if (message.renewed !== true) this.link?.setRelayAvailable(true);
       return;
     }
@@ -344,7 +352,7 @@ export class ChatConnection {
         if (mode !== 'direct' && mode !== 'relay') return;
         if (this.socketAuthenticated) {
           clearTimeout(this.connectTimer);
-          this.attempt = 0;
+          this.backoff.reset();
         }
         if (input.transportVersion !== 2) this.rpc?.retry();
         if (input.transportVersion !== 2 || !this.sessionReady) this.options.ready();
@@ -377,6 +385,7 @@ export class ChatConnection {
   }
 
   private disconnected() {
+    this.socketAuthenticated = false;
     this.mappingStreams.close();
     clearTimeout(this.authRenewalTimer);
     this.generation += 1;
@@ -412,7 +421,7 @@ export class ChatConnection {
     clearTimeout(this.timer);
     this.options.retryAt?.(null);
     if (!this.active) return;
-    const delay = Math.min(30_000, 1500 * 2 ** Math.min(this.attempt++, 5));
+    const delay = this.backoff.next();
     this.options.retryAt?.(Date.now() + delay);
     this.timer = setTimeout(() => { this.timer = undefined; void this.connect(); }, delay);
   }

@@ -8,10 +8,12 @@ import { setChatPolicy } from '../remote-chat/policy';
 import { HistoryExchange } from './syncExchange';
 import { HistoryAccess } from './syncAccess';
 import type { SyncArchive } from './syncArchive';
+import { ReconnectBackoff } from '../realtime/reconnectBackoff';
 
 const RENEW_MS = 4 * 60_000;
 const CONNECT_MS = 15_000;
 export interface LoungeSyncTransport {
+  retryRandom?: () => number;
   randomBytes: (length: number) => Uint8Array;
   createPeer: LinkOptions['createPeer'];
   createPacketCipher?: LinkOptions['createPacketCipher'];
@@ -24,7 +26,7 @@ interface SyncPeer { link: ChatLink; exchange: HistoryExchange; started: boolean
 export class HistorySyncConnection {
   private active = false;
   private generation = 0;
-  private attempt = 0;
+  private readonly backoff: ReconnectBackoff;
   private socket?: ChatSocket;
   private keys?: ReturnType<typeof keyPair>;
   private retry?: ReturnType<typeof setTimeout>;
@@ -37,13 +39,14 @@ export class HistorySyncConnection {
   constructor(private readonly options: {
     baseUrl: string; deviceId: string; transport: LoungeSyncTransport; archive: SyncArchive;
     authorize: () => Promise<{ ticket: string }>; error: (failed: boolean) => void;
-  }) {}
+  }) { this.backoff = new ReconnectBackoff({ random: options.transport.retryRandom }); }
 
   start() { if (!this.active) { this.active = true; void this.connect(); } }
-  retryNow() { if (this.active) { this.reset(); void this.connect(); } }
+  retryNow() { if (this.active && this.retry) { this.reset(); void this.connect(); } }
   changed(key: string) { for (const peer of this.peers.values()) peer.exchange.changedHere(key); }
 
   private async connect() {
+    if (!this.active) return;
     const generation = ++this.generation;
     this.deadline = setTimeout(() => this.failed(), CONNECT_MS);
     try {
@@ -81,7 +84,7 @@ export class HistorySyncConnection {
   private control(frame: Record<string, unknown>) {
     if (frame.type === 'chat-policy') { setChatPolicy(frame.policy); return; }
     if (frame.type === 'sync-registered' || frame.type === 'auth-renewed') {
-      clearTimeout(this.deadline); clearTimeout(this.renewal); this.attempt = 0;
+      clearTimeout(this.deadline); clearTimeout(this.renewal); this.backoff.reset();
       this.options.error(false); this.renewal = setTimeout(() => void this.renew(), RENEW_MS); return;
     }
     if (frame.type === 'sync-peer') { this.pair(frame); return; }
@@ -127,11 +130,13 @@ export class HistorySyncConnection {
   private failed() {
     if (!this.active) return;
     this.reset(); this.options.error(true);
-    this.retry = setTimeout(() => void this.connect(), Math.min(30_000, 1000 * 2 ** this.attempt++));
+    if (!this.active) return;
+    this.retry = setTimeout(() => { this.retry = undefined; void this.connect(); }, this.backoff.next());
   }
 
   private reset() {
     this.generation++; clearTimeout(this.retry); clearTimeout(this.deadline); clearTimeout(this.renewal);
+    this.retry = undefined;
     const socket = this.socket; this.socket = undefined;
     if (socket) { socket.onopen = socket.onmessage = socket.onclose = socket.onerror = null; socket.close(); }
     for (const peer of this.peers.values()) { peer.exchange.close(); peer.link.close(); }

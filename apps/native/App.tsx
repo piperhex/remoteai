@@ -1,4 +1,5 @@
 import 'react-native-gesture-handler';
+import { DeviceStatusConnection } from '../../shared/realtime/deviceStatusConnection';
 import { createThemedStyles } from './src/theme/styles';
 import { loadTheme, useThemeColor } from './src/theme/preference';
 import { ThemeStatusBar } from './src/theme/ThemeStatusBar';
@@ -916,107 +917,46 @@ function AppContent() {
   useEffect(() => {
     if (!session) return undefined;
     let stopped = false;
-    let foreground = AppState.currentState === 'active';
-    let socket: WebSocket | null = null;
-    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-    let reconnectAttempt = 0;
-    let recoveringSession = false;
-
-    const clearReconnectTimer = () => {
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      reconnectTimer = null;
-    };
-    const scheduleReconnect = () => {
-      if (stopped || !foreground || reconnectTimer || recoveringSession) return;
-      const delay = Math.min(15_000, 1_000 * (2 ** reconnectAttempt));
-      reconnectAttempt += 1;
-      reconnectTimer = setTimeout(() => {
-        reconnectTimer = null;
-        connect();
-      }, delay);
-    };
-    const recoverSessionAndReconnect = async () => {
-      if (recoveringSession || stopped) return;
-      recoveringSession = true;
-      try {
-        const nextDevices = await fetchRemoteDevices(session);
-        if (stopped) return;
-        setDevices(nextDevices);
-        setDevicesLoaded(true);
-        reconnectAttempt = 0;
-      } catch (error) {
-        if (isSessionExpiredError(error)) {
-          await clearSession();
-          if (!stopped) {
-            setSession(null);
-            setProfile(null);
-            setAccounts([]);
-            setDevices([]);
-            setProviders([]);
-            setActivePage(DEFAULT_APP_PAGE);
-          }
-        }
-      } finally {
-        recoveringSession = false;
-        scheduleReconnect();
-      }
-    };
-    const connect = () => {
-      if (stopped || !foreground || socket) return;
-      let nextSocket: WebSocket;
-      try {
-        nextSocket = new WebSocket(deviceStatusWebSocketUrl(session.baseUrl));
-      } catch {
-        scheduleReconnect();
-        return;
-      }
-      socket = nextSocket;
-      const receiveDeviceStatus = createDeviceStatusReceiver();
-      nextSocket.onopen = () => {
-        if (stopped || !foreground || socket !== nextSocket) {
-          nextSocket.close(1000, 'Connection is no longer needed');
-          return;
-        }
-        reconnectAttempt = 0;
-        nextSocket.send(deviceStatusSubscriptionMessage(session));
-      };
-      nextSocket.onmessage = (event) => {
-        if (stopped || socket !== nextSocket) return;
-        const message = parseDeviceStatusSocketMessage(event.data);
-        if (!message) return;
+    let receiveDeviceStatus = createDeviceStatusReceiver();
+    const connection = new DeviceStatusConnection({
+      url: () => deviceStatusWebSocketUrl(session.baseUrl),
+      subscribe: () => deviceStatusSubscriptionMessage(session),
+      connecting: () => { receiveDeviceStatus = createDeviceStatusReceiver(); },
+      message: data => {
+        const message = parseDeviceStatusSocketMessage(data);
+        if (!message) return false;
         setDevices(receiveDeviceStatus(message));
         if (message.type === 'devices-snapshot') setDevicesLoaded(true);
-      };
-      nextSocket.onerror = () => undefined;
-      nextSocket.onclose = (event) => {
-        if (socket === nextSocket) socket = null;
-        if (stopped || !foreground) return;
-        if (event.code === 4001) void recoverSessionAndReconnect();
-        else scheduleReconnect();
-      };
-    };
-
-    connect();
-    const subscription = AppState.addEventListener('change', (state) => {
-      foreground = state === 'active';
-      if (foreground) {
-        reconnectAttempt = 0;
-        connect();
-        return;
-      }
-      clearReconnectTimer();
-      const activeSocket = socket;
-      socket = null;
-      activeSocket?.close(1000, 'App moved to background');
+        return message.type === 'devices-snapshot';
+      },
+      recoverAuthentication: async () => {
+        try {
+          const nextDevices = await fetchRemoteDevices(session);
+          if (stopped) return;
+          setDevices(nextDevices);
+          setDevicesLoaded(true);
+        } catch (error) {
+          if (isSessionExpiredError(error)) {
+            await clearSession();
+            if (!stopped) {
+              setSession(null);
+              setProfile(null);
+              setAccounts([]);
+              setDevices([]);
+              setProviders([]);
+              setActivePage(DEFAULT_APP_PAGE);
+            }
+          }
+        }
+      },
     });
+    connection.setForeground(AppState.currentState === 'active');
+    connection.start();
+    const subscription = AppState.addEventListener('change', state => connection.setForeground(state === 'active'));
     return () => {
       stopped = true;
-      foreground = false;
-      clearReconnectTimer();
       subscription.remove();
-      const activeSocket = socket;
-      socket = null;
-      activeSocket?.close(1000, 'Session ended');
+      connection.stop();
     };
   }, [session]);
 

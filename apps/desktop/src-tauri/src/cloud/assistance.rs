@@ -132,7 +132,7 @@ impl AssistanceCommand {
     }
 }
 
-fn public_error(response: reqwest::blocking::Response, responding: bool) -> AssistanceError {
+fn public_error(response: CloudResponse, responding: bool) -> AssistanceError {
     match response.status() {
         StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN => return AssistanceError::Authentication,
         StatusCode::NOT_FOUND => {
@@ -170,9 +170,9 @@ fn run(
     command: AssistanceCommand,
 ) -> Result<AssistanceReply, AssistanceError> {
     command.validate()?;
-    let _guard = lock_cloud_credentials().map_err(|_| AssistanceError::Unavailable)?;
-    let mut settings = read_app_settings(app).map_err(|_| AssistanceError::Unavailable)?;
-    let mut credentials = read_cloud_credentials(app);
+
+    let (mut settings, mut credentials) =
+        cloud_snapshot(app).map_err(|_| AssistanceError::Unavailable)?;
     if !cloud_state(&settings, &credentials).authenticated {
         return Err(AssistanceError::Authentication);
     }
@@ -207,7 +207,7 @@ fn run(
 }
 
 fn decode_response(
-    response: reqwest::blocking::Response,
+    response: CloudResponse,
     command: &AssistanceCommand,
 ) -> Result<Vec<AssistanceInvitation>, AssistanceError> {
     if !response.status().is_success() {

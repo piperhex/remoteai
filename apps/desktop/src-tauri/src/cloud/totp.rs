@@ -157,18 +157,15 @@ pub(crate) async fn cloud_sync_totp<R: Runtime>(
 ) -> Result<CloudTotpVault, String> {
     validate_totp_vault(&entries, &tombstones, &modified_at)?;
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let local = CloudTotpVault {
             entries,
             tombstones,
             modified_at: Some(modified_at),
         };
         let result = put_remote_totp_vault(&app, &client, &mut settings, &mut credentials, &local)?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         Ok(result)
     })
     .await
@@ -180,13 +177,10 @@ pub(crate) async fn cloud_pull_totp<R: Runtime>(
     app: tauri::AppHandle<R>,
 ) -> Result<CloudTotpVault, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let result = get_remote_totp_vault(&app, &client, &mut settings, &mut credentials)?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         Ok(result)
     })
     .await

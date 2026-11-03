@@ -206,7 +206,8 @@ pub(super) fn endpoint(settings: &AppSettings, path: &str) -> Result<String, Str
     Ok(format!("{}{}", base_url(settings)?, path))
 }
 
-pub(super) fn response_error(action: &str, response: reqwest::blocking::Response) -> String {
+pub(super) fn response_error(action: &str, response: impl Into<CloudResponse>) -> String {
+    let response = response.into();
     let status = response.status();
     let detail = response.text().unwrap_or_default();
     if detail.trim().is_empty() {
@@ -245,48 +246,6 @@ pub(super) fn refresh_rejection_expires_cloud_session(status: StatusCode) -> boo
     matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN)
 }
 
-pub(super) fn refresh_cloud_token<R: Runtime>(
-    app: &tauri::AppHandle<R>,
-    client: &Client,
-    settings: &mut AppSettings,
-    credentials: &mut CloudCredentials,
-) -> Result<(), String> {
-    let refresh_token = credentials
-        .refresh_token
-        .clone()
-        .ok_or_else(|| "Cloud refresh token is missing. Please log in again.".to_string())?;
-    let response = client
-        .post(endpoint(settings, "/auth/refresh")?)
-        .json(&json!({ "refreshToken": refresh_token }))
-        .send()
-        .map_err(|error| request_error("Cloud token refresh", error))?;
-    if !response.status().is_success() {
-        if refresh_rejection_expires_cloud_session(response.status()) {
-            let server_error = response_error("Cloud token refresh", response);
-            if let Err(error) = expire_cloud_session(app, settings) {
-                return Err(format!(
-                    "Cloud login expired and local sign-out failed: {error}. Server response: {server_error}"
-                ));
-            }
-            return Err(
-                "Cloud login expired. Please sign in again to continue cloud synchronization."
-                    .to_string(),
-            );
-        }
-        return Err(response_error("Cloud token refresh", response));
-    }
-    let tokens: CloudTokenResponse = response
-        .json()
-        .map_err(|error| format!("Cloud token refresh response is invalid: {error}"))?;
-    persist_cloud_token_response(
-        settings,
-        credentials,
-        tokens,
-        |credentials| write_cloud_credentials(app, credentials),
-        |settings| write_app_settings(app, settings),
-    )
-}
-
 pub(super) fn access_token_expires_soon(access_token: &str) -> bool {
     let Some(payload) = access_token.split('.').nth(1) else {
         return true;
@@ -309,9 +268,7 @@ pub(super) fn access_token_expires_soon(access_token: &str) -> bool {
 pub(crate) fn remote_control_config<R: Runtime>(
     app: &tauri::AppHandle<R>,
 ) -> Result<Option<RemoteControlConfig>, String> {
-    let _credentials_guard = lock_cloud_credentials()?;
-    let mut settings = read_app_settings(app)?;
-    let mut credentials = read_cloud_credentials(app);
+    let (mut settings, mut credentials) = cloud_snapshot(app)?;
     let Some(mut access_token) = credentials.access_token.clone() else {
         return Ok(None);
     };
@@ -325,8 +282,6 @@ pub(crate) fn remote_control_config<R: Runtime>(
             .access_token
             .clone()
             .ok_or_else(|| "Cloud access token is missing after refresh".to_string())?;
-        write_app_settings(app, &settings)?;
-        write_cloud_credentials(app, &credentials)?;
     }
 
     let mut url = url::Url::parse(base_url(&settings)?)
@@ -343,6 +298,7 @@ pub(crate) fn remote_control_config<R: Runtime>(
     url.set_query(None);
     url.set_fragment(None);
 
+    ensure_cloud_session(app, &credentials)?;
     let installation = read_or_create_installation_state(app)?;
     let manager_state = read_state(&resolve_paths(app)?);
     Ok(Some(RemoteControlConfig {
@@ -370,8 +326,9 @@ pub(super) fn cloud_request<R: Runtime>(
     method: Method,
     path: &str,
     body: Option<Value>,
-) -> Result<reqwest::blocking::Response, String> {
+) -> Result<CloudResponse, String> {
     for attempt in 0..2 {
+        prepare_cloud_request(app, settings, credentials)?;
         let access_token = credentials
             .access_token
             .clone()
@@ -390,7 +347,7 @@ pub(super) fn cloud_request<R: Runtime>(
             .send()
             .map_err(|error| request_error("Cloud request", error))?;
         if response.status() != StatusCode::UNAUTHORIZED || attempt == 1 {
-            return Ok(response);
+            return CloudResponse::authenticated(app, credentials, response);
         }
         refresh_cloud_token(app, client, settings, credentials)?;
     }

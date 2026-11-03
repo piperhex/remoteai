@@ -18,6 +18,7 @@ export class LoungeAttachmentManager {
       source: id => this.source(id) });
   }
   readonly device: string;
+  retryNow() { this.connection?.retryNow(); }
   private async source(id: string) {
     return this.sources.get(id) ?? await this.options.session?.attachmentImages?.source?.(id);
   }

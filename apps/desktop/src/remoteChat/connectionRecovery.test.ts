@@ -43,7 +43,7 @@ beforeEach(async () => {
   credentials.accessToken = 'token';
   Socket.instances = [];
   vi.stubGlobal('WebSocket', Socket);
-  connection = new ChatConnection({ deviceId: 'pc', mode, ready, error, upload, event: vi.fn(), renewAuthorization,
+  connection = new ChatConnection({ deviceId: 'pc', retryRandom: () => 1, mode, ready, error, upload, event: vi.fn(), renewAuthorization,
     authorize: async () => credentials,
     randomBytes: (size) => new Uint8Array(size).fill(1),
     createPeer: () => { throw new Error('unused'); },
@@ -60,6 +60,20 @@ afterEach(() => { connection.stop(); vi.useRealTimers(); vi.unstubAllGlobals(); 
 
 it('applies the initial authenticated lease to the created transport', () => {
   expect(state.renew).toHaveBeenCalledWith(Date.now() + 120_000);
+});
+
+it('does not reset coordinator failures when the retained P2P path changes mode', async () => {
+  Socket.instances[0].onclose?.({ code: 1006 });
+  state.options!.mode('direct');
+  await vi.advanceTimersByTimeAsync(1500);
+  Socket.instances[1].onopen?.(); Socket.instances[1].onclose?.({ code: 1006 });
+  state.options!.mode('relay');
+  await vi.advanceTimersByTimeAsync(2999); expect(Socket.instances).toHaveLength(2);
+  await vi.advanceTimersByTimeAsync(1); expect(Socket.instances).toHaveLength(3);
+  Socket.instances[2].receive({ type: 'resumed', sessionId: 'session', expiresAt: Date.now() + 120_000 });
+  await vi.advanceTimersByTimeAsync(0);
+  Socket.instances[2].onclose?.({ code: 1006 });
+  await vi.advanceTimersByTimeAsync(1500); expect(Socket.instances).toHaveLength(4);
 });
 
 it('skips socket backoff on foreground return without reinitializing chat or overlapping handshakes', async () => {
@@ -190,7 +204,7 @@ it('pairs again after repeated missing-session replies without restarting or rep
   second.onclose?.({ code: 4004 });
   expect(state.close).toHaveBeenCalledOnce();
   await rejected;
-  const fresh = await reconnectSocket();
+  const fresh = await reconnectSocket(6000);
   expect(JSON.parse(fresh.send.mock.calls[0][0])).not.toHaveProperty('resume');
   first.onclose?.({ code: 4004 });
   fresh.receive({ type: 'paired', sessionId: 'replacement', resumeToken: 'cd'.repeat(32),

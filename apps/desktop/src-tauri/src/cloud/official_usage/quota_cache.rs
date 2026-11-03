@@ -111,8 +111,8 @@ pub(crate) fn cached_official_quota(
     if account_ids.is_empty() {
         return None;
     }
-    let settings = read_app_settings(app).ok()?;
-    if !cloud_state(&settings, &read_cloud_credentials(app)).authenticated {
+    let (settings, credentials) = cloud_snapshot(app).ok()?;
+    if !cloud_state(&settings, &credentials).authenticated {
         return None;
     }
     let scope = QuotaScope::from_settings(&settings)?;

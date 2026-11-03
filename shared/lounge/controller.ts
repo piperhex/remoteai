@@ -21,6 +21,7 @@ import { LoungeDeviceSync } from './deviceSync';
 import { synchronizedSnapshot } from './syncSnapshot';
 import { notificationSettingsUpdate, notificationUnread } from './notificationSettings';
 import { LoungeAttachmentManager } from './attachmentManager';
+import { ReconnectBackoff } from '../realtime/reconnectBackoff';
 
 const HEARTBEAT_MS = 20_000;
 const STALE_MS = 65_000;
@@ -35,7 +36,7 @@ export class LoungeController {
   private connecting = false;
   private viewing = false;
   private generation = 0;
-  private attempt = 0;
+  private readonly backoff: ReconnectBackoff;
   private received = 0;
   private authorized = 0;
   private renewing = false;
@@ -60,6 +61,7 @@ export class LoungeController {
   readonly attachments: LoungeAttachmentManager;
 
   constructor(private readonly session?: LoungeSession, private readonly runtime: LoungeRuntime = browserLoungeRuntime) {
+    this.backoff = new ReconnectBackoff({ maximumMs: 15_000, random: runtime.retryRandom });
     this.profiles = new LoungeProfiles(session?.avatars);
     this.attachments = new LoungeAttachmentManager({ session, randomId: runtime.randomId });
     this.state = { status: session ? 'connecting' : 'signed-out', messages: [], unread: 0,
@@ -171,6 +173,9 @@ export class LoungeController {
     this.update({ unreadByConversation, unread: Object.values(unreadByConversation).reduce((sum, n) => sum + n, 0) });
   }
   private wake = () => {
+    if (!this.running) return;
+    this.deviceSync.retry();
+    this.attachments.retryNow();
     this.markRead();
     if (this.socket && Date.now() - this.received > STALE_MS) this.disconnect();
     if (!this.socket) { clearTimeout(this.retry); void this.connect(); }
@@ -188,7 +193,7 @@ export class LoungeController {
   private schedule() {
     if (!this.running) return;
     clearTimeout(this.retry);
-    this.retry = setTimeout(() => void this.connect(), Math.min(15_000, 1000 * 2 ** this.attempt++));
+    this.retry = setTimeout(() => { this.retry = undefined; void this.connect(); }, this.backoff.next());
   }
   private async connect() {
     if (!this.running || !this.session || this.socket || this.connecting) return;
@@ -288,7 +293,7 @@ export class LoungeController {
     if (frame.type === 'ready') {
       const user = frame.user as LoungeSnapshot['user'];
       if (!user || typeof user.id !== 'string' || typeof user.account !== 'string') return;
-      this.authorized = Date.now(); this.attempt = 0; this.renewalStarted = 0;
+      this.authorized = Date.now(); this.backoff.reset(); this.renewalStarted = 0;
       this.attachments.ready(frame.attachments === true);
       this.profiles.ready(user, frame.profiles === true, frame.names === true, frame.avatarCache === true);
       this.directState.resetAvailable = frame.directReset === true;

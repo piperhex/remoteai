@@ -1,3 +1,4 @@
+import { DeviceStatusConnection } from '../../../shared/realtime/deviceStatusConnection';
 import { displayError } from './i18n/index';
 import { getLocale, t, useLanguage } from './i18n';
 import type { RemoteModelTarget } from '../../../shared/remote-chat/modelTarget';
@@ -303,36 +304,27 @@ function AppShell() {
 
   useEffect(() => {
     if (!session) return;
-    let stopped = false;
-    let socket: WebSocket | null = null;
-    let timer: number | null = null;
-    let attempt = 0;
-    const connect = () => {
-      if (stopped || socket) return;
-      try { socket = new WebSocket(deviceStatusWebSocketUrl(session.baseUrl)); }
-      catch { return; }
-      const current = socket;
-      current.onopen = () => {
-        attempt = 0;
+    const connection = new DeviceStatusConnection({
+      url: () => deviceStatusWebSocketUrl(session.baseUrl),
+      subscribe: () => {
         const latest = getActiveSession();
-        if (latest) current.send(JSON.stringify({ type: "subscribe-devices", accessToken: latest.accessToken }));
-      };
-      current.onmessage = (event) => {
-        const message = parseDeviceStatusMessage(event.data);
+        if (!latest || latest.baseUrl !== session.baseUrl || latest.email !== session.email) {
+          connection.stop();
+          throw new Error('Subscription session changed');
+        }
+        return JSON.stringify({ type: 'subscribe-devices', accessToken: latest.accessToken });
+      },
+      message: data => {
+        const message = parseDeviceStatusMessage(data);
         if (message) dispatch(deviceSocketMessage(message));
-      };
-      current.onerror = () => undefined;
-      current.onclose = () => {
-        if (socket === current) socket = null;
-        if (stopped) return;
-        timer = window.setTimeout(connect, Math.min(15_000, 1000 * 2 ** attempt++));
-      };
-    };
-    connect();
+        return message?.type === 'devices-snapshot';
+      },
+    });
+    connection.start();
+    window.addEventListener('online', connection.retryNow);
     return () => {
-      stopped = true;
-      if (timer) window.clearTimeout(timer);
-      socket?.close(1000, "Web session ended");
+      window.removeEventListener('online', connection.retryNow);
+      connection.stop();
     };
   }, [dispatch, session]);
 

@@ -33,10 +33,8 @@ pub(crate) fn upload_skill_market_item<R: Runtime>(
     app: &tauri::AppHandle<R>,
     upload: SkillMarketUpload<'_>,
 ) -> Result<SkillMarketItem, String> {
-    let _credentials_guard = lock_cloud_credentials()?;
     let client = feedback_client()?;
-    let mut settings = read_app_settings(app)?;
-    let mut credentials = read_cloud_credentials(app);
+    let (mut settings, mut credentials) = cloud_snapshot(app)?;
     if credentials.access_token.is_none() || credentials.refresh_token.is_none() {
         return Err("Please sign in before publishing a skill".to_string());
     }
@@ -51,6 +49,7 @@ pub(crate) fn upload_skill_market_item<R: Runtime>(
         .unwrap_or_else(|| "/skills".to_string());
     let mut final_response = None;
     for attempt in 0..2 {
+        prepare_cloud_request(app, &settings, &mut credentials)?;
         let archive_part = multipart::Part::bytes(upload.archive.to_vec())
             .file_name(upload.archive_file_name.to_string())
             .mime_str("application/zip")
@@ -79,13 +78,12 @@ pub(crate) fn upload_skill_market_item<R: Runtime>(
             .send()
             .map_err(|error| format!("Skill upload failed: {error}"))?;
         if response.status() != StatusCode::UNAUTHORIZED || attempt == 1 {
-            final_response = Some(response);
+            final_response = Some(CloudResponse::authenticated(app, &credentials, response)?);
             break;
         }
         refresh_cloud_token(app, &client, &mut settings, &mut credentials)?;
     }
-    write_app_settings(app, &settings)?;
-    write_cloud_credentials(app, &credentials)?;
+    persist_cloud_sync(app, &settings, &credentials)?;
     let response = final_response.ok_or_else(|| "Skill upload failed".to_string())?;
     if !response.status().is_success() {
         return Err(response_error("Skill upload", response));

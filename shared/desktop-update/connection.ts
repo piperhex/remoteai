@@ -1,8 +1,8 @@
 import { DESKTOP_UPDATE_CAPABILITY, parseUpdateStatus, UPDATE_MESSAGES,
   type DesktopUpdateStatus, type UpdateAction, type UpdateDevice } from './protocol';
+import { ReconnectBackoff } from '../realtime/reconnectBackoff';
 
 const REQUEST_TIMEOUT_MS = 45_000;
-const RECONNECT_MS = 3_000;
 export interface UpdateSession { baseUrl: string; accessToken: string }
 export interface UpdateSocket {
   onopen: (() => void) | null;
@@ -13,6 +13,7 @@ export interface UpdateSocket {
   close: () => void;
 }
 export interface UpdateConnectionOptions {
+  retryRandom?: () => number;
   authorize: () => Promise<UpdateSession>;
   createSocket?: (url: string) => UpdateSocket;
 }
@@ -32,6 +33,7 @@ interface Pending {
 }
 
 export class DesktopUpdateConnection {
+  private readonly backoff: ReconnectBackoff;
   private state: UpdateSnapshot = { devices: [], selectedId: '', connected: false,
     status: null, busy: false, checked: false, updated: false, error: '' };
   private listeners = new Set<() => void>();
@@ -45,7 +47,9 @@ export class DesktopUpdateConnection {
   private expected = new Map<string, string>();
   private receivedSnapshot = false;
   private earlyDeviceEvents: Record<string, unknown>[] = [];
-  constructor(private readonly options: UpdateConnectionOptions) {}
+  constructor(private readonly options: UpdateConnectionOptions) {
+    this.backoff = new ReconnectBackoff({ initialMs: 3000, random: options.retryRandom });
+  }
   snapshot = () => this.state;
   subscribe = (listener: () => void) => {
     this.listeners.add(listener); return () => { this.listeners.delete(listener); };
@@ -92,6 +96,7 @@ export class DesktopUpdateConnection {
   };
 
   private async connect() {
+    if (!this.active) return;
     const generation = ++this.generation;
     this.receivedSnapshot = false;
     this.earlyDeviceEvents = [];
@@ -118,12 +123,15 @@ export class DesktopUpdateConnection {
 
   private disconnected() {
     this.generation += 1;
+    clearTimeout(this.reconnect);
     clearTimeout(this.authTimer);
     this.clearPending();
     this.socket?.close();
     this.socket = undefined;
     this.patch({ connected: false, busy: false, error: UPDATE_MESSAGES.disconnected });
-    if (this.active) this.reconnect = setTimeout(() => { void this.connect(); }, RECONNECT_MS);
+    if (this.active) this.reconnect = setTimeout(() => {
+      this.reconnect = undefined; void this.connect();
+    }, this.backoff.next());
   }
 
   private receive(raw: unknown) {
@@ -135,6 +143,7 @@ export class DesktopUpdateConnection {
     let devices = deviceMessage(this.state.devices, message);
     if (!devices) return;
     if (message.type === 'devices-snapshot') {
+      this.backoff.reset();
       devices = this.earlyDeviceEvents.reduce((current, event) => deviceMessage(current, event) ?? current, devices);
       this.earlyDeviceEvents = [];
       this.receivedSnapshot = true;

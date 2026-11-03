@@ -12,9 +12,7 @@ pub(crate) async fn get_cloud_auth_state<R: Runtime + 'static>(
 pub(super) fn get_cloud_auth_state_blocking<R: Runtime>(
     app: &tauri::AppHandle<R>,
 ) -> Result<CloudAuthState, String> {
-    let _credentials_guard = lock_cloud_credentials()?;
-    let settings = read_app_settings(app)?;
-    let credentials = read_cloud_credentials(app);
+    let (settings, credentials) = cloud_snapshot(app)?;
     Ok(cloud_state(&settings, &credentials))
 }
 
@@ -44,23 +42,27 @@ pub(super) fn set_cloud_base_url_blocking<R: Runtime>(
     app: &tauri::AppHandle<R>,
     base_url: String,
 ) -> Result<CloudAuthState, String> {
-    let _credentials_guard = lock_cloud_credentials()?;
-    let mut settings = read_app_settings(app)?;
-    let normalized = normalize_base_url(&base_url)?;
-    if settings.cloud_base_url != normalized {
-        clear_cloud_profile(&mut settings);
-        settings.cloud_session_expired = false;
-        clear_cloud_credentials(app)?;
-    }
-    settings.cloud_base_url = normalized;
-    if settings.cloud_base_url.is_none() {
-        clear_cloud_profile(&mut settings);
-        settings.cloud_session_expired = false;
-        clear_cloud_credentials(app)?;
-    }
-    write_app_settings(app, &settings)?;
-    let credentials = read_cloud_credentials(app);
-    Ok(cloud_state(&settings, &credentials))
+    with_cloud_data(app, || {
+        let _credentials_guard = lock_cloud_credentials()?;
+        let mut settings = read_app_settings(app)?;
+        let normalized = normalize_base_url(&base_url)?;
+        if settings.cloud_base_url != normalized {
+            clear_cloud_profile(&mut settings);
+            settings.cloud_session_expired = false;
+            invalidate_cloud_session(app)?;
+            clear_cloud_credentials(app)?;
+        }
+        settings.cloud_base_url = normalized;
+        if settings.cloud_base_url.is_none() {
+            clear_cloud_profile(&mut settings);
+            settings.cloud_session_expired = false;
+            invalidate_cloud_session(app)?;
+            clear_cloud_credentials(app)?;
+        }
+        write_app_settings(app, &settings)?;
+        let credentials = read_cloud_credentials(app);
+        Ok(cloud_state(&settings, &credentials))
+    })
 }
 
 #[tauri::command]
@@ -170,10 +172,8 @@ pub(crate) async fn cloud_change_password<R: Runtime>(
     new_password: String,
 ) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let remembered_new_password = new_password.clone();
         let response = cloud_request(
             &app,
@@ -187,19 +187,23 @@ pub(crate) async fn cloud_change_password<R: Runtime>(
                 "newPassword": new_password,
             })),
         )?;
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         if !response.status().is_success() {
             return Err(response_error("Cloud password change", response));
         }
-        if let Ok(Some(mut saved_login)) = read_saved_cloud_login(&settings) {
-            if settings.cloud_user_email.as_deref() == Some(saved_login.email.as_str()) {
-                saved_login.password = remembered_new_password;
-                if let Err(error) = update_saved_cloud_login(&settings, Some(&saved_login)) {
-                    eprintln!("could not update saved cloud login after password change: {error}");
+        with_cloud_session(&app, &credentials, || {
+            if let Ok(Some(mut saved_login)) = read_saved_cloud_login(&settings) {
+                if settings.cloud_user_email.as_deref() == Some(saved_login.email.as_str()) {
+                    saved_login.password = remembered_new_password;
+                    if let Err(error) = update_saved_cloud_login(&settings, Some(&saved_login)) {
+                        eprintln!(
+                            "could not update saved cloud login after password change: {error}"
+                        );
+                    }
                 }
             }
-        }
+            Ok(())
+        })?;
         Ok(())
     })
     .await
@@ -238,9 +242,8 @@ pub(super) async fn cloud_authenticate<R: Runtime>(
     action: &'static str,
 ) -> Result<CloudAuthenticationResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
+        let (settings, ticket) = authentication_session::begin_login(&app)?;
         let saved_login = SavedCloudLogin {
             email: email.trim().to_string(),
             password: password.clone(),
@@ -260,60 +263,44 @@ pub(super) async fn cloud_authenticate<R: Runtime>(
         let tokens: CloudTokenResponse = response
             .json()
             .map_err(|error| format!("{action} response is invalid: {error}"))?;
-        let mut credentials = CloudCredentials {
-            access_token: Some(tokens.access_token),
-            refresh_token: Some(tokens.refresh_token),
-            device_id: Some(read_or_create_installation_state(&app)?.device_id),
+        let replacement = tokens.refresh_token.clone();
+        let committed = authentication_session::commit_login(&app, &ticket, tokens);
+        let (mut settings, mut credentials) = match committed {
+            Ok(snapshot) => snapshot,
+            Err(error) => {
+                revoke_cloud_token(&client, &settings, &replacement);
+                return Err(error);
+            }
         };
-        if let Some(user) = tokens.user {
-            settings.cloud_user_id = Some(user.id);
-            settings.cloud_user_email = Some(user.email);
-        }
-        settings.cloud_session_expired = false;
-        // Merge cloud data before uploading so a new or returning device cannot publish an empty
-        // or stale local copy over newer cloud fields during its first sync.
-        let remote_accounts = get_remote_accounts(&app, &client, &mut settings, &mut credentials)?;
-        for account_id in &remote_accounts.deleted_account_ids {
-            apply_remote_account_deletion(&app, account_id)?;
-        }
-        for account in remote_accounts.accounts {
-            apply_remote_account(&app, &account)?;
-        }
-        let remote_providers =
-            get_remote_providers(&app, &client, &mut settings, &mut credentials)?;
-        for provider_id in &remote_providers.deleted_provider_ids {
-            apply_remote_provider_deletion(&app, provider_id)?;
-        }
-        for provider in remote_providers.providers {
-            apply_remote_provider(&app, &provider)?;
-        }
-        let _ = put_remote_accounts(&app, &client, &mut settings, &mut credentials)?;
-        put_remote_provider_records(&app, &client, &mut settings, &mut credentials)?;
-        let sync_warning = aggregates::authentication_warning(aggregates::sync_aggregates(
+        // Commit authentication before I/O so every subsequent request shares the
+        // same session and rotated tokens can never be lost on a failed sync.
+        let sync_warning = authentication_session::merge_login_data(
             &app,
             &client,
             &mut settings,
             &mut credentials,
-        ))?;
-        let (password_saved, credential_storage_updated) = if remember_password {
-            match update_saved_cloud_login(&settings, Some(&saved_login)) {
-                Ok(()) => (true, true),
-                Err(error) => {
-                    eprintln!("could not save cloud login: {error}");
-                    (false, false)
-                }
-            }
-        } else {
-            match update_saved_cloud_login(&settings, None) {
-                Ok(()) => (false, true),
-                Err(error) => {
-                    eprintln!("could not remove saved cloud login: {error}");
-                    (false, false)
-                }
-            }
-        };
-        write_app_settings(&app, &settings)?;
-        write_cloud_credentials(&app, &credentials)?;
+        )?;
+        let (password_saved, credential_storage_updated) =
+            with_cloud_session(&app, &credentials, || {
+                Ok(if remember_password {
+                    match update_saved_cloud_login(&settings, Some(&saved_login)) {
+                        Ok(()) => (true, true),
+                        Err(error) => {
+                            eprintln!("could not save cloud login: {error}");
+                            (false, false)
+                        }
+                    }
+                } else {
+                    match update_saved_cloud_login(&settings, None) {
+                        Ok(()) => (false, true),
+                        Err(error) => {
+                            eprintln!("could not remove saved cloud login: {error}");
+                            (false, false)
+                        }
+                    }
+                })
+            })?;
+        persist_cloud_sync(&app, &settings, &credentials)?;
         Ok(CloudAuthenticationResult {
             state: cloud_state(&settings, &credentials),
             password_saved,
@@ -330,21 +317,15 @@ pub(crate) async fn cloud_logout<R: Runtime>(
     app: tauri::AppHandle<R>,
 ) -> Result<CloudAuthState, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
-        let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let credentials = read_cloud_credentials(&app);
-        if credentials.refresh_token.is_some() && settings.cloud_base_url.is_some() {
-            let _ = client
-                .post(endpoint(&settings, "/auth/logout")?)
-                .json(&json!({ "refreshToken": credentials.refresh_token.clone() }))
-                .send();
+        let (state, settings, credentials) = authentication_session::logout_local(&app)?;
+        if let Some(token) = credentials
+            .refresh_token
+            .as_deref()
+            .filter(|_| settings.cloud_base_url.is_some())
+        {
+            revoke_cloud_token(&api_client()?, &settings, token);
         }
-        clear_cloud_profile(&mut settings);
-        settings.cloud_session_expired = false;
-        clear_cloud_credentials(&app)?;
-        write_app_settings(&app, &settings)?;
-        Ok(cloud_state(&settings, &CloudCredentials::default()))
+        Ok(state)
     })
     .await
     .map_err(|error| format!("Cloud logout task failed: {error}"))?

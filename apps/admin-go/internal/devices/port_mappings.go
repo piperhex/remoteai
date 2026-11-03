@@ -1,6 +1,7 @@
 package devices
 
 import (
+	"context"
 	"errors"
 	"net"
 	"net/http"
@@ -54,7 +55,7 @@ func (s *Service) portMappings(c *gin.Context) {
 			return
 		}
 	}
-	result, err := s.syncPortMappings(owner, device, incoming)
+	result, err := s.syncPortMappings(c.Request.Context(), owner, device, incoming)
 	platform.Respond(c, result, err)
 }
 
@@ -89,15 +90,19 @@ func readPortMappings(db *gorm.DB, owner, device string) (mappingDocument, error
 }
 
 // Compare-and-swap rejects stale snapshots, including snapshots predating a deletion.
-func (s *Service) syncPortMappings(owner, device string, incoming *mappingDocument) (mappingDocument, error) {
+func (s *Service) syncPortMappings(ctx context.Context, owner, device string,
+	incoming *mappingDocument) (mappingDocument, error) {
+	if incoming == nil {
+		return s.cachedPortMappings(ctx, owner, device)
+	}
 	var result mappingDocument
-	err := s.deps.DB.Transaction(func(tx *gorm.DB) error {
+	err := s.deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Exec("SELECT pg_advisory_xact_lock(hashtext(?))", "port-mappings:"+owner+":"+device).Error; err != nil {
 			return err
 		}
 		var err error
 		result, err = readPortMappings(tx, owner, device)
-		if err != nil || incoming == nil || incoming.Revision != result.Revision {
+		if err != nil || incoming.Revision != result.Revision {
 			return err
 		}
 		result.Mappings = incoming.Mappings
@@ -105,5 +110,8 @@ func (s *Service) syncPortMappings(owner, device string, incoming *mappingDocume
 		result.Accepted = true
 		return tx.Save(&result).Error
 	})
+	if err == nil && result.Accepted {
+		platform.InvalidatePortMappings(s.deps, owner, device)
+	}
 	return result, err
 }
