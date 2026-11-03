@@ -179,7 +179,8 @@ export function ConnectedChat({ chat, device, devices, active, scope, email, cho
     <ChatQuotesProvider scope={state.selected?.id ?? null} sending={state.sending}
     enabled={active && !state.selectedArchived}>
     <ChatTerminalLayout>
-    <header className="chat-header" data-tauri-drag-region={draggableHeader || undefined}>
+    <header className={`chat-header${showDesktopDiffs ? ' workspace-toolbar' : ''}`}
+      data-tauri-drag-region={draggableHeader || undefined}>
       {desktop ? <button type="button" className="chat-back"
         aria-label={listOpen ? t("client.chat.collapseChatList") : t("client.chat.openChatList")}
         aria-expanded={listOpen} onClick={() => setSidebar(!sidebar)}>

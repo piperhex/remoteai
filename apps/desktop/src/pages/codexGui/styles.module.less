@@ -99,16 +99,17 @@
 .workspace { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
 .header { display: flex; align-items: center; gap: 6px; padding: 4px 14px; flex-shrink: 0;
   box-sizing: border-box; height: 38px; min-height: 38px;
-  button:global(.ant-btn) { height: 26px; min-width: 26px; padding: 0 6px; gap: 4px;
+  button:global(.ant-btn) { height: var(--workspace-toolbar-button-size, 32px);
+    min-width: var(--workspace-toolbar-button-size, 32px); padding: 0 6px; gap: 4px;
     font-size: calc(var(--gui-font-size, 14px) - 2px); line-height: max(18px, 1.4em); }
-  button:global(.ant-btn-icon-only) { width: 26px; padding: 0; }
+  button:global(.ant-btn-icon-only) { width: var(--workspace-toolbar-button-size, 32px); padding: 0; }
   :global(.ant-btn-icon) { display: inline-flex; align-items: center; }
-  :global(.ant-btn) svg { width: 14px; height: 14px; }
 }
 .heading { display: flex; min-width: 0;
   strong { overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
   font-size: calc(var(--gui-font-size, 14px) - 1px); line-height: max(16px, 1.4em); } }
-.headerActions { margin-left: auto; display: flex; align-items: center; flex-shrink: 0; }
+.headerActions { margin-left: auto; display: flex; align-items: center; flex-shrink: 0;
+  gap: var(--workspace-toolbar-gap, 6px); }
 .focusWindowControls { align-self: stretch; display: flex; flex-shrink: 0; margin: -4px -14px -4px 4px; }
 .messageViewport { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: none; overflow-anchor: none; }
 .messageEntry { display: flex; flex-direction: column; min-width: 0; }
@@ -256,7 +257,6 @@
   .header { gap: 4px; padding: 0 8px; height: 28px; min-height: 28px; }
   .focusWindowControls { margin: 0 -8px 0 4px;
     :global(.window-control) { width: 36px; height: 28px; } }
-  .headerActions { gap: 0; }
   .messageContent { padding: 14px 12px; }
   .composerWrap, .questionWrap { padding-inline: 10px; }
   .composerWrap { padding-bottom: 10px; }

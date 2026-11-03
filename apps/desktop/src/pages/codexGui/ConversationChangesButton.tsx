@@ -1,6 +1,7 @@
-import { useEffect, useId, useMemo } from "react";
+import { useContext, useEffect, useId, useMemo } from "react";
 import { PanelRight, PanelRightClose } from "lucide-react";
-import { Button, Tooltip } from "antd";
+import { PanelToggleButton } from '../../../../../shared/chat/PanelToggleButton';
+import { WorkspaceDrawerContext } from '../../../../../shared/chat/workspaceDrawer';
 import type { Conversation } from "./types";
 import { useTurnChangedFiles } from "./useTurnChangedFiles";
 import { useDetailsEntry } from "./detailsContext";
@@ -15,13 +16,14 @@ export function ConversationChangesButton({ value }: { value?: Pick<Conversation
   const title = t("client.chat.fileChanges.049e14");
   const entry = useMemo(() => ({ id, title, files }), [id, files, title]);
   const panel = useDetailsEntry(entry);
+  const workspace = useContext(WorkspaceDrawerContext);
   const register = panel?.setConversationChanges;
   useEffect(() => { register?.(entry); }, [register, entry]);
   const showingChanges = Boolean(panel?.visible && panel.showingChanges);
+  const visible = Boolean(panel?.visible || (workspace?.tabs.visible
+    && workspace.tabs.entries.some(tab => tab.id === workspace.tabs.selected)));
   const label = t(showingChanges ? "client.chat.hideFileChanges" : "client.chat.viewFileChanges");
-  return <Tooltip title={label} styles={{ root: { maxWidth: 400 } }}>
-    <Button type="text" icon={showingChanges ? <PanelRightClose size={16} /> : <PanelRight size={16} />}
-      aria-label={label} aria-expanded={showingChanges}
-      onClick={() => showingChanges ? panel?.close() : panel?.open(entry)} />
-  </Tooltip>;
+  return <PanelToggleButton icon={showingChanges ? <PanelRightClose size={16} /> : <PanelRight size={16} />}
+    label={label} expanded={showingChanges} active={visible}
+    onClick={() => showingChanges ? panel?.close() : panel?.open(entry)} />;
 }

@@ -9,7 +9,8 @@ import { formatRemoteError } from "../../../../shared/localization/errors";
 import { DiffTextContext } from "../../../../shared/chat/diffText";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useVisibleGuiState } from './codexGui/useVisibleGuiState';
-import { Alert, Button, Popover, Tooltip } from "antd";
+import { Alert, Button, Popover } from "antd";
+import { PanelToggleButton } from '../../../../shared/chat/PanelToggleButton';
 import { PanelBottom, PanelLeftClose, PanelLeftOpen, RefreshCw } from "lucide-react";
 import { canManageCodexConnection, hasLocalBackend, isDesktopApp } from "../api/backend";
 import { getGuiController, retainGuiSession } from "./codexGui/session";
@@ -128,7 +129,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
       focused={focused} onToggleFocus={onToggleFocus} view={view} onNavigate={setView}
       scheduledTasksAvailable={canManageCodexConnection} />}
     <div className={styles.workspace}>
-      <header className={styles.header} data-tauri-drag-region={isDesktopApp || undefined}>
+      <header className={`${styles.header} workspace-toolbar`} data-tauri-drag-region={isDesktopApp || undefined}>
         <Button type="text" icon={collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
           aria-label={collapsed ? uiText("client.composer.expandConversationList") : uiText("client.composer.collapseConversationList")} onClick={() => setCollapsed(!collapsed)} />
         {collapsed && <FocusModeButton focused={focused} onToggleFocus={onToggleFocus} />}
@@ -149,11 +150,9 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
             <Button type="text" icon={<CliUpdateIcon version={installer.version} release={installer.release} />}
               aria-label={uiText("client.composer.codexCliUpdates")} />
           </Popover>
-          {isDesktopApp && view === "conversation" && <Tooltip title={terminal.open ? uiText("client.chat.hideTerminal") : uiText("client.composer.openTerminal")}
-            styles={{ root: { maxWidth: 400 } }}>
-            <Button type="text" icon={<PanelBottom size={16} />} aria-label={terminal.open ? uiText("client.chat.hideTerminal") : uiText("client.composer.openTerminal")}
-              aria-expanded={terminal.open} onClick={terminal.toggle} />
-          </Tooltip>}
+          {isDesktopApp && view === "conversation" && <PanelToggleButton icon={<PanelBottom size={16} />}
+            label={terminal.open ? uiText("client.chat.hideTerminal") : uiText("client.composer.openTerminal")}
+            expanded={terminal.open} onClick={terminal.toggle} />}
           {view === "conversation" && <ConversationChangesButton value={current} />}
         </div>
         {focused && windowControls && <div className={styles.focusWindowControls}>{windowControls}</div>}

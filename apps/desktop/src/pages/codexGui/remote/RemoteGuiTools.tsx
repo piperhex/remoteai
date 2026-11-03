@@ -9,6 +9,7 @@ import type { TerminalPanelState } from '../terminal/useTerminalPanel';
 import { Installer } from '../Installer';
 import { CliUpdateIcon } from '../CliUpdateIcon';
 import { GuiChatSettingsButton } from '../GuiChatSettingsButton';
+import { PanelToggleButton } from '../../../../../../shared/chat/PanelToggleButton';
 import type { useRemoteCliInstaller } from './useRemoteCliInstaller';
 
 export function RemoteGuiTools({ controller, state, installer, terminal, active }: {
@@ -45,11 +46,9 @@ export function RemoteGuiTools({ controller, state, installer, terminal, active 
         icon={<CliUpdateIcon version={installer.version} release={installer.release} />}
         aria-label={uiText("client.workspaceActions.remoteCodexCliUpdates")} />
     </Popover>
-    {terminal && <Tooltip title={terminalLabel} styles={{ root: { maxWidth: 400 } }}>
-      <Button type="text" icon={<PanelBottom size={16} />} aria-label={terminalLabel}
-        aria-expanded={terminal.open} disabled={terminal.busy || (!connected && !terminal.open)}
-        onClick={terminal.toggle} />
-    </Tooltip>}
+    {terminal && <PanelToggleButton icon={<PanelBottom size={16} />} label={terminalLabel}
+      expanded={terminal.open} disabled={terminal.busy || (!connected && !terminal.open)}
+      onClick={terminal.toggle} />}
     {terminal?.error && !terminal.open && <span role="alert" style={{ maxWidth: 400 }}>
       {remoteErrorText(terminal.error)}
     </span>}

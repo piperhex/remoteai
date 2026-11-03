@@ -3,7 +3,8 @@ import { displayError } from '../i18n/index';
 import { lazy, Suspense, useContext, useMemo, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { ChatTerminalHostContext } from './ChatTerminalLayout';
-import { Button, Drawer, Spin, Tooltip } from 'antd';
+import { Drawer, Spin } from 'antd';
+import { PanelToggleButton } from '../../../../shared/chat/PanelToggleButton';
 import { PanelBottom, SquareTerminal } from 'lucide-react';
 import type { GuiToolsClient } from '../../../../shared/remote-chat/guiTools';
 import { useRemoteTerminalLauncher } from '../../../../shared/remote-chat/useRemoteTerminalLauncher';
@@ -61,10 +62,9 @@ function TerminalView({ client, active, connected, deviceName, launchId = 0, hid
       notice={panel.tabs.length ? panel.error : undefined} empty={empty} />
   </Suspense>;
   return <>
-    {!hideTrigger && (desktop ? <Tooltip title={label} styles={{ root: { maxWidth: 400 } }}>
-      <Button type="text" icon={<PanelBottom size={16} />} aria-label={label} aria-expanded={Boolean(visible)}
-        disabled={panel.busy || (!connected && !panel.tabs.length && !panel.error)} onClick={panel.toggle} />
-    </Tooltip> : <button type="button" className="chat-terminal-toggle" aria-label={label} data-error={!!panel.error}
+    {!hideTrigger && (desktop ? <PanelToggleButton icon={<PanelBottom size={16} />} label={label}
+      expanded={Boolean(visible)} disabled={panel.busy || (!connected && !panel.tabs.length && !panel.error)}
+      onClick={panel.toggle} /> : <button type="button" className="chat-terminal-toggle" aria-label={label} data-error={!!panel.error}
       aria-expanded={visible} disabled={panel.busy || (!connected && !panel.tabs.length && !panel.error)}
       onClick={panel.toggle}>
       <SquareTerminal size={22} /></button>)}
