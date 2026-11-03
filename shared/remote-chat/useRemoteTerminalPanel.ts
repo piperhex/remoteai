@@ -18,6 +18,7 @@ const restoreTab = (session: TerminalInfo, previous?: Tab): Tab => {
 /** Both phone clients discover this project's PC shells without owning their lifetime. */
 export function useRemoteTerminalPanel(options: {
   client: Pick<GuiToolsClient['terminal'], 'list' | 'open' | 'close'>; cwd: string; connected: boolean;
+  errorKey?: string;
 }) {
   const { client, cwd, connected } = options;
   const project = terminalProjectKey(cwd);
@@ -40,7 +41,7 @@ export function useRemoteTerminalPanel(options: {
     const version = ++scope.generation;
     const current = () => version === scope.generation;
     try { await action(current); }
-    catch { if (current()) update({ error: '终端暂时无法连接，请确认电脑在线后重试。' }); }
+    catch { if (current()) update({ error: options.errorKey ?? '终端暂时无法连接，请确认电脑在线后重试。' }); }
     finally { scope.pending = false; if (current()) update({ busy: false }); }
   };
   // Filtering also supports PCs running the previous, unscoped list protocol.
@@ -65,7 +66,7 @@ export function useRemoteTerminalPanel(options: {
     void list().then(sessions => {
       if (current()) { restore(sessions); update({ error: '' }); }
     }).catch(() => {
-      if (current()) update({ error: '无法读取电脑上的终端，请稍后重试。' });
+      if (current()) update({ error: options.errorKey ?? '无法读取电脑上的终端，请稍后重试。' });
     });
     return () => { cancelled = true; };
   }, [scope, connected]);

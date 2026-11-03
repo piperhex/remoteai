@@ -58,6 +58,7 @@
     "plugins": [
       "expo-secure-store",
       "./plugins/withChatTransport.cjs",
+      "./plugins/withDirectSsh.cjs",
       [
         "@config-plugins/react-native-webrtc",
         {

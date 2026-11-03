@@ -153,5 +153,7 @@
   "client.ssh.hostKeyChangedHint": "Проверьте новый отпечаток. Подтвердите, чтобы обновить сохранённый отпечаток сервера и продолжить.",
   "client.ssh.previousFingerprint": "Прежний отпечаток",
   "client.ssh.currentFingerprint": "Новый отпечаток",
-  "client.ssh.updateFingerprint": "Подтвердить и обновить"
+  "client.ssh.updateFingerprint": "Подтвердить и обновить",
+  "client.ssh.nativeUpdateRequired": "Обновите приложение для прямого SSH-подключения с телефона.",
+  "client.ssh.directConnectionRequired": "Выберите или создайте SSH-подключение."
 }

@@ -153,5 +153,7 @@
   "client.ssh.hostKeyChangedHint": "新しい指紋を確認してください。承認すると、このサーバーの保存済み指紋を更新して続行します。",
   "client.ssh.previousFingerprint": "以前の指紋",
   "client.ssh.currentFingerprint": "新しい指紋",
-  "client.ssh.updateFingerprint": "確認して更新"
+  "client.ssh.updateFingerprint": "確認して更新",
+  "client.ssh.nativeUpdateRequired": "スマートフォンから SSH に直接接続するにはアプリを更新してください。",
+  "client.ssh.directConnectionRequired": "SSH 接続を選択するか、新しく作成してください。"
 }

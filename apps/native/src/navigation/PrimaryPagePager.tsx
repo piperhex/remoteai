@@ -21,7 +21,7 @@ export function PrimaryPagePager({ page, onChange, pages, pageStyles, children }
   const handlers = usePrimaryPageSwipe(page, navigate, progress);
   const onNext = useCallback(() => { Keyboard.dismiss(); navigate('accounts'); }, [navigate]);
   const chatSwipe = useMemo(() => ({ ...progress, onNext }), [progress, onNext]);
-  const displayedPage = page === 'token-summary' || page === 'ssh' ? 'chat' : page;
+  const displayedPage = page === 'token-summary' ? 'chat' : page;
   const primary = PRIMARY_PAGES.some(key => key === displayedPage);
   // Include every slot in the native bounds so Android can hit-test and expose the visible pane to accessibility.
   const trackWidth = width * PRIMARY_PAGES.length;

@@ -52,7 +52,6 @@ function DiscoverySshFixture() {
   const [fonts] = useFonts(Ionicons.font);
   const [page, setPage] = useState('discover');
   const [mode, setMode] = useState('saved');
-  const [online, setOnline] = useState(true);
   const client = useMemo(() => createClient(mode), [mode]);
   const color = useThemeColor();
   const canvas = { flex: 1, backgroundColor: color('#ededed', 'canvas') };
@@ -63,14 +62,13 @@ function DiscoverySshFixture() {
       <Button title="Saved" onPress={() => setMode('saved')} />
       <Button title="Empty" onPress={() => setMode('empty')} />
       <Button title="Error" onPress={() => setMode('error')} />
-      <Button title="Offline" onPress={() => setOnline(value => !value)} />
     </View>
     {fonts && <PrimaryPagePager page={page} onChange={setPage}
       pageStyles={{ chat: canvas, accounts: canvas, discover: canvas, settings: canvas }} pages={{
-        chat: page === 'ssh' && <SshPage key={mode} client={client} connected={online}
-          deviceName="我的工作电脑" devices={[]} chooseDevice={() => {}} onBack={() => setPage('discover')} />,
+        chat: null,
         discover: <DiscoveryPage onOpen={setPage} />, accounts: null, settings: null,
-      }} />}
+      }}>{page === 'ssh' && <SshPage key={mode} client={client} onBack={() => setPage('discover')} />}
+      </PrimaryPagePager>}
     <BottomNavigation activePage={page} onChange={setPage} />
   </SafeAreaView></SafeAreaProvider>;
 }

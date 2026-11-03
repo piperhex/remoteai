@@ -29,8 +29,10 @@ export function SshPage({ client, connected, deviceName, devices, chooseDevice, 
     </div>
       <button type="button" className="discovery-ssh-device" onClick={() => setPicking(true)}
         aria-label={t('client.settings.chooseAComputer')}>
-        {deviceName || t('client.settings.chooseAComputer')}<ChevronDown size={18} />
+        {deviceName ? t('client.discovery.sshViaComputer', { name: deviceName })
+          : t('client.settings.chooseAComputer')}<ChevronDown size={18} />
       </button>
+      <p className="discovery-ssh-hint">{t('client.discovery.sshWebHint')}</p>
     </header>
     <div className="discovery-ssh-content">
       <div className="discovery-ssh-section"><span>{t('client.ssh.savedConnections')}</span>

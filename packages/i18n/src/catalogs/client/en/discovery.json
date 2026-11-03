@@ -3,5 +3,8 @@
   "client.discovery.twoFactor": "2FA",
   "client.discovery.back": "Back to Discover",
   "client.discovery.ssh": "SSH",
-  "client.discovery.sshComputerHint": "Choose an online computer to open an SSH terminal."
+  "client.discovery.sshComputerHint": "Choose an online computer to open an SSH terminal.",
+  "client.discovery.sshDirectHint": "Connect directly from your phone. No computer needs to be online.",
+  "client.discovery.sshViaComputer": "Connect through {name}",
+  "client.discovery.sshWebHint": "The web version connects through a computer. Use the mobile app to connect directly from your phone."
 }

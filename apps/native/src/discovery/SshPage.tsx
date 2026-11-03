@@ -1,49 +1,39 @@
-import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import type { GuiToolsClient } from '../../../../shared/remote-chat/guiTools';
 import { sshLabel } from '../../../../shared/terminal/sshProfiles';
 import { useSshDiscovery } from '../../../../shared/terminal/useSshDiscovery';
-import type { RemoteDevice } from '../types';
 import { displayError, t, useLanguage } from '../i18n';
 import { createThemedStyles } from '../theme/styles';
 import { textMetrics } from '../theme/text';
 import { useThemeColor } from '../theme/store';
-import { ChatDevices } from '../chat/ChatDevices';
 import { ChatTerminal } from '../chat/ChatTerminal';
 import { SshQuickConnectSheet } from '../chat/terminal/SshQuickConnectSheet';
 import { SshConnectionSheet } from '../chat/terminal/SshConnectionSheet';
 import { SshButton } from '../chat/terminal/SshControls';
-import { BottomSheet } from '../components/BottomSheet';
 import { DiscoveryBackButton } from './DiscoveryPage';
 
-export function SshPage({ client, connected, deviceName, devices, chooseDevice, onBack }: {
-  client: GuiToolsClient['terminal']; connected: boolean; deviceName?: string;
-  devices: RemoteDevice[]; chooseDevice: (id: string) => void; onBack: () => void;
+export function SshPage({ client, onBack }: {
+  client: GuiToolsClient['terminal']; onBack: () => void;
 }) {
   useLanguage();
   const styles = useStyles();
   const color = useThemeColor();
-  const { saved, profile, choose, close, panel, editor, edit, closeEditor } = useSshDiscovery(client, connected);
-  const [picking, setPicking] = useState(false);
+  const { saved, profile, choose, close, panel, editor, edit, closeEditor } = useSshDiscovery(client, true, true);
   return <View style={styles.page}>
     <DiscoveryBackButton onBack={onBack} />
     <View style={styles.heading}><View style={styles.titleRow}>
       <Text accessibilityRole="header" style={styles.title}>{t('client.discovery.ssh')}</Text>
       <SshButton label={t('client.ssh.createTitle')} onPress={() => edit()} />
     </View>
-      <Pressable accessibilityRole="button" accessibilityLabel={t('client.settings.chooseAComputer')}
-        onPress={() => setPicking(true)} style={styles.device}>
-        <Text style={styles.hint}>{deviceName || t('client.settings.chooseAComputer')}</Text>
-        <Ionicons name="chevron-down" size={18} color={color('#777', 'muted')} />
-      </Pressable>
+      <Text style={styles.hint}>{t('client.discovery.sshDirectHint')}</Text>
+      {panel.tabs.length > 0 && <SshButton label={t('client.projectBrowser.terminal')} onPress={panel.toggle} />}
     </View>
     <ScrollView contentContainerStyle={styles.content} refreshControl={
       <RefreshControl refreshing={saved.loading} onRefresh={() => void saved.refresh()} />}>
       <View style={styles.section}><Text style={styles.hint}>{t('client.ssh.savedConnections')}</Text>
         <SshButton label={t('client.ssh.refresh')} disabled={saved.loading} onPress={() => void saved.refresh()} />
       </View>
-      {!connected && <Text style={styles.hint}>{t('client.discovery.sshComputerHint')}</Text>}
       {!!saved.error && <Text accessibilityRole="alert" style={styles.error}>{displayError(saved.error)}</Text>}
       {saved.profiles.map(item => <View key={item.id} style={styles.row}>
         <Pressable accessibilityRole="button"
@@ -66,18 +56,11 @@ export function SshPage({ client, connected, deviceName, devices, chooseDevice, 
         <Text style={styles.hint}>{t('client.ssh.emptyConnectionsHint')}</Text>
       </View>}
     </ScrollView>
-    <ChatTerminal client={client} cwd="" active connected={connected} deviceName={deviceName} hideTrigger panel={panel} />
+    <ChatTerminal client={client} cwd="" active connected hideTrigger panel={panel} sshOnly />
     {editor && <SshConnectionSheet settingsOnly api={client.ssh} initial={editor.profile} cwd=""
       connected={panel.adopt} dispose={client.close} close={closeEditor} />}
-    {profile && connected && <SshQuickConnectSheet key={profile.id} api={client.ssh} profile={profile} cwd=""
+    {profile && <SshQuickConnectSheet key={profile.id} api={client.ssh} profile={profile} cwd=""
       connected={panel.adopt} dispose={client.close} close={close} />}
-    {profile && !connected && !picking && <BottomSheet visible title={profile.name || sshLabel(profile)}
-      onClose={close} maxWidth={400}>
-      <ActivityIndicator /><Text style={styles.hint}>{t('client.discovery.sshComputerHint')}</Text>
-      <SshButton label={t('client.settings.chooseAComputer')} onPress={() => setPicking(true)} />
-    </BottomSheet>}
-    {picking && <ChatDevices devices={devices} onClose={() => setPicking(false)}
-      choose={id => { setPicking(false); chooseDevice(id); }} />}
   </View>;
 }
 
@@ -86,7 +69,6 @@ const useStyles = createThemedStyles(color => ({
   heading: { paddingHorizontal: 20, paddingBottom: 16, gap: 8 },
   title: { ...textMetrics(24, 34), fontWeight: '600', color: color('#181818', 'ink') },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 },
-  device: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 8, minHeight: 44 },
   section: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   content: { padding: 16, gap: 12, paddingBottom: 24 },
   row: { flexDirection: 'row', alignItems: 'center', borderRadius: 12,

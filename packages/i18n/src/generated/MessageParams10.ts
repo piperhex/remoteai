@@ -91,6 +91,9 @@ export interface MessageParams10 {
   "client.discovery.back": Record<string, never>;
   "client.discovery.ssh": Record<string, never>;
   "client.discovery.sshComputerHint": Record<string, never>;
+  "client.discovery.sshDirectHint": Record<string, never>;
+  "client.discovery.sshViaComputer": { "name": string | number };
+  "client.discovery.sshWebHint": Record<string, never>;
   "client.discovery.title": Record<string, never>;
   "client.discovery.twoFactor": Record<string, never>;
   "client.downloads.activeCount": { "count": string | number };
@@ -197,7 +200,4 @@ export interface MessageParams10 {
   "client.downloads.selectAll": Record<string, never>;
   "client.downloads.selectTask": { "name": string | number };
   "client.downloads.share": Record<string, never>;
-  "client.downloads.shareFile": Record<string, never>;
-  "client.downloads.source": Record<string, never>;
-  "client.downloads.tasks": { "count": string | number };
 }

@@ -15,6 +15,7 @@ import { useToolLaunch } from '../../../../shared/remote-chat/useToolLaunch';
 interface Props {
   client: GuiToolsClient['terminal']; cwd: string; active: boolean; connected: boolean; deviceName?: string;
   launchId?: number; hideTrigger?: boolean;
+  sshOnly?: boolean;
 }
 export type ChatTerminalPanel = ReturnType<typeof useRemoteTerminalLauncher>;
 
@@ -28,7 +29,7 @@ function StandaloneTerminal(props: Props) {
   return <TerminalView {...props} panel={panel} />;
 }
 
-function TerminalView({ client, cwd, active, connected, deviceName, launchId = 0, hideTrigger = false, panel }:
+function TerminalView({ client, cwd, active, connected, deviceName, launchId = 0, hideTrigger = false, panel, sshOnly }:
   Props & { panel: ChatTerminalPanel }) {
   const resolveThemeColor = useThemeColor();
   const styles = useStyles();
@@ -48,13 +49,14 @@ function TerminalView({ client, cwd, active, connected, deviceName, launchId = 0
     {!selected && <BottomSheet visible={active && panel.open} title={t("client.chat.remoteTerminal")} subtitle={deviceName}
       onClose={hide} maxWidth={400} actions={[{ label: panel.error ? t("client.terminal.retry") : t("client.chat.newTerminal"),
         onPress: panel.retry, disabled: !connected, loading: panel.busy }]}>
-      <TerminalTabs panel={panel} client={client} cwd={cwd} connected={connected} active={active && !!panel.open} />
+      <TerminalTabs panel={panel} client={client} cwd={cwd} connected={connected} active={active && !!panel.open}
+        sshOnly={sshOnly} />
       {panel.busy ? <ActivityIndicator color={color(palette.green, 'accent')} />
         : !!panel.error && <Text accessibilityRole="alert" style={styles.status}>{displayError(panel.error)}</Text>}
     </BottomSheet>}
     {selected && <TerminalSession client={client} session={selected.session} deviceName={deviceName}
       visible={active && panel.open} hide={hide} notice={panel.error}
       tabs={<TerminalTabs key={cwd} panel={panel} client={client} cwd={cwd} connected={connected}
-        active={active && !!panel.open} />} />}
+        active={active && !!panel.open} sshOnly={sshOnly} />} />}
   </>;
 }

@@ -30,7 +30,6 @@ import { ChatThreads } from './ChatThreads';
 import { ChatListButton } from './ChatListButton';
 import { ChatProfileMenu } from './ChatProfileMenu';
 import { TokenSummaryPage } from '../tokenSummary/TokenSummaryPage';
-import { SshPage } from '../discovery/SshPage';
 import { ChatSearch } from './ChatSearch';
 import { ChatDrawer, type ChatDrawerMethods } from './ChatDrawer';
 import { ChatDrawerSurface } from './ChatDrawerSurface';
@@ -60,7 +59,6 @@ interface Props {
   notification: ChatNotificationTarget | null; notificationError: string;
   notificationHandled: (id: string) => void;
   tokenSummary: boolean; closeTokenSummary: () => void;
-  sshDiscovery?: boolean; closeSshDiscovery?: () => void;
   openAccounts?: () => void;
 }
 
@@ -98,12 +96,12 @@ export function ChatPage(props: Props) {
 }
 
 function ConnectedChat({ session, device, devices, selected, active: pageActive, chooseDevice, notification,
-  notificationHandled, tokenSummary, closeTokenSummary, openAccounts, sshDiscovery, closeSshDiscovery }: Props & {
+  notificationHandled, tokenSummary, closeTokenSummary, openAccounts }: Props & {
   device?: RemoteDevice; selected: boolean; chooseDevice: (id: string) => void;
 }) {
   const styles = useStyles();
   useLanguage();
-  const active = pageActive && !tokenSummary && !sshDiscovery;
+  const active = pageActive && !tokenSummary;
   const insets = useSafeAreaInsets();
   const { state, controller, foreground, catalog } = useChat(session, device?.deviceId ?? '', pageActive);
   useDownloadConnection({ session, deviceId: device?.deviceId ?? '', deviceName: device?.name ?? '', controller,
@@ -155,12 +153,10 @@ function ConnectedChat({ session, device, devices, selected, active: pageActive,
     return () => subscription.remove();
   }, [active, drawer, drawerMoving, pickingDevice, state.selected?.id, state.sending, controller]);
   return <>
-  {sshDiscovery && pageActive && <SshPage client={controller.guiTools.terminal} connected={ready}
-    deviceName={device?.name} devices={devices} chooseDevice={chooseDevice} onBack={closeSshDiscovery!} />}
   {tokenSummary && pageActive && <TokenSummaryPage read={controller.readTokenSummary} ready={ready}
     scope={JSON.stringify([session.baseUrl, session.email, device?.deviceId ?? ''])}
     foreground={foreground} deviceName={device?.name} onBack={closeTokenSummary} />}
-  <View style={[styles.fill, (tokenSummary || sshDiscovery) && styles.hidden]}>
+  <View style={[styles.fill, tokenSummary && styles.hidden]}>
   <ChatFileReferencesProvider enabled={active && !state.selectedArchived}>
   <ChatQuotesProvider active={active} scope={state.selected?.id ?? null}
     enabled={active && !state.selectedArchived}>

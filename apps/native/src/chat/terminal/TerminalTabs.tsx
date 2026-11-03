@@ -22,9 +22,10 @@ function terminalLabel(session: TerminalInfo, index: number) {
   return t('client.mobile.terminal', { value1: index + 1 });
 }
 
-export function TerminalTabs({ panel, client, cwd, connected, active }: {
+export function TerminalTabs({ panel, client, cwd, connected, active, sshOnly }: {
   panel: ReturnType<typeof useRemoteTerminalLauncher>; client: GuiToolsClient['terminal'];
   cwd: string; connected: boolean; active: boolean;
+  sshOnly?: boolean;
 }) {
   useLanguage();
   const styles = useTerminalStyles();
@@ -58,8 +59,10 @@ export function TerminalTabs({ panel, client, cwd, connected, active }: {
         <Ionicons name="ellipsis-horizontal" size={20} color={color('#17211b', 'ink')} />
       </Pressable>}
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel={t('client.chat.newTerminal')}
-        style={[styles.button, disabled && styles.disabled]} disabled={disabled} onPress={panel.add}>
+      <Pressable accessibilityRole="button"
+        accessibilityLabel={t(sshOnly ? 'client.ssh.new' : 'client.chat.newTerminal')}
+        style={[styles.button, disabled && styles.disabled]} disabled={disabled}
+        onPress={sshOnly ? () => { Keyboard.dismiss(); setTool('ssh'); } : panel.add}>
         <Ionicons name="add-outline" size={22} color={color('#17211b', 'ink')} />
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={t('client.ssh.menu')}

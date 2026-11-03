@@ -9,7 +9,9 @@ apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/installer-helper/target/
 crates/chat-connectivity/target/
 crates/ssh-client/target/
+crates/ssh-mobile/target/
 apps/native/plugins/connectivity/build/
+apps/native/plugins/ssh/build/
 apps/native/android/
 apps/native/ios/
 apps/native/.expo/

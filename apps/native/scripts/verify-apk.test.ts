@@ -7,7 +7,7 @@ const { validateNativeEntries } = require('./verify-apk.cjs') as {
 };
 const architectures = ['armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'];
 const runtimeLibraries = [
-  'csw_chat_connectivity', 'appmodules', 'c++_shared', 'expo-modules-core', 'expo-sqlite', 'fbjni',
+  'csw_chat_connectivity', 'csw_ssh_mobile', 'appmodules', 'c++_shared', 'expo-modules-core', 'expo-sqlite', 'fbjni',
   'gesturehandler', 'hermes', 'reactnative', 'reanimated', 'worklets',
 ];
 const completeApk = architectures.flatMap((abi) => runtimeLibraries.map((name) => `lib/${abi}/lib${name}.so`));
@@ -15,7 +15,7 @@ const completeApk = architectures.flatMap((abi) => runtimeLibraries.map((name) =
 describe('release APK native libraries', () => {
   it('accepts complete libraries for phones and emulators', () => {
     expect(validateNativeEntries([...completeApk, 'classes.dex', 'assets/index.android.bundle']))
-      .toContain('arm64-v8a: 11 libraries');
+      .toContain('arm64-v8a: 12 libraries');
   });
 
   it('rejects the mixed APK where only the emulator has Expo, gestures and animations', () => {
@@ -45,7 +45,7 @@ describe('release APK native libraries', () => {
 
   it('accepts different Rust library fingerprints for different CPU architectures', () => {
     expect(validateNativeEntries([...completeApk, ...targetLibraries]))
-      .toContain('arm64-v8a: 12 libraries');
+      .toContain('arm64-v8a: 13 libraries');
   });
 
   it('still rejects a missing architecture of a fingerprinted library', () => {

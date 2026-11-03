@@ -153,5 +153,7 @@
   "client.ssh.hostKeyChangedHint": "Verify the new fingerprint. Confirm to update this server’s saved fingerprint and continue.",
   "client.ssh.previousFingerprint": "Previous fingerprint",
   "client.ssh.currentFingerprint": "New fingerprint",
-  "client.ssh.updateFingerprint": "Confirm and update"
+  "client.ssh.updateFingerprint": "Confirm and update",
+  "client.ssh.nativeUpdateRequired": "Update the app to connect to SSH directly from your phone.",
+  "client.ssh.directConnectionRequired": "Choose or create an SSH connection."
 }

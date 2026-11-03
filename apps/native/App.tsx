@@ -87,6 +87,8 @@ import { useNativeLounge } from './src/lounge/useNativeLounge';
 import { isDiscoveryPage } from '../../shared/navigation/discovery';
 import { usePageStyles as useTotpPageStyles } from './src/totp/pageStyles';
 import { ChatPage } from './src/chat/ChatPage';
+import { SshPage } from './src/discovery/SshPage';
+import { useDirectSsh } from './src/ssh/useDirectSsh';
 import { PrimaryPagePager } from './src/navigation/PrimaryPagePager';
 import { palette as chatPalette } from './src/chat/styles';
 import { useChatNotificationNavigation } from './src/chat/useChatNotificationNavigation';
@@ -1258,6 +1260,7 @@ function AppContent() {
   }, []);
 
   const lounge = useNativeLounge(session);
+  const directSsh = useDirectSsh(session);
   const showBottomNavigation = !['token-summary', 'downloads', 'lounge'].includes(activePage);
   if (initializing) return <View style={styles.boot}><ThemeStatusBar /><ActivityIndicator size="large" color={color(COLORS.green, 'accent')} /><Text style={styles.bootText}>Remote AI</Text></View>;
   if (!session) return <View style={styles.app}>
@@ -1276,8 +1279,7 @@ function AppContent() {
       accounts: accountStyles.page, discover: styles.discoveryCanvas, settings: styles.settingsCanvas,
     }} pages={{
     chat: <ChatPage session={session} devices={devices}
-      active={activePage === 'chat' || activePage === 'token-summary' || activePage === 'ssh'}
-      sshDiscovery={activePage === 'ssh'} closeSshDiscovery={() => setActivePage('discover')}
+      active={activePage === 'chat' || activePage === 'token-summary'}
       openAccounts={openAccounts}
       devicesLoaded={devicesLoaded}
       tokenSummary={activePage === 'token-summary'} closeTokenSummary={() => setActivePage('discover')}
@@ -1300,6 +1302,7 @@ function AppContent() {
       onLogout={handleLogout} totpManager={totpManager} />,
     }}>
     {activePage === 'downloads' && <DownloadManagerPage session={session} onBack={() => setActivePage('discover')} />}
+    {activePage === 'ssh' && directSsh && <SshPage client={directSsh} onBack={() => setActivePage('discover')} />}
     {isDiscoveryPage(activePage)
       && !['downloads', 'token-summary', 'lounge', 'port-mappings', 'totp', 'devices', 'ssh'].includes(activePage)
       && <DiscoveryBackButton onBack={() => setActivePage('discover')} />}

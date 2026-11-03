@@ -6,6 +6,7 @@ const MAX_ARCHIVE_LISTING_BYTES = 16 * 1024 * 1024;
 const EASYTIER_TARGET_LIBRARY = /^libeasytier_core-[0-9a-f]{16}\.so$/;
 const REQUIRED_LIBRARIES = [
   'libcsw_chat_connectivity.so',
+  'libcsw_ssh_mobile.so',
   'libappmodules.so',
   'libc++_shared.so',
   'libexpo-modules-core.so',

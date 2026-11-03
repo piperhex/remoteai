@@ -27,6 +27,8 @@ test('saved SSH connections open directly from mobile Discover', async ({ page, 
   const list = page.locator('.discovery-ssh-page');
   await expect(list.locator('.discovery-ssh-connection')).toHaveCount(12);
   await expect(list.locator('.discovery-ssh-connection').first()).toBeEnabled();
+  await expect(list.getByText(testText('client.discovery.sshWebHint'))).toBeVisible();
+  await expect(list.locator('.discovery-ssh-device')).toContainText('通过');
   await screenshot(page, info, 'web-mobile-light-ssh-list');
   await list.getByRole('button', { name: /备份服务器 11 / }).scrollIntoViewIfNeeded();
   await expect(list.getByRole('button', { name: /备份服务器 11 / })).toBeInViewport();

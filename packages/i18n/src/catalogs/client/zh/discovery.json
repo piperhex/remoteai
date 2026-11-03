@@ -3,5 +3,8 @@
   "client.discovery.twoFactor": "2FA",
   "client.discovery.back": "返回发现",
   "client.discovery.ssh": "SSH",
-  "client.discovery.sshComputerHint": "选择一台在线电脑以打开 SSH 终端。"
+  "client.discovery.sshComputerHint": "选择一台在线电脑以打开 SSH 终端。",
+  "client.discovery.sshDirectHint": "从手机直接连接服务器，无需电脑在线。",
+  "client.discovery.sshViaComputer": "通过 {name} 连接",
+  "client.discovery.sshWebHint": "网页版通过电脑连接服务器。如需手机直连，请使用移动 App。"
 }

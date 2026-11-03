@@ -70,7 +70,6 @@ async function input(label, value) {
   throw new Error(`Missing input ${label}`);
 }
 async function verifyEditor(scale) {
-  await tap('OFFLINE');
   await tap('新建 SSH 连接'); await find('连接名称（可选）');
   await screenshot(`android-light-ssh-create-${scale}`);
   await input('连接名称（可选）', 'New-server');
@@ -91,7 +90,7 @@ async function verifyEditor(scale) {
   await screenshot(`android-dark-ssh-edit-key-${scale}`);
   await tap('保存'); await find('编辑 Key-edited');
   await screenshot(`android-dark-ssh-updated-list-${scale}`);
-  await tap('OFFLINE'); await tap('Key-edited'); await find('远程文件浏览');
+  await tap('Key-edited'); await find('远程文件浏览');
   await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
   await tap('LIGHT');
   console.log(`PASS Android add, retry, cancel, edit and preserved private key at scale ${scale}`);
@@ -124,8 +123,10 @@ async function verify(scale) {
   await tap('ERROR'); await find('无法读取已保存的 SSH 连接，请检查网络后刷新。');
   await screenshot(`android-dark-ssh-error-${scale}`);
   await tap('SAVED'); await find('Saved-edited');
-  await tap('OFFLINE'); await tap('Saved-edited'); await find('选择一台在线电脑以打开 SSH 终端。');
-  await screenshot(`android-dark-ssh-offline-${scale}`);
+  await find('从手机直接连接服务器，无需电脑在线。');
+  assert.ok(!(await nodes()).some(node => node['content-desc'] === '选择电脑'));
+  await tap('Saved-edited'); await find('远程终端');
+  await screenshot(`android-dark-ssh-direct-${scale}`);
   await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
   await tap('返回发现'); await find('SSH');
   console.log(`PASS Android discovery, saved terminal, login, empty, error, offline, back at scale ${scale}`);

@@ -153,5 +153,7 @@
   "client.ssh.hostKeyChangedHint": "请核对新指纹。确认后，将更新此服务器已保存的指纹并继续。",
   "client.ssh.previousFingerprint": "原指纹",
   "client.ssh.currentFingerprint": "新指纹",
-  "client.ssh.updateFingerprint": "确认并更新"
+  "client.ssh.updateFingerprint": "确认并更新",
+  "client.ssh.nativeUpdateRequired": "请更新 App 后使用手机直连 SSH。",
+  "client.ssh.directConnectionRequired": "请选择或新建一个 SSH 连接。"
 }
