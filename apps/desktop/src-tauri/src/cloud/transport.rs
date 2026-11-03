@@ -1,5 +1,8 @@
 use super::*;
 
+mod batch_sync;
+pub(super) use batch_sync::{upload_sync_records, SyncRecords, SyncUpload};
+
 pub(super) fn upsert_remote_account_payload<R: Runtime>(
     app: &tauri::AppHandle<R>,
     client: &Client,
