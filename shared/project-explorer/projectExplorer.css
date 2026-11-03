@@ -33,14 +33,27 @@
   display: flex; align-items: center; min-width: 0; gap: 10px; background: var(--pe-surface);
   border: 1px solid var(--pe-border); border-radius: 5px; padding: 3px 10px; min-height: 38px;
 }
-.pe-address { flex: 1; }
+.pe-address { flex: 1; cursor: text; }
+.pe-address:focus-within { outline: 2px solid #4096ff; outline-offset: -2px; }
 .pe-address > svg { flex-shrink: 0; color: var(--pe-muted); }
-.pe-address nav { display: flex; align-items: center; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
-.pe-address nav span { display: inline-flex; align-items: center; flex-shrink: 0; }
-.pe-address nav button { white-space: nowrap; }
-.pe-address form { flex: 1; min-width: 0; }
+.pe-address-path { position: relative; display: flex; align-items: center; flex: 1; min-width: 0; overflow: hidden; }
+.pe-address-crumbs, .pe-address-measure { display: flex; align-items: center; min-width: 0; }
+.pe-address-measure { position: absolute; width: max-content; visibility: hidden; pointer-events: none; }
+.pe-crumb { display: inline-flex; align-items: center; flex-shrink: 0; }
+.pe-crumb > svg { flex-shrink: 0; }
+.pe-address-crumbs .pe-crumb:last-child { flex-shrink: 1; min-width: 0; }
+.pe-address .pe-crumb-label {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 0; min-height: 32px;
+  padding: 5px 9px; border: 1px solid transparent; white-space: nowrap;
+}
+.pe-crumb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pe-address form { display: flex; align-items: center; flex: 1; min-width: 0; padding-block: 6px; }
 .pe-address input, .pe-search input { width: 100%; border: 0; outline: none; background: transparent; min-width: 0; }
-.pe-address .pe-address-edit { padding: 3px; min-width: 20px; }
+.pe-address input { padding: 0; }
+.pe-shell .pe-address input:focus { outline: none; box-shadow: none; }
+.pe-address .pe-address-edit { flex: 0 0 32px; align-self: stretch; padding: 0; cursor: text; }
+.pe-address .pe-address-edit:hover:not(:disabled) { background: transparent; }
+.pe-shell .pe-address-edit:focus-visible { outline: none; }
 .pe-search { flex: 0 1 26%; color: var(--pe-muted); }
 .pe-search:focus-within { outline: 2px solid #4096ff; outline-offset: -2px; }
 .pe-shell .pe-search input:focus-visible { outline: none; }

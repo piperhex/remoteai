@@ -2,6 +2,8 @@ import type { ProjectDirectoriesResponse, ProjectDirectory } from '../../../shar
 import type { EntryRequest } from '../../../shared/project-browser/entryActions';
 
 export const explorerRoot = 'D:/jiutian-projects/backend/zczd-wms-b';
+export const explorerLongPath = 'C:/ProgramData/Microsoft/Windows/Virtual Hard Disks';
+export const explorerWideName = `${explorerLongPath}/${'工程资料归档'.repeat(16)}`;
 export const explorerShortcuts = {
   home: 'C:/Users/RemoteUser', desktop: 'D:/Cloud/Desktop', downloads: 'D:/Downloads',
 };
@@ -13,6 +15,8 @@ entries.push(...['.gitignore', 'pom.xml', 'README.md', 'start-dev.bat'].map((nam
   name, path: `${explorerRoot}/${name}`, directory: false, modified: 1793268120, size: [280, 1876, 7230, 1200][index],
 })));
 const directories = new Map<string, ProjectDirectory[]>([
+  ...['C:/ProgramData', 'C:/ProgramData/Microsoft', 'C:/ProgramData/Microsoft/Windows',
+    explorerLongPath, explorerWideName].map(path => [path, []] as [string, ProjectDirectory[]]),
   ...Object.values(explorerShortcuts).map(path => [path, []] as [string, ProjectDirectory[]]),
   ['', ['C:/', 'D:/'].map(path => ({ name: path, path, directory: true }))],
   ['C:/', [{ name: 'Users', path: 'C:/Users', directory: true }]],
