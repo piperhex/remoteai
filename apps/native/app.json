@@ -41,8 +41,6 @@
         "android.permission.REQUEST_INSTALL_PACKAGES"
       ],
       "blockedPermissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.BLUETOOTH",
         "android.permission.SYSTEM_ALERT_WINDOW",
         "android.permission.READ_MEDIA_IMAGES",
@@ -62,8 +60,7 @@
       [
         "@config-plugins/react-native-webrtc",
         {
-          "cameraPermission": "允许 Remote AI 拍摄照片和扫描二维码",
-          "microphonePermission": "聊天不需要使用麦克风"
+          "cameraPermission": "允许 Remote AI 拍摄照片和扫描二维码"
         }
       ],
       [
@@ -112,7 +109,8 @@
         {
           "motionPermission": "允许 Remote AI 根据手机方向旋转图片"
         }
-      ]
+      ],
+      "expo-audio"
     ]
   }
 }

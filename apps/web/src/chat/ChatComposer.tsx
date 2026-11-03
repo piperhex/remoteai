@@ -46,6 +46,8 @@ export function ChatComposer(props: ComposerProps) {
     uploadProgress, threadId, active, ready, sending, goal, goalBusy, catalog, cwd, loadFiles, loadCatalog } = props;
   const state = useComposerState(props);
   const { draft, attachments, menu, busy, compact, action, actionDisabled, goalMode } = state;
+  const voiceAction = !desktop && !!props.dictation && action === 'send'
+    && !draft.hasContent && !attachments.items.length && !state.hasQuotes;
   const [settings, setSettings] = useState(false);
   const [adding, setAdding] = useState(false);
   const [projectFiles, setProjectFiles] = useState<'files' | 'photos' | null>(null);
@@ -107,7 +109,7 @@ export function ChatComposer(props: ComposerProps) {
   }}>
     {props.projectPicker}
     {queue && <ChatQueue {...queue} {...state.queueEditor} editDisabled={state.queueEditor.editDisabled || busy} />}
-    <form className={`chat-composer${props.dictation ? ' has-dictation' : ''}`
+    <form className={`chat-composer${props.dictation && !voiceAction ? ' has-dictation' : ''}`
       + `${compact && !desktop && !suggestion.text ? ' is-compact' : ''}`}
       onSubmit={event => { event.preventDefault(); void state.submit(); }}>
       <input ref={photoInput} type="file" accept="image/*" multiple hidden aria-label={t("client.chat.choosePhotos")}
@@ -207,14 +209,16 @@ export function ChatComposer(props: ComposerProps) {
                 <ChevronDown size={12} /></>}
             </button>}
             {props.dictation && <ComposerDictation key={`dictation:${threadId}:${cwd}`} client={props.dictation}
+              buttonClassName={voiceAction ? 'chat-composer-submit' : undefined}
               active={active && ready && !sending && !props.compacting && !settings && !settingsBusy && !goalBusy}
               disabled={!active || !ready || busy || settingsBusy || props.compacting || goalBusy}
               onBusyChange={state.setDictationBusy}
               onText={text => { flushSync(() => draft.appendDictation(text)); menu.input.current?.focus(); }} />}
-            <button type="submit" className="chat-composer-submit" aria-label={displayText(COMPOSER_ACTION_LABELS[action])}
+            {!voiceAction && <button type="submit"
+              className="chat-composer-submit" aria-label={displayText(COMPOSER_ACTION_LABELS[action])}
               onPointerDown={event => event.preventDefault()} aria-busy={state.pausing || sending} disabled={actionDisabled}>
               <ActionIcon size={desktop ? 18 : 22}
-                fill={action === 'continue' || (desktop && action === 'pause') ? 'currentColor' : 'none'} /></button>
+                fill={action === 'continue' || (desktop && action === 'pause') ? 'currentColor' : 'none'} /></button>}
           </div>
         </div>
       </div>

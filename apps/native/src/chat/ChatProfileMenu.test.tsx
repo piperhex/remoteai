@@ -13,7 +13,7 @@ vi.mock('react', async original => ({ ...await original<typeof React>(), useEffe
   useSyncExternalStore: (_subscribe: unknown, snapshot: () => unknown) => snapshot(),
 }));
 vi.mock('react-native', () => ({ Pressable: 'Pressable', Text: 'Text', TextInput: 'Input', View: 'View',
-  ActivityIndicator: 'Spinner', StyleSheet: { create: <T,>(value: T) => value } }));
+  ActivityIndicator: 'Spinner', Platform: { OS: 'android' }, StyleSheet: { create: <T,>(value: T) => value } }));
 vi.mock('@expo/vector-icons/Feather', () => ({ default: 'Icon' }));
 vi.mock('../components/BottomSheet', () => ({ BottomSheet: 'BottomSheet' }));
 vi.mock('../../../../shared/remote-chat/client/useGuiAccounts', () => ({ useGuiAccounts: () => ({

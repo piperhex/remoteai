@@ -17,6 +17,8 @@ import type { ReadUsage } from '../../../../shared/remote-chat/usage';
 import type { ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
 import type { ContextSettingsApi } from '../../../../shared/remote-chat/contextSettings';
 import { ComposerActionButton } from './ComposerActionButton';
+import { ComposerDictation } from './dictation/ComposerDictation';
+import type { DictationClient } from '../../../../shared/chat/dictation/client';
 import { ComposerModelButton } from './ComposerModelButton';
 import { ComposerAddMenu, type ComposerAddAction } from './ComposerAddMenu';
 import { ComposerPopover } from './ComposerPopover';
@@ -49,6 +51,7 @@ import type { QueueProps } from '../../../../shared/remote-chat/client/queueProp
 import { useQueueEditor } from '../../../../shared/remote-chat/client/useQueueEditor';
 
 interface Props {
+  dictation?: DictationClient;
   projectPicker?: ReactNode;
   suggestions?: PromptSuggestionSource;
   connection: ChatConnectionProps;
@@ -87,7 +90,7 @@ interface Props {
   loadConversations: ConversationSearch;
 }
 
-export function ChatComposer({ projectPicker, suggestions, models, selection, settingsBusy, settingsError,
+export function ChatComposer({ dictation, projectPicker, suggestions, models, selection, settingsBusy, settingsError,
   updateSettings, refreshModels,
   readUsage, readConversationMetrics, usageActive, tokenUsage, contextSettings, connection, queue, goals, goal, goalBusy,
   threadId, active, ready, sending, running, upload, reconnecting = false, interrupted = false, send, interrupt,
@@ -99,6 +102,7 @@ export function ChatComposer({ projectPicker, suggestions, models, selection, se
   useEffect(() => { if (active && ready && threadId) void goals?.load(threadId); }, [goals, threadId, active, ready]);
   const [adding, setAdding] = useState(false);
   const [pausing, setPausing] = useState(false);
+  const [dictationBusy, setDictationBusy] = useState(false);
   const [projectFiles, setProjectFiles] = useState<'files' | 'photos' | null>(null);
   const [attachmentError, setAttachmentError] = useState('');
   const anchor = useRef<View>(null);
@@ -108,7 +112,8 @@ export function ChatComposer({ projectPicker, suggestions, models, selection, se
   const photos = useChatPhotos({ threadId, sending });
   const quoteDraft = useChatQuotes();
   const disabled = !ready || settingsBusy || compacting;
-  const draft = useChatDraft({ threadId, sending, disabled: disabled || photos.busy || attachments.busy, selection, send });
+  const draft = useChatDraft({ threadId, sending,
+    disabled: disabled || photos.busy || attachments.busy || dictationBusy, selection, send });
   const menu = useComposerMenu({ draft, scope: `${threadId ?? ''}:${cwd}`, active,
     refresh: catalog.refresh, compact });
   const quoteCount = quoteDraft?.quotes.length ?? 0;
@@ -123,7 +128,7 @@ export function ChatComposer({ projectPicker, suggestions, models, selection, se
   const hasDraft = draft.hasContent || photos.photos.length > 0 || attachments.items.length > 0
     || Boolean(quoteDraft?.quotes.length);
   const queueEditor = useQueueEditor({ threadId, queue,
-    disabled: !active || disabled || sending || photos.busy || attachments.busy || hasDraft,
+    disabled: !active || disabled || sending || photos.busy || attachments.busy || hasDraft || dictationBusy,
     restore: (message) => {
       draft.restore({ ...message, images: [], attachments: [] });
       photos.restore(message.images); attachments.restore(message.attachments ?? []);
@@ -132,6 +137,7 @@ export function ChatComposer({ projectPicker, suggestions, models, selection, se
     } });
   const suggestion = useComposerSuggestion({ source: suggestions, value: draft.text,
     blocked: !active || !usageActive || disabled || sending || running || hasDraft || photos.busy || attachments.busy
+      || dictationBusy
       || queueEditor.loading || menu.open || adding || settings || !!projectFiles || goalMode.enabled,
     fill: text => { draft.setText(text); menu.setSelection({ start: text.length, end: text.length });
       menu.input.current?.focus(); } });
@@ -148,7 +154,7 @@ export function ChatComposer({ projectPicker, suggestions, models, selection, se
     focus: () => menu.input.current?.focus() });
   const cannotSend = disabled || attachmentBusy || goalBusy || (goalMode.enabled && running)
     || (action === 'send' && !hasDraft);
-  const actionDisabled = action === 'pause' ? !ready || pausing : cannotSend;
+  const actionDisabled = dictationBusy || (action === 'pause' ? !ready || pausing : cannotSend);
   const submit = async () => {
     if (actionDisabled) return;
     if (action === 'pause') {
@@ -247,8 +253,17 @@ export function ChatComposer({ projectPicker, suggestions, models, selection, se
         <View style={styles.composerTrailing}>
           <ComposerModelButton models={models} selection={selection} compact={compactField}
             onPress={() => setSettings(true)} />
-          <ComposerActionButton action={action} disabled={actionDisabled} busy={pausing || sending}
-            onPress={() => { void submit(); }} />
+          {dictation ? <ComposerDictation key={`dictation:${threadId}:${cwd}`} client={dictation}
+            active={active && ready && !sending && !compacting && !settings && !settingsBusy && !goalBusy}
+            visible={action === 'send' && !hasDraft}
+            disabled={!active || disabled || attachmentBusy || !!goalBusy || (goalMode.enabled && running)}
+            onBusyChange={setDictationBusy} onText={text => {
+              draft.appendDictation(text); requestAnimationFrame(() => menu.input.current?.focus());
+            }}>
+            <ComposerActionButton action={action} disabled={actionDisabled} busy={pausing || sending}
+              onPress={() => { void submit(); }} />
+          </ComposerDictation> : <ComposerActionButton action={action} disabled={actionDisabled} busy={pausing || sending}
+            onPress={() => { void submit(); }} />}
         </View>
       </View>
     </View>

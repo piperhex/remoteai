@@ -53,11 +53,15 @@ function Harness() {
   const [sent, setSent] = useState<string[]>([]);
   const [threadId, setThreadId] = useState('remote');
   const [ready, setReady] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [interrupted, setInterrupted] = useState(false);
   return <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', height: '100dvh' }}>
     <output aria-label="已发送">{sent.join('\n')}</output>
     <div style={{ position: 'absolute', top: 0, left: 0 }}>
       <button onClick={() => setThreadId(value => value === 'remote' ? 'other' : 'remote')}>切换对话</button>
       <button onClick={() => setReady(value => !value)}>切换连接</button>
+      <button onClick={() => setRunning(value => !value)}>切换运行</button>
+      <button onClick={() => setInterrupted(value => !value)}>切换中断</button>
       <button onClick={() => window.dispatchEvent(new CustomEvent('dictation-host-event', {
         detail: { method: GUI_ACCOUNT_SELECTION_EVENT, params: {} },
       }))}>切换账户</button>
@@ -65,7 +69,8 @@ function Harness() {
       <button onClick={() => setLanguage('ja')}>日本語</button>
       <button onClick={() => setLanguage('ru')}>Русский</button>
     </div>
-    <ChatComposer {...base} threadId={threadId} ready={ready} send={async input => {
+    <ChatComposer {...base} threadId={threadId} ready={ready} running={running} interrupted={interrupted}
+      interrupt={async () => { setRunning(false); setInterrupted(true); }} send={async input => {
       document.body.dataset.sent = JSON.stringify(input);
       setSent(values => [...values, input.text]); return true;
     }} />

@@ -1,5 +1,6 @@
 {
   "ios": {
+    "NSMicrophoneUsageDescription": "Remote AI がマイクを使って音声を文字に変換することを許可します",
     "NSCameraUsageDescription": "Remote AI が写真を撮影し、QR コードを読み取ることを許可します",
     "NSPhotoLibraryUsageDescription": "チャットで送信する写真を Remote AI が選択することを許可します",
     "NSPhotoLibraryAddUsageDescription": "Remote AI が画像を写真ライブラリに保存することを許可します",

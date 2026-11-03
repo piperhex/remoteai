@@ -10,10 +10,11 @@ interface Operation {
 interface View { phase: Phase; error?: string; started?: number; canRetry?: boolean }
 interface Options {
   client: DictationClient; active: boolean; onText: (text: string) => void; onBusyChange: (busy: boolean) => void;
+  record?: typeof startRecording;
 }
 const IDLE: View = { phase: 'idle' };
 
-export function useDictation({ client, active, onText, onBusyChange }: Options) {
+export function useDictation({ client, active, onText, onBusyChange, record = startRecording }: Options) {
   const [view, setView] = useState<View>(IDLE);
   const current = useRef<Operation>();
   const callbacks = useRef({ onText, onBusyChange });
@@ -61,7 +62,7 @@ export function useDictation({ client, active, onText, onBusyChange }: Options) 
         void client.cancel(sessionId).catch(() => undefined);
         return;
       }
-      operation.recording = await startRecording(operation.abort.signal);
+      operation.recording = await record(operation.abort.signal);
       // A cancelled permission prompt may return after this component has gone away.
       if (!valid(operation)) { operation.recording.cancel(); return; }
       change({ phase: 'recording', started: Date.now() });

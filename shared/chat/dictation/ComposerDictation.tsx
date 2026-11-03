@@ -26,6 +26,7 @@ function RecordingTimer({ started }: { started: number }) {
 
 export function ComposerDictation(props: {
   client: DictationClient; active: boolean; disabled: boolean;
+  buttonClassName?: string;
   onText: (text: string) => void; onBusyChange: (busy: boolean) => void;
 }) {
   const state = useDictation(props);
@@ -56,7 +57,7 @@ export function ComposerDictation(props: {
     <div className={styles.wrap}>
       <Tooltip title={label} open={state.phase === 'idle' ? undefined : false}
         styles={{ root: { maxWidth: 400 } }}>
-        <button type="button" className={styles.microphone} aria-label={label}
+        <button type="button" className={props.buttonClassName ?? styles.microphone} aria-label={label}
           aria-pressed={recording} disabled={(props.disabled && !recording) || pending}
           onClick={() => { if (recording) state.stop(); else { reset(); void state.start(); } }}>
           {pending ? <LoaderCircle size={19} className={styles.spinner} />

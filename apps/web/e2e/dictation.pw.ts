@@ -168,3 +168,40 @@ test('keeps an empty mobile composer clear of the microphone controls', async ({
   }
   await page.screenshot({ path: info.outputPath('empty-composer.png') });
 });
+
+for (const dark of [false, true]) {
+  test(`uses the empty mobile send position for voice input (${dark ? 'dark' : 'light'})`, async ({ page }, info) => {
+    test.skip(info.project.name !== 'web-mobile');
+    const backend = await fixture(page, info.project.name, dark);
+    const primary = page.locator('.chat-composer-submit');
+    await expect(primary).toHaveAccessibleName('语音输入');
+    await expect(primary).toBeEnabled();
+    await expect(page.getByRole('button', { name: '发送消息', exact: true })).toHaveCount(0);
+    await backend.editor.fill('   ');
+    await expect(primary).toHaveAccessibleName('语音输入');
+    await backend.editor.fill('');
+    await page.screenshot({ path: info.outputPath('mobile-voice-empty.png') });
+    await primary.click();
+    await expect(primary).toHaveAccessibleName('结束录音并转写');
+    await expect(page.getByRole('status').filter({ hasText: '正在录音' })).toContainText('0:01');
+    await page.screenshot({ path: info.outputPath('mobile-voice-recording.png') });
+    await primary.click();
+    await expect(primary).toBeDisabled();
+    await expect.poll(() => backend.uploads().length).toBe(1);
+    backend.reply({ text: '请检查代码。' });
+    await expect(backend.editor).toHaveValue('请检查代码。');
+    await expect(primary).toHaveAccessibleName('发送消息');
+    await expect(page.getByRole('status', { name: '已发送' })).toHaveText('');
+    await expect(page.locator('.ant-popover:visible')).toHaveCount(0);
+    await page.mouse.move(190, 300);
+    await page.screenshot({ path: info.outputPath('mobile-voice-draft.png') });
+    await backend.editor.fill('');
+    await page.getByRole('button', { name: '切换运行' }).click();
+    await expect(primary).toHaveAccessibleName('暂停生成');
+    await primary.click();
+    await expect(primary).toHaveAccessibleName('继续生成');
+    await page.screenshot({ path: info.outputPath('mobile-voice-continue.png') });
+    await backend.editor.fill('文字优先发送');
+    await expect(primary).toHaveAccessibleName('发送消息');
+  });
+}

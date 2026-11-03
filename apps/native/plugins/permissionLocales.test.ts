@@ -10,9 +10,11 @@ const readJson = (path: string) => JSON.parse(readFileSync(join(root, path), 'ut
 const { expo } = readJson('app.json') as {
   expo: { locales: Record<string, string>; plugins: (string | [string, Record<string, unknown>])[] };
 };
-const { LOCAL_NETWORK_USAGE } = require('./withChatTransport.cjs') as { LOCAL_NETWORK_USAGE: string };
+const { LOCAL_NETWORK_USAGE, MICROPHONE_USAGE } = require('./withChatTransport.cjs') as {
+  LOCAL_NETWORK_USAGE: string; MICROPHONE_USAGE: string;
+};
 
-// Plugin options that become Info.plist usage descriptions. withChatTransport removes the microphone one.
+// withChatTransport supplies the microphone prompt from the generated locale resource.
 const OPTION_KEYS: Record<string, string> = {
   cameraPermission: 'NSCameraUsageDescription',
   photosPermission: 'NSPhotoLibraryUsageDescription',
@@ -21,7 +23,9 @@ const OPTION_KEYS: Record<string, string> = {
 };
 
 function baseUsageDescriptions() {
-  const base: Record<string, string> = { NSLocalNetworkUsageDescription: LOCAL_NETWORK_USAGE };
+  const base: Record<string, string> = {
+    NSLocalNetworkUsageDescription: LOCAL_NETWORK_USAGE, NSMicrophoneUsageDescription: MICROPHONE_USAGE,
+  };
   for (const plugin of expo.plugins) {
     if (!Array.isArray(plugin)) continue;
     for (const [option, value] of Object.entries(plugin[1])) {

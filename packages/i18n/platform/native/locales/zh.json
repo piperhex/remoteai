@@ -1,5 +1,6 @@
 {
   "ios": {
+    "NSMicrophoneUsageDescription": "允许 Remote AI 使用麦克风，将语音转换为文字",
     "NSCameraUsageDescription": "允许 Remote AI 拍摄照片和扫描二维码",
     "NSPhotoLibraryUsageDescription": "允许 Remote AI 选择照片发送到聊天",
     "NSPhotoLibraryAddUsageDescription": "允许 Remote AI 将图片保存到相册",

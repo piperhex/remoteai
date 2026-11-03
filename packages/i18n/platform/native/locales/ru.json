@@ -1,5 +1,6 @@
 {
   "ios": {
+    "NSMicrophoneUsageDescription": "Разрешить Remote AI использовать микрофон для преобразования речи в текст",
     "NSCameraUsageDescription": "Разрешите Remote AI делать фото и сканировать QR-коды",
     "NSPhotoLibraryUsageDescription": "Разрешите Remote AI выбирать фото для отправки в чат",
     "NSPhotoLibraryAddUsageDescription": "Разрешите Remote AI сохранять изображения в «Фото»",
