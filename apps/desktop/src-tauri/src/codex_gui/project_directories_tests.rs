@@ -65,8 +65,50 @@ fn computer_root_is_navigation_only() {
     assert!(!listing.entries.is_empty());
     for root in listing.entries {
         assert!(Path::new(&root.path).is_absolute());
-        assert_eq!(browse(&root.path).unwrap().parent, Some(String::new()));
+        assert!(root.directory);
+        assert!(root.modified.is_none());
+        assert!(root.size.is_none());
     }
+}
+
+#[tokio::test]
+async fn directory_requests_do_not_wait_for_chat_connection_or_replacement() {
+    use super::super::{execute_request, protocol::GuiRequest, GuiState};
+    let state = GuiState::default();
+    let _connecting = state.client.lock().await;
+    let _replacing = state.activity.write().await;
+    let root = tempfile::tempdir().unwrap();
+    fs::create_dir(root.path().join("project")).unwrap();
+    let response = timeout(
+        Duration::from_secs(2),
+        execute_request(
+            &state,
+            GuiRequest::ProjectDirectories {
+                directory: execution_path(root.path()),
+                include_files: true,
+            },
+        ),
+    )
+    .await
+    .expect("filesystem browsing must not wait for chat locks")
+    .unwrap();
+    assert_eq!(response.data["entries"][0]["name"], "project");
+}
+
+#[tokio::test]
+async fn computer_roots_are_available_without_a_chat_client() {
+    use super::super::{execute_request, protocol::GuiRequest, GuiState};
+    let response = execute_request(
+        &GuiState::default(),
+        GuiRequest::ProjectDirectories {
+            directory: String::new(),
+            include_files: true,
+        },
+    )
+    .await
+    .unwrap();
+    assert!(!response.data["entries"].as_array().unwrap().is_empty());
+    assert!(response.data["shortcuts"]["home"].is_string());
 }
 
 #[test]

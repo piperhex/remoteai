@@ -5,11 +5,16 @@ use super::{
     protocol::GuiResponse,
 };
 use serde::Serialize;
+use std::time::Duration;
 use std::{fs, path::Path};
+use tokio::{sync::Semaphore, time::timeout};
 
 const MAX_ENTRIES: usize = 500;
 const MAX_SCANNED_ENTRIES: usize = 10_000;
 const MAX_PATH_BYTES: usize = 4096;
+const BROWSE_TIMEOUT: Duration = Duration::from_secs(10);
+// Timed-out filesystem calls cannot be cancelled; keep their workers bounded until the OS returns.
+static BROWSE_WORKERS: Semaphore = Semaphore::const_new(4);
 
 #[derive(Serialize)]
 struct Entry {
@@ -39,18 +44,29 @@ struct DirectoryShortcuts {
 
 fn directory_shortcuts() -> DirectoryShortcuts {
     // OS known folders preserve redirected Windows folders and Linux XDG preferences.
+    let [home, desktop, downloads] = super::platform::directory_shortcuts();
     DirectoryShortcuts {
-        home: dirs::home_dir().as_deref().map(execution_path),
-        desktop: dirs::desktop_dir().as_deref().map(execution_path),
-        downloads: dirs::download_dir().as_deref().map(execution_path),
+        home: home.as_deref().map(execution_path),
+        desktop: desktop.as_deref().map(execution_path),
+        downloads: downloads.as_deref().map(execution_path),
     }
 }
 
 pub(super) async fn list(directory: String, include_files: bool) -> Result<GuiResponse> {
-    let listing =
-        tauri::async_runtime::spawn_blocking(move || browse_entries(&directory, include_files))
+    let listing = timeout(BROWSE_TIMEOUT, async move {
+        let permit = BROWSE_WORKERS
+            .acquire()
             .await
-            .map_err(|_| GuiError::ProjectDirectories)??;
+            .map_err(|_| GuiError::ProjectDirectories)?;
+        tauri::async_runtime::spawn_blocking(move || {
+            let _permit = permit;
+            browse_entries(&directory, include_files)
+        })
+        .await
+        .map_err(|_| GuiError::ProjectDirectories)?
+    })
+    .await
+    .map_err(|_| GuiError::ProjectDirectories)??;
     let data = serde_json::to_value(listing).map_err(|_| GuiError::ProjectDirectories)?;
     Ok(GuiResponse { data })
 }
@@ -62,7 +78,13 @@ fn browse_entries(directory: &str, include_files: bool) -> Result<DirectoryListi
             parent: None,
             entries: directory_roots()
                 .iter()
-                .map(|path| entry(path, true))
+                .map(|path| Entry {
+                    name: execution_path(path),
+                    path: execution_path(path),
+                    directory: true,
+                    modified: None,
+                    size: None,
+                })
                 .collect(),
             truncated: false,
             shortcuts: Some(directory_shortcuts()),

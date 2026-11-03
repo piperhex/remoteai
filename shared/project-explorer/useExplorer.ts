@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ProjectDirectoriesResponse } from '../remote-chat/projectDirectories';
 import { samePath, visibleEntries, type ExplorerEntry, type ExplorerProps, type Sort, type View } from './model';
+import { loadDirectory } from './loadDirectory';
 
 const VIEW_STORAGE = 'remoteai:project-explorer:view';
 function savedView(): View {
@@ -31,20 +32,27 @@ export function useExplorer({ load, cwd = '' }: Pick<ExplorerProps, 'load' | 'cw
   const [hidden, setHidden] = useState(true);
   const [details, setDetails] = useState(false);
   const requestId = useRef(0);
-  useEffect(() => {
-    let cancelled = false;
-    setRootsError(false);
-    void load('').then(value => {
-      if (cancelled) return;
-      setRoots(value.entries.map(entry => ({ ...entry, directory: true })));
-      setShortcuts(value.shortcuts ?? {});
-    }).catch(() => { if (!cancelled) setRootsError(true); });
-    return () => { cancelled = true; };
-  }, [load, revision]);
+  const hostLoad = useRef(load);
+  const rootRequest = useRef<{ load: typeof load; promise: Promise<ProjectDirectoriesResponse> }>();
   useEffect(() => {
     const id = ++requestId.current;
+    if (hostLoad.current !== load) {
+      hostLoad.current = load;
+      setRoots([]); setShortcuts({});
+    }
+    if (rootRequest.current?.load !== load) {
+      rootRequest.current = { load, promise: loadDirectory(load, '') };
+    }
+    const roots = rootRequest.current.promise;
+    setRootsError(false);
+    void roots.then(value => {
+      if (id !== requestId.current) return;
+      setRoots(value.entries.map(entry => ({ ...entry, directory: true })));
+      setShortcuts(value.shortcuts ?? {});
+    }).catch(() => { if (id === requestId.current) setRootsError(true); });
     setLoading(true); setError(false); setResult(undefined); setSelected('');
-    void load(directory, true).then(value => {
+    // The computer view and sidebar share one request; folder navigation reuses the host roots.
+    void (directory ? loadDirectory(load, directory, true) : roots).then(value => {
       if (id === requestId.current) setResult(value);
     }).catch(() => { if (id === requestId.current) setError(true); })
       .finally(() => { if (id === requestId.current) setLoading(false); });
@@ -73,6 +81,6 @@ export function useExplorer({ load, cwd = '' }: Pick<ExplorerProps, 'load' | 'cw
     selection, selected, setSelected, query, setQuery: (value: string) => { setQuery(value); setSelected(''); },
     view, setView, sort, setSort, descending, setDescending, hidden, setHidden, details, setDetails,
     navigate, travel, canBack: history.index > 0, canForward: history.index < history.paths.length - 1,
-    refresh: () => setRevision(value => value + 1) };
+    refresh: () => { rootRequest.current = undefined; setRevision(value => value + 1); } };
 }
 export type ExplorerState = ReturnType<typeof useExplorer>;

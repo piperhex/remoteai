@@ -22,9 +22,11 @@ const directories = new Map<string, ProjectDirectory[]>([
   [explorerRoot, entries], ...folders.map(name => [`${explorerRoot}/${name}`, []] as [string, ProjectDirectory[]]),
 ]);
 export const explorerCalls: object[] = [];
+export const explorerBlockedPaths = new Set<string>();
 function parent(path: string) { return /^[a-z]:\/$/i.test(path) ? '' : path.slice(0, path.lastIndexOf('/')) + (/^[a-z]:\/[^/]+$/i.test(path) ? '/' : ''); }
 
 async function listing(directory: string, includeFiles: boolean): Promise<ProjectDirectoriesResponse> {
+  if (explorerBlockedPaths.has(directory)) await new Promise(() => {});
   if (directory.endsWith('/slow')) await new Promise(resolve => setTimeout(resolve, 500));
   const value = directories.get(directory);
   if (!value) throw new Error('unavailable');

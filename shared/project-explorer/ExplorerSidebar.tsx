@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, Download, Folder, HardDrive, House, Monitor } from 'lucide-react';
 import { samePath, textKey, type ExplorerEntry, type ExplorerProps } from './model';
 import type { ExplorerState } from './useExplorer';
+import { loadDirectory } from './loadDirectory';
 
 const SHORTCUTS = [
   { key: 'home', Icon: House },
@@ -22,7 +23,8 @@ function Drive({ entry, props, state, busy }: {
     if (loading) return;
     if (expanded) { setExpanded(false); return; }
     setExpanded(true); setLoading(true); setFailed(false);
-    try { setChildren((await props.load(entry.path)).entries.map(child => ({ ...child, directory: true }))); }
+    try { setChildren((await loadDirectory(props.load, entry.path)).entries
+      .map(child => ({ ...child, directory: true }))); }
     catch { setFailed(true); }
     finally { setLoading(false); }
   };

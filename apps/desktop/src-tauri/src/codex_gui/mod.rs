@@ -192,8 +192,12 @@ pub(crate) async fn codex_gui_request(
 
 /// Share request validation and typed failures with background GUI operations.
 async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiResponse> {
-    // Local Git downloads also work when the chat server is disconnected.
+    // Filesystem browsing must not wait for chat startup, reconnects or CLI replacement.
     let request = match request {
+        GuiRequest::ProjectDirectories {
+            directory,
+            include_files,
+        } => return project_directories::list(directory, include_files).await,
         GuiRequest::ProjectFileRead(target) => return project_editor::read(target).await,
         GuiRequest::ProjectFileBlame(request) => return project_editor::blame::read(request).await,
         GuiRequest::ProjectFileWrite(request) => return project_editor::write(request).await,
@@ -261,13 +265,6 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
     }
     if let GuiRequest::ProjectFiles(options) = request {
         return project_files::list(&client, options).await;
-    }
-    if let GuiRequest::ProjectDirectories {
-        directory,
-        include_files,
-    } = request
-    {
-        return project_directories::list(directory, include_files).await;
     }
     if let GuiRequest::EditMessage(edit) = request {
         return message_edit::submit(&client, edit).await;

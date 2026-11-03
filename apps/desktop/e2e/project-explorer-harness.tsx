@@ -10,12 +10,14 @@ import { useGuiLanguage } from '../src/i18n/useGuiLanguage';
 import { setLanguage } from '../../web/src/i18n';
 import { applyThemeMode } from '../src/utils/themeMode';
 import { setThemeMode } from '../../web/src/theme/preference';
-import { explorerRoot, explorerCalls, explorerRequest } from './project-explorer-fixture';
+import { explorerRoot, explorerCalls, explorerRequest, explorerBlockedPaths } from './project-explorer-fixture';
 import 'antd/dist/reset.css';
 
 const params = new URLSearchParams(location.search);
 const mode = params.get('mode') ?? 'local';
 const dark = params.has('dark');
+const initialPath = params.has('computer') ? '' : explorerRoot;
+if (params.has('stalled')) explorerBlockedPaths.add(initialPath);
 if (mode === 'web') {
   await import('../../web/src/styles.css');
   await import('../../web/src/chat/chat.css');
@@ -30,12 +32,13 @@ guiApi.request = explorerRequest;
 const controller = new ChatController(() => ({ start() {}, stop() {},
   request: <T,>(_method: string, body: object) => explorerRequest<T>(body),
 }));
-Object.assign(controller.snapshot(), { ready: true, draftProject: { cwd: explorerRoot, label: 'zczd-wms-b' } });
-Object.assign(window, { explorerCalls, setExplorerLanguage: setLanguage });
+Object.assign(controller.snapshot(), { ready: true,
+  draftProject: initialPath ? { cwd: initialPath, label: 'zczd-wms-b' } : null });
+Object.assign(window, { explorerCalls, explorerBlockedPaths, setExplorerLanguage: setLanguage });
 
 function Harness() {
   useGuiLanguage();
-  const [path, setPath] = useState(explorerRoot);
+  const [path, setPath] = useState(initialPath);
   const state = useSyncExternalStore(controller.subscribe, controller.snapshot);
   return <ConfigProvider theme={{ algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm,
     token: { motion: false, colorPrimary: '#1677d2' } }}>

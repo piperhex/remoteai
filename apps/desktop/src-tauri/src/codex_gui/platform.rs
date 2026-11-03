@@ -1,17 +1,46 @@
 use std::path::Path;
 use tokio::process::Command;
 
-/// Enumerate filesystem roots only from a blocking worker, since a drive may be slow to respond.
+/// Enumerate assigned drive letters without opening potentially unavailable volumes.
 pub(super) fn directory_roots() -> Vec<std::path::PathBuf> {
     #[cfg(windows)]
     {
+        // SAFETY: GetLogicalDrives takes no pointers and returns the process's drive bitmask.
+        let drives = unsafe { windows_sys::Win32::Storage::FileSystem::GetLogicalDrives() };
         (b'A'..=b'Z')
+            .filter(|letter| drives & (1 << (letter - b'A')) != 0)
             .map(|letter| std::path::PathBuf::from(format!("{}:\\", char::from(letter))))
-            .filter(|path| path.is_dir())
             .collect()
     }
     #[cfg(not(windows))]
     vec![std::path::PathBuf::from("/")]
+}
+
+/// Resolve shortcuts without checking redirected folders over a network connection.
+pub(super) fn directory_shortcuts() -> [Option<std::path::PathBuf>; 3] {
+    #[cfg(windows)]
+    {
+        use windows::Win32::UI::Shell::{FOLDERID_Desktop, FOLDERID_Downloads, FOLDERID_Profile};
+        [FOLDERID_Profile, FOLDERID_Desktop, FOLDERID_Downloads].map(|id| known_folder(&id))
+    }
+    #[cfg(not(windows))]
+    [dirs::home_dir(), dirs::desktop_dir(), dirs::download_dir()]
+}
+
+#[cfg(windows)]
+fn known_folder(id: &windows::core::GUID) -> Option<std::path::PathBuf> {
+    use std::{ffi::OsString, os::windows::ffi::OsStringExt};
+    use windows::Win32::{
+        System::Com::CoTaskMemFree,
+        UI::Shell::{SHGetKnownFolderPath, KF_FLAG_DONT_VERIFY},
+    };
+    // SAFETY: the OS returns a NUL-terminated allocation; copy it before freeing with its allocator.
+    unsafe {
+        let value = SHGetKnownFolderPath(id, KF_FLAG_DONT_VERIFY, None).ok()?;
+        let path = std::path::PathBuf::from(OsString::from_wide(value.as_wide()));
+        CoTaskMemFree(Some(value.0.cast()));
+        Some(path)
+    }
 }
 
 pub(super) fn execution_path(path: &Path) -> String {

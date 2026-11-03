@@ -17,7 +17,7 @@ export function ExplorerNavigation({ state, t, busy }: { state: ExplorerState; t
   return <div className="pe-navigation">
     <div className="pe-nav-buttons">{buttons.map(button => <button type="button" key={button.key}
       aria-label={t(textKey(button.key))} title={t(textKey(button.key))}
-      disabled={busy || state.loading || button.disabled} onClick={button.click}>
+      disabled={busy || button.disabled} onClick={button.click}>
       <button.icon size={19} aria-hidden="true" /></button>)}</div>
     <div className="pe-address" onDoubleClick={() => { if (!busy) setEditing(true); }}>
       <Monitor size={19} aria-hidden="true" />
