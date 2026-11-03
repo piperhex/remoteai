@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha1"
 	"encoding/base64"
@@ -23,7 +22,7 @@ func Handler(router *gin.Engine) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		original := originalRequest{request.Method, request.URL.RequestURI()}
 		request = request.Clone(context.WithValue(request.Context(), originalRequestKey{}, original))
-		if request.Method == http.MethodHead {
+		if request.Method == http.MethodHead && canonicalRoute(routes, http.MethodHead, request.URL.EscapedPath()) == "" {
 			request.Method = http.MethodGet
 		}
 		path := request.URL.EscapedPath()
@@ -74,33 +73,6 @@ func canonicalRoute(routes gin.RoutesInfo, method, path string) string {
 	return ""
 }
 
-type captureWriter struct {
-	gin.ResponseWriter
-	Body          bytes.Buffer
-	Code          int
-	WrittenHeader bool
-}
-
-func (writer *captureWriter) WriteHeader(code int) {
-	if !writer.WrittenHeader {
-		writer.Code = code
-	}
-}
-func (writer *captureWriter) WriteHeaderNow() { writer.WrittenHeader = true }
-func (writer *captureWriter) Write(data []byte) (int, error) {
-	writer.WrittenHeader = true
-	return writer.Body.Write(data)
-}
-func (writer *captureWriter) WriteString(data string) (int, error) { return writer.Write([]byte(data)) }
-func (writer *captureWriter) Status() int                          { return writer.Code }
-func (writer *captureWriter) Size() int {
-	if !writer.WrittenHeader {
-		return -1
-	}
-	return writer.Body.Len()
-}
-func (writer *captureWriter) Written() bool { return writer.WrittenHeader }
-
 func transportHeaders() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("X-Powered-By", "Express")
@@ -108,9 +80,14 @@ func transportHeaders() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		writer := &captureWriter{ResponseWriter: c.Writer, Code: http.StatusOK}
+		original, _ := c.Request.Context().Value(originalRequestKey{}).(originalRequest)
+		writer := &captureWriter{ResponseWriter: c.Writer, Code: http.StatusOK,
+			Context: c.Request.Context(), Head: original.Method == http.MethodHead}
 		c.Writer = writer
 		c.Next()
+		if writer.Streaming {
+			return
+		}
 		data := writer.Body.Bytes()
 		headers := writer.Header()
 		if len(data) > 0 && headers.Get("ETag") == "" && !c.GetBool("skipETag") {
@@ -133,7 +110,6 @@ func transportHeaders() gin.HandlerFunc {
 			headers["content-length"] = []string{"0"}
 		}
 		writer.ResponseWriter.WriteHeader(writer.Code)
-		original, _ := c.Request.Context().Value(originalRequestKey{}).(originalRequest)
 		if len(data) > 0 && original.Method != http.MethodHead {
 			// A disconnected client cannot receive another error response after headers have been written.
 			_, _ = writer.ResponseWriter.Write(data)

@@ -2,6 +2,7 @@ package updatecache
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -15,6 +16,8 @@ import (
 	"github.com/codex-switch/admin-go/internal/platform"
 	"github.com/gin-gonic/gin"
 )
+
+const maxConcurrentDownloads = 16
 
 // Register serves only already cached official assets. Public requests cannot trigger fetches or choose upstream URLs.
 func Register(router *gin.Engine, config platform.Config) func() {
@@ -31,7 +34,12 @@ func Register(router *gin.Engine, config platform.Config) func() {
 	} else {
 		close(s.done)
 	}
-	slots := make(chan struct{}, 16)
+	s.registerRoutes(router)
+	return func() { cancel(); <-s.done; transport.CloseIdleConnections() }
+}
+
+func (s *cache) registerRoutes(router *gin.Engine) {
+	slots := make(chan struct{}, maxConcurrentDownloads)
 	handler := func(c *gin.Context) {
 		defer func() {
 			if c.Writer.Status() >= http.StatusBadRequest {
@@ -50,7 +58,6 @@ func Register(router *gin.Engine, config platform.Config) func() {
 	router.GET("/update-packages/:version/:name", handler)
 	router.HEAD("/update-packages/:version/:name", handler)
 	router.GET("/update-packages", s.status)
-	return func() { cancel(); <-s.done; transport.CloseIdleConnections() }
 }
 
 func (s *cache) serve(c *gin.Context) {
@@ -81,7 +88,22 @@ func (s *cache) serve(c *gin.Context) {
 	c.Header("Cache-Control", "public, max-age=3600")
 	c.Header("Content-Type", "application/octet-stream")
 	c.Header("X-Content-Type-Options", "nosniff")
-	http.ServeContent(c.Writer, c.Request, entry.Asset.Name, info.ModTime(), file)
+	content := &downloadContent{ReadSeeker: file, ctx: c.Request.Context()}
+	http.ServeContent(c.Writer, c.Request, entry.Asset.Name, info.ModTime(), content)
+}
+
+// Keep cancellation visible between file reads, including before the first network write.
+// Wrapping the file also prevents optional copy fast paths from bypassing this check.
+type downloadContent struct {
+	io.ReadSeeker
+	ctx context.Context
+}
+
+func (content *downloadContent) Read(data []byte) (int, error) {
+	if err := content.ctx.Err(); err != nil {
+		return 0, err
+	}
+	return content.ReadSeeker.Read(data)
 }
 
 // lookup requires mu to be held. Asset IDs only resolve already verified, retained files.
