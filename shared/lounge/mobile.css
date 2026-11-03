@@ -63,7 +63,9 @@
 .lounge-mobile .lounge-bubble.image-only { background: transparent; padding: 0; }
 .lounge-mobile .lounge-text { font-size: 14px; }
 .lounge-mobile .lounge-message.is-own .lounge-bubble { background: var(--lounge-blue-bg); color: var(--lounge-text); }
-.lounge-mobile .lounge-message-time { font-size: 9px; color: var(--lounge-muted); margin-top: 5px; }
+.lounge-mobile .lounge-message-footer { display: flex; align-items: center; gap: 5px; margin-top: 5px; }
+.lounge-mobile .lounge-message-time { font-size: 9px; color: var(--lounge-muted); }
+.lounge-mobile .lounge-message-footer .lounge-delivery { align-self: center; margin: 0; }
 .lounge-mobile .lounge-composer { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px 44px;
   gap: 5px; align-items: end; min-height: 0; padding: 10px; background: var(--lounge-paper); }
 .lounge-mobile .lounge-toolbar { grid-column: 1; grid-row: 4; margin: 0; }

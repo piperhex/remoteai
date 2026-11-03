@@ -137,6 +137,7 @@ export const useLoungeStyles = createLoungeStyles(color => ({
   rowMeta: { alignItems: 'flex-end', gap: 6 },
   messageText: { ...textMetrics(MESSAGE_FONT_SIZE, 23), alignSelf: 'stretch', flexShrink: 0,
     color: color('#202b33', 'ink') },
+  messageFooter: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   messageTime: { ...textMetrics(9, 14), color: color('#687c89', 'muted') },
   messageName: { ...textMetrics(10, 15), color: color('#687c89', 'muted') },
   messageAvatar: { width: 30, height: 30, borderRadius: 11 },

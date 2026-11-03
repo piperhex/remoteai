@@ -5,6 +5,7 @@ import { displayText as t } from '../localization/messages';
 import type { MobileLounge } from './useMobileLounge';
 import { LoungeAvatar } from './LoungeAvatar';
 import { LoungeMessageBody } from './LoungeMessageBody';
+import { LoungeDeliveryStatus } from './LoungeDeliveryStatus';
 import type { LoungeController } from './controller';
 import { historyKey } from './archive';
 import { scrollToLoungeMessage } from './scrollToMessage';
@@ -67,13 +68,17 @@ export function MobileLoungeThread({ model, controller, mention }: {
           <div className="lounge-message-main">
             <LoungeSender user={message.sender} manage={state.policy.moderator && !own
               ? () => model.setModerating(message.sender) : undefined} />
-            <LoungeMessageBody mobile message={message} preview={model.setPreview} onImageLoad={scrollBottom}
+            <LoungeMessageBody mobile showDelivery={false} message={message}
+              preview={model.setPreview} onImageLoad={scrollBottom}
               controller={controller} locate={model.locate}
               actions={{ reply: model.quote, blocked: state.blocked.includes(message.sender.id),
                 direct: !own && state.directAvailable ? () => model.select(message.sender) : undefined,
                 block: !own && state.directAvailable ? () => model.setBlocking(message.sender) : undefined }} />
-            <time className="lounge-message-time" dateTime={message.sentAt}>
-              {new Date(message.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
+            <footer className="lounge-message-footer">
+              <time className="lounge-message-time" dateTime={message.sentAt}>
+                {new Date(message.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>
+              <LoungeDeliveryStatus delivery={message.delivery} />
+            </footer>
           </div>
         </article>;
       })}

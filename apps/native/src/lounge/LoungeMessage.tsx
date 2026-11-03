@@ -99,13 +99,10 @@ export function LoungeMessage({ message, own, manage, preview, onImageLoad, repl
         {message.images.map((uri, index) => <LoungeImage key={index} uri={uri} preview={preview}
           onLongPress={openMenu} onLoad={onImageLoad} />)}
       </Pressable>
-      {history ? <View style={historyStyles.footer}>
-        <Text style={historyStyles.time}>{timestamp}</Text>
+      <View style={history ? historyStyles.footer : styles.messageFooter}>
+        <Text style={history ? historyStyles.time : styles.messageTime}>{timestamp}</Text>
         <LoungeDeliveryStatus delivery={message.delivery} inline />
-      </View> : <>
-        <Text style={styles.messageTime}>{timestamp}</Text>
-        <LoungeDeliveryStatus delivery={message.delivery} />
-      </>}
+      </View>
     </View>
     {menu && reply && <LoungeMessageActions anchor={menu} message={message} reply={reply} close={() => setMenu(undefined)}
       direct={direct} block={block} blocked={blocked} />}
