@@ -24,6 +24,9 @@ interface Props {
 }
 
 const LIST_BOTTOM_SPACING = 16;
+const MAX_INDENT_DEPTH = 6;
+const LEVEL_INDENT = 12;
+const GROUP_CONTENT_INDENT = 40;
 
 export function ChatThreadList({ state, newChat, select, controller, bottomInset,
   openActions, openProjectActions }: Props) {
@@ -38,7 +41,10 @@ export function ChatThreadList({ state, newChat, select, controller, bottomInset
   const ready = state.ready;
   return (
     <SectionList style={styles.fill} sections={groups.map(group =>
-      ({ ...group, key: group.id, label: group.kind === 'group' || group.cwd
+      ({ ...group, key: group.id,
+        contentIndent: Math.min(group.depth, MAX_INDENT_DEPTH) * LEVEL_INDENT
+          + (group.kind === 'group' ? GROUP_CONTENT_INDENT : 0),
+        label: group.kind === 'group' || group.cwd
         ? group.label : t(group.id === 'ungrouped' ? 'client.groups.ungrouped' : 'client.chat.recent') }))}
       keyExtractor={(thread) => thread.id}
       contentContainerStyle={[listStyles.content, { paddingBottom: bottomInset + LIST_BOTTOM_SPACING }]}
@@ -47,7 +53,7 @@ export function ChatThreadList({ state, newChat, select, controller, bottomInset
       onLayout={pagination.onLayout} onContentSizeChange={pagination.onContentSizeChange}
       onScroll={pagination.onScroll} scrollEventThrottle={16}
       renderSectionHeader={({ section }) => <View style={[styles.row,
-        { paddingLeft: Math.min(section.depth, 6) * 12 }]}>
+        { paddingLeft: Math.min(section.depth, MAX_INDENT_DEPTH) * LEVEL_INDENT }]}>
         <Pressable accessibilityRole="button" accessibilityState={{ expanded: !section.collapsed }}
           accessibilityLabel={section.kind === 'group'
             ? t(section.collapsed ? 'client.groups.expand' : 'client.groups.collapse', { name: section.label })
@@ -77,7 +83,8 @@ export function ChatThreadList({ state, newChat, select, controller, bottomInset
       </View>}
       renderSectionFooter={({ section }) => section.canToggle ? <Pressable accessibilityRole="button"
         accessibilityLabel={`${section.expanded ? t("client.chat.collapse") : t("client.chat.showMore.83ad87")}：${section.label}`}
-        accessibilityState={{ expanded: section.expanded }} style={listStyles.more} onPress={() => toggle(section.id)}>
+        accessibilityState={{ expanded: section.expanded }}
+        style={[listStyles.more, { marginLeft: section.contentIndent }]} onPress={() => toggle(section.id)}>
         <Text style={styles.subtitle}>{section.expanded ? t("client.chat.collapse") : t("client.chat.showMore.83ad87")}</Text>
       </Pressable> : null}
       renderItem={({ item, section }) => {
@@ -89,7 +96,7 @@ export function ChatThreadList({ state, newChat, select, controller, bottomInset
           onAccessibilityAction={event => { if (event.nativeEvent.actionName === 'longpress') openActions(item); }}
           accessibilityState={{ selected: state.selected?.id === item.id }}
           disabled={(!ready && !state.cachedThreadIds?.includes(item.id)) || state.sending}
-          style={[listStyles.thread, { marginLeft: Math.min(section.depth, 6) * 12 + (section.kind === 'group' ? 40 : 0) },
+          style={[listStyles.thread, { marginLeft: section.contentIndent },
             state.selected?.id === item.id && listStyles.selected]}
           onPress={() => select(item)}>
           <Text numberOfLines={1} style={listStyles.title}>{view.title}</Text>
