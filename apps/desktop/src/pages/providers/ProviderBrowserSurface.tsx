@@ -4,6 +4,7 @@ import { listen } from '@tauri-apps/api/event';
 import { Globe } from 'lucide-react';
 import type { BrowserSurfaceProps } from '../../../../../shared/provider-market/ProviderBrowser';
 import { nativeBrowserSession } from './providerBrowserSession';
+import { browserOverlayAttributes, hasBrowserOverlay } from './browserOverlays';
 
 function browserFeedback(state: { url: string; unsupported: boolean; needsDesktop: boolean; failed: boolean }) {
   if (!state.url) return 'market.browserBlank';
@@ -56,13 +57,12 @@ export function ProviderBrowserSurface({ tab, active, command, onNavigate, onPop
     void unlisten.catch(() => setFailed(true));
     const observer = new ResizeObserver(sync); observer.observe(element);
     const checkModal = () => {
-      const visible = Boolean(hideForModal) && [...document.querySelectorAll('[aria-modal="true"]')]
-        .some(dialog => dialog.getClientRects().length > 0);
+      const visible = hasBrowserOverlay(element, Boolean(hideForModal));
       if (visible !== modalVisible) { modalVisible = visible; sync(); }
     };
     const overlays = new MutationObserver(checkModal);
     overlays.observe(document.body, { childList: true, subtree: true, attributes: true,
-      attributeFilter: ['style', 'class', 'aria-modal'] });
+      attributeFilter: browserOverlayAttributes });
     checkModal();
     window.addEventListener('resize', sync);
     window.addEventListener('scroll', sync, true);

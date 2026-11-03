@@ -31,7 +31,7 @@ export function ImageViewerFrame({ src, description, close, translate = defaultT
     <button type="button" aria-label={translate('client.shared.rotateImage')} onClick={gestures.rotate}>↻</button>
   </div>;
   return <dialog ref={(dialog) => { if (dialog && !dialog.open) dialog.showModal(); }}
-    className="cs-image-viewer" aria-label={description} onCancel={close}
+    className="cs-image-viewer" aria-modal="true" aria-label={description} onCancel={close}
     onWheel={event => event.stopPropagation()}>
     <div className={`cs-image-stage${naturalSize ? ' cs-image-stage-natural' : ''}`}
       ref={gestures.stageRef} {...gestures.stageProps} {...backdrop} onDragStart={event => event.preventDefault()}

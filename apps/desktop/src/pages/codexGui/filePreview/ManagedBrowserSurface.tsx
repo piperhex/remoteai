@@ -3,6 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { Globe } from 'lucide-react';
 import type { BrowserSurfaceProps } from '../../../../../../shared/provider-market/ProviderBrowser';
 import { ProviderBrowserSurface } from '../../providers/ProviderBrowserSurface';
+import { browserOverlayAttributes, hasBrowserOverlay } from '../../providers/browserOverlays';
 import { BrowserClientContext } from './browserClient';
 import { placeBrowser } from './nativeBrowserPlacement';
 
@@ -28,7 +29,7 @@ function ManagedBrowserSurface({ tab, active, onNavigate, t }: BrowserSurfacePro
       if (stopped) return;
       flight = true;
       const bounds = element.getBoundingClientRect();
-      const modal = [...document.querySelectorAll('[aria-modal="true"]')].some(node => node.getClientRects().length);
+      const modal = hasBrowserOverlay(element);
       const visible = current.current.active && !document.hidden && !modal && bounds.width > 0 && bounds.height > 0;
       try {
         await placeBrowser({ threadId: tab.automationThread, tabId: tab.id,
@@ -42,7 +43,7 @@ function ManagedBrowserSurface({ tab, active, onNavigate, t }: BrowserSurfacePro
     const observer = new ResizeObserver(sync); observer.observe(element);
     const overlays = new MutationObserver(sync);
     overlays.observe(document.body, { childList: true, subtree: true, attributes: true,
-      attributeFilter: ['style', 'class', 'aria-modal'] });
+      attributeFilter: browserOverlayAttributes });
     window.addEventListener('resize', sync); window.addEventListener('scroll', sync, true);
     document.addEventListener('visibilitychange', sync);
     const listener = listen<{ url: string; popup?: boolean }>(`conversation-browser-${tab.id}`, ({ payload }) => {
