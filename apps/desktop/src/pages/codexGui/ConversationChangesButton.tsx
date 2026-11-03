@@ -20,10 +20,8 @@ export function ConversationChangesButton({ value }: { value?: Pick<Conversation
   const register = panel?.setConversationChanges;
   useEffect(() => { register?.(entry); }, [register, entry]);
   const showingChanges = Boolean(panel?.visible && panel.showingChanges);
-  const visible = Boolean(panel?.visible || (workspace?.tabs.visible
-    && workspace.tabs.entries.some(tab => tab.id === workspace.tabs.selected)));
   const label = t(showingChanges ? "client.chat.hideFileChanges" : "client.chat.viewFileChanges");
   return <PanelToggleButton icon={showingChanges ? <PanelRightClose size={16} /> : <PanelRight size={16} />}
-    label={label} expanded={showingChanges} active={visible}
+    label={label} expanded={showingChanges} active={workspace?.hasOpenTabs ?? Boolean(panel?.visible)}
     onClick={() => showingChanges ? panel?.close() : panel?.open(entry)} />;
 }

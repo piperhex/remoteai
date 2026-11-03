@@ -28,6 +28,8 @@ export const workspaceTabId = {
 /** Internal drawers stay within their owning conversation, including remote workspaces. */
 export const WorkspaceDrawerContext = createContext<{
   active: boolean;
+  /** Open content tabs remain active while the drawer is hidden or minimized. */
+  hasOpenTabs: boolean;
   tabs: WorkspaceTabs;
 } | null>(null);
 

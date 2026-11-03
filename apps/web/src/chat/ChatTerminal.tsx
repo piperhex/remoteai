@@ -63,7 +63,8 @@ function TerminalView({ client, active, connected, deviceName, launchId = 0, hid
   </Suspense>;
   return <>
     {!hideTrigger && (desktop ? <PanelToggleButton icon={<PanelBottom size={16} />} label={label}
-      expanded={Boolean(visible)} disabled={panel.busy || (!connected && !panel.tabs.length && !panel.error)}
+      expanded={Boolean(visible)} active={panel.tabs.length > 0}
+      disabled={panel.busy || (!connected && !panel.tabs.length && !panel.error)}
       onClick={panel.toggle} /> : <button type="button" className="chat-terminal-toggle" aria-label={label} data-error={!!panel.error}
       aria-expanded={visible} disabled={panel.busy || (!connected && !panel.tabs.length && !panel.error)}
       onClick={panel.toggle}>

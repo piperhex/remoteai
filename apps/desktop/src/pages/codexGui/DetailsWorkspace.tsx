@@ -32,7 +32,6 @@ export function DetailsWorkspace({ selected, active, children, enabled = true, c
   const fontSize = useGuiFontSize();
   const host = useRef<HTMLDivElement>(null);
   const drawer = useWorkspaceDrawer(active);
-  const workspace = useMemo(() => ({ active, tabs: drawer.tabs }), [active, drawer.tabs]);
   const closeButton = useRef<HTMLButtonElement>(null);
   const panelId = useId();
   const panel = useDetailsPanel({ selected, enabled, active, remoteFiles: Boolean(renderRemoteFile), drawer: drawer.tabs });
@@ -47,6 +46,10 @@ export function DetailsWorkspace({ selected, active, children, enabled = true, c
     ...(preview ? [{ id: 'preview', title: t('client.chat.preview'), icon: <FileSearch size={16} /> }] : []),
     ...drawer.tabs.entries,
   ].filter(tab => !drawer.tabs.closed.has(tab.id));
+  const hasOpenTabs = Boolean(enabled && ((entry && !drawer.tabs.closed.has('changes'))
+    || (preview && !drawer.tabs.closed.has('preview'))))
+    || drawer.tabs.entries.some(tab => !drawer.tabs.closed.has(tab.id));
+  const workspace = useMemo(() => ({ active, tabs: drawer.tabs, hasOpenTabs }), [active, drawer.tabs, hasOpenTabs]);
   const label = tool?.title ?? t(showingChanges ? "client.chat.fileChangeDetails" : "client.desktopGuiExtras.previewDetails");
   const resize = useDrawerResize(host);
   const docked = visible && !expanded && resize.available - resize.width >= MIN_CHAT_WIDTH;

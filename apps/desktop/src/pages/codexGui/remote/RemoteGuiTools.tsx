@@ -47,7 +47,8 @@ export function RemoteGuiTools({ controller, state, installer, terminal, active 
         aria-label={uiText("client.workspaceActions.remoteCodexCliUpdates")} />
     </Popover>
     {terminal && <PanelToggleButton icon={<PanelBottom size={16} />} label={terminalLabel}
-      expanded={terminal.open} disabled={terminal.busy || (!connected && !terminal.open)}
+      expanded={terminal.open} active={terminal.tabs.length > 0}
+      disabled={terminal.busy || (!connected && !terminal.open)}
       onClick={terminal.toggle} />}
     {terminal?.error && !terminal.open && <span role="alert" style={{ maxWidth: 400 }}>
       {remoteErrorText(terminal.error)}

@@ -152,7 +152,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
           </Popover>
           {isDesktopApp && view === "conversation" && <PanelToggleButton icon={<PanelBottom size={16} />}
             label={terminal.open ? uiText("client.chat.hideTerminal") : uiText("client.composer.openTerminal")}
-            expanded={terminal.open} onClick={terminal.toggle} />}
+            expanded={terminal.open} active={terminal.tabs.length > 0} onClick={terminal.toggle} />}
           {view === "conversation" && <ConversationChangesButton value={current} />}
         </div>
         {focused && windowControls && <div className={styles.focusWindowControls}>{windowControls}</div>}
