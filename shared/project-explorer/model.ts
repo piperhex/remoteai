@@ -3,7 +3,9 @@ import type { ProjectDirectory, ProjectPickerProps } from '../remote-chat/projec
 
 export type Translate = (key: MessageKey, values?: TranslationValues) => string;
 export type ExplorerEntry = ProjectDirectory & { directory: boolean };
-export type ExplorerProps = ProjectPickerProps & { t: Translate; locale: string };
+export type ExplorerProps = Omit<ProjectPickerProps, 'choose'> & { t: Translate; locale: string } & (
+  { mode: 'browse'; choose?: never } | { mode?: 'select'; choose: ProjectPickerProps['choose'] }
+);
 export const VIEWS = ['extraLarge', 'large', 'medium', 'small', 'list', 'details', 'tiles', 'content'] as const;
 export type View = typeof VIEWS[number];
 export const SORTS = ['name', 'modified', 'type', 'size'] as const;

@@ -15,7 +15,7 @@ import { useDesktopLayout } from '../useDesktopLayout';
 import { useChatSearch } from '../../../../shared/chat/useChatSearch';
 import { SidebarSearchInput } from '../../../../shared/chat/SidebarSearchInput';
 import { ChatSearchResults } from './ChatSearchResults';
-import { useOpenProjectFolder } from '../../../../shared/chat/useOpenProjectFolder';
+import { useRemoteProjectFolder } from '../../../../shared/chat/useRemoteProjectFolder';
 import { threadPresentation } from '../../../../shared/remote-chat/sidebar';
 import { BrowserGroups } from '../../../../shared/chat/groups/BrowserGroups';
 import { GroupHeading } from '../../../../shared/chat/groups/GroupHeading';
@@ -46,7 +46,7 @@ function ChatThreadsContent({ state, controller, newChat, onClose, openSearch, p
   const ready = state.ready;
   const actions = useThreadActions(state, controller);
   const projectActions = useProjectActions(state, controller);
-  const openProject = useOpenProjectFolder(controller.guiTools.files, t);
+  const { openProject, projectFolderDialog } = useRemoteProjectFolder({ controller, state, translate: t });
   const renderHeading = (group: typeof groups[number]) => desktop ? <h3 className="chat-grow">
     <button type="button" className="chat-project-toggle" aria-expanded={!group.collapsed}
       aria-label={`${group.collapsed ? t('client.chat.expandProject') : t('client.chat.collapseProject')}：${group.label}`}
@@ -119,6 +119,7 @@ function ChatThreadsContent({ state, controller, newChat, onClose, openSearch, p
       disabled={state.sending} onClick={() => newChat()}><Plus size={20} />{t("client.chat.newChat")}</button>{profile}</div>}
     {accountPicker}
     <ChatThreadActions actions={actions} />
+    {projectFolderDialog}
     {!desktop && <ChatProjectActions actions={projectActions} />}
   </>;
 }

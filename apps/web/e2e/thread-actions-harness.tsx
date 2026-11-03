@@ -24,7 +24,7 @@ function createController() {
       if (input.operation === 'models') return { data: [{ id: 'model', model: 'model', displayName: 'Model',
         supportedReasoningEfforts: [], defaultReasoningEffort: 'medium' }], nextCursor: null } as T;
       if (['list', 'rename', 'archive', 'unarchive', 'delete', 'threadPin', 'forkLatest', 'guiFileAction',
-        'guiProjectPin', 'guiProjectRemove'].includes(input.operation)) {
+        'guiProjectPin', 'guiProjectRemove', 'projectDirectories'].includes(input.operation)) {
         const response = await fetch('/web/thread-action', { method: 'POST', body: JSON.stringify(input) });
         if (!response.ok) throw new Error('操作未完成，请稍后重试。');
         return response.json();

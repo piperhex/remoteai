@@ -26,7 +26,8 @@ export function ProjectExplorer(props: ExplorerProps) {
   });
   const chosen = state.selection?.directory ? state.selection.path : state.result?.directory;
   const canChoose = !!chosen && !state.loading && !state.error && !actions.busy && !actions.prompt;
-  const choose = () => { if (canChoose && chosen) props.choose(directoryProject(chosen)); };
+  const browsing = props.mode === 'browse';
+  const choose = () => { if (!browsing && canChoose && chosen) props.choose(directoryProject(chosen)); };
   const menus = explorerMenus(state, actions, t);
   return <Modal open centered width="85vw" className="project-explorer-modal" footer={null}
     title={props.title ?? t('client.chat.chooseProject')} maskClosable={!actions.busy}
@@ -74,10 +75,13 @@ export function ProjectExplorer(props: ExplorerProps) {
         <button type="button" aria-label={t(textKey('large'))} aria-pressed={state.view === 'large'}
           onClick={() => state.setView('large')}><LayoutGrid size={17} /></button>
       </div>
-      <div className="pe-footer"><label>{t(textKey('selection'))}<input readOnly value={chosen ?? ''}
+      <div className="pe-footer"><label>{t(textKey('selection'))}<input readOnly
+        value={browsing ? state.directory : chosen ?? ''}
         aria-label={t(textKey('selection'))} /></label>
-        <button type="button" className="pe-primary" disabled={!canChoose} onClick={choose}>{t(textKey('choose'))}</button>
-        <button type="button" disabled={actions.busy} onClick={props.close}>{t(textKey('cancel'))}</button>
+        {!browsing && <button type="button" className="pe-primary" disabled={!canChoose}
+          onClick={choose}>{t(textKey('choose'))}</button>}
+        <button type="button" disabled={actions.busy} onClick={props.close}>
+          {t(browsing ? 'client.projectBrowser.close' : textKey('cancel'))}</button>
       </div>
       {menu && <Dropdown open trigger={[]} overlayClassName="pe-menu" placement="bottomLeft"
         onOpenChange={open => { if (!open) setMenu(undefined); }}

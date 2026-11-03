@@ -16,10 +16,14 @@ async function nativeFolderBridge(page: Page) {
   });
 }
 
-async function setup(page: Page, mode: string, options: { failPin?: boolean; sidebarPathsOnly?: boolean } = {}) {
+async function setup(page: Page, mode: string, options: {
+  failPin?: boolean; sidebarPathsOnly?: boolean; failDirectories?: boolean;
+} = {}) {
   let { failPin = false } = options;
+  let { failDirectories = false } = options;
   if (mode === 'local') await nativeFolderBridge(page);
   const calls: { operation: string; cwd?: string; pinned?: boolean; threadId?: string; name?: string;
+    directory?: string; includeFiles?: boolean;
     target?: { path?: string; threadId?: string | null }; action?: { type: string; application?: string } }[] = [];
   const threads = [{ id: 'one', name: '项目对话', cwd: '/project', preview: '', updatedAt: 1 },
     { id: 'two', name: '其他项目对话', cwd: '/other', preview: '', updatedAt: 2 }];
@@ -40,6 +44,21 @@ async function setup(page: Page, mode: string, options: { failPin?: boolean; sid
       nextCursor: null, sidebar: sidebar(),
     } });
     if (input.operation === 'guiFileAction') return route.fulfill({ json: { path: input.target?.path, saved: false } });
+    if (input.operation === 'projectDirectories') {
+      const directory = input.directory ?? '';
+      if (directory && failDirectories) {
+        failDirectories = false;
+        return route.fulfill({ status: 500, json: {} });
+      }
+      const entries = directory === '/project'
+        ? [{ name: 'src', path: '/project/src', directory: true },
+          { name: 'README.md', path: '/project/README.md', directory: false, size: 2048 }]
+        : directory === '/project/src'
+          ? [{ name: 'index.ts', path: '/project/src/index.ts', directory: false, size: 1024 }]
+          : [{ name: 'project', path: '/project', directory: true }];
+      return route.fulfill({ json: { directory, parent: directory === '/project/src' ? '/project' : null,
+        entries, truncated: false } });
+    }
     if (input.operation === 'guiProjectPin') pinnedProjects = input.pinned ? [input.cwd!] : [];
     if (input.operation === 'guiProjectRemove') {
       pinnedProjects = [];
@@ -57,11 +76,23 @@ async function setup(page: Page, mode: string, options: { failPin?: boolean; sid
   return calls;
 }
 
-async function openProjectMenuItem(page: Page, calls: unknown[], label: string) {
+async function openProjectMenuItem(page: Page, calls: unknown[], label: string, mode: string) {
   await page.getByRole('menuitem', { name: label, exact: true }).click();
   await expect(page.getByRole('menu')).toBeHidden();
-  await expect.poll(() => calls.at(-1)).toEqual({ operation: 'guiFileAction',
-    target: { path: '/project', threadId: null }, action: { type: 'open', application: 'default' } });
+  if (mode === 'local') {
+    await expect.poll(() => calls.at(-1)).toEqual({ operation: 'guiFileAction',
+      target: { path: '/project', threadId: null }, action: { type: 'open', application: 'default' } });
+    return;
+  }
+  await expect(page.getByRole('dialog', { name: '浏览项目文件' })).toBeVisible();
+  await expect(page.getByRole('option', { name: /README.md/ })).toBeVisible();
+  await expect(page.locator('.pe-footer input')).toHaveValue('/project');
+  await expect(page.locator('.pe-footer .pe-primary')).toHaveCount(0);
+  expect(calls).toContainEqual({ operation: 'projectDirectories', directory: '/project', includeFiles: true });
+  expect(calls).not.toContainEqual(expect.objectContaining({ operation: 'guiFileAction' }));
+  await page.screenshot({ path: `../../.codex-tmp/project-folder-preview/${mode}-browse.png` });
+  await page.locator('.pe-footer').getByRole('button', { name: '关闭', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
 }
 
 async function longPressContext(target: Locator) {
@@ -180,13 +211,13 @@ for (const mode of ['local', 'remote', 'web']) {
     const openInExplorer = testText('client.projectBrowser.openInExplorer', {}, 'zh');
     const pin = testText('client.conversation.pin', {}, 'zh');
     const removeProject = testText('client.conversation.removeProject', {}, 'zh');
-    await expect(page.getByRole('menuitem')).toHaveText([pin, openInExplorer, removeProject]);
+    await expect(page.getByRole('menuitem')).toHaveText([pin, openInExplorer, '移动到分组', removeProject]);
     await expect(heading).toHaveAttribute('aria-expanded', 'true');
     expect((await page.getByRole('menu').boundingBox())!.width).toBeLessThanOrEqual(400);
     await page.screenshot({ path: `../../.codex-tmp/project-menu-${mode}.png` });
-    await openProjectMenuItem(page, calls, openInExplorer);
+    await openProjectMenuItem(page, calls, openInExplorer, mode);
     await longPressContext(heading);
-    await expect(page.getByRole('menuitem')).toHaveText([pin, openInExplorer, removeProject]);
+    await expect(page.getByRole('menuitem')).toHaveText([pin, openInExplorer, '移动到分组', removeProject]);
     await page.getByRole('menuitem', { name: pin, exact: true }).click();
     await expect(project.getByLabel('已置顶', { exact: true })).toBeVisible();
     if (mode === 'web') await heading.click({ button: 'right' });
@@ -195,14 +226,14 @@ for (const mode of ['local', 'remote', 'web']) {
     await page.getByRole('menuitem', { name: '取消置顶', exact: true }).click();
     await expect(project.getByLabel('已置顶', { exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: '项目对话', exact: true }).click({ button: 'right' });
-    const threadMenu = [pin, openInExplorer, '重命名', '创建分支', '归档', '删除'];
+    const threadMenu = [pin, openInExplorer, '重命名', '创建分支', '归档', '删除', '移动到分组'];
     await expect(page.getByRole('menuitem')).toHaveText(threadMenu);
     await expect(page.getByTestId('selected')).toHaveText('none');
     await page.screenshot({ path: `../../.codex-tmp/thread-menu-${mode}.png` });
-    await openProjectMenuItem(page, calls, openInExplorer);
+    await openProjectMenuItem(page, calls, openInExplorer, mode);
     await longPressContext(page.getByRole('button', { name: '项目对话', exact: true }));
     await expect(page.getByRole('menuitem')).toHaveText(threadMenu);
-    await openProjectMenuItem(page, calls, openInExplorer);
+    await openProjectMenuItem(page, calls, openInExplorer, mode);
     await page.keyboard.press('Escape');
     await heading.press('Shift+F10');
     await expect(page.getByRole('menuitem', { name: '移除项目', exact: true })).toBeVisible();
@@ -221,11 +252,42 @@ test('web thread menu opens the project path supplied by the sidebar snapshot', 
   const calls = await setup(page, 'web', { sidebarPathsOnly: true });
   const project = page.locator('section[aria-label="project"]');
   await project.locator('.chat-thread').first().click({ button: 'right' });
-  await openProjectMenuItem(page, calls, testText('client.projectBrowser.openInExplorer', {}, 'zh'));
+  await openProjectMenuItem(page, calls, testText('client.projectBrowser.openInExplorer', {}, 'zh'), 'web');
   await expect(page.getByTestId('selected')).toHaveText('none');
 });
 
 for (const mode of ['remote', 'web']) {
+  test(`${mode} browses folders and retries failures without changing the current chat`, async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Desktop folder browser');
+    await page.setViewportSize({ width: 1024, height: 768 });
+    const calls = await setup(page, mode, { failDirectories: true });
+    await page.getByRole('button', { name: '其他项目对话', exact: true }).click();
+    await expect(page.getByTestId('selected')).toHaveText('two');
+    await page.getByRole('button', { name: '项目对话', exact: true }).click({ button: 'right' });
+    await page.getByRole('menuitem', { name: testText('client.projectBrowser.openInExplorer', {}, 'zh') }).click();
+    await expect(page.getByRole('alert')).toHaveText(testText('client.projectExplorer.loadError', {}, 'zh'));
+    await expect(page.getByRole('menu')).toBeHidden();
+    await expect(page.getByRole('alert')).toBeVisible();
+    await page.screenshot({ path: `../../.codex-tmp/project-folder-preview/${mode}-error.png`, animations: 'disabled' });
+    await page.locator('.pe-empty').getByRole('button').click();
+    await expect(page.getByRole('option', { name: /README.md/ })).toBeVisible();
+    await page.getByRole('searchbox').fill('README');
+    await expect(page.getByRole('option')).toHaveCount(1);
+    await page.getByRole('searchbox').fill('');
+    await page.locator('.pe-entry[data-path="/project/src"]').dblclick();
+    await expect(page.getByRole('option', { name: /index.ts/ })).toBeVisible();
+    await expect(page.locator('.pe-footer input')).toHaveValue('/project/src');
+    expect(await page.locator('.pe-shell').evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
+    await page.screenshot({ path: `../../.codex-tmp/project-folder-preview/${mode}-compact-subfolder.png` });
+    await page.getByRole('button', { name: '后退', exact: true }).click();
+    await expect(page.getByRole('option', { name: /README.md/ })).toBeVisible();
+    await page.locator('.pe-files').focus();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await expect(page.getByTestId('selected')).toHaveText('two');
+    expect(calls.some(call => call.operation === 'guiFileAction')).toBe(false);
+  });
+
   test(`${mode} pins a thread and branches the clicked conversation without preselecting`, async ({ page, isMobile }) => {
     test.skip(isMobile, 'Desktop sidebar menus');
     const calls = await setup(page, mode);

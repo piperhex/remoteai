@@ -173,7 +173,10 @@ const openMenu = () => act(async () => {
 it('opens a compact context menu without selecting the source and creates the remote branch', async () => {
   const fork = { ...thread, id: 'fork', name: '新分支', turns: [] };
   request.mockImplementation(async (_method, body) => {
-    const input = body as { operation: string };
+    const input = body as { operation: string; directory?: string };
+    if (input.operation === 'projectDirectories') {
+      return { directory: input.directory, parent: null, entries: [], truncated: false };
+    }
     if (input.operation === 'forkLatest') return { thread: fork };
     if (input.operation === 'syncHistory') return historyDelta(fork);
     return { data: [thread, fork], nextCursor: null };
@@ -182,11 +185,16 @@ it('opens a compact context menu without selecting the source and creates the re
   expect(controller.snapshot().selected).toBeNull();
   expect(request).not.toHaveBeenCalled();
   expect([...document.querySelectorAll('[role="menuitem"]')].map(entry => entry.textContent))
-    .toEqual(['置顶', '在资源管理器中打开', '重命名', '创建分支', '归档', '删除']);
+    .toEqual(['置顶', '在资源管理器中打开', '重命名', '创建分支', '归档', '删除', '移动到分组']);
   expect(document.querySelector<HTMLElement>('.ant-dropdown')!.style.maxWidth).toBe('400px');
   await act(async () => menuItem('在资源管理器中打开').click());
-  expect(request).toHaveBeenCalledWith('request', { operation: 'guiFileAction',
-    target: { path: 'D:/project', threadId: null }, action: { type: 'open', application: 'default' } });
+  expect(request).toHaveBeenCalledWith('request', { operation: 'projectDirectories',
+    directory: 'D:/project', includeFiles: true });
+  expect(request).not.toHaveBeenCalledWith('request', expect.objectContaining({ operation: 'guiFileAction' }));
+  expect(document.querySelector<HTMLInputElement>('.pe-footer input')?.value).toBe('D:/project');
+  expect(document.querySelector('.pe-footer .pe-primary')).toBeNull();
+  expect(controller.snapshot().selected).toBeNull();
+  await act(async () => document.querySelector<HTMLButtonElement>('.pe-footer button')!.click());
   await openMenu();
   await act(async () => menuItem('创建分支').click());
   expect(request).toHaveBeenCalledWith('request', { operation: 'forkLatest', threadId: thread.id });

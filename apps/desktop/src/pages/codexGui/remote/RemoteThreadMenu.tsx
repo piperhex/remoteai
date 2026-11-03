@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import { App, Input, Modal } from 'antd';
 import { ThreadContextMenu } from '../../../../../../shared/chat/ThreadContextMenu';
 import { threadMenuItems } from '../../../../../../shared/chat/threadMenuItems';
-import { useOpenProjectFolder } from '../../../../../../shared/chat/useOpenProjectFolder';
+import { useRemoteProjectFolder } from '../../../../../../shared/chat/useRemoteProjectFolder';
 import { threadPresentation } from '../../../../../../shared/remote-chat/sidebar';
 import { uiText } from "../../../i18n/uiText";
 import type { ChatController, ChatState, Thread } from '../../../../../web/src/chat/types';
@@ -17,7 +17,7 @@ export function RemoteThreadMenu({ thread, state, controller, actions, onClose, 
   onClose: () => void; children: ReactElement;
 }) {
   const { message } = App.useApp();
-  const openProject = useOpenProjectFolder(controller.guiTools.files, uiText);
+  const { openProject, projectFolderDialog } = useRemoteProjectFolder({ controller, state, translate: uiText });
   const { cwd } = threadPresentation(thread, state.sidebar);
   const pin = state.sidebar.pins?.includes(thread.id) ? 'unpin' : 'pin';
   const archive = state.archived ? 'unarchive' : 'archive';
@@ -32,14 +32,14 @@ export function RemoteThreadMenu({ thread, state, controller, actions, onClose, 
     openProject: Boolean(cwd), openProjectDisabled: !state.ready,
     disabled: action => action === 'fork' ? Boolean(forkUnavailableReason(state, thread))
       : disabled(action === 'pin' ? pin : action === 'archive' ? archive : action) });
-  return <ThreadContextMenu groupTarget={{ kind: 'thread', id: thread.id }} menu={{ items,
+  return <><ThreadContextMenu groupTarget={{ kind: 'thread', id: thread.id }} menu={{ items,
     onClick: ({ key }) => {
       if (key === 'pin') run(pin);
       if (key === 'openProject') void openProject(cwd);
       if (key === 'archive') run(archive);
       if (key === 'fork') void controller.forkConversation(thread).then(opened => { if (opened) onClose(); });
       if (key === 'rename' || key === 'delete') { actions.open(thread); actions.changeView(key); }
-    } }}>{children}</ThreadContextMenu>;
+    } }}>{children}</ThreadContextMenu>{projectFolderDialog}</>;
 }
 
 export function RemoteThreadDialogs({ actions }: { actions: ThreadActionsModel }) {
