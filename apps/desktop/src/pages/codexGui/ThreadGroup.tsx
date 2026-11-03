@@ -49,8 +49,7 @@ export function ThreadGroup({ label, pinned, threads, selected, collapsed, expan
         </button>
       </Tooltip>}
     </div>}
-    <div id={contentId} className={styles.content} hidden={isCollapsed}
-      style={hideHeading ? { paddingInlineStart: 42 } : undefined}>
+    <div id={contentId} className={styles.content} hidden={isCollapsed}>
       {(showAll ? threads : previewThreads(threads, selected)).map(renderThread)}
       {threads.length > THREAD_GROUP_PREVIEW_COUNT && !filtering && <button type="button" className={styles.more}
         aria-expanded={showAll} aria-controls={contentId} onClick={() => onToggle("expanded")}>

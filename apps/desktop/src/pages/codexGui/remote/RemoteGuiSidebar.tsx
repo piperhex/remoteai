@@ -92,8 +92,7 @@ function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, fo
             aria-label={uiText("client.chat.startAChatIn", { value1: group.label })} disabled={state.sending}
             onClick={() => actions.newChat(group)}><SquarePen size={14} strokeWidth={1.6} /></button>}
         </div>}
-        <div className={groupsStyle.content} hidden={group.collapsed}
-          style={group.kind === 'group' ? { paddingInlineStart: 42 } : undefined}>
+        <div className={groupsStyle.content} hidden={group.collapsed}>
           {group.data.map(thread => {
             const view = threadPresentation(thread, state.sidebar, displayText);
             const selected = state.selected?.id === thread.id;

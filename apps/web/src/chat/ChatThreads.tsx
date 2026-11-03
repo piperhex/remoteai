@@ -90,7 +90,7 @@ function ChatThreadsContent({ state, controller, newChat, onClose, openSearch, p
             {group.cwd && <button type="button" className="chat-back" aria-label={t("client.chat.startAChatIn", { value1: group.label })}
               disabled={state.sending} onClick={() => newChat(group)}><Plus size={18} aria-hidden="true" /></button>}
           </div>}
-          <div style={group.kind === 'group' ? { paddingInlineStart: 32 } : undefined}>
+          <div>
           {group.data.map(thread => {
             const { cwd } = threadPresentation(thread, state.sidebar);
             return <ChatThreadRow key={thread.id} thread={thread} state={state}
