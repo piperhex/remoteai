@@ -726,3 +726,69 @@ Web 浏览器没有原生安装包共享下载器，沿用现有下载行为，�
 后台可按天分页查看，包括换源后最终成功的下载。公开缓存服务失败另记 `update server download failed`
 及 HTTP 状态码。不上报原始异常文本、访问令牌、下载地址、连接凭据和本地文件路径。
 验收覆盖重复上报、北京时间午夜、多人/同人多次下载、校验失败、混合来源和无权限访问。
+## TURN allocation quota managed by admin
+
+Admin **Chat settings → Remote desktop relay** manages `total-quota`, default **256**, integer range
+**1–65535** (zero/unlimited is not supported). The authoritative value is the `chat_settings` row
+`id='turn-relay'`, JSON field `policy.totalQuota`; no schema migration is needed. Missing rows/fields
+use 256. Chat policy remains in its separate `current` row. Saves and audit records commit atomically;
+read/manage permissions remain `admin.chat-settings.read` / `admin.chat-settings.manage`.
+
+This limits concurrent effective TURN allocations across all accounts in **one coturn process/default realm**.
+It does not count users, desktop sessions, chat sockets, or proxy TCP/UDP connections. Multiple instances each
+have their own counters, even if they share the saved setting: this is not a cluster-wide pool. The existing
+200 UDP relay ports (50000–50199), `user-quota=8`, bandwidth and lifetime protections remain unchanged;
+a higher configured quota does not promise that many usable desktop sessions.
+
+The pinned coturn 4.18.0 implementation supports `cc total-quota N` on its password-protected CLI.
+`src/apps/relay/turn_admin_server.c::change_cli_param` changes the default; `netengine.c::run_auth_server_thread`
+calls `userdb.c::reread_realms` every five seconds; `userdb.c::check_new_allocation_quota` checks admission
+against that realm value. See the [4.18.0 source](https://github.com/coturn/coturn/tree/4.18.0/src/apps/relay).
+`pc` reports **current realm total-quota**, which admin reads back before showing Applied. This does not rely
+on SIGHUP or re-reading the config file. `no-dynamic-realms` prevents a separate realm database overriding the
+admin-controlled default. No allocations are cancelled: after a decrease, new allocations receive TURN 486
+until the count falls below the new quota. Refresh(0) releases a slot after coturn's asynchronous cleanup.
+
+The admin process reconciles immediately on startup and every five seconds, with bounded single-flight attempts.
+Saving also attempts synchronization; normal propagation is within ten seconds. Pending is distinct from Applied.
+Readback failures, missing control configuration and restart-snapshot failures appear in admin, are logged without
+secrets, and retry automatically. The Retry action also has an audit entry. A failed DB/audit transaction does not
+change the desired value. If the HTTP response is lost after a commit, reload to check the saved value.
+
+Compose adds an unpublished TCP 5766 control listener on the existing private media-relay network, with a separate
+random `DESKTOP_TURN_CONTROL_PASSWORD` (at least 32 characters, e.g. 64 hexadecimal characters). Never publish
+5766 or the private 3478 backend, share the TURN credential secret as this password, or mount the Docker socket.
+The deployment guards reject published control ports, including loopback mappings. Admin uses
+`DESKTOP_TURN_CONTROL=desktop-turn:5766` and `DESKTOP_TURN_QUOTA_DIR=/var/lib/codex-switch/turn-quota`.
+The named `turn-quota` volume is writable only in admin and mounted read-only in coturn. Its `total-quota` file
+contains only the last synchronized integer, written atomically before the live change, and is a restart snapshot,
+not another editable configuration source. coturn reads it before listening; malformed snapshots fail startup.
+A missing volume/file retains legacy 256 until reconciliation; do not delete this volume during updates/rollback.
+If synchronization failed before the snapshot was written, restart retains the previous applied quota and admin
+continues to report pending. Back up/restore the database and this volume together; after a restore confirm Applied.
+
+**One-time enablement requires a planned coturn recreation**, because existing containers lack the management
+listener/environment and volume. This can interrupt current relays. Later admin quota edits do not restart services.
+Prepare the verified Go image, matching scripts/Compose files, new separate password and preserved volume first.
+Keep every Compose file recorded on the current container, including private overrides and `compose.desktop-relay.yml`.
+Use `python3 scripts/deployment_compose.py check`, then, in an authorized maintenance window,
+`python3 scripts/deployment_compose.py up --update-turn`, then `python3 scripts/deployment_compose.py verify`
+(with the actual project/env/additional-file arguments on each command). `--update-turn` explicitly targets coturn
+before admin using the same complete file list; normal `up` continues to update admin only.
+Check relay networking and all public UDP/TCP/TLS mappings before and after, verify admin's applied value, and run
+real TURN Allocate/Refresh checks. HTTP, WebSocket and STUN Binding success do not prove TURN admission works.
+
+Rollback only to a verified admin-go image. Preserve this Compose control/volume configuration and compatible
+entrypoint to retain the last applied quota; an older Go image will not offer runtime editing/reconciliation.
+Do not use an older hardcoded entrypoint without explicitly accounting for its return to 256. Older containers
+without the control environment can still start this entrypoint with CLI disabled, but admin reports pending.
+No production deployment or restart is part of the quota implementation task.
+
+Local verification: `python3 scripts/test_turn_quota.py` creates disposable PostgreSQL/coturn containers on
+random loopback ports, runs real Allocate/Refresh requests through the metered Go UDP/TCP/TLS proxy, verifies
+the initial 256, 2/3/1 quota changes, asynchronous release, failure/recovery, audit/permissions and restart
+restoration before any reconciliation, then removes only its own containers. It needs local Docker, Go and
+the pinned coturn/PostgreSQL images. No media relay ports need publishing for allocation admission tests.
+The fixture uses five distinct account IDs, at most three allocations at a time and the unchanged 200-port
+pool / per-user quota 8, avoiding capacity or user-quota interference. Media billing regressions are run in
+`internal/mediarelay`; these tests do not simulate a full remote desktop/video session or production networking.

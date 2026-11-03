@@ -106,7 +106,11 @@ class Deployment:
         arguments = self.command() + ["up", "-d", "--no-deps", "--no-build", "--pull", "never"]
         if self.options.force_recreate:
             arguments.append("--force-recreate")
+        if self.options.update_turn and not self.required:
+            raise DeploymentError("--update-turn requires an enabled TURN relay.")
         try:
+            if self.options.update_turn:
+                capture(arguments + [TURN_SERVICE], timeout=UPDATE_TIMEOUT_SECONDS)
             capture(arguments + [ADMIN_SERVICE], timeout=UPDATE_TIMEOUT_SECONDS)
         except DeploymentError as error:
             message = "admin-go update failed. Inspect its state and use the recorded rollback image."
@@ -132,10 +136,14 @@ def parse_options(arguments=None):
                         help="Additional Compose override; repeatable")
     parser.add_argument("--force-recreate", action="store_true",
                         help="Recreate admin-go when restoring a verified image")
+    parser.add_argument("--update-turn", action="store_true",
+                        help="Also update coturn for explicit relay configuration changes; interrupts active relays")
     parser.set_defaults(root=ADMIN_ROOT)
     options = parser.parse_args(arguments)
     if options.force_recreate and options.action != "up":
         parser.error("--force-recreate is only valid with up")
+    if options.update_turn and options.action != "up":
+        parser.error("--update-turn is only valid with up")
     return options
 
 

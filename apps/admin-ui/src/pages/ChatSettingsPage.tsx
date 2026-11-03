@@ -4,6 +4,7 @@ import { App, Button, Form, Space, Typography, theme } from 'antd';
 import type { ChatPolicy } from '../../../../shared/remote-chat/policy';
 import { useI18n } from '../i18n-context';
 import { ChatSettingsFields } from './ChatSettingsFields';
+import { TurnQuotaSettings } from './TurnQuotaSettings';
 import './ChatSettingsPage.css';
 
 interface Props {
@@ -56,6 +57,7 @@ export function ChatSettingsPage({ api, canManage }: Props) {
         : inlineCopy["Transfer_size_and_image_compression_7978ce03"]}
       </Typography.Text>
     </div>
+    <TurnQuotaSettings api={api} canManage={canManage} />
     <Form form={form} onFinish={save} disabled={!canManage || saving || !loaded}>
       <ChatSettingsFields zh={zh} loading={loading} />
       <div className="chat-policy-actions"

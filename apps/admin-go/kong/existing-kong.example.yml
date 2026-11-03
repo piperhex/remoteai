@@ -51,6 +51,8 @@ services:
           - /official-usage
           - /update-sharing/reports
           - /admin/api
+          # Includes /admin/api/chat-settings/turn-relay and /retry.
+          # Go additionally requires admin.chat-settings.read/manage permissions.
           - /devices
           - /remote-assistance
           - /chat-push

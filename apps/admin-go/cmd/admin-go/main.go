@@ -15,6 +15,7 @@ import (
 	"github.com/codex-switch/admin-go/internal/migrations"
 	"github.com/codex-switch/admin-go/internal/platform"
 	"github.com/codex-switch/admin-go/internal/server"
+	"github.com/codex-switch/admin-go/internal/turnquota"
 )
 
 func main() {
@@ -58,6 +59,8 @@ func run() error {
 	}()
 	stopModels := accounts.StartModelCatalogRefresh(deps)
 	defer stopModels()
+	stopQuota := turnquota.Start(deps)
+	defer stopQuota()
 	return serve(config, server.Handler(router))
 }
 

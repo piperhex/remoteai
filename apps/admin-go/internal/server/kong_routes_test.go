@@ -101,6 +101,7 @@ func TestKongRouteAuthenticationBoundaries(t *testing.T) {
 	for _, path := range []string{"/admin/api/lounge/users/example", "/admin/api/lounge/presence", "/lounge/ticket",
 		"/sync/accounts", "/sync/ssh-profiles", "/sync/ssh-profiles/import",
 		"/sync/ssh-profiles/example/credentials",
+		"/admin/api/chat-settings/turn-relay", "/admin/api/chat-settings/turn-relay/retry",
 		"/sync/ssh-profiles/example", "/admin/api/users", "/devices", "/official-usage",
 		"/devices/00000000-0000-4000-8000-000000000000/screen-power",
 		"/remote-assistance", "/chat-push/status", "/admin/api/update-sharing", "/update-sharing/reports",

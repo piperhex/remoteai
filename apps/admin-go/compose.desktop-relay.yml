@@ -4,6 +4,11 @@ services:
     environment:
       DESKTOP_TURN_LISTEN: "0.0.0.0:3479"
       DESKTOP_TURN_BACKEND: "desktop-turn:3478"
+      DESKTOP_TURN_CONTROL: "desktop-turn:5766"
+      DESKTOP_TURN_CONTROL_PASSWORD: "${DESKTOP_TURN_CONTROL_PASSWORD:?Generate a separate TURN control password}"
+      DESKTOP_TURN_QUOTA_DIR: /var/lib/codex-switch/turn-quota
+    volumes:
+      - turn-quota:/var/lib/codex-switch/turn-quota
     ports:
       - "${ADMIN_GO_TURN_BIND:-0.0.0.0}:3479:3479/udp"
       - "${ADMIN_GO_TURN_BIND:-0.0.0.0}:3479:3479/tcp"
@@ -21,8 +26,10 @@ services:
       DESKTOP_TURN_SECRET: "${DESKTOP_TURN_SECRET:?Generate a separate TURN secret}"
       DESKTOP_TURN_PUBLIC_IP: "${DESKTOP_TURN_PUBLIC_IP:?Set the public relay IPv4 address}"
       DESKTOP_TURN_REALM: "${DESKTOP_TURN_REALM:-codex-switch}"
+      DESKTOP_TURN_CONTROL_PASSWORD: "${DESKTOP_TURN_CONTROL_PASSWORD:?Generate a separate TURN control password}"
     volumes:
       - ./scripts/turn-entrypoint.sh:/opt/codex/turn-entrypoint.sh:ro
+      - turn-quota:/var/lib/codex-switch/turn-quota:ro
     ports:
       - "${ADMIN_GO_TURN_BIND:-0.0.0.0}:50000-50199:50000-50199/udp"
     networks:
@@ -36,3 +43,5 @@ services:
     security_opt: [no-new-privileges:true]
 networks:
   media-relay:
+volumes:
+  turn-quota:

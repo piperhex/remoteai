@@ -8,6 +8,7 @@ ADMIN_SERVICE = "admin-go"
 TURN_SERVICE = "desktop-turn"
 TURN_URLS = "DESKTOP_TURN_URLS"
 PRIVATE_TURN_PORT = 3478
+PRIVATE_CONTROL_PORT = 5766
 
 
 class DeploymentError(RuntimeError):
@@ -96,9 +97,21 @@ def validate_configuration(config, previous):
     turn = services.get(TURN_SERVICE)
     if not turn or not set(admin.get("networks", {})) & set(turn.get("networks", {})):
         raise DeploymentError("The TURN backend and admin-go must share a Compose network.")
-    if any(int(port["target"]) == PRIVATE_TURN_PORT for port in turn.get("ports", [])):
+    if any(int(port["target"]) in {PRIVATE_TURN_PORT, PRIVATE_CONTROL_PORT} for port in turn.get("ports", [])):
         raise DeploymentError("The private TURN authentication listener must not be published.")
+    validate_quota_control(values, turn.get("environment", {}))
     return required
+
+
+def validate_quota_control(admin, turn):
+    if not admin.get("DESKTOP_TURN_CONTROL"):
+        return  # Compatible rollback configurations may not support runtime quotas.
+    password = admin.get("DESKTOP_TURN_CONTROL_PASSWORD", "")
+    if (admin["DESKTOP_TURN_CONTROL"] != "desktop-turn:5766" or len(password) < 32
+            or password != turn.get("DESKTOP_TURN_CONTROL_PASSWORD")
+            or password == turn.get("DESKTOP_TURN_SECRET")
+            or not admin.get("DESKTOP_TURN_QUOTA_DIR")):
+        raise DeploymentError("TURN quota control configuration is missing or inconsistent.")
 
 
 def verify_runtime(config, containers):
@@ -116,10 +129,16 @@ def verify_runtime(config, containers):
     turn = containers.get(TURN_SERVICE, {})
     if not turn.get("State", {}).get("Running"):
         raise DeploymentError("The TURN backend is not running.")
+    desired_control = config["services"][ADMIN_SERVICE].get("environment", {}).get("DESKTOP_TURN_CONTROL")
+    if desired_control:
+        if environment(admin).get("DESKTOP_TURN_CONTROL") != desired_control:
+            raise DeploymentError("Running admin-go has not enabled the configured TURN quota control.")
+        validate_quota_control(environment(admin), environment(turn))
     admin_networks = set(admin.get("NetworkSettings", {}).get("Networks", {}))
     turn_networks = set(turn.get("NetworkSettings", {}).get("Networks", {}))
     if not admin_networks & turn_networks:
         raise DeploymentError("The running TURN backend and admin-go do not share a network.")
     bindings = turn.get("NetworkSettings", {}).get("Ports", {})
-    if any(value for key, value in bindings.items() if key.split("/")[0] == str(PRIVATE_TURN_PORT)):
+    if any(value for key, value in bindings.items()
+           if key.split("/")[0] in {str(PRIVATE_TURN_PORT), str(PRIVATE_CONTROL_PORT)}):
         raise DeploymentError("The running private TURN authentication listener must not be published.")

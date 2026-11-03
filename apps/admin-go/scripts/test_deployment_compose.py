@@ -22,6 +22,7 @@ RELAY_ENV = {
     "DESKTOP_TURN_LISTEN": "0.0.0.0:3479",
     "DESKTOP_TURN_TLS_LISTEN": "0.0.0.0:5349",
     "DESKTOP_TURN_SECRET": "private-test-value-must-not-appear",
+    "DESKTOP_TURN_CONTROL_PASSWORD": "private-control-value-must-not-appear",
 }
 RELAY_PORTS = [(3479, "udp"), (3479, "tcp"), (5349, "tcp")]
 
@@ -46,6 +47,17 @@ def container(enabled=True):
 
 
 class RelayGuardTests(unittest.TestCase):
+    def test_control_port_is_never_published_even_on_loopback(self):
+        config = configuration()
+        config["services"]["desktop-turn"]["ports"].append({
+            "target": 5766, "published": "5766", "protocol": "tcp", "host_ip": "127.0.0.1"})
+        with self.assertRaises(DeploymentError):
+            validate_configuration(config, {})
+        turn = container()
+        turn["NetworkSettings"]["Ports"] = {"5766/tcp": [{"HostIp": "127.0.0.1", "HostPort": "5766"}]}
+        with self.assertRaises(DeploymentError):
+            verify_runtime(configuration(), {"admin-go": container(), "desktop-turn": turn})
+
     def test_each_advertised_transport_requires_its_port_before_deployment(self):
         for missing in RELAY_PORTS:
             with self.subTest(missing=missing):
@@ -185,6 +197,18 @@ class ComposeEntrypointTests(unittest.TestCase):
         self.assertEqual(update.call_args.args[0][-8:], [
             "up", "-d", "--no-deps", "--no-build", "--pull", "never", "--force-recreate", "admin-go"
         ])
+        verify.assert_called_once()
+
+    def test_explicit_turn_update_uses_the_same_complete_compose_file_list(self):
+        deployment = self.make_deployment()
+        deployment.options.update_turn = True
+        with patch.object(compose.subprocess, "run") as update, patch.object(deployment, "verify") as verify:
+            update.return_value.returncode = 0
+            deployment.update()
+        commands = [call.args[0] for call in update.call_args_list]
+        self.assertEqual([command[-1] for command in commands], ["desktop-turn", "admin-go"])
+        self.assertEqual(commands[0][:-1], commands[1][:-1])
+        self.assertIn(str(self.root / "compose.desktop-relay.yml"), commands[0])
         verify.assert_called_once()
 
     def test_safe_summary_and_failed_inspection_never_print_credentials(self):

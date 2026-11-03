@@ -31,6 +31,7 @@ func Register(router *gin.Engine, deps *platform.Dependencies) error {
 	s.marketRoutes(router)
 	s.feedbackRoutes(router)
 	s.settingsRoutes(router)
+	s.turnQuotaRoutes(router)
 	s.updateSharingRoutes(router)
 	s.tokenPricingRoutes(router)
 	s.analyticsRoutes(router)

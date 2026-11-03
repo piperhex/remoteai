@@ -6,6 +6,9 @@ import { I18nProvider } from '../i18n-context';
 import { ChatSettingsPage } from './ChatSettingsPage';
 import { DEFAULT_CHAT_POLICY, type ChatPolicy } from '../../../../shared/chat/chatPolicy';
 
+// Relay settings have their own API/form coverage in TurnQuotaSettings.test.tsx.
+vi.mock('./TurnQuotaSettings', () => ({ TurnQuotaSettings: () => null }));
+
 let root: Root;
 let container: HTMLDivElement;
 let saved: ChatPolicy | undefined;
