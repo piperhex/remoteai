@@ -22,14 +22,12 @@ fn send<R: Runtime>(
     expected: &PushRoute,
     body: &Value,
 ) -> Result<bool, ()> {
-    let _guard = lock_cloud_credentials().map_err(|_| ())?;
-    let mut settings = read_app_settings(app).map_err(|_| ())?;
+    let (mut settings, mut credentials) = cloud_snapshot(app).map_err(|_| ())?;
     if settings.cloud_user_id.as_deref() != Some(expected.owner_id.as_str())
         || base_url(&settings).map_err(|_| ())?.trim_end_matches('/') != expected.base_url
     {
         return Ok(false);
     }
-    let mut credentials = read_cloud_credentials(app);
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
         .build()

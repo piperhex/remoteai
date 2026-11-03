@@ -141,6 +141,7 @@ fn refreshed_credentials_are_persisted_before_followup_work() {
         access_token: Some("old-access".to_string()),
         refresh_token: Some("old-refresh".to_string()),
         device_id: Some("device-1".to_string()),
+        ..CloudCredentials::default()
     };
     let mut persisted_credentials = None;
 

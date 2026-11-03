@@ -192,10 +192,8 @@ pub(super) const FEEDBACK_IMAGE_MIME_TYPES: [&str; 3] = ["image/jpeg", "image/pn
 pub(super) const CLOUD_LOGIN_KEYRING_USER: &str = "default";
 pub(super) const CLOUD_SESSION_EXPIRED_EVENT: &str = "cloud-session-expired";
 
-// Refresh tokens are rotated by the backend. All cloud operations that read or
-// write cloud-auth.json must therefore share one critical section: otherwise a
-// slower request can overwrite a newly rotated token with the revoked one it
-// read before the refresh completed.
+// Serialize credential snapshots and local commits only. Network I/O must never
+// hold this lock; each session has a separate refresh coordinator.
 pub(super) static CLOUD_CREDENTIALS_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 pub(super) const ACTIVITY_REPORT_USAGE_INTERVAL: usize = 50;
 pub(super) static USAGE_SINCE_LAST_ACTIVITY_REPORT: AtomicUsize = AtomicUsize::new(0);
@@ -221,6 +219,8 @@ pub(super) struct InstallationState {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct CloudCredentials {
+    #[serde(skip)]
+    pub(super) session: Option<credential_session::SessionSnapshot>,
     pub(super) access_token: Option<String>,
     pub(super) refresh_token: Option<String>,
     #[serde(default)]

@@ -56,10 +56,9 @@ pub(crate) fn publish_prompt_plugin<R: Runtime>(
     plugin_type: PromptPluginType,
     text: &str,
 ) -> Result<PromptPluginItem, String> {
-    let _guard = lock_cloud_credentials()?;
     let client = feedback_client()?;
-    let settings = read_app_settings(app)?;
-    let credentials = read_cloud_credentials(app);
+    let (settings, mut credentials) = cloud_snapshot(app)?;
+    prepare_cloud_request(app, &settings, &mut credentials)?;
     let token = credentials
         .access_token
         .as_deref()
@@ -78,7 +77,7 @@ pub(crate) fn publish_prompt_plugin<R: Runtime>(
     if !response.status().is_success() {
         return Err(response_error("Prompt plugin upload", response));
     }
-    response
+    CloudResponse::authenticated(app, &credentials, response)?
         .json()
         .map_err(|error| format!("Prompt plugin response is invalid: {error}"))
 }

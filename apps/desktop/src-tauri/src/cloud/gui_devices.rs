@@ -41,9 +41,8 @@ enum DirectoryError {
 fn read_directory<R: Runtime>(
     app: &tauri::AppHandle<R>,
 ) -> Result<GuiDeviceDirectory, DirectoryError> {
-    let _guard = lock_cloud_credentials().map_err(|_| DirectoryError::Unavailable)?;
-    let mut settings = read_app_settings(app).map_err(|_| DirectoryError::Unavailable)?;
-    let mut credentials = read_cloud_credentials(app);
+    let (mut settings, mut credentials) =
+        cloud_snapshot(app).map_err(|_| DirectoryError::Unavailable)?;
     let installation =
         read_or_create_installation_state(app).map_err(|_| DirectoryError::Unavailable)?;
     let mut directory = GuiDeviceDirectory {
@@ -101,7 +100,9 @@ fn load_devices<R: Runtime>(
 }
 
 #[tauri::command]
-pub(crate) async fn codex_gui_devices(app: tauri::AppHandle) -> Result<GuiDeviceDirectory, String> {
+pub(crate) async fn codex_gui_devices<R: Runtime>(
+    app: tauri::AppHandle<R>,
+) -> Result<GuiDeviceDirectory, String> {
     tauri::async_runtime::spawn_blocking(move || read_directory(&app))
         .await
         .map_err(|_| DirectoryError::Unavailable.to_string())?

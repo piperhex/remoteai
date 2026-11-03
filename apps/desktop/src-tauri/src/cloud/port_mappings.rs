@@ -65,14 +65,13 @@ fn exchange<R: Runtime>(
     {
         return Err(SYNC_ERROR.into());
     }
-    let _guard = lock_cloud_credentials()?;
-    let mut settings = read_app_settings(app)?;
+
+    let (mut settings, mut credentials) = cloud_snapshot(app)?;
     if base_url(&settings)? != identity.base_url
         || settings.cloud_user_id.as_deref() != Some(&identity.user_id)
     {
         return Err(SYNC_ERROR.into());
     }
-    let mut credentials = read_cloud_credentials(app);
     let client = api_client()?;
     let method = if document.is_some() {
         Method::PUT
@@ -105,8 +104,8 @@ fn exchange<R: Runtime>(
 
 /// Credentials and blocking cloud I/O remain in the native worker.
 #[tauri::command]
-pub(crate) async fn sync_port_mappings(
-    app: tauri::AppHandle,
+pub(crate) async fn sync_port_mappings<R: Runtime>(
+    app: tauri::AppHandle<R>,
     identity: GuiCloudIdentity,
     device_id: String,
     document: Option<MappingDocument>,

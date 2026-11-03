@@ -99,11 +99,9 @@ pub(crate) async fn report_announcement_click<R: Runtime>(
     announcement_updated_at: Option<String>,
 ) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let installation = read_or_create_installation_state(&app)?;
         let client = api_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let authenticated =
             credentials.access_token.is_some() && credentials.refresh_token.is_some();
         let path = if authenticated {
@@ -128,8 +126,7 @@ pub(crate) async fn report_announcement_click<R: Runtime>(
                 path,
                 Some(payload),
             )?;
-            write_app_settings(&app, &settings)?;
-            write_cloud_credentials(&app, &credentials)?;
+            persist_cloud_sync(&app, &settings, &credentials)?;
             response
         } else {
             client
@@ -138,6 +135,7 @@ pub(crate) async fn report_announcement_click<R: Runtime>(
                 .json(&payload)
                 .send()
                 .map_err(|error| format!("Announcement click report failed: {error}"))?
+                .into()
         };
         if !response.status().is_success() {
             return Err(response_error("Announcement click report", response));
@@ -158,7 +156,6 @@ pub(crate) async fn submit_feedback<R: Runtime>(
     images: Vec<FeedbackImageInput>,
 ) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _credentials_guard = lock_cloud_credentials()?;
         let images = decode_feedback_images(images)?;
         let contact_email = contact_email
             .as_deref()
@@ -166,8 +163,7 @@ pub(crate) async fn submit_feedback<R: Runtime>(
             .filter(|email| !email.is_empty());
         validate_feedback(&content, &version, &platform, contact_email, &images)?;
         let client = feedback_client()?;
-        let mut settings = read_app_settings(&app)?;
-        let mut credentials = read_cloud_credentials(&app);
+        let (mut settings, mut credentials) = cloud_snapshot(&app)?;
         let authenticated =
             credentials.access_token.is_some() && credentials.refresh_token.is_some();
         let path = if authenticated {
@@ -178,6 +174,9 @@ pub(crate) async fn submit_feedback<R: Runtime>(
         let mut final_response = None;
 
         for attempt in 0..if authenticated { 2 } else { 1 } {
+            if authenticated {
+                prepare_cloud_request(&app, &settings, &mut credentials)?;
+            }
             let mut request = client
                 .post(endpoint(&settings, path)?)
                 .header("Accept", "application/json")
@@ -196,15 +195,18 @@ pub(crate) async fn submit_feedback<R: Runtime>(
                 .send()
                 .map_err(|error| format!("Feedback submission failed: {error}"))?;
             if !authenticated || response.status() != StatusCode::UNAUTHORIZED || attempt == 1 {
-                final_response = Some(response);
+                final_response = Some(if authenticated {
+                    CloudResponse::authenticated(&app, &credentials, response)?
+                } else {
+                    response.into()
+                });
                 break;
             }
             refresh_cloud_token(&app, &client, &mut settings, &mut credentials)?;
         }
 
         if authenticated {
-            write_app_settings(&app, &settings)?;
-            write_cloud_credentials(&app, &credentials)?;
+            persist_cloud_sync(&app, &settings, &credentials)?;
         }
         let response = final_response.ok_or_else(|| "Feedback submission failed".to_string())?;
         if !response.status().is_success() {

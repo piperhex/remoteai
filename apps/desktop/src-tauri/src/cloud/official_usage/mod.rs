@@ -31,8 +31,7 @@ fn report_records<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<(), UsageErro
     }
     let _guard = ReportGuard;
     let started_at = tracking::started_at(app)?;
-    let settings = read_app_settings(app).map_err(|_| UsageError::Unavailable)?;
-    let credentials = read_cloud_credentials(app);
+    let (settings, credentials) = cloud_snapshot(app).map_err(|_| UsageError::Unavailable)?;
     if !cloud_state(&settings, &credentials).authenticated {
         return Ok(());
     }
@@ -59,42 +58,34 @@ fn report_records<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<(), UsageErro
     let (reports, checkpoint) = local::prepare_report(snapshot, checkpoint, started_at)
         .map_err(|_| UsageError::Unavailable)?;
     if !reports.is_empty() {
-        upload_reports(app, reports, &identity)?;
+        upload_reports(app, reports, &credentials)?;
     }
     // A failed batch leaves the checkpoint untouched. Absolute minute totals make retrying safe.
     let value = serde_json::to_value(checkpoint).map_err(|_| UsageError::Unavailable)?;
-    write_json_atomic(&path, &value).map_err(|_| UsageError::Unavailable)
+    with_cloud_session(app, &credentials, || write_json_atomic(&path, &value))
+        .map_err(|_| UsageError::Unavailable)
 }
 
 fn upload_reports<R: Runtime>(
     app: &tauri::AppHandle<R>,
     reports: Vec<local::UsageReport>,
-    identity: &str,
+    expected: &CloudCredentials,
 ) -> Result<(), UsageError> {
     for report in reports {
-        upload_report(app, report, identity)?;
+        upload_report(app, report, expected)?;
     }
     Ok(())
 }
 
-// Release the credentials lock between batches so initial backfill cannot starve account actions.
+// Each batch retains the original login generation; network I/O never holds credentials.
 fn upload_report<R: Runtime>(
     app: &tauri::AppHandle<R>,
     report: local::UsageReport,
-    identity: &str,
+    expected: &CloudCredentials,
 ) -> Result<(), UsageError> {
-    let _guard = lock_cloud_credentials().map_err(|_| UsageError::Unavailable)?;
-    let mut settings = read_app_settings(app).map_err(|_| UsageError::Unavailable)?;
-    let mut credentials = read_cloud_credentials(app);
-    let current = format!(
-        "{:?}:{:?}:{}",
-        settings.cloud_base_url,
-        settings.cloud_user_id,
-        credentials.device_id.as_deref().unwrap_or_default()
-    );
-    if current != identity {
-        return Err(UsageError::Unavailable);
-    }
+    let (mut settings, mut credentials) =
+        cloud_snapshot(app).map_err(|_| UsageError::Unavailable)?;
+    ensure_cloud_session(app, expected).map_err(|_| UsageError::Unavailable)?;
     let client = api_client().map_err(|_| UsageError::Unavailable)?;
     let payload = serde_json::to_value(report).map_err(|_| UsageError::Unavailable)?;
     cloud_request(
@@ -109,8 +100,7 @@ fn upload_report<R: Runtime>(
     .map_err(|_| UsageError::Unavailable)?
     .error_for_status()
     .map_err(|_| UsageError::Unavailable)?;
-    write_app_settings(app, &settings).map_err(|_| UsageError::Unavailable)?;
-    write_cloud_credentials(app, &credentials).map_err(|_| UsageError::Unavailable)
+    persist_cloud_sync(app, &settings, &credentials).map_err(|_| UsageError::Unavailable)
 }
 
 /// Reporting continues while all usage pages are closed and never blocks the window thread.
@@ -130,3 +120,6 @@ pub(crate) fn start_official_usage_reporting<R: Runtime + 'static>(app: tauri::A
         }
     });
 }
+
+#[cfg(test)]
+mod credential_tests;

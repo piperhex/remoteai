@@ -82,9 +82,8 @@ pub(super) fn load_summary<R: Runtime>(
     start_ts: i64,
     expected_scope: Option<&quota_cache::QuotaScope>,
 ) -> Result<UsageSummary, UsageError> {
-    let _guard = lock_cloud_credentials().map_err(|_| UsageError::Unavailable)?;
-    let mut settings = read_app_settings(app).map_err(|_| UsageError::Unavailable)?;
-    let mut credentials = read_cloud_credentials(app);
+    let (mut settings, mut credentials) =
+        cloud_snapshot(app).map_err(|_| UsageError::Unavailable)?;
     if expected_scope.is_some_and(|scope| {
         quota_cache::QuotaScope::from_settings(&settings).as_ref() != Some(scope)
     }) {
@@ -112,8 +111,7 @@ pub(super) fn load_summary<R: Runtime>(
     .map_err(|_| UsageError::Unavailable)?
     .json()
     .map_err(|_| UsageError::Unavailable)?;
-    write_app_settings(app, &settings).map_err(|_| UsageError::Unavailable)?;
-    write_cloud_credentials(app, &credentials).map_err(|_| UsageError::Unavailable)?;
+    persist_cloud_sync(app, &settings, &credentials).map_err(|_| UsageError::Unavailable)?;
     Ok(summary)
 }
 

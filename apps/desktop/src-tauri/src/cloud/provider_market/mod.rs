@@ -98,6 +98,7 @@ fn exchange<R: Runtime>(
             .get(endpoint(&settings, &path).map_err(|_| MarketError::Unavailable)?)
             .send()
             .map_err(|_| MarketError::Unavailable)?
+            .into()
     } else {
         authenticated_request(app, identity.as_ref(), (method, path, body), &client)?
     };
@@ -108,11 +109,11 @@ fn authenticated_request<R: Runtime>(
     identity: Option<&GuiCloudIdentity>,
     request: (Method, String, Option<Value>),
     client: &Client,
-) -> Result<reqwest::blocking::Response, MarketError> {
+) -> Result<CloudResponse, MarketError> {
     let identity = identity.ok_or(MarketError::Authentication)?;
-    let _guard = lock_cloud_credentials().map_err(|_| MarketError::Unavailable)?;
-    let mut settings = read_app_settings(app).map_err(|_| MarketError::Unavailable)?;
-    let mut credentials = read_cloud_credentials(app);
+
+    let (mut settings, mut credentials) =
+        cloud_snapshot(app).map_err(|_| MarketError::Unavailable)?;
     if base_url(&settings).ok() != Some(identity.base_url.as_str())
         || settings.cloud_user_id.as_deref() != Some(&identity.user_id)
         || !cloud_state(&settings, &credentials).authenticated
@@ -130,7 +131,7 @@ fn authenticated_request<R: Runtime>(
     )
     .map_err(|_| MarketError::Unavailable)
 }
-fn read_reply(response: reqwest::blocking::Response) -> Result<ProviderMarketReply, MarketError> {
+fn read_reply(response: CloudResponse) -> Result<ProviderMarketReply, MarketError> {
     match response.status().as_u16() {
         200..=299 => (),
         400 => return Err(MarketError::Invalid),
