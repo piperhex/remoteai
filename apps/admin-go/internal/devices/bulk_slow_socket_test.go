@@ -67,3 +67,23 @@ func TestBulkSharedSourceWithStalledSocketWriter(t *testing.T) {
 		t.Fatal("slow socket unexpectedly drained")
 	}
 }
+
+func TestBulkSharedSourceReportsUnavailableAccountingOnDrainedSocket(t *testing.T) {
+	target, receiver := bulkBackpressurePeer(t)
+	writerDone := make(chan struct{})
+	go func() { defer close(writerDone); target.writeLoop() }()
+	defer func() { target.terminate(); <-writerDone }()
+	conn, _, _ := sharedBulkSource(t, map[string]*peer{"download": target})
+	if err := conn.WriteMessage(websocket.BinaryMessage, fullBulkWire(t)); err != nil {
+		t.Fatal(err)
+	}
+	for _, socket := range []*websocket.Conn{conn, receiver} {
+		var message platform.JSON
+		if err := socket.ReadJSON(&message); err != nil {
+			t.Fatal(err)
+		}
+		if message["type"] != "relay-quota" || message["reason"] != "unavailable" || message["blocked"] != true {
+			t.Fatalf("missing accounting state: %v", message)
+		}
+	}
+}

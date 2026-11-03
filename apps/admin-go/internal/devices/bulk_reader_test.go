@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/codex-switch/admin-go/internal/chattraffic"
 	"github.com/codex-switch/admin-go/internal/platform"
 	"github.com/gorilla/websocket"
 )
@@ -17,7 +18,9 @@ import (
 // of OS TCP buffering, while the source is a real multiplexed WebSocket.
 func sharedBulkSource(t *testing.T, targets map[string]*peer) (*websocket.Conn, *peer, *ChatGateway) {
 	t.Helper()
-	gateway := &ChatGateway{sessions: newChatSessions(nil)}
+	// A real writer may drain the prefilled queue depending on OS socket buffering.
+	// Keep accounting fail-closed without storage instead of leaving a nil meter.
+	gateway := &ChatGateway{sessions: newChatSessions(nil), meter: chattraffic.NewMeter(nil, nil)}
 	gateway.sessions.hot.deliver = gateway.deliverRelay
 	ready := make(chan *peer, 1)
 	finished := make(chan struct{})
