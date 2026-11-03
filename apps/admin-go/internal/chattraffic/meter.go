@@ -6,16 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
-
-type accountBudget struct {
-	mu    sync.Mutex
-	value budget
-	epoch string
-}
 
 const settlementBatchSize = 256
 const settlementTimeout = 10 * time.Second
@@ -26,13 +19,18 @@ const budgetRetention = 10 * time.Minute
 // Meter reserves bounded SQL budgets, spends them atomically in Redis and settles in batches.
 // No accounting lock is held across a network write. Unknown crash outcomes consume reserved credit.
 type Meter struct {
-	db       *gorm.DB
-	redis    *redis.Client
-	accounts sync.Map
-	flushMu  sync.Mutex
+	db           *gorm.DB
+	redis        *redis.Client
+	accounts     sync.Map
+	flushGate    contextGate
+	reservations contextGate
+	completions  contextGate
 }
 
-func NewMeter(db *gorm.DB, client *redis.Client) *Meter { return &Meter{db: db, redis: client} }
+func NewMeter(db *gorm.DB, client *redis.Client) *Meter {
+	return &Meter{db: db, redis: client, flushGate: make(contextGate, 1),
+		reservations: make(contextGate, accountingConcurrency), completions: make(contextGate, accountingConcurrency)}
+}
 
 func (meter *Meter) Transmit(ctx context.Context, owner string, bytes int, write func() error) error {
 	if bytes <= 0 || int64(bytes) > budgetBytes || meter.redis == nil {
@@ -42,36 +40,19 @@ func (meter *Meter) Transmit(ctx context.Context, owner string, bytes int, write
 	if err != nil {
 		return err
 	}
-	writeErr := write()
-	return errors.Join(writeErr, finishReservation(meter.redis, value, ticket, writeErr == nil))
-}
-
-func (meter *Meter) reserve(ctx context.Context, owner string, bytes int) (budget, string, error) {
-	entry, _ := meter.accounts.LoadOrStore(owner, &accountBudget{})
-	account := entry.(*accountBudget)
-	account.mu.Lock()
-	defer account.mu.Unlock()
-	ticket := "ticket:" + uuid.NewString()
-	if account.value.ID != "" {
-		ok, err := meter.take(ctx, account, bytes, ticket)
-		if err != nil || ok {
-			return account.value, ticket, err
-		}
-		if err := meter.retire(ctx, account.value); err != nil {
-			return budget{}, "", err
-		}
-		account.value = budget{}
+	if err := ctx.Err(); err != nil {
+		return errors.Join(err, meter.complete(ctx, value, ticket, false))
 	}
-	value, epoch, err := meter.openBudget(ctx, owner, bytes)
-	if err != nil {
-		return budget{}, "", err
+	if !time.Now().Before(value.ExpiresAt) {
+		// A delayed predebit reply must not authorize a new write in a later hour/month.
+		return errors.Join(ErrState, meter.complete(ctx, value, ticket, false))
 	}
-	account.value, account.epoch = value, epoch
-	ok, err := meter.take(ctx, account, bytes, ticket)
-	if err == nil && !ok {
-		err = ErrState
+	if err := write(); err != nil {
+		// The callback cannot prove that zero bytes reached the peer. Keep this
+		// ticket pending; recovery conservatively charges it after the write grace.
+		return err
 	}
-	return value, ticket, err
+	return meter.complete(ctx, value, ticket, true)
 }
 
 func (meter *Meter) openBudget(ctx context.Context, owner string, bytes int) (budget, string, error) {
@@ -86,9 +67,12 @@ func (meter *Meter) openBudget(ctx context.Context, owner string, bytes int) (bu
 	return value, epoch, initializeBudget(ctx, meter.redis, value)
 }
 
-func (meter *Meter) take(ctx context.Context, account *accountBudget, bytes int, ticket string) (bool, error) {
+func (meter *Meter) take(ctx context.Context, grant *budgetGrant, bytes int, ticket string) (bool, error) {
+	if err := ctx.Err(); err != nil {
+		return false, err
+	}
 	value, err := takeScript.Run(ctx, meter.redis,
-		[]string{budgetKey(account.value), epochKey(account.value.UserID)}, account.epoch, bytes, ticket).Int()
+		[]string{budgetKey(grant.value), epochKey(grant.value.UserID)}, grant.epoch, bytes, ticket).Int()
 	return value == 1, err
 }
 
@@ -121,10 +105,12 @@ func (meter *Meter) Flush() error {
 	if meter.redis == nil {
 		return ErrState
 	}
-	meter.flushMu.Lock()
-	defer meter.flushMu.Unlock()
 	ctx, cancel := context.WithTimeout(context.Background(), settlementTimeout)
 	defer cancel()
+	if err := meter.flushGate.lock(ctx); err != nil {
+		return err
+	}
+	defer meter.flushGate.unlock()
 	var values []budget
 	if err := meter.db.WithContext(ctx).Table("chat_relay_budgets").
 		Where("NOT closed AND expires_at <= ?", time.Now()).Order("expires_at").
@@ -144,9 +130,12 @@ func (meter *Meter) Flush() error {
 func (meter *Meter) forgetIdle() {
 	meter.accounts.Range(func(owner, entry interface{}) bool {
 		account := entry.(*accountBudget)
-		account.mu.Lock()
-		defer account.mu.Unlock()
-		if time.Now().After(account.value.ExpiresAt.Add(abandonedWriteGrace)) {
+		if !account.renew.tryLock() {
+			return true
+		}
+		defer account.renew.unlock()
+		grant := account.current.Load()
+		if grant == nil || time.Now().After(grant.value.ExpiresAt.Add(abandonedWriteGrace)) {
 			// Every grant is durable; an in-flight caller retaining this entry is still recoverable.
 			meter.accounts.CompareAndDelete(owner, entry)
 		}
@@ -161,10 +150,13 @@ func (meter *Meter) Close() error {
 	var result error
 	meter.accounts.Range(func(_, entry interface{}) bool {
 		account := entry.(*accountBudget)
-		account.mu.Lock()
-		defer account.mu.Unlock()
-		if account.value.ID != "" {
-			result = errors.Join(result, meter.retire(ctx, account.value))
+		if err := account.renew.lock(ctx); err != nil {
+			result = errors.Join(result, err)
+			return false
+		}
+		defer account.renew.unlock()
+		if grant := account.current.Load(); grant != nil {
+			result = errors.Join(result, meter.retire(ctx, grant.value))
 		}
 		return true
 	})

@@ -3,7 +3,9 @@ package chattraffic
 import (
 	"context"
 	"errors"
+	"net"
 	"os"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -53,7 +55,8 @@ func trafficFixture(t *testing.T) (*gorm.DB, string) {
 		t.Skip("local PostgreSQL fixture is opt-in")
 	}
 	db, err := gorm.Open(postgres.Open(
-		"host=127.0.0.1 port=15432 user=parity password=local-parity-only dbname=admin_go sslmode=disable"))
+		"host=127.0.0.1 port=" + trafficPort(t, "POSTGRES", "15432") +
+			" user=parity password=local-parity-only dbname=admin_go sslmode=disable"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +104,7 @@ func trafficFixture(t *testing.T) (*gorm.DB, string) {
 func TestConcurrentQuotaAndFailedWrites(t *testing.T) {
 	db, id := trafficFixture(t)
 	meter := trafficMeter(t, db, id)
-	setQuota(t, db, id, 100)
+	setQuota(t, db, id, 125)
 	failure := errors.New("socket write failed")
 	if err := meter.Transmit(t.Context(), id, 25, func() error { return failure }); !errors.Is(err, failure) {
 		t.Fatal(err)
@@ -119,11 +122,17 @@ func TestConcurrentQuotaAndFailedWrites(t *testing.T) {
 		}()
 	}
 	workers.Wait()
+	if sent.Load() != 100 {
+		t.Fatalf("failed write's 25 uncertain bytes were reused: sent=%d", sent.Load())
+	}
 	if err := meter.Close(); err != nil {
 		t.Fatal(err)
 	}
+	// A failed callback may have delivered part of its frame. Its pending ticket
+	// must survive until recovery; it cannot be refunded and spent a second time.
+	recoverTrafficBudgets(t, meter, id)
 	usage, err := ReadUsage(db, id, time.Now())
-	if err != nil || sent.Load() != 100 || usage.MonthUsedBytes != 100 {
+	if err != nil || sent.Load() != 100 || usage.MonthUsedBytes != 125 {
 		t.Fatalf("%+v %d %v", usage, sent.Load(), err)
 	}
 	daily, err := ReadDaily(db, id, MonthStart(time.Now()))
@@ -131,7 +140,7 @@ func TestConcurrentQuotaAndFailedWrites(t *testing.T) {
 	for _, day := range daily {
 		total += day.Bytes
 	}
-	if err != nil || total != 100 {
+	if err != nil || total != 125 {
 		t.Fatalf("hourly total: %d %v", total, err)
 	}
 }
@@ -165,7 +174,9 @@ func TestUnlimitedAndNextMonth(t *testing.T) {
 
 func trafficMeter(t *testing.T, db *gorm.DB, owner string) *Meter {
 	t.Helper()
-	client := redis.NewClient(&redis.Options{Addr: "127.0.0.1:16380"})
+	client := redis.NewClient(&redis.Options{
+		Addr: net.JoinHostPort("127.0.0.1", trafficPort(t, "REDIS", "16380")),
+	})
 	if err := client.Ping(t.Context()).Err(); err != nil {
 		t.Fatal(err)
 	}
@@ -193,4 +204,18 @@ func setQuota(t *testing.T, db *gorm.DB, owner string, limit int64) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+// Only the port is configurable: integration fixtures must stay on loopback.
+func trafficPort(t *testing.T, service, fallback string) string {
+	t.Helper()
+	port := os.Getenv("ADMIN_GO_TRAFFIC_" + service + "_PORT")
+	if port == "" {
+		return fallback
+	}
+	number, err := strconv.Atoi(port)
+	if err != nil || number < 1 || number > 65535 {
+		t.Fatalf("invalid local %s port: %q", service, port)
+	}
+	return port
 }

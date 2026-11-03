@@ -48,7 +48,7 @@ func TestRedisLossCannotReissueUnsettledQuota(t *testing.T) {
 		t.Fatal(err)
 	}
 	entry, _ := meter.accounts.Load(owner)
-	value := entry.(*accountBudget).value
+	value := entry.(*accountBudget).current.Load().value
 	if err := meter.redis.Del(t.Context(), budgetKey(value), epochKey(owner)).Err(); err != nil {
 		t.Fatal(err)
 	}
@@ -154,8 +154,8 @@ func TestReservationAndCompletionRetriesAreIdempotent(t *testing.T) {
 		t.Fatal(err)
 	}
 	entry, _ := meter.accounts.Load(owner)
-	account := entry.(*accountBudget)
-	if ok, err := meter.take(t.Context(), account, 10, ticket); err != nil || !ok {
+	grant := entry.(*accountBudget).current.Load()
+	if ok, err := meter.take(t.Context(), grant, 10, ticket); err != nil || !ok {
 		t.Fatal(ok, err)
 	}
 	for range 2 {
@@ -199,7 +199,7 @@ func TestRedisRestartCannotReuseAnOlderPersistentCounter(t *testing.T) {
 		t.Fatal(err)
 	}
 	entry, _ := meter.accounts.Load(owner)
-	value := entry.(*accountBudget).value
+	value := entry.(*accountBudget).current.Load().value
 	// Simulate restoration of an older counter from a different Redis process, without restarting the fixture.
 	if err := meter.redis.HSet(t.Context(), budgetKey(value), "server", "previous-redis-process",
 		"remaining", 100, "spent", 0).Err(); err != nil {
