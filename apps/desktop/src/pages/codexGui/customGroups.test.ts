@@ -53,6 +53,51 @@ it('deleting a group preserves children, projects and conversations at its paren
   expect(readGrouping(collision)).toEqual(collision);
 });
 
+it('removing conversation groups restores the original project, including legacy ungrouped entries', () => {
+  const state = { ...seeded(), projects: { '/project': 'child' },
+    threads: { one: 'other', two: null, untouched: 'other' } };
+  const restored = mutateGrouping(state, { action: 'assign', groupId: null,
+    targets: [{ kind: 'thread', id: 'one' }, { kind: 'thread', id: 'two' }] });
+  expect(restored.threads).toEqual({ untouched: 'other' });
+  expect(restored.projects).toEqual(state.projects);
+  expect(state.threads).toEqual({ one: 'other', two: null, untouched: 'other' });
+  const tree = flattenGroupingTree(groupingTree([
+    { cwd: '/project', label: 'Project', data: [{ id: 'one' }, { id: 'two' }] },
+  ], readGrouping(JSON.parse(JSON.stringify(restored)))), new Set());
+  expect(tree.find(row => row.id === 'project:/project')).toMatchObject({ depth: 2,
+    data: [{ id: 'one' }, { id: 'two' }] });
+  expect(tree.some(row => row.id === 'ungrouped')).toBe(false);
+  expect(memberGroup(restored, { kind: 'thread', id: 'one', cwd: '/project', title: '' })).toBe('child');
+});
+
+it('removing a group from a conversation without a project keeps it projectless', () => {
+  const thread = { id: 'loose', cwd: '' };
+  const state = { ...seeded(), threads: { loose: 'work' } };
+  const restored = mutateGrouping(state, { action: 'assign', groupId: null,
+    targets: [{ kind: 'thread', id: thread.id }] });
+  const tree = flattenGroupingTree(groupingTree([{ id: 'recent', cwd: '', label: 'Recent', data: [thread] }], restored),
+    new Set());
+  expect(tree.find(row => row.id === 'recent')?.data).toEqual([{ id: 'loose', cwd: '' }]);
+  expect(restored.projects).toEqual({});
+  expect(tree.some(row => row.cwd || row.id === 'ungrouped')).toBe(false);
+  expect(mutateGrouping(restored, { action: 'assign', groupId: null,
+    targets: [{ kind: 'thread', id: thread.id }] })).toEqual(restored);
+});
+
+it('batch removal returns projects to the root and threads to their own projects', () => {
+  const state = { ...seeded(), projects: { '/project': 'child', '/other': 'work' },
+    threads: { one: 'other', two: 'child' } };
+  const restored = mutateGrouping(state, { action: 'assign', groupId: null,
+    targets: [{ kind: 'project', id: '/project' }, { kind: 'thread', id: 'one' }, { kind: 'thread', id: 'two' }] });
+  const tree = flattenGroupingTree(groupingTree([
+    { cwd: '/project', label: 'Project', data: [{ id: 'one' }] },
+    { cwd: '/other', label: 'Other', data: [{ id: 'two' }] },
+  ], restored), new Set());
+  expect(restored.projects).toEqual({ '/other': 'work' });
+  expect(tree.find(row => row.cwd === '/project')).toMatchObject({ depth: 0, data: [{ id: 'one' }] });
+  expect(tree.find(row => row.cwd === '/other')).toMatchObject({ depth: 1, data: [{ id: 'two' }] });
+});
+
 it('persists before publication, reloads changes and broadcasts group-only updates', async () => {
   let state = { ...initialState(), grouping: seeded() };
   let changed = () => {};
@@ -65,6 +110,10 @@ it('persists before publication, reloads changes and broadcasts group-only updat
   expect(loadGrouping()).toEqual(state.grouping);
   expect(published).toHaveBeenCalledOnce();
   expect(bridge.snapshot().grouping?.projects).toEqual({ '/project': 'work' });
+  await service.mutate({ action: 'assign', targets: [{ kind: 'thread', id: 'one' }], groupId: 'child' });
+  await service.mutate({ action: 'assign', targets: [{ kind: 'thread', id: 'one' }], groupId: null });
+  expect(loadGrouping().threads).toEqual({});
+  expect(bridge.snapshot().grouping?.threads).toEqual({});
   vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('full'); });
   await expect(service.mutate({ action: 'delete', id: 'work' })).rejects.toThrow('client.groups.saveFailed');
   expect(state.grouping.groups).toHaveLength(3);

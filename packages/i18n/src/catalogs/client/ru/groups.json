@@ -1,4 +1,5 @@
 {
+  "client.groups.remove": "Убрать из группы",
   "client.groups.move": "Переместить в группу",
   "client.groups.manage": "Управление группами",
   "client.groups.groups": "Группы",

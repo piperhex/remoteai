@@ -24,8 +24,11 @@ export function GroupChoice({ groups, exclude, title, disabled, close, pick, man
         style={styles.row} disabled={disabled} onPress={() => pick(group.value)}>
         <NativeGroupIcon icon={group.icon} /><Text style={styles.text}>{group.label}</Text>
       </Pressable>)}
-      <Pressable accessibilityRole="button" style={styles.action} disabled={disabled} onPress={() => pick(null)}>
-        <Text style={styles.text}>{t(parent ? 'client.groups.root' : 'client.groups.ungrouped')}</Text>
+      <Pressable accessibilityRole="button" style={[styles.action, !parent && styles.actionRow]}
+        disabled={disabled} onPress={() => pick(null)}>
+        {!parent && <Feather name="minus-circle" size={18} color={styles.remove.color} />}
+        <Text style={[styles.text, !parent && styles.remove]}>
+          {t(parent ? 'client.groups.root' : 'client.groups.remove')}</Text>
       </Pressable>
       {manage && <Pressable accessibilityRole="button" style={styles.action} disabled={disabled} onPress={manage}>
         <Text style={styles.text}>{t('client.groups.manage')}</Text>

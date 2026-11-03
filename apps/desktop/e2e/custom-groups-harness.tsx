@@ -11,6 +11,7 @@ import { guiApi } from '../src/pages/codexGui/api';
 import { SidebarBridge } from '../src/pages/codexGui/sidebarBridge';
 import { ChatController } from '../../../shared/remote-chat/client/controller';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
+import { setThemeMode } from '../../web/src/theme/preference';
 import styles from '../src/pages/codexGui/styles.module.less';
 import 'antd/dist/reset.css';
 import '../src/styles.css';
@@ -22,16 +23,22 @@ setInterfaceLanguage((params.get('lang') ?? 'zh') as 'zh');
 document.body.style.minWidth = '0';
 const dark = params.has('dark');
 document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+if (params.get('mode') === 'web') setThemeMode(dark ? 'dark' : 'light');
 const threads = [
   { id: 'design', name: '分组设计讨论', preview: '', cwd: '/workspace/remote-ai', updatedAt: 3 },
   { id: 'release', name: '发布检查清单', preview: '', cwd: '/workspace/remote-ai', updatedAt: 2 },
   { id: 'research', name: '交互体验研究', preview: '', cwd: '/workspace/research', updatedAt: 1 },
+  ...(params.has('restore') ? [{ id: 'loose', name: '无项目对话', preview: '', cwd: '', updatedAt: 1 }] : []),
 ];
 let state = { ...initialState(), connection: 'ready' as const, threads };
 if (!state.grouping.groups.length && !localStorage.getItem('custom-group-fixture-initialized')) {
   state.grouping.groups = [{ id: 'work', name: '工作', parentId: null },
     { id: 'client', name: '客户端', parentId: 'work' }, { id: 'research', name: '研究', parentId: null }];
   localStorage.setItem('custom-group-fixture-initialized', '1');
+  if (params.has('restore')) {
+    state.grouping.projects = { '/workspace/remote-ai': 'client' };
+    state.grouping.threads = { design: 'research', release: null, loose: 'research' };
+  }
   localStorage.setItem('codex-switch:gui-custom-groups', JSON.stringify(state.grouping));
 }
 const listeners = new Set<() => void>();

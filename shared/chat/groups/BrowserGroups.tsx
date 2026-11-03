@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Alert, Button, Modal, Space, Table, Tabs } from 'antd';
+import { CircleMinus } from 'lucide-react';
 import { GroupingContext, useGroupingUI, type GroupingUI } from './context';
 import { groupOptions, groupPath, type ChatGroup } from './model';
 import { GroupIcon } from './GroupIcon';
@@ -19,8 +20,9 @@ export function BrowserGroups({ children, mobile = false, ...options }: Paramete
         {groupOptions(model.grouping.groups).map(group => <Button key={group.value} disabled={model.busy || !model.ready}
           icon={<GroupIcon icon={group.icon} />} onClick={() => void model.assign([model.moveTarget!], group.value)}>
           {group.label}</Button>)}
-        <Button disabled={model.busy || !model.ready} onClick={() => void model.assign([model.moveTarget!], null)}>
-          {model.translate('client.groups.ungrouped')}</Button>
+        <Button danger icon={<CircleMinus size={16} />} disabled={model.busy || !model.ready}
+          onClick={() => void model.assign([model.moveTarget!], null)}>
+          {model.translate('client.groups.remove')}</Button>
         <Button onClick={model.openManager}>{model.translate('client.groups.manage')}</Button>
       </div>
     </Modal>}

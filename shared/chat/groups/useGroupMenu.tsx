@@ -1,5 +1,5 @@
 import type { MenuProps } from 'antd';
-import { Settings2 } from 'lucide-react';
+import { CircleMinus, Settings2 } from 'lucide-react';
 import { useGrouping } from './context';
 import { groupOptions, type GroupTarget } from './model';
 import { GroupIcon } from './GroupIcon';
@@ -14,7 +14,8 @@ export function useGroupMenu(target?: GroupTarget): NonNullable<MenuProps['items
     popupClassName: 'chat-custom-group-menu', children: [
       ...groupOptions(groups.grouping.groups).map(group => ({ key: `moveGroup:${group.value}`,
         label: group.label, icon: <GroupIcon icon={group.icon} />, onClick: () => move(group.value) })),
-      { key: 'moveGroup:root', label: t('client.groups.ungrouped'), onClick: () => move(null) },
+      { key: 'moveGroup:root', label: t('client.groups.remove'), icon: <CircleMinus size={16} />,
+        danger: true, onClick: () => move(null) },
       { type: 'divider' },
       { key: 'manageGroups', label: t('client.groups.manage'), icon: <Settings2 size={16} />,
         onClick: groups.openManager },

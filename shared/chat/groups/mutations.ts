@@ -50,8 +50,12 @@ export function mutateGrouping(state: Grouping, input: unknown): Grouping {
   if (mutation.action === 'assign') {
     validateTargets(mutation.targets);
     if (mutation.groupId !== null && !next.groups.some(group => group.id === mutation.groupId)) throw invalid();
-    mutation.targets.forEach(target => { next[target.kind === 'project' ? 'projects' : 'threads'][target.id]
-      = mutation.groupId; });
+    mutation.targets.forEach(target => {
+      const memberships = next[target.kind === 'project' ? 'projects' : 'threads'];
+      // Remove the override so conversations follow their project again.
+      if (mutation.groupId === null) delete memberships[target.id];
+      else memberships[target.id] = mutation.groupId;
+    });
     return next;
   }
   if (mutation.action === 'create') {

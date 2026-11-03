@@ -12,13 +12,15 @@ import { ChatThreads } from '../src/chat/ChatThreads';
 import type { ChatController as NativeController } from '../src/chat/controller';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
 import { textMetrics } from '../src/theme/text';
+import { updateThemeMode, useThemeColor, useThemeMode } from '../src/theme/store';
 
 setInterfaceLanguage('zh');
 
 type FailureMode = 'none' | 'legacy' | 'delayed';
 function createController(failure: FailureMode) {
   const threads = [{ id: 'one', name: '项目里的对话', cwd: '/project', preview: '', updatedAt: 2 },
-    { id: 'two', name: '其他项目的对话', cwd: '/other', preview: '', updatedAt: 1 }];
+    { id: 'two', name: '其他项目的对话', cwd: '/other', preview: '', updatedAt: 1 },
+    { id: 'loose', name: '无项目对话', cwd: '', preview: '', updatedAt: 1 }];
   let grouping: Grouping = { ...emptyGrouping(), groups: [
     { id: 'work', name: '工作', parentId: null }, { id: 'client', name: '客户端', parentId: 'work' },
     { id: 'research', name: '研究', parentId: null },
@@ -51,16 +53,20 @@ function createController(failure: FailureMode) {
 }
 
 function Fixture() {
+  const themeMode = useThemeMode();
+  const color = useThemeColor();
   const [failure, setFailure] = useState<FailureMode>('none');
   const controller = useMemo(() => createController(failure), [failure]);
   const state = useSyncExternalStore(controller.subscribe, controller.snapshot);
   const [fontsReady] = useFonts(Feather.font);
   useEffect(() => { controller.start(); return () => controller.stop(); }, [controller]);
-  return <SafeAreaProvider><SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+  return <SafeAreaProvider><SafeAreaView style={{ flex: 1, backgroundColor: color('#fff', 'canvas') }}>
     <View style={{ flexDirection: 'row', gap: 12, paddingHorizontal: 16 }}>
       {(['none', 'legacy', 'delayed'] as const).map(mode => <Pressable key={mode}
         accessibilityRole="button" accessibilityLabel={`fixture-${mode}`} onPress={() => setFailure(mode)}
-        style={{ padding: 8 }}><Text style={textMetrics(14, 22)}>{mode}</Text></Pressable>)}
+        onLongPress={mode === 'none' ? () => updateThemeMode(themeMode === 'light' ? 'dark' : 'light') : undefined}
+        style={{ padding: 8 }}><Text style={[textMetrics(14, 22), { color: color('#17211b', 'ink') }]}>
+          {mode}</Text></Pressable>)}
     </View>
     {fontsReady && <ChatThreads state={state} controller={controller as NativeController}
       newChat={() => {}} select={() => {}} openSearch={() => {}} profileMenu={null} />}

@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Button, Input, Select, Space, Table, Tag } from 'antd';
+import { Button, Input, Select, Space, Table, Tag, theme } from 'antd';
+import { CircleMinus } from 'lucide-react';
 import type { GroupingUI } from './context';
 import { groupOptions, groupPath, memberGroup, type GroupMember } from './model';
 import { GroupMemberCards } from './GroupMemberCards';
 
 export function GroupMembers({ model, mobile }: { model: GroupingUI; mobile: boolean }) {
   const t = model.translate;
+  const { token } = theme.useToken();
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<React.Key[]>([]);
   const [destination, setDestination] = useState('');
@@ -24,7 +26,8 @@ export function GroupMembers({ model, mobile }: { model: GroupingUI; mobile: boo
       <span>{t('client.groups.selected', { count: selected.length })}</span>
       <Select className="chat-group-destination" value={destination} onChange={setDestination}
         aria-label={t('client.groups.move')} disabled={model.busy}
-        options={[{ value: '', label: t('client.groups.ungrouped') }, ...groupOptions(model.grouping.groups)]} />
+        options={[{ value: '', label: <Space style={{ color: token.colorError }}>
+          <CircleMinus size={16} />{t('client.groups.remove')}</Space> }, ...groupOptions(model.grouping.groups)]} />
       <Button type="primary" disabled={!selected.length || !model.ready || model.loading}
         loading={model.busy} onClick={() => void assign()}>{t('client.groups.apply')}</Button>
       <Button loading={model.loading} onClick={() => void model.reload()}>{t('client.workspaceActions.refreshConversations')}</Button>

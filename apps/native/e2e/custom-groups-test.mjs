@@ -52,6 +52,37 @@ async function dismissKeyboard() {
   if (/mInputShown=true|isInputViewShown=true/.test(keyboard)) await adb('shell', 'input', 'keyevent', '4');
 }
 
+async function verifyRemoval(scale) {
+  await hold('项目里的对话');
+  await tap('移动到分组');
+  await find('取消分组');
+  assert.ok(!(await nodes()).some(node => matches(node, '未分组')));
+  await screenshot(`android-cancel-picker-${scale}`);
+  await tap('取消分组');
+  await tap('折叠项目：项目文件夹中文显示测试');
+  assert.ok(!(await nodes()).some(node => matches(node, '项目里的对话')));
+  await tap('展开项目：项目文件夹中文显示测试');
+  await find('项目里的对话');
+  await hold('无项目对话');
+  await tap('移动到分组');
+  await tap('研究');
+  await tap('折叠分组：研究');
+  assert.ok(!(await nodes()).some(node => matches(node, '无项目对话')));
+  await tap('展开分组：研究');
+  await hold('无项目对话');
+  await tap('移动到分组');
+  await tap('取消分组');
+  await tap('折叠分组：工作');
+  await tap('折叠分组：研究');
+  await tap('折叠项目：其他项目');
+  await find('无项目对话');
+  await screenshot(`android-projectless-restored-${scale}`);
+  await tap('展开分组：工作');
+  await tap('展开分组：研究');
+  await tap('展开项目：其他项目');
+  await screenshot(`android-project-restored-${scale}`);
+}
+
 async function verify(scale) {
   await hold('折叠项目：项目文件夹中文显示测试');
   await find('移动到分组');
@@ -68,6 +99,7 @@ async function verify(scale) {
   await tap('研究');
   await find('项目里的对话');
   await screenshot(`android-tree-${scale}`);
+  await verifyRemoval(scale);
   await hold('折叠分组：工作');
   await find('管理分组');
   await tap('新增分组');
@@ -106,7 +138,22 @@ async function verify(scale) {
   await find('折叠分组：Plan');
   await tap('折叠分组：Plan');
   assert.ok(!(await nodes()).some(node => matches(node, '项目里的对话')));
+  await verifyBatchRemoval(scale);
   console.log(`PASS native groups, batch membership and navigation at font scale ${scale}`);
+}
+
+async function verifyBatchRemoval(scale) {
+  await tap('管理分组');
+  await tap('项目与对话');
+  await tap('选择 项目里的对话', true);
+  await tap('选择 其他项目的对话', true);
+  await adb('shell', 'input', 'swipe', '540', '750', '540', '1900', '350');
+  await tap('移动到分组');
+  await tap('取消分组');
+  await adb('shell', 'input', 'keyevent', '4');
+  await find('项目里的对话');
+  await find('其他项目的对话', true);
+  await screenshot(`android-batch-restored-${scale}`);
 }
 
 const original = await adb('shell', 'settings', 'get', 'system', 'font_scale');

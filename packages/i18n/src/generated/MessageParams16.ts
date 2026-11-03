@@ -46,6 +46,7 @@ export interface MessageParams16 {
   "client.groups.name": Record<string, never>;
   "client.groups.parent": Record<string, never>;
   "client.groups.project": Record<string, never>;
+  "client.groups.remove": Record<string, never>;
   "client.groups.resetIcon": Record<string, never>;
   "client.groups.root": Record<string, never>;
   "client.groups.saved": Record<string, never>;
@@ -199,5 +200,4 @@ export interface MessageParams16 {
   "client.lounge.fileLimitHint": { "size": string | number };
   "client.lounge.fileOnlineHint": Record<string, never>;
   "client.lounge.fileProgress": { "percent": string | number };
-  "client.lounge.fileUnavailable": Record<string, never>;
 }

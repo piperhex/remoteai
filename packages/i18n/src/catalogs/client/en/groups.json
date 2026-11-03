@@ -1,5 +1,6 @@
 {
   "client.groups.move": "Move to group",
+  "client.groups.remove": "Remove from group",
   "client.groups.manage": "Manage groups",
   "client.groups.groups": "Groups",
   "client.groups.members": "Projects and conversations",

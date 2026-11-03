@@ -10,6 +10,8 @@ export const useGroupStyles = createThemedStyles(color => ({
   error: { ...textMetrics(14, 22), color: color(palette.danger, 'danger'), flexShrink: 1, maxWidth: 400 },
   action: { minHeight: 44, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 8,
     borderWidth: 1, borderColor: color(palette.border, 'border'), justifyContent: 'center' },
+  actionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 10 },
+  remove: { color: color(palette.danger, 'danger') },
   input: { ...textMetrics(15, 22), color: color(palette.ink, 'ink'), borderWidth: 1,
     borderColor: color(palette.border, 'border'), borderRadius: 8, padding: 10 },
   card: { borderWidth: 1, borderColor: color(palette.border, 'border'), borderRadius: 12, padding: 14, gap: 10 },

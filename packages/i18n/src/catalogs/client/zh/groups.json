@@ -1,5 +1,6 @@
 {
   "client.groups.move": "移动到分组",
+  "client.groups.remove": "取消分组",
   "client.groups.manage": "管理分组",
   "client.groups.groups": "分组",
   "client.groups.members": "项目与对话",
