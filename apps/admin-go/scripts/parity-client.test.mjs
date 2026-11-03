@@ -40,3 +40,14 @@ test('old Providers cannot acquire market page access', () => {
   assert.throws(() => normalize({ ...provider, fieldModifiedAt: { marketSource: 'invalid' } }), /ISO timestamp/);
   assert.deepEqual(normalize({ marketSource: 'unrelated' }), { marketSource: 'unrelated' });
 });
+
+test('frozen chat settings preserve the Go remote command concurrency default', () => {
+  assert.deepEqual(normalize({ threadPageSize: 30, remoteCommandConcurrencyLimit: 5 }), { threadPageSize: 30 });
+  for (const limit of [0, 1, 6, '5', null]) {
+    assert.throws(() => normalize({ threadPageSize: 30, remoteCommandConcurrencyLimit: limit }),
+      /must preserve remoteCommandConcurrencyLimit/);
+  }
+  assert.deepEqual(normalize({ remoteCommandConcurrencyLimit: 6 }), { remoteCommandConcurrencyLimit: 6 });
+  assert.deepEqual(normalize({ threadPageSize: 30, unknownSetting: 5 }),
+    { threadPageSize: 30, unknownSetting: 5 });
+});

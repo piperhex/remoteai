@@ -27,12 +27,15 @@ const goOnlyChatFields = new Set([
   'relayHeartbeatTimeoutSeconds', 'fileDownloadWindowSize', 'fileBulkEnabled',
 ]);
 const goOnlyDeviceFields = new Set(['guiAccountId', 'guiProviderId']);
-const loungeDefaults = { loungeFileMaxMb: 300, loungeGroupImageMaxMb: 1, loungeDirectImageMaxMb: 1 };
+const goOnlyChatDefaults = {
+  loungeFileMaxMb: 300, loungeGroupImageMaxMb: 1, loungeDirectImageMaxMb: 1,
+  remoteCommandConcurrencyLimit: 5,
+};
 
 function legacyChatField(value, field) {
   if (!('threadPageSize' in value)) return true;
-  if (Object.hasOwn(loungeDefaults, field)) {
-    assert.equal(value[field], loungeDefaults[field], `legacy settings must preserve ${field}`);
+  if (Object.hasOwn(goOnlyChatDefaults, field)) {
+    assert.equal(value[field], goOnlyChatDefaults[field], `legacy settings must preserve ${field}`);
     return false;
   }
   return !goOnlyChatFields.has(field);
