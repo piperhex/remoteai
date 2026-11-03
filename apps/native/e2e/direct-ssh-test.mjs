@@ -71,7 +71,7 @@ async function verify(scale) {
   await tap('SSH key server'); await find('远程文件浏览');
   await screenshot(`android-dark-direct-key-terminal-font-${scale}`);
   await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK');
-  await tap('新建 SSH 连接'); await find('IP 或主机名');
+  await tap('新建'); await find('IP 或主机名');
   await screenshot(`android-dark-direct-create-font-${scale}`);
   await adb('shell', 'input', 'keyevent', 'KEYCODE_BACK'); await tap('返回发现'); await find('SSH');
   console.log(`PASS Android direct SSH, trust, files, retained sessions, back, light/dark at font ${scale}`);

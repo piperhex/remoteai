@@ -70,7 +70,7 @@ async function input(label, value) {
   throw new Error(`Missing input ${label}`);
 }
 async function verifyEditor(scale) {
-  await tap('新建 SSH 连接'); await find('连接名称（可选）');
+  await tap('新建'); await find('连接名称（可选）');
   await screenshot(`android-light-ssh-create-${scale}`);
   await input('连接名称（可选）', 'New-server');
   await input('IP 或主机名', 'new.test'); await input('用户名', 'dev');

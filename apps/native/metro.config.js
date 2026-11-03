@@ -23,7 +23,9 @@ config.watchFolders = [workspaceRoot];
 const existingBlockList = config.resolver.blockList ?? [];
 config.resolver.blockList = [...(Array.isArray(existingBlockList) ? existingBlockList : [existingBlockList]),
   /[/\\]crates[/\\]chat-connectivity[/\\]target[/\\].*/,
-  /[/\\]plugins[/\\]connectivity[/\\]build[/\\].*/];
+  /[/\\]crates[/\\]ssh-mobile[/\\]target[/\\].*/,
+  /[/\\]plugins[/\\]connectivity[/\\]build[/\\].*/,
+  /[/\\]plugins[/\\]ssh[/\\]build[/\\].*/];
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
   path.resolve(workspaceRoot, 'node_modules'),

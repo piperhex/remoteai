@@ -21,11 +21,18 @@ export function SshPage({ client, onBack }: {
   const color = useThemeColor();
   const { saved, profile, choose, close, panel, editor, edit, closeEditor } = useSshDiscovery(client, true, true);
   return <View style={styles.page}>
-    <DiscoveryBackButton onBack={onBack} />
-    <View style={styles.heading}><View style={styles.titleRow}>
+    <View style={styles.header}>
+      <View style={styles.headerSide}><DiscoveryBackButton onBack={onBack} /></View>
       <Text accessibilityRole="header" style={styles.title}>{t('client.discovery.ssh')}</Text>
-      <SshButton label={t('client.ssh.createTitle')} onPress={() => edit()} />
+      <View style={[styles.headerSide, styles.headerRight]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('client.ssh.createAction')}
+          onPress={() => edit()} style={({ pressed }) => [styles.create, pressed && styles.pressed]}>
+          <Ionicons name="add" size={20} color={color('#07b775', 'accent')} accessible={false} />
+          <Text style={styles.createLabel}>{t('client.ssh.createAction')}</Text>
+        </Pressable>
+      </View>
     </View>
+    <View style={styles.heading}>
       <Text style={styles.hint}>{t('client.discovery.sshDirectHint')}</Text>
       {panel.tabs.length > 0 && <SshButton label={t('client.projectBrowser.terminal')} onPress={panel.toggle} />}
     </View>
@@ -66,9 +73,13 @@ export function SshPage({ client, onBack }: {
 
 const useStyles = createThemedStyles(color => ({
   page: { flex: 1, backgroundColor: color('#ededed', 'canvas') },
+  header: { flexDirection: 'row', alignItems: 'center', minHeight: 48, paddingVertical: 6 },
+  headerSide: { flex: 1, minWidth: 0 },
+  headerRight: { alignItems: 'flex-end' },
+  title: { ...textMetrics(18, 28), fontWeight: '600', textAlign: 'center', color: color('#181818', 'ink') },
+  create: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 16, minHeight: 48 },
+  createLabel: { ...textMetrics(16, 24), flexShrink: 1, color: color('#07b775', 'accent') },
   heading: { paddingHorizontal: 20, paddingBottom: 16, gap: 8 },
-  title: { ...textMetrics(24, 34), fontWeight: '600', color: color('#181818', 'ink') },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 },
   section: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   content: { padding: 16, gap: 12, paddingBottom: 24 },
   row: { flexDirection: 'row', alignItems: 'center', borderRadius: 12,

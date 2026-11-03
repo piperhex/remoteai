@@ -1,9 +1,18 @@
 .discovery-ssh-page { flex: 1; min-height: 0; overflow-y: auto; background: var(--app-canvas, #ededed);
   color: var(--app-ink, #181818); }
 .discovery-ssh-heading { padding: 0 20px 16px; }
-.discovery-ssh-heading h1 { margin: 0 0 8px; font-size: 24px; line-height: 1.5; }
-.discovery-ssh-title-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-.discovery-ssh-title-row .ant-btn { min-height: 44px; height: auto; white-space: normal; }
+.discovery-ssh-header { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center; min-height: 48px; padding-block: 6px; }
+.discovery-ssh-header h1 { margin: 0; padding-block: 2px; font-size: 18px; font-weight: 600;
+  line-height: 1.56; text-align: center; }
+.discovery-ssh-header .discovery-back { justify-self: start; margin-left: 0; max-width: 100%; }
+.discovery-ssh-create { display: inline-flex; align-items: center; justify-self: end; gap: 4px;
+  min-height: 48px; max-width: 100%; padding: 0 16px; border: 0; background: transparent;
+  color: var(--app-accent, #07b775); font: inherit; font-size: 16px; cursor: pointer; }
+.discovery-ssh-create > svg { flex-shrink: 0; }
+.discovery-ssh-create > span { min-width: 0; padding-block: 2px; line-height: 1.5; overflow-wrap: anywhere; }
+.discovery-ssh-create:active { opacity: .65; }
+.discovery-ssh-create:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
 .discovery-ssh-device { display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
   padding: 0; border: 0; background: transparent; color: var(--app-muted, #777); font: inherit; cursor: pointer; }
 .discovery-ssh-content { display: flex; flex-direction: column; gap: 12px; padding: 16px 16px 24px; }

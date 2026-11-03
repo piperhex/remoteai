@@ -22,18 +22,21 @@ export function SshPage({ client, connected, deviceName, devices, chooseDevice, 
   const { saved, profile, choose, close, panel, editor, edit, closeEditor } = useSshDiscovery(client, connected);
   const [picking, setPicking] = useState(false);
   return <section className="discovery-ssh-page" aria-label={t('client.discovery.ssh')}>
-    <DiscoveryBackButton onBack={onBack} />
-    <header className="discovery-ssh-heading"><div className="discovery-ssh-title-row">
+    <header className="discovery-ssh-header">
+      <DiscoveryBackButton onBack={onBack} />
       <h1>{t('client.discovery.ssh')}</h1>
-      <Button type="primary" icon={<Plus size={16} />} onClick={() => edit()}>{t('client.ssh.createTitle')}</Button>
-    </div>
+      <button type="button" className="discovery-ssh-create" onClick={() => edit()}>
+        <Plus size={20} aria-hidden="true" /><span>{t('client.ssh.createAction')}</span>
+      </button>
+    </header>
+    <div className="discovery-ssh-heading">
       <button type="button" className="discovery-ssh-device" onClick={() => setPicking(true)}
         aria-label={t('client.settings.chooseAComputer')}>
         {deviceName ? t('client.discovery.sshViaComputer', { name: deviceName })
           : t('client.settings.chooseAComputer')}<ChevronDown size={18} />
       </button>
       <p className="discovery-ssh-hint">{t('client.discovery.sshWebHint')}</p>
-    </header>
+    </div>
     <div className="discovery-ssh-content">
       <div className="discovery-ssh-section"><span>{t('client.ssh.savedConnections')}</span>
         <Button aria-label={t('client.ssh.refresh')} loading={saved.loading}

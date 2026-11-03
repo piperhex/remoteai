@@ -89,6 +89,7 @@ export interface MessageParams26 {
   "client.ssh.connectionFailed": Record<string, never>;
   "client.ssh.copyFailed": Record<string, never>;
   "client.ssh.copyPath": Record<string, never>;
+  "client.ssh.createAction": Record<string, never>;
   "client.ssh.createHint": Record<string, never>;
   "client.ssh.createTitle": Record<string, never>;
   "client.ssh.credentialsHint": Record<string, never>;
@@ -199,5 +200,4 @@ export interface MessageParams26 {
   "client.ssh.updateFingerprint": Record<string, never>;
   "client.ssh.updateRequired": Record<string, never>;
   "client.ssh.upload": Record<string, never>;
-  "client.ssh.uploadConflictHint": { "name": string | number };
 }

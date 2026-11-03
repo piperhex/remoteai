@@ -34,6 +34,7 @@
   "client.ssh.passwordAuth": "Пароль",
   "client.ssh.keyAuth": "Закрытый ключ",
   "client.ssh.createTitle": "Новое SSH-подключение",
+  "client.ssh.createAction": "Создать",
   "client.ssh.editTitle": "Редактирование SSH-подключения",
   "client.ssh.editConnection": "Редактировать {name}",
   "client.ssh.createHint": "Подключитесь к серверу и начните сеанс терминала.",

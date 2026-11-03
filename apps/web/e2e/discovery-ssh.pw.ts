@@ -75,7 +75,7 @@ test('saved connections stay visible without a computer and copy switches offlin
   await page.locator('.discovery-list').getByRole('button', { name: 'SSH', exact: true }).click();
   const list = page.locator('.discovery-ssh-page');
   await expect(list.getByRole('button', { name: /已保存的服务器 / })).toBeEnabled();
-  await list.getByRole('button', { name: '新建 SSH 连接', exact: true }).click();
+  await list.getByRole('button', { name: '新建', exact: true }).click();
   const editor = page.getByRole('dialog');
   await editor.getByLabel('连接名称（可选）', { exact: true }).fill('新建服务器');
   await editor.getByLabel('IP 或主机名', { exact: true }).fill('new.test');

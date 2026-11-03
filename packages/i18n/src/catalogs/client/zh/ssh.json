@@ -34,6 +34,7 @@
   "client.ssh.passwordAuth": "密码登录",
   "client.ssh.keyAuth": "私钥登录",
   "client.ssh.createTitle": "新建 SSH 连接",
+  "client.ssh.createAction": "新建",
   "client.ssh.editTitle": "编辑 SSH 连接",
   "client.ssh.editConnection": "编辑 {name}",
   "client.ssh.createHint": "连接远程服务器，开始终端会话。",
