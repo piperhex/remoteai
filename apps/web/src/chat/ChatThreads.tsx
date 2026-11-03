@@ -1,6 +1,6 @@
 import { t, useLanguage } from '../i18n';
 import { useState, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, Layers, LoaderCircle, Pin, Plus, RefreshCw, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight, LoaderCircle, Pin, Plus, RefreshCw, Search } from 'lucide-react';
 import { RemoteProjectMenu } from '../../../../shared/remote-chat/client/RemoteProjectMenu';
 import type { ChatController, ChatProject, ChatState } from './types';
 import { useThreadActions } from '../../../../shared/remote-chat/client/useThreadActions';
@@ -19,7 +19,6 @@ import { useRemoteProjectFolder } from '../../../../shared/chat/useRemoteProject
 import { threadPresentation } from '../../../../shared/remote-chat/sidebar';
 import { BrowserGroups } from '../../../../shared/chat/groups/BrowserGroups';
 import { GroupHeading } from '../../../../shared/chat/groups/GroupHeading';
-import { useGrouping } from '../../../../shared/chat/groups/context';
 import { remoteSidebarDrag } from '../../../../shared/remote-chat/client/sidebarDrag';
 
 interface Props {
@@ -38,7 +37,6 @@ export function ChatThreads(props: Props) {
 function ChatThreadsContent({ state, controller, newChat, onClose, openSearch, profile, accountPicker }: Props) {
   useLanguage();
   const desktop = useDesktopLayout();
-  const grouping = useGrouping();
   const [query, setQuery] = useState('');
   const searching = desktop && Boolean(query.trim());
   const search = useChatSearch({ controller, query: desktop ? query : '',
@@ -63,8 +61,6 @@ function ChatThreadsContent({ state, controller, newChat, onClose, openSearch, p
     mobile={!desktop} toggle={() => toggleCollapse(group.id)} openActions={() => projectActions.open(group)} />;
   return <>
     <div className="chat-row chat-thread-controls">
-      <button type="button" className="chat-back" aria-label={t('client.groups.manage')}
-        onClick={grouping?.openManager}><Layers size={17} /></button>
       {desktop ? <SidebarSearchInput value={query} onChange={setQuery} label={t("client.chat.searchChats")}
         clearLabel={t("client.projectBrowser.clearSearch")} onSubmit={search.reload} />
         : <button type="button" className="chat-search-trigger" aria-label={t("client.chat.searchChats")} onClick={openSearch}>
