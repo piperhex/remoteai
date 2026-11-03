@@ -1,5 +1,9 @@
 import { remoteProviderCommand, type RemoteModelTarget } from '../../../shared/remote-chat/modelTarget';
 import { t } from './i18n';
+import {
+  fetchBufferedResponse, SESSION_REFRESH_TIMEOUT_MS, throwIfAborted, waitWithSignal, withRequestDeadline,
+  type DeadlineRequestInit,
+} from '../../../shared/http/requestDeadline';
 import type {
   AccountSummary,
   AuthResponse,
@@ -18,7 +22,8 @@ const SESSION_KEY = "codex-switch.web.session.v1";
 const API_BASE_FROM_ENV = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim();
 
 let activeSession: AuthSession | null = null;
-let refreshRequest: Promise<AuthSession> | null = null;
+let sessionEpoch = 0;
+const refreshRequests = new WeakMap<AuthSession, Promise<AuthSession>>();
 const sessionListeners = new Set<(session: AuthSession | null) => void>();
 
 export function defaultApiBaseUrl() {
@@ -45,6 +50,7 @@ export function loadStoredSession(): AuthSession | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<AuthSession>;
     if (!parsed.baseUrl || !parsed.accessToken || !parsed.refreshToken || !parsed.email) return null;
+    sessionEpoch += 1;
     activeSession = parsed as AuthSession;
     return activeSession;
   } catch {
@@ -57,6 +63,11 @@ export function getActiveSession() {
 }
 
 export function setActiveSession(session: AuthSession | null) {
+  sessionEpoch += 1;
+  publishSession(session);
+}
+
+function publishSession(session: AuthSession | null) {
   activeSession = session;
   if (session) localStorage.setItem(SESSION_KEY, JSON.stringify(session));
   else localStorage.removeItem(SESSION_KEY);
@@ -74,70 +85,112 @@ async function responseError(response: Response) {
   return payload?.message || t("client.app.requestFailedHttp", { value1: response.status });
 }
 
-export async function refreshSession() {
-  if (refreshRequest) return refreshRequest;
-  const session = activeSession;
-  if (!session?.refreshToken) throw new Error("登录已过期，请重新登录");
-  refreshRequest = fetch(`${session.baseUrl}/auth/refresh`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken: session.refreshToken }),
-  }).then(async (response) => {
+function assertSessionEpoch(epoch: number) {
+  if (sessionEpoch !== epoch) throw new Error(t('client.app.pleaseSignInFirst'));
+}
+
+const deadlineOptions = (init: DeadlineRequestInit = {}) => ({
+  signal: init.signal, timeoutMs: init.timeoutMs,
+  timeoutMessage: t('client.projectBrowser.theRequestTimedOutPleaseTryAgain'),
+});
+
+async function performSessionRefresh(session: AuthSession, epoch: number) {
+  return withRequestDeadline(deadlineOptions({ timeoutMs: SESSION_REFRESH_TIMEOUT_MS }), async signal => {
+    const response = await fetchBufferedResponse(`${session.baseUrl}/auth/refresh`, {
+      method: 'POST', signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: session.refreshToken }),
+    });
+    assertSessionEpoch(epoch);
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
-        if (activeSession === session) setActiveSession(null);
-        throw Object.assign(new Error("登录已过期，请重新登录"), { status: response.status });
+        setActiveSession(null);
+        throw Object.assign(new Error(t('client.app.yourSessionHasExpiredPleaseSignInAgain')),
+          { status: response.status });
       }
-      throw Object.assign(new Error("暂时无法刷新登录状态，请稍后重试"), { status: response.status });
+      throw Object.assign(new Error(t('client.app.couldNotRefreshYourSession')), { status: response.status });
     }
     const payload = await response.json() as AuthResponse;
-    if (!payload.accessToken || !payload.refreshToken) throw new Error("刷新登录状态失败");
-    if (activeSession !== session) throw new Error("登录状态已改变，请重新连接");
+    throwIfAborted(signal);
+    assertSessionEpoch(epoch);
+    if (!payload.accessToken || !payload.refreshToken) throw new Error(t('client.app.couldNotRefreshYourSession'));
     const next = { ...session, accessToken: payload.accessToken, refreshToken: payload.refreshToken };
-    setActiveSession(next);
+    publishSession(next);
     return next;
-  }).finally(() => {
-    refreshRequest = null;
   });
-  return refreshRequest;
 }
 
-export async function authorizedFetch(path: string, init: RequestInit = {}, guard?: (session: AuthSession) => void) {
-  const request = async (session: AuthSession) => {
-    guard?.(session);
-    const headers = new Headers(init.headers);
-    headers.set("Authorization", `Bearer ${session.accessToken}`);
-    if (init.body && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-    return fetch(`${session.baseUrl}${path}`, { ...init, headers });
-  };
+export async function refreshSession(options: Pick<RequestInit, 'signal'> = {}) {
+  throwIfAborted(options.signal);
   const session = activeSession;
-  if (!session) throw new Error("请先登录");
-  let response = await request(session);
-  if (response.status !== 401) return response;
-  response = await request(await refreshSession());
-  if (response.status === 401) {
-    setActiveSession(null);
-    throw new Error("登录已过期，请重新登录");
+  if (!session?.refreshToken) throw new Error(t('client.app.yourSessionHasExpiredPleaseSignInAgain'));
+  let pending = refreshRequests.get(session);
+  if (!pending) {
+    pending = performSessionRefresh(session, sessionEpoch).finally(() => refreshRequests.delete(session));
+    refreshRequests.set(session, pending);
   }
-  return response;
+  return waitWithSignal(pending, options.signal);
 }
 
-export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+export async function authorizedFetch(
+  path: string, init: DeadlineRequestInit = {}, guard?: (session: AuthSession | null) => void,
+) {
+  const session = activeSession;
+  const epoch = sessionEpoch;
+  if (!session) throw new Error(t('client.app.pleaseSignInFirst'));
+  return withRequestDeadline(deadlineOptions(init), async signal => {
+    const request = async (current: AuthSession) => {
+      throwIfAborted(signal);
+      assertSessionEpoch(epoch);
+      guard?.(current);
+      const { timeoutMs: _timeoutMs, ...requestInit } = init;
+      const headers = new Headers(init.headers);
+      headers.set('Authorization', `Bearer ${current.accessToken}`);
+      if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+      const response = await fetchBufferedResponse(`${current.baseUrl}${path}`, { ...requestInit, headers, signal });
+      guard?.(activeSession);
+      assertSessionEpoch(epoch);
+      return response;
+    };
+    const response = await request(session);
+    if (response.status !== 401) return response;
+    // A late 401 for the previous token must reuse an already completed rotation.
+    const refreshed = activeSession !== session ? activeSession! : await refreshSession({ signal });
+    const retry = await request(refreshed);
+    if (retry.status === 401) {
+      if (activeSession !== refreshed) throw new Error(t('client.app.couldNotRefreshYourSession'));
+      setActiveSession(null);
+      throw new Error(t('client.app.yourSessionHasExpiredPleaseSignInAgain'));
+    }
+    return retry;
+  });
+}
+
+export async function apiJson<T>(path: string, init: DeadlineRequestInit = {}): Promise<T> {
   const response = await authorizedFetch(path, init);
   if (!response.ok) throw new Error(await responseError(response));
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 
-export async function login(baseUrl: string, email: string, password: string) {
+export async function login(
+  baseUrl: string, email: string, password: string,
+  options: Pick<DeadlineRequestInit, 'signal' | 'timeoutMs'> = {},
+) {
   const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
-  const response = await fetch(`${normalizedBaseUrl}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: email.trim(), password }),
-  });
+  throwIfAborted(options.signal);
+  const epoch = ++sessionEpoch;
+  const response = await withRequestDeadline(deadlineOptions(options), signal => fetchBufferedResponse(
+    `${normalizedBaseUrl}/auth/login`, {
+      method: "POST",
+      signal,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim(), password }),
+    }));
   if (!response.ok) throw new Error(await responseError(response));
   const payload = await response.json() as AuthResponse;
+  throwIfAborted(options.signal);
+  assertSessionEpoch(epoch);
   if (!payload.accessToken || !payload.refreshToken) throw new Error("服务器返回的登录信息无效");
   const session: AuthSession = {
     baseUrl: normalizedBaseUrl,
@@ -150,16 +203,17 @@ export async function login(baseUrl: string, email: string, password: string) {
   return session;
 }
 
-export async function logout() {
+export async function logout(options: Pick<DeadlineRequestInit, 'signal' | 'timeoutMs'> = {}) {
   const session = activeSession;
+  setActiveSession(null);
   if (session?.refreshToken) {
-    await fetch(`${session.baseUrl}/auth/logout`, {
+    await withRequestDeadline(deadlineOptions(options), signal => fetchBufferedResponse(`${session.baseUrl}/auth/logout`, {
       method: "POST",
+      signal,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken: session.refreshToken }),
-    }).catch(() => undefined);
+    })).catch(() => undefined);
   }
-  setActiveSession(null);
 }
 
 export async function fetchDashboardData() {

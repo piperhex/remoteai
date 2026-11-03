@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { getActiveSession, refreshSession, setActiveSession } from '../../../web/src/api';
+import { t } from '../../../web/src/i18n';
 
 const session = { baseUrl: 'https://test.example', email: 'owner@example.com',
   accessToken: 'old-access', refreshToken: 'old-refresh' };
@@ -33,7 +34,7 @@ it('does not restore an old login after logout or overwrite a replacement accoun
   let finish!: (response: Response) => void;
   vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(resolve => { finish = resolve; })));
   const pending = refreshSession();
-  const rejected = expect(pending).rejects.toThrow('登录状态已改变');
+  const rejected = expect(pending).rejects.toThrow(t('client.app.pleaseSignInFirst'));
   const replacement = { ...session, email: 'new@example.com' };
   setActiveSession(replacement);
   finish(new Response(JSON.stringify(renewed)));

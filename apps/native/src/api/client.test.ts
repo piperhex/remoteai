@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccountSummary, AuthSession } from '../types';
 import type { TotpVault } from '../totp/types';
+import { activateSession, sessionEpoch } from './sessionStore';
 
 vi.mock('expo-secure-store', () => ({
   deleteItemAsync: vi.fn(),
@@ -54,8 +55,9 @@ function account(overrides: Partial<AccountSummary> = {}): AccountSummary {
 }
 
 describe('mobile Codex API client', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.restoreAllMocks();
+    await activateSession(session, sessionEpoch());
   });
 
   it('loads account metadata without refreshing Codex usage', async () => {

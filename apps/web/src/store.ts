@@ -10,7 +10,6 @@ import {
   login,
   logout,
   restartRemoteDeviceCodex,
-  setActiveSession,
   subscribeSession,
   switchRemoteDeviceProvider,
   switchRemoteDeviceProviderGroup,
@@ -65,24 +64,21 @@ export const bootstrapApp = createAsyncThunk("auth/bootstrap", async () => {
   const session = loadStoredSession();
   if (!session) return { session: null, data: null };
   try {
-    return { session, data: await fetchDashboardData() };
+    const data = await fetchDashboardData();
+    return { session: getActiveSession(), data };
   } catch (error) {
     if (!getActiveSession()) return { session: null, data: null };
-    return { session, data: null, error: messageOf(error) };
+    return { session: getActiveSession(), data: null, error: messageOf(error) };
   }
 });
 
 export const signIn = createAsyncThunk(
   "auth/signIn",
   async (payload: { baseUrl: string; email: string; password: string }) => {
-    try {
-      const session = await login(payload.baseUrl, payload.email, payload.password);
-      const data = await fetchDashboardData();
-      return { session, data };
-    } catch (error) {
-      setActiveSession(null);
-      throw error;
-    }
+    await login(payload.baseUrl, payload.email, payload.password);
+    // API authorization alone expires a session; loading failures remain retryable.
+    const data = await fetchDashboardData();
+    return { session: getActiveSession(), data };
   },
 );
 
@@ -218,8 +214,7 @@ const authSlice = createSlice({
     .addCase(signIn.rejected, (state, action) => {
       state.submitting = false;
       state.error = messageOf(action.error);
-    })
-    .addCase(signOut.fulfilled, (state) => { state.session = null; }),
+    }),
 });
 
 const initialDataState: DataState = {
@@ -271,8 +266,11 @@ const dataSlice = createSlice({
       Object.assign(state, action.payload.data);
       state.lastRefreshAt = usageUpdatedAt(state.accounts);
     })
-    .addCase(signIn.rejected, (state) => { state.loading = false; })
-    .addCase(signOut.fulfilled, () => initialDataState)
+    .addCase(signIn.rejected, (state, action) => {
+      state.loading = false;
+      state.error = messageOf(action.error);
+    })
+    .addCase(signOut.pending, () => initialDataState)
     .addCase(refreshAll.pending, (state) => { state.refreshing = true; state.error = null; })
     .addCase(refreshAll.fulfilled, (state, action) => {
       state.refreshing = false;
