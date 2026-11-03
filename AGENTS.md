@@ -90,6 +90,44 @@ Keep all instructions in this `AGENTS.md` file in English.
   spacing, and interaction patterns consistent. Use clear visual hierarchy, balanced layouts, and restrained
   effects or motion that improve usability without compromising readability, accessibility, or performance.
 
+## Unified UI Typography
+
+- For desktop local mode, desktop remote mode, and web application UI, the shared font preference defaults
+  to **14 CSS px**. `shared/appearance/fontSize.ts` owns `DEFAULT_FONT_SIZE = 14` and the supported global
+  preference range of **12-24 px**. The preference is a theme input, not every component's rendered size.
+- Desktop `DashboardApp.tsx` uses Ant Design's `compactAlgorithm` in both light and dark modes; web
+  `WebLocaleProvider.tsx` uses the default/dark algorithm without compact mode. Preserve these existing
+  host themes. At the default preference, ordinary application dialogs, forms, and tables use this hierarchy:
+
+  | Role | Desktop local / remote | Web desktop | Implementation |
+  | --- | --- | --- | --- |
+  | Body, form labels, inputs, buttons, tabs, table headers and cells, empty states | 12 px | 14 px | Inherit the host component's `fontSize`; emphasize table headers with weight. |
+  | Standard modal titles | 14 px | 16 px | Reuse the Modal title style (`fontSizeHeading5` and its matching line height). |
+  | Secondary text token | 10 px | 12 px | Use `token.fontSizeSM` where appropriate; preserve existing shared metadata styles. |
+  | Compact sidebar and navigation text | Existing 12-13 px styles | Existing corresponding styles | Preserve the shared component's hierarchy. |
+
+- These values describe the default hierarchy, not fixed overrides. Prefer Ant Design's existing component
+  typography and `theme.useToken()` over hardcoded sizes. Standard management dialogs, including Manage Groups,
+  must not introduce independent 24 px titles, 18 px tabs, or 16 px body/control text to imitate a screenshot.
+  Do not replace the desktop compact theme with web defaults to make their computed sizes identical.
+  Use spacing, font weight, and theme colors for emphasis; keep controls and icons proportionate to nearby UI.
+- Both application roots use `shared/appearance/ApplicationTypography.tsx` to pass the global preference to
+  Ant Design. `useApplicationFontSize.ts` sets `--app-font-scale`, and `fontSizePlugin.ts` scales CSS/LESS pixel
+  typography. Preserve this pipeline: do not bypass it with fixed inline sizes or scale a theme-derived size
+  a second time. Prefer inherited or relative sizing for custom controls; reuse the host's font family.
+- Codex GUI conversation text follows the global preference by default and may have its own saved size.
+  Reuse `useGuiFontSize()` and `guiFontStyle()` for that existing scope. General management dialogs follow
+  application typography; do not copy a conversation's custom font size into unrelated controls.
+- Treat screenshots as layout and hierarchy references. OS display scaling, browser zoom, image resizing,
+  and user font preferences can all change apparent size. Inspect the running UI's computed styles and the
+  corresponding existing components before choosing sizes; never infer CSS pixels from screenshot pixels.
+- Verify typography changes at the default setting and an enlarged global setting, including narrow desktop
+  windows, both dialog tabs where applicable, and desktop local, remote, and web entry points. Inspect running
+  screenshots for clipping, wrapping, and consistency with surrounding UI as required above.
+- Native apps retain their platform typography and must use `textMetrics()` and the physical-device checks
+  below. Preserve established mobile layouts and dedicated marketing/page-heading hierarchies; the standard
+  dialog scale does not authorize flattening all headings or copying CSS pixel values into native text styles.
+
 ## User-Facing Prompts and Copy
 
 - Write all user-facing prompts and copy in natural, clear, and easy-to-understand language. Do not mention implementation details, internal processes, or other technical details.
