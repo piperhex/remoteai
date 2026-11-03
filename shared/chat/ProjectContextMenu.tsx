@@ -29,7 +29,8 @@ export function ProjectContextMenu({ label, pinned, removing, pinDisabled, openD
     if (key === 'remove') onRemove();
   } };
   return <>
-    <ThreadContextMenu menu={menu}>{children}</ThreadContextMenu>
+    <ThreadContextMenu menu={menu} dragTarget={groupPath ? { kind: 'project', id: groupPath } : undefined}>
+      {children}</ThreadContextMenu>
     {showActionButton && <Dropdown trigger={['click']} overlayStyle={{ maxWidth: 400 }}
       overlayClassName={styles.menu} menu={menu}>
       <button type="button" className={buttonClassName} aria-haspopup="menu"

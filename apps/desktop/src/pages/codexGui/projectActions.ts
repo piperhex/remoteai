@@ -3,7 +3,7 @@ import { guiApi } from "./api";
 import { savePreferences } from "./preferences";
 import { removeSavedProject } from "./projectCatalog";
 import type { GuiState, ListResponse, Thread } from "./types";
-import { forgetGroupedProject } from './groupActions';
+import { forgetGroupedProject, forgetGroupedThread } from './groupActions';
 
 interface ProjectHost {
   getSnapshot: () => GuiState;
@@ -47,7 +47,7 @@ export class GuiProjects {
   constructor(private host: ProjectHost) {}
 
   /** Applies a validated remote folder without changing the desktop's selected conversation. */
-  selectRemote = (cwd: string, threadId?: string) => {
+  selectRemote = (cwd: string, threadId?: string, removeFromGroup = false) => {
     const state = this.host.getSnapshot();
     const current = threadId ? state.conversations[threadId] : undefined;
     if (state.sending || state.connection !== 'ready' || state.removingProject || state.goalBusy || (threadId
@@ -56,7 +56,9 @@ export class GuiProjects {
         || state.approvals.some(event => event.params.threadId === threadId)))) return false;
     this.host.patch({ projects: [...new Set([cwd, ...state.projects])].slice(0, RECENT_PROJECT_LIMIT),
       ...(threadId ? { projectOverrides: { ...state.projectOverrides, [threadId]: cwd },
+        ...(removeFromGroup ? { grouping: forgetGroupedThread(state.grouping, threadId) } : {}),
         threads: state.threads.map(thread => thread.id === threadId ? { ...thread, cwd } : thread),
+        conversations: { ...state.conversations, [threadId]: { ...current!, thread: { ...current!.thread, cwd } } },
         ...(state.selected === threadId ? { settings: { ...state.settings, cwd } } : {}) } : {}) });
     savePreferences(this.host.getSnapshot());
     return true;

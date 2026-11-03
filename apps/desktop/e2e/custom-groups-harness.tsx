@@ -7,6 +7,9 @@ import { ChatThreads } from '../../web/src/chat/ChatThreads';
 import type { GuiController } from '../src/pages/codexGui/controller';
 import { initialState } from '../src/pages/codexGui/preferences';
 import { createGuiGroups } from '../src/pages/codexGui/groupActions';
+import { GuiProjects } from '../src/pages/codexGui/projectActions';
+import { selectGuiProject } from '../src/pages/codexGui/projectSelection';
+import { conversation } from '../src/pages/codexGui/events';
 import { guiApi } from '../src/pages/codexGui/api';
 import { SidebarBridge } from '../src/pages/codexGui/sidebarBridge';
 import { ChatController } from '../../../shared/remote-chat/client/controller';
@@ -31,9 +34,15 @@ const threads = [
   ...(params.has('restore') ? [{ id: 'loose', name: '无项目对话', preview: '', cwd: '', updatedAt: 1 }] : []),
 ];
 let state = { ...initialState(), connection: 'ready' as const, threads };
+state.threads = threads.map(thread => ({ ...thread, cwd: state.projectOverrides[thread.id] ?? thread.cwd }));
 if (!state.grouping.groups.length && !localStorage.getItem('custom-group-fixture-initialized')) {
   state.grouping.groups = [{ id: 'work', name: '工作', parentId: null },
     { id: 'client', name: '客户端', parentId: 'work' }, { id: 'research', name: '研究', parentId: null }];
+  if (params.has('scroll')) {
+    state.grouping.groups.push(...Array.from({ length: 35 }, (_, index) =>
+      ({ id: `extra-${index}`, name: `Group ${index}`, parentId: null })));
+    state.grouping.threads.design = 'work';
+  }
   localStorage.setItem('custom-group-fixture-initialized', '1');
   if (params.has('restore')) {
     state.grouping.projects = { '/workspace/remote-ai': 'client' };
@@ -44,13 +53,23 @@ if (!state.grouping.groups.length && !localStorage.getItem('custom-group-fixture
 const listeners = new Set<() => void>();
 const patch = (value: Partial<typeof state>) => { state = { ...state, ...value }; listeners.forEach(listener => listener()); };
 guiApi.request = async request => (request.operation === 'list'
-  ? { data: request.archived ? [] : threads, nextCursor: null } : {}) as never;
+  ? { data: request.archived ? [] : state.threads, nextCursor: null }
+  : request.operation === 'projectDirectories' ? { directory: request.directory, entries: [] } : {}) as never;
 const local = { getSnapshot: () => state, subscribe: (listener: () => void) => {
   listeners.add(listener); return () => { listeners.delete(listener); };
 }, groups: createGuiGroups({ snapshot: () => state, patch }), readState: { markRemoteRead() {} },
 refresh: async () => {}, filter: (_: string, archived: boolean) => patch({ archived }),
-pin() {}, newConversation() {}, setProject() {}, select: async () => {},
-projectActions: { pin() {}, remove: async () => true },
+pin() {}, newConversation() {}, setProject() {}, select: async (id: string) => patch({ selected: id }),
+setWorkspaceBusy: (workspaceBusy: boolean) => patch({ workspaceBusy }),
+retainConversation: () => () => {},
+loadRemoteThread: async (id: string) => {
+  const thread = state.threads.find(entry => entry.id === id)!;
+  patch({ conversations: { ...state.conversations, [id]: conversation(thread) } });
+},
+projectActions: new GuiProjects({ getSnapshot: () => state, patch, report: error => { throw error; } }),
+moveThreadToProject: async (threadId: string, cwd: string) => {
+  await selectGuiProject(local, { threadId, cwd, removeFromGroup: true });
+},
 } as unknown as GuiController;
 if (params.has('failure')) {
   local.groups.members = async () => {
@@ -65,7 +84,11 @@ const remote = new ChatController(events => ({
   async request<T>(method: string, value?: unknown): Promise<T> {
     if (method === 'connect') return [] as T;
     const body = value as { operation: string; action?: string; mutation?: Parameters<typeof local.groups.mutate>[0] };
-    if (body.operation === 'list') return { data: threads, nextCursor: null, sidebar: bridge.snapshot() } as T;
+    if (body.operation === 'list') return { data: state.threads, nextCursor: null, sidebar: bridge.snapshot() } as T;
+    if (body.operation === 'guiProjectSelect') {
+      const project = await selectGuiProject(local, body);
+      return { ...project, sidebar: bridge.snapshot() } as T;
+    }
     if (body.operation === 'guiGroups') {
       if (body.action === 'members') return await local.groups.members() as T;
       await local.groups.mutate(body.mutation!); return bridge.snapshot() as T;

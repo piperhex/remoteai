@@ -70,6 +70,10 @@ export function createGuiToolsClient(request: <T>(body: object) => Promise<T>,
     projects: {
       list: () => request<ChatProject[]>({ operation: PROJECT_LIST_OPERATION }),
       select: (input: ProjectSelection) => request<ChatProject>({ ...input, operation: PROJECT_SELECT_OPERATION }),
+      moveThread: (threadId: string, cwd: string) =>
+        request<ChatProject & { sidebar: import('./sidebar').SidebarSnapshot }>({
+          operation: PROJECT_SELECT_OPERATION, threadId, cwd, removeFromGroup: true,
+        }),
     },
     review: createReviewClient(request),
     desktop: desktopClient(request, diagnostic, nativeMedia),

@@ -47,7 +47,7 @@ import { createGuiToolsClient } from '../guiTools';
 import type { SshProfileStore } from '../../terminal/sshProfiles';
 import type { MappingSocket } from '../../port-mapping/socket';
 import { MAPPING_UPDATE_REQUIRED } from '../../port-mapping/errors';
-import { canSelectProject } from '../projects';
+import { canSelectProject, canMoveThreadToProject } from '../projects';
 import { CONVERSATION_METRICS_OPERATION, type ReadConversationMetrics } from '../conversationMetrics';
 import { TOKEN_SUMMARY_OPERATION, type ReadTokenSummary } from '../tokenSummary';
 import { decodeTokenSummary, QUOTA_HISTORY_FORMAT, type TokenSummaryResponse } from '../tokenSummaryCodec';
@@ -858,6 +858,33 @@ export class ChatController {
       return true;
     } catch (error) { this.failure(error); return false; }
     finally { this.update({ workspaceBusy: false }); }
+  };
+
+  moveThreadToProject = async (threadId: string, cwd: string) => {
+    if (!canMoveThreadToProject(this.state, threadId)) {
+      throw new Error('client.workspaceActions.waitForTheCurrentTaskAndQueuedMessagesToFinish');
+    }
+    const generation = this.synchronization;
+    this.update({ workspaceBusy: true });
+    try {
+      const moved = await this.guiTools.projects.moveThread(threadId, cwd);
+      if (generation !== this.synchronization || !this.state.ready) {
+        throw new Error('client.errors.connectToYourComputerFirst');
+      }
+      if (moved.sidebar) this.applySidebar(moved.sidebar);
+      // A newer sidebar event may already contain a subsequent move from another client.
+      const destination = this.state.sidebar.threads[threadId]?.cwd ?? moved.cwd;
+      this.listRequests.reset();
+      this.histories.remove(threadId);
+      this.update({ loading: false, listRefreshing: false,
+        threads: this.state.threads.map(thread => thread.id === threadId ? { ...thread, cwd: destination } : thread) });
+      if (this.state.selected?.id === threadId) {
+        this.readGeneration += 1; this.refreshThreadId = null;
+        this.update({ selected: { ...this.state.selected, cwd: destination },
+          historyLoading: false, historyLoadingMore: false });
+        this.rememberHistory();
+      }
+    } finally { if (generation === this.synchronization) this.update({ workspaceBusy: false }); }
   };
 
   compact = async () => {

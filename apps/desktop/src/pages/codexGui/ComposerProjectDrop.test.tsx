@@ -51,6 +51,9 @@ beforeEach(async () => {
   vi.clearAllMocks(); listeners.clear(); localStorage.clear(); granted = false; references = [folder];
   saveProject({ path: folder.path, name: '用户自定义项目名称' });
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  vi.stubGlobal('matchMedia', vi.fn((media: string) => ({ media, matches: false, onchange: null,
+    addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {},
+    dispatchEvent: () => true })));
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
     left: 0, top: 0, right: 100, bottom: 100, width: 100, height: 100, x: 0, y: 0, toJSON: () => ({}),
   });

@@ -16,6 +16,15 @@ function saveGrouping(grouping: Grouping) {
   catch { throw new Error('client.groups.saveFailed'); }
 }
 
+export function forgetGroupedThread(grouping: Grouping, id: string): Grouping {
+  if (!Object.hasOwn(grouping.threads, id)) return grouping;
+  const threads = { ...grouping.threads };
+  delete threads[id];
+  const next = { ...grouping, threads };
+  saveGrouping(next);
+  return next;
+}
+
 export function forgetGroupedProject(grouping: Grouping, path: string): Grouping {
   if (!Object.hasOwn(grouping.projects, path)) return grouping;
   const projects = { ...grouping.projects };

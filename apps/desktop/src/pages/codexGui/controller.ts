@@ -9,6 +9,7 @@ import { forkGuiConversation } from "./forkConversation";
 import { GuiMessageEditor } from "./editMessage";
 import { GuiGoals } from "./goals";
 import { GuiProjects } from "./projectActions";
+import { selectGuiProject } from './projectSelection';
 import { createGuiGroups } from './groupActions';
 import { GuiReadState } from "./threadReadState";
 import type { AttachmentReference } from "./attachmentTypes";
@@ -270,6 +271,9 @@ export class GuiController {
     if (this.state.sending || (id && this.state.conversations[id]?.activeTurn)) return;
     if (id) this.patch({ projectOverrides: { ...this.state.projectOverrides, [id]: cwd } });
     this.settings({ cwd });
+  };
+  moveThreadToProject = async (threadId: string, cwd: string) => {
+    await selectGuiProject(this, { cwd, threadId, removeFromGroup: true });
   };
   pin = (id: string) => {
     const pins = this.state.pins.includes(id) ? this.state.pins.filter((pin) => pin !== id) : [...this.state.pins, id];

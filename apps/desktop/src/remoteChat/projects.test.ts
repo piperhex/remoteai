@@ -9,17 +9,20 @@ import { guiComposer } from '../pages/codexGui/composerBridge';
 import type { Thread } from '../pages/codexGui/types';
 import { ChatOperations } from './operations';
 import { readRemoteProjects, selectRemoteProject } from './projects';
+import { guiSidebar } from '../pages/codexGui/sidebarBridge';
 
 vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn() } }));
 vi.mock('../pages/codexGui/session', () => ({ getGuiController: vi.fn() }));
 vi.mock('../pages/codexGui/composerBridge', () => ({ guiComposer: { validateSend: vi.fn() } }));
 const thread: Thread = { id: 'chat', cwd: '/old', preview: '', updatedAt: 1, turns: [] };
 let controller: GuiController;
+let detachSidebar: () => void;
 beforeEach(() => {
   vi.resetAllMocks(); localStorage.clear(); controller = new GuiController();
   vi.mocked(getGuiController).mockReturnValue(controller);
   Object.assign(controller.getSnapshot(), { connection: 'ready', threads: [thread], selected: 'local',
     projects: ['/recent'] });
+  detachSidebar = guiSidebar.attach(controller);
   vi.mocked(guiComposer.validateSend).mockResolvedValue({ model: 'model', effort: 'high', access: 'workspace-write' });
   vi.mocked(guiApi.request).mockImplementation(async body => {
     if (body.operation === 'projectDirectories') return { directory: '/canonical', entries: [] };
@@ -27,7 +30,7 @@ beforeEach(() => {
     return { thread };
   });
 });
-afterEach(() => { controller.dispose(); vi.restoreAllMocks(); });
+afterEach(() => { detachSidebar(); controller.dispose(); vi.restoreAllMocks(); });
 
 it('lists host saved and recent projects, deduplicates paths, and uses effective conversation folders', () => {
   saveProject({ path: '/recent', name: 'Saved name' });
@@ -82,4 +85,48 @@ it('keeps the effective folder in list, history, events, and subsequent resume/s
   await execute('resume'); await execute('send');
   for (const operation of ['resume', 'send']) expect(guiApi.request).toHaveBeenCalledWith(
     expect.objectContaining({ operation, threadId: 'chat', cwd: '/canonical' }));
+});
+
+it('moves a nonselected chat into its destination project and publishes both placement changes together', async () => {
+  await controller.groups.mutate({ action: 'create', group: { id: 'group', name: 'Group', parentId: null } });
+  await controller.groups.mutate({ action: 'assign', targets: [{ kind: 'thread', id: 'chat' }], groupId: 'group' });
+  const before = controller.getSnapshot();
+  const publish = vi.fn();
+  const unsubscribe = guiSidebar.subscribe(publish);
+  const result = await selectRemoteProject({ cwd: '/canonical', threadId: 'chat', removeFromGroup: true });
+  unsubscribe();
+  expect(result).toMatchObject({ cwd: '/canonical', sidebar: {
+    threads: { chat: { cwd: '/canonical' } }, grouping: { threads: {} },
+  } });
+  const moved = publish.mock.calls.map(([snapshot]) => snapshot)
+    .filter(snapshot => snapshot.threads.chat.cwd === '/canonical');
+  expect(moved.length).toBeGreaterThan(0);
+  expect(moved.every(snapshot => !Object.hasOwn(snapshot.grouping.threads, 'chat'))).toBe(true);
+  expect(controller.getSnapshot()).toMatchObject({ selected: before.selected, settings: before.settings,
+    conversations: { chat: { thread: { cwd: '/canonical' } } } });
+  expect(initialState()).toMatchObject({ projectOverrides: { chat: '/canonical' }, grouping: { threads: {} } });
+});
+
+it('uses the same validated move locally, preserving the draft and keeping grouping when validation fails', async () => {
+  Object.assign(controller.getSnapshot(), { selected: null, settings: { cwd: '/draft' } });
+  await controller.groups.mutate({ action: 'create', group: { id: 'group', name: 'Group', parentId: null } });
+  await controller.groups.mutate({ action: 'assign', targets: [{ kind: 'thread', id: 'chat' }], groupId: 'group' });
+  vi.mocked(guiApi.request).mockRejectedValueOnce(new Error('missing directory'));
+  await expect(controller.moveThreadToProject('chat', '/missing')).rejects.toThrow('missing directory');
+  expect(controller.getSnapshot()).toMatchObject({ grouping: { threads: { chat: 'group' } }, projectOverrides: {} });
+  await controller.moveThreadToProject('chat', '/canonical');
+  expect(controller.getSnapshot()).toMatchObject({ selected: null, settings: { cwd: '/draft' },
+    grouping: { threads: {} }, projectOverrides: { chat: '/canonical' } });
+});
+
+it('rejects malformed move options and preserves placement when a task starts during validation', async () => {
+  await expect(selectRemoteProject({ cwd: '/new', removeFromGroup: true })).rejects.toThrow('有效');
+  await expect(selectRemoteProject({ cwd: '/new', threadId: 'chat', removeFromGroup: 'yes' })).rejects.toThrow('有效');
+  await controller.groups.mutate({ action: 'create', group: { id: 'group', name: 'Group', parentId: null } });
+  await controller.groups.mutate({ action: 'assign', targets: [{ kind: 'thread', id: 'chat' }], groupId: 'group' });
+  vi.mocked(guiApi.request).mockImplementation(async body => body.operation === 'read'
+    ? { thread: { ...thread, turns: [{ id: 'running', status: 'inProgress', items: [] }] } }
+    : { directory: '/canonical', entries: [] });
+  await expect(controller.moveThreadToProject('chat', '/canonical')).rejects.toThrow('等待');
+  expect(controller.getSnapshot()).toMatchObject({ grouping: { threads: { chat: 'group' } }, projectOverrides: {} });
 });

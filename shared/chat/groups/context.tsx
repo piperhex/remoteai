@@ -15,16 +15,17 @@ export function useGroupingUI(options: {
   const flight = useRef(false);
   const generation = useRef(0);
   useEffect(() => () => { generation.current += 1; }, [options.client]);
-  const run = async (mutation: GroupMutation): Promise<boolean> => {
+  const perform = async (operation: () => Promise<void>): Promise<boolean> => {
     if (flight.current || !options.ready) return false;
     flight.current = true;
     setBusy(true); setError('');
-    try { await options.client.mutate(mutation); return true; }
+    try { await operation(); return true; }
     catch (failure) {
       setError(failure instanceof Error ? failure.message : 'client.groups.saveFailed');
       return false;
     } finally { flight.current = false; setBusy(false); }
   };
+  const run = (mutation: GroupMutation) => perform(() => options.client.mutate(mutation));
   const reload = async () => {
     const current = ++generation.current;
     setLoading(true); setError('');
@@ -49,7 +50,7 @@ export function useGroupingUI(options: {
     return success;
   };
   return { ...options, grouping: options.grouping ?? EMPTY_GROUPING, managerOpen, closeManager,
-    moveTarget, setMoveTarget, busy, error, setError, members, loading, reload, run, assign, openManager };
+    moveTarget, setMoveTarget, busy, error, setError, members, loading, reload, run, perform, assign, openManager };
 }
 
 export type GroupingUI = ReturnType<typeof useGroupingUI>;

@@ -20,9 +20,11 @@ import navigationStyle from '../GuiNavigation.module.less';
 import { BrowserGroups } from '../../../../../../shared/chat/groups/BrowserGroups';
 import { GroupHeading } from '../../../../../../shared/chat/groups/GroupHeading';
 import { useGrouping } from '../../../../../../shared/chat/groups/context';
+import { remoteSidebarDrag } from '../../../../../../shared/remote-chat/client/sidebarDrag';
 
 export function RemoteGuiSidebar(props: Parameters<typeof RemoteGuiSidebarContent>[0]) {
   return <BrowserGroups grouping={props.state.sidebar.grouping} client={props.controller.groups}
+    drag={remoteSidebarDrag(props.state, props.controller)}
     translate={uiText} ready={props.state.ready}><RemoteGuiSidebarContent {...props} /></BrowserGroups>;
 }
 
@@ -80,7 +82,7 @@ function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, fo
       {groups.map(group => <section className={groupsStyle.group} aria-label={group.label} key={group.id}
         style={{ paddingInlineStart: Math.min(group.depth, 8) * 14,
           ...(group.kind === 'group' ? { margin: '0 0 4px' } : {}) }}>
-        {group.kind === 'group' ? <GroupHeading label={group.label} icon={group.icon}
+        {group.kind === 'group' ? <GroupHeading id={group.id.slice('group:'.length)} label={group.label} icon={group.icon}
           collapsed={group.collapsed} toggle={() => toggleCollapse(group.id)} /> :
         <div className={groupsStyle.header}>
           {group.cwd ? <RemoteProjectMenu cwd={group.cwd} label={group.label} state={state} controller={controller}

@@ -92,3 +92,55 @@ it('can clear a draft and does not replace a newer draft while selecting', async
   finish(folder); await pending;
   expect(controller.snapshot().draftProject?.cwd).toBe('/newer');
 });
+
+it('moves a nonselected chat, clears its group, and preserves the active chat and draft', async () => {
+  const other = { ...original, id: 'other', cwd: '/other' };
+  const draftProject = { cwd: '/draft', label: 'draft' };
+  Object.assign(controller.snapshot(), { selected: other, draftProject });
+  request.mockResolvedValueOnce({ ...folder, sidebar: { revision: 1,
+    threads: { chat: { cwd: '/new', projectName: 'new', title: 'chat', running: false } }, readState: {},
+    grouping: { groups: [], projects: {}, threads: {} } } });
+  await controller.moveThreadToProject('chat', '/new');
+  expect(request).toHaveBeenCalledWith('request', { operation: 'guiProjectSelect', cwd: '/new',
+    threadId: 'chat', removeFromGroup: true });
+  expect(controller.snapshot()).toMatchObject({ selected: other, draftProject, workspaceBusy: false,
+    threads: [{ cwd: '/new' }], sidebar: { grouping: { threads: {} }, threads: { chat: { cwd: '/new' } } } });
+});
+
+it('does not apply a late move result after disconnecting', async () => {
+  let finish!: (value: unknown) => void;
+  request.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  const pending = controller.moveThreadToProject('chat', '/new');
+  controller.stop();
+  finish(folder);
+  await expect(pending).rejects.toThrow('connectToYourComputerFirst');
+  expect(controller.snapshot().threads[0].cwd).toBe('/original');
+});
+
+it('keeps placement on failure and prevents duplicate moves or moving running conversations', async () => {
+  let reject!: (error: Error) => void;
+  request.mockImplementationOnce(() => new Promise((_resolve, fail) => { reject = fail; }));
+  const pending = controller.moveThreadToProject('chat', '/new');
+  await expect(controller.moveThreadToProject('chat', '/other')).rejects.toThrow('waitForTheCurrentTask');
+  reject(new Error('folder unavailable'));
+  await expect(pending).rejects.toThrow('folder unavailable');
+  expect(controller.snapshot()).toMatchObject({ workspaceBusy: false, selected: original, threads: [original] });
+  Object.assign(controller.snapshot(), { selected: { ...original,
+    turns: [{ id: 'active', status: 'inProgress', items: [] }] } });
+  await expect(controller.moveThreadToProject('chat', '/new')).rejects.toThrow('waitForTheCurrentTask');
+  expect(request).toHaveBeenCalledTimes(1);
+});
+
+it('preserves a newer sidebar placement when an earlier move acknowledgement arrives late', async () => {
+  const sidebar = (revision: number, cwd: string) => ({ revision,
+    threads: { chat: { cwd, projectName: cwd, title: 'Chat', running: false } }, readState: {},
+    grouping: { groups: [], projects: {}, threads: {} } });
+  let finish!: (value: unknown) => void;
+  request.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  const pending = controller.moveThreadToProject('chat', '/new');
+  Object.assign(controller.snapshot(), { sidebar: sidebar(3, '/newer') });
+  finish({ ...folder, sidebar: sidebar(2, '/new') });
+  await pending;
+  expect(controller.snapshot()).toMatchObject({ selected: { cwd: '/newer' }, threads: [{ cwd: '/newer' }],
+    sidebar: { revision: 3 } });
+});

@@ -20,6 +20,7 @@ import { threadPresentation } from '../../../../shared/remote-chat/sidebar';
 import { BrowserGroups } from '../../../../shared/chat/groups/BrowserGroups';
 import { GroupHeading } from '../../../../shared/chat/groups/GroupHeading';
 import { useGrouping } from '../../../../shared/chat/groups/context';
+import { remoteSidebarDrag } from '../../../../shared/remote-chat/client/sidebarDrag';
 
 interface Props {
   state: ChatState; controller: ChatController; newChat: (project?: ChatProject) => void; onClose: () => void;
@@ -30,6 +31,7 @@ export function ChatThreads(props: Props) {
   useLanguage();
   const desktop = useDesktopLayout();
   return <BrowserGroups grouping={props.state.sidebar.grouping} client={props.controller.groups}
+    drag={remoteSidebarDrag(props.state, props.controller)}
     translate={t} ready={props.state.ready} mobile={!desktop}><ChatThreadsContent {...props} /></BrowserGroups>;
 }
 
@@ -82,7 +84,7 @@ function ChatThreadsContent({ state, controller, newChat, onClose, openSearch, p
         <section className="chat-project-group" aria-label={group.label} key={group.id}
           style={{ paddingInlineStart: Math.min(group.depth, 8) * 14,
             ...(group.kind === 'group' ? { margin: '0 0 4px' } : {}) }}>
-          {group.kind === 'group' ? <GroupHeading label={group.label} icon={group.icon}
+          {group.kind === 'group' ? <GroupHeading id={group.id.slice('group:'.length)} label={group.label} icon={group.icon}
             collapsed={group.collapsed} toggle={() => toggleCollapse(group.id)} /> :
           <div className="chat-project-heading">
             {desktop && group.cwd ? <RemoteProjectMenu cwd={group.cwd} label={group.label} state={state}

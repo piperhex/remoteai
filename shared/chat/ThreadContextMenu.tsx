@@ -6,8 +6,10 @@ import { useGroupMenu } from './groups/useGroupMenu';
 import type { GroupTarget } from './groups/model';
 
 /** Route mouse, touch and keyboard gestures through the same viewport-aware context menu. */
-export function ThreadContextMenu({ children, overlayClassName = '', groupTarget, ...props }: Omit<DropdownProps,
-  'children' | 'trigger'> & { children: ReactElement<HTMLAttributes<HTMLElement>>; groupTarget?: GroupTarget }) {
+export function ThreadContextMenu({ children, overlayClassName = '', groupTarget, dragTarget = groupTarget,
+  ...props }: Omit<DropdownProps, 'children' | 'trigger'> & {
+  children: ReactElement<HTMLAttributes<HTMLElement>>; groupTarget?: GroupTarget; dragTarget?: GroupTarget;
+}) {
   const groupItems = useGroupMenu(groupTarget);
   const gestures = useThreadLongPress(({ target, x, y }) => {
     target.dispatchEvent(new MouseEvent('contextmenu', {
@@ -18,6 +20,9 @@ export function ThreadContextMenu({ children, overlayClassName = '', groupTarget
     menu={{ ...props.menu, items: [...(props.menu?.items ?? []), ...groupItems] }}
     overlayStyle={{ ...props.overlayStyle, maxWidth: 400 }}
     overlayClassName={`${styles.menu} ${overlayClassName}`}>
-    {cloneElement(children, { ...gestures, className: `${children.props.className ?? ''} ${styles.trigger}` })}
+    {cloneElement(children, { ...gestures, ...(!props.disabled && dragTarget ? {
+      'data-chat-drag-kind': dragTarget.kind, 'data-chat-drag-id': dragTarget.id,
+      ...(dragTarget.kind === 'project' ? { 'data-chat-drop-kind': 'project', 'data-chat-drop-id': dragTarget.id } : {}),
+    } : {}), className: `${children.props.className ?? ''} ${styles.trigger}` })}
   </Dropdown>;
 }

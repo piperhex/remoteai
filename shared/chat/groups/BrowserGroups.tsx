@@ -8,11 +8,13 @@ import { GroupEditor } from './GroupEditor';
 import { GroupMembers } from './GroupMembers';
 import { GroupCards } from './GroupCards';
 import './groups.css';
+import { SidebarDrag, type SidebarDragOptions } from './SidebarDrag';
 
-export function BrowserGroups({ children, mobile = false, ...options }: Parameters<typeof useGroupingUI>[0]
-  & { children: ReactNode; mobile?: boolean }) {
+export function BrowserGroups({ children, mobile = false, drag, ...options }: Parameters<typeof useGroupingUI>[0]
+  & { children: ReactNode; mobile?: boolean; drag?: SidebarDragOptions }) {
   const model = useGroupingUI(options);
-  return <GroupingContext.Provider value={model}>{children}
+  return <GroupingContext.Provider value={model}><SidebarDrag options={mobile ? undefined : drag}>
+    {children}</SidebarDrag>
     {model.managerOpen && <GroupManager model={model} mobile={mobile} />}
     {model.moveTarget && <Modal open width={400} footer={null} title={model.translate('client.groups.move')}
       onCancel={() => { if (!model.busy) model.setMoveTarget(null); }}>

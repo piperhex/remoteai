@@ -34,6 +34,13 @@ export { projectName } from "./projectCatalog";
 
 export function ThreadSidebar(props: Parameters<typeof ThreadSidebarContent>[0]) {
   return <BrowserGroups grouping={props.state.grouping} client={props.controller.groups}
+    drag={{ enabled: !props.state.sending && !props.state.workspaceBusy && !props.state.removingProject,
+      threadCwds: Object.fromEntries(props.state.threads.map(thread =>
+        [thread.id, props.state.projectOverrides[thread.id] ?? thread.cwd])),
+      canMoveThread: id => !props.state.goalBusy && props.state.compacting !== id && props.state.deleting !== id
+        && !props.state.queued[id]?.length && !props.state.approvals.some(event => event.params.threadId === id)
+        && !props.state.threads.some(thread => thread.id === id && isThreadRunning(props.state, thread)),
+      moveThread: props.controller.moveThreadToProject }}
     translate={uiText} ready={props.state.connection === 'ready'}><ThreadSidebarContent {...props} /></BrowserGroups>;
 }
 
@@ -120,7 +127,7 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
         const key = `${state.archived ? "archived" : "recent"}:${group.id}`;
         const custom = group.kind === 'group';
         return <div key={key} style={{ paddingInlineStart: Math.min(group.depth, 8) * 14 }}>
-          {custom && <GroupHeading label={group.label} icon={group.icon}
+          {custom && <GroupHeading id={group.id.slice('group:'.length)} label={group.label} icon={group.icon}
             collapsed={!state.search.trim() && collapsed.has(group.id)}
             toggle={() => toggle('collapsed', key)} />}
           <ThreadGroup label={group.label || uiText('client.groups.ungrouped')} pinned={Boolean(group.pinned)}
