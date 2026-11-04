@@ -11,7 +11,9 @@ import { FileThreadContext, fileApi } from '../../../shared/conversation/fileApi
 import { filePreviewApi } from '../../../shared/file-preview/workspace/api';
 import { BrowserClientContext } from '../../../shared/file-preview/workspace/browserClient';
 import { ChatFileContext } from '../../../shared/remote-chat/views/ChatFileLink';
-import { ChatImage } from '../../../shared/remote-chat/views/ChatImage';
+import { ChatImage, ChatImageContext } from '../../../shared/remote-chat/views/ChatImage';
+import { guiApi } from '../../../shared/conversation/api';
+import { ImageThreadContext } from '../../../shared/conversation/useImageSource';
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
 import { filePreviewKind } from '../../../shared/file-preview/kinds';
 import type { FileClient } from '../../../shared/remote-chat/fileDownload';
@@ -58,11 +60,20 @@ const client: FileClient = {
 };
 const load = async (_thread: string, path: string) => ({ path, text: await (await fetch(address(path))).text() });
 const browser = { native: false, request: async () => ({ tabs: [] }), subscribe: async () => () => {} };
+const imageLoad = async (_thread: string, source: string, original = false): Promise<string> => {
+  const response = await fetch('/image-preview.json', { method: 'POST',
+    body: JSON.stringify({ source, original }) });
+  return (await response.json()).url;
+};
+if (params.has('source')) guiApi.request = async <T,>(request: Parameters<typeof guiApi.request>[0]) => {
+  if (request.operation !== 'imagePreview') throw new Error('Unexpected image fixture request');
+  return { url: await imageLoad('resource-thread', request.source, request.variant === 'original') } as T;
+};
 
 function Harness() {
   const { mode: appearance } = useThemeMode();
   const [threadId, setThread] = useState('resource-thread');
-  const thumbnail = 'https://resource.test/thumbnail.png';
+  const thumbnail = params.get('source') === 'file' ? 'C:/project/preview.png' : 'https://resource.test/thumbnail.png';
   const text = params.has('image') ? `![回复图片](${thumbnail})`
     : names.map(name => `[${name}](C:/project/${name})`).join('\n\n');
   const content = <main style={{ padding: 24, maxWidth: 520 }}><h2>项目资源</h2>
@@ -76,9 +87,12 @@ function Harness() {
     <FileEnvironmentContext.Provider value={mode === 'remote' ? environment : null}>
     <FileThreadContext.Provider value={threadId}>
     <ChatFileContext.Provider value={{ client, threadId, ready: true, load }}>
+    <ImageThreadContext.Provider value={threadId}>
+    <ChatImageContext.Provider value={params.has('source') ? { threadId, ready: true, load: imageLoad } : null}>
       <div style={{ height: '100vh' }}>{mode === 'local'
         ? <DetailsWorkspace selected={threadId} active>{content}</DetailsWorkspace>
         : <ChatDetailsWorkspace selected={threadId} active enabled>{content}</ChatDetailsWorkspace>}</div>
+    </ChatImageContext.Provider></ImageThreadContext.Provider>
     </ChatFileContext.Provider></FileThreadContext.Provider>
     </FileEnvironmentContext.Provider></BrowserClientContext.Provider>
   </ConfigProvider></ApplicationTypography>;

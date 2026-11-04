@@ -92,7 +92,7 @@ for (const mode of ['local', 'remote', 'web']) {
 }
 
 for (const mode of ['local', 'remote', 'web']) {
-  test(`${mode} enlarged text keeps long download names centered and reply images use browser tabs`, async ({ page }, info) => {
+  test(`${mode} enlarged text keeps long download names centered and image clicks open fullscreen`, async ({ page }, info) => {
     await page.setViewportSize({ width: 1024, height: 800 });
     await page.addInitScript(() => localStorage.setItem('codex-switch:global-font-size', '20'));
     await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());
@@ -120,6 +120,19 @@ for (const mode of ['local', 'remote', 'web']) {
     await page.goto(`/e2e/reply-resources-harness.html?mode=${mode}&image=1`);
     await page.locator('main').getByRole('button', { name: '放大查看：回复图片' }).click();
     const browser = page.locator('.website-preview-browser');
+    const viewer = page.getByRole('dialog', { name: '回复图片', exact: true });
+    await expect(viewer).toBeVisible();
+    await expect(browser).toHaveCount(0);
+    await expect(viewer.getByRole('img', { name: '回复图片' })).toBeVisible();
+    await page.screenshot({ path: info.outputPath(`${mode}-light-narrow-font20-fullscreen-image.png`) });
+    await viewer.getByRole('button', { name: '关闭图片', exact: true }).click();
+    const thumbnail = page.locator('main').getByRole('button', { name: '放大查看：回复图片' });
+    await thumbnail.click({ button: 'right' });
+    const action = page.getByRole('menuitem', { name: '在内置浏览器中打开', exact: true });
+    await expect(action).toBeVisible();
+    await expect(page.locator('.ant-dropdown:visible')).not.toHaveClass(/-(?:appear|enter)(?:-|\s|$)/);
+    await page.screenshot({ path: info.outputPath(`${mode}-light-narrow-font20-image-menu.png`) });
+    await action.click();
     await expect(browser.getByRole('tab', { selected: true })).toContainText('回复图片');
     await expect(browser.getByRole('img', { name: '回复图片' })).toBeVisible();
     await expect(page.getByRole('dialog', { name: '回复图片', exact: true })).toHaveCount(0);
