@@ -70,3 +70,17 @@ test("a failed release lookup does not create a duplicate draft", async () => {
 test("Coze builds and publishes only in its independent repository", () => {
   assert.doesNotMatch(workflow, /working-directory: apps\/coze|coze-runtime|Check Coze UI/);
 });
+
+test("full releases wait for verified Native packages without rebuilding Native", () => {
+  const mirror = workflow.slice(workflow.indexOf('\n  native-release-assets:'),
+    workflow.indexOf('\n  dream-skin-resources:'));
+  assert.match(mirror, /needs: create-release/);
+  assert.match(mirror, /!inputs.linux_only && !inputs.unix_only/);
+  assert.match(mirror, /ref: \$\{\{ github.workflow_sha \}\}/);
+  assert.match(mirror, /node --test scripts\/sync-native-release.test.mjs/);
+  assert.match(mirror, /node scripts\/sync-native-release.mjs/);
+  assert.match(mirror, /NATIVE_RELEASE_TAG: \$\{\{ inputs.native_tag \}\}/);
+  assert.doesNotMatch(mirror, /npm ci|apps\/native|submodules:|build:apk/);
+  const publish = workflow.slice(workflow.indexOf('\n  publish-release:'));
+  assert.match(publish, /needs:[\s\S]*?- native-release-assets/);
+});

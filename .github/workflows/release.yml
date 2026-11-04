@@ -7,6 +7,10 @@ on:
         description: "Existing release tag, for example v0.1.0"
         required: true
         type: string
+      native_tag:
+        description: "Native stable release to mirror (empty selects latest; retries keep the recorded version)"
+        type: string
+        required: false
       linux_only:
         description: "Rebuild Linux packages for an existing draft release"
         type: boolean
@@ -420,6 +424,30 @@ jobs:
             python3 scripts/verify-linux-appimage.py "$appimage"
           done
 
+  native-release-assets:
+    if: ${{ !inputs.linux_only && !inputs.unix_only }}
+    name: Mirror published Native packages
+    needs: create-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Use the workflow's sync script when retrying an older release tag.
+          ref: ${{ github.workflow_sha }}
+          sparse-checkout: scripts
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Test Native release synchronization
+        run: node --test scripts/sync-native-release.test.mjs
+      - name: Copy verified Native release assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
+          TAG_NAME: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          NATIVE_RELEASE_TAG: ${{ inputs.native_tag }}
+        run: node scripts/sync-native-release.mjs
+
   dream-skin-resources:
     if: ${{ !inputs.linux_only && !inputs.unix_only }}
     name: Publish Dream Skin resources
@@ -433,6 +461,7 @@ jobs:
     needs:
       - create-release
       - release
+      - native-release-assets
       - dream-skin-resources
     runs-on: ubuntu-latest
     steps:
