@@ -1,8 +1,0 @@
-{
-  "client.projectBrowser.openInExplorer": "Open in file manager",
-  "client.projectBrowser.openInTerminal": "Open in terminal",
-  "client.projectBrowser.largePlainText": "This large file is open in plain text mode. Search, replace and save are available.",
-  "client.projectBrowser.largeImagePreview": "Images larger than 5 MB cannot be previewed.",
-  "client.projectBrowser.enterFullscreen": "View fullscreen",
-  "client.projectBrowser.exitFullscreen": "Exit fullscreen"
-}

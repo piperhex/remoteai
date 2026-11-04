@@ -1,6 +1,0 @@
-{
-  "client.filePreview.someHtmlAssetsUnavailable": "部分图片或媒体未能加载，可以重新打开预览再试。",
-  "client.filePreview.tooLarge": "此文件超过 64 MB，请下载后查看。",
-  "client.filePreview.unavailable": "暂时无法预览此文件，请下载后查看。",
-  "client.filePreview.pdfUnavailable": "无法打开此 PDF，请下载后用 PDF 阅读器查看。"
-}

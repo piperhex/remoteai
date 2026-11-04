@@ -1,9 +1,0 @@
-{
-  "common.actions.copy": "コピー",
-  "common.actions.apply": "適用",
-  "common.actions.cancel": "キャンセル",
-  "common.items.count": {
-    "other": "{count} 件"
-  },
-  "common.greeting": "こんにちは、{name}さん"
-}

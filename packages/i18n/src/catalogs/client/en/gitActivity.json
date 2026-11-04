@@ -1,6 +1,0 @@
-{
-  "client.gitActivity.filesBusy": "These files are in use by running tasks. Wait for the listed tasks to finish, then try again:\n{details}",
-  "client.gitActivity.tasksBusy": "These tasks are still using this working directory. Wait for them to finish before continuing:\n{details}",
-  "client.gitActivity.preparing": "A task is starting in this working directory. Please try again shortly.",
-  "client.gitActivity.operationBusy": "Another file or branch operation is in progress in this working directory. Please try again shortly."
-}

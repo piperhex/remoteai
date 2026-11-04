@@ -1,6 +1,0 @@
-{
-  "client.accounts.alias": "アカウントの別名",
-  "client.accounts.aliasPlaceholder": "例：仕事用",
-  "client.accounts.aliasHint": "グループ内ではモデル名とこの別名を表示します。16文字以内。",
-  "client.accounts.aliasInvalid": "別名は改行を含めず、16文字以内で入力してください。"
-}

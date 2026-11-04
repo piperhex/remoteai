@@ -1,9 +1,0 @@
-{
-  "client.gitBlame.annotate": "显示 Git Blame",
-  "client.gitBlame.hideAnnotations": "关闭 Git Blame 批注",
-  "client.gitBlame.uncommitted": "未提交",
-  "client.gitBlame.loading": "正在加载 Git Blame…",
-  "client.gitBlame.unavailable": "暂时无法加载 Git Blame，请稍后重试。",
-  "client.gitBlame.notRepository": "此文件不在 Git 仓库中。",
-  "client.gitBlame.changed": "文件已在其他地方更改，请重新加载后查看 Git Blame。"
-}

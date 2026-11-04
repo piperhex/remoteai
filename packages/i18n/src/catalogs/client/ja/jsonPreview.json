@@ -1,6 +1,0 @@
-{
-  "client.filePreview.jsonHighlightLimit": "JSON ハイライトの上限（MB）",
-  "client.filePreview.jsonHighlightHint": "このサイズ以下の JSON ファイルは全文をハイライトします。超える場合はプレーンテキストで表示します。設定範囲は {min}～{max} MB、初期値は 10 MB です。",
-  "client.filePreview.jsonLines": "JSON · {count} 行",
-  "client.filePreview.jsonPlainText": "ファイルが {limit} MB を超えているため、プレーンテキストで表示しています。上限は設定で変更できます。"
-}

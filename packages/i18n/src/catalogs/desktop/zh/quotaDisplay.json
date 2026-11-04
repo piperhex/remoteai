@@ -1,9 +1,0 @@
-{
-  "settings.quotaDisplay.average": "显示全部账号平均额度",
-  "settings.quotaDisplay.hint": "同时用于悬浮球和宠物底座，按全部账号等权计算 5 小时、周剩余。缺失数据不按 0% 计算。",
-  "settings.quotaDisplay.unsupported": "请在显示悬浮球和宠物的电脑上设置此选项。",
-  "settings.quotaDisplay.short": "全部平均",
-  "settings.quotaDisplay.summary": "全部账号平均剩余：5 小时 {primary}/{total} 个账号，周额度 {secondary}/{total} 个账号。点击刷新全部账号。",
-  "settings.quotaDisplay.stale": "部分数据未更新",
-  "settings.quotaDisplay.compact": "全部账号平均"
-}

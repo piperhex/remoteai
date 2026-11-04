@@ -1,4 +1,0 @@
-{
-  "client.chat.modelUnavailableForAccount": "このアカウントでは選択したモデルを利用できません。アカウントを切り替えるか、別のモデルを選択して送信してください。",
-  "client.chat.effortUnavailableForAccount": "このアカウントでは選択した推論の強度を利用できません。アカウントを切り替えるか、強度を変更して送信してください。"
-}

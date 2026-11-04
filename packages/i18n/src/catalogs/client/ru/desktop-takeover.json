@@ -1,8 +1,0 @@
-{
-  "client.remoteDesktop.takeoverTitle": "Прервать текущее подключение?",
-  "client.remoteDesktop.takeoverMessage": "К этому компьютеру подключено другое устройство. Если продолжить, его сеанс удалённого рабочего стола будет отключён.",
-  "client.remoteDesktop.takeoverConfirm": "Прервать и подключиться",
-  "client.remoteDesktop.takeoverCancel": "Отмена",
-  "client.remoteDesktop.connectionInUse": "К этому компьютеру уже подключён удалённый рабочий стол.",
-  "client.remoteDesktop.connectionCancelled": "Подключение отменено. Текущее подключение сохранено."
-}

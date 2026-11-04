@@ -21,6 +21,8 @@ function licenseNotices(inputs) {
 async function build() {
   const result = await esbuild.build({
     absWorkingDir: root, metafile: true,
+    // Keep module identities and license notices stable for npm links and physical package installs.
+    preserveSymlinks: true,
     entryPoints: [path.join(root, 'shared/project-browser/nativeEntry.tsx')],
     bundle: true, minify: true, format: 'iife', platform: 'browser', target: ['chrome100', 'safari16'],
     // Escape multiline snippets so generated source has no whitespace-only lines.

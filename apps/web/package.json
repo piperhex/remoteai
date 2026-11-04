@@ -34,7 +34,7 @@
     "@noble/curves": "^1.9.7",
     "@noble/hashes": "^1.8.0",
     "@reduxjs/toolkit": "^2.8.2",
-    "@remoteai/i18n": "0.1.0",
+    "@remoteai/i18n": "0.1.2",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
     "antd": "^5.29.3",

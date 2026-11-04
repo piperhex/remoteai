@@ -1,4 +1,0 @@
-/* macOS permission prompts. Keep the keys in sync with Info.plist. */
-"NSMicrophoneUsageDescription" = "Used to record your voice and turn it into typed text.";
-"NSScreenCaptureUsageDescription" = "The computer assistant needs to see your screen to operate apps as you ask.";
-"NSAppleEventsUsageDescription" = "The computer assistant asks to control other apps when a task requires it.";

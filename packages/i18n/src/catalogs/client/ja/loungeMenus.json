@@ -1,7 +1,0 @@
-{
-  "client.lounge.copyMessage": "コピー",
-  "client.lounge.messageCopied": "コピーしました",
-  "client.lounge.messageCopyFailed": "コピーできませんでした。もう一度お試しください。",
-  "client.lounge.mentionUser": "このユーザーをメンション",
-  "client.lounge.contactsSyncFailed": "個別チャットの連絡先を同期できませんでした。もう一度お試しください。"
-}

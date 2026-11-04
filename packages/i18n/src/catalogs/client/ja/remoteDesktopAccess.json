@@ -1,5 +1,0 @@
-{
-  "client.remoteDesktop.privacyFailed": "プライバシースクリーンを切り替えられませんでした。パソコン側で設定を確認してから再試行してください。オフにして接続すると、パソコン本体の画面にもリモート操作が表示されます。",
-  "client.remoteDesktop.lockedRequiresUnattended": "パソコンがロックされています。遠隔操作を続けるには無人アクセスが必要です。パソコンのロックを解除し、「リモート設定」で無人アクセスを有効にしてから再接続してください。",
-  "client.remoteDesktop.privacyRequiresUnattended": "プライバシースクリーンを使うには無人アクセスが必要です。パソコンの「リモート設定」で有効にしてから、再接続してお試しください。"
-}

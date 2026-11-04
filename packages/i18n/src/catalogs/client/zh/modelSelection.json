@@ -1,4 +1,0 @@
-{
-  "client.chat.modelUnavailableForAccount": "当前账户不支持所选模型，请切换账户或重新选择模型后发送。",
-  "client.chat.effortUnavailableForAccount": "当前账户不支持所选推理强度，请切换账户或调整强度后发送。"
-}

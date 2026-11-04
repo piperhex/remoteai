@@ -1,7 +1,0 @@
-{
-  "client.lounge.copyMessage": "Copy",
-  "client.lounge.messageCopied": "Copied",
-  "client.lounge.messageCopyFailed": "Could not copy. Please try again.",
-  "client.lounge.mentionUser": "Mention this user",
-  "client.lounge.contactsSyncFailed": "Could not sync private chat contacts. Please try again."
-}

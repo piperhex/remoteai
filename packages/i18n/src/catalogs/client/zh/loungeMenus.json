@@ -1,7 +1,0 @@
-{
-  "client.lounge.copyMessage": "复制",
-  "client.lounge.messageCopied": "已复制",
-  "client.lounge.messageCopyFailed": "复制失败，请重试。",
-  "client.lounge.mentionUser": "@该用户",
-  "client.lounge.contactsSyncFailed": "私聊联系人同步失败，请重试。"
-}

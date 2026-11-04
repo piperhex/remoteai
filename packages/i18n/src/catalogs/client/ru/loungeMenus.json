@@ -1,7 +1,0 @@
-{
-  "client.lounge.copyMessage": "Копировать",
-  "client.lounge.messageCopied": "Скопировано",
-  "client.lounge.messageCopyFailed": "Не удалось скопировать. Попробуйте ещё раз.",
-  "client.lounge.mentionUser": "Упомянуть пользователя",
-  "client.lounge.contactsSyncFailed": "Не удалось синхронизировать контакты личных чатов. Попробуйте ещё раз."
-}

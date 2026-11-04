@@ -1,9 +1,0 @@
-{
-  "settings.quotaDisplay.average": "全アカウントの平均残量を表示",
-  "settings.quotaDisplay.hint": "両ウィジェットに、各アカウントを同じ重みで計算した5時間・週間の平均残量を表示します。データなしは0%として扱いません。",
-  "settings.quotaDisplay.unsupported": "フローティング表示とペットを表示するパソコンで設定してください。",
-  "settings.quotaDisplay.short": "全体平均",
-  "settings.quotaDisplay.summary": "平均残量：5時間は{primary}/{total}アカウント、週間は{secondary}/{total}アカウント。クリックですべて更新します。",
-  "settings.quotaDisplay.stale": "一部のデータが古くなっています",
-  "settings.quotaDisplay.compact": "全アカウント平均"
-}

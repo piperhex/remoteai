@@ -1,9 +1,0 @@
-{
-  "client.downloads.completedAt": "Завершено: {time}",
-  "client.downloads.totalDuration": "Общее время: {duration}",
-  "client.downloads.completionSummary": "{time} · Всего {duration}",
-  "client.downloads.durationLessThanSecond": "Менее 1 с",
-  "client.downloads.durationSeconds": "{seconds} с",
-  "client.downloads.durationMinutes": "{minutes} мин {seconds} с",
-  "client.downloads.durationHours": "{hours} ч {minutes} мин {seconds} с"
-}

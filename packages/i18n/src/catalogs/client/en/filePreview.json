@@ -1,6 +1,0 @@
-{
-  "client.filePreview.someHtmlAssetsUnavailable": "Some images or media could not be loaded. Reopen the preview to try again.",
-  "client.filePreview.tooLarge": "This file is larger than 64 MB. Download it to view it.",
-  "client.filePreview.unavailable": "This file cannot be previewed right now. Download it to view it.",
-  "client.filePreview.pdfUnavailable": "This PDF could not be opened. Download it and open it in a PDF reader."
-}

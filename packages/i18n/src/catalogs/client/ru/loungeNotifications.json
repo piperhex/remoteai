@@ -1,6 +1,0 @@
-{
-  "client.lounge.muteNotifications": "Отключить уведомления",
-  "client.lounge.unmuteNotifications": "Включить уведомления",
-  "client.lounge.notificationsMuted": "Уведомления отключены",
-  "client.lounge.notificationSaveFailed": "Не удалось сохранить настройки уведомлений. Повторите попытку позже."
-}

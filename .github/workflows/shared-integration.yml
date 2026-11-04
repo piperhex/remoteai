@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'shared'
+      - 'packages/i18n'
       - '.gitmodules'
       - 'scripts/export-admin-ui-dependencies.mjs'
       - '.husky/pre-commit'
@@ -12,6 +13,7 @@ on:
   pull_request:
     paths:
       - 'shared'
+      - 'packages/i18n'
       - '.gitmodules'
       - 'scripts/export-admin-ui-dependencies.mjs'
       - '.husky/pre-commit'

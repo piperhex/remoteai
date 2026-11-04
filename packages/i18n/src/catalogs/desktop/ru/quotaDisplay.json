@@ -1,9 +1,0 @@
-{
-  "settings.quotaDisplay.average": "Средняя квота всех аккаунтов",
-  "settings.quotaDisplay.hint": "Оба виджета показывают средний остаток за 5 часов и неделю с равным весом аккаунтов. Отсутствующие данные не считаются 0%.",
-  "settings.quotaDisplay.unsupported": "Настройте параметр на компьютере, где отображаются виджет и питомец.",
-  "settings.quotaDisplay.short": "Среднее всех",
-  "settings.quotaDisplay.summary": "Средний остаток: за 5 часов — {primary}/{total} аккаунтов, за неделю — {secondary}/{total}. Нажмите, чтобы обновить все аккаунты.",
-  "settings.quotaDisplay.stale": "Часть данных устарела",
-  "settings.quotaDisplay.compact": "Среднее аккаунтов"
-}

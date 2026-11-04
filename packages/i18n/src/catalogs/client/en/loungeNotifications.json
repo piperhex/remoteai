@@ -1,6 +1,0 @@
-{
-  "client.lounge.muteNotifications": "Mute notifications",
-  "client.lounge.unmuteNotifications": "Unmute notifications",
-  "client.lounge.notificationsMuted": "Notifications muted",
-  "client.lounge.notificationSaveFailed": "Could not save notification settings. Try again later."
-}

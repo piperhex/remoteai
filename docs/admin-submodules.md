@@ -29,15 +29,19 @@ and `deploy:admin` commands require the corresponding submodule.
 
 ## Shared source ownership
 
-The parent still owns `shared/` and `packages/i18n`. The UI consumes generated npm dependency archives
-through the public `@remoteai/shared` and `@remoteai/i18n` interfaces. `vendor/source-lock.json` records
-the original repository, commit and individual source hashes; npm's lockfile pins archive integrity.
-There are no separately maintained translation tables in the UI repository.
+`shared/` is the shared-source submodule; `packages/i18n` is the independent `piperhex/remoteai-i18n` submodule.
+Admin UI consumes a generated `@remoteai/shared` archive and installs `@remoteai/i18n` directly from an
+immutable GitHub release. `vendor/source-lock.json` records both provenances; npm's lockfile pins integrity.
+No language archive or editable translation table is maintained in the UI repository.
 
-After editing a shared dependency, run `npm run generate:i18n`, `npm run check:i18n`, then
-`npm run export:admin-ui`. In `apps/admin-ui`, run `npm install` and `npm run check`, review the artifacts,
-and commit and push the child before updating the parent gitlink. Backend platform translation sources
-and their generation manifest now belong to `apps/admin/packages/i18n`.
+After updating shared components, run `npm run export:admin-ui`. It exports only shared components and
+pins the language package's published version. In `apps/admin-ui`, run `npm install` and `npm run check`,
+then commit and push the child before updating its parent gitlink. Language changes are made and released
+in `remoteai-i18n`, followed by explicit dependency updates in consumers.
+
+The backend also installs that published package. `npm run generate:i18n` generates Go messages with its
+`admin` profile; `npm run check:i18n` verifies them. Docker builds verify the same output before compiling.
+Its former local language package is removed. Both applications preserve their existing language policies.
 
 ## Images and deployment
 

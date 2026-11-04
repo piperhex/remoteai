@@ -1,8 +1,0 @@
-{
-  "client.discovery.title": "发现",
-  "client.discovery.twoFactor": "2FA",
-  "client.discovery.back": "返回发现",
-  "client.discovery.ssh": "SSH",
-  "client.discovery.sshComputerHint": "选择一台在线电脑以打开 SSH 终端。",
-  "client.discovery.sshViaComputer": "通过 {name} 连接"
-}
