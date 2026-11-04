@@ -23,10 +23,11 @@ pub(super) struct Registry {
     release_tag: String,
     repository: String,
     protocol: u32,
+    public_key: String,
 }
 
 pub(super) fn registry() -> Result<Registry> {
-    serde_json::from_str(include_str!("../../../../coze/runtime.json"))
+    serde_json::from_str(include_str!("../../../../../shared/coze/runtime.json"))
         .map_err(|_| Error::Integrity)
 }
 
@@ -161,12 +162,8 @@ fn read_small(client: &reqwest::blocking::Client, url: &str) -> Result<String> {
 }
 
 fn verify(bytes: &[u8], signature: &str) -> Result<()> {
-    let config: serde_json::Value = serde_json::from_str(include_str!("../../tauri.conf.json"))
-        .map_err(|_| Error::Integrity)?;
-    let key = config
-        .pointer("/plugins/updater/pubkey")
-        .and_then(serde_json::Value::as_str)
-        .ok_or(Error::Integrity)?;
+    let registry = registry()?;
+    let key = &registry.public_key;
     let decode = |value: &str| -> Result<String> {
         String::from_utf8(
             STANDARD

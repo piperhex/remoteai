@@ -1,0 +1,3 @@
+[submodule "apps/coze"]
+	path = apps/coze
+	url = https://github.com/piperhex/remoteai-coze.git

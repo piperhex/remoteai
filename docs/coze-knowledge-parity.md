@@ -76,7 +76,7 @@ CSV 引号及多行字段、标识保留、批量导入回滚、分页总量和�
 ```powershell
 cargo test --manifest-path apps/coze/Cargo.toml --lib knowledge
 cargo test --manifest-path apps/coze/Cargo.toml --lib tables
-node node_modules/typescript/bin/tsc -p apps/coze/ui/tsconfig.json
+npm --prefix apps/coze run build
 ```
 
 上述模型测试使用本地协议测试服务，PDF 测试为可复现的合成扫描页；

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { applications, createI18n, fallbackChain, isAppLanguage, languageOptions, resolveLanguage } from '../src';
 import { resources } from '../src/catalogs/common';
-import { resources as coze } from '../src/catalogs/coze';
+import { resources as desktop } from '../src/catalogs/desktop';
 import { loadResource } from '../src/catalogs/loader';
 
 describe('language registration and release policies', () => {
@@ -48,9 +48,9 @@ describe('translations', () => {
   });
 
   it('keeps contextual semantic keys separate', () => {
-    const instance = createI18n({ locale: 'en', resources: { en: { ...resources.en, ...coze.en } } });
+    const instance = createI18n({ locale: 'en', resources: { en: { ...resources.en, ...desktop.en } } });
     expect(instance.t('common.actions.apply')).toBe('Apply');
-    expect(instance.t('coze.application.title')).toBe('Application');
+    expect(instance.t('downloads.title')).toBe('Downloads');
   });
 
   it.each([
@@ -80,8 +80,7 @@ describe('translations', () => {
 describe('resource loading', () => {
   it('loads released Japanese resources across independent modules', async () => {
     const instance = createI18n({ locale: 'ja', loadResource });
-    await instance.load('ja', ['common', 'coze', 'desktop']);
-    expect(instance.t('coze.application.title')).toBe('アプリケーション');
+    await instance.load('ja', ['common', 'desktop']);
     expect(instance.t('common.actions.copy')).toBe('コピー');
     expect(instance.t('downloads.title')).toBe('ダウンロード');
   });
@@ -93,7 +92,7 @@ describe('resource loading', () => {
     expect(loader.mock.calls).toEqual([['ja', 'common'], ['en', 'common']]);
     expect(instance.t('common.actions.copy')).toBe('コピー');
     expect(instance.t('common.actions.cancel')).toBe('キャンセル');
-    expect(instance.text('coze.application.title')).toBe('coze.application.title');
+    expect(instance.text('downloads.title')).toBe('downloads.title');
   });
 
   it('retries failed loads and a late load never resets the selected language', async () => {

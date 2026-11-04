@@ -4,7 +4,6 @@ import toolResults from '../src/catalogs/client/zh/toolResults.json';
 import { createHash } from 'node:crypto';
 import { expect, it } from 'vitest';
 import { resources as client } from '../src/catalogs/client';
-import { resources as coze } from '../src/catalogs/coze';
 import { createI18n } from '../src/engine';
 import { createErrorFormatter } from '../src/errors';
 import gitConflicts from '../src/catalogs/client/zh/git-conflicts.json';
@@ -50,7 +49,6 @@ import loungeNotifications from '../src/catalogs/client/zh/loungeNotifications.j
 
 const baselines = {
   "client": "751b7f50aca5a2ebf8976190600fd93ce74f94673b73390a87c6fc153bdc6e22",
-  "coze": "54efc3f47447847456222d9c0470eca8ea5ed35b5afe24104da1e27471db06de"
 };
 
 // New complete templates added after migration are covered by the catalog completeness checks.
@@ -114,10 +112,10 @@ const additions = new Set(['client.chat.usePlugin',
 ]);
 
 it('preserves the complete pre-migration Chinese, English and Russian copy', () => {
-  for (const [module, resources] of Object.entries({ client, coze })) {
+  for (const [module, resources] of Object.entries({ client })) {
     const dictionaries = resources as Record<string, Record<string, string>>;
-    const entries = Object.keys(dictionaries.zh).filter(key => key !== 'coze.application.title'
-      && key !== 'client.app.webPageTitle' && !key.startsWith('client.skills.') && !additions.has(key))
+    const entries = Object.keys(dictionaries.zh)
+      .filter(key => key !== 'client.app.webPageTitle' && !key.startsWith('client.skills.') && !additions.has(key))
       .map(key => [dictionaries.zh[key], dictionaries.en[key], dictionaries.ru[key]])
       .sort((a, b) => a[0].localeCompare(b[0], 'en'));
     expect(createHash('sha256').update(JSON.stringify(entries)).digest('hex'))
@@ -127,9 +125,7 @@ it('preserves the complete pre-migration Chinese, English and Russian copy', () 
 
 it('keeps context separate and accepts code + params without interpreting parameter values', () => {
   const app = createI18n({ locale: 'en', resources: client });
-  const studio = createI18n({ locale: 'en', resources: coze });
   expect(app.t('client.chat.apply')).toBe('Apply');
-  expect(studio.t('coze.index.appAccess')).toBe('App access');
   const format = createErrorFormatter(client);
   expect(format('en', { code: 'client.conversation.manageProject', params: { value1: '取消 {value1}' } }))
     .toBe('Manage project: 取消 {value1}');

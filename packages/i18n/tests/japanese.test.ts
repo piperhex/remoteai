@@ -1,13 +1,12 @@
 import { expect, it } from 'vitest';
 import { resources as client } from '../src/catalogs/client';
 import { resources as desktop } from '../src/catalogs/desktop';
-import { resources as coze } from '../src/catalogs/coze';
 import { resources as common } from '../src/catalogs/common';
 import { resources as website } from '../src/catalogs/website';
 import { createI18n, type Resources } from '../src';
 
 it('ships complete Japanese resources without conversion artifacts or broken replacement prefixes', () => {
-  const modules: Record<string, Resources> = { client, desktop, coze, common, website };
+  const modules: Record<string, Resources> = { client, desktop, common, website };
   for (const [module, resources] of Object.entries(modules)) {
     expect(Object.keys(resources.ja ?? {}).sort()).toEqual(Object.keys(resources.en ?? {}).sort());
     for (const [key, source] of Object.entries(resources.en ?? {})) {

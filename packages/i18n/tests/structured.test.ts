@@ -4,7 +4,6 @@ import en from '../src/copy/admin/en';
 import zh from '../src/copy/admin/zh';
 import ru from '../src/copy/admin/ru';
 import help from '../src/copy/desktop/help';
-import kinds from '../src/copy/coze/kinds';
 import { threadCopy } from '../src/copy/desktop/threads';
 import { getUserAgreement, agreementCopy } from '../src/legal/agreement';
 import { applications } from '../src/registry';
@@ -20,7 +19,7 @@ function sorted(value: unknown): unknown {
 }
 
 it('preserves the original structured translations in all shipped languages', () => {
-  const resources = { adminEn: en, adminZh: zh, adminRu: ru, help, kinds, threads: threadCopy, agreementCopy };
+  const resources = { adminEn: en, adminZh: zh, adminRu: ru, help, threads: threadCopy, agreementCopy };
   for (const [name, value] of Object.entries(resources)) {
     const hash = createHash('sha256').update(JSON.stringify(sorted(value))).digest('hex');
     expect(hash, name).toBe(baselines[name as keyof typeof baselines]);
@@ -29,7 +28,7 @@ it('preserves the original structured translations in all shipped languages', ()
 
 it('keeps complete client tables and legal documents available offline in every enabled language', () => {
   for (const language of applications.native) {
-    for (const resources of [help, kinds, threadCopy, agreementCopy]) {
+    for (const resources of [help, threadCopy, agreementCopy]) {
       expect(Object.keys(resources[language]).sort()).toEqual(Object.keys(resources.en).sort());
     }
     const agreement = getUserAgreement(language);

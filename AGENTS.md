@@ -2,6 +2,16 @@
 
 Keep all instructions in this `AGENTS.md` file in English.
 
+## Coze Submodule
+
+- `apps/coze` is the independent `https://github.com/piperhex/remoteai-coze.git` Git submodule.
+  Follow its own `AGENTS.md`. Commit and push Coze changes there before updating the parent gitlink.
+- Coze owns its dependencies, localization package, tests, build scripts and CI releases. Do not add it
+  back to the parent's npm workspaces or rebuild it as part of Remote AI releases.
+- The parent owns the desktop integration and `shared/coze/runtime.json`, which pins a published,
+  compatible signed runtime. Parent builds must work without initializing the optional submodule.
+- Coze translations live only in its `packages/i18n`; the parent's package owns desktop integration copy.
+
 ## Admin Backend: Go Only
 
 - The NestJS backend in `apps/admin` is no longer maintained. Its source is frozen: do not add features,

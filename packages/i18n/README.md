@@ -9,7 +9,7 @@ there is no npm publication or separate build step. The root entry has no React,
 | --- | --- |
 | `@remoteai/i18n` | Registry, instance engine, interpolation, plurals, date and number formatting |
 | `@remoteai/i18n/react` | `I18nProvider` (`Provider`), `useT`, `useLocale`, `useI18n` |
-| `@remoteai/i18n/common`, `/desktop`, `/client`, `/coze`, `/website` | Explicitly imported module resources |
+| `@remoteai/i18n/common`, `/desktop`, `/client`, `/website` | Explicitly imported module resources |
 | `@remoteai/i18n/catalogs/<module>/<language>` | One module in one language, default-exported messages |
 | `@remoteai/i18n/loader` | Optional dynamic imports by module and language |
 | `@remoteai/i18n/errors` | Structured error formatting and decoding of existing service text responses |
@@ -50,7 +50,7 @@ import { createI18n } from '@remoteai/i18n';
 import { loadResource } from '@remoteai/i18n/loader';
 
 const i18n = createI18n({ locale: 'ja', loadResource });
-await i18n.load('ja', ['common', 'coze']); // Also loads these modules in fallback languages.
+await i18n.load('ja', ['common', 'desktop']); // Also loads these modules in fallback languages.
 ```
 
 Loads are cached per instance, concurrent requests are shared, and failed loads may be retried. Loading resources
@@ -66,7 +66,7 @@ and languages. The package's root and React entries never import application dic
 
 Semantic resources are JSON files under `src/catalogs/<module>/<language>/`. Desktop's existing keys and values are
 preserved, split into resource chunks. New keys should use context, such as `common.actions.apply` versus
-`coze.application.title`. New resource modules are registered in `catalogs.json`; that file also declares each
+`downloads.title`. New resource modules are registered in `catalogs.json`; that file also declares each
 module's released and draft languages. Structured marketing content, legal documents and existing feature-specific
 tables also belong to this package; their public entries preserve their shapes and established fallback policies.
 
@@ -102,7 +102,7 @@ This decoder is separate from ordinary translation; `i18n.text('复制')` does n
 4. Complete the modules an application uses, move the language to those modules' released lists, and only then add
    it to that application's enabled list. Include the `client` module for desktop, web and native releases.
 
-Japanese is released in desktop, web, native, Coze and the website. Its acceptance covers complete module resources,
+Japanese is released in desktop, web, native and the website. Its acceptance covers complete module resources,
 saved preferences, live switching with unsaved content, offline native resources and website language routes.
 The first-launch policy remains Chinese for a Chinese system locale and English otherwise; saved choices take priority.
 The engine tests use intentionally partial resources to verify fallback independently of shipped dictionaries.
@@ -124,7 +124,7 @@ Admin's three-language release policy is in `languages.json`. Its Russian dictio
 and falls back to English on operator pages; centralizing resources does not release additional languages.
 
 `platform.json` lists the platform resources generated from `platform/`: Chrome extension locale JSON, iOS/macOS
-permission descriptions, Coze built-in templates, native Rust translators and embedded JavaScript copy.
+permission descriptions, native Rust translators and embedded JavaScript copy.
 Chrome's fallback module and marked HTML defaults are also generated from its Chinese catalog.
 The platform tools require files at their existing
 application paths, so these are generated outputs, not independent translation sources. Update the package source and
@@ -153,7 +153,7 @@ desktop language adapter. Nature artwork batch manifests are generated mirrors o
 The old forwarding files and legacy package entry have been removed. Applications use semantic keys and package
 resources. `shared/localization` owns client bundle integration, device defaults and the shared UI language store;
 storage, Tauri communication and native preferences stay in the applications. This store is never used by the
-website server, which creates an instance for each render. Coze keeps its own instance and independent resources.
+website server, which creates an instance for each render. Coze is an independent submodule: its own `packages/i18n` owns the editor resources and checks.
 Web chat views embedded in desktop inherit and follow the host selection without writing Web language preferences.
 
 The migration regression test fingerprints the original Chinese, English and Russian copy, including explicit

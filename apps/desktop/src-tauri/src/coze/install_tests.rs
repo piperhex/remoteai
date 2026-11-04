@@ -43,6 +43,15 @@ fn unsigned_packages_are_never_accepted() {
 }
 
 #[test]
+fn independent_coze_signatures_use_the_pinned_component_key() {
+    let payload = include_bytes!("../../../../../shared/coze/signature-fixture.txt");
+    let signature = include_str!("../../../../../shared/coze/signature-fixture.txt.sig");
+    assert!(verify(payload, signature).is_ok());
+    assert!(verify(b"modified package", signature).is_err());
+    assert_eq!(registry().unwrap().repository, "piperhex/remoteai-coze");
+}
+
+#[test]
 fn incomplete_packages_are_not_marked_installed() {
     let root = tempfile::tempdir().unwrap();
     let package = directory(root.path()).unwrap();

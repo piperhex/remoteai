@@ -76,12 +76,6 @@ export const applications = {
     "ru",
     "ja"
   ],
-  "coze": [
-    "zh",
-    "en",
-    "ru",
-    "ja"
-  ],
   "website": [
     "zh",
     "en",

@@ -9,7 +9,6 @@
     "./react": "./src/react.tsx",
     "./common": "./src/catalogs/common/index.ts",
     "./desktop": "./src/catalogs/desktop/index.ts",
-    "./coze": "./src/catalogs/coze/index.ts",
     "./website": "./src/catalogs/website/index.ts",
     "./catalogs/*": "./src/catalogs/*/index.ts",
     "./loader": "./src/catalogs/loader.ts",

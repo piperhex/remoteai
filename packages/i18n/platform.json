@@ -142,11 +142,6 @@
       "name": "speed-selector"
     },
     {
-      "source": "platform/coze/builtin-template.rs",
-      "target": "apps/coze/src/catalog.rs",
-      "name": "builtin-template"
-    },
-    {
       "source": "platform/desktop/overlays/usage-statusline.js",
       "target": "apps/desktop/src-tauri/src/dream_skin_native/usage_statusline.js",
       "name": "usage-statusline"

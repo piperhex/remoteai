@@ -1,0 +1,1 @@
+Remote AI Coze release signing compatibility fixture.

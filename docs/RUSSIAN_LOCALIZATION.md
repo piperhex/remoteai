@@ -1,7 +1,7 @@
 # Russian localization
 
 Translation resources now live in the private workspace package [`@remoteai/i18n`](../packages/i18n/README.md).
-Client resources live in `packages/i18n/src/catalogs/client`, Coze resources in `src/catalogs/coze`,
+Client resources live in `packages/i18n/src/catalogs/client`, Coze resources in its submodule localization package,
 and desktop semantic resources in `src/catalogs/desktop`. All use stable semantic keys. Run
 `npm run generate:i18n` and `npm run check:i18n` after edits. Language metadata, application release policies and the generated Rust acceptance table are documented in that README.
 
@@ -41,26 +41,7 @@ The review of `bbbc02617b7c4bf8c7cbfcea58ffa1bfe579ad62` also fixes inherited-pr
 
 ### Coze editor
 
-The Coze editor (`apps/coze/ui`) ships in the separately signed Coze runtime package, not in the desktop app. It has its own dictionaries and does not import the shared ones: they are large, and some short shared keys mean something else in Coze (`应用` is "Apply" there, but "App" in Coze).
-
-- Dictionaries: `packages/i18n/src/catalogs/coze/{zh,en,ru}/`, imported through `@remoteai/i18n/coze`.
-  Resource kind names with their plural and gender forms remain in `apps/coze/ui/src/i18n/kinds.ts`.
-- Use `t()` with semantic keys. `msg()` marks keys stored for later display; `verbatim()` marks protocol
-  values and classifier patterns. `displayError()` decodes external runtime errors at render time.
-  Default editable data is localized once when created; user content remains literal.
-- `i18n/coverage.test.ts` checks resource coverage, matching placeholders and unexpected Chinese text.
-  Package checks also reject retired imports and Chinese literal keys. Coze unit tests use the zh-CN fixture
-  (`shared/localization/testLocale.ts`).
-- Language source: the runtime serves the editor on a new random port at each start, so browser storage in the editor does not persist. The desktop appends `lang=<zh|en|ru>` to the iframe URL fragment once per runtime URL, and the editor keeps it in sessionStorage `coze-language`. Live changes arrive in the `language` field of the `remoteai:coze:state` bridge message (`CozeDesktopState` in `shared/coze/desktopBridge.ts`), so the iframe does not reload and drafts survive. Without either (access links opened in a browser, older desktop builds), `deviceLanguage()` decides: Chinese locales get Chinese, all others English. The antd locale and the document language follow the selected language.
-- Release: editor and Rust changes reach users only with a new signed Coze runtime release. Bump `apps/coze/Cargo.toml`, `apps/coze/Cargo.lock`, `apps/coze/package.json` and `apps/coze/runtime.json` together (tag `coze-v<version>`), publish the release with `.github/workflows/coze-runtime.yml`, and ship a desktop build that embeds the new `runtime.json`. Until then, desktop builds download `coze-v0.2.2`, whose editor is Chinese only. Older runtimes ignore the `lang` fragment parameter and the extra bridge field.
-- Verification: in `apps/coze`, run `npx vitest run` and `npx tsc -p ui/tsconfig.json --noEmit`; run the Playwright specs with `npm run test:e2e -w @codex-switch/coze`. The Coze README is available in [English](../apps/coze/README_EN.md) and [Russian](../apps/coze/README_RU.md).
-
-## Verification
-
-- Run native `check` and `test`, desktop `build` and `test`, and web `check`. Native tests cover dictionary completeness, placeholder parity, data preservation, preference races and write failures.
-- Desktop dictionary tests: `src/i18n/russianParity.test.ts` (every shared English key has Russian with the same placeholders and no Chinese), `russian.test.ts`, `englishCoverage.test.ts` and `backendMessages.test.ts`.
-- Run Rust formatting, tests and strict Clippy for desktop changes.
-- Run `node --test scripts/chrome-plugin-i18n.test.mjs` for the browser assistant locales.
-- Web Playwright `i18n.pw.ts` checks all three languages, persistence, cross-tab updates, blocked storage and 320px/390px/desktop layouts. `i18n-chat.pw.ts` checks draft and connection preservation and localized chat settings.
-- `apps/desktop/e2e/android-i18n-regression.mjs` runs against the local mobile fixture and a separate regression APK. It checks login, language changes, draft/connection preservation, sending and restart persistence. Set `ANDROID_CHAT_PACKAGE=com.codexswitch.mobile.regressiontest`, `ANDROID_CHAT_APK`, `ANDROID_SERIAL` and `CHAT_TEST_API_PORT` to the isolated fixture values.
-- Build Android and export iOS resources. An iOS export validates bundling; it does not replace an iOS device check. Check the macOS and iOS permission prompts in each system language on a device.
+Coze is maintained in the [independent submodule](coze-submodule.md). Its translations, tests and signed
+releases live in https://github.com/piperhex/remoteai-coze. Desktop integration copy remains in the parent
+language package. The desktop sends the initial language in the iframe fragment and subsequent changes
+through the versioned bridge; unsaved drafts survive language switches.

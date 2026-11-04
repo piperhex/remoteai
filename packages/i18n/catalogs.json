@@ -4,7 +4,6 @@
       "desktop",
       "web",
       "native",
-      "coze",
       "website"
     ],
     "base": "en",
@@ -20,19 +19,6 @@
     "applications": [
       "desktop",
       "web"
-    ],
-    "base": "en",
-    "released": [
-      "zh",
-      "en",
-      "ru",
-      "ja"
-    ],
-    "draft": []
-  },
-  "coze": {
-    "applications": [
-      "coze"
     ],
     "base": "en",
     "released": [
