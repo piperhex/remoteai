@@ -94,6 +94,20 @@ For local Windows ARM64 app builds, install the Rust `aarch64-pc-windows-msvc` t
 
 ## Debugging Guidelines
 
+### Desktop Frontend DevTools
+
+Development and release builds support the WebView inspector. It stays closed at startup.
+Focus the application window, then press **Ctrl+Shift+I** on Windows/Linux or **Command+Option+I**
+on macOS. Close the inspector window when finished. The same shortcut works in desktop local and
+remote modes; Web uses the browser's own developer tools.
+
+The desktop's `tauri` dependency enables the `devtools` feature without changing Release optimization.
+Use Tauri's built-in shortcut and existing `core:default` capability; no application startup code should
+call `open_devtools()`. Keep the inspector closed for baseline CPU/memory measurements, and record
+performance traces only while reproducing a problem because the inspector and recording add overhead.
+
+### Troubleshooting
+
 - UI or state issue: reproduce it first with `npm run dev` and demo data.
 - IPC issue: verify that command names and arguments in `apps/desktop/src/api/backend.ts` match `commands.rs`.
 - File issue: set a temporary `CODEX_HOME` instead of modifying an account you regularly use.

@@ -63,7 +63,8 @@ serde_json = "1"
 serde_yaml = "0.9"
 semver = "1"
 sha2 = "0.10"
-tauri = { version = "2", features = ["tray-icon", "macos-private-api", "unstable"] }
+# Keep the inspector available on demand in release builds without opening it at startup.
+tauri = { version = "2", features = ["tray-icon", "macos-private-api", "unstable", "devtools"] }
 tempfile = "3"
 tauri-plugin-autostart = "2.5.1"
 tauri-plugin-clipboard-manager = "2.3.2"
