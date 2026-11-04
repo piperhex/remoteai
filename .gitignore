@@ -21,6 +21,7 @@ apps/desktop/src-tauri/.updater/
 .tar.gz
 .codex-tmp
 /.codex-tmp-*
+/.artifacts/
 .worktrees/
 apps/desktop/src-tauri/resources/remote-desktop/runtime/
 apps/desktop/src-tauri/resources/desktop-service/*

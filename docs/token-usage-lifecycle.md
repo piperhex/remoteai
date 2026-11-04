@@ -71,7 +71,9 @@ before and 409 ms after. This proves the tested frontend interaction remains ava
 an asynchronous read; it is not evidence of a measured speedup or native disk/network latency.
 
 Raw reports: `.codex-tmp/token-lifecycle/before.json` and `after.json`.
-The retained reports and source-hash manifest are also under `.artifacts/task-04/`.
+The original reports and source-hash manifest are available in Git history at commit
+`9097d0a51`, under `.artifacts/task-04/`. The directory has been removed from the working
+tree and is now ignored for future local artifacts.
 The current browser rerun passed all nine cases with exit code 0. PowerShell renders Node stderr
 warnings as `NativeCommandError` records in the log; the runner's explicit exit code and test
 results distinguish those warnings from failing tests.
@@ -107,8 +109,9 @@ Token Summary remains visible, returning stops requests for 5,100 ms, and reopen
 while retaining the three-week range. This was run after removing the experimental ChatPage
 active guard. It uses the existing simulated remote transport, not a production remote host.
 
-The isolated Windows probe sources are retained in `.artifacts/task-04/`. To replay on this
-Windows development machine with the already-built matching Tauri dependency artifacts, copy
+The isolated Windows probe sources are available in the same historical commit. To replay on this
+Windows development machine with the already-built matching Tauri dependency artifacts, retrieve
+the following files from that commit's `.artifacts/task-04/` directory and copy
 `native-probe.rs`, `native-probe.exe.manifest`, `build-native.ps1` and `native-smoke.mjs` into
 `.codex-tmp/token-lifecycle/`, then run from the repository root:
 
