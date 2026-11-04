@@ -138,6 +138,7 @@ fn real_commands_overlap_route_results_and_cancel_without_losing_slots() {
             let replies = wait_reply(&mut host);
             assert_eq!(replies.len(), 1);
             assert_eq!(replies[0]["commandId"], index.to_string());
+            assert!(replies[0]["error"].is_null(), "command failed: {replies:?}");
             assert_eq!(
                 replies[0]["data"]["stdout"].as_str().unwrap().trim(),
                 index.to_string()

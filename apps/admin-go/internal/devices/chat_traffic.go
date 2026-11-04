@@ -59,6 +59,10 @@ func withChatClientInfo(frame platform.JSON, value interface{}) platform.JSON {
 }
 
 func (g *ChatGateway) deliverRelay(delivery relayDelivery, frame platform.JSON) {
+	g.deliverMeteredRelay(delivery, frame, g.meter)
+}
+
+func (g *ChatGateway) deliverMeteredRelay(delivery relayDelivery, frame platform.JSON, meter relayTrafficMeter) {
 	sent := func(bytes int) {
 		g.traffic.record(bytes)
 		if delivery.fromDesktop {
@@ -67,7 +71,7 @@ func (g *ChatGateway) deliverRelay(delivery relayDelivery, frame platform.JSON) 
 			delivery.traffic.download.Add(int64(bytes))
 		}
 	}
-	guard := delivery.guard(g.meter)
+	guard := delivery.guard(meter)
 	if frame["type"] == "bulk" {
 		data, err := encodeBulkRelay(frame)
 		if err != nil {

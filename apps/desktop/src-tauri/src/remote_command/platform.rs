@@ -3,6 +3,18 @@ use super::{protocol::Shell, RemoteError, Result};
 use std::process::Stdio;
 use tokio::process::{Child, Command};
 
+#[cfg(target_os = "macos")]
+static SPAWN_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+/// Keep concurrent remote commands from inheriting each other's capture pipes on macOS.
+pub(super) async fn spawn(command: &mut Command) -> std::io::Result<Child> {
+    // macOS creates pipes and sets CLOEXEC separately (rust-lang/rust#95584).
+    // Only process creation is serialized; commands execute and drain concurrently.
+    #[cfg(target_os = "macos")]
+    let _guard = SPAWN_LOCK.lock().await;
+    command.spawn()
+}
+
 pub(super) fn project_script(command: &str) -> String {
     #[cfg(windows)]
     {
@@ -99,12 +111,17 @@ pub(super) async fn stop(child: &mut Child, pid: u32) {
             .await
     };
     #[cfg(not(windows))]
-    let result = Command::new("/bin/kill")
-        .args(["-KILL", "--", &format!("-{pid}")])
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .await;
+    let result = {
+        let mut command = Command::new("/bin/kill");
+        command
+            .args(["-KILL", "--", &format!("-{pid}")])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
+        match spawn(&mut command).await {
+            Ok(mut cleanup) => cleanup.wait().await,
+            Err(error) => Err(error),
+        }
+    };
     if !result.is_ok_and(|status| status.success()) {
         // A process that already exited needs no further termination; kill_on_drop is the fallback.
         if let Err(error) = child.kill().await {

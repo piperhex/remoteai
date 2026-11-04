@@ -347,6 +347,14 @@ jobs:
           node scripts/check-installer-fixture.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+      - name: Stress concurrent command capture on macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: >-
+          cargo nextest run --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
+          -E 'test(remote_command::host::tests::real_commands_overlap)'
+          --test-threads 1 --stress-count 20
+
       - name: Prepare desktop video runtime
         if: startsWith(matrix.name, 'windows') || startsWith(matrix.name, 'macos')
         run: node scripts/prepare-remote-desktop-runtime.mjs

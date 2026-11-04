@@ -68,7 +68,9 @@ pub(super) async fn execute_prevalidated(
     let mut command = platform::command(&request.shell, &request.command)?;
     command.current_dir(cwd);
     let started = Instant::now();
-    let mut child = command.spawn().map_err(|_| RemoteError::Execution)?;
+    let mut child = platform::spawn(&mut command)
+        .await
+        .map_err(|_| RemoteError::Execution)?;
     let tree = platform::track(&child)?;
     let pid = child.id().ok_or(RemoteError::Execution)?;
     let stdout = child.stdout.take().ok_or(RemoteError::Execution)?;

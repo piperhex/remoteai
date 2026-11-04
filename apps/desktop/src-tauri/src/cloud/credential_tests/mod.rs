@@ -105,8 +105,16 @@ impl Drop for Fixture {
 }
 
 pub(super) fn client() -> Client {
+    // Fixtures hold a burst of requests before responding. Release tiny_http's read
+    // workers after each request so idle keep-alive reads cannot block that burst.
+    let mut headers = reqwest::header::HeaderMap::new();
+    headers.insert(
+        reqwest::header::CONNECTION,
+        reqwest::header::HeaderValue::from_static("close"),
+    );
     Client::builder()
         .no_proxy()
+        .default_headers(headers)
         .timeout(Duration::from_secs(10))
         .build()
         .unwrap()

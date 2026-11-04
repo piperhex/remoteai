@@ -68,22 +68,25 @@ func TestBulkSharedSourceWithStalledSocketWriter(t *testing.T) {
 	}
 }
 
-func TestBulkSharedSourceReportsUnavailableAccountingOnDrainedSocket(t *testing.T) {
+func TestBulkSharedSourceWritesAndAccountsOnDrainedSocket(t *testing.T) {
 	target, receiver := bulkBackpressurePeer(t)
 	writerDone := make(chan struct{})
 	go func() { defer close(writerDone); target.writeLoop() }()
 	defer func() { target.terminate(); <-writerDone }()
-	conn, _, _ := sharedBulkSource(t, map[string]*peer{"download": target})
-	if err := conn.WriteMessage(websocket.BinaryMessage, fullBulkWire(t)); err != nil {
+	conn, source, gateway := sharedBulkSource(t, map[string]*peer{"download": target})
+	wire := fullBulkWire(t)
+	if err := conn.WriteMessage(websocket.BinaryMessage, wire); err != nil {
 		t.Fatal(err)
 	}
-	for _, socket := range []*websocket.Conn{conn, receiver} {
-		var message platform.JSON
-		if err := socket.ReadJSON(&message); err != nil {
-			t.Fatal(err)
-		}
-		if message["type"] != "relay-quota" || message["reason"] != "unavailable" || message["blocked"] != true {
-			t.Fatalf("missing accounting state: %v", message)
-		}
+	kind, data, err := receiver.ReadMessage()
+	if err != nil || kind != websocket.BinaryMessage || !bytes.Equal(data, wire) {
+		t.Fatal("drained writer did not deliver the original bulk record", err)
+	}
+	waitBulkCondition(t, func() bool { return source.bulkBuffered.Load()+target.bulkBuffered.Load() == 0 })
+	gateway.sessions.mu.Lock()
+	traffic := &gateway.sessions.hot.sessions["download"].traffic
+	gateway.sessions.mu.Unlock()
+	if traffic.upload.Load()+traffic.download.Load() != int64(len(wire)) {
+		t.Fatal("successful socket write was not counted exactly once")
 	}
 }

@@ -2,13 +2,13 @@ package devices
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/codex-switch/admin-go/internal/chattraffic"
 	"github.com/codex-switch/admin-go/internal/platform"
 	"github.com/gorilla/websocket"
 )
@@ -18,10 +18,18 @@ import (
 // of OS TCP buffering, while the source is a real multiplexed WebSocket.
 func sharedBulkSource(t *testing.T, targets map[string]*peer) (*websocket.Conn, *peer, *ChatGateway) {
 	t.Helper()
-	// A real writer may drain the prefilled queue depending on OS socket buffering.
-	// Keep accounting fail-closed without storage instead of leaving a nil meter.
-	gateway := &ChatGateway{sessions: newChatSessions(nil), meter: chattraffic.NewMeter(nil, nil)}
-	gateway.sessions.hot.deliver = gateway.deliverRelay
+	// The meter permits real socket writes without storage. A rejecting meter would
+	// prevent the test from filling larger OS send buffers after the prefilled queue drains.
+	gateway := &ChatGateway{sessions: newChatSessions(nil), traffic: newTrafficCounter(nil)}
+	meter := relayMeterFunc(func(_ context.Context, owner string, size int, write func() error) error {
+		if owner != t.Name() || size <= 0 {
+			t.Error("missing relay accounting owner or wire bytes")
+		}
+		return write()
+	})
+	gateway.sessions.hot.deliver = func(delivery relayDelivery, frame platform.JSON) {
+		gateway.deliverMeteredRelay(delivery, frame, meter)
+	}
 	ready := make(chan *peer, 1)
 	finished := make(chan struct{})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
