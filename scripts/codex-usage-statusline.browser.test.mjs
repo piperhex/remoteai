@@ -106,15 +106,16 @@ for (const dark of [false, true]) {
   });
 }
 
-test('current Codex host subscriptions restore metrics without the legacy registry and follow new chats', async () => {
+for (const format of ['legacy', 'rspack']) {
+test(`${format} Codex host subscriptions restore metrics without the legacy registry and follow new chats`, async () => {
   const page = await browser.newPage({ viewport: { width: 1100, height: 300 } });
   try {
+    const modulePath = format === 'legacy' ? '/assets/app-shared-fixture.js' : '/assets/348410.fixture.js';
     await page.route('http://codex-fixture.test/**', route => {
-      const isModule = route.request().url().endsWith('/assets/app-shared-fixture.js');
-      return route.fulfill({ contentType: isModule ? 'text/javascript' : 'text/html',
-        body: isModule ? `
+      const isModule = route.request().url().endsWith(modulePath);
+      const serviceSource = `
           const resource = () => ({ [Symbol.dispose]() {} });
-          export const services = { appServerManagers: {
+          const services = { appServerManagers: {
             openAccount() { throw new Error('Account access is not needed for usage'); },
             subscribe(hostId, listener) {
               if (hostId !== 'local') throw new Error('Unexpected host');
@@ -130,21 +131,34 @@ test('current Codex host subscriptions restore metrics without the legacy regist
               return resource();
             }
           } };
-        ` : '<!doctype html><title>Native usage fixture</title>' });
+        `;
+      const moduleSource = format === 'legacy' ? `${serviceSource} export { services };`
+        : `${serviceSource}
+          const appHost = new Proxy(() => {}, { get() { throw new Error('Callable RPC proxy'); } });
+          export const __webpack_require__ = Object.assign(() => {
+            throw new Error('Discovery must not execute module factories');
+          }, { c: { loaded: { exports: { appHost, appServices: services } } } });`;
+      return route.fulfill({ contentType: isModule ? 'text/javascript' : 'text/html',
+        body: isModule ? moduleSource : '<!doctype html><title>Native usage fixture</title>' });
     });
     await page.goto('http://codex-fixture.test/');
     await setup(page, false);
-    await page.evaluate(() => {
+    await page.evaluate(({ format, modulePath }) => {
       window.__CODEX_SWITCH_USAGE_STATUSLINE__.dispose();
       delete window.__codexRoot;
       window.fixtureNativeUsage = { total: { inputTokens: 1000, cachedInputTokens: 650 },
         last: { totalTokens: 2050 }, modelContextWindow: 10000 };
-      const preload = document.createElement('link');
-      preload.rel = 'modulepreload'; preload.href = '/assets/app-shared-fixture.js'; document.head.append(preload);
-    });
+      const entry = document.createElement(format === 'legacy' ? 'link' : 'script');
+      if (format === 'legacy') { entry.rel = 'modulepreload'; entry.href = modulePath; }
+      else { entry.type = 'module'; entry.src = modulePath; }
+      document.head.append(entry);
+    }, { format, modulePath });
     await page.evaluate(script);
     const bar = page.getByRole('status', { name: '会话用量统计' });
     await expect(bar).toHaveText('51.0 tok/s缓存命中 65.0%20.5%');
+    if (format === 'rspack' && process.env.CODEX_USAGE_STATUSLINE_RSPACK_SCREENSHOT) {
+      await page.screenshot({ path: process.env.CODEX_USAGE_STATUSLINE_RSPACK_SCREENSHOT });
+    }
     await page.evaluate(() => {
       document.querySelector('[data-above-composer-conversation-id]')
         .setAttribute('data-above-composer-conversation-id', 'local:second');
@@ -163,6 +177,7 @@ test('current Codex host subscriptions restore metrics without the legacy regist
     await expect(bar).toHaveCount(0);
   } finally { await page.close(); }
 });
+}
 
 test("Japanese and usage toggles stay responsive while conversation timings are pending", async () => {
   const page = await browser.newPage({ viewport: { width: 420, height: 320 } });
