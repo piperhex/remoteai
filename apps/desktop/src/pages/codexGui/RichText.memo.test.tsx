@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import Markdown from "react-markdown";
-import { RichText } from "./RichText";
+import { RichText } from "../../../../../shared/conversation/RichText";
 
 vi.mock("react-markdown", async original => {
   const module = await original<typeof import("react-markdown")>();

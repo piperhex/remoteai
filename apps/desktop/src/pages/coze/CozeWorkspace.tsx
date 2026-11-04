@@ -1,12 +1,12 @@
-import { displayError } from '../../i18n/uiText';
+import { displayError } from '../../../../../shared/localization/uiText';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Button, Popconfirm } from "antd";
 import {
   COZE_DESKTOP_READY, COZE_DESKTOP_STATE, COZE_DESKTOP_STOP, COZE_DESKTOP_STOP_READY, type CozeDesktopState,
   withCozeLanguage,
 } from "../../../../../shared/coze/desktopBridge";
-import { guiLanguage, uiText } from "../../i18n/uiText";
-import { useGuiLanguage } from "../../i18n/useGuiLanguage";
+import { guiLanguage, uiText } from "../../../../../shared/localization/uiText";
+import { useGuiLanguage } from "../../../../../shared/localization/useGuiLanguage";
 import styles from "./CozePage.module.less";
 
 interface CozeWorkspaceProps {

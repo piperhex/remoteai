@@ -31,7 +31,7 @@ import type {
   ResetCreditsLoadState,
 } from "../../../types";
 import { accountExpirationDate } from "../../../utils/expiration";
-import { maskAccountEmail } from "../../../utils/accountPrivacy";
+import { maskAccountEmail } from "../../../../../../shared/accounts/privacy";
 import { shouldShowUsageError } from "../../../utils/usageErrors";
 import { formatRemoteError } from "../../../../../../shared/localization/errors";
 import {

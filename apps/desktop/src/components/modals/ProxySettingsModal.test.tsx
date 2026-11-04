@@ -29,6 +29,7 @@ vi.mock("../../api/backend", () => ({
   loadProxySessionRequests: vi.fn().mockResolvedValue([]),
   setProxySessionUnlimitedConversation: vi.fn(),
 }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 
 const proxy: LocalProxyStatus = {
   running: true, fastModeEnabled: false, fastModeAvailable: true,

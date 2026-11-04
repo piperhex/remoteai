@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { App, ConfigProvider } from "antd";
 import { Messages } from "../src/pages/codexGui/Messages";
-import type { Conversation, Item, Turn } from "../src/pages/codexGui/types";
-import styles from "../src/pages/codexGui/styles.module.less";
+import type { Conversation, Item, Turn } from "../../../shared/conversation/types";
+import styles from "../../../shared/conversation/styles.module.less";
 
 const MESSAGE_COUNT = 2_000;
 const ITEMS_PER_TURN = 20;

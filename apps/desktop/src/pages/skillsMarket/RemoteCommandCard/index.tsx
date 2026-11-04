@@ -1,12 +1,12 @@
 import { pluginSearch } from '@remoteai/i18n/copy/desktop/pluginSearch';
-import { displayError } from '../../../i18n/uiText';
+import { displayError } from '../../../../../../shared/localization/uiText';
 import { useEffect } from "react";
 import { Popconfirm } from "antd";
 import { Download, LoaderCircle, Power, RefreshCw, Terminal, Trash2 } from "lucide-react";
 import type { RemoteCommandStatus } from "../../../api/remoteCommand";
 import { translate } from "../../../i18n";
-import { uiText } from "../../../i18n/uiText";
-import { useGuiLanguage } from "../../../i18n/useGuiLanguage";
+import { uiText } from "../../../../../../shared/localization/uiText";
+import { useGuiLanguage } from "../../../../../../shared/localization/useGuiLanguage";
 import { useRemoteCommand } from "./useRemoteCommand";
 import styles from "./index.module.less";
 

@@ -1,8 +1,8 @@
-import { guiApi } from "./api";
-import { CONTINUE_MESSAGE } from "./continuation";
-import { conversation } from "./events";
-import { modelSelectionError } from "./modelSelection";
-import type { GuiState, Settings, Thread, Turn } from "./types";
+import { guiApi } from "../../../../../shared/conversation/api";
+import { CONTINUE_MESSAGE } from "../../../../../shared/conversation/continuation";
+import { conversation } from "../../../../../shared/conversation/events";
+import { modelSelectionError } from "../../../../../shared/conversation/modelSelection";
+import type { GuiState, Settings, Thread, Turn } from "../../../../../shared/conversation/types";
 
 interface RetrySendHost {
   getSnapshot: () => GuiState;

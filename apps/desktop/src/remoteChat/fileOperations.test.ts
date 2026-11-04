@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, it, vi } from 'vitest';
 import { ChatOperations } from './operations';
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { fileDownloadByteLimit } from '../../../../shared/remote-chat/policy';
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
 beforeEach(() => vi.resetAllMocks());
 
 it.each(['fileOpen', 'fileRead', 'downloadOpen'])('derives %s limits from the actual connection', async (operation) => {

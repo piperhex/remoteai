@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import type { Conversation } from '../src/pages/codexGui/types';
+import type { Conversation } from '../../../shared/conversation/types';
 
 async function open(page: Page) {
   const value: Conversation = { thread: { id: 'scroll-bottom', cwd: '', preview: '', updatedAt: 1 },

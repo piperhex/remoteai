@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, it, vi } from "vitest";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { GuiController } from "./controller";
-import type { Model } from "./types";
+import type { Model } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 const model = (name: string): Model => ({ id: name, model: name, displayName: name, isDefault: true,
   defaultReasoningEffort: "high", supportedReasoningEfforts: [{ reasoningEffort: "high", description: "" }] });
 const official = model("gpt-6-astra");

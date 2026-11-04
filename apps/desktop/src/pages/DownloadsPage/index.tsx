@@ -1,13 +1,13 @@
 import { Modal } from 'antd';
-import { DownloadWorkspace } from '../../../../web/src/downloads/desktop/DownloadWorkspace';
-import { useDownloadTasks } from '../../../../web/src/downloads/useDownloadTasks';
+import { DownloadWorkspace } from '../../../../../shared/downloads/desktop/DownloadWorkspace';
+import { useDownloadTasks } from '../../../../../shared/downloads/useDownloadTasks';
 import { authenticatedDownloadOwner } from '../../downloads/useDesktopDownloads';
 import { openDesktopDownload } from '../../downloads/openDownload';
 import { LOCAL_DOWNLOAD_OWNER, useLocalGitDownloads } from '../../downloads/localGitDownloads';
-import { displayText, uiText } from '../../i18n/uiText';
-import { useGuiLanguage } from '../../i18n/useGuiLanguage';
+import { displayText, uiText } from '../../../../../shared/localization/uiText';
+import { useGuiLanguage } from '../../../../../shared/localization/useGuiLanguage';
 import type { CloudAuthState } from '../../types';
-import '../../../../web/src/downloads/styles.css';
+import '../../../../../shared/downloads/styles.css';
 import styles from './index.module.less';
 
 function confirmRemove(count?: number) {

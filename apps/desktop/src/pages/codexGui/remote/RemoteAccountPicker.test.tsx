@@ -3,8 +3,8 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { GuiAccountsClient, GuiAccountsSnapshot } from '../../../../../../shared/remote-chat/guiAccounts';
-import { RemoteAccountPicker } from './RemoteAccountPicker';
-import type { GuiComputerNavigation } from './types';
+import { RemoteAccountPicker } from '../../../../../../shared/conversation/remote/RemoteAccountPicker';
+import type { GuiComputerNavigation } from '../../../../../../shared/conversation/remote/types';
 
 let root: Root;
 let container: HTMLDivElement;

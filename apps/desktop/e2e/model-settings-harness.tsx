@@ -9,7 +9,7 @@ import { useUsageStatus } from "../src/pages/codexGui/useUsageStatus";
 import { useGuiRequestSpeed } from "../src/pages/codexGui/useGuiRequestSpeed";
 import { GuiAutoSwitchSettingsDialog } from "../src/pages/codexGui/GuiAutoSwitchSettingsDialog";
 import { UsageStatus } from "../src/pages/codexGui/UsageStatus";
-import { ChatUsage } from "../../web/src/chat/ChatUsage";
+import { ChatUsage } from "../../../shared/remote-chat/views/ChatUsage";
 
 const controller = getGuiController();
 const pendingUsage = () => new Promise<never>(() => {});

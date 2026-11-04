@@ -2,13 +2,13 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { GuiController } from '../pages/codexGui/controller';
 import { getGuiController } from '../pages/codexGui/session';
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { guiSidebar } from '../pages/codexGui/sidebarBridge';
 import { initialState } from '../pages/codexGui/preferences';
 import { ChatOperations } from './operations';
 import { changeRemoteProject } from './projectActions';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 vi.mock('../pages/codexGui/session', () => ({ getGuiController: vi.fn() }));
 let controller: GuiController;
 let detach: () => void;

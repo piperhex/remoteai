@@ -4,14 +4,15 @@ import { createRoot, type Root } from 'react-dom/client';
 import { PhysicalPosition } from '@tauri-apps/api/dpi';
 import type { DragDropEvent } from '@tauri-apps/api/webview';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 import { useProjectFolderDrop } from './useProjectFolderDrop';
 import { droppedReferences } from './fileDrop';
 
 const native = vi.hoisted(() => ({ desktop: true, listen: vi.fn(), cleanup: vi.fn() }));
 vi.mock('../../api/backend', () => ({ get isDesktopApp() { return native.desktop; } }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock('@tauri-apps/api/webview', () => ({ getCurrentWebview: () => ({ onDragDropEvent: native.listen }) }));
-vi.mock('./api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 vi.mock('./fileDrop', () => ({ droppedReferences: vi.fn() }));
 
 let root: Root;

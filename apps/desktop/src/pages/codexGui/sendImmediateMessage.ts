@@ -1,6 +1,6 @@
-import { guiApi } from './api';
-import { withSentMessage } from './sentMessages';
-import type { GuiState, MessageInput } from './types';
+import { guiApi } from '../../../../../shared/conversation/api';
+import { withSentMessage } from '../../../../../shared/conversation/sentMessages';
+import type { GuiState, MessageInput } from '../../../../../shared/conversation/types';
 
 interface Host {
   getSnapshot: () => GuiState;

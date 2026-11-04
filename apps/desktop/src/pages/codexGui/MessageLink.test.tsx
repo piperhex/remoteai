@@ -5,14 +5,14 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { message } from "antd";
-import { MessageLink } from "./MessageLink";
-import { copyText } from "../../utils/clipboard";
+import { MessageLink } from "../../../../../shared/conversation/MessageLink";
+import { copyText } from "../../../../../shared/clipboard";
 
 vi.mock("@tauri-apps/api/core", () => ({ isTauri: vi.fn(() => false) }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn() }));
 vi.mock("antd", async (original) => ({ ...await original<typeof import("antd")>(),
   message: { error: vi.fn() } }));
-vi.mock("../../utils/clipboard", () => ({ copyText: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("../../../../../shared/clipboard", () => ({ copyText: vi.fn().mockResolvedValue(undefined) }));
 let root: Root;
 let container: HTMLDivElement;
 const href = "https://example.com/photo-source";

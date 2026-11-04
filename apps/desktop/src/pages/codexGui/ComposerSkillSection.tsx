@@ -1,7 +1,7 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { ComposerSkillIcon } from "./ComposerSkillIcon";
 import { skillDescription, skillLabel } from "./skillEditorDom";
-import type { Skill } from "./types";
+import type { Skill } from "../../../../../shared/conversation/types";
 import styles from "./ComposerAddMenu.module.less";
 
 export function ComposerSkillSection({ catalog, onChoose }: {

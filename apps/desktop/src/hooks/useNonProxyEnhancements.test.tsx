@@ -6,6 +6,7 @@ import { useNonProxyEnhancements } from "./useNonProxyEnhancements";
 
 const backend = vi.hoisted(() => ({ loadAppSettings: vi.fn(), updateNonProxyEnhancements: vi.fn() }));
 vi.mock("../api/backend", () => backend);
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 
 let container: HTMLDivElement;
 let root: Root;

@@ -1,6 +1,6 @@
-import { conversation } from './events';
+import { conversation } from '../../../../../shared/conversation/events';
 import { mergeHistory } from '../../../../../shared/remote-chat/client/history';
-import type { Conversation, Thread } from './types';
+import type { Conversation, Thread } from '../../../../../shared/conversation/types';
 
 /** A disk snapshot may precede a confirmed send; explicit edits still use conversation() directly. */
 export function conversationSnapshot(thread: Thread, previous?: Conversation): Conversation {

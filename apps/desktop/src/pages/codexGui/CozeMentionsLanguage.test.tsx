@@ -2,12 +2,12 @@
 import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { SkillInput } from "./SkillInput";
-import { setGuiLanguage } from "../../i18n/uiText";
-import type { ComposerText } from "./types";
+import { setGuiLanguage } from "../../../../../shared/localization/uiText";
+import type { ComposerText } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: { request: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { request: vi.fn() } }));
 const id = "f321c884-a198-4244-ad4f-53762b3d2aba";
 let root: Root;
 let host: HTMLDivElement;

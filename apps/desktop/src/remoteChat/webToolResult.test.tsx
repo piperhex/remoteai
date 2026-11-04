@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
-import { ChatToolResult } from '../../../web/src/chat/ChatToolResult';
+import { ChatToolResult } from '../../../../shared/remote-chat/views/ChatToolResult';
 
 vi.mock('antd-mobile', () => ({ Toast: { show: vi.fn() } }));
-vi.mock('../../../web/src/components/AdaptiveSheet', () => ({ AdaptiveSheet: () => null }));
+vi.mock('../../../../shared/layout/AdaptiveSheet', () => ({ AdaptiveSheet: () => null }));
 
 describe('Web tool resource links', () => {
   it('keeps untrusted executable resources inert while allowing web links', () => {

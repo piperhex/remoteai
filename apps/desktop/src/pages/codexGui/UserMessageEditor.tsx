@@ -1,9 +1,9 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { remoteErrorText } from "../../../../../shared/localization/errors";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Button, Popconfirm } from "antd";
-import type { Content, SkillReference } from "./types";
-import type { SubmitMessageEdit } from "./messageEditContent";
+import type { Content, SkillReference } from "../../../../../shared/conversation/types";
+import type { SubmitMessageEdit } from "../../../../../shared/conversation/messageEditContent";
 import { MessageEditorImages } from "./MessageEditorImages";
 import { SkillInput, type SkillInputHandle } from "./SkillInput";
 import { useMessageEditDraft } from "./useMessageEditDraft";

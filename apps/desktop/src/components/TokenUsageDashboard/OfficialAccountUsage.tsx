@@ -3,7 +3,7 @@ import type { Language } from '../../i18n';
 import type { OfficialAccountTotal } from '../../../../../shared/officialUsage';
 import { officialUsageLabels } from '@remoteai/i18n/copy/client/officialUsageLabels';
 import { useOfficialUsage } from '../../hooks/useOfficialUsage';
-import { formatTokens } from './chartUtils';
+import { formatTokens } from '../../../../../shared/token-usage/chartUtils';
 import { formatEstimatedCost, type TokenCostDisplaySettings } from '../../utils/tokenCost';
 import { formatAvailableQuota } from '../../utils/officialQuota';
 import { useTokenCostDisplaySettings } from '../../hooks/useTokenCostDisplaySettings';

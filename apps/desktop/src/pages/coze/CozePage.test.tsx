@@ -3,10 +3,11 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "../../api/backend";
-import { setGuiLanguage } from "../../i18n/uiText";
+import { setGuiLanguage } from "../../../../../shared/localization/uiText";
 import CozePage from "./CozePage";
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn(), isDesktopApp: true }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 let host: HTMLDivElement;
 let root: Root;
 

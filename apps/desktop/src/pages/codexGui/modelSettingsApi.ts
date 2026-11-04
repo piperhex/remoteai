@@ -1,5 +1,5 @@
 import { invoke } from "../../api/backend";
-import { subscribeGuiEvent } from "./webEvents";
+import { subscribeGuiEvent } from "../../../../../shared/conversation/webEvents";
 import type { ModelSettingsApi, ModelSettingsSnapshot } from "./threadModelSettings";
 
 export const modelSettingsApi: ModelSettingsApi = {

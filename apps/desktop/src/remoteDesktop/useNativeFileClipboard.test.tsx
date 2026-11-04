@@ -2,7 +2,7 @@
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
-import { useDesktopClipboard } from '../../../web/src/chat/desktop/useDesktopClipboard';
+import { useDesktopClipboard } from '../../../../shared/remote-desktop/views/useDesktopClipboard';
 
 const offer = { id: '12345678-1234-1234-1234-123456789abc', files: [{ name: 'remote.txt', size: 3 }] };
 afterEach(() => vi.unstubAllGlobals());

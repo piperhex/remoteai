@@ -1,12 +1,12 @@
 import { pluginSearch } from '@remoteai/i18n/copy/desktop/pluginSearch';
-import { displayError } from '../../../i18n/uiText';
+import { displayError } from '../../../../../../shared/localization/uiText';
 import { useEffect } from "react";
 import { Popconfirm } from "antd";
 import { Download, LoaderCircle, Monitor, Power, RefreshCw, Trash2 } from "lucide-react";
 import type { ComputerUseStatus } from "../../../api/computerUse";
 import { translate } from "../../../i18n";
-import { uiText } from "../../../i18n/uiText";
-import { useGuiLanguage } from "../../../i18n/useGuiLanguage";
+import { uiText } from "../../../../../../shared/localization/uiText";
+import { useGuiLanguage } from "../../../../../../shared/localization/useGuiLanguage";
 import { useComputerUse } from "./useComputerUse";
 import { Permissions } from "./Permissions";
 import styles from "./index.module.less";

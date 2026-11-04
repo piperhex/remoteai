@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useState } from "react";
 import { queryProviderBalance, subscribeToProviderBalance } from "../../api/backend";
 import type { Provider, ProviderBalance } from "../../types";

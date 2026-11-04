@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DiffCache, DIFF_CACHE_LIMITS } from '../../../../../shared/chat/diffCache';
-import type { Turn } from './types';
+import type { Turn } from '../../../../../shared/conversation/types';
 
 const patch = (path = 'src/a.ts', text = 'new') =>
   `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}\n@@ -1 +1 @@\n-old\n+${text}\n`;
@@ -53,7 +53,7 @@ describe('diff content cache', () => {
   });
 
   it('invalidates actual content/options, while preserving unchanged files and list order', async () => {
-    const { changedFiles, parseDiff } = await import('./diff');
+    const { changedFiles, parseDiff } = await import('../../../../../shared/conversation/diff');
     const first = changedFiles([change(), change('second', 'src/b.ts')]);
     expect(changedFiles([change(), change('second', 'src/b.ts')])).toBe(first);
     const updated = changedFiles([change(), change('third', 'src/b.ts')]);
@@ -70,7 +70,7 @@ describe('diff content cache', () => {
   });
 
   it('freezes arrays, files, lines, summaries, and does not mutate caller data', async () => {
-    const { changedFiles, parseDiff } = await import('./diff');
+    const { changedFiles, parseDiff } = await import('../../../../../shared/conversation/diff');
     const { summarizeDiffFiles } = await import('../../../../../shared/chat/diffSummary');
     for (const files of [parseDiff(patch()), changedFiles([change()])]) {
       const summary = summarizeDiffFiles(files);
@@ -103,7 +103,7 @@ describe('diff content cache', () => {
   });
 
   it('aggregates duplicate paths once without confusing files with the same basename', async () => {
-    const { changedFiles } = await import('./diff');
+    const { changedFiles } = await import('../../../../../shared/conversation/diff');
     const { summarizeDiffFiles } = await import('../../../../../shared/chat/diffSummary');
     const summary = summarizeDiffFiles(changedFiles([change(), change('again\n'), change('b\n', 'other/a.ts')]));
     expect(summary).toEqual({ files: [{ path: 'src/a.ts', added: 2, removed: 0 },
@@ -111,7 +111,7 @@ describe('diff content cache', () => {
   });
 
   it('evicts production entries and safely reparses an older conversation', async () => {
-    const { parseDiff } = await import('./diff');
+    const { parseDiff } = await import('../../../../../shared/conversation/diff');
     const original = parseDiff(patch());
     for (let i = 0; i < DIFF_CACHE_LIMITS.entries; i++) parseDiff(patch(`src/${i}.ts`));
     const reparsed = parseDiff(patch());
@@ -120,7 +120,7 @@ describe('diff content cache', () => {
   });
 
   it('bounds retained large source and parsed strings even below the entry limit', async () => {
-    const { parseDiff } = await import('./diff');
+    const { parseDiff } = await import('../../../../../shared/conversation/diff');
     const largeA = patch('a.ts', 'a'.repeat(1_500_000));
     const largeB = patch('b.ts', 'b'.repeat(1_500_000));
     const first = parseDiff(largeA);

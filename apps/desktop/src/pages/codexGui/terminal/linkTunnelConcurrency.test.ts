@@ -2,7 +2,7 @@ import http from 'node:http';
 import net from 'node:net';
 import { expect, it } from 'vitest';
 import { TerminalLinkTunnels } from './linkTunnel';
-import { LinkSocketFixture } from './linkTunnelSocketFixture';
+import { LinkSocketFixture } from '../../../../../../shared/terminal/testing/linkSocketFixture';
 import { StreamBudget } from '../../../../../../shared/port-mapping/streamBudget';
 import { ChatRpc } from '../../../../../../shared/remote-chat/rpc';
 import type { TerminalLinkReply, TerminalLinkRequest } from '../../../../../../shared/terminal/links';

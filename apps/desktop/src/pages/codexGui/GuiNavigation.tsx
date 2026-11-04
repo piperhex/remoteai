@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { Clock3, FolderInput, Package, SquarePen } from "lucide-react";
 import styles from "./GuiNavigation.module.less";
 

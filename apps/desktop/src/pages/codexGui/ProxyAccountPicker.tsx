@@ -1,15 +1,15 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Settings } from "lucide-react";
 import type { Account, AggregateApi, Provider } from "../../types";
-import { maskAccountEmail } from "../../utils/accountPrivacy";
-import { GuiAccountList } from "./GuiAccountList";
+import { maskAccountEmail } from "../../../../../shared/accounts/privacy";
+import { GuiAccountList } from "../../../../../shared/conversation/GuiAccountList";
 import { providerWebsiteOrigin } from '../../../../../shared/provider-market/providerWebsite';
-import { GuiAccountMenu } from "./GuiAccountMenu";
-import type { GuiComputerNavigation } from "./remote/types";
+import { GuiAccountMenu } from "../../../../../shared/conversation/GuiAccountMenu";
+import type { GuiComputerNavigation } from "../../../../../shared/conversation/remote/types";
 import { ProxyAccountSummary } from "./ProxyAccountSummary";
 import { GuiAutoSwitchSettingsDialog } from "./GuiAutoSwitchSettingsDialog";
-import styles from "./ProxyAccountPicker.module.less";
+import styles from "../../../../../shared/conversation/ProxyAccountPicker.module.less";
 
 export interface ProxyAccountPickerProps {
   active: boolean;

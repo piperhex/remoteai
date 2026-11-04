@@ -3,13 +3,14 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { LANGUAGE_STORAGE_KEY, type Language } from '../i18n';
-import { uiText } from "../i18n/uiText";
+import { uiText } from "../../../../shared/localization/uiText";
 import { useLanguage } from './useLanguage';
 
 vi.mock('../api/backend', () => ({
   publishLanguageChange: vi.fn().mockResolvedValue(undefined),
   subscribeToLanguageChanges: () => () => undefined,
 }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 
 let root: Root;
 let container: HTMLDivElement;

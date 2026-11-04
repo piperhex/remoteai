@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { GuiHostPicker } from "../src/pages/codexGui/GuiHostPicker";
-import { ChatDevices } from "../../web/src/chat/ChatDevices";
-import { ChatQueue } from "../../web/src/chat/ChatQueue";
+import { GuiHostPicker } from "../../../shared/conversation/GuiHostPicker";
+import { ChatDevices } from "../../../shared/remote-chat/views/ChatDevices";
+import { ChatQueue } from "../../../shared/remote-chat/views/ChatQueue";
 
 /** Real controls from both workspaces expose native-preview input and IPC regressions. */
 export function WebsitePreviewControls() {

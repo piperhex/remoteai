@@ -15,6 +15,7 @@ vi.mock("../../api/backend", () => ({
   loadProxySessionRequests: vi.fn().mockResolvedValue([]),
   setProxySessionUnlimitedConversation: vi.fn(),
 }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 
 vi.mock("../../api/errorLogs", () => ({
   listErrorLogs: vi.fn().mockResolvedValue({ entries: [], hasMore: false, total: 0, page: 1, snapshotId: null }),

@@ -1,4 +1,4 @@
-import type { ComposerText, Skill } from "./types";
+import type { ComposerText, Skill } from "../../../../../shared/conversation/types";
 import styles from "./SkillInput.module.less";
 import { skillLabel } from "../../../../../shared/remote-chat/skills";
 

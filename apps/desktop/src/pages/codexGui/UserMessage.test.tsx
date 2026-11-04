@@ -2,12 +2,12 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { guiApi } from "./api";
-import type { Content } from "./types";
-import { ImageThreadContext } from "./useImageSource";
+import { guiApi } from "../../../../../shared/conversation/api";
+import type { Content } from "../../../../../shared/conversation/types";
+import { ImageThreadContext } from "../../../../../shared/conversation/useImageSource";
 import { UserMessage } from "./UserMessage";
 
-vi.mock("./api", () => ({ guiApi: { request: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { request: vi.fn() } }));
 const thumbnail = "data:image/png;base64,dGh1bWJuYWls";
 const original = "data:image/png;base64,b3JpZ2luYWw=";
 const showModal = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "showModal");

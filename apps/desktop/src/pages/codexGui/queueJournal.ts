@@ -1,4 +1,4 @@
-import type { GuiState, QueuedMessage } from './types';
+import type { GuiState, QueuedMessage } from '../../../../../shared/conversation/types';
 
 export interface QueueSnapshot { revision: number; threads: GuiState['queued'] }
 export interface QueueStorage {

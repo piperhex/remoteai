@@ -3,11 +3,11 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Messages } from "./Messages";
-import type { Conversation, Item } from "./types";
-import { CONTINUE_MESSAGE } from "./continuation";
+import type { Conversation, Item } from "../../../../../shared/conversation/types";
+import { CONTINUE_MESSAGE } from "../../../../../shared/conversation/continuation";
 
 const rendered = vi.hoisted(() => ({ texts: new Set<string>() }));
-vi.mock("./RichText", () => ({ RichText: ({ text }: { text: string }) => {
+vi.mock("../../../../../shared/conversation/RichText", () => ({ RichText: ({ text }: { text: string }) => {
   rendered.texts.add(text);
   return <p>{text}</p>;
 } }));
@@ -73,7 +73,7 @@ it('bounds a continually open conversation, keeps history stable, and returns to
   expect(count()).toBe(10);
   expect(container.querySelector('[data-message-id="item-135"]')).not.toBeNull();
   await render(value, false);
-  expect(count()).toBe(0);
+  expect(count()).toBe(10);
 });
 
 it("mounts only ten rich messages, shows loading before the next batch, and never overlaps batches", async () => {
@@ -96,14 +96,14 @@ it("mounts only ten rich messages, shows loading before the next batch, and neve
   expect(container.textContent).toContain('加载更新的消息');
 });
 
-it("resets cached conversations to ten items on reentry and cancels pending work on navigation", async () => {
+it("resets a different conversation, retains same-conversation history, and cancels pending navigation work", async () => {
   const cached = conversation();
   await render(cached); await older(); expect(count()).toBe(20);
   await render(conversation("other")); await render(cached); expect(count()).toBe(10);
   await act(async () => button().click());
   await render(cached, false); expect(frames.size).toBe(0);
   await render(cached); expect(count()).toBe(10);
-  await older(); await render(cached, false); await render(cached); expect(count()).toBe(10);
+  await older(); await render(cached, false); await render(cached); expect(count()).toBe(20);
 });
 
 it("loads only one batch for repeated upward wheels at the top without a scroll event", async () => {

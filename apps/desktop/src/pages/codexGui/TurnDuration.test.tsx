@@ -3,9 +3,9 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { TurnDuration } from "./TurnDuration";
-import { conversation, reduceConversation } from "./events";
-import { formatTurnDuration, turnElapsedMs } from "./turnTiming";
-import type { Thread, Turn } from "./types";
+import { conversation, reduceConversation } from "../../../../../shared/conversation/events";
+import { formatTurnDuration, turnElapsedMs } from "../../../../../shared/conversation/turnTiming";
+import type { Thread, Turn } from "../../../../../shared/conversation/types";
 
 const thread: Thread = { id: "one", cwd: "", preview: "", updatedAt: 1 };
 let root: Root;

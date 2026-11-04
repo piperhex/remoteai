@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { getCurrentWebview, type DragDropEvent } from '@tauri-apps/api/webview';
 import { isDesktopApp } from '../../api/backend';
-import { uiText } from "../../i18n/uiText";
-import { guiApi } from './api';
+import { uiText } from "../../../../../shared/localization/uiText";
+import { guiApi } from '../../../../../shared/conversation/api';
 import { droppedReferences } from './fileDrop';
 
 interface Options {

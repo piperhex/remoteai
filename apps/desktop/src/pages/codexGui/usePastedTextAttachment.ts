@@ -1,9 +1,9 @@
-import { displayError } from '../../i18n/uiText';
+import { displayError } from '../../../../../shared/localization/uiText';
 import { useState } from 'react';
 
 import { readFileBase64 } from '../../../../../shared/chat/fileData';
 import { checkFileUploadSize } from '../../../../../shared/remote-chat/policy';
-import type { AttachmentReference } from './attachmentTypes';
+import type { AttachmentReference } from '../../../../../shared/conversation/attachmentTypes';
 
 interface Options {
   key: string;

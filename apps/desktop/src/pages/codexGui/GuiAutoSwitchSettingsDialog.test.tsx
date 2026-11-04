@@ -5,12 +5,13 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "../../api/backend";
 import { DEMO_ACCOUNTS } from "../../demo";
 import { GuiAutoSwitchSettingsDialog } from "./GuiAutoSwitchSettingsDialog";
-import type { GuiAutoSwitchSettings } from "./autoSwitchSettings";
+import type { GuiAutoSwitchSettings } from "../../../../../shared/conversation/autoSwitchSettings";
 import type { GuiSystemPromptSettings } from "./useGuiSystemPrompts";
 import { translate } from "../../i18n";
 import { isMessageQueueEnabled } from "../../../../../shared/chat/messageQueueSettings";
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock("../../hooks/useLanguage", () => ({ useLanguage: () => ({
   t: (key: Parameters<typeof translate>[1]) => translate("zh", key),
 }) }));

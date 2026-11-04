@@ -4,9 +4,9 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { SkillInput } from './SkillInput';
 import { readEditor } from './skillEditorDom';
-import type { ComposerText } from './types';
+import type { ComposerText } from '../../../../../shared/conversation/types';
 
-vi.mock('./api', () => ({ guiApi: { request: vi.fn().mockResolvedValue({ data: [] }) } }));
+vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn().mockResolvedValue({ data: [] }) } }));
 const suggestion = '按这个方案实现';
 const send = vi.fn();
 const dismiss = vi.fn();

@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { GuiController } from "./controller";
 import { threadGroups } from "./threadGroups";
-import type { GuiEvent, Thread } from "./types";
+import type { GuiEvent, Thread } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 const thread: Thread = { id: "one", cwd: "D:/project", preview: "", updatedAt: 1, turns: [] };
 let receive: (event: GuiEvent) => void;
 let controller: GuiController;

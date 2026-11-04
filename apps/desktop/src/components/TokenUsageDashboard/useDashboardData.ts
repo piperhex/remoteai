@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DailyTokenUsage, TokenUsageEntry } from "../../types";
-import type { AccountQuotaHistory, DailyTokenUsageBreakdown } from "../../types/tokenUsageAnalytics";
-import { startOfCalendar } from "./chartUtils";
-import { createDashboardLoader } from "./dashboardLoader";
+import type { AccountQuotaHistory, DailyTokenUsageBreakdown } from "../../../../../shared/token-usage/analytics";
+import { startOfCalendar } from "../../../../../shared/token-usage/chartUtils";
+import { createDashboardLoader } from "../../../../../shared/token-usage/dashboardLoader";
 import { readDashboardQuery } from "./dashboardQuery";
 import { useViewActive } from '../../../../../shared/RetainedView';
 

@@ -1,22 +1,22 @@
 import { useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ConfigProvider, theme } from 'antd';
-import { DetailsWorkspace } from '../src/pages/codexGui/DetailsWorkspace';
+import { DetailsWorkspace } from '../../../shared/conversation/DetailsWorkspace';
 import { LocalProjectBrowser } from '../src/pages/codexGui/LocalProjectBrowser';
-import { ProjectBrowserButton } from '../../web/src/chat/projectBrowser/ProjectBrowserButton';
+import { ProjectBrowserButton } from '../../../shared/project-browser/views/ProjectBrowserButton';
 import { ChatTools } from '../../web/src/chat/ChatTools';
 import { createGuiToolsClient } from '../../../shared/remote-chat/guiTools';
 import type { ProjectBrowserRequest } from '../../../shared/project-browser/protocol';
-import { guiApi } from '../src/pages/codexGui/api';
-import { displayText } from '../src/i18n/uiText';
+import { guiApi } from '../../../shared/conversation/api';
+import { displayText } from '../../../shared/localization/uiText';
 import { applyThemeMode } from '../src/utils/themeMode';
 import { browserRoot, savedFiles, causeConflict, seedLargeDirectory,
   seedLargeText } from './project-browser-fixture';
 import { ProjectBrowser } from '../../../shared/project-browser/ProjectBrowser';
 import type { BrowserHost } from '../../../shared/project-browser/entryActions';
 import { ChatFileReferencesProvider, useComposerFileReferences } from '../../../shared/chat/ChatFileReferences';
-import type { ReplyQuote } from '../src/pages/codexGui/replyQuotes';
-import { ChatDetailsWorkspace } from '../../web/src/chat/ChatDetailsWorkspace';
+import type { ReplyQuote } from '../../../shared/conversation/replyQuotes';
+import { ChatDetailsWorkspace } from '../../../shared/remote-chat/views/ChatDetailsWorkspace';
 import '../src/styles.css';
 import 'antd/dist/reset.css';
 import { previewBrowserRequest, setPreviewFiles, previewReads } from './browser-preview-fixture';

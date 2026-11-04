@@ -1,11 +1,11 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useRef, useState } from "react";
 import { Button, Input, Radio } from "antd";
 import { X } from "lucide-react";
-import { pendingAsyncQuestions } from "./asyncQuestionState";
-import type { Conversation, Item } from "./types";
+import { pendingAsyncQuestions } from "../../../../../shared/conversation/asyncQuestionState";
+import type { Conversation, Item } from "../../../../../shared/conversation/types";
 import { submitQuestionOnEnter } from "./questionKeyboard";
-import layout from "./styles.module.less";
+import layout from "../../../../../shared/conversation/styles.module.less";
 import styles from "./AsyncQuestions.module.less";
 
 export interface AsyncQuestionsProps {

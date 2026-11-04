@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import type { Conversation, Item } from "../src/pages/codexGui/types";
+import type { Conversation, Item } from "../../../shared/conversation/types";
 
 const commands: Item[] = Array.from({ length: 120 }, (_, index) => ({ id: `command-${index}`,
   type: "commandExecution", command: `echo COMMAND-${index}`,

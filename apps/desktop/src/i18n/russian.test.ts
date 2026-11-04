@@ -4,7 +4,7 @@ import { afterEach, expect, it } from "vitest";
 import { translate, type TranslationKey } from "../i18n";
 import { russian } from "./ru";
 
-import { displayText, uiText, setGuiLanguage } from "./uiText";
+import { displayText, uiText, setGuiLanguage } from "../../../../shared/localization/uiText";
 
 const placeholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map(match => match[1]).sort();
 afterEach(() => setGuiLanguage("zh"));

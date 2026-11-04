@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { hasLocalBackend, invoke } from '../../api/backend';
-import { subscribeGuiEvent } from '../../pages/codexGui/webEvents';
+import { subscribeGuiEvent } from '../../../../../shared/conversation/webEvents';
 import type { DashboardPage } from '../dashboard/DashboardNavigation';
 import { boundedMessages, helpError, messageHistory, MAX_QUESTION_LENGTH, type HelpError,
   type HelpMessage, type HelpStatus, type HelpAvailability, type HelpContent } from './types';

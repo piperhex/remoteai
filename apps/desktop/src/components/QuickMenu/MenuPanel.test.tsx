@@ -5,7 +5,7 @@ import { act, createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { translateMessage } from "../../../../../shared/localization/messages";
-import { setGuiLanguage } from "../../i18n/uiText";
+import { setGuiLanguage } from "../../../../../shared/localization/uiText";
 import { quickMenuLanguage } from './language';
 import { MenuPanel } from './MenuPanel';
 import type { MenuEntry, MenuSnapshot } from './types';

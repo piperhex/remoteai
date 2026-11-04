@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { GUI_CODEX_HOME_ID } from "../../types";
 import { CodexThreadsPage } from "../CodexThreadsPage";
 import { getGuiController } from "./session";

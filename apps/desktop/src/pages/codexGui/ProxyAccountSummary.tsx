@@ -1,6 +1,6 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import type { Account, Provider } from "../../types";
-import { GuiAccountSummary, GuiPrimaryQuota } from "./GuiAccountSummary";
+import { GuiAccountSummary, GuiPrimaryQuota } from "../../../../../shared/conversation/GuiAccountSummary";
 import { useProviderWallet } from "./useProviderWallet";
 
 export function ProxyAccountSummary({ name, account, provider, thirdParty, active }: {

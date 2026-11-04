@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, it, vi } from "vitest";
-import { asyncAnswerText, pendingAsyncQuestions } from "./asyncQuestionState";
+import { asyncAnswerText, pendingAsyncQuestions } from "../../../../../shared/conversation/asyncQuestionState";
 import { GuiController } from "./controller";
-import { guiApi } from "./api";
-import { testModels } from "./testModels";
-import { conversation, reduceConversation } from "./events";
-import type { GuiEvent, Item, Thread } from "./types";
+import { guiApi } from "../../../../../shared/conversation/api";
+import { testModels } from "../../../../../shared/conversation/testing/models";
+import { conversation, reduceConversation } from "../../../../../shared/conversation/events";
+import type { GuiEvent, Item, Thread } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 const question: Item = { id: "ask", type: "agentMessage", delivery: "async", phase: "final_answer",
   text: "哪里卡住了？\n- 切换时\n- 发消息时", questions: [{ title: "哪里卡住了？", options: ["切换时", "发消息时"] }] };
 const thread: Thread = { id: "one", cwd: "D:/project", preview: "", updatedAt: 1,

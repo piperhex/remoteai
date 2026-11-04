@@ -1,5 +1,5 @@
 import { trayHeaderLanguages } from '@remoteai/i18n/copy/desktop/trayLanguages';
-import { guiLanguage } from "../../i18n/uiText";
+import { guiLanguage } from "../../../../../shared/localization/uiText";
 import type { Language } from "../../../../../shared/localization/language";
 import type { MenuSnapshot } from "./types";
 

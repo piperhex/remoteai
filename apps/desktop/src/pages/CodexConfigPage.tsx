@@ -1,4 +1,4 @@
-import { uiText } from "../i18n/uiText";
+import { uiText } from "../../../../shared/localization/uiText";
 import { remoteErrorText } from "../../../../shared/localization/errors";
 import { CodexHomeScope, CodexHomeSelect, useSelectedCodexHome } from "../components/CodexHomeScope";
 import { useEffect, useState } from "react";

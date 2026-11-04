@@ -2,9 +2,9 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { setGuiLanguage, uiText } from './uiText';
+import { setGuiLanguage, uiText } from '../../../../shared/localization/uiText';
 import { MessageItem } from '../pages/codexGui/MessageItem';
-import { RichText } from '../pages/codexGui/RichText';
+import { RichText } from '../../../../shared/conversation/RichText';
 
 let root: Root;
 let container: HTMLDivElement;

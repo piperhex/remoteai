@@ -6,14 +6,14 @@ import { DEFAULT_CHAT_POLICY, MIB, checkDownloadSize, checkFileUploadSize, getCh
 import { Assembler, chunks } from '../../../../shared/remote-chat/framing';
 import { validateChatImages } from '../../../../shared/remote-chat/attachments';
 import { ChatOperations } from './operations';
-import { guiApi } from '../pages/codexGui/api';
-import { pickChatImages } from '../../../web/src/chat/pickChatImages';
+import { guiApi } from '../../../../shared/conversation/api';
+import { pickChatImages } from '../../../../shared/remote-chat/views/pickChatImages';
 import { ReliableDelivery } from '../../../../shared/remote-chat/delivery';
 
 vi.mock('../pages/codexGui/composerBridge', () => ({ guiComposer: {
   validateSend: async () => ({ model: 'model', effort: 'high', access: 'workspace-write' }),
 } }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn(), connect: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn(), connect: vi.fn() } }));
 afterEach(() => { setChatConnectionMode('offline'); setChatPolicy(DEFAULT_CHAT_POLICY); vi.resetAllMocks(); });
 
 it('removes transfer caps on P2P and reapplies updated Relay settings on fallback and disconnect', () => {

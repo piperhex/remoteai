@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { GuiController } from '../pages/codexGui/controller';
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { getGuiController } from '../pages/codexGui/session';
 import { ChatOperations } from './operations';
 import { DEFAULT_CHAT_POLICY } from '../../../../shared/chat/chatPolicy';
 import { setChatPolicy } from '../../../../shared/remote-chat/policy';
-import type { ListResponse, Thread } from '../pages/codexGui/types';
+import type { ListResponse, Thread } from '../../../../shared/conversation/types';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 vi.mock('../pages/codexGui/session', () => ({ getGuiController: vi.fn() }));
 const thread: Thread = { id: 'one', name: 'Original', preview: '', cwd: '/project', updatedAt: 1 };
 let controller: GuiController;

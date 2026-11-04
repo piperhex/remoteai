@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { EventStream } from './eventStream';
 import { historyNotification } from '../../../../shared/remote-chat/historyNotification';
-import type { GuiEvent } from '../pages/codexGui/types';
+import type { GuiEvent } from '../../../../shared/conversation/types';
 
 afterEach(() => vi.useRealTimers());
 const fragment = (delta: string): GuiEvent => ({ method: 'item/agentMessage/delta',

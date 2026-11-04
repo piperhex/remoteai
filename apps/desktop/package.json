@@ -15,6 +15,7 @@
     "dev": "vite",
     "build": "tsc && tsc --noEmit -p service/tsconfig.json && vite build",
     "check": "npm run build && node --test ../../scripts/prepare-desktop-service.test.mjs",
+    "test:typecheck": "tsc --noEmit -p tsconfig.tests.json",
     "test": "vitest run --exclude src/pages/codexConfig/schema.test.mjs && node --test src/pages/codexConfig/schema.test.mjs",
     "check:rust": "node ../../scripts/check-desktop-rust.mjs",
     "preview": "vite preview",

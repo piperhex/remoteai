@@ -1,8 +1,8 @@
 import { mutateGrouping, readGrouping } from '../../../../../shared/chat/groups/mutations';
 import { type GroupClient, type Grouping, type GroupMember } from '../../../../../shared/chat/groups/model';
-import type { GuiState, ListResponse, Thread } from './types';
-import { guiApi } from './api';
-import { readProjects, projectName } from './projectCatalog';
+import type { GuiState, ListResponse, Thread } from '../../../../../shared/conversation/types';
+import { guiApi } from '../../../../../shared/conversation/api';
+import { readProjects, projectName } from '../../../../../shared/conversation/projectCatalog';
 import { readMembersPage, readMembersQuery } from '../../../../../shared/chat/groups/memberPaging';
 
 const STORAGE_KEY = 'codex-switch:gui-custom-groups';

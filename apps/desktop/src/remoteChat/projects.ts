@@ -1,8 +1,8 @@
 import { getGuiController } from '../pages/codexGui/session';
 import { selectGuiProject } from '../pages/codexGui/projectSelection';
 import { guiSidebar } from '../pages/codexGui/sidebarBridge';
-import { readProjects } from '../pages/codexGui/projectCatalog';
-import type { Thread } from '../pages/codexGui/types';
+import { readProjects } from '../../../../shared/conversation/projectCatalog';
+import type { Thread } from '../../../../shared/conversation/types';
 import { directoryProject } from '../../../../shared/remote-chat/projectDirectories';
 import type { ChatProject } from '../../../../shared/remote-chat/client/types';
 

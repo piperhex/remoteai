@@ -9,6 +9,7 @@ import { ComposerReferences } from "./ComposerReferences";
 import { readClipboardImages } from "./clipboardImages";
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn(), isDesktopApp: true }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock("./clipboardImages", () => ({ readClipboardImages: vi.fn() }));
 let root: Root;
 let host: HTMLDivElement;

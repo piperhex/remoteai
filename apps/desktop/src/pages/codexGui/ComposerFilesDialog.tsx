@@ -1,11 +1,11 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useState } from "react";
 import { Button, Input, Modal, Segmented } from "antd";
 import { File, Folder, ImagePlus } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { isDesktopApp } from "../../api/backend";
-import { folderName } from "./projectCatalog";
-import type { AttachmentReference } from "./attachmentTypes";
+import { folderName } from "../../../../../shared/conversation/projectCatalog";
+import type { AttachmentReference } from "../../../../../shared/conversation/attachmentTypes";
 import styles from "./ComposerExtras.module.less";
 
 export function ComposerFilesDialog({ onAdd, onImages, onClose, onError }: {

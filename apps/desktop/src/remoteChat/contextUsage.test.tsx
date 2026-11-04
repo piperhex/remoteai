@@ -8,14 +8,15 @@ import { mergeHistory } from '../../../../shared/remote-chat/client/history';
 import { initialChatState, type Thread, type ThreadTokenUsage } from '../../../../shared/remote-chat/client/types';
 import { applyHistoryDelta, historyVersion, type HistoryDelta } from '../../../../shared/remote-chat/historySync';
 import { ChatOperations } from './operations';
-import { guiApi } from '../pages/codexGui/api';
-import { ChatSettings } from '../../../web/src/chat/ChatSettings';
-import { useDesktopLayout } from '../../../web/src/useDesktopLayout';
+import { guiApi } from '../../../../shared/conversation/api';
+import { ChatSettings } from '../../../../shared/remote-chat/views/ChatSettings';
+import { useDesktopLayout } from '../../../../shared/layout/useDesktopLayout';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false }));
-vi.mock('../../../web/src/useDesktopLayout', () => ({ useDesktopLayout: vi.fn(() => false) }));
-vi.mock('../../../web/src/components/AdaptiveSheet', () => ({
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
+vi.mock('../../../../shared/layout/useDesktopLayout', () => ({ useDesktopLayout: vi.fn(() => false) }));
+vi.mock('../../../../shared/layout/AdaptiveSheet', () => ({
   AdaptiveSheet: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 const usage: ThreadTokenUsage = {
@@ -109,18 +110,19 @@ it('shows and updates context in settings even while daily usage is still loadin
     updateSettings={async () => {}} refreshModels={async () => {}} onClose={() => {}} />));
   try {
     await render(usage);
-    expect(container.textContent).toContain('上下文 121.3K / 258K Token（47% 已用）');
-    expect(container.querySelector('.chat-context-progress [role="progressbar"]')
+    expect(container.textContent).toContain('121.3K / 258K Token');
+    expect(container.querySelector('.chat-usage-card-context [role="progressbar"]')
       ?.getAttribute('aria-valuenow')).toBe('47');
     expect(container.textContent).toContain('正在读取今日用量…');
     await render({ ...usage, last: { totalTokens: 25_800 } });
-    expect(container.textContent).toContain('10% 已用');
-    expect(container.querySelector('.chat-context-progress [role="progressbar"]')
+    expect(container.textContent).toContain('上下文 10%');
+    expect(container.querySelector('.chat-usage-card-context [role="progressbar"]')
       ?.getAttribute('aria-valuenow')).toBe('10');
     await render();
-    expect(container.textContent).toContain('暂无上下文用量');
+    expect(container.querySelector('.chat-usage-card-context [role=progressbar]')?.getAttribute('aria-label'))
+      .toBe('暂无上下文用量');
     expect(container.textContent).not.toContain('10% 已用');
-    expect(container.querySelector('.chat-context-progress [role="progressbar"]')
+    expect(container.querySelector('.chat-usage-card-context [role="progressbar"]')
       ?.hasAttribute('aria-valuenow')).toBe(false);
     expect(readUsage).toHaveBeenCalledTimes(1);
     readUsage.mockResolvedValue({ totalTokens: 123, estimatedCostUsd: 2,
@@ -128,11 +130,11 @@ it('shows and updates context in settings even while daily usage is still loadin
     // Reopen the drawer so the read belongs to its new active subscription.
     await act(async () => root.render(null));
     await render();
-    expect(container.querySelector('.cs-quota-progress')).not.toBeNull();
-    expect(container.textContent).toContain('25USD 剩余 · 125USD 总额度');
+    expect(container.querySelector('.chat-usage-card-quota [role="progressbar"]')).not.toBeNull();
+    expect(container.textContent).toContain('25 / 125 USD');
     vi.mocked(useDesktopLayout).mockReturnValue(true);
     await render();
-    expect(container.querySelector('.cs-quota-progress')).toBeNull();
+    expect(container.querySelector('.chat-usage-card-quota [role="progressbar"]')).toBeNull();
     expect(container.textContent).toContain('25USD 剩余额度 · 125USD 总额度');
   } finally { await act(async () => root.unmount()); }
 });

@@ -8,6 +8,7 @@ import { EMPTY_PROXY_CONVERSATION_METRICS } from "../utils/proxyConversationMetr
 import { useRecentProxyConversationMetrics } from "./useRecentProxyConversationMetrics";
 
 vi.mock("../api/backend", () => ({ loadRecentProxySessionLatency: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 
 function Metrics() {
   const summary = useRecentProxyConversationMetrics();

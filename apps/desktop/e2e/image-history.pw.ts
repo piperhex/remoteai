@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import type { Conversation } from '../src/pages/codexGui/types';
+import type { Conversation } from '../../../shared/conversation/types';
 
 test.beforeEach(async ({ page }) => {
   await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());

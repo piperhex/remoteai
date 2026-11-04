@@ -1,6 +1,6 @@
 import { imagePreviewByteLimit, imagePreviewCharLimit } from '../../../../shared/remote-chat/policy';
-import { guiApi } from '../pages/codexGui/api';
-import type { Thread } from '../pages/codexGui/types';
+import { guiApi } from '../../../../shared/conversation/api';
+import type { Thread } from '../../../../shared/conversation/types';
 import { contentHash } from '../../../../shared/remote-chat/historySync';
 import { isInlineImage } from '../../../../shared/chat/imageSources';
 import type { ConnectionMode } from '../../../../shared/remote-chat/protocol';

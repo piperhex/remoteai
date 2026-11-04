@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import type { Conversation } from "../src/pages/codexGui/types";
+import type { Conversation } from "../../../shared/conversation/types";
 
 const CONTINUE_MESSAGE = "请继续完成刚才中断的任务。";
 

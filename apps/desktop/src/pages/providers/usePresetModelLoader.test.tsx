@@ -6,6 +6,7 @@ import { usePresetModelLoader } from "./usePresetModelLoader";
 
 const backend = vi.hoisted(() => ({ fetchPresetModels: vi.fn() }));
 vi.mock("../../api/backend", () => backend);
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 
 function Fixture({ region, onModels, providerId }: {
   region: string; onModels: (models: string[]) => void; providerId?: string;

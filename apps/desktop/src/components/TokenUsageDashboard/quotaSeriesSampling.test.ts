@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { QuotaSeriesPoint } from "./quotaHistoryData";
+import type { QuotaSeriesPoint } from "../../../../../shared/token-usage/quotaHistoryData";
 import { QUOTA_RENDER_POINT_TARGET, sampleQuotaSeries } from "./quotaSeriesSampling";
 
 const POINT_COUNT = 100_000;

@@ -1,19 +1,19 @@
 import { useContext, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { DetailsWorkspace } from '../src/pages/codexGui/DetailsWorkspace';
-import { DetailsContext } from '../src/pages/codexGui/detailsContext';
-import { FileEnvironmentContext, type FileEnvironment } from '../src/pages/codexGui/fileEnvironment';
-import { filePreviewApi } from '../src/pages/codexGui/filePreview/api';
-import { fileApi } from '../src/pages/codexGui/fileApi';
+import { DetailsWorkspace } from '../../../shared/conversation/DetailsWorkspace';
+import { DetailsContext } from '../../../shared/conversation/detailsContext';
+import { FileEnvironmentContext, type FileEnvironment } from '../../../shared/conversation/fileEnvironment';
+import { filePreviewApi } from '../../../shared/file-preview/workspace/api';
+import { fileApi } from '../../../shared/conversation/fileApi';
 import { ProjectBrowserSettingsCard } from '../src/pages/settings/ProjectBrowserSettingsCard';
-import { ChatDetailsWorkspace } from '../../web/src/chat/ChatDetailsWorkspace';
-import { ChatFileContext } from '../../web/src/chat/ChatFileLink';
+import { ChatDetailsWorkspace } from '../../../shared/remote-chat/views/ChatDetailsWorkspace';
+import { ChatFileContext } from '../../../shared/remote-chat/views/ChatFileLink';
 import { JsonHighlightSettings } from '../../../shared/file-preview/JsonHighlightSettings';
 import { displayText } from '../../../shared/localization/messages';
-import { useLanguage, setLanguage } from '../../web/src/i18n';
+import { useLanguage, setLanguage } from '../../../shared/localization/browserClient';
 import { MEBIBYTE } from '../../../shared/file-preview/jsonHighlightLimit';
 import '../src/styles.css';
-import '../../web/src/chat/chat.css';
+import '../../../shared/remote-chat/views/chat.css';
 
 const params = new URLSearchParams(location.search);
 const mode = params.get('mode') ?? 'local';

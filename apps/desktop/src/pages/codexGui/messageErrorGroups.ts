@@ -1,5 +1,5 @@
 import type { VisibleTurn } from "./messageWindow";
-import { requestErrorDetails } from "./requestError";
+import { requestErrorDetails } from "../../../../../shared/conversation/requestError";
 import { turnMessageGroups, type TurnMessageGroup } from "./turnMessageGroups";
 
 type ErrorGroup = Extract<TurnMessageGroup, { type: "error" }>;

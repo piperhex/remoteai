@@ -1,4 +1,4 @@
-import { displayError } from '../../../i18n/uiText';
+import { displayError } from '../../../../../../shared/localization/uiText';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CodexHomeScope, CodexHomeSelect, useSelectedCodexHome } from "../../../components/CodexHomeScope";
 import { useCliInstaller } from "../../codexGui/useCliInstaller";
@@ -11,7 +11,7 @@ import {
   removeOfficialPlugin,
   setOfficialPluginEnabled,
 } from "../../../api/backend";
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import type { OfficialPluginItem } from "../../../types";
 import { OfficialPluginGrid } from "../OfficialPluginGrid";
 import { SkillsMarketToolbar } from "../SkillsMarketToolbar";

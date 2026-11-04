@@ -5,13 +5,13 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ChatController } from '../../../../../../shared/remote-chat/client/controller';
 import type { ChatConnection } from '../../../../../../shared/remote-chat/client/connection';
 import type { GitRequest, GitStatus } from '../../../../../../shared/remote-chat/gitWorkspace';
-import { RemoteGuiProject } from './RemoteGuiProject';
-import type { GuiComputerNavigation } from './types';
-import { gitApi } from '../gitApi';
-import { saveProject } from '../projectCatalog';
+import { RemoteGuiProject } from '../../../../../../shared/conversation/remote/RemoteGuiProject';
+import type { GuiComputerNavigation } from '../../../../../../shared/conversation/remote/types';
+import { gitApi } from '../../../../../../shared/conversation/gitApi';
+import { saveProject } from '../../../../../../shared/conversation/projectCatalog';
 
-vi.mock('../gitApi', () => ({ gitApi: { request: vi.fn() } }));
-vi.mock('../GuiHostPicker', () => ({ GuiHostPicker: () => <span>测试电脑</span> }));
+vi.mock('../../../../../../shared/conversation/gitApi', () => ({ gitApi: { request: vi.fn() } }));
+vi.mock('../../../../../../shared/conversation/GuiHostPicker', () => ({ GuiHostPicker: () => <span>测试电脑</span> }));
 const navigation: GuiComputerNavigation = { current: null, devices: [], authenticated: true,
   loading: false, error: '', refresh() {}, choose() {}, login() {} };
 const original: GitStatus = { cwd: '/remote/project', branch: 'develop', isWorktree: false, changedFiles: 1,

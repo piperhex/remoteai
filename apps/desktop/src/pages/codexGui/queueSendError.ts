@@ -1,5 +1,5 @@
-import { displayError } from '../../i18n/uiText';
-import { uiText } from "../../i18n/uiText";
+import { displayError } from '../../../../../shared/localization/uiText';
+import { uiText } from "../../../../../shared/localization/uiText";
 
 const IMAGE_INPUT_ERRORS = new Set([
   '图片无法读取，请重新选择后发送。',

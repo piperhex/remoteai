@@ -6,11 +6,11 @@ import type { DragDropEvent } from '@tauri-apps/api/webview';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { Composer } from './Composer';
 import { GuiController } from './controller';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 import { invoke } from '../../api/backend';
-import { readProjects, saveProject } from './projectCatalog';
-import type { AttachmentReference } from './attachmentTypes';
-import { testModels } from './testModels';
+import { readProjects, saveProject } from '../../../../../shared/conversation/projectCatalog';
+import type { AttachmentReference } from '../../../../../shared/conversation/attachmentTypes';
+import { testModels } from '../../../../../shared/conversation/testing/models';
 
 const native = vi.hoisted(() => ({ listen: vi.fn(), invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/webview', () => ({
@@ -19,13 +19,13 @@ vi.mock('@tauri-apps/api/webview', () => ({
 vi.mock('@tauri-apps/api/core', async importOriginal => ({
   ...await importOriginal<typeof import('@tauri-apps/api/core')>(), invoke: native.invoke,
 }));
-vi.mock('./api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
+vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 vi.mock('../../api/backend', async importOriginal => ({
   ...await importOriginal<typeof import('../../api/backend')>(), invoke: vi.fn(), isDesktopApp: true,
 }));
 vi.mock('./UsageStatus', () => ({ UsageStatus: () => null }));
-vi.mock('./WorkspacePicker', () => ({ WorkspacePicker: () => null }));
-vi.mock('./GuiToolbox', () => ({ GuiToolbox: () => null }));
+vi.mock('../../../../../shared/conversation/WorkspacePicker', () => ({ WorkspacePicker: () => null }));
+vi.mock('../../../../../shared/conversation/GuiToolbox', () => ({ GuiToolbox: () => null }));
 vi.mock('./AccessPicker', () => ({ AccessPicker: () => null }));
 vi.mock('./ModelPicker', () => ({ ModelPicker: () => null }));
 

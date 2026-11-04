@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { acknowledgedEvents } from '../../../../shared/chat/acknowledgedMessages';
 import { updateThread } from '../../../../shared/remote-chat/client/events';
-import type { Item, Thread, Turn } from '../pages/codexGui/types';
+import type { Item, Thread, Turn } from '../../../../shared/conversation/types';
 
 it('reuses scans of immutable historical turns while preserving ordinals and neighbouring anchors', () => {
   let reads = 0;

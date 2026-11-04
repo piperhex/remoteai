@@ -73,8 +73,9 @@ test('keeps legacy preferences and switches language without losing custom size'
   await expect(page.getByRole('spinbutton', { name: 'Global font size', exact: true })).toHaveValue('22');
   await expect(reply(page)).toHaveCSS('font-size', '19px');
   if (info.project.name !== 'local') {
-    await page.getByRole('button', { name: 'Codex GUI font size', exact: true }).click();
+    await page.getByRole('button', { name: 'Codex GUI settings', exact: true }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('dialog').getByRole('tab', { name: 'Appearance', exact: true }).click();
     await expect(page.getByRole('dialog').getByRole('switch')).not.toBeChecked();
   }
 });

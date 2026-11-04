@@ -9,10 +9,10 @@ import { RequestSpeedButton } from "../../../../shared/remote-chat/RequestSpeedB
 import { ResetCreditsPanel } from "../components/accounts/ResetCreditsPanel";
 import { threadCopy } from "@remoteai/i18n/copy/desktop/threads";
 import { HomeMigrationError } from "../pages/codex-threads/ThreadModals/HomeMigrationError";
-import { displayText, setGuiLanguage } from "./uiText";
+import { displayText, setGuiLanguage } from "../../../../shared/localization/uiText";
 
 const clipboard = vi.hoisted(() => ({ copyText: vi.fn(() => Promise.resolve()) }));
-vi.mock("../utils/clipboard", () => ({ copyText: clipboard.copyText }));
+vi.mock("../../../../shared/clipboard", () => ({ copyText: clipboard.copyText }));
 
 // A backend message with an upstream Russian entry; the component must not show the Chinese source.
 const BACKEND_MESSAGE = "无法读取配置";

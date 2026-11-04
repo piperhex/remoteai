@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { ChatTokenSummary } from '../../web/src/chat/ChatTokenSummary';
 import { demoTokenSummary } from './demo-token-summary';
 import '../../web/src/styles.css';
-import '../../web/src/chat/chat.css';
+import '../../../shared/remote-chat/views/chat.css';
 import './token-native-observer';
 
 let reads = 0;

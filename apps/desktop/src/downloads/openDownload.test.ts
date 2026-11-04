@@ -1,10 +1,10 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { openDesktopDownload } from './openDownload';
-import type { DownloadTask } from '../../../web/src/downloads/types';
+import type { DownloadTask } from '../../../../shared/downloads/types';
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn(), isTauri: vi.fn(), verified: vi.fn(), browser: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke, isTauri: mocks.isTauri }));
-vi.mock('../../../web/src/downloads/openDownload', () => ({
+vi.mock('../../../../shared/downloads/openDownload', () => ({
   verifiedDownloadContent: mocks.verified, openBrowserDownload: mocks.browser,
 }));
 const task = { id: 'download', name: 'sample.msi' } as DownloadTask;

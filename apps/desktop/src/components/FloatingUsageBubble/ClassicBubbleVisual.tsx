@@ -1,5 +1,5 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
-import { remainingTone } from "../../utils/format";
+import { remainingTone } from "../../../../../shared/accounts/format";
 import styles from "./ClassicBubbleVisual.module.less";
 
 interface ClassicBubbleVisualProps {

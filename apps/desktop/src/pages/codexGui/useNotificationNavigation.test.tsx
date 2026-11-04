@@ -9,6 +9,7 @@ const fixture = vi.hoisted(() => ({
   filter: vi.fn(), select: vi.fn(), show: vi.fn(), clicked: () => {},
 }));
 vi.mock('../../api/backend', () => ({ isDesktopApp: true, invoke: fixture.invoke }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock('@tauri-apps/api/event', () => ({ listen: fixture.listen }));
 
 let root: Root;

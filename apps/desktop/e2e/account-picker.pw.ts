@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import type { GuiAutoSwitchSettings } from "../src/pages/codexGui/autoSwitchSettings";
+import type { GuiAutoSwitchSettings } from "../../../shared/conversation/autoSwitchSettings";
 
 const defaults: GuiAutoSwitchSettings = { enabled: false, switchOnQuotaExhaustion: true,
   minimumRemainingPercent: 0, mode: "sequential", fallbackProviderId: null, accounts: [] };

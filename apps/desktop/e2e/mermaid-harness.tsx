@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
-import { RichText } from '../src/pages/codexGui/RichText';
-import { ChatMarkdown } from '../../web/src/chat/ChatMarkdown';
+import { RichText } from '../../../shared/conversation/RichText';
+import { ChatMarkdown } from '../../../shared/remote-chat/views/ChatMarkdown';
 import { applyThemeMode } from '../src/utils/themeMode';
 import { setThemeMode } from '../../web/src/theme/preference';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
-import styles from '../src/pages/codexGui/styles.module.less';
+import styles from '../../../shared/conversation/styles.module.less';
 import { mermaidRenderStats } from '../../../shared/chat/mermaidRenderer';
-import { FileEnvironmentContext, type FileEnvironment } from '../src/pages/codexGui/fileEnvironment';
+import { FileEnvironmentContext, type FileEnvironment } from '../../../shared/conversation/fileEnvironment';
 
 type FixtureUpdate = { source?: string; visible?: boolean; duplicate?: boolean; session?: string };
 declare global {
@@ -20,7 +20,7 @@ declare global {
 const entry = new URLSearchParams(location.search).get('entry') ?? 'local';
 if (entry.startsWith('web')) {
   await import('../../web/src/styles.css');
-  await import('../../web/src/chat/messages.css');
+  await import('../../../shared/remote-chat/views/messages.css');
 } else {
   await import('../src/styles.css');
   if (entry === 'remote') await import('../src/pages/codexGui/remote/remoteGui.less');

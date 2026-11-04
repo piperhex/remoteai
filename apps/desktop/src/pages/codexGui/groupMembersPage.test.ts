@@ -3,7 +3,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { readMembersPage, readMembersQuery } from '../../../../../shared/chat/groups/memberPaging';
 import { createGuiGroups } from './groupActions';
 import { initialState } from './preferences';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 
 beforeEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
 

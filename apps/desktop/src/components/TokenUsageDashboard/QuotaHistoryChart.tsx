@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Segmented, Select } from "antd";
 import type { Language } from "../../i18n";
-import type { AccountQuotaHistory } from "../../types/tokenUsageAnalytics";
+import type { AccountQuotaHistory } from "../../../../../shared/token-usage/analytics";
 import { EChart } from "./EChart";
-import { quotaChartLabels } from "./quotaChartLabels";
+import { quotaChartLabels } from "../../../../../shared/token-usage/quotaChartLabels";
 import { quotaChartDescription, quotaChartOption } from "./quotaChartOption";
-import { buildQuotaChartData, type QuotaInterval, type QuotaView } from "./quotaHistoryData";
+import { buildQuotaChartData, type QuotaInterval, type QuotaView } from "../../../../../shared/token-usage/quotaHistoryData";
 import type { QuotaVisibleRange } from "./quotaSeriesSampling";
 import styles from "./quotaHistory.module.less";
 

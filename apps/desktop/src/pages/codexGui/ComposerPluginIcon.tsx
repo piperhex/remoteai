@@ -1,6 +1,6 @@
 import { Blocks, FileText, Globe, LayoutTemplate, Presentation, Sheet } from "lucide-react";
-import { ComposerCatalogIcon } from "./ComposerCatalogIcon";
-import type { ComposerPlugin } from "./attachmentTypes";
+import { ComposerCatalogIcon } from "../../../../../shared/conversation/ComposerCatalogIcon";
+import type { ComposerPlugin } from "../../../../../shared/conversation/attachmentTypes";
 
 const ICONS = [
   { match: /document/i, Icon: FileText, color: "#428bea" },

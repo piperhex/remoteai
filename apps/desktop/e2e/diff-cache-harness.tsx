@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { DetailsWorkspace } from '../src/pages/codexGui/DetailsWorkspace';
+import { DetailsWorkspace } from '../../../shared/conversation/DetailsWorkspace';
 import { DiffView } from '../src/pages/codexGui/DiffView';
 import { RunningChangesSummary } from '../src/pages/codexGui/RunningChangesSummary';
-import { useTurnChangedFiles } from '../src/pages/codexGui/useTurnChangedFiles';
-import { ChatDetailsWorkspace } from '../../web/src/chat/ChatDetailsWorkspace';
-import { ChatTurnSummary, type TurnPanel } from '../../web/src/chat/ChatTurnSummary';
-import { ChatTurnDetails } from '../../web/src/chat/ChatTurnDetails';
-import type { Turn } from '../src/pages/codexGui/types';
-import { useDesktopLayout } from '../../web/src/useDesktopLayout';
+import { useTurnChangedFiles } from '../../../shared/conversation/useTurnChangedFiles';
+import { ChatDetailsWorkspace } from '../../../shared/remote-chat/views/ChatDetailsWorkspace';
+import { ChatTurnSummary, type TurnPanel } from '../../../shared/remote-chat/views/ChatTurnSummary';
+import { ChatTurnDetails } from '../../../shared/remote-chat/views/ChatTurnDetails';
+import type { Turn } from '../../../shared/conversation/types';
+import { useDesktopLayout } from '../../../shared/layout/useDesktopLayout';
 import { DiffTextContext } from '../../../shared/chat/diffText';
-import { displayText } from '../../web/src/i18n';
+import { displayText } from '../../../shared/localization/browserClient';
 import '../src/styles.css';
 import '../../web/src/styles.css';
-import '../../web/src/chat/chat.css';
-import '../../web/src/chat/messages.css';
-import '../../web/src/chat/desktopMessages.css';
+import '../../../shared/remote-chat/views/chat.css';
+import '../../../shared/remote-chat/views/messages.css';
+import '../../../shared/remote-chat/views/desktopMessages.css';
 
 interface Fixture { threadId: string; turn: Turn }
 const mode = new URLSearchParams(location.search).get('mode') ?? 'web';

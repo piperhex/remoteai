@@ -3,7 +3,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { invoke } from '../../api/backend';
-import { subscribeGuiEvent } from '../../pages/codexGui/webEvents';
+import { subscribeGuiEvent } from '../../../../../shared/conversation/webEvents';
 import { HelpAssistant } from './HelpAssistant';
 import { readImage } from '../../pages/codexGui/draftImages';
 import { helpCopy } from './copy';
@@ -11,7 +11,8 @@ import { helpError, messageHistory, type HelpAvailability, type HelpMessage } fr
 import type { DashboardPage } from '../dashboard/DashboardNavigation';
 
 vi.mock('../../api/backend', () => ({ hasLocalBackend: true, invoke: vi.fn() }));
-vi.mock('../../pages/codexGui/webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
+vi.mock('../../../../../shared/conversation/webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
 vi.mock('../../pages/codexGui/draftImages', async (original) => ({
   ...await original<typeof import('../../pages/codexGui/draftImages')>(), readImage: vi.fn(),
 }));

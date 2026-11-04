@@ -1,17 +1,17 @@
-import { uiText, guiLocale } from "../../i18n/uiText";
+import { uiText, guiLocale } from "../../../../../shared/localization/uiText";
 import { ProjectExplorer } from '../../../../../shared/project-explorer/ProjectExplorer';
 import { loadProjectExplorer, mutateProjectExplorer } from './projectExplorerClient';
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { isDesktopApp } from '../../api/backend';
 import { CreateProjectDialog } from './CreateProjectDialog';
-import { folderName, projectName, readProjects, saveProject, type SavedProject } from './projectCatalog';
-import { ProjectFolderPicker } from './ProjectFolderPicker';
-import { WorkspacePicker } from './WorkspacePicker';
-import { ConversationWorkspaceStatus } from './ConversationWorkspaceStatus';
+import { folderName, projectName, readProjects, saveProject, type SavedProject } from '../../../../../shared/conversation/projectCatalog';
+import { ProjectFolderPicker } from '../../../../../shared/conversation/ProjectFolderPicker';
+import { WorkspacePicker } from '../../../../../shared/conversation/WorkspacePicker';
+import { ConversationWorkspaceStatus } from '../../../../../shared/conversation/ConversationWorkspaceStatus';
 import { useProjectFolderDrop } from './useProjectFolderDrop';
-import { ProjectBar } from './ProjectBar';
-import dropStyles from './ProjectPicker.module.less';
-import layout from './styles.module.less';
+import { ProjectBar } from '../../../../../shared/conversation/ProjectBar';
+import dropStyles from '../../../../../shared/conversation/ProjectPicker.module.less';
+import layout from '../../../../../shared/conversation/styles.module.less';
 
 interface ProjectPickerProps {
   value: string; projects: string[]; disabled: boolean;

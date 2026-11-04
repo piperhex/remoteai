@@ -2,12 +2,12 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import type { DownloadTask } from '../../../web/src/downloads/types';
-import { useDownloadTasks } from '../../../web/src/downloads/useDownloadTasks';
+import type { DownloadTask } from '../../../../shared/downloads/types';
+import { useDownloadTasks } from '../../../../shared/downloads/useDownloadTasks';
 import { useDownloadSelection } from '../../../../shared/downloads/useDownloadSelection';
 
 const mocks = vi.hoisted(() => ({ tasks: [] as DownloadTask[], remove: vi.fn(), confirm: vi.fn() }));
-vi.mock('../../../web/src/downloads/manager', () => ({ downloadManager: {
+vi.mock('../../../../shared/downloads/manager', () => ({ downloadManager: {
   subscribe: () => () => {}, snapshot: () => mocks.tasks, connection: () => undefined,
   error: () => '', initialize: async () => {}, remove: mocks.remove,
 } }));

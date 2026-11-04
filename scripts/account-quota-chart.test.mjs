@@ -25,7 +25,7 @@ const { quotaChartOption } = loadModule(`${componentPath}quotaChartOption.ts`, {
     "../../i18n/uiText": { uiText: testText },
   }),
   "./quotaSeriesSampling": loadModule(`${componentPath}quotaSeriesSampling.ts`),
-  "../../utils/theme": loadModule("../apps/desktop/src/utils/theme.ts"),
+  "../../utils/theme": loadModule("../shared/appearance/themeColor.ts"),
 });
 const START = new Date(2026, 8, 6, 0, 0, 0).getTime() / 1_000;
 const HOUR = 3_600;

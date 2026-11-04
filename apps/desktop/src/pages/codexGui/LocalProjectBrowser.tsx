@@ -1,10 +1,10 @@
 import { createProjectBrowserClient } from '../../../../../shared/project-browser/protocol';
-import { ProjectBrowserButton } from '../../../../web/src/chat/projectBrowser/ProjectBrowserButton';
-import { guiApi } from './api';
-import styles from './WorkspacePicker.module.less';
+import { ProjectBrowserButton } from '../../../../../shared/project-browser/views/ProjectBrowserButton';
+import { guiApi } from '../../../../../shared/conversation/api';
+import styles from '../../../../../shared/conversation/WorkspacePicker.module.less';
 import { isDesktopApp } from '../../api/backend';
-import { fileApi } from './fileApi';
-import { browserHost } from '../../../../web/src/chat/projectBrowser/browserHost';
+import { fileApi } from '../../../../../shared/conversation/fileApi';
+import { browserHost } from '../../../../../shared/project-browser/views/browserHost';
 import { projectDownloads } from '../../../../../shared/project-browser/downloads';
 
 const client = createProjectBrowserClient(request => guiApi.request(request),

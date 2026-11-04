@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { hasLocalBackend, invoke } from '../../api/backend';
-import { subscribeGuiEvent } from '../../pages/codexGui/webEvents';
-import type { CliSnapshot } from '../../pages/codexGui/cliManualDownloadApi';
+import { subscribeGuiEvent } from '../../../../../shared/conversation/webEvents';
+import type { CliSnapshot } from '../../../../../shared/conversation/cliManualDownloadApi';
 
 export type HelpSetupPhase = 'checking' | 'downloading' | 'installing' | 'initializing';
 export type HelpSetupError = 'installFailed' | 'initializeFailed' | 'previewOnly';

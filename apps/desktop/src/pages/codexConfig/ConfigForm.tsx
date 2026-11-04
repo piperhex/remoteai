@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useMemo, useState } from "react";
 import { Empty } from "antd";
 import { ConfigField } from "./ConfigField";

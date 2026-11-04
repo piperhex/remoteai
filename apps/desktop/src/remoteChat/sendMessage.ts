@@ -1,6 +1,6 @@
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { getGuiController } from '../pages/codexGui/session';
-import type { Request, Turn } from '../pages/codexGui/types';
+import type { Request, Turn } from '../../../../shared/conversation/types';
 
 /** The host owns send receipts so every viewer and subsequent history read sees the same message. */
 export async function sendRemoteMessage(request: Extract<Request, { operation: 'send' }>) {

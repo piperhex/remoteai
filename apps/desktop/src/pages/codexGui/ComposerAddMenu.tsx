@@ -1,5 +1,5 @@
-import { uiText } from "../../i18n/uiText";
-import { useGuiLanguage } from "../../i18n/useGuiLanguage";
+import { uiText } from "../../../../../shared/localization/uiText";
+import { useGuiLanguage } from "../../../../../shared/localization/useGuiLanguage";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { Popover } from "antd";
 import { Paperclip, Plus, Target } from "lucide-react";
@@ -7,8 +7,8 @@ import { ComposerPluginIcon } from "./ComposerPluginIcon";
 import { useComposerPlugins } from "./useComposerPlugins";
 import { useComposerSkills } from "./useComposerSkills";
 import { ComposerSkillSection } from "./ComposerSkillSection";
-import type { AttachmentReference } from "./attachmentTypes";
-import type { Skill } from "./types";
+import type { AttachmentReference } from "../../../../../shared/conversation/attachmentTypes";
+import type { Skill } from "../../../../../shared/conversation/types";
 import styles from "./ComposerAddMenu.module.less";
 
 export function ComposerAddMenu({ cwd, disabled, active, anchor, onFiles, onGoal, onPlugin, onSkill }: {

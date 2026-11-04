@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { expect, it } from 'vitest';
-import { conversation, reduceEvent } from './events';
+import { conversation, reduceEvent } from '../../../../../shared/conversation/events';
 import { initialState } from './preferences';
-import type { GuiState, Thread } from './types';
+import type { GuiState, Thread } from '../../../../../shared/conversation/types';
 
 it('shows tool-created conversations and supplements without switching the selection or settings', () => {
   const current: Thread = { id: 'current', cwd: '', preview: 'current', updatedAt: 1, turns: [] };

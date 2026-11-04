@@ -1,5 +1,5 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { normalizeThemeColor } from "../../utils/theme";
+import { normalizeThemeColor } from "../../../../../shared/appearance/themeColor";
 import type { ThemeMode } from "../../utils/themeMode";
 
 const STORAGE_KEY = "codex-switch:gui-theme";

@@ -1,15 +1,15 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, it, vi } from "vitest";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { GuiController } from "./controller";
-import { conversation } from "./events";
+import { conversation } from "../../../../../shared/conversation/events";
 import { initialState } from "./preferences";
 import { GuiProjects } from "./projectActions";
-import { readProjects, saveProject } from "./projectCatalog";
+import { readProjects, saveProject } from "../../../../../shared/conversation/projectCatalog";
 import { threadGroups } from "./threadGroups";
-import type { GuiState, Thread } from "./types";
+import type { GuiState, Thread } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: { request: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { request: vi.fn() } }));
 const path = "D:/project";
 const thread = (id: string, cwd = path): Thread => ({ id, cwd, preview: id, updatedAt: 1, turns: [] });
 let state: GuiState;

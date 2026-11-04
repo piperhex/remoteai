@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useRef } from "react";
 import { File, Folder, GitBranch, MessageSquare, Target } from "lucide-react";
 import { ComposerSkillIcon } from "./ComposerSkillIcon";

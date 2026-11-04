@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import type { Conversation } from '../src/pages/codexGui/types';
+import type { Conversation } from '../../../shared/conversation/types';
 
 const ACTIVITY_COUNT = 180;
 function fixture(): Conversation {

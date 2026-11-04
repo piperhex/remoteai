@@ -10,6 +10,7 @@ import { invoke } from '../api/backend';
 import { guiToolRequest } from './guiTools';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 vi.mock('../pages/codexGui/session', () => ({ getGuiController: vi.fn() }));
 let client: ReturnType<typeof createAsyncGitFixture>;
 let root: ReturnType<typeof createRoot>;

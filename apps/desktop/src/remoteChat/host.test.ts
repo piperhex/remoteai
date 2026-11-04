@@ -25,8 +25,8 @@ vi.mock('./nativeTransport', () => ({ NativeChatTransport: class {
   constructor(receive: (event: HostTransportEvent) => void) { native.receive = receive; }
   send = vi.fn(); forgetSession = vi.fn(); reconnect = vi.fn(); close = vi.fn();
 } }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { subscribe: vi.fn(async () => vi.fn()) } }));
-vi.mock('../pages/codexGui/webEvents', () => ({ subscribeGuiEvent: vi.fn(async (_event, callback) => {
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { subscribe: vi.fn(async () => vi.fn()) } }));
+vi.mock('../../../../shared/conversation/webEvents', () => ({ subscribeGuiEvent: vi.fn(async (_event, callback) => {
   native.accountChanged = callback; return vi.fn();
 }) }));
 vi.mock('./operations', () => ({ ChatOperations: class {

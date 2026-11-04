@@ -1,13 +1,13 @@
 import { lazy, Suspense, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { ConfigProvider } from 'antd';
-import { ConnectedChat } from '../../../../../web/src/chat/ConnectedChat';
+import { ConnectedChat } from '../../../../../../shared/remote-chat/views/ConnectedChat';
 import { FocusModeButton, type GuiFocusMode } from '../FocusModeButton';
-import { RemoteAccountPicker } from './RemoteAccountPicker';
+import { RemoteAccountPicker } from '../../../../../../shared/conversation/remote/RemoteAccountPicker';
 import { useRemoteGui } from './useRemoteGui';
-import type { GuiCloudIdentity, GuiComputer, GuiComputerNavigation } from './types';
+import type { GuiCloudIdentity, GuiComputer, GuiComputerNavigation } from '../../../../../../shared/conversation/remote/types';
 import { useDreamSkin } from '../useDreamSkin';
 import { RemoteGuiSidebar } from './RemoteGuiSidebar';
-import { RemoteGuiProject } from './RemoteGuiProject';
+import { RemoteGuiProject } from '../../../../../../shared/conversation/remote/RemoteGuiProject';
 import { readClipboardImages } from '../clipboardImages';
 import { readDroppedFiles, subscribeFileDrop } from '../fileDrop';
 import { isDesktopApp } from '../../../api/backend';
@@ -15,17 +15,17 @@ import { useRemoteTerminalPanel } from '../../../../../../shared/remote-chat/use
 import { TerminalWorkspaceProvider } from '../../../../../../shared/terminal/TerminalWorkspaceProvider';
 import { remoteTerminalApi } from './terminalApi';
 import { useTerminalLinkTunnels } from '../terminal/useTerminalLinkTunnels';
-import { RemoteGuiTools } from './RemoteGuiTools';
-import { useRemoteCliInstaller } from './useRemoteCliInstaller';
-import { GuiRemoteDesktop } from '../GuiRemoteDesktop';
-import styles from '../styles.module.less';
+import { RemoteGuiTools } from '../../../../../../shared/conversation/remote/RemoteGuiTools';
+import { useRemoteCliInstaller } from '../../../../../../shared/conversation/remote/useRemoteCliInstaller';
+import { GuiRemoteDesktop } from '../../../../../../shared/conversation/GuiRemoteDesktop';
+import styles from '../../../../../../shared/conversation/styles.module.less';
 import './remoteGui.less';
 import { useDesktopDownloads } from '../../../downloads/useDesktopDownloads';
 import { RemoteFileEnvironment } from './RemoteFileEnvironment';
 import { PortForwarding } from '../portForwarding/PortForwarding';
 import { RemoteUserMessage } from './RemoteUserMessage';
 
-const TerminalPanel = lazy(() => import('../terminal/TerminalPanel'));
+const TerminalPanel = lazy(() => import('../../../../../../shared/terminal/views/TerminalPanel'));
 const nativeFileDrop = { subscribe: subscribeFileDrop, readFiles: readDroppedFiles };
 
 export default function RemoteGuiWorkspace(props: {

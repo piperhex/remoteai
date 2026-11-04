@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { GuiController } from "./controller";
-import { guiApi } from "./api";
-import type { Model } from "./types";
+import { guiApi } from "../../../../../shared/conversation/api";
+import type { Model } from "../../../../../shared/conversation/types";
 import type { ModelSettingsApi, ModelSettingsSnapshot } from "./threadModelSettings";
 
-vi.mock("./api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 const models: Model[] = ["first", "second"].map((model, index) => ({
   id: model, model, displayName: model, isDefault: index === 0, defaultReasoningEffort: "medium",
   supportedReasoningEfforts: ["low", "medium", "high", "xhigh"].map((reasoningEffort) =>

@@ -1,7 +1,7 @@
 import { composerPatch, COMPOSER_EVENT, DEFAULT_COMPOSER,
   type ComposerSnapshot } from '../../../shared/remote-chat/composer';
 import type { ChatLink } from '../../../shared/remote-chat/link';
-import { resolveModelSelection } from '../src/pages/codexGui/modelSelection';
+import { resolveModelSelection } from '../../../shared/conversation/modelSelection';
 import { object } from '../../../shared/remote-chat/protocol';
 
 let snapshot: ComposerSnapshot = { revision: 1,

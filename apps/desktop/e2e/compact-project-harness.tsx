@@ -3,12 +3,12 @@ import { createRoot } from 'react-dom/client';
 import { App, ConfigProvider, Input, theme } from 'antd';
 import { ProjectPicker } from '../src/pages/codexGui/ProjectPicker';
 import { Messages } from '../src/pages/codexGui/Messages';
-import { DetailsWorkspace } from '../src/pages/codexGui/DetailsWorkspace';
+import { DetailsWorkspace } from '../../../shared/conversation/DetailsWorkspace';
 import { previewConversation } from './compact-project-conversation';
 import { capacityConversation, singleCapacityConversation } from './compact-project-capacity';
-import { gitApi } from '../src/pages/codexGui/gitApi';
+import { gitApi } from '../../../shared/conversation/gitApi';
 import { TurnRetryProvider } from '../../../shared/chat/TurnRetryContext';
-import styles from '../src/pages/codexGui/styles.module.less';
+import styles from '../../../shared/conversation/styles.module.less';
 import 'antd/dist/reset.css';
 import '../src/styles.css';
 

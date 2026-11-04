@@ -1,8 +1,8 @@
-import { uiText } from "../../i18n/uiText";
-import { guiApi } from "./api";
+import { uiText } from "../../../../../shared/localization/uiText";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { savePreferences } from "./preferences";
-import { removeSavedProject } from "./projectCatalog";
-import type { GuiState, ListResponse, Thread } from "./types";
+import { removeSavedProject } from "../../../../../shared/conversation/projectCatalog";
+import type { GuiState, ListResponse, Thread } from "../../../../../shared/conversation/types";
 import { forgetGroupedProject, forgetGroupedThread } from './groupActions';
 
 interface ProjectHost {

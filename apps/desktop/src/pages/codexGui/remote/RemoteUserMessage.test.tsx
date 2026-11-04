@@ -5,9 +5,9 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { RemoteUserMessage } from './RemoteUserMessage';
 import { initialChatState, type Thread } from '../../../../../../shared/remote-chat/client/types';
 import { ChatController } from '../../../../../../shared/remote-chat/client/controller';
-import { guiApi } from '../api';
+import { guiApi } from '../../../../../../shared/conversation/api';
 
-vi.mock('../api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 const thread: Thread = { id: 'thread', cwd: 'D:/remote', preview: '', updatedAt: 1, turns: [
   { id: 'first', status: 'completed', items: [{ id: 'old', type: 'userMessage',
     content: [{ type: 'text', text: 'earlier' }] }] },

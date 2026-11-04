@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import type { GuiEvent, Request, Thread, Turn } from '../src/pages/codexGui/types';
+import type { GuiEvent, Request, Thread, Turn } from '../../../shared/conversation/types';
 
 const prompt = '请检查项目，暂停后保留这条消息。';
 const thread: Thread = { id: 'new-chat', cwd: '', name: '暂停测试', preview: '', updatedAt: 1, turns: [] };

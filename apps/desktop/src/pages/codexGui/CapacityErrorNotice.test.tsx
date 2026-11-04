@@ -3,10 +3,10 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Messages } from "./Messages";
-import { conversation, reduceConversation } from "./events";
-import { MODEL_CAPACITY_MESSAGE } from "./requestError";
-import { uiText } from '../../i18n/uiText';
-import { CONTINUE_MESSAGE } from "./continuation";
+import { conversation, reduceConversation } from "../../../../../shared/conversation/events";
+import { MODEL_CAPACITY_MESSAGE } from "../../../../../shared/conversation/requestError";
+import { uiText } from '../../../../../shared/localization/uiText';
+import { CONTINUE_MESSAGE } from "../../../../../shared/conversation/continuation";
 
 let root: Root;
 let container: HTMLDivElement;

@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { Menu } from "@tauri-apps/api/menu";
-import { ImagePreview } from "./ImagePreview";
+import { ImagePreview } from "../../../../../shared/conversation/ImagePreview";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), isTauri: vi.fn(() => true) }));
 vi.mock("@tauri-apps/api/menu", () => ({ Menu: { new: vi.fn() } }));

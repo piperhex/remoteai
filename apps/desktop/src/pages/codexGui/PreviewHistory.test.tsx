@@ -3,9 +3,9 @@ import { act, useContext } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { message } from "antd";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { DetailsWorkspace } from "./DetailsWorkspace";
-import { DetailsContext } from "./detailsContext";
-import { filePreviewApi, type FilePreviewData } from "./filePreview/api";
+import { DetailsWorkspace } from "../../../../../shared/conversation/DetailsWorkspace";
+import { DetailsContext } from "../../../../../shared/conversation/detailsContext";
+import { filePreviewApi, type FilePreviewData } from "../../../../../shared/file-preview/workspace/api";
 
 vi.mock("@tauri-apps/api/core", () => ({ isTauri: () => false, invoke: vi.fn() }));
 let root: Root;

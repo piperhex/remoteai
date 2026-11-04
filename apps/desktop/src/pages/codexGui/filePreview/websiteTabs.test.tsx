@@ -2,9 +2,9 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { FileEnvironmentContext, type FileEnvironment } from '../fileEnvironment';
-import { useWebsiteTabs } from './useWebsiteTabs';
-import { placeBrowser } from './nativeBrowserPlacement';
+import { FileEnvironmentContext, type FileEnvironment } from '../../../../../../shared/conversation/fileEnvironment';
+import { useWebsiteTabs } from '../../../../../../shared/file-preview/workspace/useWebsiteTabs';
+import { placeBrowser } from '../../../../../../shared/file-preview/workspace/nativeBrowserPlacement';
 import { invoke } from '@tauri-apps/api/core';
 
 vi.mock('@tauri-apps/api/core', () => ({ isTauri: () => false, invoke: vi.fn() }));

@@ -2,7 +2,7 @@ import { invoke } from '../api/backend';
 import { object } from '../../../../shared/remote-chat/protocol';
 import type { FilePreviewData } from '../../../../shared/remote-chat/files';
 import { PREVIEW_CHUNK_CHARACTERS } from '../../../../shared/remote-chat/filePreviewText';
-import { RemoteMappingStreams } from './mappingStreams';
+import { RemoteMappingStreams } from '../../../../shared/port-mapping/remoteStreams';
 import { STREAM_OPERATION, type MappingStreamLink } from '../../../../shared/port-mapping/streamMux';
 
 interface Resource { kind: 'preview' | 'resource'; id?: string; text?: string }

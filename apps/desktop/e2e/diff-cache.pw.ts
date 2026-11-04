@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import type { Turn } from '../src/pages/codexGui/types';
+import type { Turn } from '../../../shared/conversation/types';
 
 function fixture() {
   const turn: Turn = { id: 'turn', status: 'completed', items: [

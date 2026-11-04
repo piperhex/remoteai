@@ -3,11 +3,11 @@ import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { SkillInput } from "./SkillInput";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { readEditor } from "./skillEditorDom";
-import type { ComposerText, Skill } from "./types";
+import type { ComposerText, Skill } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: { request: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { request: vi.fn() } }));
 const skills: Skill[] = [
   { name: "deploy-codex-switch", path: "D:/skills/deploy/SKILL.md", description: "部署服务", enabled: true,
     interface: { displayName: "Deploy Remote AI" } },

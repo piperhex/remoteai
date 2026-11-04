@@ -1,8 +1,8 @@
 import { fileDownloadByteLimit, imagePreviewByteLimit, textPreviewByteLimit, videoByteLimit }
   from '../../../../shared/remote-chat/policy';
 import { remoteAttachments } from '../../../../shared/remote-chat/composerAttachments';
-import { guiApi } from '../pages/codexGui/api';
-import type { ApprovalReply, GuiEvent, ListResponse, Request, SkillsResponse, Thread } from '../pages/codexGui/types';
+import { guiApi } from '../../../../shared/conversation/api';
+import type { ApprovalReply, GuiEvent, ListResponse, Request, SkillsResponse, Thread } from '../../../../shared/conversation/types';
 import { object, type ConnectionMode, type RpcRequest, type RpcResponse }
   from '../../../../shared/remote-chat/protocol';
 import { chunks } from '../../../../shared/remote-chat/framing';

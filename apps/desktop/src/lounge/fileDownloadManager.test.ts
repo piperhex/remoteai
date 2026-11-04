@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { expect, it, vi } from 'vitest';
-import { WebDownloadManager } from '../../../web/src/downloads/manager';
-import type { DownloadTask } from '../../../web/src/downloads/types';
+import { WebDownloadManager } from '../../../../shared/downloads/manager';
+import type { DownloadTask } from '../../../../shared/downloads/types';
 import { loungeDownloadClient, LOUNGE_DOWNLOAD_DEVICE } from '../../../../shared/lounge/downloadClient';
 import type { LoungeAttachmentManager } from '../../../../shared/lounge/attachmentManager';
 import type { LoungeAttachment } from '../../../../shared/lounge/attachments';
 
 const storage = vi.hoisted(() => ({ tasks: new Map<string, DownloadTask>(), chunks: new Map<number, string>() }));
-vi.mock('../../../web/src/downloads/storage', () => ({
+vi.mock('../../../../shared/downloads/storage', () => ({
   listDownloads: async () => [],
   storeDownload: async (task: DownloadTask) => { storage.tasks.set(task.id, structuredClone(task)); },
   resetDownload: async () => { storage.chunks.clear(); },

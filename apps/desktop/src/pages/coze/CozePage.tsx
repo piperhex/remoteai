@@ -1,9 +1,9 @@
-import { displayError } from '../../i18n/uiText';
+import { displayError } from '../../../../../shared/localization/uiText';
 import { Alert, Button, Progress, Space } from "antd";
 import { BookOpen, Bot, Download, GitBranch } from "lucide-react";
 import { isDesktopApp } from "../../api/backend";
-import { uiText } from "../../i18n/uiText";
-import { useGuiLanguage } from "../../i18n/useGuiLanguage";
+import { uiText } from "../../../../../shared/localization/uiText";
+import { useGuiLanguage } from "../../../../../shared/localization/useGuiLanguage";
 import { useCoze } from "./useCoze";
 import { CozeWorkspace } from "./CozeWorkspace";
 import styles from "./CozePage.module.less";

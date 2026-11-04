@@ -2,10 +2,11 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { CliManualDownload } from "./CliManualDownload";
+import { CliManualDownload } from "../../../../../shared/conversation/CliManualDownload";
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn(), open: vi.fn() }));
 vi.mock("../../api/backend", () => ({ invoke: mocks.invoke }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: mocks.open }));
 const links = { platform: "Windows / x64", assetName: "codex-package-x86_64-pc-windows-msvc.tar.gz",
   packageUrl: "https://github.com/openai/codex/releases/latest/download/package.tar.gz",

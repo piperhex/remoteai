@@ -1,6 +1,6 @@
-import { uiText } from "../../i18n/uiText";
-import { projectName } from "./projectCatalog";
-import type { GuiState, Thread } from "./types";
+import { uiText } from "../../../../../shared/localization/uiText";
+import { projectName } from "../../../../../shared/conversation/projectCatalog";
+import type { GuiState, Thread } from "../../../../../shared/conversation/types";
 import { isThreadRunning } from "./threadRunning";
 import { prioritizeRunningThreads } from "../../../../../shared/chat/threadOrder";
 

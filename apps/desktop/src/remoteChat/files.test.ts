@@ -3,6 +3,7 @@ import { RemoteFiles } from './files';
 import { invoke } from '../api/backend';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 beforeEach(() => vi.resetAllMocks());
 
 it('binds previews and streams to the transport owner and overrides forged scopes', async () => {

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { PanelBottom } from "lucide-react";
-import TerminalPanel from "../src/pages/codexGui/terminal/TerminalPanel";
-import { useTerminalPanel } from "../src/pages/codexGui/terminal/useTerminalPanel";
+import TerminalPanel from "../../../shared/terminal/views/TerminalPanel";
+import { useTerminalPanel } from "../../../shared/terminal/views/useTerminalPanel";
 import { terminalApi, type TerminalEvent } from "../src/pages/codexGui/terminal/api";
-import { DetailsWorkspace } from "../src/pages/codexGui/DetailsWorkspace";
-import { ConversationChangesButton } from "../src/pages/codexGui/ConversationChangesButton";
-import styles from "../src/pages/codexGui/styles.module.less";
+import { DetailsWorkspace } from "../../../shared/conversation/DetailsWorkspace";
+import { ConversationChangesButton } from "../../../shared/conversation/ConversationChangesButton";
+import styles from "../../../shared/conversation/styles.module.less";
 import type { TerminalApi } from '../../../shared/terminal/types';
 
 const sessions = new Map<string, (event: TerminalEvent) => void>();

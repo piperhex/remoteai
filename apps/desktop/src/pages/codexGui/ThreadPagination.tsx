@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { LoaderCircle } from "lucide-react";
 import styles from "./ThreadPagination.module.less";
 

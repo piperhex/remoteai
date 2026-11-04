@@ -1,8 +1,8 @@
-import { guiLocale, uiText } from "../../i18n/uiText";
+import { guiLocale, uiText } from "../../../../../shared/localization/uiText";
 import { Button, Tooltip } from "antd";
 import { Split } from "lucide-react";
-import { CopyButton } from "./CopyButton";
-import { SECOND_MS } from "./turnTiming";
+import { CopyButton } from "../../../../../shared/conversation/CopyButton";
+import { SECOND_MS } from "../../../../../shared/conversation/turnTiming";
 import styles from "./MessageActions.module.less";
 
 const timeOptions: Intl.DateTimeFormatOptions = {

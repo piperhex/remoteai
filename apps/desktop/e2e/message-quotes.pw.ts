@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import type { Conversation } from "../src/pages/codexGui/types";
+import type { Conversation } from "../../../shared/conversation/types";
 
 const reply = "下架异常上报使用上架异常上报的接口";
 const quote = "下架异常上报\n" + "引用内容较长时应自动换行。".repeat(30);

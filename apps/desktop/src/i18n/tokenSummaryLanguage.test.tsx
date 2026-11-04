@@ -7,12 +7,12 @@ import { setInterfaceLanguage } from '../../../../shared/localization/interfaceL
 import { translateMessage } from '../../../../shared/localization/messages';
 import { TOKEN_FIELDS, CONTEXT_FIELDS, MODE_FIELDS } from '../../../../shared/remote-chat/tokenSummaryLabels';
 import type { TokenSummary } from '../../../../shared/remote-chat/tokenSummary';
-import { EditedFilesSummary } from '../pages/codexGui/EditedFilesSummary';
+import { EditedFilesSummary } from '../../../../shared/conversation/EditedFilesSummary';
 import { DiffTextContext } from '../../../../shared/chat/diffText';
 import { displayText } from '../../../../shared/localization/messages';
-import { changedFiles } from '../pages/codexGui/diff';
+import { changedFiles } from '../../../../shared/conversation/diff';
 
-vi.mock('../../../web/src/components/AdaptiveSheet', () => ({
+vi.mock('../../../../shared/layout/AdaptiveSheet', () => ({
   AdaptiveSheet: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 vi.mock('../../../web/src/chat/OfficialUsagePanel', () => ({ OfficialUsagePanel: () => null }));

@@ -2,10 +2,10 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
-import { ChatMarkdown } from '../../../web/src/chat/ChatMarkdown';
-import { ChatFileContext } from '../../../web/src/chat/ChatFileLink';
-import { getLanguage, setLanguage, t } from '../../../web/src/i18n';
-import type { FilePreviewContext } from '../../../web/src/chat/ChatFilePreview';
+import { ChatMarkdown } from '../../../../shared/remote-chat/views/ChatMarkdown';
+import { ChatFileContext } from '../../../../shared/remote-chat/views/ChatFileLink';
+import { getLanguage, setLanguage, t } from '../../../../shared/localization/browserClient';
+import type { FilePreviewContext } from '../../../../shared/remote-chat/views/ChatFilePreview';
 
 const parses = vi.hoisted(() => ({ count: 0 }));
 vi.mock('react-markdown', async original => {

@@ -3,11 +3,11 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { ChatController } from '../../../../shared/remote-chat/client/controller';
 import { remotePromptSuggestion } from '../../../../shared/remote-chat/client/promptSuggestion';
 import { initialChatState, type ChatState } from '../../../../shared/remote-chat/client/types';
-import { testModels } from '../pages/codexGui/testModels';
-import { guiApi } from '../pages/codexGui/api';
+import { testModels } from '../../../../shared/conversation/testing/models';
+import { guiApi } from '../../../../shared/conversation/api';
 import { ChatOperations } from './operations';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 beforeEach(() => vi.resetAllMocks());
 const target = { threadId: 'remote', sourceTurnId: 'turn', model: 'gpt-test', effort: 'low' as const };
 function readyState(): ChatState {

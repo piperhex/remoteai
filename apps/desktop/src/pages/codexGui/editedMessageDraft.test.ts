@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
-import { editedMessageDraft } from "./editedMessageDraft";
-import { conversation } from "./events";
+import { editedMessageDraft } from "../../../../../shared/conversation/editedMessageDraft";
+import { conversation } from "../../../../../shared/conversation/events";
 
 it("recovers newly pasted images and replaces only the edited message's skills", () => {
   const source = conversation({ id: "thread", cwd: "", preview: "", updatedAt: 0, turns: [

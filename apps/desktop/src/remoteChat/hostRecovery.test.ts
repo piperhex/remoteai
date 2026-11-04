@@ -8,8 +8,8 @@ const state = vi.hoisted(() => ({ options: undefined as LinkOptions | undefined,
   receive: undefined as ((event: HostTransportEvent) => void) | undefined,
   relay: vi.fn(), close: vi.fn(), reconnect: vi.fn(), stop: vi.fn(), registerDesktop: vi.fn(), renew: vi.fn(),
   execute: vi.fn(async () => ({})) }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { subscribe: vi.fn(async () => vi.fn()) } }));
-vi.mock('../pages/codexGui/webEvents', () => ({ subscribeGuiEvent: vi.fn(async () => vi.fn()) }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { subscribe: vi.fn(async () => vi.fn()) } }));
+vi.mock('../../../../shared/conversation/webEvents', () => ({ subscribeGuiEvent: vi.fn(async () => vi.fn()) }));
 vi.mock('./operations', () => ({ ChatOperations: class {
   release = vi.fn(); execute = state.execute; attachMappingStreams = vi.fn();
   desktop = { register: state.registerDesktop, diagnose: vi.fn(), nativeMedia: vi.fn() };

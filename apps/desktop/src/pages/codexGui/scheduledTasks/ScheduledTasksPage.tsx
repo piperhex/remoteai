@@ -1,5 +1,5 @@
-import { displayText } from '../../../i18n/uiText';
-import { uiText } from "../../../i18n/uiText";
+import { displayText } from '../../../../../../shared/localization/uiText';
+import { uiText } from "../../../../../../shared/localization/uiText";
 import { remoteErrorText } from "../../../../../../shared/localization/errors";
 import { useMemo, useState } from "react";
 import { Alert, Button, Dropdown, Input, Modal, Spin } from "antd";

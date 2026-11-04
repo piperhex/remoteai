@@ -1,13 +1,13 @@
-import { displayText } from '../../i18n/uiText';
-import { uiText } from "../../i18n/uiText";
+import { displayText } from '../../../../../shared/localization/uiText';
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useState } from "react";
 import { Button, Grid, Modal, Tabs } from "antd";
 import { ArrowLeftRight, Circle, Image, MessageSquareText, Palette, Settings2, Type } from "lucide-react";
 import type { Account, Provider } from "../../types";
 import { useGuiAutoSwitchSettings } from "./useGuiAutoSwitchSettings";
 import { GuiAutoSwitchPanel } from "./GuiAutoSwitchPanel";
-import { GuiAppearanceSettings } from "./GuiAppearanceSettings";
-import { GuiMessageSettings } from "./GuiMessageSettings";
+import { GuiAppearanceSettings } from "../../../../../shared/conversation/GuiAppearanceSettings";
+import { GuiMessageSettings } from "../../../../../shared/conversation/GuiMessageSettings";
 import { GuiThemeSettings } from "./GuiThemeSettings";
 import { GuiSkinSettings } from "./GuiSkinSettings";
 import { GuiSystemPromptSettings } from "./GuiSystemPromptSettings";

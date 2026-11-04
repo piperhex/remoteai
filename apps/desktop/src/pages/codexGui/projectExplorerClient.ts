@@ -1,6 +1,6 @@
 import type { ProjectDirectoriesResponse } from '../../../../../shared/remote-chat/projectDirectories';
 import type { EntryChange, EntryRequest } from '../../../../../shared/project-browser/entryActions';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 
 export const loadProjectExplorer = (directory: string, includeFiles = false) =>
   guiApi.request<ProjectDirectoriesResponse>({ operation: 'projectDirectories', directory, includeFiles });

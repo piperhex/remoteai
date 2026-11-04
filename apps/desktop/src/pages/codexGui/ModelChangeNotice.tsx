@@ -1,7 +1,7 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { Tooltip } from "antd";
 import { Box, Info } from "lucide-react";
-import type { Item } from "./types";
+import type { Item } from "../../../../../shared/conversation/types";
 import styles from "./ModelChangeNotice.module.less";
 
 export function ModelChangeNotice({ item }: { item: Item }) {

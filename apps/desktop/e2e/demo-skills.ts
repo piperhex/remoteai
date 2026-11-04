@@ -1,4 +1,4 @@
-import type { Skill } from '../src/pages/codexGui/types';
+import type { Skill } from '../../../shared/conversation/types';
 
 let revision = 1;
 let delay = 0;

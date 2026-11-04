@@ -2,8 +2,8 @@
 import { act, useMemo } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { GitDiff } from '../../../web/src/chat/git/GitDiff';
-import { DetailsWorkspace } from '../pages/codexGui/DetailsWorkspace';
+import { GitDiff } from '../../../../shared/git/views/GitDiff';
+import { DetailsWorkspace } from '../../../../shared/conversation/DetailsWorkspace';
 import { createAsyncGitFixture } from '../../../../shared/remote-chat/testing/gitFixture';
 import type { GitClient, GitDiff as DiffValue } from '../../../../shared/remote-chat/gitTypes';
 

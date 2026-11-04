@@ -1,6 +1,6 @@
 import { Button, Tooltip } from 'antd';
 import { Handshake } from 'lucide-react';
-import { uiText } from "../i18n/uiText";
+import { uiText } from "../../../../shared/localization/uiText";
 import { assistanceStore } from './store';
 
 export function AssistanceButton() {

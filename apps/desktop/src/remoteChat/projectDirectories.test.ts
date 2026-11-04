@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 import { expect, it, vi } from 'vitest';
 import { ChatOperations } from './operations';
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 
 it('forwards folder browsing to the typed desktop boundary and keeps failures scoped to the request', async () => {
   const body = { operation: 'projectDirectories', directory: 'F:/projects' };

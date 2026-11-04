@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useState } from "react";
 import { Popover } from "antd";
 import { MessageSquareQuote } from "lucide-react";

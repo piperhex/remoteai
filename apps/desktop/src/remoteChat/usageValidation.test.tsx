@@ -2,7 +2,7 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { ChatUsage as WebChatUsage } from '../../../web/src/chat/ChatUsage';
+import { ChatUsage as WebChatUsage } from '../../../../shared/remote-chat/views/ChatUsage';
 import { USAGE_REFRESH_INTERVAL_MS, type ReadUsage } from '../../../../shared/remote-chat/usage';
 
 const usage = { totalTokens: 1_520, estimatedCostUsd: 2.5, primaryRemainingPercent: null,

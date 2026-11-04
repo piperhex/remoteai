@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { guiApi } from "./api";
-import { testModels } from "./testModels";
+import { guiApi } from "../../../../../shared/conversation/api";
+import { testModels } from "../../../../../shared/conversation/testing/models";
 import { GuiController } from "./controller";
-import type { GuiEvent, Thread } from "./types";
-import type { ThreadGoal } from "./goalTypes";
+import type { GuiEvent, Thread } from "../../../../../shared/conversation/types";
+import type { ThreadGoal } from "../../../../../shared/conversation/goalTypes";
 
-vi.mock("./api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 const thread: Thread = { id: "one", cwd: "D:/project", preview: "hello", updatedAt: 1, turns: [] };
 const goal: ThreadGoal = { threadId: thread.id, objective: "完成登录页面", status: "active", tokenBudget: null,
   tokensUsed: 0, timeUsedSeconds: 0, createdAt: 1, updatedAt: 1 };

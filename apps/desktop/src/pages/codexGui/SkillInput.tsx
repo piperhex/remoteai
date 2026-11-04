@@ -1,10 +1,10 @@
-import { uiText } from "../../i18n/uiText";
-import { useGuiLanguage } from "../../i18n/useGuiLanguage";
+import { uiText } from "../../../../../shared/localization/uiText";
+import { useGuiLanguage } from "../../../../../shared/localization/useGuiLanguage";
 import { forwardRef, useId, useImperativeHandle, useLayoutEffect, useRef, useState,
   type ClipboardEvent, type KeyboardEvent } from "react";
-import type { ComposerText, GuiState, Skill } from "./types";
-import type { AttachmentReference } from "./attachmentTypes";
-import { conversationCandidates, conversationReference } from "./conversationReferences";
+import type { ComposerText, GuiState, Skill } from "../../../../../shared/conversation/types";
+import type { AttachmentReference } from "../../../../../shared/conversation/attachmentTypes";
+import { conversationCandidates, conversationReference } from "../../../../../shared/conversation/conversationReferences";
 import { useConversationCandidates } from "./useConversationCandidates";
 import { insertSkill, readEditor, skillTrigger, writeEditor } from "./skillEditorDom";
 import { composerOptions, type CompactCommand, type ComposerOption, type GoalCommand } from "./composerOptions";

@@ -2,12 +2,12 @@
 import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { SkillInput } from "./SkillInput";
 import { readEditor } from "./skillEditorDom";
-import type { ComposerText, Thread } from "./types";
+import type { ComposerText, Thread } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: { request: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { request: vi.fn() } }));
 const threads: Thread[] = [
   { id: "self", name: "当前对话", preview: "", cwd: "D:/project", updatedAt: 3 },
   { id: "idle", name: "设计讨论", preview: "", cwd: "D:/design", updatedAt: 2, status: { type: "idle" } },

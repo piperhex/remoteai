@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { groupVisibleTurns } from "./messageErrorGroups";
-import { CONTINUE_MESSAGE } from "./continuation";
-import type { Turn } from "./types";
+import { CONTINUE_MESSAGE } from "../../../../../shared/conversation/continuation";
+import type { Turn } from "../../../../../shared/conversation/types";
 
 const error = { message: "HTTP 502", additionalDetails: "upstream timed out" };
 const failed = (id: string, items: Turn["items"] = []): Turn => ({ id, status: "failed", items, error });

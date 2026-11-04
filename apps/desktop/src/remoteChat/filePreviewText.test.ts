@@ -8,6 +8,7 @@ import { PREVIEW_CHUNK_CHARACTERS } from '../../../../shared/remote-chat/filePre
 import { chunks } from '../../../../shared/remote-chat/framing';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 beforeEach(() => vi.resetAllMocks());
 const target = { path: 'F:/remote/models.json', threadId: 'thread' };
 const preview: FilePreviewData = { ...target, sessionId: 'preview', name: 'models.json', kind: 'text',

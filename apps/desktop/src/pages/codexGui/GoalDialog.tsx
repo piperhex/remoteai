@@ -1,11 +1,11 @@
-import { displayText } from '../../i18n/uiText';
-import { uiText } from "../../i18n/uiText";
+import { displayText } from '../../../../../shared/localization/uiText';
+import { uiText } from "../../../../../shared/localization/uiText";
 import { remoteErrorText } from "../../../../../shared/localization/errors";
 import { useEffect, useState } from "react";
 import { Alert, Button, Input, Modal } from "antd";
-import { GOAL_STATUS } from "./goalTypes";
+import { GOAL_STATUS } from "../../../../../shared/conversation/goalTypes";
 import type { GuiController } from "./controller";
-import type { GuiState } from "./types";
+import type { GuiState } from "../../../../../shared/conversation/types";
 import styles from "./ComposerExtras.module.less";
 
 export function GoalDialog({ state, controller, onClose }: {

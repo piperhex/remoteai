@@ -1,6 +1,6 @@
 import inlineCopy from '@remoteai/i18n/copy/inline/desktop/pages/codexConfig/TomlEditorModal';
 import { interpolate as interpolateCopy } from '@remoteai/i18n';
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useMemo, useRef } from "react";
 import type { KeyboardEvent, ReactNode, UIEvent } from "react";
 import { Modal } from "antd";

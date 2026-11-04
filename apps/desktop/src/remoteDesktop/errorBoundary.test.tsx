@@ -2,7 +2,7 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { DesktopErrorBoundary } from '../../../web/src/chat/desktop/DesktopErrorBoundary';
+import { DesktopErrorBoundary } from '../../../../shared/remote-desktop/views/DesktopErrorBoundary';
 
 let root: Root;
 let container: HTMLDivElement;

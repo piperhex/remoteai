@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Button } from 'antd';
 import { Monitor } from 'lucide-react';
 import { isDesktopApp } from '../../api/backend';
-import { uiText } from "../../i18n/uiText";
-import { useGuiLanguage } from '../../i18n/useGuiLanguage';
+import { uiText } from "../../../../../shared/localization/uiText";
+import { useGuiLanguage } from '../../../../../shared/localization/useGuiLanguage';
 import { RemoteDesktopSettingsModal } from './RemoteDesktopSettingsModal';
 
 export function RemoteDesktopSettingsCard() {

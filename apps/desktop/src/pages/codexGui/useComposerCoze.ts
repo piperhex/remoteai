@@ -1,6 +1,6 @@
-import { displayError } from '../../i18n/uiText';
+import { displayError } from '../../../../../shared/localization/uiText';
 import { useEffect, useState } from "react";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 
 
 export interface CozeReference { id: string; name: string; kind: string; description: string }

@@ -1,7 +1,7 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { X } from "lucide-react";
-import type { Content } from "./types";
-import { MessageImage } from "./MessageImage";
+import type { Content } from "../../../../../shared/conversation/types";
+import { MessageImage } from "../../../../../shared/conversation/MessageImage";
 import styles from "./UserMessage.module.less";
 
 export function MessageEditorImages({ images, removed, disabled, onRemove }: {

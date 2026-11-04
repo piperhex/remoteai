@@ -4,12 +4,12 @@ import { RefreshCw } from "lucide-react";
 import { queryProviderBalance, subscribeToProviderBalance } from "../../api/backend";
 import type { Language, Translate } from "../../i18n";
 import type { Provider, ProviderBalance, ProviderTokenUsageTotals } from "../../types";
-import { formatCompactTokenCount } from "../../utils/tokenContext";
+import { formatCompactTokenCount } from "../../../../../shared/context-usage/format";
 import { formatEstimatedCost, type TokenCostDisplaySettings } from "../../utils/tokenCost";
 import { modelOptions, normalizeModels } from "./providerUtils";
 import { useCurrencyFormatter } from "../../hooks/useTokenCostDisplaySettings";
 import { formatMarketError } from '../../../../../shared/provider-market/i18n';
-import { guiLanguage } from '../../i18n/uiText';
+import { guiLanguage } from '../../../../../shared/localization/uiText';
 import type { CurrencyFormatter } from "../../utils/currencyDisplay";
 
 export function apiFormatTag(provider: Provider, t: Translate) {

@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useContext, useEffect, useRef, useState } from "react";
 import { AutoComplete, Input, Select, Spin } from "antd";
 import { ChevronDown } from "lucide-react";

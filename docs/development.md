@@ -9,8 +9,9 @@ Native is also an optional, independent submodule. Run `git submodule update --i
 [the Native repository guide](native-submodule.md).
 
 Web is independently installed with `npm ci --prefix apps/web`, and its standalone commands run through
-`npm run dev:web`, `npm run build:web` and `npm run check:web`. Its source submodule is required by the
-desktop application's reused components; see [the Web repository guide](web-submodule.md).
+`npm run dev:web`, `npm run build:web` and `npm run check:web`. Shared components live in `shared`;
+initialize Web for Web development and cross-application tests, including desktop `test:typecheck`.
+See [the Web repository guide](web-submodule.md).
 
 For installed Linux packages, headless servers, systemd, and proxy setup, see
 [Linux installation and usage (Chinese)](linux.md). The dependencies below are for building from source.
@@ -20,7 +21,7 @@ For installed Linux packages, headless servers, systemd, and proxy setup, see
 Install Node.js, npm, the Go toolchain declared in `apps/admin/go.mod`, the latest stable Rust toolchain, and the Tauri 2 dependencies for your platform. Then install project dependencies:
 
 ```powershell
-git submodule update --init shared packages/i18n apps/web
+git submodule update --init shared packages/i18n
 npm install
 ```
 

@@ -1,6 +1,6 @@
 import inlineCopy from '@remoteai/i18n/copy/inline/desktop/components/TokenUsageHeatmap';
 import { getLocale } from "../i18n";
-import { uiText } from "../i18n/uiText";
+import { uiText } from "../../../../shared/localization/uiText";
 import { useEffect, useMemo, useState } from "react";
 import { Tooltip } from "antd";
 import {
@@ -11,7 +11,7 @@ import {
 import type { Language, Translate } from "../i18n";
 import type { DailyTokenUsage, Provider } from "../types";
 import { ProxyConversationMetrics } from "./ProxyConversationMetrics";
-import { formatCompactTokenCount } from "../utils/tokenContext";
+import { formatCompactTokenCount } from "../../../../shared/context-usage/format";
 import {
   estimateTokenCost,
   invalidateCustomTokenCostRulesCache,

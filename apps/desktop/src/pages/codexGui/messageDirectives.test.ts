@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { messageSections } from "./messageDirectives";
+import { messageSections } from "../../../../../shared/conversation/messageDirectives";
 
 const directive = '::code-comment{title="[P2] 空输入" body="先检查输入。" file="F:/demo/file.ts" start="3" end="5"}';
 it("renders valid review comments between Markdown sections", () => {

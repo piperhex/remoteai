@@ -2,9 +2,9 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { ProviderBrowserSurface } from './ProviderBrowserSurface';
-import { WebsiteBrowserSurface } from '../codexGui/filePreview/ManagedBrowserSurface';
-import { BrowserClientContext } from '../codexGui/filePreview/browserClient';
+import { ProviderBrowserSurface } from '../../../../../shared/browser/managed/ProviderBrowserSurface';
+import { WebsiteBrowserSurface } from '../../../../../shared/file-preview/workspace/ManagedBrowserSurface';
+import { BrowserClientContext } from '../../../../../shared/file-preview/workspace/browserClient';
 import { marketText } from '../../../../../shared/provider-market/i18n';
 import { createBrowserTab } from '../../../../../shared/provider-market/browserState';
 

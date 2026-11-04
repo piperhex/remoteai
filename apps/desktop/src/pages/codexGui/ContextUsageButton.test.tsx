@@ -4,9 +4,10 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { UsageStatus } from "./UsageStatus";
 import { invoke } from "../../api/backend";
-import type { ThreadTokenUsage } from "./types";
+import type { ThreadTokenUsage } from "../../../../../shared/conversation/types";
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn(), isHostedWebApp: false, canManageCodexConnection: true }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const usage: ThreadTokenUsage = {
   total: { totalTokens: 11_670_000 }, last: { totalTokens: 121_260 }, modelContextWindow: 258_000,
 };

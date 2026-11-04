@@ -2,7 +2,7 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { GitToolbar } from '../../../web/src/chat/git/GitToolbar';
+import { GitToolbar } from '../../../../shared/git/views/GitToolbar';
 import { useRemoteGit } from '../../../../shared/remote-chat/useRemoteGit';
 import { createAsyncGitFixture } from '../../../../shared/remote-chat/testing/gitFixture';
 

@@ -5,7 +5,7 @@ import { runInNewContext } from "node:vm";
 import ts from "typescript";
 
 const source = readFileSync(new URL(
-  "../apps/desktop/src/components/TokenUsageDashboard/dashboardLoader.ts", import.meta.url,
+  "../shared/token-usage/dashboardLoader.ts", import.meta.url,
 ), "utf8");
 const exports = {};
 runInNewContext(ts.transpileModule(source, {

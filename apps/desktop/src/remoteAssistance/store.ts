@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { DesktopPermissions } from '../../../../shared/remote-desktop/protocol';
-import type { GuiCloudIdentity } from '../pages/codexGui/remote/types';
+import type { GuiCloudIdentity } from '../../../../shared/conversation/remote/types';
 import { rememberRevocation, revokedInvitations } from './revocations';
 import type { LoungeAccount } from '../../../../shared/lounge/types';
 

@@ -1,8 +1,8 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useState } from "react";
-import type { Turn } from "./types";
-import { formatTurnDuration, SECOND_MS, turnElapsedMs } from "./turnTiming";
-import styles from "./styles.module.less";
+import type { Turn } from "../../../../../shared/conversation/types";
+import { formatTurnDuration, SECOND_MS, turnElapsedMs } from "../../../../../shared/conversation/turnTiming";
+import styles from "../../../../../shared/conversation/styles.module.less";
 
 export function TurnDuration({ turn, running, active, fallback, inline = false }: {
   turn: Turn; running: boolean; active: boolean; fallback?: string; inline?: boolean;

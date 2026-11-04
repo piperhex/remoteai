@@ -1,9 +1,9 @@
-import { displayError, displayText } from '../../i18n/uiText';
+import { displayError, displayText } from '../../../../../shared/localization/uiText';
 import { useEffect, useState } from 'react';
 import { Alert, Button } from 'antd';
 import { Check, Info, LockKeyhole } from 'lucide-react';
 import { invoke } from '../../api/backend';
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import styles from './RemoteDesktopSettingsModal.module.less';
 
 interface Status { supported: boolean; installed: boolean; running: boolean }

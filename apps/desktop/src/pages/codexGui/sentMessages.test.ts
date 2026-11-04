@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
-import { conversation, reduceConversation } from "./events";
-import { mergeMessageItems, withSentMessage } from "./sentMessages";
-import type { Item, QueuedMessage, Turn } from "./types";
+import { conversation, reduceConversation } from "../../../../../shared/conversation/events";
+import { mergeMessageItems, withSentMessage } from "../../../../../shared/conversation/sentMessages";
+import type { Item, QueuedMessage, Turn } from "../../../../../shared/conversation/types";
 
 const message: QueuedMessage = { id: "queued", text: "继续检查", images: [], skills: [],
   access: "read-only", model: "", effort: "" };

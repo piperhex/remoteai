@@ -2,16 +2,16 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ComposerBridge } from './composerBridge';
 import { GuiController } from './controller';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 import type { ModelSettingsApi, ModelSettingsSnapshot } from './threadModelSettings';
-import type { Model } from './types';
+import type { Model } from '../../../../../shared/conversation/types';
 import { ChatController } from '../../../../../shared/remote-chat/client/controller';
 import { COMPOSER_EVENT, composerThreadId } from '../../../../../shared/remote-chat/composer';
 import { emptyQueue } from '../../../../../shared/remote-chat/queue';
 import { historyDelta } from '../../../../../shared/remote-chat/historySync';
 import type { ConnectionEvents } from '../../../../../shared/remote-chat/client/connection';
 
-vi.mock('./api', () => ({ guiApi: { request: vi.fn(), connect: vi.fn(), subscribe: vi.fn() } }));
+vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn(), connect: vi.fn(), subscribe: vi.fn() } }));
 const models: Model[] = [{ id: 'model', model: 'model', displayName: 'Model', isDefault: true,
   defaultReasoningEffort: 'low', supportedReasoningEfforts: ['low', 'high', 'xhigh'].map(reasoningEffort =>
     ({ reasoningEffort, description: '' })) }];

@@ -1,5 +1,5 @@
 import { QUEUE_EVENT, type QueueSnapshot } from '../../../shared/remote-chat/queue';
-import type { Thread } from '../src/pages/codexGui/types';
+import type { Thread } from '../../../shared/conversation/types';
 import type { ChatLink } from '../../../shared/remote-chat/link';
 
 interface Pending { id: string; input: Record<string, unknown> }

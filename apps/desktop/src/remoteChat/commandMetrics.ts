@@ -1,6 +1,6 @@
 import { commandOutcome, countCommandOutcomes, type CommandMetricTurn }
   from '../../../../shared/remote-chat/commandMetrics';
-import type { GuiEvent, Thread } from '../pages/codexGui/types';
+import type { GuiEvent, Thread } from '../../../../shared/conversation/types';
 
 const MAX_METRIC_THREADS = 16;
 const RESET_EVENTS = new Set(['thread/started', 'thread/resumed', 'thread/archived', 'thread/unarchived',

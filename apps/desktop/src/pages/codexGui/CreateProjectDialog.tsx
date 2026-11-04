@@ -1,10 +1,10 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useRef, useState } from "react";
 import { Button, Input, Modal, type InputRef } from "antd";
 import { Folder, FolderPlus } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { isDesktopApp } from "../../api/backend";
-import { folderName, type SavedProject } from "./projectCatalog";
+import { folderName, type SavedProject } from "../../../../../shared/conversation/projectCatalog";
 import { useProjectFolderDrop } from "./useProjectFolderDrop";
 import styles from "./CreateProjectDialog.module.less";
 

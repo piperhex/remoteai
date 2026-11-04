@@ -1,7 +1,7 @@
-import { uiText } from "../../i18n/uiText";
-import { contextUsage } from "./contextUsage";
+import { uiText } from "../../../../../shared/localization/uiText";
+import { contextUsage } from "../../../../../shared/conversation/contextUsage";
 import { skillDescription, skillLabel } from "./skillEditorDom";
-import type { GuiState, Skill } from "./types";
+import type { GuiState, Skill } from "../../../../../shared/conversation/types";
 
 export interface CompactCommand {
   enabled: boolean;

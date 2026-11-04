@@ -2,7 +2,7 @@ import { getGuiController } from '../pages/codexGui/session';
 import { composerPatch } from '../../../../shared/remote-chat/composer';
 import { queueTextPreview, type QueueSnapshot, type QueueEnqueueResult } from '../../../../shared/remote-chat/queue';
 import type { GuiController } from '../pages/codexGui/controller';
-import type { GuiState, SkillReference } from '../pages/codexGui/types';
+import type { GuiState, SkillReference } from '../../../../shared/conversation/types';
 import { remoteAttachments } from '../../../../shared/remote-chat/composerAttachments';
 import { validateChatImages } from '../../../../shared/remote-chat/attachments';
 import type { QueueEditResult } from '../../../../shared/remote-chat/queue';

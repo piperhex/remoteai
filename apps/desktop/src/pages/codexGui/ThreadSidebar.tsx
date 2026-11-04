@@ -1,12 +1,12 @@
-import { uiText } from "../../i18n/uiText";
-import { useGuiLanguage } from '../../i18n/useGuiLanguage';
+import { uiText } from "../../../../../shared/localization/uiText";
+import { useGuiLanguage } from '../../../../../shared/localization/useGuiLanguage';
 import { useMemo, useState, type ReactNode } from "react";
 import { App, Button, Input, Modal, Segmented, Spin } from "antd";
 import { ThreadContextMenu } from "../../../../../shared/chat/ThreadContextMenu";
 import { Layers, RefreshCw, Search } from "lucide-react";
 import { threadMenuItems } from "../../../../../shared/chat/threadMenuItems";
 import type { GuiController } from "./controller";
-import type { GuiState, Thread } from "./types";
+import type { GuiState, Thread } from "../../../../../shared/conversation/types";
 import { ThreadGroup } from "./ThreadGroup";
 import { ThreadSearch } from "./ThreadSearch";
 import { useThreadGroupViews } from "./useThreadGroupViews";
@@ -19,18 +19,18 @@ import { ThreadPagination } from "./ThreadPagination";
 import { ResizableThreadSidebar } from "./ResizableThreadSidebar";
 import { useThreadPagination } from "./useThreadPagination";
 import { isDesktopApp } from "../../api/backend";
-import { fileApi } from "./fileApi";
+import { fileApi } from "../../../../../shared/conversation/fileApi";
 import { useOpenProjectFolder } from "../../../../../shared/chat/useOpenProjectFolder";
 import { FocusModeButton, type GuiFocusMode } from "./FocusModeButton";
 import { GuiNavigation, type GuiView } from "./GuiNavigation";
-import styles from "./styles.module.less";
+import styles from "../../../../../shared/conversation/styles.module.less";
 import { BrowserGroups } from '../../../../../shared/chat/groups/BrowserGroups';
 import { groupingTree, flattenGroupingTree } from '../../../../../shared/chat/groups/tree';
 import { GroupHeading } from '../../../../../shared/chat/groups/GroupHeading';
 import { useGrouping } from '../../../../../shared/chat/groups/context';
 
 export function threadTitle(thread: Thread) { return thread.name || thread.preview || uiText("client.workspaceSettings.newConversation"); }
-export { projectName } from "./projectCatalog";
+export { projectName } from "../../../../../shared/conversation/projectCatalog";
 
 export function ThreadSidebar(props: Parameters<typeof ThreadSidebarContent>[0]) {
   return <BrowserGroups grouping={props.state.grouping} client={props.controller.groups}

@@ -1,8 +1,8 @@
-import { guiApi } from "./api";
-import { conversation } from "./events";
+import { guiApi } from "../../../../../shared/conversation/api";
+import { conversation } from "../../../../../shared/conversation/events";
 import { isThreadRunning } from "./threadRunning";
 import type { ThreadModelSettings } from "./threadModelSettings";
-import type { GuiState, Thread, Turn } from "./types";
+import type { GuiState, Thread, Turn } from "../../../../../shared/conversation/types";
 
 export function canForkConversation(state: GuiState, threadId = state.selected): boolean {
   return Boolean(threadId && state.connection === "ready" && !state.forking

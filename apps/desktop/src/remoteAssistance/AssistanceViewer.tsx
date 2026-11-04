@@ -1,4 +1,4 @@
-import { displayError } from '../i18n/uiText';
+import { displayError } from '../../../../shared/localization/uiText';
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'antd';
 import { ChatConnection } from '../../../../shared/remote-chat/client/connection';
@@ -8,13 +8,13 @@ import { createDesktopPeer } from '../remoteChat/peer';
 import { createDesktopNativePath } from '../remoteChat/nativePath';
 import { createDesktopPacketCompression } from '../remoteChat/packetCompression';
 import { NativeGuiSocket } from '../pages/codexGui/remote/nativeSocket';
-import type { GuiCloudIdentity } from '../pages/codexGui/remote/types';
-import { localDesktopClipboard } from '../remoteDesktop/localClipboard';
-import { uiText } from "../i18n/uiText";
+import type { GuiCloudIdentity } from '../../../../shared/conversation/remote/types';
+import { localDesktopClipboard } from '../../../../shared/remote-desktop/local/localClipboard';
+import { uiText } from "../../../../shared/localization/uiText";
 import type { AssistanceInvitation } from './store';
 import styles from './assistance.module.less';
 
-const RemoteDesktop = lazy(() => import('../../../web/src/chat/desktop/RemoteDesktop')
+const RemoteDesktop = lazy(() => import('../../../../shared/remote-desktop/views/RemoteDesktop')
   .then(module => ({ default: module.RemoteDesktop })));
 
 export function AssistanceViewer({ invitation, identity, close }: {

@@ -1,8 +1,8 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Popover } from "antd";
 import { Check, Hand, ShieldAlert, ShieldCheck } from "lucide-react";
-import type { AccessMode } from "./types";
+import type { AccessMode } from "../../../../../shared/conversation/types";
 import styles from "./AccessPicker.module.less";
 
 const ACCESS_OPTIONS = [

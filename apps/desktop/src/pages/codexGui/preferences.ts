@@ -1,4 +1,4 @@
-import type { GuiState, Settings, ThreadReadState } from "./types";
+import type { GuiState, Settings, ThreadReadState } from "../../../../../shared/conversation/types";
 import { ACCESS_OPTIONS } from "../../../../../shared/remote-chat/composer";
 import { loadGrouping } from './groupActions';
 

@@ -1,10 +1,10 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useId } from "react";
 import { Popover } from "antd";
 import { Settings } from "lucide-react";
-import { formatCompactTokenCount } from "../../utils/tokenContext";
-import type { ThreadTokenUsage } from "./types";
-import { contextUsage, FULL_PERCENT } from "./contextUsage";
+import { formatCompactTokenCount } from "../../../../../shared/context-usage/format";
+import type { ThreadTokenUsage } from "../../../../../shared/conversation/types";
+import { contextUsage, FULL_PERCENT } from "../../../../../shared/conversation/contextUsage";
 import styles from "./ContextUsageButton.module.less";
 import { ContextCapacityHint } from "./ContextCapacityHint";
 

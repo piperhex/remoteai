@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, it, vi } from 'vitest';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 import { GuiThreadTitles } from './threadTitles';
-import { reduceEvent, conversation } from './events';
+import { reduceEvent, conversation } from '../../../../../shared/conversation/events';
 import { initialState } from './preferences';
-import type { Thread } from './types';
+import type { Thread } from '../../../../../shared/conversation/types';
 
-vi.mock('./api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 vi.mock('../../api/cloudTitleSettings', () => ({ fetchCloudTitleSettings: async () => {
   throw new Error('offline');
 } }));

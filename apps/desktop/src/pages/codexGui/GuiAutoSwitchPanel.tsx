@@ -1,9 +1,9 @@
 import { Button, InputNumber, Select, Spin, Switch } from "antd";
 import { ArrowLeftRight } from "lucide-react";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import type { Account, Provider } from "../../types";
-import { MAX_REMAINING_PERCENT } from "./autoSwitchSettings";
-import type { GuiAutoSwitchSettings } from "./autoSwitchSettings";
+import { MAX_REMAINING_PERCENT } from "../../../../../shared/conversation/autoSwitchSettings";
+import type { GuiAutoSwitchSettings } from "../../../../../shared/conversation/autoSwitchSettings";
 import type { useGuiAutoSwitchSettings } from "./useGuiAutoSwitchSettings";
 import { GuiAccountSettings } from "./GuiAccountSettings";
 import styles from "./GuiAutoSwitchPanel.module.less";

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
-import { readBrowserClipboardBaseline } from '../../../web/src/chat/desktop/clipboardContent';
+import { readBrowserClipboardBaseline } from '../../../../shared/remote-desktop/views/clipboardContent';
 
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 

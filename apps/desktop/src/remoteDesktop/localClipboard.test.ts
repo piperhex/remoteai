@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
-import { localDesktopClipboard } from './localClipboard';
+import { localDesktopClipboard } from '../../../../shared/remote-desktop/local/localClipboard';
 import { ClipboardReadUnavailableError } from '../../../../shared/remote-desktop/clipboard';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));

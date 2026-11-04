@@ -1,9 +1,9 @@
-import { uiText } from "../../i18n/uiText";
-import { guiApi } from "./api";
-import { modelSelectionError } from "./modelSelection";
-import { conversation } from "./events";
-import type { ThreadGoal } from "./goalTypes";
-import type { GuiState, Thread } from "./types";
+import { uiText } from "../../../../../shared/localization/uiText";
+import { guiApi } from "../../../../../shared/conversation/api";
+import { modelSelectionError } from "../../../../../shared/conversation/modelSelection";
+import { conversation } from "../../../../../shared/conversation/events";
+import type { ThreadGoal } from "../../../../../shared/conversation/goalTypes";
+import type { GuiState, Thread } from "../../../../../shared/conversation/types";
 
 interface GoalHost {
   getSnapshot: () => GuiState;

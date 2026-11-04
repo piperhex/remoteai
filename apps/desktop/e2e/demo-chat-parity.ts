@@ -1,5 +1,5 @@
-import type { Item, Thread } from '../src/pages/codexGui/types';
-import type { ThreadGoal } from '../src/pages/codexGui/goalTypes';
+import type { Item, Thread } from '../../../shared/conversation/types';
+import type { ThreadGoal } from '../../../shared/conversation/goalTypes';
 import { demoVideoResponse } from './demo-videos';
 import previewImage from '../src-tauri/icons/32x32.png?inline';
 

@@ -3,19 +3,20 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import type { BrowserHost } from '../../../../shared/project-browser/entryActions';
 import { createProjectBrowserClient } from '../../../../shared/project-browser/protocol';
 import { downloadProjectEntry } from '../../../../shared/project-browser/downloads';
-import { browserHost } from '../../../web/src/chat/projectBrowser/browserHost';
-import { downloadManager } from '../../../web/src/downloads/manager';
-import { fileApi } from '../pages/codexGui/fileApi';
+import { browserHost } from '../../../../shared/project-browser/views/browserHost';
+import { downloadManager } from '../../../../shared/downloads/manager';
+import { fileApi } from '../../../../shared/conversation/fileApi';
 import { terminalDirectory } from '../../../../shared/project-browser/terminalDirectory';
 
 const platform = vi.hoisted(() => ({ desktop: true }));
 vi.mock('../api/backend', () => ({ get isDesktopApp() { return platform.desktop; } }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn() } }));
-vi.mock('../pages/codexGui/fileApi', () => ({ fileApi: { perform: vi.fn() } }));
-vi.mock('../../../web/src/downloads/manager', () => ({
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../shared/conversation/fileApi', () => ({ fileApi: { perform: vi.fn() } }));
+vi.mock('../../../../shared/downloads/manager', () => ({
   downloadManager: { connectionForProjectBrowser: vi.fn(), enqueue: vi.fn() },
 }));
-vi.mock('../../../web/src/chat/projectBrowser/ProjectBrowserButton', () => ({ ProjectBrowserButton: () => null }));
+vi.mock('../../../../shared/project-browser/views/ProjectBrowserButton', () => ({ ProjectBrowserButton: () => null }));
 beforeEach(() => { vi.clearAllMocks(); });
 
 it('opens local folders and files in the system browser', async () => {

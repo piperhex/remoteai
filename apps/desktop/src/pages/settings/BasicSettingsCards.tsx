@@ -21,7 +21,7 @@ import { HelpAssistantSettingsCard } from "./HelpAssistantSettingsCard";
 import type { SettingsPageProps } from "./types";
 import { ClassicBubbleVisual } from "../../components/FloatingUsageBubble/ClassicBubbleVisual";
 import { ThemeModeTabs } from "../../../../../shared/theme/ThemeModeTabs";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 
 interface BasicSettingsCardsProps {
   bubbleStyleModalOpen: boolean;

@@ -1,8 +1,8 @@
 import { groupTurnItems, type TurnItemGroup } from "../../../../../shared/chat/turnGroups";
 import { hasVisibleProcessContent } from "../../../../../shared/chat/processContent";
-import { visibleContinuationItems } from "./continuation";
-import { requestErrorPosition, turnRequestErrors, type TurnRequestError } from "./turnRequestErrors";
-import type { Item, Turn } from "./types";
+import { visibleContinuationItems } from "../../../../../shared/conversation/continuation";
+import { requestErrorPosition, turnRequestErrors, type TurnRequestError } from "../../../../../shared/conversation/turnRequestErrors";
+import type { Item, Turn } from "../../../../../shared/conversation/types";
 
 type MessageGroup = { type: "work" | "message"; key: string; items: Item[] };
 export type TurnMessageGroup = MessageGroup | {

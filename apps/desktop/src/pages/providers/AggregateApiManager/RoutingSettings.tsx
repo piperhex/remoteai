@@ -1,5 +1,5 @@
 import { Form, InputNumber, Select, type FormInstance } from "antd";
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import { isFailoverInteger } from "./failoverPolicy";
 import styles from "./index.module.less";
 

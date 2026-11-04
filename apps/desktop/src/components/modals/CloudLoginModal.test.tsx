@@ -9,6 +9,7 @@ import { translate, type Language } from '../../i18n';
 vi.mock('../../api/backend', () => ({
   isHostedWebApp: false, loadSavedCloudLogin: () => Promise.resolve(null),
 }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const onLogin = vi.fn<() => Promise<boolean>>();
 const onRegister = vi.fn<() => Promise<boolean>>();
 const onClose = vi.fn();

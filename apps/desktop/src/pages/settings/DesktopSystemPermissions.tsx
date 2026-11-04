@@ -1,9 +1,9 @@
-import { displayText, displayError } from '../../i18n/uiText';
+import { displayText, displayError } from '../../../../../shared/localization/uiText';
 import { Alert, Button, Popconfirm, Space, Typography } from 'antd';
 import { useDesktopSystemPermissions } from './useDesktopSystemPermissions';
 import type { ComputerUsePermission } from '../../api/computerUse';
-import { uiText } from "../../i18n/uiText";
-import { useGuiLanguage } from '../../i18n/useGuiLanguage';
+import { uiText } from "../../../../../shared/localization/uiText";
+import { useGuiLanguage } from '../../../../../shared/localization/useGuiLanguage';
 
 /** Presentation keys are resolved at render time so mounted views follow language changes. */
 const PERMISSIONS: {

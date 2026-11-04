@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import type { Conversation, Item } from "../src/pages/codexGui/types";
+import type { Conversation, Item } from "../../../shared/conversation/types";
 
 const screenshot = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jQKsAAAAASUVORK5CYII=";
 const output = "工具输出内容 ".repeat(150_000);

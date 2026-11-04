@@ -1,8 +1,8 @@
-import { displayError } from '../../../i18n/uiText';
+import { displayError } from '../../../../../../shared/localization/uiText';
 import { Modal } from "antd";
 import { ExternalLink, RefreshCw } from "lucide-react";
 import type { ChromePluginAction, ChromePluginStatus } from "../../../api/chromePlugin";
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import { ManualInstall } from "./ManualInstall";
 import styles from "./index.module.less";
 

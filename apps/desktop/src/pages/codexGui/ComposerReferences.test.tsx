@@ -3,10 +3,11 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "../../api/backend";
-import type { AttachmentReference } from "./attachmentTypes";
+import type { AttachmentReference } from "../../../../../shared/conversation/attachmentTypes";
 import { ComposerReferences } from "./ComposerReferences";
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn(), isDesktopApp: true }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const photo: AttachmentReference = { kind: "file", name: "QQ 截图.PNG", path: "C:\\Tencent Files\\QQ 截图.PNG" };
 const document: AttachmentReference = { kind: "file", name: "notes.txt", path: "C:/notes.txt" };
 const thumbnail = "data:image/jpeg;base64,dGh1bWJuYWls";
@@ -23,6 +24,7 @@ const click = (label: string) => act(async () => {
 });
 
 beforeEach(() => {
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.clearAllMocks();
   vi.mocked(invoke).mockReset().mockResolvedValue({ url: thumbnail });

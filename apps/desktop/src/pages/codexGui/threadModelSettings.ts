@@ -1,5 +1,5 @@
-import { resolveModelSelection, type ModelSelection } from "./modelSelection";
-import type { GuiState } from "./types";
+import { resolveModelSelection, type ModelSelection } from "../../../../../shared/conversation/modelSelection";
+import type { GuiState } from "../../../../../shared/conversation/types";
 import { appendModelChange, type PendingModelChange } from "./liveModelNotice";
 
 export interface ModelSettingsSnapshot {

@@ -7,7 +7,7 @@ import { ChatController } from '../../../../../../shared/remote-chat/client/cont
 import type { ChatConnection } from '../../../../../../shared/remote-chat/client/connection';
 import type { ChatState } from '../../../../../../shared/remote-chat/client/types';
 import { RemoteGuiSidebar } from './RemoteGuiSidebar';
-import styles from '../styles.module.less';
+import styles from '../../../../../../shared/conversation/styles.module.less';
 import { historyDelta } from '../../../../../../shared/remote-chat/historySync';
 
 let root: Root;

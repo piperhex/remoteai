@@ -1,12 +1,12 @@
 import inlineCopy from '@remoteai/i18n/copy/inline/desktop/components/accounts/UsageMeter';
 import { interpolate as interpolateCopy } from '@remoteai/i18n';
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { Progress } from "antd";
 import { useEffect, useState } from "react";
 import type { Language, Translate } from "../../i18n";
 import type { UsageWindow } from "../../types";
 import { AccountUsageCard } from "./AccountUsageCard";
-import { remainingTone, resetCountdownTime, resetCountdownWithDays, resetLabel, type UsageResetWindow } from "../../utils/format";
+import { remainingTone, resetCountdownTime, resetCountdownWithDays, resetLabel, type UsageResetWindow } from "../../../../../shared/accounts/format";
 
 function usageStroke(value: number) {
   const tone = remainingTone(value);

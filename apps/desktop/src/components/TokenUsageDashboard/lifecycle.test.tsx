@@ -9,6 +9,7 @@ import { useDashboardData } from './useDashboardData';
 vi.mock('../../api/backend', () => ({ isDesktopApp: false, isHostedWebApp: false,
   loadTokenUsageEntries: vi.fn(), loadDailyTokenUsage: vi.fn(), loadTokenUsageBreakdown: vi.fn(),
   loadAccountQuotaHistory: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 let latest: ReturnType<typeof useDashboardData>;
 let renders = 0;
 let mounted = 0;

@@ -5,7 +5,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { SshDropTarget, type SshNativeDrop } from '../../../../shared/terminal/SshDropTarget';
 import { droppedSshFiles } from '../../../../shared/terminal/sshDrop';
 import type { FileDropEvent } from '../../../../shared/chat/useFileDrop';
-import { nativeSshUploadBatch } from '../pages/codexGui/terminal/sshDrop';
+import { nativeSshUploadBatch } from '../../../../shared/terminal/views/sshDrop';
 
 const native = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: native.invoke, isTauri: () => false }));

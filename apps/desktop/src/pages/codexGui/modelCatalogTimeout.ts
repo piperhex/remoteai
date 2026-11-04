@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 
 // Outlast the 130-second model/list RPC, including official and Admin discovery.
 export const MODEL_CATALOG_TIMEOUT_MS = 140_000;

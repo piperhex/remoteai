@@ -1,11 +1,11 @@
-import { uiText } from "../../i18n/uiText";
-import { useGuiLanguage } from '../../i18n/useGuiLanguage';
+import { uiText } from "../../../../../shared/localization/uiText";
+import { useGuiLanguage } from '../../../../../shared/localization/useGuiLanguage';
 import { useId, useMemo } from "react";
 import { ChevronRight, FileText } from "lucide-react";
-import { useDetailsEntry } from "./detailsContext";
-import { useTurnChangedFiles } from "./useTurnChangedFiles";
+import { useDetailsEntry } from "../../../../../shared/conversation/detailsContext";
+import { useTurnChangedFiles } from "../../../../../shared/conversation/useTurnChangedFiles";
 import { summarizeDiffFiles } from "../../../../../shared/chat/diffSummary";
-import type { Conversation, Turn } from "./types";
+import type { Conversation, Turn } from "../../../../../shared/conversation/types";
 import styles from "./RunningChangesSummary.module.less";
 
 function TurnChangesBadge({ turn }: { turn: Turn }) {

@@ -1,6 +1,6 @@
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 import { withModelCatalogTimeout } from './modelCatalogTimeout';
-import type { ListResponse, Model } from './types';
+import type { ListResponse, Model } from '../../../../../shared/conversation/types';
 
 const PROVIDER_DISCOVERY_WAIT_MS = 3000;
 

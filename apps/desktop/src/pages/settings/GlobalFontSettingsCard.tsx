@@ -1,6 +1,6 @@
 import { Type } from 'lucide-react';
 import { GlobalFontSettings } from '../../../../../shared/appearance/GlobalFontSettings';
-import { uiText } from '../../i18n/uiText';
+import { uiText } from '../../../../../shared/localization/uiText';
 import styles from './GlobalFontSettingsCard.module.less';
 
 export function GlobalFontSettingsCard() {

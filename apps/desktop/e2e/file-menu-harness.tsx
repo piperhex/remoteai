@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { App, ConfigProvider, theme } from "antd";
-import { FileMenu } from "../src/pages/codexGui/FileMenu";
-import { EditedFilesSummary } from "../src/pages/codexGui/EditedFilesSummary";
-import { FileThreadContext, fileApi, type FileApplication } from "../src/pages/codexGui/fileApi";
-import { parseDiff } from "../src/pages/codexGui/diff";
+import { FileMenu } from "../../../shared/conversation/FileMenu";
+import { EditedFilesSummary } from "../../../shared/conversation/EditedFilesSummary";
+import { FileThreadContext, fileApi, type FileApplication } from "../../../shared/conversation/fileApi";
+import { parseDiff } from "../../../shared/conversation/diff";
 
 const applications: FileApplication[] = [
   { id: "vscode", name: "VS Code", kind: "editor" },

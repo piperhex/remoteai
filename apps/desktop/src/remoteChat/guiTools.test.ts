@@ -3,16 +3,17 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { ChatOperations } from './operations';
 import { RemoteTerminals } from './terminals';
 import type { TerminalRead } from '../../../../shared/terminal/types';
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { invoke } from '../api/backend';
 import { terminalApi, type TerminalEvent } from '../pages/codexGui/terminal/api';
-import { subscribeGuiEvent } from '../pages/codexGui/webEvents';
+import { subscribeGuiEvent } from '../../../../shared/conversation/webEvents';
 
 const state = vi.hoisted(() => ({ sending: false, workspaceBusy: false, approvals: [],
   conversations: {} as Record<string, { activeTurn: string | null }> }));
 vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { connect: vi.fn() } }));
-vi.mock('../pages/codexGui/webEvents', () => ({ subscribeGuiEvent: vi.fn(async () => vi.fn()) }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn() } }));
+vi.mock('../../../../shared/conversation/webEvents', () => ({ subscribeGuiEvent: vi.fn(async () => vi.fn()) }));
 vi.mock('../pages/codexGui/session', () => ({ getGuiController: () => ({ getSnapshot: () => state }) }));
 vi.mock('../pages/codexGui/terminal/api', () => ({
   terminalApi: { open: vi.fn(), write: vi.fn(), resize: vi.fn(), close: vi.fn() },

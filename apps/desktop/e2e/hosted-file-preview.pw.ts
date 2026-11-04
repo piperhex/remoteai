@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFile } from "node:fs/promises";
-import type { FilePreviewData } from "../src/pages/codexGui/filePreview/api";
+import type { FilePreviewData } from "../../../shared/file-preview/workspace/api";
 
 const ASSET_PREFIX = "/__codex_switch__/file-preview/browser-session/";
 const FILE_PATH = "C:/project/docs/report.md";

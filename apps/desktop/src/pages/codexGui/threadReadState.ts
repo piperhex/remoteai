@@ -1,5 +1,5 @@
 import { savePreferences } from "./preferences";
-import type { GuiEvent, GuiState, Thread } from "./types";
+import type { GuiEvent, GuiState, Thread } from "../../../../../shared/conversation/types";
 
 interface ReadStateHost {
   getSnapshot: () => GuiState;

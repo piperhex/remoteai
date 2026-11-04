@@ -1,12 +1,12 @@
-import { displayError } from '../../../i18n/uiText';
+import { displayError } from '../../../../../../shared/localization/uiText';
 import type { ReactElement } from 'react';
 import { App, Input, Modal } from 'antd';
 import { ThreadContextMenu } from '../../../../../../shared/chat/ThreadContextMenu';
 import { threadMenuItems } from '../../../../../../shared/chat/threadMenuItems';
 import { useRemoteProjectFolder } from '../../../../../../shared/chat/useRemoteProjectFolder';
 import { threadPresentation } from '../../../../../../shared/remote-chat/sidebar';
-import { uiText } from "../../../i18n/uiText";
-import type { ChatController, ChatState, Thread } from '../../../../../web/src/chat/types';
+import { uiText } from "../../../../../../shared/localization/uiText";
+import type { ChatController, ChatState, Thread } from '../../../../../../shared/remote-chat/views/types';
 import { forkUnavailableReason } from '../../../../../../shared/remote-chat/client/forkConversation';
 import { THREAD_NAME_LIMIT, threadActionReason, type ThreadAction }
   from '../../../../../../shared/remote-chat/client/threadActions';

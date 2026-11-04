@@ -1,7 +1,7 @@
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import { Channel, invoke } from '@tauri-apps/api/core';
 import type { ChatSocket } from '../../../../../../shared/remote-chat/client/socket';
-import type { GuiCloudIdentity } from './types';
+import type { GuiCloudIdentity } from '../../../../../../shared/conversation/remote/types';
 import { decodeGuiBulkBatch } from './nativeBulkSocket';
 import { encodeBulkIpc } from '../../../remoteChat/bulkIpc';
 

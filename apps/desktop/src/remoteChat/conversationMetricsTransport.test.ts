@@ -3,13 +3,14 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { ChatController } from '../../../../shared/remote-chat/client/controller';
 import { ChatOperations } from './operations';
 import { invoke } from '../api/backend';
-import { guiApi } from '../pages/codexGui/api';
-import type { Thread } from '../pages/codexGui/types';
+import { guiApi } from '../../../../shared/conversation/api';
+import type { Thread } from '../../../../shared/conversation/types';
 import type { PagedHistoryDelta } from '../../../../shared/remote-chat/historyPage';
 import { CONVERSATION_METRICS_OPERATION } from '../../../../shared/remote-chat/conversationMetrics';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 beforeEach(() => vi.clearAllMocks());
 
 it.each(['direct', 'relay'] as const)('reads TPS and TTFT from the exact host and thread over %s', async mode => {

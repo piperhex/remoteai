@@ -2,7 +2,7 @@
 import { act, type ClipboardEvent, type KeyboardEvent } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { useComposerPaste } from '../../../../../web/src/chat/useComposerPaste';
+import { useComposerPaste } from '../../../../../../shared/remote-chat/views/useComposerPaste';
 
 let root: Root;
 let paste: ReturnType<typeof useComposerPaste>;

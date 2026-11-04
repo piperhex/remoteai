@@ -4,9 +4,9 @@ import { App, ConfigProvider, theme } from "antd";
 import { Messages } from "../src/pages/codexGui/Messages";
 import { AsyncQuestions } from "../src/pages/codexGui/AsyncQuestions";
 import { TurnMessage } from "../src/pages/codexGui/TurnMessage";
-import type { Conversation } from "../src/pages/codexGui/types";
+import type { Conversation } from "../../../shared/conversation/types";
 import queueStyles from "../src/pages/codexGui/QueuedMessages.module.less";
-import styles from "../src/pages/codexGui/styles.module.less";
+import styles from "../../../shared/conversation/styles.module.less";
 
 const full = new URLSearchParams(location.search).has("full");
 function Harness() {

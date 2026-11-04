@@ -8,6 +8,7 @@ import { threadCopy } from "@remoteai/i18n/copy/desktop/threads";
 
 vi.mock("../../components/CodexHomeScope", () => ({ useSelectedCodexHome: () => "codex-gui" }));
 vi.mock("../../api/backend", () => ({ loadCodexThreadBin: vi.fn(), restoreCodexThreads: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 let root: Root;
 let trash: ReturnType<typeof useTrash>;
 const reportError = vi.fn();

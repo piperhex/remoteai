@@ -8,6 +8,7 @@ import { CatalogProviderModal } from "./CatalogProviderModal";
 
 const backend = vi.hoisted(() => ({ fetchPresetModels: vi.fn() }));
 vi.mock("../../api/backend", () => backend);
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 
 vi.mock("antd", () => ({
   Button: ({ children, disabled, onClick }: ButtonHTMLAttributes<HTMLButtonElement>) => (

@@ -1,6 +1,6 @@
 import { Check, ChevronRight, CircleUserRound, PanelsTopLeft, Power, RotateCw, Settings2, Waves } from "lucide-react";
 import type { MenuEntry } from "./types";
-import { remainingTone } from "../../utils/format";
+import { remainingTone } from "../../../../../shared/accounts/format";
 
 const ACTION_ICONS = {
   "tray:settings": Settings2,

@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, it, vi } from 'vitest';
 import { ChatOperations } from './operations';
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { guiSidebar } from '../pages/codexGui/sidebarBridge';
 import { initialState } from '../pages/codexGui/preferences';
-import type { GuiState, Thread } from '../pages/codexGui/types';
+import type { GuiState, Thread } from '../../../../shared/conversation/types';
 import { forkRemoteConversation } from './forkConversation';
 import { pinRemoteThread } from './threadActions';
 
@@ -12,7 +12,7 @@ const host = vi.hoisted(() => ({ getSnapshot: vi.fn(), connect: vi.fn(), refresh
   receiveThreadListEvent: vi.fn(),
   select: vi.fn(), modelSettings: { ready: vi.fn(), created: vi.fn() } }));
 vi.mock('../pages/codexGui/session', () => ({ getGuiController: () => host }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 vi.mock('../pages/codexGui/sidebarBridge', () => ({ guiSidebar: { observe: vi.fn() } }));
 let state: GuiState;
 const source: Thread = { id: 'source', cwd: 'D:/project', preview: '', updatedAt: 1,

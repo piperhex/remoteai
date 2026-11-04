@@ -1,16 +1,16 @@
-import { uiText } from "../../i18n/uiText";
-import type { Item } from "./types";
-import { RichText } from "./RichText";
-import { MessageImage } from "./MessageImage";
-import { MessageLink } from "./MessageLink";
-import { CopyButton } from "./CopyButton";
-import { formatTurnDuration } from "./turnTiming";
+import { uiText } from "../../../../../shared/localization/uiText";
+import type { Item } from "../../../../../shared/conversation/types";
+import { RichText } from "../../../../../shared/conversation/RichText";
+import { MessageImage } from "../../../../../shared/conversation/MessageImage";
+import { MessageLink } from "../../../../../shared/conversation/MessageLink";
+import { CopyButton } from "../../../../../shared/conversation/CopyButton";
+import { formatTurnDuration } from "../../../../../shared/conversation/turnTiming";
 import styles from "./ActivityRow.module.less";
-import { generatedImageSource } from "./imageSources";
+import { generatedImageSource } from "../../../../../shared/conversation/imageSources";
 import { DeferredDetails } from "./DeferredDetails";
 import { ToolText } from "./ToolText";
 import { CollaborationDetails } from "./CollaborationDetails";
-import { isCollaborationActivity } from "./collaborationActivity";
+import { isCollaborationActivity } from "../../../../../shared/conversation/collaborationActivity";
 import { CommandOutput } from "../../../../../shared/chat/CommandOutput";
 import { toolResultPresentation } from "../../../../../shared/chat/toolResult";
 

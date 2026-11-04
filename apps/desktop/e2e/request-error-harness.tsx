@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Messages } from "../src/pages/codexGui/Messages";
-import { conversation, reduceConversation } from "../src/pages/codexGui/events";
-import styles from "../src/pages/codexGui/styles.module.less";
+import { conversation, reduceConversation } from "../../../shared/conversation/events";
+import styles from "../../../shared/conversation/styles.module.less";
 
 const REFRESH_MS = 100;
 const initial = reduceConversation(conversation({ id: "test", cwd: "", preview: "", updatedAt: 1,

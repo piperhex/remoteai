@@ -3,8 +3,8 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ChromePluginStatus } from "../../../api/chromePlugin";
-import { setGuiLanguage } from "../../../i18n/uiText";
-import { useGuiLanguage } from "../../../i18n/useGuiLanguage";
+import { setGuiLanguage } from "../../../../../../shared/localization/uiText";
+import { useGuiLanguage } from "../../../../../../shared/localization/useGuiLanguage";
 import { ChromePluginCard } from ".";
 import { ManualInstall } from "./ManualInstall";
 

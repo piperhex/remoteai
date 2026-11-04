@@ -1,6 +1,6 @@
 import type { Channel } from '@tauri-apps/api/core';
 import previewImage from '../src-tauri/icons/32x32.png?inline';
-import { saveGuiFontSize } from '../src/pages/codexGui/guiAppearance';
+import { saveGuiFontSize } from '../../../shared/conversation/guiAppearance';
 import { applyThemeMode } from '../src/utils/themeMode';
 import '../src/styles.css';
 

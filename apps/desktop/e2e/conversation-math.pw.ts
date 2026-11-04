@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import fixtureText from "../../../shared/chat/markdownFixture.json" with { type: "json" };
-import type { Conversation } from "../src/pages/codexGui/types";
+import type { Conversation } from "../../../shared/conversation/types";
 
 function fixture(text: string): Conversation {
   return { thread: { id: "math", cwd: "", preview: "公式验证", updatedAt: 1 },

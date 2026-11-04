@@ -2,17 +2,17 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { ChatDetailsWorkspace } from '../../../web/src/chat/ChatDetailsWorkspace';
-import { ChatFileContext } from '../../../web/src/chat/ChatFileLink';
-import type { FilePreviewContext } from '../../../web/src/chat/ChatFilePreview';
-import { ChatMarkdown } from '../../../web/src/chat/ChatMarkdown';
-import { filePreviewApi } from '../pages/codexGui/filePreview/api';
+import { ChatDetailsWorkspace } from '../../../../shared/remote-chat/views/ChatDetailsWorkspace';
+import { ChatFileContext } from '../../../../shared/remote-chat/views/ChatFileLink';
+import type { FilePreviewContext } from '../../../../shared/remote-chat/views/ChatFilePreview';
+import { ChatMarkdown } from '../../../../shared/remote-chat/views/ChatMarkdown';
+import { filePreviewApi } from '../../../../shared/file-preview/workspace/api';
 
 let root: Root;
 let host: HTMLDivElement;
 let context: FilePreviewContext;
 const panel = () => host.querySelector<HTMLElement>('aside[data-details-panel]');
-const content = () => host.querySelector('[aria-label="文件预览"]');
+const content = () => host.querySelector('.website-preview-browser');
 const click = (name: string) => act(async () => {
   const button = [...host.querySelectorAll('button')]
     .find(element => (element.getAttribute('aria-label') ?? element.textContent) === name);
@@ -53,9 +53,9 @@ it('opens remote Markdown in the shared drawer and navigates nested links on the
   expect(host.querySelectorAll('aside')).toHaveLength(1);
   expect(context.load).toHaveBeenLastCalledWith('remote-thread', 'F:/remote/docs/next.md', expect.any(Object));
   expect(content()?.textContent).toContain('引用位置：第 3 行');
-  await click('返回上一页');
+  await click('后退');
   expect(content()?.textContent).toContain('远程交接文档');
-  await click('前往下一页');
+  await click('前进');
   expect(content()?.textContent).toContain('后续内容');
   expect(filePreviewApi.open).not.toHaveBeenCalled();
   expect(filePreviewApi.close).not.toHaveBeenCalled();

@@ -158,7 +158,7 @@ test('remote GUI switches to Japanese without losing its connection or draft', a
   await page.getByRole('textbox', { name: '聊天消息', exact: true }).fill('保留草稿 / draft');
   await page.evaluate(async () => {
     const module = '/src/i18n/uiText.ts';
-    const { setGuiLanguage }: typeof import('../src/i18n/uiText') = await import(module);
+    const { setGuiLanguage }: typeof import('../../../shared/localization/uiText') = await import(module);
     setGuiLanguage('ja');
   });
   await expect(page.getByRole('textbox', { name: 'チャットメッセージ', exact: true })).toHaveValue('保留草稿 / draft');

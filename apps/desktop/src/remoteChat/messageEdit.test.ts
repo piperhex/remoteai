@@ -2,7 +2,7 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { RemoteMessageEditor, canEditRemoteMessage } from '../../../../shared/remote-chat/client/messageEdit';
 import { initialChatState, type ChatState, type Thread } from '../../../../shared/remote-chat/client/types';
-import type { MessageChangeResult } from '../pages/codexGui/editMessage';
+import type { MessageChangeResult } from '../../../../shared/conversation/editMessage';
 
 const source: Thread = { id: 'thread', cwd: '', preview: '', updatedAt: 1, turns: [
   { id: 'first', status: 'completed', items: [{ id: 'old', type: 'userMessage',

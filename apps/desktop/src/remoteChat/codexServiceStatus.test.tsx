@@ -12,7 +12,8 @@ import { ChatOperations } from './operations';
 import { invoke } from '../api/backend';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 const normal: CodexServiceStatus = { api: 'operational', cli: 'operational' };
 let root: Root;
 let host: HTMLDivElement;

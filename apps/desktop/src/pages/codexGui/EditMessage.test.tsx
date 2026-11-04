@@ -3,8 +3,8 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Messages } from "./Messages";
-import { conversation } from "./events";
-import type { Thread } from "./types";
+import { conversation } from "../../../../../shared/conversation/events";
+import type { Thread } from "../../../../../shared/conversation/types";
 
 const thread: Thread = { id: "thread", cwd: "", preview: "", updatedAt: 1, turns: [
   { id: "first", status: "completed", items: [{ id: "old", type: "userMessage",

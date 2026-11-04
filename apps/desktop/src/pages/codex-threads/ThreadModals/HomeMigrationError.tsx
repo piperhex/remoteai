@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Alert, Button } from "antd";
 import { formatRemoteError } from "../../../../../../shared/localization/errors";
-import { useGuiLanguage } from "../../../i18n/useGuiLanguage";
-import { copyText } from "../../../utils/clipboard";
+import { useGuiLanguage } from "../../../../../../shared/localization/useGuiLanguage";
+import { copyText } from "../../../../../../shared/clipboard";
 import type { ThreadCopy } from "@remoteai/i18n/copy/desktop/threads";
 
 export function HomeMigrationError({ error, text }: { error: string; text: ThreadCopy }) {

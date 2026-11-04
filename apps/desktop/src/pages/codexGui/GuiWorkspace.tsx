@@ -7,7 +7,7 @@ import { ProxyAccountPicker } from "./ProxyAccountPicker";
 import { useGuiAccountSelection } from "./useGuiAccountSelection";
 import { useGuiComputers } from "./remote/useGuiComputers";
 import { useGuiLayout } from "./useGuiLayout";
-import { GuiHostPicker } from "./GuiHostPicker";
+import { GuiHostPicker } from "../../../../../shared/conversation/GuiHostPicker";
 import { RemoteGuiWorkspaces } from "./remote/RemoteGuiWorkspaces";
 import type { ThreadNavigation } from "./useNotificationNavigation";
 

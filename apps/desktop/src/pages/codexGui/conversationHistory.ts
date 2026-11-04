@@ -1,8 +1,8 @@
-import { guiApi } from './api';
-import { reduceEvent } from './events';
+import { guiApi } from '../../../../../shared/conversation/api';
+import { reduceEvent } from '../../../../../shared/conversation/events';
 import { conversationSnapshot as conversation } from './conversationSnapshot';
-import { trackProcessingApproval } from './processingApprovals';
-import type { GuiEvent, GuiState, Thread } from './types';
+import { trackProcessingApproval } from '../../../../../shared/conversation/processingApprovals';
+import type { GuiEvent, GuiState, Thread } from '../../../../../shared/conversation/types';
 
 interface HistoryHost {
   getSnapshot: () => GuiState;

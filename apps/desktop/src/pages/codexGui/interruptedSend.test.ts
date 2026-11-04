@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 import { GuiController } from './controller';
-import { testModels } from './testModels';
+import { testModels } from '../../../../../shared/conversation/testing/models';
 import { AcknowledgedMessages } from '../../remoteChat/acknowledgedMessages';
 import { ChatOperations } from '../../remoteChat/operations';
 import { updateThread } from '../../../../../shared/remote-chat/client/events';
-import type { GuiEvent, Item, Thread, Turn } from './types';
+import type { GuiEvent, Item, Thread, Turn } from '../../../../../shared/conversation/types';
 
-vi.mock('./api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
+vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 vi.mock('./session', () => ({ getGuiController: () => controller }));
 vi.mock('./composerBridge', () => ({ guiComposer: {
   validateSend: async () => ({ model: 'test-model', effort: 'high', access: 'read-only' }),

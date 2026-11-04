@@ -3,8 +3,8 @@ import net from 'node:net';
 import { randomBytes } from 'node:crypto';
 import { afterEach, expect, it, vi } from 'vitest';
 import { invoke } from '../../../api/backend';
-import { LinkSocketFixture } from '../terminal/linkTunnelSocketFixture';
-import { RemoteMappingStreams } from '../../../remoteChat/mappingStreams';
+import { LinkSocketFixture } from '../../../../../../shared/terminal/testing/linkSocketFixture';
+import { RemoteMappingStreams } from '../../../../../../shared/port-mapping/remoteStreams';
 import { BulkCipher } from '../../../../../../shared/remote-chat/bulkCipher';
 import { BulkTransport, type BinaryChannel } from '../../../../../../shared/remote-chat/bulkTransport';
 import { MappingStreamClient } from '../../../../../../shared/port-mapping/streamClient';
@@ -12,6 +12,7 @@ import type { MappingStreamLink } from '../../../../../../shared/port-mapping/st
 import type { TerminalLinkRequest } from '../../../../../../shared/terminal/links';
 
 vi.mock('../../../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../../../../../../shared/platform/localBackend', async () => await import('../../../api/backend'));
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 afterEach(() => vi.clearAllMocks());
 

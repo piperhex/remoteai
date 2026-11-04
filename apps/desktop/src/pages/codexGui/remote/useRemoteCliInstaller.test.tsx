@@ -3,7 +3,7 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createGuiToolsClient, type RemoteCliStatus } from '../../../../../../shared/remote-chat/guiTools';
-import { useRemoteCliInstaller } from './useRemoteCliInstaller';
+import { useRemoteCliInstaller } from '../../../../../../shared/conversation/remote/useRemoteCliInstaller';
 
 const request = vi.fn();
 const client = createGuiToolsClient(request);

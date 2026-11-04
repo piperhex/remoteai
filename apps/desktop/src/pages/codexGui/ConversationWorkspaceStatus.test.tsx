@@ -2,8 +2,8 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { ConversationWorkspaceStatus } from './ConversationWorkspaceStatus';
-import type { GitStatus, GitWorkspaceClient } from './gitApi';
+import { ConversationWorkspaceStatus } from '../../../../../shared/conversation/ConversationWorkspaceStatus';
+import type { GitStatus, GitWorkspaceClient } from '../../../../../shared/conversation/gitApi';
 
 const initial: GitStatus = { cwd: '/projects/app', branch: 'main', branches: [],
   changedFiles: 0, isWorktree: false };

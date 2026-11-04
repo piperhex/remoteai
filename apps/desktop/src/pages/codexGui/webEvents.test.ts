@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const backend = vi.hoisted(() => ({ invoke: vi.fn(), isDesktopApp: false }));
 const native = vi.hoisted(() => ({ listen: vi.fn() }));
 vi.mock("../../api/backend", () => backend);
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock("@tauri-apps/api/event", () => native);
 const stops: Array<() => void> = [];
 const batch = (sequence: number, events: unknown[] = [], reset = false) =>
@@ -16,7 +17,7 @@ beforeEach(() => {
 afterEach(() => { stops.splice(0).forEach((stop) => stop()); vi.useRealTimers(); });
 
 it("establishes a cursor before connect, shares polling and delivers ordered GUI and install events", async () => {
-  const { subscribeGuiEvent } = await import("./webEvents");
+  const { subscribeGuiEvent } = await import("../../../../../shared/conversation/webEvents");
   const gui = vi.fn(); const install = vi.fn();
   stops.push(await subscribeGuiEvent("codex-gui-event", gui));
   stops.push(await subscribeGuiEvent("codex-gui-download", install));
@@ -32,7 +33,7 @@ it("establishes a cursor before connect, shares polling and delivers ordered GUI
 });
 
 it("keeps slow polls single-flight and ignores their result after unsubscribe", async () => {
-  const { subscribeGuiEvent } = await import("./webEvents");
+  const { subscribeGuiEvent } = await import("../../../../../shared/conversation/webEvents");
   const receive = vi.fn();
   const stop = await subscribeGuiEvent("codex-gui-event", receive);
   stops.push(stop);
@@ -48,7 +49,7 @@ it("keeps slow polls single-flight and ignores their result after unsubscribe", 
 });
 
 it("reports a lost connection and resynchronizes after recovery or a replay gap", async () => {
-  const { subscribeGuiEvent } = await import("./webEvents");
+  const { subscribeGuiEvent } = await import("../../../../../shared/conversation/webEvents");
   const receive = vi.fn();
   stops.push(await subscribeGuiEvent("codex-gui-event", receive));
   backend.invoke.mockRejectedValueOnce(new Error("offline"));
@@ -65,7 +66,7 @@ it("reports a lost connection and resynchronizes after recovery or a replay gap"
 });
 
 it("cleans up a rejected initial subscription and allows retry", async () => {
-  const { subscribeGuiEvent } = await import("./webEvents");
+  const { subscribeGuiEvent } = await import("../../../../../shared/conversation/webEvents");
   backend.invoke.mockRejectedValueOnce(new Error("access denied"));
   await expect(subscribeGuiEvent("codex-gui-event", vi.fn())).rejects.toThrow("access denied");
   await vi.advanceTimersByTimeAsync(5000);
@@ -76,7 +77,7 @@ it("cleans up a rejected initial subscription and allows retry", async () => {
 
 it("preserves native desktop subscriptions", async () => {
   backend.isDesktopApp = true;
-  const { subscribeGuiEvent } = await import("./webEvents");
+  const { subscribeGuiEvent } = await import("../../../../../shared/conversation/webEvents");
   native.listen.mockResolvedValue(vi.fn());
   stops.push(await subscribeGuiEvent("codex-gui-event", vi.fn()));
   expect(native.listen).toHaveBeenCalledWith("codex-gui-event", expect.any(Function));
@@ -84,7 +85,7 @@ it("preserves native desktop subscriptions", async () => {
 });
 
 it("keeps a replacement subscription when an earlier cleanup runs twice", async () => {
-  const { subscribeGuiEvent } = await import("./webEvents");
+  const { subscribeGuiEvent } = await import("../../../../../shared/conversation/webEvents");
   const previous = await subscribeGuiEvent("codex-gui-event", vi.fn());
   previous();
   const receive = vi.fn();
@@ -96,7 +97,7 @@ it("keeps a replacement subscription when an earlier cleanup runs twice", async 
 });
 
 it("ignores a failed in-flight poll after the final subscriber leaves", async () => {
-  const { subscribeGuiEvent } = await import("./webEvents");
+  const { subscribeGuiEvent } = await import("../../../../../shared/conversation/webEvents");
   const receive = vi.fn();
   const stop = await subscribeGuiEvent("codex-gui-event", receive);
   let reject!: (reason: Error) => void;

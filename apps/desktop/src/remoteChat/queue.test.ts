@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { GuiController } from '../pages/codexGui/controller';
-import { guiApi } from '../pages/codexGui/api';
-import type { GuiEvent, Thread } from '../pages/codexGui/types';
+import { guiApi } from '../../../../shared/conversation/api';
+import type { GuiEvent, Thread } from '../../../../shared/conversation/types';
 import { RemoteQueue } from './queue';
 import { AcknowledgedMessages } from './acknowledgedMessages';
 import { updateThread } from '../../../../shared/remote-chat/client/events';
 import * as sharedAcknowledgements from '../../../../shared/chat/acknowledgedMessages';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: {
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: {
   connect: vi.fn(), request: vi.fn(), subscribe: vi.fn(),
 } }));
 vi.mock('../api/cloudTitleSettings', () => ({ fetchCloudTitleSettings: async () => ({

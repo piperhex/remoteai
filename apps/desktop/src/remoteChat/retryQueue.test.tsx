@@ -6,14 +6,14 @@ import { ChatRetryProvider } from '../../../../shared/remote-chat/ChatRetryProvi
 import { ChatController } from '../../../../shared/remote-chat/client/controller';
 import type { ConnectionEvents } from '../../../../shared/remote-chat/client/connection';
 import { QUEUE_EVENT } from '../../../../shared/remote-chat/queue';
-import { ChatRetryButton } from '../../../web/src/chat/ChatRetryButton';
+import { ChatRetryButton } from '../../../../shared/remote-chat/views/ChatRetryButton';
 import { GuiController } from '../pages/codexGui/controller';
-import { guiApi } from '../pages/codexGui/api';
-import { testModels } from '../pages/codexGui/testModels';
-import type { Request, Thread } from '../pages/codexGui/types';
+import { guiApi } from '../../../../shared/conversation/api';
+import { testModels } from '../../../../shared/conversation/testing/models';
+import type { Request, Thread } from '../../../../shared/conversation/types';
 import { RemoteQueue } from './queue';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: {
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: {
   connect: vi.fn(), request: vi.fn(), subscribe: vi.fn(),
 } }));
 const thread: Thread = { id: 'thread', cwd: '', preview: '', updatedAt: 1,

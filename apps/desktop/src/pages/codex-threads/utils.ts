@@ -1,6 +1,6 @@
 import inlineCopy from '@remoteai/i18n/copy/inline/desktop/pages/codex-threads/utils';
 import { interpolate as interpolateCopy } from '@remoteai/i18n';
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import type { Language } from "../../i18n";
 import type { CodexThreadEntry } from "../../types";
 

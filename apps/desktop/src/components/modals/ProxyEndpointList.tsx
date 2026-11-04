@@ -1,4 +1,4 @@
-import { copyText } from "../../utils/clipboard";
+import { copyText } from "../../../../../shared/clipboard";
 import { Button } from "antd";
 import { Copy } from "lucide-react";
 import { LOOPBACK_IPV4 } from "../../api/proxyEndpoints";

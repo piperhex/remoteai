@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { Button, Tooltip } from "antd";
 import { Maximize, Minimize } from "lucide-react";
 

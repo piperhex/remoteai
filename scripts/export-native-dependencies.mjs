@@ -3,12 +3,17 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { inspectSourceBoundaries } from '../shared/scripts/source-boundaries.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const destination = path.resolve(process.argv[2] ?? path.join(root, 'apps/native'));
 const vendor = path.join(destination, 'vendor');
+const boundaries = inspectSourceBoundaries({ shared: path.join(root, 'shared'), applications: [destination] });
+if (boundaries.violations.length) throw new Error(JSON.stringify(boundaries.violations, null, 2));
 const files = {};
 const pending = new Set([
+  'shared/dependencies.json',
+  'apps/desktop/src-tauri/icons/32x32.png', 'apps/desktop/src-tauri/icons/128x128.png',
   'shared/localization/testLocale.ts', 'shared/project-browser/nativeEntry.tsx',
   'shared/lounge/nativeDocumentEntry.tsx', 'shared/file-preview/nativeHtmlPreparation.ts',
   'shared/remote-desktop/ime.ts', 'shared/chat/touchTextSelection.ts',
@@ -83,8 +88,7 @@ for (const relative of pending) {
 const roots = ['crates/chat-connectivity', 'crates/ssh-client', 'crates/ssh-mobile'];
 for (const relative of git(['ls-files', ...roots]).split('\n').filter(Boolean)) copy(relative);
 copy('LICENSE');
-const desktop = readJson(path.join(root, 'apps/desktop/package.json'));
-const web = readJson(path.join(root, 'apps/web/package.json'));
+const shared = readJson(path.join(root, 'shared/dependencies.json'));
 const i18n = readJson(path.join(destination, 'package.json')).dependencies['@remoteai/i18n'];
 if (!i18n.startsWith('https://github.com/piperhex/remoteai-i18n/releases/download/')) {
   throw new Error('Native must pin a published @remoteai/i18n release.');
@@ -92,8 +96,8 @@ if (!i18n.startsWith('https://github.com/piperhex/remoteai-i18n/releases/downloa
 writeJson(path.join(vendor, 'package.json'), {
   name: '@remoteai/native-dependencies', version: '0.1.0', private: true,
   description: 'Generated dependency snapshot. Refresh with npm run export:native in the parent repository.',
-  dependencies: { ...desktop.dependencies, 'antd-mobile': web.dependencies['antd-mobile'], '@remoteai/i18n': i18n },
-  devDependencies: Object.fromEntries(Object.entries(desktop.devDependencies)
+  dependencies: { ...shared.dependencies, '@remoteai/i18n': i18n },
+  devDependencies: Object.fromEntries(Object.entries(shared.devDependencies)
     .filter(([name]) => name.startsWith('@types/'))),
 });
 writeJson(path.join(vendor, 'source-lock.json'), {

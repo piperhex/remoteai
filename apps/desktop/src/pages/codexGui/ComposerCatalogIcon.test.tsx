@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ComposerSkillIcon } from "./ComposerSkillIcon";
 import { ComposerPluginIcon } from "./ComposerPluginIcon";
-import type { Skill } from "./types";
+import type { Skill } from "../../../../../shared/conversation/types";
 
 let root: Root;
 let host: HTMLDivElement;

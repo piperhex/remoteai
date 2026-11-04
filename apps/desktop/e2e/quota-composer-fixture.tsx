@@ -1,13 +1,13 @@
 import { Composer } from '../src/pages/codexGui/Composer';
 import { GuiController } from '../src/pages/codexGui/controller';
-import { conversation } from '../src/pages/codexGui/events';
-import { ChatComposer } from '../../web/src/chat/ChatComposer';
-import type { ComposerProps } from '../../web/src/chat/composerProps';
+import { conversation } from '../../../shared/conversation/events';
+import { ChatComposer } from '../../../shared/remote-chat/views/ChatComposer';
+import type { ComposerProps } from '../../../shared/remote-chat/views/composerProps';
 import { invoke } from '../src/api/backend';
 import { initialSettings, settingsFixture } from '../../../shared/remote-chat/testing/settingsFixture';
-import type { GuiState } from '../src/pages/codexGui/types';
+import type { GuiState } from '../../../shared/conversation/types';
 import { DesktopUsageContext } from '../../../shared/chat/DesktopUsageContext';
-import { useVisibleChatUsage } from '../../web/src/chat/useVisibleChatUsage';
+import { useVisibleChatUsage } from '../../../shared/remote-chat/views/useVisibleChatUsage';
 import { QuotaAccountFixture } from './quota-account-fixture';
 
 export const readQuota = () => invoke('codex_gui_usage_summary');

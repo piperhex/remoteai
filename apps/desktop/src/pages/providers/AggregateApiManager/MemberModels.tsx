@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { AutoComplete, Button, Form, Select, Space, type FormInstance } from "antd";
 import { ArrowDown, ArrowUp } from "lucide-react";
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import type { AggregateMemberOption } from "../../../utils/aggregateMembers";
 import styles from "./index.module.less";
 

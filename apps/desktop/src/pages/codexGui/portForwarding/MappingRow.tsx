@@ -1,8 +1,8 @@
-import { displayText, displayError } from '../../../i18n/uiText';
+import { displayText, displayError } from '../../../../../../shared/localization/uiText';
 import { Button, Dropdown, Tooltip, message } from 'antd';
 import { ArrowRight, Copy, MoreHorizontal, Pencil, Play, Square, Trash2 } from 'lucide-react';
-import { uiText as t } from "../../../i18n/uiText";
-import { copyText } from '../../../utils/clipboard';
+import { uiText as t } from "../../../../../../shared/localization/uiText";
+import { copyText } from '../../../../../../shared/clipboard';
 import { ForwardedAddress } from './ForwardedAddress';
 import { protocolLabel } from '../../../../../../shared/port-mapping/settings';
 import { mappingAddress } from '../../../../../../shared/port-mapping/target';

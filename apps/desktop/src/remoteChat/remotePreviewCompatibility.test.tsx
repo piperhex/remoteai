@@ -2,13 +2,13 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { ChatDetailsWorkspace } from '../../../web/src/chat/ChatDetailsWorkspace';
-import { ChatFileContext } from '../../../web/src/chat/ChatFileLink';
-import type { FilePreviewContext } from '../../../web/src/chat/ChatFilePreview';
-import { ChatMarkdown } from '../../../web/src/chat/ChatMarkdown';
-import { FileEnvironmentContext, type FileEnvironment } from '../pages/codexGui/fileEnvironment';
-import { FileThreadContext, fileApi } from '../pages/codexGui/fileApi';
-import { filePreviewApi } from '../pages/codexGui/filePreview/api';
+import { ChatDetailsWorkspace } from '../../../../shared/remote-chat/views/ChatDetailsWorkspace';
+import { ChatFileContext } from '../../../../shared/remote-chat/views/ChatFileLink';
+import type { FilePreviewContext } from '../../../../shared/remote-chat/views/ChatFilePreview';
+import { ChatMarkdown } from '../../../../shared/remote-chat/views/ChatMarkdown';
+import { FileEnvironmentContext, type FileEnvironment } from '../../../../shared/conversation/fileEnvironment';
+import { FileThreadContext, fileApi } from '../../../../shared/conversation/fileApi';
+import { filePreviewApi } from '../../../../shared/file-preview/workspace/api';
 
 let root: Root;
 let host: HTMLDivElement;

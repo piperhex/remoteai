@@ -3,8 +3,8 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ChatController } from '../../../../shared/remote-chat/client/controller';
 import type { ChatConnection, ConnectionEvents } from '../../../../shared/remote-chat/client/connection';
 import { compactUnavailableReason } from '../../../../shared/remote-chat/client/composerCommands';
-import type { GuiEvent, Skill, Thread } from '../pages/codexGui/types';
-import { guiApi } from '../pages/codexGui/api';
+import type { GuiEvent, Skill, Thread } from '../../../../shared/conversation/types';
+import { guiApi } from '../../../../shared/conversation/api';
 import { GuiController } from '../pages/codexGui/controller';
 import { getGuiController } from '../pages/codexGui/session';
 import { ChatOperations } from './operations';
@@ -13,7 +13,7 @@ import { remoteQueue } from './queue';
 vi.mock('../pages/codexGui/composerBridge', () => ({ guiComposer: {
   validateSend: async () => ({ model: 'model', effort: 'high', access: 'workspace-write' }),
 } }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
 vi.mock('../pages/codexGui/session', () => ({ getGuiController: vi.fn() }));
 const skill: Skill = { name: 'review', path: 'C:/skills/review/SKILL.md', description: '检查代码', enabled: true };
 const thread: Thread = { id: 'chat', preview: '', cwd: 'C:/project', updatedAt: 1, turns: [] };

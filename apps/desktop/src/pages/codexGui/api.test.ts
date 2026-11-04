@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "../../api/backend";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn(), isHostedWebApp: true }));
-vi.mock("./webEvents", () => ({ subscribeGuiEvent: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
+vi.mock("../../../../../shared/conversation/webEvents", () => ({ subscribeGuiEvent: vi.fn() }));
 beforeEach(() => vi.resetAllMocks());
 
 it("sends text and image input through the hosted backend and unwraps the protocol result", async () => {

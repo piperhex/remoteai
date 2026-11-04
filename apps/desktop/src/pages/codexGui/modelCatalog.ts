@@ -1,6 +1,6 @@
-import { uiText } from "../../i18n/uiText";
-import { guiApi } from "./api";
-import type { ListResponse, Model } from "./types";
+import { uiText } from "../../../../../shared/localization/uiText";
+import { guiApi } from "../../../../../shared/conversation/api";
+import type { ListResponse, Model } from "../../../../../shared/conversation/types";
 import { withModelCatalogTimeout } from "./modelCatalogTimeout";
 import { MODEL_CATALOG_ERROR } from "../../../../../shared/remote-chat/composer";
 import { ProviderCatalogSync } from "./providerCatalogSync";

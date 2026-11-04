@@ -4,10 +4,10 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { Composer } from './Composer';
 import { GuiController } from './controller';
-import { guiApi } from './api';
-import { testModels } from './testModels';
+import { guiApi } from '../../../../../shared/conversation/api';
+import { testModels } from '../../../../../shared/conversation/testing/models';
 
-vi.mock('./api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
+vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 vi.mock('./UsageStatus', () => ({ UsageStatus: () => <span data-testid="usage" /> }));
 vi.mock('./ProjectPicker', () => ({ ProjectPicker: () => null }));
 vi.mock('./AccessPicker', () => ({ AccessPicker: () => null }));

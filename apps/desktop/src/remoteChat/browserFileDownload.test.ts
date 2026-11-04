@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from 'vitest';
-import { browserDownloadTarget, prepareBrowserDownload } from '../../../web/src/chat/fileDownloadTarget';
+import { browserDownloadTarget, prepareBrowserDownload } from '../../../../shared/remote-chat/views/fileDownloadTarget';
 import type { FileInfo } from '../../../../shared/remote-chat/fileDownload';
 const info: FileInfo = { id: 'id', name: 'app.apk', size: 2, mimeType: 'application/vnd.android.package-archive' };
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });

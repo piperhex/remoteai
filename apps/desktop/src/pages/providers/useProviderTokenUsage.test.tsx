@@ -10,6 +10,7 @@ vi.mock("../../api/backend", () => ({
   loadProviderTokenUsage: vi.fn(),
   subscribeToTokenUsageChanges: vi.fn(),
 }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 
 const providers: Provider[] = [];
 function Fixture({ active }: { active: boolean }) {

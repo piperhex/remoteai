@@ -10,6 +10,7 @@ const backend = vi.hoisted(() => ({
   subscribeToFloatingBubbleChanges: vi.fn(),
 }));
 vi.mock("../api/backend", () => backend);
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 
 const notify = vi.fn();
 const unsubscribe = vi.fn();

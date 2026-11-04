@@ -2,8 +2,8 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { ChatMessages } from '../../../web/src/chat/ChatMessages';
-import { ChatMarkdown } from '../../../web/src/chat/ChatMarkdown';
+import { ChatMessages } from '../../../../shared/remote-chat/views/ChatMessages';
+import { ChatMarkdown } from '../../../../shared/remote-chat/views/ChatMarkdown';
 import type { Item, Thread, Turn } from '../../../../shared/remote-chat/client/types';
 
 const counts = vi.hoisted(() => ({ rows: [] as string[], markdown: [] as string[] }));

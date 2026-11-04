@@ -1,5 +1,5 @@
 import inlineCopy from '@remoteai/i18n/copy/inline/desktop/components/FloatingUsageBubble/index';
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { translate, type Language } from "../../i18n";
 import {
   useCallback,
@@ -39,7 +39,7 @@ import type {
   Provider,
   UsageSummary,
 } from "../../types";
-import { remainingTone } from "../../utils/format";
+import { remainingTone } from "../../../../../shared/accounts/format";
 import { ConcurrentUsageCard } from "./ConcurrentUsageCard";
 import { FloatingProviderCard } from "../FloatingProviderCard";
 import { useConcurrentUsageStats } from "./useConcurrentUsageStats";

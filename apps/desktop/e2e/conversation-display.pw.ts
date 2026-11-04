@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
-import type { Conversation, Item } from "../src/pages/codexGui/types";
+import type { Conversation, Item } from "../../../shared/conversation/types";
 
 const text = "下面展示各类基础排版效果。\n\n## 展示测试\n\n这段包含**粗体文字**、`行内代码`和普通文本。"
   + "\n\n|项目|状态|\n|---|---|\n|文本|正常|\n|排版|正常|"

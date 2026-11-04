@@ -1,10 +1,10 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
-import type { Item, Turn } from "./types";
+import type { Item, Turn } from "../../../../../shared/conversation/types";
 import { TurnDuration } from "./TurnDuration";
 import { WorkItems } from "./WorkItems";
-import styles from "./styles.module.less";
+import styles from "../../../../../shared/conversation/styles.module.less";
 
 export { hasVisibleProcessContent } from "../../../../../shared/chat/processContent";
 

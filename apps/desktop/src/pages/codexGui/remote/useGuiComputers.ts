@@ -1,7 +1,7 @@
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke, isDesktopApp } from '../../../api/backend';
-import type { GuiCloudIdentity, GuiComputer, GuiDeviceDirectory } from './types';
+import type { GuiCloudIdentity, GuiComputer, GuiDeviceDirectory } from '../../../../../../shared/conversation/remote/types';
 
 const DEVICE_REFRESH_MS = 15_000;
 const scopeOf = (identity: GuiCloudIdentity | null) => identity ? `${identity.baseUrl}\n${identity.userId}` : '';

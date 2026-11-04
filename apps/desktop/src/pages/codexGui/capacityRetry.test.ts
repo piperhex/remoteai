@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { guiApi } from "./api";
-import { testModels } from "./testModels";
+import { guiApi } from "../../../../../shared/conversation/api";
+import { testModels } from "../../../../../shared/conversation/testing/models";
 import { GuiController } from "./controller";
-import { CONTINUE_MESSAGE } from "./continuation";
-import { isModelCapacityError, MODEL_CAPACITY_MESSAGE } from "./requestError";
-import type { GuiEvent, Request, Thread, Turn } from "./types";
+import { CONTINUE_MESSAGE } from "../../../../../shared/conversation/continuation";
+import { isModelCapacityError, MODEL_CAPACITY_MESSAGE } from "../../../../../shared/conversation/requestError";
+import type { GuiEvent, Request, Thread, Turn } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn(), respond: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn(), respond: vi.fn() } }));
 let controller: GuiController;
 let receive: (event: GuiEvent) => void;
 let nextTurn: number;

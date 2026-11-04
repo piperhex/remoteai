@@ -1,7 +1,7 @@
 import { invoke } from '../../../api/backend';
 import { audioBase64 } from '../../../../../../shared/chat/dictation/recording';
 import type { DictationClient } from '../../../../../../shared/chat/dictation/client';
-import { subscribeGuiEvent } from '../webEvents';
+import { subscribeGuiEvent } from '../../../../../../shared/conversation/webEvents';
 
 export const dictationClient: DictationClient = {
   subscribeAccountChange: changed => subscribeGuiEvent('codex-gui-account-changed', changed),

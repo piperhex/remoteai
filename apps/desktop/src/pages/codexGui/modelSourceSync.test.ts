@@ -1,20 +1,21 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { invoke } from '../../api/backend';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 import { ComposerBridge } from './composerBridge';
 import { GuiController } from './controller';
 import { watchModelCatalog } from './modelCatalogRefresh';
 import { readGuiProviderModels } from './providerModelSource';
-import { subscribeGuiEvent } from './webEvents';
+import { subscribeGuiEvent } from '../../../../../shared/conversation/webEvents';
 import type { GuiAccountSelection } from '../../../../../shared/remote-chat/guiAccounts';
 import type { ModelSettingsApi, ModelSettingsSnapshot } from './threadModelSettings';
-import type { Model } from './types';
+import type { Model } from '../../../../../shared/conversation/types';
 
 vi.mock('../../api/backend', () => ({ invoke: vi.fn(), isHostedWebApp: false,
   subscribeToProviderEvents: () => () => {} }));
-vi.mock('./api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
-vi.mock('./webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
+vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
+vi.mock('../../../../../shared/conversation/webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
 const model = (name: string): Model => ({ id: name, model: name, displayName: name, isDefault: true,
   defaultReasoningEffort: 'high', supportedReasoningEfforts: [{ reasoningEffort: 'high', description: '' }] });
 let selection: GuiAccountSelection;

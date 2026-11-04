@@ -1,4 +1,4 @@
-import type { Thread } from '../src/pages/codexGui/types';
+import type { Thread } from '../../../shared/conversation/types';
 
 export const detailText = 'const value = 2;\nexport default value;\n';
 export function seedDemoDetails(thread: Thread) {

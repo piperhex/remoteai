@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { Button, Spin } from "antd";
 import { useLanguage } from "../../hooks/useLanguage";
 import { SystemPromptPage } from "../SystemPromptPage";

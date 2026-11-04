@@ -1,6 +1,6 @@
-import { guiApi } from '../pages/codexGui/api';
-import type { PluginsResponse } from '../pages/codexGui/attachmentTypes';
-import type { SkillsResponse } from '../pages/codexGui/types';
+import { guiApi } from '../../../../shared/conversation/api';
+import type { PluginsResponse } from '../../../../shared/conversation/attachmentTypes';
+import type { SkillsResponse } from '../../../../shared/conversation/types';
 import { remoteSkills } from '../../../../shared/remote-chat/skills';
 import { remotePlugins } from '../../../../shared/remote-chat/composerCatalog';
 

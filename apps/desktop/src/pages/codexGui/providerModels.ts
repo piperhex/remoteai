@@ -1,6 +1,6 @@
 import type { AggregateApi, Provider } from "../../types";
 import { defaultReasoningEfforts, normalizeModels } from "../providers/providerUtils";
-import type { Model } from "./types";
+import type { Model } from "../../../../../shared/conversation/types";
 
 function modelOption(model: string, preferred: string, efforts = defaultReasoningEfforts(model)): Model {
   return {

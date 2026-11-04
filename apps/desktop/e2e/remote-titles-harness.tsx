@@ -7,7 +7,7 @@ import { QUEUE_EVENT } from '../../../shared/remote-chat/queue';
 import { COMPOSER_EVENT } from '../../../shared/remote-chat/composer';
 import { ChatOperations } from '../src/remoteChat/operations';
 import { remoteQueue } from '../src/remoteChat/queue';
-import { guiApi } from '../src/pages/codexGui/api';
+import { guiApi } from '../../../shared/conversation/api';
 import { guiSidebar } from '../src/pages/codexGui/sidebarBridge';
 import { guiComposer } from '../src/pages/codexGui/composerBridge';
 import { retainGuiSession } from '../src/pages/codexGui/session';

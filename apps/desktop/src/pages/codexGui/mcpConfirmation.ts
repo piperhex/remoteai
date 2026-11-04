@@ -1,5 +1,5 @@
-import { uiText } from "../../i18n/uiText";
-import type { EventParams } from "./types";
+import { uiText } from "../../../../../shared/localization/uiText";
+import type { EventParams } from "../../../../../shared/conversation/types";
 
 const CHROME_ACTIONS: Record<string, string> = {
   get browser_open() { return uiText("client.conversation.openThisWebPage"); }, get browser_navigate() { return uiText("client.conversation.goToThisWebPage"); }, get browser_close() { return uiText("client.conversation.closeThisTab"); },

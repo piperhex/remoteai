@@ -4,14 +4,15 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke, loadAggregateApis, subscribeToProviderEvents } from "../../api/backend";
 import { DEMO_ACCOUNTS } from "../../demo";
-import { subscribeGuiEvent } from "./webEvents";
+import { subscribeGuiEvent } from "../../../../../shared/conversation/webEvents";
 import { selectedGuiEntries, useGuiAccountSelection, type GuiAccountSelection } from "./useGuiAccountSelection";
 import { useUsageStatus } from "./useUsageStatus";
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn(), loadAggregateApis: vi.fn().mockResolvedValue([]),
   subscribeToProviderEvents: vi.fn(() => () => {}),
   hasLocalBackend: true, isHostedWebApp: false }));
-vi.mock("./webEvents", () => ({ subscribeGuiEvent: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
+vi.mock("../../../../../shared/conversation/webEvents", () => ({ subscribeGuiEvent: vi.fn() }));
 let root: Root;
 let container: HTMLDivElement;
 let selection: ReturnType<typeof useGuiAccountSelection>;

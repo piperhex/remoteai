@@ -1,6 +1,6 @@
 import { getGuiController } from '../pages/codexGui/session';
 import type { GuiController } from '../pages/codexGui/controller';
-import type { GuiEvent, Thread } from '../pages/codexGui/types';
+import type { GuiEvent, Thread } from '../../../../shared/conversation/types';
 import { acknowledgedEvents } from '../../../../shared/chat/acknowledgedMessages';
 import { updateThread } from '../../../../shared/remote-chat/client/events';
 

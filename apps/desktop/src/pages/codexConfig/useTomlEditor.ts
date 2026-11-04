@@ -1,5 +1,5 @@
 import inlineCopy from '@remoteai/i18n/copy/inline/desktop/pages/codexConfig/useTomlEditor';
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useRef, useState } from "react";
 import { validateCodexConfigDocument } from "../../api/codexConfig";
 import type { Language } from "../../i18n";

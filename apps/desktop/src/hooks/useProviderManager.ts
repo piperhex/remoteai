@@ -50,7 +50,7 @@ import { useProviderData } from "./useProviderData";
 import { runSwitchFollowUp } from "./switchFollowUp";
 import type { MarketIdentity } from '../../../../shared/provider-market/types';
 import { formatMarketError } from '../../../../shared/provider-market/i18n';
-import { guiLanguage } from '../i18n/uiText';
+import { guiLanguage } from '../../../../shared/localization/uiText';
 
 interface ProviderCloudSync {
   pushProvider?: (id: string, identity?: MarketIdentity) => Promise<void> | void;

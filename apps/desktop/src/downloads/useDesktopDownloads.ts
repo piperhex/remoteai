@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { downloadManager } from '../../../web/src/downloads/manager';
+import { downloadManager } from '../../../../shared/downloads/manager';
 import type { ChatController } from '../../../../shared/remote-chat/client/controller';
-import type { GuiCloudIdentity, GuiComputer } from '../pages/codexGui/remote/types';
+import type { GuiCloudIdentity, GuiComputer } from '../../../../shared/conversation/remote/types';
 import type { CloudAuthState } from '../types';
 
 export const desktopDownloadOwner = (identity: GuiCloudIdentity) =>

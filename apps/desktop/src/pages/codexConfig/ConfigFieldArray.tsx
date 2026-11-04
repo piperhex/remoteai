@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useRef, useState } from "react";
 import { Button, Empty, Select } from "antd";
 import { Plus } from "lucide-react";

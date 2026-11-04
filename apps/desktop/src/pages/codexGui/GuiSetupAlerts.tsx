@@ -1,7 +1,7 @@
 import { Alert } from "antd";
-import { uiText } from "../../i18n/uiText";
-import type { GuiState } from "./types";
-import styles from "./styles.module.less";
+import { uiText } from "../../../../../shared/localization/uiText";
+import type { GuiState } from "../../../../../shared/conversation/types";
+import styles from "../../../../../shared/conversation/styles.module.less";
 
 export function GuiSetupAlerts({ computerUseSetup, unattendedSetup }:
   Pick<GuiState, "computerUseSetup" | "unattendedSetup">) {

@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { downloadManager } from '../../../web/src/downloads/manager';
-import type { DownloadConnection } from '../../../web/src/downloads/types';
-import { guiApi } from '../pages/codexGui/api';
+import { downloadManager } from '../../../../shared/downloads/manager';
+import type { DownloadConnection } from '../../../../shared/downloads/types';
+import { guiApi } from '../../../../shared/conversation/api';
 import { localGitClient } from '../pages/codexGui/localGitClient';
 import { fileDownloadByteLimit } from '../../../../shared/remote-chat/policy';
-import { uiText } from "../i18n/uiText";
+import { uiText } from "../../../../shared/localization/uiText";
 import { sshApi } from '../pages/codexGui/terminal/sshApi';
 
 export const LOCAL_DOWNLOAD_OWNER = 'desktop-local';

@@ -4,12 +4,12 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { TurnRetryProvider } from '../../../../../shared/chat/TurnRetryContext';
 import { failedTurnTarget } from '../../../../../shared/chat/turnRetry';
-import { ChatTurnSummary } from '../../../../web/src/chat/ChatTurnSummary';
+import { ChatTurnSummary } from '../../../../../shared/remote-chat/views/ChatTurnSummary';
 import { TurnMessage } from './TurnMessage';
-import { restoreRequestErrors } from './turnRequestErrors';
-import { MODEL_CAPACITY_MESSAGE } from './requestError';
-import { uiText } from '../../i18n/uiText';
-import type { Turn } from './types';
+import { restoreRequestErrors } from '../../../../../shared/conversation/turnRequestErrors';
+import { MODEL_CAPACITY_MESSAGE } from '../../../../../shared/conversation/requestError';
+import { uiText } from '../../../../../shared/localization/uiText';
+import type { Turn } from '../../../../../shared/conversation/types';
 
 let root: Root;
 let container: HTMLDivElement;

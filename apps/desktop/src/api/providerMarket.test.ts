@@ -53,7 +53,8 @@ describe('public Provider contract', () => {
 
 const backend = vi.hoisted(() => ({ invoke: vi.fn(), loadCloudAuthState: vi.fn() }));
 vi.mock('./backend', () => backend);
-vi.mock('../utils/clipboard', () => ({ copyText: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('./backend'));
+vi.mock('../../../../shared/clipboard', () => ({ copyText: vi.fn() }));
 import { desktopProviderMarket } from './providerMarket';
 it('browsing never saves; explicit anonymous addition saves once without a usage claim', async () => {
   backend.loadCloudAuthState.mockResolvedValue({ authenticated: false });

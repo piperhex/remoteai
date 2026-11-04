@@ -3,7 +3,7 @@ import { Alert, Button, Modal, Tag } from "antd";
 import { ArrowDown, ArrowUp, GripVertical } from "lucide-react";
 import type { Language } from "../../../i18n";
 import type { Account } from "../../../types";
-import { maskAccountEmail } from "../../../utils/accountPrivacy";
+import { maskAccountEmail } from "../../../../../../shared/accounts/privacy";
 import { applyAccountOrder, moveAccount } from "./accountOrder";
 import { accountOrderLabels } from "@remoteai/i18n/copy/desktop/accountOrderLabels";
 import { useAccountOrderDrag } from "./useAccountOrderDrag";

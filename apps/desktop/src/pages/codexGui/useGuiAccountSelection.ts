@@ -1,8 +1,8 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { hasLocalBackend, invoke, loadAggregateApis, subscribeToProviderEvents } from "../../api/backend";
 import type { Account, AggregateApi, Provider } from "../../types";
-import { subscribeGuiEvent } from "./webEvents";
+import { subscribeGuiEvent } from "../../../../../shared/conversation/webEvents";
 import { switchGuiAccount } from "./session";
 
 import type { GuiAccountSelection } from "../../../../../shared/remote-chat/guiAccounts";

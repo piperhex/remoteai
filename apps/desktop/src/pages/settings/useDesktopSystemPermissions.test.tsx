@@ -6,6 +6,7 @@ import { useDesktopSystemPermissions } from './useDesktopSystemPermissions';
 
 const api = vi.hoisted(() => ({ invoke: vi.fn(), restartApplication: vi.fn() }));
 vi.mock('../../api/backend', () => api);
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 let root: Root;
 let hook: ReturnType<typeof useDesktopSystemPermissions>;
 function Harness({ active = true }: { active?: boolean }) { hook = useDesktopSystemPermissions(active); return null; }

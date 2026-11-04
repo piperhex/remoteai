@@ -1,6 +1,6 @@
-import type { Item, Turn } from "./types";
+import type { Item, Turn } from "../../../../../shared/conversation/types";
 import { groupTurnItems } from "../../../../../shared/chat/turnGroups";
-import { followsStoppedTurn, visibleContinuationItems } from "./continuation";
+import { followsStoppedTurn, visibleContinuationItems } from "../../../../../shared/conversation/continuation";
 
 export const MESSAGE_PAGE_SIZE = 10;
 export const MESSAGE_WINDOW_SIZE = MESSAGE_PAGE_SIZE * 3;

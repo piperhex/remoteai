@@ -2,7 +2,7 @@ import { Popover, Tooltip } from "antd";
 import { ChevronRight, Info } from "lucide-react";
 import type { Language } from "../../i18n";
 import type { UsageWindow } from "../../types";
-import { remainingTone, resetCountdownWithDays, resetLabel } from "../../utils/format";
+import { remainingTone, resetCountdownWithDays, resetLabel } from "../../../../../shared/accounts/format";
 import { accountCardLabels } from "@remoteai/i18n/copy/desktop/accountCardLabels";
 
 interface AccountUsageCardProps {

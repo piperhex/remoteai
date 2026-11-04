@@ -2,10 +2,10 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { gitApi, type GitStatus } from "./gitApi";
-import { useGitWorkspace } from "./useGitWorkspace";
+import { gitApi, type GitStatus } from "../../../../../shared/conversation/gitApi";
+import { useGitWorkspace } from "../../../../../shared/conversation/useGitWorkspace";
 
-vi.mock("./gitApi", () => ({ gitApi: { request: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/gitApi", () => ({ gitApi: { request: vi.fn() } }));
 let root: Root;
 let current: ReturnType<typeof useGitWorkspace>;
 const onChange = vi.fn();

@@ -36,7 +36,7 @@
     "build:app": "npm run build:app -w @codex-switch/desktop",
     "build:app:mac": "npm run build:app:mac -w @codex-switch/desktop",
     "build:app:win-arm64": "npm run build:app:win-arm64 -w @codex-switch/desktop",
-    "check": "npm run test:clean && node scripts/i18n.mjs check-host && lerna run check --stream && npm run check:rust",
+    "check": "npm run check:boundaries && npm run test:clean && node scripts/i18n.mjs check-host && lerna run check --stream && npm run check:rust",
     "check:rust": "npm run check:rust -w @codex-switch/desktop",
     "test": "lerna run test --stream",
     "preview": "npm run preview -w @codex-switch/desktop",
@@ -55,7 +55,8 @@
     "export:admin-ui": "node scripts/export-admin-ui-dependencies.mjs",
     "export:native": "node scripts/export-native-dependencies.mjs",
     "check:web": "npm --prefix apps/web run check",
-    "export:web": "node scripts/export-web-dependencies.mjs"
+    "export:web": "node scripts/export-web-dependencies.mjs",
+    "check:boundaries": "node --test shared/scripts/source-boundaries.test.mjs shared/testing/chatSessions.test.mjs && node shared/scripts/check-boundaries.mjs --host ."
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",

@@ -7,6 +7,7 @@ import { LoginModal } from "./LoginModal";
 
 const runtime = vi.hoisted(() => ({ hosted: true }));
 vi.mock("../../api/backend", () => ({ get isHostedWebApp() { return runtime.hosted; } }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const onImportText = vi.fn<(content: string) => Promise<boolean>>();
 const onClose = vi.fn();
 const onImportClipboard = vi.fn();

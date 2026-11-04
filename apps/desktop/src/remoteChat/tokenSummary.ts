@@ -1,10 +1,10 @@
 import { loadAppSettings } from '../api/backend';
 import { readDashboardQuery } from '../components/TokenUsageDashboard/dashboardQuery';
-import { aggregateEntries, calendarDateKeys, startOfCalendar } from '../components/TokenUsageDashboard/chartUtils';
+import { aggregateEntries, calendarDateKeys, startOfCalendar } from '../../../../shared/token-usage/chartUtils';
 import { loadLongContextCostSettings } from '../utils/tokenCostLongContext';
 import { MAX_SUMMARY_WEEKS, MIN_SUMMARY_WEEKS, type TokenSummary } from '../../../../shared/remote-chat/tokenSummary';
 import { loadOfficialUsage } from '../api/officialUsage';
-import { uiText } from "../i18n/uiText";
+import { uiText } from "../../../../shared/localization/uiText";
 
 const DEFAULT_WEEKS = 10;
 const DEFAULT_REFRESH_SECONDS = 60;

@@ -4,9 +4,9 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ConversationTokenStatus } from '../pages/codexGui/ConversationTokenStatus';
 import { loadConversationMetrics } from '../api/conversationMetrics';
-import { ChatUsage } from '../../../web/src/chat/ChatUsage';
-import { ConversationPerformance } from '../../../web/src/chat/ConversationPerformance';
-import { setLanguage } from '../../../web/src/i18n';
+import { ChatUsage } from '../../../../shared/remote-chat/views/ChatUsage';
+import { ConversationPerformance } from '../../../../shared/remote-chat/views/ConversationPerformance';
+import { setLanguage } from '../../../../shared/localization/browserClient';
 
 vi.mock('../api/conversationMetrics', () => ({ loadConversationMetrics: vi.fn() }));
 const metrics = { totalOutputTokens: 300, totalOutputTimeMs: 2_000, outputRequestCount: 1,

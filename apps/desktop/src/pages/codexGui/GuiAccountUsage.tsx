@@ -1,8 +1,8 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useState } from "react";
 import type { UsageWindow } from "../../types";
-import { remainingTone, resetCountdownTime, resetCountdownWithDays } from "../../utils/format";
-import { MAX_REMAINING_PERCENT } from "./autoSwitchSettings";
+import { remainingTone, resetCountdownTime, resetCountdownWithDays } from "../../../../../shared/accounts/format";
+import { MAX_REMAINING_PERCENT } from "../../../../../shared/conversation/autoSwitchSettings";
 import styles from "./GuiAccountUsage.module.less";
 
 const COUNTDOWN_INTERVAL_MS = 1_000;

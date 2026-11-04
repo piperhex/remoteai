@@ -1,7 +1,7 @@
 import { Tooltip } from "antd";
 import { Database, Wallet } from "lucide-react";
 import type { Language, Translate } from "../../i18n";
-import { formatCompactTokenCount } from "../../utils/tokenContext";
+import { formatCompactTokenCount } from "../../../../../shared/context-usage/format";
 import { formatEstimatedCost, type TokenCostDisplaySettings } from "../../utils/tokenCost";
 import { DailyTokenUsageTooltip } from "../DailyTokenUsageTooltip";
 import { accountCardLabels } from "@remoteai/i18n/copy/desktop/accountCardLabels";

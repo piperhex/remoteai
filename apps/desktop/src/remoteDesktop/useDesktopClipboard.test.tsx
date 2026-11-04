@@ -2,7 +2,7 @@
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { useDesktopClipboard } from '../../../web/src/chat/desktop/useDesktopClipboard';
+import { useDesktopClipboard } from '../../../../shared/remote-desktop/views/useDesktopClipboard';
 import { ClipboardReadUnavailableError, type ClipboardContent } from '../../../../shared/remote-desktop/clipboard';
 
 const text = (value: string): ClipboardContent => ({ format: 'text', text: value });

@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { nativeBrowserSession } from './providerBrowserSession';
+import { nativeBrowserSession } from '../../../../../shared/browser/managed/providerBrowserSession';
 
 const invoke = vi.hoisted(() => vi.fn());
 vi.mock('@tauri-apps/api/core', () => ({ invoke }));

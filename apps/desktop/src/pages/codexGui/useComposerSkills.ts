@@ -1,9 +1,9 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useContext, useEffect, useState } from "react";
 import { MessageEditContext } from './messageEditContext';
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { skillLabel } from "./skillEditorDom";
-import type { Skill, SkillsResponse } from "./types";
+import type { Skill, SkillsResponse } from "../../../../../shared/conversation/types";
 
 export function useComposerSkills({ cwd, active, connected }: {
   cwd: string; active: boolean; connected: boolean;

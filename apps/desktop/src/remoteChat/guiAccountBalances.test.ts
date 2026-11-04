@@ -4,6 +4,7 @@ import type { Provider, ProviderBalance } from '../types';
 import { GuiAccountBalances } from './guiAccountBalances';
 
 vi.mock('../api/backend', () => ({ queryProviderBalance: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 afterEach(() => { vi.resetAllMocks(); vi.useRealTimers(); });
 
 const provider = { id: 'third-party', balancePlatform: 'newApi' } as Provider;

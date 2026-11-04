@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { ResizableThreadSidebar as SharedThreadSidebar } from "../../../../../shared/chat/ResizableThreadSidebar";
-import styles from "./styles.module.less";
+import styles from "../../../../../shared/conversation/styles.module.less";
 
 export function ResizableThreadSidebar({ children, className = "", layoutSelector = `.${styles.page}` }: {
   children: ReactNode; className?: string; layoutSelector?: string;

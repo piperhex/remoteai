@@ -2,8 +2,8 @@
 import { act, Profiler } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
-import { downloadManager } from '../../../web/src/downloads/manager';
-import type { DownloadTask } from '../../../web/src/downloads/types';
+import { downloadManager } from '../../../../shared/downloads/manager';
+import type { DownloadTask } from '../../../../shared/downloads/types';
 import { DownloadNavigationIcon } from './DownloadNavigationIcon';
 import { LOCAL_DOWNLOAD_OWNER } from './localGitDownloads';
 

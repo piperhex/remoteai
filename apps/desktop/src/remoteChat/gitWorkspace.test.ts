@@ -9,6 +9,7 @@ import type { RpcMessage } from '../../../../shared/remote-chat/protocol';
 
 const host = vi.hoisted(() => ({ sending: false, workspaceBusy: false }));
 vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 vi.mock('../pages/codexGui/session', () => ({ getGuiController: () => ({
   getSnapshot: () => host, setWorkspaceBusy: (busy: boolean) => { host.workspaceBusy = busy; },
 }) }));

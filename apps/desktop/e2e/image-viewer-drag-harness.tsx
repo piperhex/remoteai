@@ -1,10 +1,10 @@
 import { createRoot } from 'react-dom/client';
-import { MessageImage } from '../src/pages/codexGui/MessageImage';
-import { FileEnvironmentContext, type FileEnvironment } from '../src/pages/codexGui/fileEnvironment';
-import { ChatImage } from '../../web/src/chat/ChatImage';
+import { MessageImage } from '../../../shared/conversation/MessageImage';
+import { FileEnvironmentContext, type FileEnvironment } from '../../../shared/conversation/fileEnvironment';
+import { ChatImage } from '../../../shared/remote-chat/views/ChatImage';
 import { ImageAiContext } from '../../../shared/chat/ImageAiContext';
 import '../src/styles.css';
-import '../../web/src/chat/messages.css';
+import '../../../shared/remote-chat/views/messages.css';
 
 const params = new URLSearchParams(location.search);
 const canvas = document.createElement('canvas');

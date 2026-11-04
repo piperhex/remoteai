@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { remoteErrorText } from "../../../../../shared/localization/errors";
 import { useState } from "react";
 import { Alert, Button, Input, Segmented } from "antd";

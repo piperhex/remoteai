@@ -1,4 +1,4 @@
-import type { GuiEvent } from '../pages/codexGui/types';
+import type { GuiEvent } from '../../../../shared/conversation/types';
 
 const STREAM_FLUSH_MS = 40;
 const MAX_DELTA_CHARS = 16 * 1024;

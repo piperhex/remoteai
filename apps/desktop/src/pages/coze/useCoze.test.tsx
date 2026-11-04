@@ -6,6 +6,7 @@ import { invoke } from "../../api/backend";
 import { useCoze, type CozeStatus } from "./useCoze";
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn(), isDesktopApp: true }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 let root: Root;
 let value: ReturnType<typeof useCoze>;
 const idle: CozeStatus = { installed: false, version: "0.1.0", phase: "idle", downloaded: 0, total: null, url: null };

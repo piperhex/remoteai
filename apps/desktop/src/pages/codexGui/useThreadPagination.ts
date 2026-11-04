@@ -1,6 +1,6 @@
 import { useViewportThreadPagination } from '../../../../../shared/remote-chat/client/useViewportThreadPagination';
 import type { GuiController } from "./controller";
-import type { GuiState } from "./types";
+import type { GuiState } from "../../../../../shared/conversation/types";
 
 export function useThreadPagination({ state, controller, enabled }: {
   state: GuiState; controller: GuiController; enabled: boolean;

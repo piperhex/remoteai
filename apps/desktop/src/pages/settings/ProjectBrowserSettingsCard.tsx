@@ -1,9 +1,9 @@
-import { displayText } from '../../i18n/uiText';
+import { displayText } from '../../../../../shared/localization/uiText';
 import { FolderSearch } from 'lucide-react';
 import { AutoSaveSettings } from '../../../../../shared/project-browser/AutoSaveSettings';
 import { JsonHighlightSettings } from '../../../../../shared/file-preview/JsonHighlightSettings';
 import { useBrowserPreferences } from '../../../../../shared/project-browser/useBrowserPreferences';
-import { t, useLanguage } from '../../../../web/src/i18n';
+import { t, useLanguage } from '../../../../../shared/localization/browserClient';
 
 export function ProjectBrowserSettingsCard() {
   useLanguage();

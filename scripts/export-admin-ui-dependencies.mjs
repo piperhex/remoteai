@@ -78,7 +78,7 @@ async function sharedPackage() {
   const inputs = new Set(Object.keys(result.metafile.inputs));
   for (const input of includeTypeDependencies(inputs)) {
     const relative = path.relative(root, path.resolve(input)).replaceAll('\\', '/');
-    if (!/^(shared|apps)\//.test(relative)) throw new Error(`Unexpected shared dependency: ${relative}`);
+    if (!relative.startsWith('shared/')) throw new Error(`Unexpected shared dependency: ${relative}`);
     copy(relative, path.join(directory, relative));
     if (relative.startsWith('shared/')) {
       const target = relative.slice('shared/'.length);

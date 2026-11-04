@@ -8,11 +8,12 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 
-import { setGuiLanguage } from "../../i18n/uiText";
+import { setGuiLanguage } from "../../../../../shared/localization/uiText";
 import { DesktopSystemPermissions } from './DesktopSystemPermissions';
 
 const api = vi.hoisted(() => ({ invoke: vi.fn(), restartApplication: vi.fn() }));
 vi.mock('../../api/backend', () => api);
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 let root: Root;
 let container: HTMLDivElement;
 const han = /[一-鿿]/;

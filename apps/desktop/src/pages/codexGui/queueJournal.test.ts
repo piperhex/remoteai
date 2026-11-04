@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import { QueueJournal, type QueueSnapshot, type QueueStorage } from './queueJournal';
-import type { QueuedMessage } from './types';
+import type { QueuedMessage } from '../../../../../shared/conversation/types';
 
 const message: QueuedMessage = { id: 'one', text: 'next task', images: [], skills: [],
   model: 'model', effort: 'high', access: 'read-only' };

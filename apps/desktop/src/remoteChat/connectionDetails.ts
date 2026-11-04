@@ -1,6 +1,6 @@
 import type { ConnectionMode } from '../../../../shared/remote-chat/protocol';
 import type { RelayUsage } from '../../../../shared/remote-chat/relayUsage';
-import { uiText } from "../i18n/uiText";
+import { uiText } from "../../../../shared/localization/uiText";
 
 export interface ConnectedDevice {
   id: string;

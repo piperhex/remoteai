@@ -1,6 +1,6 @@
 import type { Language, Translate } from "../i18n";
 import type { Provider, ProviderBalance, ProviderTokenUsageTotals } from "../types";
-import { formatCompactTokenCount } from "../utils/tokenContext";
+import { formatCompactTokenCount } from "../../../../shared/context-usage/format";
 import { useCurrencyFormatter } from "../hooks/useTokenCostDisplaySettings";
 import type { CurrencyFormatter } from "../utils/currencyDisplay";
 

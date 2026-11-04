@@ -3,8 +3,8 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Messages } from "./Messages";
-import { conversation, reduceConversation } from "./events";
-import type { Item, Turn } from "./types";
+import { conversation, reduceConversation } from "../../../../../shared/conversation/events";
+import type { Item, Turn } from "../../../../../shared/conversation/types";
 
 let root: Root;
 let container: HTMLDivElement;

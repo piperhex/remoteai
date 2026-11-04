@@ -38,7 +38,7 @@ describe("automatic app updates", () => {
   let stored: Map<string, string>;
   let update: ReturnType<typeof createUpdate>;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.useFakeTimers();
     vi.resetModules();
     updater.check.mockReset();
@@ -55,7 +55,9 @@ describe("automatic app updates", () => {
       __TAURI_INTERNALS__: {}, localStorage, setTimeout, clearTimeout,
     }));
     vi.stubGlobal("document", { querySelector: () => null });
-  });
+    // Cold transformation of the backend graph belongs to setup, not the update operation's timeout.
+    await loadApp();
+  }, 30_000);
 
   afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 

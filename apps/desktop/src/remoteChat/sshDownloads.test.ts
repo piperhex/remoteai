@@ -3,12 +3,12 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { sshDownloadClient } from '../../../../shared/terminal/sshDownloadClient';
 import type { SshApi, SshFileReply } from '../../../../shared/terminal/ssh';
 import { FILE_CHUNK_BYTES, validateFileInfo } from '../../../../shared/remote-chat/fileDownload';
-import { WebDownloadManager, downloadManager } from '../../../web/src/downloads/manager';
-import { enqueueSshDownload } from '../../../web/src/downloads/sshDownload';
-import type { DownloadConnection, DownloadSource, DownloadTask } from '../../../web/src/downloads/types';
+import { WebDownloadManager, downloadManager } from '../../../../shared/downloads/manager';
+import { enqueueSshDownload } from '../../../../shared/downloads/sshDownload';
+import type { DownloadConnection, DownloadSource, DownloadTask } from '../../../../shared/downloads/types';
 
 const storage = vi.hoisted(() => ({ tasks: new Map<string, DownloadTask>(), chunks: new Map<number, string>() }));
-vi.mock('../../../web/src/downloads/storage', () => ({
+vi.mock('../../../../shared/downloads/storage', () => ({
   listDownloads: async () => [],
   storeDownload: async (task: DownloadTask) => { storage.tasks.set(task.id, structuredClone(task)); },
   resetDownload: async () => { storage.chunks.clear(); },

@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { messageWindow } from "./messageWindow";
-import type { Turn } from "./types";
-import { CONTINUE_MESSAGE } from "./continuation";
+import type { Turn } from "../../../../../shared/conversation/types";
+import { CONTINUE_MESSAGE } from "../../../../../shared/conversation/continuation";
 
 function history(): Turn[] {
   return Array.from({ length: 7 }, (_, turn) => ({ id: `turn-${turn}`, status: "completed",

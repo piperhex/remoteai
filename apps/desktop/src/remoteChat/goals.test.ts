@@ -2,8 +2,8 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { RemoteGoals } from '../../../../shared/remote-chat/client/goals';
 import { applyChatEvent } from '../../../../shared/remote-chat/client/events';
 import { initialChatState, type ChatState, type Request } from '../../../../shared/remote-chat/client/types';
-import type { ThreadGoal } from '../pages/codexGui/goalTypes';
-import { testModels } from '../pages/codexGui/testModels';
+import type { ThreadGoal } from '../../../../shared/conversation/goalTypes';
+import { testModels } from '../../../../shared/conversation/testing/models';
 
 const thread = { id: 'one', cwd: 'F:/project', preview: '', updatedAt: 1, turns: [] };
 const goal: ThreadGoal = { threadId: thread.id, objective: '完成登录页面', status: 'active', tokenBudget: null,

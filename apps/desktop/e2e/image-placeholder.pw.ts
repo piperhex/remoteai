@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
-import type { Conversation } from '../src/pages/codexGui/types';
+import type { Conversation } from '../../../shared/conversation/types';
 
 type Mode = 'local' | 'remote' | 'web';
 const modes: Mode[] = ['local', 'remote', 'web'];

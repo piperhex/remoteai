@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MarketLauncher } from "../../../../shared/provider-market/MarketLauncher";
 import { ProviderBrowser } from '../../../../shared/provider-market/ProviderBrowser';
-import { ProviderBrowserSurface } from './providers/ProviderBrowserSurface';
+import { ProviderBrowserSurface } from '../../../../shared/browser/managed/ProviderBrowserSurface';
 import { useProviderBrowser } from './providers/useProviderBrowser';
 import { desktopProviderMarket } from "../api/providerMarket";
 import type { MarketIdentity } from '../../../../shared/provider-market/types';

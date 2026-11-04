@@ -2,13 +2,13 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { guiApi } from "./api";
-import { ImageThreadContext } from "./useImageSource";
-import { RichText } from "./RichText";
-import { filePreviewApi } from "./filePreview/api";
-import { DetailsWorkspace } from "./DetailsWorkspace";
+import { guiApi } from "../../../../../shared/conversation/api";
+import { ImageThreadContext } from "../../../../../shared/conversation/useImageSource";
+import { RichText } from "../../../../../shared/conversation/RichText";
+import { filePreviewApi } from "../../../../../shared/file-preview/workspace/api";
+import { DetailsWorkspace } from "../../../../../shared/conversation/DetailsWorkspace";
 
-vi.mock("./api", () => ({ guiApi: { request: vi.fn(), subscribe: async () => () => {} } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { request: vi.fn(), subscribe: async () => () => {} } }));
 const image = "data:image/png;base64,iVBORw0KGgo=";
 let root: Root;
 let container: HTMLDivElement;

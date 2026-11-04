@@ -1,5 +1,5 @@
-import { displayText } from '../../i18n/uiText';
-import { uiText } from "../../i18n/uiText";
+import { displayText } from '../../../../../shared/localization/uiText';
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useState } from "react";
 import { Button, ColorPicker, Segmented, Switch, theme } from "antd";
 import { Monitor, Moon, Sun } from "lucide-react";

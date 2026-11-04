@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import * as backend from '../api/backend';
 import type { Provider, ProviderBalance } from '../types';
-import { setGuiLanguage } from "../i18n/uiText";
+import { setGuiLanguage } from "../../../../shared/localization/uiText";
 import { GuiAccountBalances } from './guiAccountBalances';
 import { readGuiAccounts } from './guiAccounts';
 import { connectionDetails } from './connectionDetails';
@@ -14,8 +14,9 @@ vi.mock('../api/backend', () => ({ invoke: vi.fn(), queryProviderBalance: vi.fn(
   isDesktopApp: true, isHostedWebApp: false,
   loadAppSettings: vi.fn(), loadTokenUsageEntries: vi.fn(), loadDailyTokenUsage: vi.fn(),
   loadTokenUsageBreakdown: vi.fn(), loadAccountQuotaHistory: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 vi.mock('../api/officialUsage', () => ({ loadOfficialUsage: vi.fn() }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
 
 const provider = { id: 'third-party', balancePlatform: 'newApi' } as Provider;
 const balance: ProviderBalance = {

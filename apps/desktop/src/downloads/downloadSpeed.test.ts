@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DownloadSpeed } from '../../../../shared/downloads/downloadSpeed';
-import { monitorDownloadSpeed } from '../../../web/src/downloads/downloadSpeed';
-import type { DownloadTask } from '../../../web/src/downloads/types';
+import { monitorDownloadSpeed } from '../../../../shared/downloads/monitorDownloadSpeed';
+import type { DownloadTask } from '../../../../shared/downloads/types';
 
 afterEach(() => vi.useRealTimers());
 

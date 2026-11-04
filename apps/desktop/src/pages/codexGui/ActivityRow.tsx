@@ -1,13 +1,13 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import {
   Activity, Brain, ChevronDown, FilePenLine, Image, ListChecks, Search, Sparkles,
   SquareTerminal, Users, Wrench, Clock, FileSearch, type LucideIcon,
 } from "lucide-react";
-import type { Item } from "./types";
+import type { Item } from "../../../../../shared/conversation/types";
 import { ToolDetails } from "./ToolDetails";
-import { formatTurnDuration } from "./turnTiming";
+import { formatTurnDuration } from "../../../../../shared/conversation/turnTiming";
 import { DeferredDetails } from "./DeferredDetails";
-import { collaborationSummary, isCollaborationActivity } from "./collaborationActivity";
+import { collaborationSummary, isCollaborationActivity } from "../../../../../shared/conversation/collaborationActivity";
 import styles from "./ActivityRow.module.less";
 import { commandPreview } from "./commandPreview";
 

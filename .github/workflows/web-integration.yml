@@ -4,6 +4,10 @@ on:
   push:
     paths:
       - 'apps/web'
+      - 'shared'
+      - 'packages/i18n'
+      - 'apps/desktop/src/**'
+      - 'apps/desktop/e2e/**'
       - 'apps/desktop/package.json'
       - 'apps/desktop/vite.config.ts'
       - 'scripts/export-web-dependencies.mjs'
@@ -11,6 +15,10 @@ on:
   pull_request:
     paths:
       - 'apps/web'
+      - 'shared'
+      - 'packages/i18n'
+      - 'apps/desktop/src/**'
+      - 'apps/desktop/e2e/**'
       - 'apps/desktop/package.json'
       - 'apps/desktop/vite.config.ts'
       - 'scripts/export-web-dependencies.mjs'
@@ -34,6 +42,9 @@ jobs:
             apps/web/package-lock.json
       - run: npm ci
       - run: npm ci --prefix apps/web
+      - run: npm run check:boundaries
+      - run: npm run test:typecheck -w @codex-switch/desktop
+      - run: npm run export:web
       - run: npm run check:web
       - run: npm run build:desktop
       - name: Verify reused desktop components

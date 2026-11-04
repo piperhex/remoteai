@@ -9,6 +9,7 @@ import { ChatController } from '../../../../shared/remote-chat/client/controller
 import { RemoteTerminals } from './terminals';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn(), loadCloudAuthState: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 vi.mock('../pages/codexGui/terminal/sshApi', () => ({ openNativeSsh: vi.fn(), sshFiles: vi.fn(), probeSsh: vi.fn() }));
 vi.mock('../pages/codexGui/terminal/api', () => ({ terminalApi: {} }));
 afterEach(() => { localStorage.clear(); vi.resetAllMocks(); });

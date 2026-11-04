@@ -483,23 +483,7 @@ export interface CodexThreadMigrationReport {
   message: string;
 }
 
-export interface TokenUsageEntry {
-  id: string;
-  ts: number;
-  provider: string;
-  providerId?: string | null;
-  accountId?: string | null;
-  accountEmail?: string | null;
-  model: string;
-  serviceTier?: string | null;
-  durationMs?: number | null;
-  inputTokens?: number | null;
-  outputTokens?: number | null;
-  reasoningTokens?: number | null;
-  cachedTokens?: number | null;
-  totalTokens?: number | null;
-  modelContextWindow?: number | null;
-}
+export type { TokenUsageEntry } from '../../../shared/token-usage/entry';
 
 export interface AccountTokenUsageTotals {
   accountId?: string | null;
@@ -521,14 +505,7 @@ export interface ProviderTokenUsageTotals {
   totalEstimatedCost: number;
 }
 
-export interface DailyTokenUsage {
-  date: string;
-  totalTokens: number;
-  inputTokens: number;
-  outputTokens: number;
-  reasoningTokens: number;
-  cachedTokens: number;
-}
+export type { DailyTokenUsage } from '../../../shared/token-usage/dailyUsage';
 
 export interface UpdateInfo {
   currentVersion: string;

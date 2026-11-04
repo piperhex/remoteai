@@ -1,9 +1,9 @@
 import inlineCopy from '@remoteai/i18n/copy/inline/desktop/components/FloatingUsageBubble/BubbleResetLabel';
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useState } from "react";
 import type { BubbleResetDisplay } from "../../types";
 import type { Language } from "../../i18n";
-import { resetClockTime } from "../../utils/format";
+import { resetClockTime } from "../../../../../shared/accounts/format";
 
 export function BubbleResetLabel({ timestamp, language, display, className, compact = false }: {
   timestamp?: number | null;

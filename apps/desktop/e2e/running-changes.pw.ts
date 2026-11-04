@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import type { GuiEvent, Item, Thread, Turn } from "../src/pages/codexGui/types";
+import type { GuiEvent, Item, Thread, Turn } from "../../../shared/conversation/types";
 
 function edit(id: string, added: number, removed: number): Item {
   const diff = `@@ -1,${removed} +1,${added} @@\n`

@@ -2,23 +2,23 @@ import { createRoot } from 'react-dom/client';
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
 import { GlobalFontSettingsCard } from '../src/pages/settings/GlobalFontSettingsCard';
 import { GlobalFontSettings } from '../../../shared/appearance/GlobalFontSettings';
-import { GuiAppearanceSettings } from '../src/pages/codexGui/GuiAppearanceSettings';
-import { GuiFontSettingsButton } from '../src/pages/codexGui/GuiFontSettingsButton';
-import { DetailsWorkspace } from '../src/pages/codexGui/DetailsWorkspace';
-import { ChatDetailsWorkspace } from '../../web/src/chat/ChatDetailsWorkspace';
+import { GuiAppearanceSettings } from '../../../shared/conversation/GuiAppearanceSettings';
+import { GuiChatSettingsButton } from '../../../shared/conversation/GuiChatSettingsButton';
+import { DetailsWorkspace } from '../../../shared/conversation/DetailsWorkspace';
+import { ChatDetailsWorkspace } from '../../../shared/remote-chat/views/ChatDetailsWorkspace';
 import { Messages } from '../src/pages/codexGui/Messages';
-import { ChatMessages } from '../../web/src/chat/ChatMessages';
-import { conversation } from '../src/pages/codexGui/events';
-import type { Thread } from '../src/pages/codexGui/types';
-import { uiText, setGuiLanguage } from '../src/i18n/uiText';
-import { setLanguage, useLanguage } from '../../web/src/i18n';
+import { ChatMessages } from '../../../shared/remote-chat/views/ChatMessages';
+import { conversation } from '../../../shared/conversation/events';
+import type { Thread } from '../../../shared/conversation/types';
+import { uiText, setGuiLanguage } from '../../../shared/localization/uiText';
+import { setLanguage, useLanguage } from '../../../shared/localization/browserClient';
 import { WebLocaleProvider } from '../../web/src/i18n/WebLocaleProvider';
 import { Button } from 'antd';
-import styles from '../src/pages/codexGui/styles.module.less';
+import styles from '../../../shared/conversation/styles.module.less';
 import 'antd/dist/reset.css';
 import '../../web/src/styles.css';
-import '../../web/src/chat/chat.css';
-import '../../web/src/chat/composer.css';
+import '../../../shared/remote-chat/views/chat.css';
+import '../../../shared/remote-chat/views/composer.css';
 import '../src/pages/codexGui/remote/remoteGui.less';
 import './font-size-harness.css';
 
@@ -39,7 +39,7 @@ function Harness() {
       <div className="font-harness-actions"><Button>常用控件</Button>
         <button onClick={() => { setGuiLanguage('en'); setLanguage('en'); }}>English</button>
         <button onClick={() => { setGuiLanguage('zh'); setLanguage('zh'); }}>中文</button>
-        {mode !== 'local' && <GuiFontSettingsButton active />}</div>
+        {mode !== 'local' && <GuiChatSettingsButton active />}</div>
     </header>
     <aside className="font-harness-settings"><GuiAppearanceSettings /></aside>
     <section className="font-harness-conversation" data-testid="conversation">

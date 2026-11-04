@@ -4,10 +4,10 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { mergeHistory } from '../../../../shared/remote-chat/client/history';
 import { updateThread } from '../../../../shared/remote-chat/client/events';
-import { ChatProcessing } from '../../../web/src/chat/ChatProcessing';
+import { ChatProcessing } from '../../../../shared/remote-chat/views/ChatProcessing';
 import { WorkingStatus } from '../pages/codexGui/WorkingStatus';
-import { conversation } from '../pages/codexGui/events';
-import type { Thread } from '../pages/codexGui/types';
+import { conversation } from '../../../../shared/conversation/events';
+import type { Thread } from '../../../../shared/conversation/types';
 import { LiveHistory } from './liveHistory';
 
 function runningThread(id: string, startedAt?: number | null): Thread {

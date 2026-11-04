@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 const FIELD_LABELS: Record<string, string> = {
   get model() { return uiText("client.configLabels.defaultModel"); }, get model_provider() { return uiText("client.configLabels.modelProvider"); }, get review_model() { return uiText("client.configLabels.reviewModel"); },
   get model_reasoning_effort() { return uiText("client.configLabels.reasoningEffort"); }, get plan_mode_reasoning_effort() { return uiText("client.configLabels.planningReasoningEffort"); },

@@ -1,7 +1,7 @@
 import { useProcessingStatus, type ChatProcessingProps }
   from "../../../../../shared/remote-chat/client/useProcessingStatus";
-import { useGuiLanguage } from "../../i18n/useGuiLanguage";
-import styles from "./styles.module.less";
+import { useGuiLanguage } from "../../../../../shared/localization/useGuiLanguage";
+import styles from "../../../../../shared/conversation/styles.module.less";
 import activeStyles from "./activeText.module.less";
 import statusStyles from "./WorkingStatus.module.less";
 

@@ -1,7 +1,7 @@
-import { uiText } from "../../i18n/uiText";
-import type { Item } from "./types";
-import { generatedImageSource } from "./imageSources";
-import { MessageImage } from "./MessageImage";
+import { uiText } from "../../../../../shared/localization/uiText";
+import type { Item } from "../../../../../shared/conversation/types";
+import { generatedImageSource } from "../../../../../shared/conversation/imageSources";
+import { MessageImage } from "../../../../../shared/conversation/MessageImage";
 
 export function GeneratedImages({ items }: { items: Item[] }) {
   const sources = new Set<string>();

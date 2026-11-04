@@ -4,9 +4,10 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { invoke } from '../../../api/backend';
 import { useGuiComputers } from './useGuiComputers';
-import type { GuiCloudIdentity, GuiDeviceDirectory } from './types';
+import type { GuiCloudIdentity, GuiDeviceDirectory } from '../../../../../../shared/conversation/remote/types';
 
 vi.mock('../../../api/backend', () => ({ invoke: vi.fn(), isDesktopApp: true }));
+vi.mock('../../../../../../shared/platform/localBackend', async () => await import('../../../api/backend'));
 const identity = { baseUrl: 'https://cloud.example', userId: 'owner' };
 const device = { deviceId: 'other', name: 'Work PC', platform: 'windows', online: true };
 let root: Root;

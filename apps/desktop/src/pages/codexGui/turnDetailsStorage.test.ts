@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it } from "vitest";
-import { conversation } from "./events";
-import { rememberTurnDetails } from "./turnDetailsStorage";
+import { conversation } from "../../../../../shared/conversation/events";
+import { rememberTurnDetails } from "../../../../../shared/conversation/turnDetailsStorage";
 
 afterEach(() => sessionStorage.clear());
 it("restores each turn's net diff and plan after a fresh controller loads history", () => {

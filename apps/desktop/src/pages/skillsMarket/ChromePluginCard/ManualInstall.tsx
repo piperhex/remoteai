@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, Copy, ExternalLink, FolderOpen } from "lucide-react";
 import type { ChromePluginAction } from "../../../api/chromePlugin";
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import styles from "./index.module.less";
 
 interface Props {

@@ -2,8 +2,8 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { DEFAULT_CHAT_POLICY, MIB, setChatPolicy, videoByteLimit } from '../../../../shared/remote-chat/policy';
 import { ChatOperations } from './operations';
-import { guiApi } from '../pages/codexGui/api';
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn(), connect: vi.fn() } }));
+import { guiApi } from '../../../../shared/conversation/api';
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn(), connect: vi.fn() } }));
 afterEach(() => { setChatPolicy(DEFAULT_CHAT_POLICY); vi.resetAllMocks(); });
 it('uses admin video limits instead of client values and reapplies changes on repeatable reads', async () => {
   vi.mocked(guiApi.request).mockResolvedValue({ offset: 0, data: 'AAAA' });

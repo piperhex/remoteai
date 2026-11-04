@@ -1,10 +1,10 @@
 import { DEMO_ACCOUNTS } from '../src/demo';
 import { ProxyAccountPicker } from '../src/pages/codexGui/ProxyAccountPicker';
-import { RemoteAccountPicker } from '../src/pages/codexGui/remote/RemoteAccountPicker';
-import { ChatProfileMenu } from '../../web/src/chat/ChatProfileMenu';
+import { RemoteAccountPicker } from '../../../shared/conversation/remote/RemoteAccountPicker';
+import { ChatProfileMenu } from '../../../shared/remote-chat/views/ChatProfileMenu';
 import { createGuiToolsClient } from '../../../shared/remote-chat/guiTools';
 import type { GuiAccountsClient } from '../../../shared/remote-chat/guiAccounts';
-import { useDesktopLayout } from '../../web/src/useDesktopLayout';
+import { useDesktopLayout } from '../../../shared/layout/useDesktopLayout';
 
 const account = { ...DEMO_ACCOUNTS[0], active: true, email: 'quota@example.com', plan: 'Pro',
   usage: { primary: { remainingPercent: 74, usedPercent: 26 } } };

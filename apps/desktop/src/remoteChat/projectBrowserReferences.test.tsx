@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ChatFileReferencesProvider, useChatFileReference, useChatFileSelection,
   useComposerFileReferences } from '../../../../shared/chat/ChatFileReferences';
-import { useComposerAttachments } from '../../../web/src/chat/useComposerAttachments';
+import { useComposerAttachments } from '../../../../shared/remote-chat/views/useComposerAttachments';
 
 let root: Root;
 let reference: ReturnType<typeof useChatFileReference>;

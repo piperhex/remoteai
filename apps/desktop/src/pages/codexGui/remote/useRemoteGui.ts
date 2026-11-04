@@ -8,7 +8,7 @@ import { createDesktopPacketCompression } from '../../../remoteChat/packetCompre
 import { NativeGuiSocket } from './nativeSocket';
 import { createDesktopSshProfiles } from '../../../api/sshProfiles';
 import { registerDesktopMappingStream } from '../portForwarding/streamBridge';
-import type { GuiCloudIdentity } from './types';
+import type { GuiCloudIdentity } from '../../../../../../shared/conversation/remote/types';
 import { browserTrustStore, trustedHost, trustScope } from '../../../../../../shared/remote-chat/trustedHost';
 
 const HISTORY_REFRESH_MS = 15_000;

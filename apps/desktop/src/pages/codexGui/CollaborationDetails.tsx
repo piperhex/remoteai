@@ -1,6 +1,6 @@
-import { uiText } from "../../i18n/uiText";
-import type { Item } from "./types";
-import { collaborationStates, collaborationStatus, collaborationSummary } from "./collaborationActivity";
+import { uiText } from "../../../../../shared/localization/uiText";
+import type { Item } from "../../../../../shared/conversation/types";
+import { collaborationStates, collaborationStatus, collaborationSummary } from "../../../../../shared/conversation/collaborationActivity";
 import { ToolText } from "./ToolText";
 
 export function CollaborationDetails({ item }: { item: Item }) {

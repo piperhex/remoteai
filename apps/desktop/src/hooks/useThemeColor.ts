@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { loadAppSettings, subscribeToThemeColorChanges, updateThemeColor } from "../api/backend";
-import { applyThemeColor, DEFAULT_THEME_COLOR, normalizeThemeColor } from "../utils/theme";
+import { applyThemeColor, DEFAULT_THEME_COLOR, normalizeThemeColor } from "../../../../shared/appearance/themeColor";
 
 export function useThemeColor(notify: (message: string) => void, override?: string) {
   const [color, setColor] = useState(DEFAULT_THEME_COLOR);

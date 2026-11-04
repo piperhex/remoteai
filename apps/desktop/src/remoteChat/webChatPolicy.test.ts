@@ -30,7 +30,7 @@ vi.mock('../../../web/src/api', () => ({
   apiJson: async () => ({}), getActiveSession: () => runtime.session, refreshSession: async () => undefined,
 }));
 vi.mock('../../../web/src/downloads/previews', () => ({ createPreviewDownloads: () => undefined }));
-vi.mock('../../../web/src/downloads/manager', () => ({ downloadOwner: () => 'account' }));
+vi.mock('../../../../shared/downloads/manager', () => ({ downloadOwner: () => 'account' }));
 vi.mock('../../../../shared/remote-chat/link', () => ({ ChatLink: class {
   resumable = true;
   constructor(options: LinkOptions) { runtime.links.set(options.sessionId, options); }

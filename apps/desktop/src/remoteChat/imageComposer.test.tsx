@@ -2,14 +2,14 @@
 import { act, type ComponentProps, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { ChatComposer } from '../../../web/src/chat/ChatComposer';
-import { testModels } from '../pages/codexGui/testModels';
+import { ChatComposer } from '../../../../shared/remote-chat/views/ChatComposer';
+import { testModels } from '../../../../shared/conversation/testing/models';
 import { draftImage, MAX_CHAT_IMAGE_CHARS } from '../../../../shared/remote-chat/attachments';
 import type { FileDropEvent } from '../../../../shared/chat/useFileDrop';
 
 const mocks = vi.hoisted(() => ({ pick: vi.fn() }));
-vi.mock('../../../web/src/chat/pickChatImages', () => ({ pickChatImages: mocks.pick }));
-vi.mock('../../../web/src/components/AdaptiveSheet', () => ({
+vi.mock('../../../../shared/remote-chat/views/pickChatImages', () => ({ pickChatImages: mocks.pick }));
+vi.mock('../../../../shared/layout/AdaptiveSheet', () => ({
   AdaptiveSheet: ({ children }: { children: ReactNode }) => <div role="dialog">{children}</div>,
 }));
 const url = 'data:image/jpeg;base64,aW1hZ2U=';

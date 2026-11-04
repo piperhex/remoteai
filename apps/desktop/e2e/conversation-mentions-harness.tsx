@@ -4,8 +4,8 @@ import { SkillInput } from "../src/pages/codexGui/SkillInput";
 import { ComposerReferences } from "../src/pages/codexGui/ComposerReferences";
 import { GuiController } from "../src/pages/codexGui/controller";
 import { useComposerDraft } from "../src/pages/codexGui/useComposerDraft";
-import { guiApi } from "../src/pages/codexGui/api";
-import type { Request, Thread } from "../src/pages/codexGui/types";
+import { guiApi } from "../../../shared/conversation/api";
+import type { Request, Thread } from "../../../shared/conversation/types";
 
 const threads: Thread[] = [
   { id: "current", name: "当前对话", preview: "", cwd: "F:/project", updatedAt: 3 },

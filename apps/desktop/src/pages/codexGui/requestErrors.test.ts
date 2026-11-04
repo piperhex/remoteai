@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { conversation, reduceConversation, reduceEvent } from "./events";
+import { conversation, reduceConversation, reduceEvent } from "../../../../../shared/conversation/events";
 import { initialState } from "./preferences";
-import type { GuiEvent, Thread } from "./types";
-import { requestErrorDetails } from "./requestError";
+import type { GuiEvent, Thread } from "../../../../../shared/conversation/types";
+import { requestErrorDetails } from "../../../../../shared/conversation/requestError";
 import { turnMessageGroups } from "./turnMessageGroups";
-import { requestErrorPosition } from "./turnRequestErrors";
+import { requestErrorPosition } from "../../../../../shared/conversation/turnRequestErrors";
 
 const thread: Thread = { id: "one", cwd: "", preview: "", updatedAt: 1,
   turns: [{ id: "first", status: "inProgress", items: [] }] };

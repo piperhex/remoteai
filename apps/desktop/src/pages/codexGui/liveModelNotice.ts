@@ -1,7 +1,7 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import type { ModelSettingsSnapshot } from "./threadModelSettings";
-import type { GuiState, Item } from "./types";
-import { rememberTurnDetails } from "./turnDetailsStorage";
+import type { GuiState, Item } from "../../../../../shared/conversation/types";
+import { rememberTurnDetails } from "../../../../../shared/conversation/turnDetailsStorage";
 
 export interface PendingModelChange {
   turnId: string;

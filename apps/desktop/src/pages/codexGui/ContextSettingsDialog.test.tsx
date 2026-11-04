@@ -7,6 +7,7 @@ import { invoke } from "../../api/backend";
 import { parseContextCapacity } from "./useContextSettings";
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn(), isHostedWebApp: false, canManageCodexConnection: true }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 let root: Root;
 let container: HTMLDivElement;
 const click = (element: HTMLElement) => act(async () => element.click());

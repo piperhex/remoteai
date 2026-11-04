@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { changedFiles, pairDiffLines, parseDiff } from "./diff";
+import { changedFiles, pairDiffLines, parseDiff } from "../../../../../shared/conversation/diff";
 
 describe("file changes and unified patches", () => {
   it("marks every raw line of new/deleted files, including empty lines and marker-like text", () => {

@@ -1,6 +1,6 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import type { GuiModelCatalog } from "./modelCatalog";
-import { subscribeGuiEvent } from "./webEvents";
+import { subscribeGuiEvent } from "../../../../../shared/conversation/webEvents";
 import { isHostedWebApp, subscribeToProviderEvents } from "../../api/backend";
 
 /** Only real account/Provider changes invalidate the catalog; time and hosted polls do not. */

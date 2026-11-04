@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ConfigProvider } from 'antd';
-import { ChatUsage } from '../../web/src/chat/ChatUsage';
+import { ChatUsage } from '../../../shared/remote-chat/views/ChatUsage';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
 import type { Language } from '../../../shared/localization/language';
 import { QuotaComposerFixture, readQuota } from './quota-composer-fixture';
 import '../src/pages/codexGui/remote/remoteGui.less';
-import '../../web/src/chat/composerDesktop.css';
+import '../../../shared/remote-chat/views/composerDesktop.css';
 
 setInterfaceLanguage('zh');
 function Harness() {

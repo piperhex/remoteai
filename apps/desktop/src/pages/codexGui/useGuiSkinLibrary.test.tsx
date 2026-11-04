@@ -12,6 +12,7 @@ vi.mock("../../api/backend", () => ({
   installDreamSkinMarketTheme: vi.fn(), installDreamSkinCommunityTheme: vi.fn(), retryDreamSkinResources: vi.fn(),
   applyDreamSkinTheme: vi.fn(), installDreamSkin: vi.fn(), setDreamSkinOverlayOpacity: vi.fn(),
 }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const status: DreamSkinStatus = { supported: true, platform: "windows", installed: false,
   runtimeInstalled: false, session: "notInstalled", activeThemeId: "shared",
   savedThemes: [{ id: "saved", name: "收藏" }] };

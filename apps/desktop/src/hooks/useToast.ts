@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatRemoteError } from "../../../../shared/localization/errors";
 import { syncCodexNotification } from "../api/backend";
 import { recordToastLog } from "../api/errorLogs";
-import { guiLanguage } from "../i18n/uiText";
-import { useGuiLanguage } from "../i18n/useGuiLanguage";
+import { guiLanguage } from "../../../../shared/localization/uiText";
+import { useGuiLanguage } from "../../../../shared/localization/useGuiLanguage";
 
 /**
  * Toasts receive app copy that is already translated as well as raw backend messages. The error

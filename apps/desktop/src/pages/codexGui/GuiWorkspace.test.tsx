@@ -3,7 +3,7 @@ import { act, useEffect, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { GuiWorkspace } from './GuiWorkspace';
-import type { GuiCloudIdentity, GuiComputer } from './remote/types';
+import type { GuiCloudIdentity, GuiComputer } from '../../../../../shared/conversation/remote/types';
 import type { ThreadNavigation } from './useNotificationNavigation';
 
 const fixture = vi.hoisted(() => ({ current: null as GuiComputer | null, mounts: 0, stops: 0,
@@ -12,6 +12,7 @@ const fixture = vi.hoisted(() => ({ current: null as GuiComputer | null, mounts:
   remoteMounts: vi.fn(), remoteStops: vi.fn(), replies: new Map<string, (reply: string) => void>(),
   notify: (_message: string) => {} }));
 vi.mock('../../api/backend', () => ({ isDesktopApp: true }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock('./remote/useGuiComputers', () => ({ useGuiComputers: () => ({
   current: fixture.current, identity: fixture.identity, devices: [],
   choose: fixture.choose,

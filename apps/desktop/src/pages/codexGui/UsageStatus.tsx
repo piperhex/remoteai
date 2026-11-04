@@ -1,8 +1,8 @@
-import { uiText } from '../../i18n/uiText';
+import { uiText } from '../../../../../shared/localization/uiText';
 import { useEffect, useState } from 'react';
 import { ContextUsageButton } from './ContextUsageButton';
 import { ContextSettingsDialog } from './ContextSettingsDialog';
-import type { ThreadTokenUsage } from './types';
+import type { ThreadTokenUsage } from '../../../../../shared/conversation/types';
 import type { ConversationMetrics } from '../../../../../shared/remote-chat/conversationMetrics';
 import { UsageAmounts } from '../../../../../shared/chat/UsageAmounts';
 import styles from './UsageStatus.module.less';

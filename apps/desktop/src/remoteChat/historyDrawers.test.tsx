@@ -2,11 +2,11 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { DetailsWorkspace } from '../pages/codexGui/DetailsWorkspace';
-import { useHistoryDrawers } from '../../../web/src/chat/useHistoryDrawers';
-import type { Turn } from '../../../web/src/chat/types';
+import { DetailsWorkspace } from '../../../../shared/conversation/DetailsWorkspace';
+import { useHistoryDrawers } from '../../../../shared/remote-chat/views/useHistoryDrawers';
+import type { Turn } from '../../../../shared/remote-chat/views/types';
 
-vi.mock('../../../web/src/chat/review/TaskReviewPanel', () => ({
+vi.mock('../../../../shared/task-review/views/TaskReviewPanel', () => ({
   TaskReviewPanel: () => <textarea aria-label="验收意见" defaultValue="" />,
 }));
 const turns: Turn[] = [{ id: 'turn', status: 'completed', items: [
@@ -30,7 +30,7 @@ const click = (name: string) => act(async () => {
 beforeEach(async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
-  vi.stubGlobal('matchMedia', () => ({ matches: false, addListener() {}, removeListener() {} }));
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} }));
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 1440, 900));
   host = document.createElement('div'); document.body.append(host); root = createRoot(host);
   await act(async () => root.render(<DetailsWorkspace selected="thread" active><History /></DetailsWorkspace>));

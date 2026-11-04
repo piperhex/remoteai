@@ -6,9 +6,9 @@ import type { Provider } from "../src/types";
 import { ProxyAccountPicker } from "../src/pages/codexGui/ProxyAccountPicker";
 import { useUsageStatus } from "../src/pages/codexGui/useUsageStatus";
 import { MessageItem } from "../src/pages/codexGui/MessageItem";
-import { DetailsWorkspace } from "../src/pages/codexGui/DetailsWorkspace";
+import { DetailsWorkspace } from "../../../shared/conversation/DetailsWorkspace";
 import { SkillInput } from "../src/pages/codexGui/SkillInput";
-import type { ComposerText } from "../src/pages/codexGui/types";
+import type { ComposerText } from "../../../shared/conversation/types";
 
 const provider: Provider = {
   id: "backup", name: "备用服务", kind: "custom", group: "", baseUrl: "https://example.com/v1",

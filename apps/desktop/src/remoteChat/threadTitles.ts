@@ -1,5 +1,5 @@
 import { getGuiController } from '../pages/codexGui/session';
-import type { Thread } from '../pages/codexGui/types';
+import type { Thread } from '../../../../shared/conversation/types';
 
 /** Remote sends bypass GuiController.send, but share its naming settings and deduplication. */
 export class RemoteThreadTitles {

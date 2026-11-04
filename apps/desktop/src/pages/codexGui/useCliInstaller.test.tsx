@@ -6,7 +6,8 @@ import { useCliInstaller } from "./useCliInstaller";
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn(), stop: vi.fn(), subscribe: vi.fn() }));
 vi.mock("../../api/backend", () => ({ invoke: mocks.invoke }));
-vi.mock("./webEvents", () => ({ subscribeGuiEvent: mocks.subscribe }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
+vi.mock("../../../../../shared/conversation/webEvents", () => ({ subscribeGuiEvent: mocks.subscribe }));
 const controller = { connect: vi.fn(), report: vi.fn(), clearError: vi.fn() };
 let root: ReturnType<typeof createRoot>;
 let installer: ReturnType<typeof useCliInstaller>;

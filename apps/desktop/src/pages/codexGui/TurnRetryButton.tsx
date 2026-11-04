@@ -1,7 +1,7 @@
 import { RotateCcw } from 'lucide-react';
 import { useTurnRetry } from '../../../../../shared/chat/TurnRetryContext';
-import { uiText } from "../../i18n/uiText";
-import styles from './RequestErrorNotice.module.less';
+import { uiText } from "../../../../../shared/localization/uiText";
+import styles from '../../../../../shared/conversation/RequestErrorNotice.module.less';
 
 export function TurnRetryButton({ turnId }: { turnId: string }) {
   const action = useTurnRetry(turnId);

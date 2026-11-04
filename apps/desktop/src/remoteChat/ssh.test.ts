@@ -13,6 +13,7 @@ vi.mock('../pages/codexGui/terminal/api', () => ({
   terminalApi: { open: vi.fn(), write: vi.fn(), resize: vi.fn(), close: vi.fn() },
 }));
 vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 beforeEach(() => vi.clearAllMocks());
 
 it('forwards X11 settings through the remote and Web terminal adapters', async () => {

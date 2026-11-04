@@ -5,10 +5,10 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Composer, type ComposerHandle } from "./Composer";
 import { Messages } from "./Messages";
 import { GuiController } from "./controller";
-import { conversation } from "./events";
+import { conversation } from "../../../../../shared/conversation/events";
 import { initialState } from "./preferences";
-import { testModels } from "./testModels";
-import type { GuiState } from "./types";
+import { testModels } from "../../../../../shared/conversation/testing/models";
+import type { GuiState } from "../../../../../shared/conversation/types";
 
 vi.mock("./UsageStatus", () => ({ UsageStatus: () => null }));
 vi.mock("./ModelPicker", () => ({ ModelPicker: () => null }));

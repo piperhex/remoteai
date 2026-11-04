@@ -6,9 +6,10 @@ import { invoke } from "../../api/backend";
 import { GuiController } from "./controller";
 import { ModelPicker } from "./ModelPicker";
 import { useUsageStatus } from "./useUsageStatus";
-import type { Model } from "./types";
+import type { Model } from "../../../../../shared/conversation/types";
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn(), isHostedWebApp: false, canManageCodexConnection: true }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const models: Model[] = ["kimi-k3", "deepseek-v3"].map((model) => ({
   id: model, model, displayName: model, isDefault: true, defaultReasoningEffort: "high",
   supportedReasoningEfforts: [{ reasoningEffort: "high", description: "" }],

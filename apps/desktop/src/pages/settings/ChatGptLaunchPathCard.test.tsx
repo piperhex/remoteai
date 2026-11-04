@@ -7,6 +7,7 @@ import { ChatGptLaunchPathCard } from './ChatGptLaunchPathCard';
 import type { ChatGptLaunchPathSettings } from '../../api/chatgptLaunchPath';
 
 vi.mock('../../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 let root: Root;
 let container: HTMLDivElement;
 let settings: ChatGptLaunchPathSettings;

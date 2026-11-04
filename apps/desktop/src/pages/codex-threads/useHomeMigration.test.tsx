@@ -10,6 +10,7 @@ vi.mock("../../components/CodexHomeScope", () => ({
   useCodexHomes: () => [{ id: "source" }, { id: "target" }, { id: "third" }, { id: "codex-gui" }],
 }));
 vi.mock("../../api/backend", () => ({ migrateCodexThreadsToHome: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 let root: Root;
 let migration: ReturnType<typeof useHomeMigration>;
 const selected = new Set(["one", "two"]);

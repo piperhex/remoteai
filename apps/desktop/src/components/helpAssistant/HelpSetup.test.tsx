@@ -3,14 +3,15 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { invoke } from '../../api/backend';
-import { subscribeGuiEvent } from '../../pages/codexGui/webEvents';
+import { subscribeGuiEvent } from '../../../../../shared/conversation/webEvents';
 import { HelpAssistant } from './HelpAssistant';
 import type { DashboardPage } from '../dashboard/DashboardNavigation';
 import type { HelpStatus } from './types';
 
 const backend = vi.hoisted(() => ({ available: true }));
 vi.mock('../../api/backend', () => ({ get hasLocalBackend() { return backend.available; }, invoke: vi.fn() }));
-vi.mock('../../pages/codexGui/webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
+vi.mock('../../../../../shared/conversation/webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
 
 let root: Root | undefined;
 let container: HTMLDivElement;

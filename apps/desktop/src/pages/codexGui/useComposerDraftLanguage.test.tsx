@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { GuiController } from "./controller";
 import { useComposerDraft } from "./useComposerDraft";
-import { setGuiLanguage } from "../../i18n/uiText";
+import { setGuiLanguage } from "../../../../../shared/localization/uiText";
 
 const imageUrl = "data:image/png;base64,iVBORw0KGgo=";
 let root: Root;

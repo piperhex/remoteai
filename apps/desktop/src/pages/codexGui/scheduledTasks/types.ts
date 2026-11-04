@@ -1,4 +1,4 @@
-import { displayText } from '../../../i18n/uiText';
+import { displayText } from '../../../../../../shared/localization/uiText';
 export type Schedule =
   | { kind: "once"; at: number }
   | { kind: "interval"; minutes: number }
@@ -51,4 +51,4 @@ export function filterTasks(tasks: ScheduledTask[], filter: TaskFilter, search: 
 export function taskInput({ title, prompt, cwd, schedule }: TaskInput): TaskInput {
   return { title, prompt, cwd, schedule };
 }
-import { guiLocale, uiText } from "../../../i18n/uiText";
+import { guiLocale, uiText } from "../../../../../../shared/localization/uiText";

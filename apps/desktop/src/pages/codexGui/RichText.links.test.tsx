@@ -3,13 +3,13 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { RichText } from "./RichText";
-import { PreviewMarkdown } from "./filePreview/PreviewMarkdown";
-import { DetailsContext } from "./detailsContext";
+import { RichText } from "../../../../../shared/conversation/RichText";
+import { PreviewMarkdown } from "../../../../../shared/file-preview/workspace/PreviewMarkdown";
+import { DetailsContext } from "../../../../../shared/conversation/detailsContext";
 
 vi.mock("@tauri-apps/api/core", () => ({ isTauri: () => true }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ openUrl: vi.fn().mockResolvedValue(undefined) }));
-vi.mock("./FileMenu", () => ({ FileMenu: () => <span data-file-link /> }));
+vi.mock("../../../../../shared/conversation/FileMenu", () => ({ FileMenu: () => <span data-file-link /> }));
 const report = "前端 **http://localhost:3002**、后端 **http://127.0.0.1:8082** 均保持运行。"
   + "本轮发现的问题尚未修复。";
 const urls = ["http://localhost:3002", "http://127.0.0.1:8082"];

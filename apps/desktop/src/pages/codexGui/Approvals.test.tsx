@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { Approvals } from "./Approvals";
-import type { GuiEvent } from "./types";
+import type { GuiEvent } from "../../../../../shared/conversation/types";
 
 let root: Root;
 let container: HTMLDivElement;

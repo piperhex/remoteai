@@ -6,13 +6,13 @@ import { compressChatImage } from '../../../../shared/remote-chat/compressImage'
 import { sliceHistory } from '../../../../shared/remote-chat/historyPage';
 import type { Thread } from '../../../../shared/remote-chat/client/types';
 import { ChatOperations } from './operations';
-import { guiApi } from '../pages/codexGui/api';
-import { downloadChatImage } from '../../../web/src/chat/downloadImage';
+import { guiApi } from '../../../../shared/conversation/api';
+import { downloadChatImage } from '../../../../shared/remote-chat/views/downloadImage';
 
 vi.mock('../pages/codexGui/composerBridge', () => ({ guiComposer: {
   validateSend: async () => ({ model: 'model', effort: 'high', access: 'workspace-write' }),
 } }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn(), connect: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn(), connect: vi.fn() } }));
 afterEach(() => { setChatPolicy(DEFAULT_CHAT_POLICY); vi.resetAllMocks(); });
 
 it('checks the current limit before starting a web download, including previously cached images', () => {

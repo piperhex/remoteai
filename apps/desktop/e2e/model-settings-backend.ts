@@ -1,9 +1,9 @@
 import type { BrowserContext } from "@playwright/test";
 import type { ModelSettingsSnapshot } from "../src/pages/codexGui/threadModelSettings";
-import type { ModelSelection } from "../src/pages/codexGui/modelSelection";
+import type { ModelSelection } from "../../../shared/conversation/modelSelection";
 import type { QueueSnapshot } from "../src/pages/codexGui/queueJournal";
 import type { RequestSpeed } from '../../../shared/remote-chat/composer';
-import type { ThreadTokenUsage } from '../src/pages/codexGui/types';
+import type { ThreadTokenUsage } from '../../../shared/conversation/types';
 
 export function modelSettingsBackend(liveUpdate?: ModelSettingsSnapshot["liveUpdate"]) {
   const saved = new Map<string | null, ModelSettingsSnapshot>();

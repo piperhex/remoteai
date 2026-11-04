@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import type { AccountQuotaPoint } from '../types/tokenUsageAnalytics';
+import type { AccountQuotaPoint } from '../../../../shared/token-usage/analytics';
 import type { TokenSummary } from '../../../../shared/remote-chat/tokenSummary';
 import { decodeTokenSummary, encodeTokenSummary } from '../../../../shared/remote-chat/tokenSummaryCodec';
 import { chunks, Assembler } from '../../../../shared/remote-chat/framing';

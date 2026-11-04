@@ -1,7 +1,7 @@
 import inlineCopy from '@remoteai/i18n/copy/inline/desktop/components/DailyTokenUsageTooltip';
-import { uiText } from "../i18n/uiText";
+import { uiText } from "../../../../shared/localization/uiText";
 import type { Language } from "../i18n";
-import { formatCompactTokenCount } from "../utils/tokenContext";
+import { formatCompactTokenCount } from "../../../../shared/context-usage/format";
 
 export interface TokenTypeTotals {
   total: number;

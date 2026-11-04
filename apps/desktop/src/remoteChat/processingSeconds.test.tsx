@@ -3,10 +3,10 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import { useProcessingSeconds } from '../../../../shared/remote-chat/client/useProcessingSeconds';
-import type { Turn } from '../pages/codexGui/types';
-import { ChatProcessing } from '../../../web/src/chat/ChatProcessing';
-import { restoreProcessing } from '../pages/codexGui/processing';
-import { setLanguage, type Language } from "../../../web/src/i18n/language";
+import type { Turn } from '../../../../shared/conversation/types';
+import { ChatProcessing } from '../../../../shared/remote-chat/views/ChatProcessing';
+import { restoreProcessing } from '../../../../shared/conversation/processing';
+import { setLanguage, type Language } from "../../../../shared/localization/browserLanguage";
 
 function Clock({ turn, active }: { turn: Turn; active: boolean }) {
   return <span>{useProcessingSeconds(turn, active).totalSeconds}</span>;

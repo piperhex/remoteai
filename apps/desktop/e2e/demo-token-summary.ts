@@ -1,5 +1,5 @@
 import type { TokenSummary } from '../../../shared/remote-chat/tokenSummary';
-import { calendarDateKeys, startOfCalendar } from '../src/components/TokenUsageDashboard/chartUtils';
+import { calendarDateKeys, startOfCalendar } from '../../../shared/token-usage/chartUtils';
 
 export function demoTokenSummary(input: Record<string, unknown>): TokenSummary {
   const weeks = typeof input.weeks === 'number' ? input.weeks : 4;

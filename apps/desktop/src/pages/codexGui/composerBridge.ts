@@ -1,8 +1,8 @@
-import { uiText } from "../../i18n/uiText";
-import { guiApi } from './api';
+import { uiText } from "../../../../../shared/localization/uiText";
+import { guiApi } from '../../../../../shared/conversation/api';
 import type { GuiController } from './controller';
-import { modelSelectionError, resolveModelSelection } from './modelSelection';
-import type { Model, ListResponse } from './types';
+import { modelSelectionError, resolveModelSelection } from '../../../../../shared/conversation/modelSelection';
+import type { Model, ListResponse } from '../../../../../shared/conversation/types';
 import { composerPatch, DEFAULT_COMPOSER, MODEL_CATALOG_ERROR, type ComposerSettings,
   type ComposerSnapshot, type RequestSpeed } from '../../../../../shared/remote-chat/composer';
 import { guiRequestSpeed, type RequestSpeedSource } from './requestSpeedBridge';

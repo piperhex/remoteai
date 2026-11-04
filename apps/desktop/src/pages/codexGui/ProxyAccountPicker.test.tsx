@@ -6,11 +6,12 @@ import { invoke, queryProviderBalance, subscribeToProviderBalance } from "../../
 import type { Account, Provider, ProviderBalance } from "../../types";
 import { ProxyAccountPicker, type ProxyAccountPickerProps } from "./ProxyAccountPicker";
 import { useUsageStatus } from "./useUsageStatus";
-import detailsStyles from "./ProxyAccountDetails.module.less";
-import type { GuiAutoSwitchSettings } from "./autoSwitchSettings";
+import detailsStyles from "../../../../../shared/conversation/ProxyAccountDetails.module.less";
+import type { GuiAutoSwitchSettings } from "../../../../../shared/conversation/autoSwitchSettings";
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn(), queryProviderBalance: vi.fn(),
   subscribeToProviderBalance: vi.fn(), isHostedWebApp: false, canManageCodexConnection: true }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const account: Account = {
   id: "official", email: "user@example.com", group: "", note: "工作账号", expiresAt: "", plan: "Plus",
   privateDetails: { password: "", phoneNumber: "", totpSecret: "" }, active: true, autoSwitchEnabled: true,

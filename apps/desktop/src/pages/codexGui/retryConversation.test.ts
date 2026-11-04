@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { GuiController } from './controller';
-import { guiApi } from './api';
-import { testModels } from './testModels';
+import { guiApi } from '../../../../../shared/conversation/api';
+import { testModels } from '../../../../../shared/conversation/testing/models';
 import { conversationRetryState, retryConversation } from './ConversationRetryProvider';
-import { CONTINUE_MESSAGE } from './continuation';
-import { MODEL_CAPACITY_MESSAGE } from './requestError';
-import type { GuiEvent, GuiState, Thread } from './types';
+import { CONTINUE_MESSAGE } from '../../../../../shared/conversation/continuation';
+import { MODEL_CAPACITY_MESSAGE } from '../../../../../shared/conversation/requestError';
+import type { GuiEvent, GuiState, Thread } from '../../../../../shared/conversation/types';
 
-vi.mock('./api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn(), respond: vi.fn() } }));
+vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn(), respond: vi.fn() } }));
 let controller: GuiController;
 let receive: (event: GuiEvent) => void;
 const target = { threadId: 'one', turnId: 'failed' };

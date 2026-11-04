@@ -2,11 +2,11 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { ComposerBridge } from './composerBridge';
 import { GuiController } from './controller';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 import { composerLabel, type RequestSpeed } from '../../../../../shared/remote-chat/composer';
-import type { Model } from './types';
+import type { Model } from '../../../../../shared/conversation/types';
 
-vi.mock('./api', () => ({ guiApi: { request: vi.fn(), connect: vi.fn(), subscribe: vi.fn() } }));
+vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn(), connect: vi.fn(), subscribe: vi.fn() } }));
 const models: Model[] = ['first', 'second'].map((model, index) => ({
   id: model, model, displayName: `GPT-${model}`, isDefault: index === 0, defaultReasoningEffort: 'high',
   supportedReasoningEfforts: ['high', 'xhigh'].map((reasoningEffort) => ({ reasoningEffort, description: '' })),

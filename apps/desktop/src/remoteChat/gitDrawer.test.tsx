@@ -2,12 +2,12 @@
 import { act, useContext, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { GitDrawer } from '../../../web/src/chat/git/GitDrawer';
-import { DetailsWorkspace } from '../pages/codexGui/DetailsWorkspace';
+import { GitDrawer } from '../../../../shared/git/views/GitDrawer';
+import { DetailsWorkspace } from '../../../../shared/conversation/DetailsWorkspace';
 import { WorkspaceDrawerContext, workspaceTabId } from '../../../../shared/chat/workspaceDrawer';
-import { ConversationChangesButton } from '../pages/codexGui/ConversationChangesButton';
+import { ConversationChangesButton } from '../../../../shared/conversation/ConversationChangesButton';
 
-vi.mock('../../../web/src/useDesktopLayout', () => ({ useDesktopLayout: () => true }));
+vi.mock('../../../../shared/layout/useDesktopLayout', () => ({ useDesktopLayout: () => true }));
 vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
 let root: ReturnType<typeof createRoot>;
 let container: HTMLDivElement;

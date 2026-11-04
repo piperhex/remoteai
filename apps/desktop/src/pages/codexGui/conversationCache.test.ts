@@ -2,7 +2,7 @@
 import { beforeEach, expect, it } from 'vitest';
 import { ConversationCache } from './conversationCache';
 import { initialState } from './preferences';
-import type { Conversation, GuiState } from './types';
+import type { Conversation, GuiState } from '../../../../../shared/conversation/types';
 
 const conversation = (id: string, length = 2_000): Conversation => ({
   thread: { id, cwd: '', preview: '', updatedAt: 1 }, activeTurn: null, error: '', tokens: 0,

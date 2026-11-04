@@ -1,4 +1,4 @@
-import { displayText } from '../i18n/uiText';
+import { displayText } from '../../../../shared/localization/uiText';
 import { formatRemoteError } from '../../../../shared/localization/errors';
 // @vitest-environment jsdom
 import { act } from 'react';

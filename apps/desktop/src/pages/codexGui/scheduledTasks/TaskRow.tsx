@@ -1,4 +1,4 @@
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import { remoteErrorText } from "../../../../../../shared/localization/errors";
 import { Button, Dropdown } from "antd";
 import { CheckCircle2, CirclePlay, LoaderCircle, MoreHorizontal, PauseCircle } from "lucide-react";

@@ -3,8 +3,8 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { WorkingStatus } from "./WorkingStatus";
-import { restoreProcessing } from "./processing";
-import type { Turn } from "./types";
+import { restoreProcessing } from "../../../../../shared/conversation/processing";
+import type { Turn } from "../../../../../shared/conversation/types";
 
 let root: Root;
 let host: HTMLDivElement;

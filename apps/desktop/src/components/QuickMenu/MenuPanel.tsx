@@ -1,7 +1,7 @@
-import { displayError } from '../../i18n/uiText';
+import { displayError } from '../../../../../shared/localization/uiText';
 import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 import { ArrowLeft, Layers3, X } from "lucide-react";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { quickMenuLanguage } from "./language";
 import { MenuRow } from "./MenuRow";
 import type { MenuEntry, MenuSnapshot } from "./types";

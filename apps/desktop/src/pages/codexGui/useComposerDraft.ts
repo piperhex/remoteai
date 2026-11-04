@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useFilePaste } from "./useFilePaste";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import type { GuiController } from "./controller";
-import type { ComposerText } from "./types";
-import { attachmentKey, MAX_ATTACHMENTS, type AttachmentReference } from "./attachmentTypes";
+import type { ComposerText } from "../../../../../shared/conversation/types";
+import { attachmentKey, MAX_ATTACHMENTS, type AttachmentReference } from "../../../../../shared/conversation/attachmentTypes";
 import { validateUploadedFiles } from "../../../../../shared/remote-chat/composerAttachments";
-import { MAX_REPLY_QUOTES, MAX_QUOTE_CHARACTERS, quoteKey, quotedReply, type ReplyQuote } from "./replyQuotes";
-import { queuedMessageText } from "./queuedMessageDraft";
-import { MAX_CONVERSATION_REFERENCES } from "./conversationReferences";
+import { MAX_REPLY_QUOTES, MAX_QUOTE_CHARACTERS, quoteKey, quotedReply, type ReplyQuote } from "../../../../../shared/conversation/replyQuotes";
+import { queuedMessageText } from "../../../../../shared/conversation/queuedMessageDraft";
+import { MAX_CONVERSATION_REFERENCES } from "../../../../../shared/conversation/conversationReferences";
 
 import { IMAGE_TYPES, MAX_IMAGES, MAX_IMAGE_BYTES, readImage, type DraftImage } from "./draftImages";
 export { IMAGE_TYPES, MAX_IMAGES, MAX_IMAGE_BYTES, readImage, type DraftImage } from "./draftImages";

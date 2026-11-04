@@ -1,5 +1,5 @@
 import type { DailyTokenUsage } from "../types";
-import type { AccountQuotaHistory, DailyTokenUsageBreakdown } from "../types/tokenUsageAnalytics";
+import type { AccountQuotaHistory, DailyTokenUsageBreakdown } from "../../../../shared/token-usage/analytics";
 
 export function previewTokenBreakdown(daily: DailyTokenUsage[]): DailyTokenUsageBreakdown[] {
   return daily.map((entry, index) => {

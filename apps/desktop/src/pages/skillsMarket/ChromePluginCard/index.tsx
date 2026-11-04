@@ -1,13 +1,13 @@
 import { pluginSearch } from '@remoteai/i18n/copy/desktop/pluginSearch';
-import { displayError } from '../../../i18n/uiText';
+import { displayError } from '../../../../../../shared/localization/uiText';
 import { useEffect, useState } from "react";
 import { Globe, LoaderCircle, Power, Settings2 } from "lucide-react";
 import { useChromePlugin } from "./useChromePlugin";
 import { ChromeSetup } from "./ChromeSetup";
 import type { ChromePluginStatus } from "../../../api/chromePlugin";
 import { translate } from "../../../i18n";
-import { uiText } from "../../../i18n/uiText";
-import { useGuiLanguage } from "../../../i18n/useGuiLanguage";
+import { uiText } from "../../../../../../shared/localization/uiText";
+import { useGuiLanguage } from "../../../../../../shared/localization/useGuiLanguage";
 import styles from "./index.module.less";
 
 interface Props {

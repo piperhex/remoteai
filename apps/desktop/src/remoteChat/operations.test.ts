@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, it, vi } from 'vitest';
 import { ChatOperations } from './operations';
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { remoteQueue } from './queue';
 import { guiComposer } from '../pages/codexGui/composerBridge';
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
-vi.mock('./sendMessage', () => ({ sendRemoteMessage: (request: import('../pages/codexGui/types').Request) =>
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
+vi.mock('./sendMessage', () => ({ sendRemoteMessage: (request: import('../../../../shared/conversation/types').Request) =>
   guiApi.request(request) }));
 vi.mock('../pages/codexGui/composerBridge', () => ({ guiComposer: {
   validateSend: vi.fn(), read: vi.fn(), refreshModels: vi.fn(),

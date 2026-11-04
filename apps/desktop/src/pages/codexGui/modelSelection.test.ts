@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
-import { modelSelectionError, resolveModelSelection } from "./modelSelection";
-import type { Model } from "./types";
+import { modelSelectionError, resolveModelSelection } from "../../../../../shared/conversation/modelSelection";
+import type { Model } from "../../../../../shared/conversation/types";
 
 const model: Model = { id: "kimi-k3", model: "kimi-k3", displayName: "Kimi K3", isDefault: true,
   defaultReasoningEffort: "high", supportedReasoningEfforts: ["low", "high", "max"].map((reasoningEffort) =>

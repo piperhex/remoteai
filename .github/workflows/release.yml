@@ -160,13 +160,6 @@ jobs:
             git submodule update --init shared
           fi
 
-      - name: Initialize Web source components
-        shell: bash
-        run: |
-          if git config -f .gitmodules --get submodule.apps/web.path > /dev/null; then
-            git submodule update --init apps/web
-          fi
-
       - name: Install Linux build dependencies
         if: startsWith(matrix.name, 'ubuntu')
         run: |
@@ -475,13 +468,6 @@ jobs:
         run: |
           if git config -f .gitmodules --get submodule.shared.path > /dev/null; then
             git submodule update --init shared
-          fi
-
-      - name: Initialize Web source components
-        shell: bash
-        run: |
-          if git config -f .gitmodules --get submodule.apps/web.path > /dev/null; then
-            git submodule update --init apps/web
           fi
 
       - name: Verify pinned Coze release

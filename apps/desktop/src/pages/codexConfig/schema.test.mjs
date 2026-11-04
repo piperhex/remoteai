@@ -16,7 +16,7 @@ function loadSource(filename, dependencies = {}) {
   return exports;
 }
 const labels = loadSource("./labels.ts", {
-  "../../i18n/uiText": { uiText: testText },
+  "../../../../../shared/localization/uiText": { uiText: testText },
 });
 const schema = loadSource("./schema.ts", {
   "./schema.generated.json": { default: sourceSchema }, "./labels": labels,

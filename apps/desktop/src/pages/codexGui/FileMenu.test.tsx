@@ -4,11 +4,11 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { isTauri } from "@tauri-apps/api/core";
 import { message } from "antd";
-import { FileMenu } from "./FileMenu";
-import { FileThreadContext, fileApi } from "./fileApi";
-import { RichText } from "./RichText";
-import { filePreviewApi, type FilePreviewData } from "./filePreview/api";
-import { DetailsWorkspace } from "./DetailsWorkspace";
+import { FileMenu } from "../../../../../shared/conversation/FileMenu";
+import { FileThreadContext, fileApi } from "../../../../../shared/conversation/fileApi";
+import { RichText } from "../../../../../shared/conversation/RichText";
+import { filePreviewApi, type FilePreviewData } from "../../../../../shared/file-preview/workspace/api";
+import { DetailsWorkspace } from "../../../../../shared/conversation/DetailsWorkspace";
 
 vi.mock("@tauri-apps/api/core", () => ({ isTauri: vi.fn(() => true), invoke: vi.fn() }));
 let root: Root;

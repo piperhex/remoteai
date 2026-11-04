@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { GuiController } from "./controller";
 import { MAX_IMAGE_BYTES, useComposerDraft } from "./useComposerDraft";
-import { MAX_REPLY_QUOTES, MAX_QUOTE_CHARACTERS, quoteKey } from "./replyQuotes";
+import { MAX_REPLY_QUOTES, MAX_QUOTE_CHARACTERS, quoteKey } from "../../../../../shared/conversation/replyQuotes";
 import { fileSelectionQuote } from '../../../../../shared/project-browser/fileSelection';
 
 let root: Root;

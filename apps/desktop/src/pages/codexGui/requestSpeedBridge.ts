@@ -1,7 +1,7 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { invoke } from '../../api/backend';
 import type { RequestSpeed } from '../../../../../shared/remote-chat/composer';
-import { subscribeGuiEvent } from './webEvents';
+import { subscribeGuiEvent } from '../../../../../shared/conversation/webEvents';
 
 const REFRESH_INTERVAL_MS = 5_000;
 export interface GuiRequestSettings { speed?: RequestSpeed; fastModeEnabled: boolean; fastModeAvailable: boolean }

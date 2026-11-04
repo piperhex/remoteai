@@ -1,5 +1,5 @@
 import type { Account, Provider } from "../types";
-import { maskAccountEmail } from "./accountPrivacy";
+import { maskAccountEmail } from "../../../../shared/accounts/privacy";
 
 const ACCOUNT_MEMBER_PREFIX = "account:";
 

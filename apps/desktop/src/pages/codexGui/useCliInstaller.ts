@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "../../api/backend";
-import { subscribeGuiEvent } from "./webEvents";
+import { subscribeGuiEvent } from "../../../../../shared/conversation/webEvents";
 import type { GuiController } from "./controller";
-import type { CliSnapshot } from "./cliManualDownloadApi";
+import type { CliSnapshot } from "../../../../../shared/conversation/cliManualDownloadApi";
 
 interface Release { version: string; size: number; ready?: boolean }
 interface Progress { downloaded: number; total: number; phase: "downloading" | "installing" }

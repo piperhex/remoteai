@@ -5,7 +5,7 @@ import type { GuiAccountSelection, GuiAccountsSnapshot } from '../../../../share
 import { guiAccountBalances } from './guiAccountBalances';
 import { providerWebsiteOrigin } from '../../../../shared/provider-market/providerWebsite';
 import { switchGuiAccount } from '../pages/codexGui/session';
-import { uiText } from "../i18n/uiText";
+import { uiText } from "../../../../shared/localization/uiText";
 
 function remainingPercent(value: number | undefined) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return '—';

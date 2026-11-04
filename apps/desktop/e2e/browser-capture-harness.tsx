@@ -1,9 +1,9 @@
 import { createRoot } from 'react-dom/client';
-import { RichText } from '../src/pages/codexGui/RichText';
-import { ImageThreadContext } from '../src/pages/codexGui/useImageSource';
-import { FileEnvironmentContext, type FileEnvironment } from '../src/pages/codexGui/fileEnvironment';
-import { ChatMarkdown } from '../../web/src/chat/ChatMarkdown';
-import { ChatImage, ChatImageContext } from '../../web/src/chat/ChatImage';
+import { RichText } from '../../../shared/conversation/RichText';
+import { ImageThreadContext } from '../../../shared/conversation/useImageSource';
+import { FileEnvironmentContext, type FileEnvironment } from '../../../shared/conversation/fileEnvironment';
+import { ChatMarkdown } from '../../../shared/remote-chat/views/ChatMarkdown';
+import { ChatImage, ChatImageContext } from '../../../shared/remote-chat/views/ChatImage';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
 import { applyThemeMode } from '../src/utils/themeMode';
 import { setThemeMode } from '../../web/src/theme/preference';
@@ -14,7 +14,7 @@ const appearance = params.has('dark') ? 'dark' : 'light';
 setInterfaceLanguage('zh');
 if (entry === 'web') {
   await import('../../web/src/styles.css');
-  await import('../../web/src/chat/messages.css');
+  await import('../../../shared/remote-chat/views/messages.css');
   setThemeMode(appearance);
 } else {
   await import('../src/styles.css');

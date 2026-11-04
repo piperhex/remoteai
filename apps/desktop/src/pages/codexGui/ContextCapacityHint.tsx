@@ -1,8 +1,8 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useState } from "react";
 import { invoke } from "../../api/backend";
 import type { ContextSettings } from "../../../../../shared/remote-chat/contextSettings";
-import { formatCompactTokenCount } from "../../utils/tokenContext";
+import { formatCompactTokenCount } from "../../../../../shared/context-usage/format";
 import styles from "./ContextUsageButton.module.less";
 
 export function ContextCapacityHint({ threadId, open }: { threadId?: string | null; open: boolean }) {

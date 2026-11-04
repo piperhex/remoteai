@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { GuiController } from '../pages/codexGui/controller';
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { getGuiController } from '../pages/codexGui/session';
 import { guiComposer } from '../pages/codexGui/composerBridge';
 import { ChatOperations } from './operations';
-import type { Thread } from '../pages/codexGui/types';
+import type { Thread } from '../../../../shared/conversation/types';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: {
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: {
   connect: vi.fn(), request: vi.fn(), subscribe: vi.fn(), respond: vi.fn(),
 } }));
 vi.mock('../pages/codexGui/session', () => ({ getGuiController: vi.fn() }));

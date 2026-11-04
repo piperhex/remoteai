@@ -1,15 +1,16 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ChatOperations } from './operations';
-import { guiApi } from '../pages/codexGui/api';
-import type { GuiEvent, Thread } from '../pages/codexGui/types';
+import { guiApi } from '../../../../shared/conversation/api';
+import type { GuiEvent, Thread } from '../../../../shared/conversation/types';
 import { ChatController } from '../../../../shared/remote-chat/client/controller';
 import type { ChatConnection, ConnectionEvents } from '../../../../shared/remote-chat/client/connection';
 import { applyHistoryDelta, historyVersion } from '../../../../shared/remote-chat/historySync';
 import { sliceHistory, type PagedHistoryDelta } from '../../../../shared/remote-chat/historyPage';
 import { EventStream } from './eventStream';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
 vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 beforeEach(() => vi.resetAllMocks());
 afterEach(() => vi.useRealTimers());
 

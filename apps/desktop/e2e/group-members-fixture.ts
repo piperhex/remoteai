@@ -1,5 +1,5 @@
 import type { GroupMember, GroupMembersQuery } from '../../../shared/chat/groups/model';
-import type { Thread } from '../src/pages/codexGui/types';
+import type { Thread } from '../../../shared/conversation/types';
 
 export interface FixtureThread extends Thread { archived?: boolean }
 export const groupRequests = { pages: [] as GroupMembersQuery[], full: 0 };

@@ -1,9 +1,9 @@
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { getGuiController } from '../pages/codexGui/session';
-import { canEditMessage, lastUserMessage, type MessageChangeResult } from '../pages/codexGui/editMessage';
+import { canEditMessage, lastUserMessage, type MessageChangeResult } from '../../../../shared/conversation/editMessage';
 import { guiComposer } from '../pages/codexGui/composerBridge';
 import { sliceHistory } from '../../../../shared/remote-chat/historyPage';
-import type { Request } from '../pages/codexGui/types';
+import type { Request } from '../../../../shared/conversation/types';
 
 /** Run remote edits under the host's activity/queue guards and refresh its local conversation too. */
 export async function changeRemoteMessage(body: Record<string, unknown>): Promise<MessageChangeResult> {

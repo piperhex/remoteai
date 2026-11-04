@@ -11,6 +11,7 @@ const backend = vi.hoisted(() => ({
   removeMarketSkill: vi.fn(), setMarketSkillEnabled: vi.fn(), skillPreviewUrl: vi.fn(() => null),
 }));
 vi.mock("../../../api/backend", () => ({ ...backend, hasLocalBackend: true, isDesktopApp: false }));
+vi.mock('../../../../../../shared/platform/localBackend', async () => await import('../../../api/backend'));
 
 let root: Root;
 let container: HTMLDivElement;

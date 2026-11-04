@@ -2,15 +2,15 @@
 import { act, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { guiApi } from "./api";
-import { testModels } from "./testModels";
+import { guiApi } from "../../../../../shared/conversation/api";
+import { testModels } from "../../../../../shared/conversation/testing/models";
 import { GuiController } from "./controller";
 import { Messages } from "./Messages";
-import { conversation } from "./events";
-import { CONTINUE_MESSAGE } from "./continuation";
-import type { GuiEvent, Item, Thread, Turn } from "./types";
+import { conversation } from "../../../../../shared/conversation/events";
+import { CONTINUE_MESSAGE } from "../../../../../shared/conversation/continuation";
+import type { GuiEvent, Item, Thread, Turn } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: {
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: {
   connect: vi.fn(), request: vi.fn(), subscribe: vi.fn(), respond: vi.fn(),
 } }));
 const items: Item[] = [
@@ -222,7 +222,7 @@ it("does not load local endpoints or executable URLs as Markdown images", async 
   ] }] });
   await act(async () => root.render(<Messages selected={thread.id} value={value} />));
   expect(container.querySelector("img")).toBeNull();
-  expect(container.textContent).toContain("暂不支持预览");
+  expect(container.textContent).toContain("图片加载失败");
 });
 
 it("places the real send date and time beside the copy action outside the user bubble", async () => {

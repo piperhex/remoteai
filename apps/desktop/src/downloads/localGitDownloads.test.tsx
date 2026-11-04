@@ -4,14 +4,15 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, expect, it, vi } from 'vitest';
 import { useLocalGitDownloads, LOCAL_DOWNLOAD_OWNER } from './localGitDownloads';
 import { localGitClient } from '../pages/codexGui/localGitClient';
-import { guiApi } from '../pages/codexGui/api';
-import { downloadManager } from '../../../web/src/downloads/manager';
-import { enqueueGitPatch } from '../../../web/src/downloads/gitPatch';
+import { guiApi } from '../../../../shared/conversation/api';
+import { downloadManager } from '../../../../shared/downloads/manager';
+import { enqueueGitPatch } from '../../../../shared/downloads/gitPatch';
 import { createAsyncGitFixture } from '../../../../shared/remote-chat/testing/gitFixture';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn(async () => ({})) } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn(async () => ({})) } }));
 vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
-vi.mock('../i18n/uiText', async () => ({ ...await vi.importActual<typeof import('../i18n/uiText')>('../i18n/uiText'),  }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
+vi.mock('../../../../shared/localization/uiText', async () => ({ ...await vi.importActual<typeof import('../../../../shared/localization/uiText')>('../../../../shared/localization/uiText'),  }));
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 it('queues local and remote patches against their own computer and keeps local transfers after closing Git', async () => {

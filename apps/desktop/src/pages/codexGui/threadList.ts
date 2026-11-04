@@ -1,7 +1,7 @@
 import { ThreadListCache, type ThreadListQuery } from '../../../../../shared/remote-chat/client/threadListCache';
 import { readThreadListPage } from '../../../../../shared/remote-chat/client/threadListPages';
-import { guiApi } from './api';
-import type { GuiEvent, GuiState, Thread } from './types';
+import { guiApi } from '../../../../../shared/conversation/api';
+import type { GuiEvent, GuiState, Thread } from '../../../../../shared/conversation/types';
 
 interface Host {
   getSnapshot: () => GuiState;

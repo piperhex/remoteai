@@ -5,11 +5,11 @@ import { mockIPC } from '@tauri-apps/api/mocks';
 import { createAsyncGitFixture } from '../../../shared/remote-chat/testing/gitFixture';
 import { createGuiToolsClient } from '../../../shared/remote-chat/guiTools';
 import { useRemoteGit } from '../../../shared/remote-chat/useRemoteGit';
-import { GitChanges } from '../../web/src/chat/git/GitChanges';
-import { useGitTheme } from '../../web/src/chat/git/gitTheme';
-import { displayError, setLanguage, useLanguage } from '../../web/src/i18n';
+import { GitChanges } from '../../../shared/git/views/GitChanges';
+import { useGitTheme } from '../../../shared/git/views/gitTheme';
+import { displayError, setLanguage, useLanguage } from '../../../shared/localization/browserClient';
 import type { GitConflict, GitResolution } from '../../../shared/remote-chat/gitTypes';
-import '../../web/src/chat/git/git.css';
+import '../../../shared/git/views/git.css';
 
 const query = new URLSearchParams(location.search);
 const mode = query.get('mode') ?? 'local';

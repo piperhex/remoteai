@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import type { Conversation } from "../src/pages/codexGui/types";
+import type { Conversation } from "../../../shared/conversation/types";
 
 const title = "“等很久”是点切换后一直转圈，还是切换后发消息一直没有回复？";
 const options = ["点切换后一直转圈", "切换后发消息等很久", "两种情况都有"];

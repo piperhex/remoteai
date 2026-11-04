@@ -2,7 +2,7 @@
 import { beforeEach, expect, it } from 'vitest';
 import { initialState } from './preferences';
 import { threadGroups } from './threadGroups';
-import type { Thread } from './types';
+import type { Thread } from '../../../../../shared/conversation/types';
 
 const thread = (id: string, cwd = '/project'): Thread => ({ id, cwd, preview: id, updatedAt: 1 });
 beforeEach(() => localStorage.clear());

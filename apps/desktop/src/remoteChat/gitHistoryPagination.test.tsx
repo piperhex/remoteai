@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { useRemoteGit } from '../../../../shared/remote-chat/useRemoteGit';
 import { createAsyncGitFixture } from '../../../../shared/remote-chat/testing/gitFixture';
-import { GitHistory } from '../../../web/src/chat/git/GitHistory';
+import { GitHistory } from '../../../../shared/git/views/GitHistory';
 
 vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
 let container: HTMLDivElement;

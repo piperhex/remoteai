@@ -1,11 +1,11 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import type { ReactElement } from "react";
 import { App } from "antd";
 import { ProjectContextMenu } from "../../../../../shared/chat/ProjectContextMenu";
 import { useOpenProjectFolder } from "../../../../../shared/chat/useOpenProjectFolder";
 import type { GuiController } from "./controller";
-import type { GuiState } from "./types";
-import { fileApi } from "./fileApi";
+import type { GuiState } from "../../../../../shared/conversation/types";
+import { fileApi } from "../../../../../shared/conversation/fileApi";
 import { isDesktopApp } from "../../api/backend";
 import styles from "./ThreadGroup.module.less";
 

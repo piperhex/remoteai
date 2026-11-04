@@ -15,6 +15,7 @@ vi.mock("../api/backend", () => ({
   installDownloadedUpdate: vi.fn(),
   hasPendingAppUpdateInstall: () => false,
 }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 
 const update: UpdateInfo = {
   currentVersion: "1.4.4", latestVersion: "1.4.5", releaseName: "Update",

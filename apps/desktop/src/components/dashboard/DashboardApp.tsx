@@ -116,13 +116,13 @@ import { useNotificationNavigation } from "../../pages/codexGui/useNotificationN
 import { useGuiTheme } from "../../pages/codexGui/guiTheme";
 import { RemoteAssistance } from '../../remoteAssistance/RemoteAssistance';
 import { assistanceStore } from '../../remoteAssistance/store';
-import codexGuiStyles from "../../pages/codexGui/styles.module.less";
+import codexGuiStyles from "../../../../../shared/conversation/styles.module.less";
 import { CODEX_CONFIG_TOPBAR_ID, CodexConfigPage } from "../../pages/CodexConfigPage";
 import codexConfigStyles from "../../pages/codexConfig/pageStyles.module.less";
 import { SystemPromptPage } from "../../pages/SystemPromptPage";
 import { NetworkProxySettingsModal } from "../../pages/settings/NetworkProxySettings";
 import type { Translate } from "../../i18n";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { AccountDisplayTabs } from "./AccountDisplayTabs";
 import { AccountManagementToolbar } from "./AccountManagementToolbar";
 import { AccountToolbox } from "./AccountToolbox";

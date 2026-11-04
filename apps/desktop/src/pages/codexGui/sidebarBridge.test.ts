@@ -3,8 +3,8 @@ import { beforeEach, expect, it } from 'vitest';
 import { SidebarBridge } from './sidebarBridge';
 import { GuiReadState } from './threadReadState';
 import { initialState, savePreferences } from './preferences';
-import { saveProject } from './projectCatalog';
-import type { GuiState, Thread } from './types';
+import { saveProject } from '../../../../../shared/conversation/projectCatalog';
+import type { GuiState, Thread } from '../../../../../shared/conversation/types';
 import { projectThreadGroups } from '../../../../../shared/remote-chat/sidebar';
 
 const thread: Thread = { id: 'one', cwd: 'F:/project', name: '第一项任务', preview: '', updatedAt: 1 };

@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { isDesktopApp } from '../api/backend';
 import type { ChatLink } from '../../../../shared/remote-chat/link';
 import { bulkCapability, BULK_ERROR_EVENT, type BulkOpen, type BulkOpened, type BulkRequest }

@@ -1,9 +1,9 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { invoke } from '../../api/backend';
 import type { AggregateApi, Provider } from '../../types';
 import type { GuiAccountSelection } from '../../../../../shared/remote-chat/guiAccounts';
 import { providerModels } from './providerModels';
-import type { Model } from './types';
+import type { Model } from '../../../../../shared/conversation/types';
 
 /** Read routing from the host session; page visibility and shared active flags are irrelevant. */
 export async function readGuiProviderModels(): Promise<Model[] | null> {

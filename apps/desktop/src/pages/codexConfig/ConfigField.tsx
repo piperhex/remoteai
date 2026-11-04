@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useState } from "react";
 import { Button, Select, Tag, Tooltip } from "antd";
 import { RotateCcw } from "lucide-react";

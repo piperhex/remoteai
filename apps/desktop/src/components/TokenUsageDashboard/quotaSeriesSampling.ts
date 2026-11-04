@@ -1,4 +1,4 @@
-import type { QuotaSeriesPoint } from "./quotaHistoryData";
+import type { QuotaSeriesPoint } from "../../../../../shared/token-usage/quotaHistoryData";
 
 export interface QuotaVisibleRange {
   startValue: number;

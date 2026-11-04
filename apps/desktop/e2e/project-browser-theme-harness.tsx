@@ -1,18 +1,18 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ConfigProvider, theme } from 'antd';
-import { DetailsWorkspace } from '../src/pages/codexGui/DetailsWorkspace';
+import { DetailsWorkspace } from '../../../shared/conversation/DetailsWorkspace';
 import { LocalProjectBrowser } from '../src/pages/codexGui/LocalProjectBrowser';
-import { ChatDetailsWorkspace } from '../../web/src/chat/ChatDetailsWorkspace';
-import { ProjectBrowserButton } from '../../web/src/chat/projectBrowser/ProjectBrowserButton';
+import { ChatDetailsWorkspace } from '../../../shared/remote-chat/views/ChatDetailsWorkspace';
+import { ProjectBrowserButton } from '../../../shared/project-browser/views/ProjectBrowserButton';
 import { setThemeMode } from '../../web/src/theme/preference';
 import { applyThemeMode } from '../src/utils/themeMode';
-import { guiApi } from '../src/pages/codexGui/api';
+import { guiApi } from '../../../shared/conversation/api';
 import { createProjectBrowserClient, type ProjectBrowserRequest } from '../../../shared/project-browser/protocol';
 import { browserRequest, browserRoot } from './project-browser-fixture';
 import 'antd/dist/reset.css';
 import '../src/styles.css';
-import '../../web/src/chat/chat.css';
+import '../../../shared/remote-chat/views/chat.css';
 
 const params = new URLSearchParams(location.search);
 const mode = params.get('mode') ?? 'local';

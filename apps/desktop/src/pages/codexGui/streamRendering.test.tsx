@@ -3,8 +3,8 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
 import { TurnMessage } from './TurnMessage';
-import { uiText } from '../../i18n/uiText';
-import type { Turn } from './types';
+import { uiText } from '../../../../../shared/localization/uiText';
+import type { Turn } from '../../../../../shared/conversation/types';
 
 const counts = vi.hoisted(() => ({ rows: [] as string[], parses: [] as string[] }));
 vi.mock('./useStreamingText', async original => {

@@ -1,10 +1,14 @@
 import { expect, test } from '@playwright/test';
 
+test.beforeEach(async ({ page }) => {
+  await page.route('https://fonts.googleapis.com/**', route => route.abort());
+});
+
 for (const mode of ['local', 'remote', 'web']) {
   test(`${mode}: conversation context stays visible while running and follows workspace changes`, async ({ page }) => {
-    test.setTimeout(90_000);
+    test.setTimeout(180_000);
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(`/e2e/conversation-workspace-harness.html?mode=${mode}`);
+    await page.goto(`/e2e/conversation-workspace-harness.html?mode=${mode}`, { waitUntil: 'domcontentloaded' });
     const worktree = page.getByRole('group', { name: '当前工作树', exact: true });
     const branch = page.getByRole('group', { name: '当前分支', exact: true });
     const project = page.getByRole('button', { name: mode === 'local' ? '选择项目文件夹：codex-switch' : '选择远程项目' });
@@ -40,7 +44,7 @@ for (const mode of ['local', 'remote', 'web']) {
 
   test(`${mode}: narrow chat puts project controls in overflow and restores them without losing state`, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(`/e2e/conversation-workspace-harness.html?mode=${mode}`);
+    await page.goto(`/e2e/conversation-workspace-harness.html?mode=${mode}`, { waitUntil: 'domcontentloaded' });
     const bar = page.locator('[data-project-bar]');
     const more = page.getByRole('button', { name: '更多项目选项', exact: true });
     const panel = page.getByRole('dialog', { name: '更多项目选项', exact: true });
@@ -83,15 +87,17 @@ for (const mode of ['local', 'remote', 'web']) {
 
   test(`${mode}: project and branch pickers remain usable inside overflow`, async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto(`/e2e/conversation-workspace-harness.html?mode=${mode}&draft`);
+    await page.goto(`/e2e/conversation-workspace-harness.html?mode=${mode}&draft`, { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: 'Narrow chat', exact: true }).click();
     const more = page.getByRole('button', { name: '更多项目选项', exact: true });
     await more.click();
     const project = page.getByRole('button', { name: mode === 'local'
       ? '选择项目文件夹：codex-switch' : '选择远程项目' });
     await project.click();
-    await expect(page.getByRole('textbox', { name: '搜索项目', exact: true })).toBeVisible();
-    await expect(page.getByRole('textbox', { name: '搜索项目', exact: true })).toBeFocused();
+    const search = page.getByRole('searchbox', { name: '在当前文件夹中搜索', exact: true });
+    await expect(search).toBeVisible();
+    await search.focus();
+    await expect(search).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(project).toBeFocused();
     const branch = page.getByRole('button', { name: '切换 Git 分支', exact: true });

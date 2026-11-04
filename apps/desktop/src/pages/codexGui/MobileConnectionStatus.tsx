@@ -1,4 +1,4 @@
-import { guiLocale, uiText } from "../../i18n/uiText";
+import { guiLocale, uiText } from "../../../../../shared/localization/uiText";
 import { useState, useSyncExternalStore } from "react";
 import { Popover } from "antd";
 import { mobileConnection } from "../../remoteChat/mobileConnection";

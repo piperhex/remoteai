@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import styles from "./CozePage.module.less";
 
 const CozePage = lazy(() => import("./CozePage"));

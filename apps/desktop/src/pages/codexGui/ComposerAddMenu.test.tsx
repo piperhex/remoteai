@@ -6,11 +6,11 @@ import { ComposerAddMenu } from "./ComposerAddMenu";
 import { SkillInput, type SkillInputHandle } from "./SkillInput";
 import { useComposerDraft } from "./useComposerDraft";
 import { GuiController } from "./controller";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { readEditor } from "./skillEditorDom";
-import type { Skill } from "./types";
+import type { Skill } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: { request: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { request: vi.fn() } }));
 const icon = "data:image/svg+xml;base64,PHN2Zy8+";
 const skill: Skill = { name: "review", path: "D:/skills/review/SKILL.md", enabled: true,
   description: "检查代码", iconUrl: icon, interface: { displayName: "Review" } };

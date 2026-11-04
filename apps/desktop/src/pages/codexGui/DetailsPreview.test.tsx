@@ -2,12 +2,12 @@
 import { act, useContext, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { DetailsWorkspace } from "./DetailsWorkspace";
-import { ConversationChangesButton } from "./ConversationChangesButton";
-import { MessageLink } from "./MessageLink";
-import { filePreviewApi, type FilePreviewData } from "./filePreview/api";
+import { DetailsWorkspace } from "../../../../../shared/conversation/DetailsWorkspace";
+import { ConversationChangesButton } from "../../../../../shared/conversation/ConversationChangesButton";
+import { MessageLink } from "../../../../../shared/conversation/MessageLink";
+import { filePreviewApi, type FilePreviewData } from "../../../../../shared/file-preview/workspace/api";
 import { invoke } from '@tauri-apps/api/core';
-import { DetailsContext } from "./detailsContext";
+import { DetailsContext } from "../../../../../shared/conversation/detailsContext";
 
 vi.mock("@tauri-apps/api/core", () => ({ isTauri: () => true, invoke: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn().mockResolvedValue(() => {}) }));

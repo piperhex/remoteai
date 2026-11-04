@@ -1,9 +1,9 @@
-import { displayError } from '../../i18n/uiText';
-import { guiApi } from './api';
+import { displayError } from '../../../../../shared/localization/uiText';
+import { guiApi } from '../../../../../shared/conversation/api';
 
 import { projectFileReference, useProjectFileCandidates,
   type ProjectFileSearch } from '../../../../../shared/chat/useProjectFileCandidates';
-import type { AttachmentReference } from './attachmentTypes';
+import type { AttachmentReference } from '../../../../../shared/conversation/attachmentTypes';
 import type { ComposerOption } from './composerOptions';
 
 const load: ProjectFileSearch = request => guiApi.request({ operation: 'projectFiles', ...request });

@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 import { GuiController } from './controller';
 import { GuiModelCatalog, MODEL_CATALOG_RETRY_MS } from './modelCatalog';
 import { ComposerBridge } from './composerBridge';
 import { ChatController } from '../../../../../shared/remote-chat/client/controller';
 import { chatHandshake } from '../../../../../shared/remote-chat/handshake';
-import type { Model } from './types';
+import type { Model } from '../../../../../shared/conversation/types';
 
-vi.mock('./api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
+vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 const model: Model = { id: 'available', model: 'available', displayName: 'Available', isDefault: true,
   defaultReasoningEffort: 'high', supportedReasoningEfforts: [{ reasoningEffort: 'high', description: '' }] };
 const page = { data: [model], nextCursor: null };

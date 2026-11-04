@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { commandOutcome, formatConversationTsr, summarizeCommands }
   from '../../../../shared/remote-chat/commandMetrics';
 import { CommandMetricsStore } from './commandMetrics';
-import type { GuiEvent, Item, Thread } from '../pages/codexGui/types';
+import type { GuiEvent, Item, Thread } from '../../../../shared/conversation/types';
 
 const command = (id: string, exitCode: number | null, status = 'completed'): Item =>
   ({ id, type: 'commandExecution', status, exitCode });

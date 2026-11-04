@@ -2,12 +2,12 @@ import { useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ConfigProvider, theme } from 'antd';
 import { ProjectPicker } from '../src/pages/codexGui/ProjectPicker';
-import { RemoteProjectPicker } from '../src/pages/codexGui/remote/RemoteProjectPicker';
-import { ChatProjectSwitch } from '../../web/src/chat/ChatProjectSwitch';
+import { RemoteProjectPicker } from '../../../shared/conversation/remote/RemoteProjectPicker';
+import { ChatProjectSwitch } from '../../../shared/remote-chat/views/ChatProjectSwitch';
 import { ChatController } from '../../../shared/remote-chat/client/controller';
-import { guiApi } from '../src/pages/codexGui/api';
-import { useGuiLanguage } from '../src/i18n/useGuiLanguage';
-import { setLanguage } from '../../web/src/i18n';
+import { guiApi } from '../../../shared/conversation/api';
+import { useGuiLanguage } from '../../../shared/localization/useGuiLanguage';
+import { setLanguage } from '../../../shared/localization/browserClient';
 import { applyThemeMode } from '../src/utils/themeMode';
 import { setThemeMode } from '../../web/src/theme/preference';
 import { explorerRoot, explorerCalls, explorerRequest, explorerBlockedPaths } from './project-explorer-fixture';
@@ -20,7 +20,7 @@ const initialPath = params.has('computer') ? '' : explorerRoot;
 if (params.has('stalled')) explorerBlockedPaths.add(initialPath);
 if (mode === 'web') {
   await import('../../web/src/styles.css');
-  await import('../../web/src/chat/chat.css');
+  await import('../../../shared/remote-chat/views/chat.css');
   setThemeMode(dark ? 'dark' : 'light');
 } else {
   await import('../src/styles.css');

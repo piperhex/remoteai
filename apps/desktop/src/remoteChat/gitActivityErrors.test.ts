@@ -9,6 +9,7 @@ import { createGuiToolsClient } from '../../../../shared/remote-chat/guiTools';
 import type { GitFileActionRequest } from '../../../../shared/remote-chat/gitTypes';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 const format = createErrorFormatter(resources);
 const details = '发布任务 (task-release) → src/app.ts';
 const error = JSON.stringify({ code: 'client.gitActivity.filesBusy', params: { details } });

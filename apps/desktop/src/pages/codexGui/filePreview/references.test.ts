@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { all, createLowlight } from "lowlight";
-import { fileLanguage } from "./fileLanguages";
-import { previewImageUrl, previewReference } from "./references";
+import { fileLanguage } from "../../../../../../shared/file-preview/workspace/fileLanguages";
+import { previewImageUrl, previewReference } from "../../../../../../shared/file-preview/workspace/references";
 
 it.each([
   ["a.ts", "typescript"], ["a.rs", "rust"], ["a.yml", "yaml"], ["a.TOML", "ini"],

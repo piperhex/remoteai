@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type { SubscribeFileDrop } from '../../../../../shared/chat/useFileDrop';
 import { fileUploadTotalByteLimit, getChatPolicy, MIB } from '../../../../../shared/remote-chat/policy';
 import { MAX_CHAT_IMAGES } from '../../../../../shared/remote-chat/attachments';
-import type { AttachmentReference } from './attachmentTypes';
+import type { AttachmentReference } from '../../../../../shared/conversation/attachmentTypes';
 import { nativeFile } from './nativeFile';
 
 interface DroppedFile { name: string; mimeType: string; data: string }

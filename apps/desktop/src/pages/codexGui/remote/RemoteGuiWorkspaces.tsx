@@ -1,6 +1,6 @@
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import { lazy, Suspense, useState, type ComponentProps } from 'react';
-import type { GuiComputer } from './types';
+import type { GuiComputer } from '../../../../../../shared/conversation/remote/types';
 
 const RemoteGuiWorkspace = lazy(() => import('./RemoteGuiWorkspace'));
 type WorkspaceProps = ComponentProps<typeof RemoteGuiWorkspace>;

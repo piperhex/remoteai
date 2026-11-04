@@ -1,7 +1,7 @@
-import { uiText } from '../../i18n/uiText';
+import { uiText } from '../../../../../shared/localization/uiText';
 import { directoryProject, type ProjectDirectoriesResponse } from '../../../../../shared/remote-chat/projectDirectories';
 import type { GuiController } from './controller';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 
 const MAX_PATH_LENGTH = 4096;
 const THREAD_ID = /^[a-zA-Z0-9_-]{1,200}$/;

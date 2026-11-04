@@ -1,7 +1,7 @@
 import inlineCopy from '@remoteai/i18n/copy/inline/desktop/components/TokenUsageDashboard/index';
 import { interpolate as interpolateCopy } from '@remoteai/i18n';
 import { getLocale } from "../../i18n";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useMemo, useState } from "react";
 import { Button, InputNumber } from "antd";
 import { BarChart, HeatmapChart, LineChart, PieChart } from "echarts/charts";
@@ -22,7 +22,7 @@ import type { Language } from "../../i18n";
 import { EChart } from "./EChart";
 import { CustomBillingButton } from "./CustomBillingButton";
 import styles from "./index.module.less";
-import { aggregateEntries, calendarDateKeys, chartPalette, usagePieOption } from "./chartUtils";
+import { aggregateEntries, calendarDateKeys, chartPalette, usagePieOption } from "../../../../../shared/token-usage/chartUtils";
 import { useOverviewOptions } from "./useOverviewOptions";
 import { useDashboardData } from "./useDashboardData";
 import { useLongContextThreshold } from "./useLongContextThreshold";

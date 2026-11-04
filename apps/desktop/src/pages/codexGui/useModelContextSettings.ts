@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "../../api/backend";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { parseContextCapacity, TOKENS_PER_K } from "../../../../../shared/remote-chat/contextSettings";
 
 export interface ModelContextSettings {

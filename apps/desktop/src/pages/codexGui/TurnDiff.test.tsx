@@ -3,12 +3,12 @@ import { act, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { TurnDiff } from "./TurnDiff";
-import { gitApi } from "./gitApi";
-import { changedFiles } from "./diff";
-import { DetailsContext } from "./detailsContext";
+import { gitApi } from "../../../../../shared/conversation/gitApi";
+import { changedFiles } from "../../../../../shared/conversation/diff";
+import { DetailsContext } from "../../../../../shared/conversation/detailsContext";
 import { WorkspaceOperationContext } from "./workspaceOperationContext";
 
-vi.mock("./gitApi", () => ({ gitApi: { undo: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/gitApi", () => ({ gitApi: { undo: vi.fn() } }));
 vi.mock("antd", () => ({ Popconfirm: ({ children, onConfirm, disabled }: {
   children: ReactNode; onConfirm: () => void; disabled: boolean;
 }) => <div onClick={() => { if (!disabled) onConfirm(); }}>{children}</div> }));

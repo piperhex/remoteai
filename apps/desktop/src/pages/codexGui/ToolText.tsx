@@ -1,6 +1,6 @@
-import { uiText } from "../../i18n/uiText";
-import { CopyButton } from "./CopyButton";
-import { RichText } from "./RichText";
+import { uiText } from "../../../../../shared/localization/uiText";
+import { CopyButton } from "../../../../../shared/conversation/CopyButton";
+import { RichText } from "../../../../../shared/conversation/RichText";
 import styles from "./ActivityRow.module.less";
 import { CompletePlainText } from "../../../../../shared/chat/CompletePlainText";
 

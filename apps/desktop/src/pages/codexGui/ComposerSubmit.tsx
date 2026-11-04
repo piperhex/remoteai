@@ -1,11 +1,11 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { Button, Tooltip } from "antd";
 import { ArrowUp, Play, Square } from "lucide-react";
 import type { GuiController } from "./controller";
-import type { GuiState } from "./types";
+import type { GuiState } from "../../../../../shared/conversation/types";
 import styles from "./ComposerSubmit.module.less";
-import { CONTINUE_MESSAGE } from "./continuation";
-import { modelSelectionError } from "./modelSelection";
+import { CONTINUE_MESSAGE } from "../../../../../shared/conversation/continuation";
+import { modelSelectionError } from "../../../../../shared/conversation/modelSelection";
 import { useMessageQueueEnabled } from "../../../../../shared/chat/useMessageQueueEnabled";
 
 export function ComposerSubmit({ state, controller, hasDraft, reading, onSend, goalMode = false }: {

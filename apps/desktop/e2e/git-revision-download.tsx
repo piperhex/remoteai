@@ -1,9 +1,9 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import type { GitClient } from '../../../shared/remote-chat/gitTypes';
 import type { DownloadClient } from '../../../shared/remote-chat/downloads';
-import { downloadManager } from '../../web/src/downloads/manager';
-import { DownloadCard } from '../../web/src/downloads/DownloadCard';
-import '../../web/src/downloads/styles.css';
+import { downloadManager } from '../../../shared/downloads/manager';
+import { DownloadCard } from '../../../shared/downloads/DownloadCard';
+import '../../../shared/downloads/styles.css';
 
 const PATCH = 'diff --git a/one.txt b/one.txt\n--- a/one.txt\n+++ b/one.txt\n@@ -1 +1 @@\n-old\n+new\n';
 const bytes = new TextEncoder().encode(PATCH);

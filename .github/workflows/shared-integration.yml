@@ -40,7 +40,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Initialize required source repositories
         run: |
-          git submodule update --init shared apps/web
+          git submodule update --init shared
           if git config -f .gitmodules --get submodule.packages/i18n.path > /dev/null; then
             git submodule update --init packages/i18n
           fi
@@ -55,5 +55,6 @@ jobs:
           scripts/release-workflow.test.mjs scripts/organize-release-downloads.test.mjs
           scripts/sync-native-release.test.mjs
           scripts/i18n-host-manifest.test.mjs
+      - run: npm run check:boundaries
       - run: npm run check:i18n
       - run: npx lerna run check --stream

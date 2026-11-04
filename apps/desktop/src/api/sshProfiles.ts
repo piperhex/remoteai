@@ -2,7 +2,7 @@ import { invoke, loadCloudAuthState } from './backend';
 import { legacySshProfiles, type SshProfileStore } from '../../../../shared/terminal/sshProfiles';
 import { createServerSshProfiles, parseServerSshProfiles, type SshProfileRequest }
   from '../../../../shared/terminal/serverSshProfiles';
-import type { GuiCloudIdentity } from '../pages/codexGui/remote/types';
+import type { GuiCloudIdentity } from '../../../../shared/conversation/remote/types';
 import { sshProfileError } from '../../../../shared/terminal/sshProfileResponse';
 
 async function currentIdentity(): Promise<GuiCloudIdentity> {

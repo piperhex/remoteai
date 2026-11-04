@@ -1,17 +1,18 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { subscribeToProviderEvents } from "../../api/backend";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { GuiModelCatalog } from "./modelCatalog";
 import { watchModelCatalog } from "./modelCatalogRefresh";
-import { subscribeGuiEvent } from "./webEvents";
-import type { Model } from "./types";
+import { subscribeGuiEvent } from "../../../../../shared/conversation/webEvents";
+import type { Model } from "../../../../../shared/conversation/types";
 
 const backend = vi.hoisted(() => ({ hosted: true }));
 vi.mock("../../api/backend", () => ({ get isHostedWebApp() { return backend.hosted; },
   subscribeToProviderEvents: vi.fn() }));
-vi.mock("./api", () => ({ guiApi: { request: vi.fn() } }));
-vi.mock("./webEvents", () => ({ subscribeGuiEvent: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { request: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/webEvents", () => ({ subscribeGuiEvent: vi.fn() }));
 const model: Model = { id: "model", model: "model", displayName: "Model", isDefault: true,
   defaultReasoningEffort: "high", supportedReasoningEfforts: [{ reasoningEffort: "high", description: "" }] };
 const DAY_MS = 24 * 60 * 60 * 1000;

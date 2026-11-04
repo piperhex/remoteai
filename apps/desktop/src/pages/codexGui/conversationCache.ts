@@ -1,4 +1,4 @@
-import type { Conversation, GuiState } from './types';
+import type { Conversation, GuiState } from '../../../../../shared/conversation/types';
 
 export const CONVERSATION_CACHE_BYTES = 64 * 1024 * 1024;
 const STRING_BYTES = 2;

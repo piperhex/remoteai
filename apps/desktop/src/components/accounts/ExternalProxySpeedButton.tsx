@@ -1,4 +1,4 @@
-import { displayText } from '../../i18n/uiText';
+import { displayText } from '../../../../../shared/localization/uiText';
 import { RequestSpeedButton } from "../../../../../shared/remote-chat/RequestSpeedButton";
 import type { RequestSpeed } from "../../../../../shared/remote-chat/composer";
 

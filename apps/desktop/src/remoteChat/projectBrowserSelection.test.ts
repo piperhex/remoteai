@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { EditorSelection, EditorState } from '@codemirror/state';
 import { fileSelectionQuote, selectedFileText } from '../../../../shared/project-browser/fileSelection';
-import { quotedReply } from '../pages/codexGui/replyQuotes';
+import { quotedReply } from '../../../../shared/conversation/replyQuotes';
 import { quotedMessage } from '../../../../shared/chat/quotedMessage';
 
 it('captures exact whitespace and one-based positions from a reversed CRLF selection', () => {

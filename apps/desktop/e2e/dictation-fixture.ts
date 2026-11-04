@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
-import { testModels } from '../src/pages/codexGui/testModels';
-import type { Request, Thread } from '../src/pages/codexGui/types';
+import { testModels } from '../../../shared/conversation/testing/models';
+import type { Request, Thread } from '../../../shared/conversation/types';
 
 const thread: Thread = { id: 'dictation-thread', name: '语音输入测试', cwd: '', preview: '', updatedAt: 1, turns: [] };
 interface AudioRequest { sessionId: string; data: string; mimeType: string }

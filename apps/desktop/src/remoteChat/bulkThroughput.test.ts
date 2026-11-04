@@ -17,8 +17,9 @@ const mocks = vi.hoisted(() => ({ invoke: vi.fn(), request: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke, Channel: class {
   onmessage = (_batch: Batch) => {};
 } }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: mocks.request } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: mocks.request } }));
 vi.mock('../api/backend', () => ({ isDesktopApp: true }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 vi.mock('../../../../shared/remote-chat/policy', () => ({
   getChatPolicy: () => ({ fileBulkEnabled: 1 }), fileDownloadByteLimit: () => 300 * 1024 * 1024,
 }));

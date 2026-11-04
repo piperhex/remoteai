@@ -1,22 +1,22 @@
-import { guiLocale, uiText } from "../../i18n/uiText";
+import { guiLocale, uiText } from "../../../../../shared/localization/uiText";
 import { useState } from "react";
 import { Button } from "antd";
 import { Pencil } from "lucide-react";
-import type { Item } from "./types";
+import type { Item } from "../../../../../shared/conversation/types";
 import { visibleUserContent } from "../../../../../shared/chat/conversationContext";
 import { UserMessageEditor } from "./UserMessageEditor";
-import { CopyButton } from "./CopyButton";
-import { MessageImage } from "./MessageImage";
+import { CopyButton } from "../../../../../shared/conversation/CopyButton";
+import { MessageImage } from "../../../../../shared/conversation/MessageImage";
 import { MessageQuotes } from "./MessageQuotes";
 import { quotedMessage } from "../../../../../shared/chat/quotedMessage";
-import { FileMenu } from "./FileMenu";
+import { FileMenu } from "../../../../../shared/conversation/FileMenu";
 import { messageAttachments } from "../../../../../shared/chat/messageAttachments";
 import { MessageAttachments } from "../../../../../shared/chat/SentMessageAttachments";
 import { AttachmentMetadataProvider } from './AttachmentMetadataProvider';
-import { CONVERSATION_PREFIX } from "./conversationReferences";
-import { isMessageImage, type SubmitMessageEdit } from "./messageEditContent";
+import { CONVERSATION_PREFIX } from "../../../../../shared/conversation/conversationReferences";
+import { isMessageImage, type SubmitMessageEdit } from "../../../../../shared/conversation/messageEditContent";
 import userStyles from "./UserMessage.module.less";
-import styles from "./styles.module.less";
+import styles from "../../../../../shared/conversation/styles.module.less";
 
 const MILLISECONDS_PER_SECOND = 1000;
 function referenceLabel(path?: string) {

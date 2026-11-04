@@ -1,7 +1,7 @@
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { getGuiController } from '../pages/codexGui/session';
 import { isThreadRunning } from '../pages/codexGui/threadRunning';
-import type { Thread } from '../pages/codexGui/types';
+import type { Thread } from '../../../../shared/conversation/types';
 
 /** Branch on the host so history and model choices stay scoped to the requested conversation. */
 export async function forkRemoteConversation(threadId: unknown) {

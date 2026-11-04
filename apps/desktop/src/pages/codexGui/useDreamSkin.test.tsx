@@ -11,6 +11,7 @@ import { saveGuiTheme, useGuiTheme } from "./guiTheme";
 import { saveGuiSkin } from "./guiSkin";
 
 vi.mock("../../api/backend", () => ({ loadDreamSkinStatus: vi.fn(), loadDreamSkinThemePreview: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const status: DreamSkinStatus = { supported: true, platform: "windows", installed: true,
   runtimeInstalled: true, session: "active", activeThemeId: "first", activeThemeAppearance: "dark",
   activeThemeOverlayOpacity: 0.8, savedThemes: [] };

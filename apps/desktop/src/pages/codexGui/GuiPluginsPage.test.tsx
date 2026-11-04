@@ -13,7 +13,8 @@ const backend = vi.hoisted(() => ({
   setOfficialPluginEnabled: vi.fn(), fetchPromptPlugins: vi.fn(), invoke: vi.fn(),
 }));
 vi.mock("../../api/backend", () => ({ ...backend, hasLocalBackend: true, isDesktopApp: true }));
-vi.mock("./webEvents", () => ({ subscribeGuiEvent: vi.fn(async () => () => undefined) }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
+vi.mock("../../../../../shared/conversation/webEvents", () => ({ subscribeGuiEvent: vi.fn(async () => () => undefined) }));
 
 let root: Root;
 let container: HTMLDivElement;

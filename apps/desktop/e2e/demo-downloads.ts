@@ -1,4 +1,4 @@
-import type { Thread } from '../src/pages/codexGui/types';
+import type { Thread } from '../../../shared/conversation/types';
 import { demoVideoResponse } from './demo-videos';
 import thumbnail from '../src-tauri/icons/32x32.png?inline';
 import { demoOriginal } from './demo-images';

@@ -7,7 +7,8 @@ import { ChatRpc } from '../../../../shared/remote-chat/rpc';
 import { createRemoteDictationClient } from '../../../../shared/remote-chat/dictation';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(invoke).mockImplementation(async command => command === 'codex_gui_dictation_prepare'

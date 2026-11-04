@@ -2,15 +2,15 @@
 import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { SkillInput } from "./SkillInput";
 import { ComposerReferences } from "./ComposerReferences";
 import { readEditor } from "./skillEditorDom";
 import { remoteAttachments } from "../../../../../shared/remote-chat/composerAttachments";
-import type { ComposerText } from "./types";
-import type { AttachmentReference } from "./attachmentTypes";
+import type { ComposerText } from "../../../../../shared/conversation/types";
+import type { AttachmentReference } from "../../../../../shared/conversation/attachmentTypes";
 
-vi.mock("./api", () => ({ guiApi: { request: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { request: vi.fn() } }));
 const id = "f321c884-a198-4244-ad4f-53762b3d2aba";
 const send = vi.fn();
 let root: Root;

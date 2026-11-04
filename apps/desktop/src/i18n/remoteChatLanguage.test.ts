@@ -11,9 +11,9 @@ it('keeps the host language when shared Web chat loads and follows later switche
     vi.resetModules();
     const preferenceKey = 'codex-switch.web.language.v1';
     localStorage.setItem(preferenceKey, 'en');
-    const { setGuiLanguage } = await import('./uiText');
+    const { setGuiLanguage } = await import('../../../../shared/localization/uiText');
     setGuiLanguage('ja');
-    const chat = await import('../../../web/src/i18n');
+    const chat = await import('../../../../shared/localization/browserClient');
     expect(chat.getLanguage()).toBe('ja');
     expect(chat.t('client.chat.chatMessage')).toBe('チャットメッセージ');
     for (const language of ['ru', 'en', 'zh', 'ja'] as const) {

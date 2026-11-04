@@ -2,8 +2,8 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
-import { MAX_TERMINAL_TABS, useTerminalPanel, type TerminalPanelState } from "./useTerminalPanel";
-import { terminalTheme } from "./theme";
+import { MAX_TERMINAL_TABS, useTerminalPanel, type TerminalPanelState } from "../../../../../../shared/terminal/views/useTerminalPanel";
+import { terminalTheme } from "../../../../../../shared/terminal/views/theme";
 
 it("preserves shells across hiding and project changes, and creates new tabs in the current project", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

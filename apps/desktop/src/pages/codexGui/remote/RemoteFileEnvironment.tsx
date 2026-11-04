@@ -1,11 +1,11 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { message } from 'antd';
 import type { ChatController } from '../../../../../../shared/remote-chat/client/controller';
-import { downloadManager } from '../../../../../web/src/downloads/manager';
-import { ChatImage } from '../../../../../web/src/chat/ChatImage';
-import { FileEnvironmentContext, type FileEnvironment } from '../fileEnvironment';
-import { FileThreadContext } from '../fileApi';
-import { uiText } from "../../../i18n/uiText";
+import { downloadManager } from '../../../../../../shared/downloads/manager';
+import { ChatImage } from '../../../../../../shared/remote-chat/views/ChatImage';
+import { FileEnvironmentContext, type FileEnvironment } from '../../../../../../shared/conversation/fileEnvironment';
+import { FileThreadContext } from '../../../../../../shared/conversation/fileApi';
+import { uiText } from "../../../../../../shared/localization/uiText";
 import { RemoteFileAccess } from './fileAccess';
 import { isDesktopApp } from '../../../api/backend';
 

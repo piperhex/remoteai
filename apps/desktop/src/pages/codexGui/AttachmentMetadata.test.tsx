@@ -5,10 +5,10 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ComposerAttachment } from '../../../../../shared/chat/ComposerAttachment';
 import { AttachmentMetadataContext } from '../../../../../shared/chat/attachmentMetadata';
 import { AttachmentMetadataProvider } from './AttachmentMetadataProvider';
-import { ChatAttachmentMetadata } from '../../../../web/src/chat/ChatAttachmentMetadata';
+import { ChatAttachmentMetadata } from '../../../../../shared/remote-chat/views/ChatAttachmentMetadata';
 import { ChatController } from '../../../../../shared/remote-chat/client/controller';
-import { fileApi } from './fileApi';
-import { uiText } from '../../i18n/uiText';
+import { fileApi } from '../../../../../shared/conversation/fileApi';
+import { uiText } from '../../../../../shared/localization/uiText';
 
 let root: Root;
 let host: HTMLDivElement;

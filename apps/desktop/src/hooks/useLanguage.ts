@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { publishLanguageChange, subscribeToLanguageChanges } from "../api/backend";
 import { getLocale, LANGUAGE_STORAGE_KEY, isLanguage, translate, type Language } from "../i18n";
 import { deviceLanguage } from "../../../../shared/localization/language";
-import { setGuiLanguage } from "../i18n/uiText";
+import { setGuiLanguage } from "../../../../shared/localization/uiText";
 
 function storedLanguage(): Language {
   try {

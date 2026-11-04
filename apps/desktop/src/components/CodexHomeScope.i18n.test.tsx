@@ -3,10 +3,11 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { CodexHomeScope, CodexHomeSelect, homeLabel } from "./CodexHomeScope";
-import { uiText, setGuiLanguage } from "../i18n/uiText";
+import { uiText, setGuiLanguage } from "../../../../shared/localization/uiText";
 
 const backend = vi.hoisted(() => ({ loadAppSettings: vi.fn() }));
 vi.mock("../api/backend", () => ({ loadAppSettings: backend.loadAppSettings, hasLocalBackend: true }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 
 let container: HTMLDivElement;
 let root: Root;

@@ -7,6 +7,7 @@ import { useUsageStatus } from './useUsageStatus';
 import { USAGE_REFRESH_INTERVAL_MS } from '../../../../../shared/remote-chat/usage';
 
 vi.mock('../../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 let root: Root;
 let result: ReturnType<typeof useUsageStatus>;
 function Probe({ active = true }: { active?: boolean }) { result = useUsageStatus(active); return null; }

@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useId, useState } from "react";
 import { AutoComplete, Button, Input, Modal, Spin } from "antd";
 import { CONTEXT_CAPACITY_PRESETS_K } from "../../../../../shared/remote-chat/contextSettings";

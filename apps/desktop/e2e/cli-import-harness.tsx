@@ -2,8 +2,8 @@ import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Button, ConfigProvider, Popover } from "antd";
 import { mockIPC } from "@tauri-apps/api/mocks";
-import { uiText, setGuiLanguage } from "../src/i18n/uiText";
-import type { CliSnapshot } from "../src/pages/codexGui/cliManualDownloadApi";
+import { uiText, setGuiLanguage } from "../../../shared/localization/uiText";
+import type { CliSnapshot } from "../../../shared/conversation/cliManualDownloadApi";
 import "antd/dist/reset.css";
 
 const query = new URLSearchParams(location.search);
@@ -33,7 +33,7 @@ mockIPC(async (command, args) => {
   }
   throw new Error(`Unexpected fixture command: ${command}`);
 });
-const { Installer } = await import("../src/pages/codexGui/Installer");
+const { Installer } = await import("../../../shared/conversation/Installer");
 function Fixture() {
   const [version, setVersion] = useState<string | null>(query.has("first") ? null : "0.160.0");
   const installer = { version, release: null, checking: false, installing: false, progress: null,

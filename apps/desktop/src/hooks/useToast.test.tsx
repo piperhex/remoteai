@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 
 import { formatRemoteError } from "../../../../shared/localization/errors";
-import { setGuiLanguage } from "../i18n/uiText";
+import { setGuiLanguage } from "../../../../shared/localization/uiText";
 import { useToast } from "./useToast";
 
 const api = vi.hoisted(() => ({
@@ -17,6 +17,7 @@ const api = vi.hoisted(() => ({
 }));
 vi.mock("../api/errorLogs", () => ({ recordToastLog: api.recordToastLog }));
 vi.mock("../api/backend", () => ({ syncCodexNotification: api.syncCodexNotification }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 
 const BACKEND_MESSAGE = "无法读取配置";
 const chinese = /[一-鿿]/;

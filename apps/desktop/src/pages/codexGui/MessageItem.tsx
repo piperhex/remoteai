@@ -1,15 +1,15 @@
 import { memo } from "react";
 import { ViewportContent } from '../../../../../shared/chat/ViewportContent';
-import { useGuiLanguage } from '../../i18n/useGuiLanguage';
+import { useGuiLanguage } from '../../../../../shared/localization/useGuiLanguage';
 import { ModelChangeNotice } from "./ModelChangeNotice";
-import type { Item } from "./types";
-import type { SubmitMessageEdit } from "./messageEditContent";
+import type { Item } from "../../../../../shared/conversation/types";
+import type { SubmitMessageEdit } from "../../../../../shared/conversation/messageEditContent";
 import { ActivityRow } from "./ActivityRow";
-import { RichText } from "./RichText";
+import { RichText } from "../../../../../shared/conversation/RichText";
 import { MessageActions } from "./MessageActions";
 import { UserMessage } from "./UserMessage";
 import { useStreamingText } from "./useStreamingText";
-import styles from "./styles.module.less";
+import styles from "../../../../../shared/conversation/styles.module.less";
 import activeStyles from "./activeText.module.less";
 
 function AgentMessage({ item, streaming, completedAt, onFork, forkDisabled }: {

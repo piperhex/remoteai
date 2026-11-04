@@ -1,6 +1,6 @@
-import { conversation } from '../src/pages/codexGui/events';
-import { MODEL_CAPACITY_MESSAGE } from '../src/pages/codexGui/requestError';
-import type { Item, Turn } from '../src/pages/codexGui/types';
+import { conversation } from '../../../shared/conversation/events';
+import { MODEL_CAPACITY_MESSAGE } from '../../../shared/conversation/requestError';
+import type { Item, Turn } from '../../../shared/conversation/types';
 
 function question(id: string, text: string): Item {
   return { id, type: 'userMessage', content: [{ type: 'text', text }] };

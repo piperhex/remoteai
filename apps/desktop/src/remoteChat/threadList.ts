@@ -1,6 +1,6 @@
 import { getChatPolicy } from '../../../../shared/remote-chat/policy';
 import { getGuiController } from '../pages/codexGui/session';
-import type { GuiEvent, Thread } from '../pages/codexGui/types';
+import type { GuiEvent, Thread } from '../../../../shared/conversation/types';
 
 export function readRemoteThreadList(body: Record<string, unknown>) {
   if ((body.archived !== undefined && typeof body.archived !== 'boolean')

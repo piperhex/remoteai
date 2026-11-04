@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadOfficialUsage } from '../api/officialUsage';
 import type { OfficialUsageSummary } from '../../../../shared/officialUsage';
-import { createDashboardLoader } from '../components/TokenUsageDashboard/dashboardLoader';
+import { createDashboardLoader } from '../../../../shared/token-usage/dashboardLoader';
 
 export function useOfficialUsage(options: { active: boolean; refreshSeconds: number; startTs?: number; refreshKey?: unknown }) {
   const { active, refreshSeconds, startTs = 0, refreshKey } = options;

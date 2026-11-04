@@ -1,6 +1,6 @@
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 import { GuiTitleSettings } from './titleSettings';
-import type { GuiEvent, Thread } from './types';
+import type { GuiEvent, Thread } from '../../../../../shared/conversation/types';
 
 const MAX_TITLE_PROMPT_CHARACTERS = 4_000;
 

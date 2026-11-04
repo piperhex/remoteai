@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
 import { readEditor, writeEditor } from './skillEditorDom';
-import type { ComposerText } from './types';
+import type { ComposerText } from '../../../../../shared/conversation/types';
 
 /** Ghost text never enters the editable DOM or the draft until the user accepts it with Tab or the touch action. */
 export function useSuggestionInput(options: {

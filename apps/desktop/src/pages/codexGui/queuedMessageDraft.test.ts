@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { queuedMessageText } from "./queuedMessageDraft";
+import { queuedMessageText } from "../../../../../shared/conversation/queuedMessageDraft";
 
 it("restores repeated skills without confusing names that share a prefix", () => {
   const skills = ["review", "review-code", "review.code"].map((name) => ({ name, path: `D:/skills/${name}` }));

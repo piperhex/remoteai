@@ -1,11 +1,11 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { RemoteImages } from './images';
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { ImageCache } from '../../../../shared/remote-chat/client/imageCache';
 import { contentHash } from '../../../../shared/remote-chat/historySync';
 import { DEFAULT_CHAT_POLICY, MIB, setChatPolicy } from '../../../../shared/remote-chat/policy';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 beforeEach(() => { vi.resetAllMocks(); setChatPolicy(DEFAULT_CHAT_POLICY); });
 
 it('keeps nested MCP image bytes on the host until the remote client requests their reference', async () => {

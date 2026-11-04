@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { Language } from "../../i18n";
-import { chartPalette } from "./chartUtils";
+import { chartPalette } from "../../../../../shared/token-usage/chartUtils";
 import { ConsumptionCharts } from "./ConsumptionCharts";
 import { quotaChartOption } from "./quotaChartOption";
 import { useOverviewOptions } from "./useOverviewOptions";

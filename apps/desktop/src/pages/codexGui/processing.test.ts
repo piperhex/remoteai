@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { conversation, reduceConversation, reduceEvent } from "./events";
+import { conversation, reduceConversation, reduceEvent } from "../../../../../shared/conversation/events";
 import { initialState } from "./preferences";
-import type { Conversation, EventParams, GuiEvent, GuiState, Thread } from "./types";
+import type { Conversation, EventParams, GuiEvent, GuiState, Thread } from "../../../../../shared/conversation/types";
 
 const thread: Thread = { id: "one", cwd: "", preview: "", updatedAt: 1 };
 const event = (method: string, params: EventParams = {}): GuiEvent => ({ method,

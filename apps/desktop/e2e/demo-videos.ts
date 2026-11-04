@@ -1,5 +1,5 @@
 import previewVideo from './fixtures/video-preview.mp4?url';
-import type { Thread } from '../src/pages/codexGui/types';
+import type { Thread } from '../../../shared/conversation/types';
 import { VIDEO_CHUNK_BYTES } from '../../../shared/remote-chat/video';
 
 const bytes = new Uint8Array(await (await fetch(previewVideo)).arrayBuffer());

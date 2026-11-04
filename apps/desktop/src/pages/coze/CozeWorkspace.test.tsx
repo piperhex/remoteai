@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   COZE_DESKTOP_READY, COZE_DESKTOP_STATE, COZE_DESKTOP_STOP, COZE_DESKTOP_STOP_READY, withCozeLanguage,
 } from "../../../../../shared/coze/desktopBridge";
-import { setGuiLanguage } from "../../i18n/uiText";
+import { setGuiLanguage } from "../../../../../shared/localization/uiText";
 import { CozeWorkspace } from "./CozeWorkspace";
 
 const url = "http://127.0.0.1:4321/";

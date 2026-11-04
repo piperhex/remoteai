@@ -1,4 +1,4 @@
-import { applyThemeColor, DEFAULT_THEME_COLOR } from "./theme";
+import { applyThemeColor, DEFAULT_THEME_COLOR } from "../../../../shared/appearance/themeColor";
 
 const THEME_MODE_KEY = "codex-switch:theme-mode";
 

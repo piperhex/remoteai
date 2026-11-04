@@ -7,7 +7,7 @@ import settingsStyles from '../src/pages/SettingsPage/index.module.less';
 import { DashboardNavigation, type DashboardPage } from '../src/components/dashboard/DashboardNavigation';
 import { ProxySessionManager } from '../src/components/ProxySessionManager';
 import { translate, type Translate } from '../src/i18n';
-import { applyThemeColor, DEFAULT_THEME_COLOR } from '../src/utils/theme';
+import { applyThemeColor, DEFAULT_THEME_COLOR } from '../../../shared/appearance/themeColor';
 import '../src/styles.css';
 
 const translateMessage: Translate = (key, values) => translate('zh', key, values);

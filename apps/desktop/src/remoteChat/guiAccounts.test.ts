@@ -5,7 +5,8 @@ import { readGuiAccounts, selectGuiAccount } from './guiAccounts';
 import { ChatOperations } from './operations';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false }));
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
 beforeEach(() => vi.resetAllMocks());
 
 it('reads the independent GUI account and sends only picker fields from this computer', async () => {

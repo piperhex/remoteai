@@ -1,12 +1,12 @@
 import RUSSIAN_MONTH_LABELSResource from '@remoteai/i18n/copy/desktop/russianMonths';
 import inlineCopy from '@remoteai/i18n/copy/inline/desktop/components/TokenUsageDashboard/useOverviewOptions';
 import { getLocale } from "../../i18n";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useMemo } from "react";
 import type { EChartsCoreOption as EChartsOption } from "echarts/core";
 import type { Language } from "../../i18n";
 import type { DailyTokenUsage } from "../../types";
-import { COMPACT_TOOLTIP_STYLE, dateFromKey, formatTokens, type ChartPalette } from "./chartUtils";
+import { COMPACT_TOOLTIP_STYLE, dateFromKey, formatTokens, type ChartPalette } from "../../../../../shared/token-usage/chartUtils";
 
 // ECharts registers only the EN and ZH locales by default, so Russian heatmap month labels are listed explicitly.
 const RUSSIAN_MONTH_LABELS = RUSSIAN_MONTH_LABELSResource;

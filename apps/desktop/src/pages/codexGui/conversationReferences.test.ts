@@ -1,8 +1,8 @@
 import { expect, it } from "vitest";
-import { conversationCandidates, conversationReference, referenceKind } from "./conversationReferences";
+import { conversationCandidates, conversationReference, referenceKind } from "../../../../../shared/conversation/conversationReferences";
 import { remoteAttachments } from "../../../../../shared/remote-chat/composerAttachments";
-import { conversation } from "./events";
-import type { Thread } from "./types";
+import { conversation } from "../../../../../shared/conversation/events";
+import type { Thread } from "../../../../../shared/conversation/types";
 
 it("keeps duplicate titles distinct, excludes self and prefers live running state", () => {
   const first: Thread = { id: "one", name: "同名", preview: "", cwd: "D:/one", updatedAt: 1 };

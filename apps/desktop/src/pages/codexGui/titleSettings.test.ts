@@ -6,6 +6,7 @@ import { GuiTitleSettings } from './titleSettings';
 vi.mock('../../api/backend', () => ({
   DEFAULT_CLOUD_BASE_URL: 'https://default.test', hasLocalBackend: false, loadCloudAuthState: vi.fn(),
 }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const fetcher = vi.fn();
 beforeEach(() => {
   vi.resetAllMocks();

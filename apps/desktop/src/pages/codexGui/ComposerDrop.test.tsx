@@ -5,12 +5,12 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { FileDropEvent } from '../../../../../shared/chat/useFileDrop';
 import { Composer } from './Composer';
 import { GuiController } from './controller';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 import { invoke } from '../../api/backend';
 import { droppedReferences, subscribeFileDrop } from './fileDrop';
-import { testModels } from './testModels';
+import { testModels } from '../../../../../shared/conversation/testing/models';
 
-vi.mock('./api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
+vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 vi.mock('../../api/backend', async importOriginal => ({
   ...await importOriginal<typeof import('../../api/backend')>(), invoke: vi.fn(), isDesktopApp: true,
 }));

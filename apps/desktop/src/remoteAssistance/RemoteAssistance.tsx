@@ -1,10 +1,10 @@
-import { displayText, displayError } from '../i18n/uiText';
+import { displayText, displayError } from '../../../../shared/localization/uiText';
 import { lazy, Suspense, useEffect, useSyncExternalStore } from 'react';
 import { Alert, Button, Input, Modal } from 'antd';
 import { Handshake } from 'lucide-react';
 import type { CloudAuthState } from '../types';
-import { uiText } from "../i18n/uiText";
-import { useGuiLanguage } from '../i18n/useGuiLanguage';
+import { uiText } from "../../../../shared/localization/uiText";
+import { useGuiLanguage } from '../../../../shared/localization/useGuiLanguage';
 import { assistanceStore as store, liveInvitation, type AssistanceInvitation } from './store';
 import styles from './assistance.module.less';
 

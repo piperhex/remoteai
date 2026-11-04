@@ -1,8 +1,8 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import type { GuiController } from './controller';
-import type { GuiEvent, GuiState, Thread } from './types';
+import type { GuiEvent, GuiState, Thread } from '../../../../../shared/conversation/types';
 import { initialState, savePreferences } from './preferences';
-import { readProjects, folderName } from './projectCatalog';
+import { readProjects, folderName } from '../../../../../shared/conversation/projectCatalog';
 import { emptySidebar, type SidebarSnapshot } from '../../../../../shared/remote-chat/sidebar';
 
 type Binding = Pick<GuiController, 'getSnapshot' | 'subscribe' | 'readState'>;

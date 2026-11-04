@@ -1,7 +1,7 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { createPortal } from "react-dom";
 import { MessageSquareQuote } from "lucide-react";
-import type { SelectedQuote } from "./selectedQuote";
+import type { SelectedQuote } from "../../../../../shared/conversation/selectedQuote";
 import styles from "./ReplyQuotes.module.less";
 
 export function QuoteSelectionButton({ selection, onQuote }: { selection: SelectedQuote; onQuote: () => void }) {

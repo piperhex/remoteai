@@ -1,12 +1,12 @@
 import { InputNumber, Switch } from "antd";
 import { UsersRound } from "lucide-react";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import type { Account } from "../../types";
 import { accountExpirationDate } from "../../utils/expiration";
-import { maskAccountEmail } from "../../utils/accountPrivacy";
+import { maskAccountEmail } from "../../../../../shared/accounts/privacy";
 import { guiAccountRule, MAX_AUTO_SWITCH_PRIORITY, MAX_REMAINING_PERCENT,
-  MIN_AUTO_SWITCH_PRIORITY } from "./autoSwitchSettings";
-import type { GuiAutoSwitchAccountRule, GuiAutoSwitchSettings } from "./autoSwitchSettings";
+  MIN_AUTO_SWITCH_PRIORITY } from "../../../../../shared/conversation/autoSwitchSettings";
+import type { GuiAutoSwitchAccountRule, GuiAutoSwitchSettings } from "../../../../../shared/conversation/autoSwitchSettings";
 import type { useGuiAutoSwitchSettings } from "./useGuiAutoSwitchSettings";
 import { GuiAccountUsage } from "./GuiAccountUsage";
 import styles from "./GuiAccountSettings.module.less";

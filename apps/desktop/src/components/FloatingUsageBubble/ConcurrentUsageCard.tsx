@@ -1,7 +1,7 @@
 import COPYResource from '@remoteai/i18n/copy/desktop/concurrentUsage';
 import type { Language } from "../../i18n";
 import { formatEstimatedCost, type TokenCostDisplaySettings } from "../../utils/tokenCost";
-import { formatCompactTokenCount } from "../../utils/tokenContext";
+import { formatCompactTokenCount } from "../../../../../shared/context-usage/format";
 import type { ConcurrentUsageSummary } from "./concurrentUsageSummary";
 
 const COPY = COPYResource;

@@ -2,7 +2,7 @@ import http from 'node:http';
 import net from 'node:net';
 import { expect, it } from 'vitest';
 import { TerminalLinkTunnels } from './linkTunnel';
-import { LinkSocketFixture } from './linkTunnelSocketFixture';
+import { LinkSocketFixture } from '../../../../../../shared/terminal/testing/linkSocketFixture';
 import type { TerminalLinkRequest } from '../../../../../../shared/terminal/links';
 import { LINK_CHUNK_BYTES } from '../../../../../../shared/terminal/linkChunks';
 

@@ -1,4 +1,4 @@
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { CHAT_POLICY_MESSAGE, setChatPolicy } from '../../../../shared/remote-chat/policy';
 import { keyPair } from '../../../../shared/remote-chat/cipher';
 import { ChatLink } from '../../../../shared/remote-chat/link';
@@ -16,7 +16,7 @@ import { EventStream } from './eventStream';
 import { remoteQueue } from './queue';
 import { QUEUE_EVENT } from '../../../../shared/remote-chat/queue';
 import { GUI_ACCOUNTS_EVENT, GUI_ACCOUNT_SELECTION_EVENT } from '../../../../shared/remote-chat/guiAccounts';
-import { subscribeGuiEvent } from '../pages/codexGui/webEvents';
+import { subscribeGuiEvent } from '../../../../shared/conversation/webEvents';
 import { acknowledgedMessages } from './acknowledgedMessages';
 import { guiAccountBalances } from './guiAccountBalances';
 import { NativeChatTransport, type HostTransportEvent } from './nativeTransport';

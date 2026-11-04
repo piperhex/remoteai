@@ -1,10 +1,10 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { invoke } from "../../api/backend";
-import type { AttachmentReference } from "./attachmentTypes";
-import { ImagePreview } from "./ImagePreview";
-import { isInlineImage } from "./imageSources";
+import type { AttachmentReference } from "../../../../../shared/conversation/attachmentTypes";
+import { ImagePreview } from "../../../../../shared/conversation/ImagePreview";
+import { isInlineImage } from "../../../../../shared/conversation/imageSources";
 import styles from "./ImageAttachments.module.less";
 
 const RESOURCE_ERROR = "图片过大，暂时无法预览。请缩小尺寸后重试。";

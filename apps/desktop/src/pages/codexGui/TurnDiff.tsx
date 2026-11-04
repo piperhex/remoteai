@@ -1,12 +1,12 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { remoteErrorText } from "../../../../../shared/localization/errors";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Popconfirm } from "antd";
 import { Undo2 } from "lucide-react";
 import { DiffView } from "./DiffView";
-import type { DiffFile } from "./diff";
-import { gitApi } from "./gitApi";
-import styles from "./EditedFilesSummary.module.less";
+import type { DiffFile } from "../../../../../shared/conversation/diff";
+import { gitApi } from "../../../../../shared/conversation/gitApi";
+import styles from "../../../../../shared/conversation/EditedFilesSummary.module.less";
 import { WorkspaceOperationContext } from "./workspaceOperationContext";
 
 export function TurnDiff({ files, title, threadId, turnId, disabled }: {

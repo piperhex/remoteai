@@ -1,5 +1,5 @@
-import { displayText } from '../../i18n/uiText';
-import { uiText } from "../../i18n/uiText";
+import { displayText } from '../../../../../shared/localization/uiText';
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useRef, useState } from 'react';
 import { canManageCodexConnection, isHostedWebApp } from '../../api/backend';
 import { RequestSpeedButton } from '../../../../../shared/remote-chat/RequestSpeedButton';

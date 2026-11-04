@@ -2,11 +2,12 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { uiText, setGuiLanguage } from "../../i18n/uiText";
+import { uiText, setGuiLanguage } from "../../../../../shared/localization/uiText";
 import { RemoteDesktopSettingsCard } from './RemoteDesktopSettingsCard';
 
 const api = vi.hoisted(() => ({ invoke: vi.fn(), isDesktopApp: true }));
 vi.mock('../../api/backend', () => api);
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock('./DesktopSystemPermissions', () => ({ DesktopSystemPermissions: () => null }));
 
 const chinese = /[一-鿿]/;

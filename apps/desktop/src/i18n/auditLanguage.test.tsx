@@ -2,18 +2,18 @@
 import { act, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { ChatDevices } from '../../../web/src/chat/ChatDevices';
-import { DesktopClipboardNotice } from '../../../web/src/chat/desktop/DesktopClipboardNotice';
-import type { useDesktopClipboard } from '../../../web/src/chat/desktop/useDesktopClipboard';
+import { ChatDevices } from '../../../../shared/remote-chat/views/ChatDevices';
+import { DesktopClipboardNotice } from '../../../../shared/remote-desktop/views/DesktopClipboardNotice';
+import type { useDesktopClipboard } from '../../../../shared/remote-desktop/views/useDesktopClipboard';
 import { messageSections } from '../../../../shared/chat/messageDetails';
 import { setInterfaceLanguage } from '../../../../shared/localization/interfaceLanguage';
 import { displayText, translateMessage } from '../../../../shared/localization/messages';
 import { remoteErrorText } from '../../../../shared/localization/errors';
 
-vi.mock('../../../web/src/components/AdaptiveSheet', () => ({
+vi.mock('../../../../shared/layout/AdaptiveSheet', () => ({
   AdaptiveSheet: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
-vi.mock('../../../web/src/useDesktopLayout', () => ({ useDesktopLayout: () => true }));
+vi.mock('../../../../shared/layout/useDesktopLayout', () => ({ useDesktopLayout: () => true }));
 
 let root: Root;
 let container: HTMLDivElement;

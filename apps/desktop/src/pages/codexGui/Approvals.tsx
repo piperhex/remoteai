@@ -1,12 +1,12 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useRef, useState } from "react";
 import { Button, Input, Radio } from "antd";
 import { ShieldQuestion } from "lucide-react";
 import type { GuiController } from "./controller";
-import type { GuiEvent } from "./types";
+import type { GuiEvent } from "../../../../../shared/conversation/types";
 import { submitQuestionOnEnter } from "./questionKeyboard";
 import { mcpConfirmation } from "./mcpConfirmation";
-import styles from "./styles.module.less";
+import styles from "../../../../../shared/conversation/styles.module.less";
 
 type ApprovalController = Pick<GuiController, "respond">;
 

@@ -18,9 +18,21 @@ npm run check:i18n
 After switching parent branches or pulling a new gitlink, run `git submodule update --init shared` again.
 Do not use `--remote` for builds: the parent pins the tested shared revision.
 
-Shared remains a source repository. Some shared components and protocol types depend on application
-adapters in `apps/desktop`; this migration preserves those relationships. Its CI validates against a
-pinned compatible application checkout. Translation resources continue to belong to `@remoteai/i18n`.
+Shared remains a source repository, with a one-way dependency: applications import shared domain modules.
+Shared must not import application internals, and application production sources must not import sibling
+applications. `npm run check:boundaries` enforces both rules, including types, dynamic imports and styles.
+Translation resources continue to belong to `@remoteai/i18n`.
+
+Conversation rendering and state live in `shared/conversation`, remote chat views in `shared/remote-chat`,
+and file previews, downloads, terminals, project browsing and remote desktop each retain their own domain.
+Their CSS/LESS travels with the components. Hosts retain root themes, typography and platform services.
+`shared/platform/localBackend.ts` owns the local IPC/hosted-HTTP transport; application business APIs stay
+in their host. `shared/dependencies.json` records the npm dependencies used by exported source snapshots.
+
+Cross-application parity tests may reference explicit host fixtures. These test-only snapshots are not
+production dependencies; do not move an entire host application into shared to satisfy a test fixture.
+The local chat test coordinator lives in `shared/testing/chatSessions.mjs`; browser tests do not load
+the retired admin implementation. This test double does not replace Go backend protocol validation.
 
 ## Updating shared code
 

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import lineBreaks from '../../../shared/chat/lineBreakFixture.json' with { type: 'json' };
-import type { Conversation } from '../src/pages/codexGui/types';
+import type { Conversation } from '../../../shared/conversation/types';
 
 const { answer } = lineBreaks;
 

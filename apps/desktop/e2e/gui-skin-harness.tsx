@@ -8,7 +8,7 @@ import { useThemeMode } from "../src/hooks/useThemeMode";
 import { persistThemeMode } from "../src/utils/themeMode";
 import { publishDreamSkinStatus } from "../src/pages/dreamSkin/statusEvents";
 import type { DreamSkinStatus } from "../src/types";
-import styles from "../src/pages/codexGui/styles.module.less";
+import styles from "../../../shared/conversation/styles.module.less";
 import "antd/dist/reset.css";
 import "../src/styles.css";
 

@@ -1,7 +1,7 @@
 import { queryProviderBalance } from '../api/backend';
 import type { Provider, ProviderBalance } from '../types';
 import { formatCurrencyAmount } from '../utils/currencyDisplay';
-import { uiText } from "../i18n/uiText";
+import { uiText } from "../../../../shared/localization/uiText";
 
 const BALANCE_CACHE_MS = 60_000;
 // Keep the query state instead of formatted text so every read uses the current interface language.

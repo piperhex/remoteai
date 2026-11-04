@@ -3,7 +3,7 @@ const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke, Channel: class {
   onmessage?: (event: unknown) => void;
 } }));
-import { createFileClipboard } from './fileClipboard';
+import { createFileClipboard } from '../../../../shared/remote-desktop/local/fileClipboard';
 
 beforeEach(() => { invoke.mockReset(); });
 

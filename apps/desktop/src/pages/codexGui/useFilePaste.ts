@@ -1,7 +1,7 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { invoke, isDesktopApp } from "../../api/backend";
-import type { AttachmentReference } from "./attachmentTypes";
+import type { AttachmentReference } from "../../../../../shared/conversation/attachmentTypes";
 import { readClipboardImages } from "./clipboardImages";
 import { MISSING_CLIPBOARD_IMAGES, readPastedContent } from "../../../../../shared/chat/clipboard";
 import { pastedTextFile } from "../../../../../shared/chat/pastedText";

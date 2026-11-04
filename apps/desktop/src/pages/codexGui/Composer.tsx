@@ -1,7 +1,7 @@
-import { displayText } from '../../i18n/uiText';
+import { displayText } from '../../../../../shared/localization/uiText';
 import { CodexVersionStatus } from '../../../../../shared/codex-status/CodexVersionStatus';
 import { readCodexServiceStatus } from '../../api/codexServiceStatus';
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import {
   forwardRef, useContext, useEffect, useImperativeHandle, useRef, useState, type ReactNode,
 } from "react";
@@ -13,20 +13,20 @@ import { ComposerAddMenu } from "./ComposerAddMenu";
 import { ComposerFilesDialog } from "./ComposerFilesDialog";
 import { ComposerReferences } from "./ComposerReferences";
 import { ComposerQuotes } from "./ComposerQuotes";
-import type { ReplyQuote } from "./replyQuotes";
+import type { ReplyQuote } from "../../../../../shared/conversation/replyQuotes";
 import { GoalDialog } from "./GoalDialog";
-import { GOAL_STATUS } from "./goalTypes";
+import { GOAL_STATUS } from "../../../../../shared/conversation/goalTypes";
 import extras from "./ComposerExtras.module.less";
 import { AccessPicker } from "./AccessPicker";
 import { ComposerSubmit } from "./ComposerSubmit";
 import { ComposerDictation } from "./ComposerDictation";
 import type { GuiController } from "./controller";
-import type { AccessMode, GuiState } from "./types";
+import type { AccessMode, GuiState } from "../../../../../shared/conversation/types";
 import { ImageAttachments } from "./ImageAttachments";
 import { useComposerDrop } from './useComposerDrop';
 import { IMAGE_TYPES, useComposerDraft } from "./useComposerDraft";
 import { ModelPicker } from "./ModelPicker";
-import { modelSelectionError } from "./modelSelection";
+import { modelSelectionError } from "../../../../../shared/conversation/modelSelection";
 import { useGuiRequestSpeed } from "./useGuiRequestSpeed";
 import { UsageStatus } from "./UsageStatus";
 import { DesktopUsageContext } from '../../../../../shared/chat/DesktopUsageContext';
@@ -34,7 +34,7 @@ import { useConversationMetrics } from '../../../../../shared/remote-chat/client
 import { loadConversationMetrics } from '../../api/conversationMetrics';
 import { ConversationTokenStatus } from './ConversationTokenStatus';
 import { ProjectPicker } from "./ProjectPicker";
-import { GuiToolbox } from "./GuiToolbox";
+import { GuiToolbox } from "../../../../../shared/conversation/GuiToolbox";
 import { useLocalGitDownloads } from '../../downloads/localGitDownloads';
 import { LocalProjectBrowser } from './LocalProjectBrowser';
 import { useComposerFileReferences } from '../../../../../shared/chat/ChatFileReferences';
@@ -44,7 +44,7 @@ import { useNextPromptSuggestion } from './useNextPromptSuggestion';
 import { compactCommand } from "./composerOptions";
 import { QueuedMessages } from "./QueuedMessages";
 import { RunningChangesSummary } from "./RunningChangesSummary";
-import styles from "./styles.module.less";
+import styles from "../../../../../shared/conversation/styles.module.less";
 
 export interface ComposerHandle { addQuote: (quote: ReplyQuote) => boolean }
 

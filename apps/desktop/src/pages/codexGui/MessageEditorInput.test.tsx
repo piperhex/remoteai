@@ -4,12 +4,12 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { UserMessage } from "./UserMessage";
 import { MessageEditContext } from "./messageEditContext";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 import * as draftImages from "./draftImages";
 import { readEditor } from "./skillEditorDom";
-import type { Content } from "./types";
+import type { Content } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: { request: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { request: vi.fn() } }));
 const skill = { name: "review", path: "D:/skills/review/SKILL.md", description: "检查代码", enabled: true };
 const image = "data:image/png;base64,iVBORw0KGgo=";
 const submit = vi.fn(async () => false);

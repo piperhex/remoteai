@@ -16,11 +16,10 @@ The Web repository also works when cloned alone: run `npm ci`, `npm run check`, 
 `npm run dev` there. Production assets go to its `dist/`; its own package version supplies `version.json`.
 Parent `build:web` and `check:web` commands delegate to the child explicitly.
 
-The desktop application reuses Web remote-desktop and download components. Therefore Web **source**
-is a required submodule for desktop checks and releases, alongside shared and i18n. Web is not an npm
-workspace and ordinary parent builds do not build a second Web application or install its test tooling.
-The desktop declares the libraries needed by the components it consumes and deduplicates their React,
-Ant Design and language-package contexts.
+Desktop and Web consume common conversation, remote-desktop and download components from `shared`.
+Desktop production builds and releases require only shared and i18n; Web is optional unless running Web
+or cross-application integration tests. Web is not an npm workspace. Each host declares its dependencies
+and deduplicates React, Ant Design and language-package contexts.
 
 ## Dependency snapshots
 
@@ -28,7 +27,7 @@ The child preserves existing source import paths. Its standalone runner reconstr
 the generated `.workspace/` directory using child sources and pinned snapshots in `vendor/`. Development
 commands mirror source changes into that directory; edit the original files, not generated copies.
 
-To update shared or desktop dependencies, initialize the source repositories used by the relevant
+To update shared dependencies or host integration fixtures, initialize the source repositories used by the relevant
 fixtures, then run `npm run export:web` in the parent. Review `vendor/source-lock.json`, run the child's
 checks, and commit and push the child before updating its gitlink. Hash checks reject edited snapshots.
 Native source is needed when refreshing cross-platform comparison fixtures, not when building the

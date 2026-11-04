@@ -1,8 +1,8 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useId, type ReactElement, type ReactNode } from "react";
 import { Tooltip } from "antd";
 import { ChevronRight, Folder, Pin, SquarePen } from "lucide-react";
-import type { Thread } from "./types";
+import type { Thread } from "../../../../../shared/conversation/types";
 import { previewThreads, THREAD_GROUP_PREVIEW_COUNT } from "../../../../../shared/chat/threadGroupPreview";
 import styles from "./ThreadGroup.module.less";
 

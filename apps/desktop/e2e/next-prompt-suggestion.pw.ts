@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { testModels } from '../src/pages/codexGui/testModels';
-import type { Request, Thread } from '../src/pages/codexGui/types';
+import { testModels } from '../../../shared/conversation/testing/models';
+import type { Request, Thread } from '../../../shared/conversation/types';
 
 const text = '按这个方案实现，完成后检查结果';
 const thread: Thread = { id: 'prediction-thread', name: '预测测试', cwd: '', preview: '', updatedAt: 1,

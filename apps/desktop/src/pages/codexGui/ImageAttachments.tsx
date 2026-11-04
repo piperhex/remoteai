@@ -1,9 +1,9 @@
-import { displayText } from '../../i18n/uiText';
-import { guiLanguage, uiText } from "../../i18n/uiText";
+import { displayText } from '../../../../../shared/localization/uiText';
+import { guiLanguage, uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import type { DraftImage } from "./useComposerDraft";
-import { ImagePreview } from "./ImagePreview";
+import { ImagePreview } from "../../../../../shared/conversation/ImagePreview";
 import { ImageEditor } from "../../../../../shared/chat/ImageEditor";
 import styles from "./ImageAttachments.module.less";
 

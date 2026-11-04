@@ -2,7 +2,7 @@ import { Tooltip } from 'antd';
 import { useMemo } from 'react';
 import { CONVERSATION_TSR_DESCRIPTION, formatConversationTsr, summarizeCommands, type CommandMetricTurn }
   from '../../../../../shared/remote-chat/commandMetrics';
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { UsageFooter } from '../../../../../shared/chat/UsageFooter';
 import { CONVERSATION_TPS_DESCRIPTION, CONVERSATION_TTFT_DESCRIPTION, formatConversationTps, formatConversationTtft,
   type ConversationMetrics }

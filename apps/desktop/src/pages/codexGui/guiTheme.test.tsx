@@ -5,13 +5,14 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { loadAppSettings, subscribeToThemeColorChanges } from "../../api/backend";
 import { useThemeColor } from "../../hooks/useThemeColor";
 import { useThemeMode } from "../../hooks/useThemeMode";
-import { DEFAULT_THEME_COLOR } from "../../utils/theme";
+import { DEFAULT_THEME_COLOR } from "../../../../../shared/appearance/themeColor";
 import { loadThemeMode, persistThemeMode } from "../../utils/themeMode";
 import { DEFAULT_GUI_THEME, saveGuiTheme, useGuiTheme } from "./guiTheme";
 
 vi.mock("../../api/backend", () => ({
   loadAppSettings: vi.fn(), subscribeToThemeColorChanges: vi.fn(), updateThemeColor: vi.fn(),
 }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const notify = vi.fn();
 let root: Root;
 let current: ReturnType<typeof useGuiTheme>;

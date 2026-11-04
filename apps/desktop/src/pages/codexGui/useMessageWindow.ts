@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type RefObject, type WheelEvent } from "react";
 import type { ScrollMovement } from "../../../../../shared/chat/useScrollMovement";
 import { messageWindow, type MessageCursor } from "./messageWindow";
-import type { Turn } from "./types";
+import type { Turn } from "../../../../../shared/conversation/types";
 
 const LOAD_DISTANCE = 100;
 const EMPTY_TURNS: Turn[] = [];

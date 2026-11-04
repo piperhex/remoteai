@@ -2,9 +2,9 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { MobileHistoryContent } from '../../../web/src/chat/MobileHistoryContent';
-import { HistoryContent } from '../../../web/src/chat/HistoryContent';
-import { FileEnvironmentContext, type FileEnvironment } from '../pages/codexGui/fileEnvironment';
+import { MobileHistoryContent } from '../../../../shared/remote-chat/views/MobileHistoryContent';
+import { HistoryContent } from '../../../../shared/remote-chat/views/HistoryContent';
+import { FileEnvironmentContext, type FileEnvironment } from '../../../../shared/conversation/fileEnvironment';
 import { captureVirtualScroll } from '../../../../shared/chat/virtualScroll';
 
 const observers = new Set<Observer>();

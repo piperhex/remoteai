@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "../../api/backend";
 import { USAGE_REFRESH_INTERVAL_MS, type UsageSummary } from "../../../../../shared/remote-chat/usage";

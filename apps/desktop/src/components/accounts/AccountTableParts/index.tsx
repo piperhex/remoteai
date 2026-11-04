@@ -1,6 +1,6 @@
 import inlineCopy from '@remoteai/i18n/copy/inline/desktop/components/accounts/AccountTableParts/index';
 import { interpolate as interpolateCopy } from '@remoteai/i18n';
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import { useEffect, useRef, useState } from "react";
 import { Button, InputNumber, Popover, Tooltip } from "antd";
 import { CalendarClock, Check, Copy, Eye, EyeOff, Pencil, Settings, X } from "lucide-react";
@@ -9,7 +9,7 @@ import type {
   Account,
   ResetCreditsLoadState,
 } from "../../../types";
-import { formatCompactTokenCount } from "../../../utils/tokenContext";
+import { formatCompactTokenCount } from "../../../../../../shared/context-usage/format";
 import { shouldShowUsageError } from "../../../utils/usageErrors";
 import {
   DailyTokenUsageTooltip,

@@ -13,6 +13,7 @@ import type { RpcRequest } from '../../../../shared/remote-chat/protocol';
 vi.mock('../api/backend', () => ({ isDesktopApp: true, isHostedWebApp: false,
   loadAppSettings: vi.fn(), loadTokenUsageEntries: vi.fn(),
   loadDailyTokenUsage: vi.fn(), loadTokenUsageBreakdown: vi.fn(), loadAccountQuotaHistory: vi.fn(), invoke: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 vi.mock('../api/officialUsage', () => ({ loadOfficialUsage: vi.fn() }));
 
 beforeEach(async () => {

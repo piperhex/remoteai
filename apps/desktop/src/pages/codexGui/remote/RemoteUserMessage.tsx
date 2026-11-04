@@ -1,10 +1,10 @@
 import type { ChatController } from '../../../../../../shared/remote-chat/client/controller';
 import { canEditRemoteMessage } from '../../../../../../shared/remote-chat/client/messageEdit';
 import type { ChatState } from '../../../../../../shared/remote-chat/client/types';
-import { lastUserMessage } from '../editMessage';
+import { lastUserMessage } from '../../../../../../shared/conversation/editMessage';
 import { MessageEditContext } from '../messageEditContext';
 import { UserMessage } from '../UserMessage';
-import type { Item, Turn } from '../types';
+import type { Item, Turn } from '../../../../../../shared/conversation/types';
 
 export function RemoteUserMessage({ item, turn, state, controller, active }: {
   item: Item; turn: Turn; state: ChatState; controller: ChatController; active: boolean;

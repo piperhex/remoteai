@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import type { Conversation, Item } from "../src/pages/codexGui/types";
+import type { Conversation, Item } from "../../../shared/conversation/types";
 
 const activity = (id: string, task: string, kind: string): Item => ({
   id, type: "subAgentActivity", kind, agentThreadId: `${task}-id`, agentPath: `/root/${task}`,

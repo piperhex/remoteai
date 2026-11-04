@@ -2,8 +2,8 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, it, vi } from 'vitest';
-import { changedFiles } from './diff';
-import { EditedFilesSummary } from './EditedFilesSummary';
+import { changedFiles } from '../../../../../shared/conversation/diff';
+import { EditedFilesSummary } from '../../../../../shared/conversation/EditedFilesSummary';
 import { defaultText } from '../../../../../shared/localization/messages';
 
 it('preserves expansion on content hits while updating status and review callbacks', async () => {

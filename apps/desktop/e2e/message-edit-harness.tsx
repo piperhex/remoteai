@@ -3,13 +3,13 @@ import { createRoot } from 'react-dom/client';
 import { ConfigProvider, theme } from 'antd';
 import { Messages } from '../src/pages/codexGui/Messages';
 import { RemoteUserMessage } from '../src/pages/codexGui/remote/RemoteUserMessage';
-import { ChatMessages } from '../../web/src/chat/ChatMessages';
-import { conversation } from '../src/pages/codexGui/events';
+import { ChatMessages } from '../../../shared/remote-chat/views/ChatMessages';
+import { conversation } from '../../../shared/conversation/events';
 import { initialChatState, type Thread } from '../../../shared/remote-chat/client/types';
 import { ChatController } from '../../../shared/remote-chat/client/controller';
-import type { MessageEdit, MessageTarget } from '../src/pages/codexGui/editMessage';
-import styles from '../src/pages/codexGui/styles.module.less';
-import '../../web/src/chat/chat.css';
+import type { MessageEdit, MessageTarget } from '../../../shared/conversation/editMessage';
+import styles from '../../../shared/conversation/styles.module.less';
+import '../../../shared/remote-chat/views/chat.css';
 import '../src/pages/codexGui/remote/remoteGui.less';
 
 const remote = new URLSearchParams(location.search).has('remote');

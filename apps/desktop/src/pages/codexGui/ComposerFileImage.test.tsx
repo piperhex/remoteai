@@ -6,6 +6,7 @@ import { invoke } from "../../api/backend";
 import { ComposerFileImage } from "./ComposerFileImage";
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock("@tauri-apps/api/core", () => ({ isTauri: () => false }));
 const thumbnail = "data:image/jpeg;base64,dGh1bWJuYWls";
 const original = "data:image/jpeg;base64,b3JpZ2luYWw=";
@@ -14,6 +15,7 @@ let root: Root;
 let host: HTMLDivElement;
 
 beforeEach(() => {
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.resetAllMocks();
   HTMLDialogElement.prototype.showModal = function () { this.open = true; };

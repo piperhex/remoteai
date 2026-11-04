@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
 import { TurnRetryProvider } from '../../../../../shared/chat/TurnRetryContext';
 import { failedTurnTarget, sameRetryTarget, type TurnRetryTarget } from '../../../../../shared/chat/turnRetry';
-import { CONTINUE_MESSAGE } from './continuation';
+import { CONTINUE_MESSAGE } from '../../../../../shared/conversation/continuation';
 import type { GuiController } from './controller';
-import type { GuiState } from './types';
+import type { GuiState } from '../../../../../shared/conversation/types';
 
 export function conversationRetryState(state: GuiState) {
   const current = state.selected ? state.conversations[state.selected] : undefined;

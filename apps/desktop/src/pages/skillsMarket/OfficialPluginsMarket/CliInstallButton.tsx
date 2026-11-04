@@ -1,6 +1,6 @@
 import { Button, Popover, Progress } from "antd";
 import { Download } from "lucide-react";
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import type { useCliInstaller } from "../../codexGui/useCliInstaller";
 
 export function CliInstallButton({ installer }: { installer: ReturnType<typeof useCliInstaller> }) {

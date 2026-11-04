@@ -1,5 +1,5 @@
 import type { Translate } from "../../i18n";
-import { initials } from "../../utils/format";
+import { initials } from "../../../../../shared/accounts/format";
 import styles from "./AccountAvatar.module.less";
 
 interface AccountAvatarProps {

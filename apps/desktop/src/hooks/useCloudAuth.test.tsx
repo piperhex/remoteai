@@ -10,6 +10,7 @@ import { useCloudAuth } from "./useCloudAuth";
 vi.mock("../api/backend", () => ({
   loadCloudAuthState: vi.fn(), loginCloud: vi.fn(), registerCloud: vi.fn(), syncCloudAccounts: vi.fn(),
 }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 
 const initialState: CloudAuthState = {
   enabled: true, baseUrl: "https://example.test", authenticated: false,

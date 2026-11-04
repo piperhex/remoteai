@@ -1,8 +1,8 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { remoteErrorText } from "../../../../../shared/localization/errors";
 import { Button, Dropdown } from "antd";
 import { ArrowDown, ArrowUp, CornerDownRight, MoreHorizontal, Trash2 } from "lucide-react";
-import type { QueuedMessage } from "./types";
+import type { QueuedMessage } from "../../../../../shared/conversation/types";
 import type { MessageQueue } from "./messageQueue";
 import styles from "./QueuedMessages.module.less";
 

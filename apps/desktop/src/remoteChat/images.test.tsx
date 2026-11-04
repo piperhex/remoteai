@@ -2,11 +2,11 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { ChatImage, ChatImageContext } from '../../../web/src/chat/ChatImage';
-import { ChatMarkdown } from '../../../web/src/chat/ChatMarkdown';
+import { ChatImage, ChatImageContext } from '../../../../shared/remote-chat/views/ChatImage';
+import { ChatMarkdown } from '../../../../shared/remote-chat/views/ChatMarkdown';
 import type { ImagePreviewOptions } from '../../../../shared/remote-chat/client/useChatImage';
 import type { PreviewLoadOptions } from '../../../../shared/remote-chat/previewProgress';
-import { FileEnvironmentContext, type FileEnvironment } from '../pages/codexGui/fileEnvironment';
+import { FileEnvironmentContext, type FileEnvironment } from '../../../../shared/conversation/fileEnvironment';
 
 const dataUrl = 'data:image/png;base64,aW1hZ2U=';
 const load = vi.fn<ImagePreviewOptions['load']>();

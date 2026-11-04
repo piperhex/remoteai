@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { markdownAnswer } from "../../../../../shared/chat/markdownFixture.json";
 import { answer } from "../../../../../shared/chat/lineBreakFixture.json";
-import { RichText } from "./RichText";
+import { RichText } from "../../../../../shared/conversation/RichText";
 
 let root: Root;
 let container: HTMLDivElement;

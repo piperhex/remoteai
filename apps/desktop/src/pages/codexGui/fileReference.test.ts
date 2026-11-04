@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { parseFileReference } from "./fileReference";
+import { parseFileReference } from "../../../../../shared/conversation/fileReference";
 
 it.each([
   ["C:\\项目\\read me.txt:12:3", { path: "C:\\项目\\read me.txt", line: 12, column: 3 }],

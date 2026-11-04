@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AutoComplete, Button, Input, Spin } from "antd";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { CONTEXT_CAPACITY_PRESETS_K, TOKENS_PER_K } from "../../../../../shared/remote-chat/contextSettings";
 import { useModelContextSettings } from "./useModelContextSettings";
 import styles from "./GuiModelContextSettings.module.less";

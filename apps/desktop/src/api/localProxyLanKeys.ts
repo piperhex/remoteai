@@ -1,6 +1,6 @@
 import type { LocalProxyLanApiKey, LocalProxyLanApiKeyInput } from "../types";
 import { listen } from "@tauri-apps/api/event";
-import { copyText } from "../utils/clipboard";
+import { copyText } from "../../../../shared/clipboard";
 import { hasLocalBackend, isDesktopApp, isHostedWebApp, invoke } from "./backend";
 import { previewCopyLocalProxyLanApiKey, previewDeleteLocalProxyLanApiKey,
   previewLocalProxyLanApiKeys, previewSaveLocalProxyLanApiKey } from "./localProxyLanKeysPreview";

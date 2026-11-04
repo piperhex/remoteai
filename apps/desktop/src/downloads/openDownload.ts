@@ -1,6 +1,6 @@
 import { invoke, isTauri } from '@tauri-apps/api/core';
-import { openBrowserDownload, verifiedDownloadContent } from '../../../web/src/downloads/openDownload';
-import type { DownloadTask } from '../../../web/src/downloads/types';
+import { openBrowserDownload, verifiedDownloadContent } from '../../../../shared/downloads/openDownload';
+import type { DownloadTask } from '../../../../shared/downloads/types';
 
 const OPEN_CHUNK_BYTES = 256 * 1024;
 

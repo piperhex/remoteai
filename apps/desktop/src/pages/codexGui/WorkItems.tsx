@@ -1,10 +1,10 @@
 import { useMemo } from "react";
-import type { Item } from "./types";
+import type { Item } from "../../../../../shared/conversation/types";
 import { ActivitySummary } from "./ActivityRow";
 import { DeferredDetails } from "./DeferredDetails";
 import { MessageItem } from "./MessageItem";
-import { groupConsecutiveActivities, latestActivity } from "./activityGroups";
-import styles from "./styles.module.less";
+import { groupConsecutiveActivities, latestActivity } from "../../../../../shared/conversation/activityGroups";
+import styles from "../../../../../shared/conversation/styles.module.less";
 import activityStyles from "./ActivityRow.module.less";
 
 interface Props { items: Item[]; running: boolean; startedAt?: number | null }

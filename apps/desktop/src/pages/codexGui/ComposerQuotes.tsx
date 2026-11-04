@@ -1,8 +1,8 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useState } from "react";
 import { Popover } from "antd";
 import { MessageSquareQuote, X } from "lucide-react";
-import { quoteKey, type ReplyQuote } from "./replyQuotes";
+import { quoteKey, type ReplyQuote } from "../../../../../shared/conversation/replyQuotes";
 import styles from "./ReplyQuotes.module.less";
 
 export function ComposerQuotes({ quotes, draftKey, active, disabled, onRemove, onClear }: {

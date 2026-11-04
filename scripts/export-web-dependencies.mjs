@@ -3,10 +3,13 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { inspectSourceBoundaries } from '../shared/scripts/source-boundaries.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const destination = path.resolve(process.argv[2] ?? path.join(root, 'apps/web'));
 const vendor = path.join(destination, 'vendor');
+const boundaries = inspectSourceBoundaries({ shared: path.join(root, 'shared'), applications: [destination] });
+if (boundaries.violations.length) throw new Error(JSON.stringify(boundaries.violations, null, 2));
 const sourcePattern = /\.(?:[cm]?[jt]sx?|css|less|html)$/;
 const textPattern = /\.(?:[cm]?[jt]sx?|css|less|html|json|md|svg|txt|sig)$/;
 const slash = value => value.replaceAll('\\', '/');

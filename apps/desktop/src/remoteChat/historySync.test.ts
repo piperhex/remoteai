@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { applyHistoryDelta, historyDelta, historyVersion } from '../../../../shared/remote-chat/historySync';
-import type { Thread } from '../pages/codexGui/types';
+import type { Thread } from '../../../../shared/conversation/types';
 
 const thread: Thread = { id: 'chat', preview: '', cwd: '', updatedAt: 1,
   turns: [{ id: 'turn', status: 'inProgress', items: [

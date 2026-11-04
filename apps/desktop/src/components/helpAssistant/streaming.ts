@@ -1,5 +1,5 @@
 import { invoke } from '../../api/backend';
-import { subscribeGuiEvent } from '../../pages/codexGui/webEvents';
+import { subscribeGuiEvent } from '../../../../../shared/conversation/webEvents';
 import type { DashboardPage } from '../dashboard/DashboardNavigation';
 import type { HelpAnswer, HelpContent, HelpMessage } from './types';
 

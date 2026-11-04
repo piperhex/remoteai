@@ -2,13 +2,13 @@
 import { act, useSyncExternalStore } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { guiApi } from "./api";
-import { testModels } from "./testModels";
+import { guiApi } from "../../../../../shared/conversation/api";
+import { testModels } from "../../../../../shared/conversation/testing/models";
 import { GuiController } from "./controller";
 import { ComposerSubmit } from "./ComposerSubmit";
-import type { GuiEvent, Thread, Turn } from "./types";
+import type { GuiEvent, Thread, Turn } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: {
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: {
   connect: vi.fn(), request: vi.fn(), subscribe: vi.fn(), respond: vi.fn(),
 } }));
 const stopped: Turn = { id: "stopped", status: "interrupted", items: [

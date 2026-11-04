@@ -1,14 +1,14 @@
 import { expect, it, vi } from "vitest";
 import { visibleUserContent, visibleUserMessage } from "../../../../../shared/chat/conversationContext";
-import { CONTINUE_MESSAGE, visibleContinuationItems } from "./continuation";
-import { conversation } from "./events";
-import { mergeMessageItems } from "./sentMessages";
+import { CONTINUE_MESSAGE, visibleContinuationItems } from "../../../../../shared/conversation/continuation";
+import { conversation } from "../../../../../shared/conversation/events";
+import { mergeMessageItems } from "../../../../../shared/conversation/sentMessages";
 import { messageWindow } from "./messageWindow";
-import { lastUserMessage } from "./editMessage";
-import { editedMessageDraft } from "./editedMessageDraft";
-import type { Item, Turn } from "./types";
+import { lastUserMessage } from "../../../../../shared/conversation/editMessage";
+import { editedMessageDraft } from "../../../../../shared/conversation/editedMessageDraft";
+import type { Item, Turn } from "../../../../../shared/conversation/types";
 
-vi.mock("./api", () => ({ guiApi: { request: vi.fn() } }));
+vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { request: vi.fn() } }));
 
 const wrap = (value: unknown) => `<codex_gui_conversation_context>\n${JSON.stringify(value)}
 </codex_gui_conversation_context>`;

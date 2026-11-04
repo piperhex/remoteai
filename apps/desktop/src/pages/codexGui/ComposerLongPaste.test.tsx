@@ -10,6 +10,7 @@ import { readFileBase64 } from '../../../../../shared/chat/fileData';
 import { invoke } from '../../api/backend';
 
 vi.mock('../../api/backend', () => ({ invoke: vi.fn(), isDesktopApp: true }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock('../../../../../shared/chat/fileData', () => ({ readFileBase64: vi.fn() }));
 let host: HTMLDivElement;
 let root: Root;

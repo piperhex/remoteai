@@ -1,12 +1,12 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { CircleAlert, ChevronDown } from "lucide-react";
-import type { Turn } from "./types";
-import { isModelCapacityError, requestErrorDetails } from "./requestError";
-import { CapacityErrorNotice, type CapacityRetryControl } from "./CapacityErrorNotice";
+import type { Turn } from "../../../../../shared/conversation/types";
+import { isModelCapacityError, requestErrorDetails } from "../../../../../shared/conversation/requestError";
+import { CapacityErrorNotice, type CapacityRetryControl } from "../../../../../shared/conversation/CapacityErrorNotice";
 import { DeferredDetails } from "./DeferredDetails";
-import { requestErrorPosition, turnRequestErrors, type TurnRequestError } from "./turnRequestErrors";
+import { requestErrorPosition, turnRequestErrors, type TurnRequestError } from "../../../../../shared/conversation/turnRequestErrors";
 import { TurnRetryButton } from "./TurnRetryButton";
-import styles from "./RequestErrorNotice.module.less";
+import styles from "../../../../../shared/conversation/RequestErrorNotice.module.less";
 
 function noticeMessage(turn: Turn, record: TurnRequestError): string {
   if (!record.willRetry) return uiText("client.chat.thisReplyStoppedBecauseOfAProblem");

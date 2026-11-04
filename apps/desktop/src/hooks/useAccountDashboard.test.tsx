@@ -7,6 +7,7 @@ import { DEMO_ACCOUNTS, DEMO_INFO } from "../demo";
 import { useAccountDashboard } from "./useAccountDashboard";
 
 vi.mock("../api/backend", () => ({ loadDashboard: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 type Dashboard = Awaited<ReturnType<typeof loadDashboard>>;
 const snapshot = (label: string): Dashboard => ({
   accounts: DEMO_ACCOUNTS.map(account => ({ ...account, note: label })), info: DEMO_INFO,

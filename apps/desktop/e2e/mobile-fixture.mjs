@@ -1,15 +1,13 @@
 import { testBrowserChannel, testBrowserLaunchOptions } from '../../../scripts/test-browser.mjs';
 // Local emulator fixture only. It never connects to a cloud account or an AI provider.
 import http from 'node:http';
-import { createRequire } from 'node:module';
+import { WebSocketServer } from 'ws';
+import { ChatSessionsFixture } from '../../../shared/testing/chatSessions.mjs';
 import { createServer } from 'vite';
 import { chromium } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
-const require = createRequire(new URL('../../admin/package.json', import.meta.url));
-const { WebSocketServer } = require('ws');
-const { ChatSessions } = require('./dist/modules/devices/chat/chat-sessions.js');
-const session = new ChatSessions();
+const session = new ChatSessionsFixture();
 const apiPort = Number(process.env.CHAT_TEST_API_PORT ?? 1490);
 const uiPort = Number(process.env.CHAT_TEST_UI_PORT ?? 1488);
 const profile = { id: 'test-owner', email: 'mobile-test@example.test', role: 'user' };

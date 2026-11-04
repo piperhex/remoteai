@@ -9,6 +9,7 @@ import { ChatOperations } from './operations';
 import { invoke } from '../api/backend';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 let root: Root;
 let editor: ReturnType<typeof useContextSettings>;
 function Probe({ threadId, api }: { threadId: string; api: ContextSettingsApi }) {

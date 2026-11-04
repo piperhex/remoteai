@@ -19,7 +19,7 @@ afterEach(() => { document.head.innerHTML = ""; sessionStorage.clear(); vi.unstu
 it("opens and releases previews through authenticated HTTP with a browser-resolvable asset URL", async () => {
   fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, result: data })))
     .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, result: null })));
-  const { filePreviewApi } = await import("./api");
+  const { filePreviewApi } = await import("../../../../../../shared/file-preview/workspace/api");
   const preview = await filePreviewApi.open(target);
   expect(preview).toEqual({ ...data, url: new URL(data.url, location.origin).href });
   await filePreviewApi.close(data.sessionId);
@@ -35,7 +35,7 @@ it("opens and releases previews through authenticated HTTP with a browser-resolv
 it("preserves unsupported files and reports missing-file failures", async () => {
   fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, result: null })))
     .mockResolvedValueOnce(new Response(JSON.stringify({ ok: false, error: "找不到这个文件" })));
-  const { filePreviewApi } = await import("./api");
+  const { filePreviewApi } = await import("../../../../../../shared/file-preview/workspace/api");
   expect(await filePreviewApi.open(target)).toBeNull();
   await expect(filePreviewApi.open(target)).rejects.toThrow("找不到这个文件");
 });
@@ -45,7 +45,7 @@ it("keeps native previews on desktop IPC with their existing stream URL", async 
   vi.stubGlobal("__TAURI_INTERNALS__", {});
   const nativeData = { ...data, url: "http://127.0.0.1:32100/token/preview.md" };
   native.invoke.mockResolvedValueOnce(nativeData);
-  const { filePreviewApi } = await import("./api");
+  const { filePreviewApi } = await import("../../../../../../shared/file-preview/workspace/api");
   expect(await filePreviewApi.open(target)).toEqual(nativeData);
   expect(native.invoke).toHaveBeenCalledWith("codex_gui_open_file_preview", { target });
   expect(fetchMock).not.toHaveBeenCalled();

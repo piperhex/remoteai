@@ -2,16 +2,16 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { GuiController } from '../pages/codexGui/controller';
 import { getGuiController } from '../pages/codexGui/session';
-import { guiApi } from '../pages/codexGui/api';
-import { saveProject } from '../pages/codexGui/projectCatalog';
+import { guiApi } from '../../../../shared/conversation/api';
+import { saveProject } from '../../../../shared/conversation/projectCatalog';
 import { initialState } from '../pages/codexGui/preferences';
 import { guiComposer } from '../pages/codexGui/composerBridge';
-import type { Thread } from '../pages/codexGui/types';
+import type { Thread } from '../../../../shared/conversation/types';
 import { ChatOperations } from './operations';
 import { readRemoteProjects, selectRemoteProject } from './projects';
 import { guiSidebar } from '../pages/codexGui/sidebarBridge';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 vi.mock('../pages/codexGui/session', () => ({ getGuiController: vi.fn() }));
 vi.mock('../pages/codexGui/composerBridge', () => ({ guiComposer: { validateSend: vi.fn() } }));
 const thread: Thread = { id: 'chat', cwd: '/old', preview: '', updatedAt: 1, turns: [] };

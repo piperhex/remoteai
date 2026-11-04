@@ -1,4 +1,4 @@
-import type { Thread } from '../src/pages/codexGui/types';
+import type { Thread } from '../../../shared/conversation/types';
 
 export function seedDemoHistory(thread: Thread) {
   thread.turns = [{ id: 'history', status: 'completed', items: Array.from({ length: 35 }, (_, index) => ({

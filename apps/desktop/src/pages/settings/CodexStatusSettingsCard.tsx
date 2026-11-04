@@ -1,6 +1,6 @@
 import { Activity } from 'lucide-react';
 import { StatusRefreshSettings } from '../../../../../shared/codex-status/StatusRefreshSettings';
-import { uiText } from '../../i18n/uiText';
+import { uiText } from '../../../../../shared/localization/uiText';
 
 export function CodexStatusSettingsCard() {
   return <section className="settings-card">

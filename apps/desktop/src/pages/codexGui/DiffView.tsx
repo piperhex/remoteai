@@ -1,12 +1,12 @@
-import { uiText } from "../../i18n/uiText";
-import { useGuiLanguage } from '../../i18n/useGuiLanguage';
+import { uiText } from "../../../../../shared/localization/uiText";
+import { useGuiLanguage } from '../../../../../shared/localization/useGuiLanguage';
 import { memo, useId, useMemo, type ReactNode } from "react";
-import { DiffDocument, type DiffDocumentProps } from "./DiffDocument";
-import { EditedFilesSummary } from "./EditedFilesSummary";
-import { FileMenu } from "./FileMenu";
-import { useDetailsEntry } from "./detailsContext";
+import { DiffDocument, type DiffDocumentProps } from "../../../../../shared/conversation/DiffDocument";
+import { EditedFilesSummary } from "../../../../../shared/conversation/EditedFilesSummary";
+import { FileMenu } from "../../../../../shared/conversation/FileMenu";
+import { useDetailsEntry } from "../../../../../shared/conversation/detailsContext";
 
-export { DiffDocument } from "./DiffDocument";
+export { DiffDocument } from "../../../../../shared/conversation/DiffDocument";
 
 export const DiffView = memo(function DiffView({ files, title = uiText("client.shared.fileChanges"), status, undo }:
   DiffDocumentProps & { undo?: ReactNode }) {

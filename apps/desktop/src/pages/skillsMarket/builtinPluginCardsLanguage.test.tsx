@@ -8,7 +8,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 
-import { setGuiLanguage } from "../../i18n/uiText";
+import { setGuiLanguage } from "../../../../../shared/localization/uiText";
 import { ComputerUseCard } from "./ComputerUseCard";
 import { RemoteCommandCard } from "./RemoteCommandCard";
 
@@ -83,7 +83,7 @@ it("uses the Enable action label and shows remote command errors in the interfac
 
   api.remoteCommandAction.mockRejectedValueOnce("操作未完成，请重试。");
   await act(async () => container.querySelector<HTMLButtonElement>(".official-plugin-toggle")!.click());
-  expect(container.querySelector("[role=alert]")?.textContent).toBe(russian["client.projectBrowser.unableToCompleteTheActionPleaseTryAgain"]);
+  expect(container.querySelector("[role=alert]")?.textContent).toBe(russian["client.projectExplorer.actionError"]);
   expect(buttonText()).toContain("Проверить снова");
   expect(container.textContent).not.toMatch(han);
 });

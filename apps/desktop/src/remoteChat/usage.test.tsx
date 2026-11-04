@@ -9,6 +9,7 @@ import { ChatOperations } from './operations';
 import { invoke } from '../api/backend';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 const usage = { totalTokens: 50290000, estimatedCostUsd: 74.32, primaryRemainingPercent: 95,
   primaryRemainingAggregated: false, providerEstimatedCost: null };
 let root: Root;

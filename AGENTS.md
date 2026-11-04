@@ -269,8 +269,9 @@ Keep all instructions in this `AGENTS.md` file in English.
   Follow its own `AGENTS.md`; commit and push child changes before updating the parent gitlink.
 - Web owns its npm dependencies, checks, build output, Docker context and CI. Keep it out of parent
   npm workspaces; use the explicit `dev:web`, `build:web`, `check:web` and `export:web` commands.
-- Desktop still reuses Web remote-desktop and download components. Initialize `apps/web` together with
-  `shared` and `packages/i18n` for desktop development, checks and releases. Preserve host module deduplication.
+- Reused conversation, remote-desktop and download components belong to `shared`. Desktop production
+  builds require only `shared` and `packages/i18n`; initialize Web for Web development or cross-application
+  integration tests. Preserve host module deduplication.
 - Web standalone commands use generated dependency snapshots with repository revisions and source hashes.
   Refresh them through `npm run export:web`; never edit `vendor/` or `.workspace/` contents manually.
 - Keep the existing Web service, gateway alias, image variable and network configuration. Do not deploy
@@ -282,8 +283,9 @@ Keep all instructions in this `AGENTS.md` file in English.
   Initialize it with `git submodule update --init shared` before building or checking application sources.
 - Follow `shared/AGENTS.md`. Commit and push shared changes before updating the parent gitlink.
   Preserve existing import paths, cross-platform behavior and public `@remoteai/i18n` imports.
-- Shared sources still use application adapters and types; this Git split does not make them a standalone
-  npm application. Validate them with the consuming desktop, native and web applications.
+- Applications depend on shared sources, never the reverse. Reusable contracts and platform transports
+  belong in shared; application-specific services use typed interfaces. Run `npm run check:boundaries`
+  and validate with the consuming desktop, native and web applications.
 - Application CI must initialize the pinned shared revision. Translation ownership checks must include
   shared tracked and untracked source files, and dependency exports must record its repository and revision.
 

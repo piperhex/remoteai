@@ -1,4 +1,4 @@
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import type { TaskInput } from "./types";
 
 export const TASK_SUGGESTIONS: (TaskInput & { description: string; icon: "briefing" | "review" | "monitor" })[] = [

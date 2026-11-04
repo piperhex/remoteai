@@ -1,9 +1,9 @@
 import { useContext, useEffect, useState } from 'react';
 import { Dropdown } from 'antd';
 import { ChevronDown } from 'lucide-react';
-import { uiText as t } from "../../../i18n/uiText";
-import { DetailsContext } from '../detailsContext';
-import { openWebsiteInBrowser } from '../WebsiteLinkMenu';
+import { uiText as t } from "../../../../../../shared/localization/uiText";
+import { DetailsContext } from '../../../../../../shared/conversation/detailsContext';
+import { openWebsiteInBrowser } from '../../../../../../shared/conversation/WebsiteLinkMenu';
 import styles from './portForwarding.module.less';
 
 export function ForwardedAddress({ port, running, onOpen }: {

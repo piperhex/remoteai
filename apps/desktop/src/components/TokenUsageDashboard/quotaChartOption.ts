@@ -1,9 +1,9 @@
 import { getLocale } from "../../i18n";
 import type { EChartsCoreOption } from "echarts/core";
 import type { Language } from "../../i18n";
-import { normalizeThemeColor } from "../../utils/theme";
-import { quotaChartLabels } from "./quotaChartLabels";
-import type { QuotaChartData, QuotaInterval, QuotaSeriesPoint, QuotaView } from "./quotaHistoryData";
+import { normalizeThemeColor } from "../../../../../shared/appearance/themeColor";
+import { quotaChartLabels } from "../../../../../shared/token-usage/quotaChartLabels";
+import type { QuotaChartData, QuotaInterval, QuotaSeriesPoint, QuotaView } from "../../../../../shared/token-usage/quotaHistoryData";
 import { sampleQuotaSeries, type QuotaVisibleRange } from "./quotaSeriesSampling";
 
 interface QuotaOptionProps {

@@ -1,9 +1,9 @@
-import { completeTurnTiming, restoreTurnTiming } from './turnTiming';
-import { mergeMessageItems } from './sentMessages';
-import { restoreProcessing } from './processing';
-import type { CapacityRetry } from './capacityRetry';
+import { completeTurnTiming, restoreTurnTiming } from '../../../../../shared/conversation/turnTiming';
+import { mergeMessageItems } from '../../../../../shared/conversation/sentMessages';
+import { restoreProcessing } from '../../../../../shared/conversation/processing';
+import type { CapacityRetry } from '../../../../../shared/conversation/capacityRetry';
 import type { GuiReadState } from './threadReadState';
-import type { GuiState, Turn } from './types';
+import type { GuiState, Turn } from '../../../../../shared/conversation/types';
 
 interface Host {
   getSnapshot: () => GuiState;

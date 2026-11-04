@@ -1,7 +1,7 @@
 import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { hasLocalBackend } from "../../api/backend";
 import { readCodexConfigModelNames } from "../../api/codexConfig";
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 
 export const ConfigModelsContext = createContext<{ models: string[]; loading: boolean }>({
   models: [], loading: false,

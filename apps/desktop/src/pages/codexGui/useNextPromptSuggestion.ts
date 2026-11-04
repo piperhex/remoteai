@@ -1,5 +1,5 @@
-import { guiApi } from './api';
-import type { GuiState } from './types';
+import { guiApi } from '../../../../../shared/conversation/api';
+import type { GuiState } from '../../../../../shared/conversation/types';
 import { promptSuggestionTarget, type RequestPromptSuggestion } from '../../../../../shared/chat/nextPromptSuggestion';
 import { usePromptSuggestion } from '../../../../../shared/chat/usePromptSuggestion';
 

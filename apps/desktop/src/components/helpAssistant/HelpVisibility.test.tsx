@@ -4,14 +4,15 @@ import { createRoot, type Root } from 'react-dom/client';
 import { ConfigProvider, message } from 'antd';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { invoke } from '../../api/backend';
-import { subscribeGuiEvent } from '../../pages/codexGui/webEvents';
+import { subscribeGuiEvent } from '../../../../../shared/conversation/webEvents';
 import { HelpAssistantSettingsCard } from '../../pages/settings/HelpAssistantSettingsCard';
 import type { Language } from '../../i18n';
 import { HelpAssistant } from './HelpAssistant';
 import { helpCopy } from './copy';
 
 vi.mock('../../api/backend', () => ({ hasLocalBackend: true, invoke: vi.fn() }));
-vi.mock('../../pages/codexGui/webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
+vi.mock('../../../../../shared/conversation/webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
 
 const preferenceKey = 'codex-switch:help-assistant-visible';
 const unsubscribe = vi.fn();

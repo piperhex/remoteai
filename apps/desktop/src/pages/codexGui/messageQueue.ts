@@ -1,10 +1,10 @@
-import { uiText } from "../../i18n/uiText";
-import { guiApi } from "./api";
+import { uiText } from "../../../../../shared/localization/uiText";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { conversationSnapshot as conversation } from './conversationSnapshot';
-import { withSentMessage } from "./sentMessages";
+import { withSentMessage } from "../../../../../shared/conversation/sentMessages";
 import { queueSendError } from "./queueSendError";
-import { modelSelectionError } from "./modelSelection";
-import type { GuiState, MessageInput, QueuedMessage, Settings, Thread, Turn } from "./types";
+import { modelSelectionError } from "../../../../../shared/conversation/modelSelection";
+import type { GuiState, MessageInput, QueuedMessage, Settings, Thread, Turn } from "../../../../../shared/conversation/types";
 
 const MAX_QUEUED_MESSAGES = 100;
 const MAX_RECORDED_CANCELLATIONS = 1000;

@@ -1,5 +1,5 @@
 import type { BrowserContext } from '@playwright/test';
-import type { GuiEvent, Thread } from '../src/pages/codexGui/types';
+import type { GuiEvent, Thread } from '../../../shared/conversation/types';
 
 export function titleBackend(settingsStatus = 200) {
   let settings = { model: 'admin-title-model', effort: 'medium' };

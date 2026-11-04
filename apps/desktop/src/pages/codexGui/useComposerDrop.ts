@@ -1,12 +1,12 @@
-import { displayError } from '../../i18n/uiText';
+import { displayError } from '../../../../../shared/localization/uiText';
 import type { RefObject } from 'react';
 import { isDesktopApp } from '../../api/backend';
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { fileDropError, useFileDrop } from '../../../../../shared/chat/useFileDrop';
-import { guiApi } from './api';
-import type { AttachmentReference } from './attachmentTypes';
+import { guiApi } from '../../../../../shared/conversation/api';
+import type { AttachmentReference } from '../../../../../shared/conversation/attachmentTypes';
 import { droppedReferences, subscribeFileDrop } from './fileDrop';
-import { projectName, saveProject } from './projectCatalog';
+import { projectName, saveProject } from '../../../../../shared/conversation/projectCatalog';
 
 interface Options {
   target: RefObject<HTMLElement>;

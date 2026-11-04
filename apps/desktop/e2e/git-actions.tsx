@@ -1,16 +1,16 @@
 import { createRoot } from 'react-dom/client';
 import { createAsyncGitFixture } from '../../../shared/remote-chat/testing/gitFixture';
 import { useRemoteGit } from '../../../shared/remote-chat/useRemoteGit';
-import { GitToolbar } from '../../web/src/chat/git/GitToolbar';
-import { GitChanges } from '../../web/src/chat/git/GitChanges';
-import { GitFileActionDialog } from '../../web/src/chat/git/GitFileActionDialog';
-import { GitHistory } from '../../web/src/chat/git/GitHistory';
-import { GitRevisionDialog } from '../../web/src/chat/git/GitRevisionDialog';
-import { enqueueGitPatch } from '../../web/src/downloads/gitPatch';
+import { GitToolbar } from '../../../shared/git/views/GitToolbar';
+import { GitChanges } from '../../../shared/git/views/GitChanges';
+import { GitFileActionDialog } from '../../../shared/git/views/GitFileActionDialog';
+import { GitHistory } from '../../../shared/git/views/GitHistory';
+import { GitRevisionDialog } from '../../../shared/git/views/GitRevisionDialog';
+import { enqueueGitPatch } from '../../../shared/downloads/gitPatch';
 import { GitRevisionDownloads } from './git-revision-download';
-import { useGitTheme } from '../../web/src/chat/git/gitTheme';
-import '../../web/src/chat/git/git.css';
-import { displayError } from '../../web/src/i18n';
+import { useGitTheme } from '../../../shared/git/views/gitTheme';
+import '../../../shared/git/views/git.css';
+import { displayError } from '../../../shared/localization/browserClient';
 
 const client = createAsyncGitFixture();
 if (new URLSearchParams(location.search).has('taskConflict')) {

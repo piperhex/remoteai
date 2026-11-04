@@ -1,6 +1,6 @@
-import { displayText } from '../../../i18n/uiText';
+import { displayText } from '../../../../../../shared/localization/uiText';
 import type { ComputerUsePermission, ComputerUsePermissions } from "../../../api/computerUse";
-import { uiText } from "../../../i18n/uiText";
+import { uiText } from "../../../../../../shared/localization/uiText";
 import styles from "./index.module.less";
 
 interface Props {

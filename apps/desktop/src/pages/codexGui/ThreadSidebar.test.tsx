@@ -4,12 +4,12 @@ import { App, ConfigProvider } from "antd";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { GuiController } from "./controller";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 import { ThreadSidebar } from "./ThreadSidebar";
 import { initialState } from "./preferences";
-import { conversation } from "./events";
-import type { GuiState } from "./types";
-import styles from "./styles.module.less";
+import { conversation } from "../../../../../shared/conversation/events";
+import type { GuiState } from "../../../../../shared/conversation/types";
+import styles from "../../../../../shared/conversation/styles.module.less";
 
 let root: Root;
 let container: HTMLDivElement;
@@ -100,7 +100,7 @@ it("places create branch above archive and branches the right-clicked conversati
   await render();
   await openThreadMenu();
   const items = [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')];
-  expect(items.map((entry) => entry.textContent)).toEqual(["置顶", "重命名", "创建分支", "归档", "删除"]);
+  expect(items.map((entry) => entry.textContent)).toEqual(["置顶", "重命名", "创建分支", "归档", "删除", "移动到分组"]);
   await act(async () => items.find((entry) => entry.textContent === "创建分支")!.click());
   expect(fork).toHaveBeenCalledExactlyOnceWith("one");
   expect(select).not.toHaveBeenCalled();

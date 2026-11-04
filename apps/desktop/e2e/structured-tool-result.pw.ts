@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import type { Conversation } from '../src/pages/codexGui/types';
+import type { Conversation } from '../../../shared/conversation/types';
 
 test.beforeEach(async ({ page }) => {
   // Visual fixtures use system fonts so external font downloads cannot stall offline checks.

@@ -1,9 +1,9 @@
 import { invoke } from '../api/backend';
 import { CODEX_STATUS_OPERATION } from '../../../../shared/codex-status/status';
 import { readCodexServiceStatus } from '../api/codexServiceStatus';
-import { guiApi } from '../pages/codexGui/api';
+import { guiApi } from '../../../../shared/conversation/api';
 import { getGuiController } from '../pages/codexGui/session';
-import { subscribeGuiEvent } from '../pages/codexGui/webEvents';
+import { subscribeGuiEvent } from '../../../../shared/conversation/webEvents';
 import type { CliProgress, CliRelease, RemoteCliStatus } from '../../../../shared/remote-chat/guiTools';
 import { workspaceRequest } from './gitWorkspace';
 import { readRemoteProjects, selectRemoteProject } from './projects';

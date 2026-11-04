@@ -1,8 +1,8 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { DeferredDetails } from './DeferredDetails';
 import { CheckCircle2, Circle, LoaderCircle } from "lucide-react";
-import type { Turn } from "./types";
-import { RichText } from "./RichText";
+import type { Turn } from "../../../../../shared/conversation/types";
+import { RichText } from "../../../../../shared/conversation/RichText";
 import styles from "./TurnPlan.module.less";
 
 export function TurnPlan({ turn }: { turn: Turn }) {

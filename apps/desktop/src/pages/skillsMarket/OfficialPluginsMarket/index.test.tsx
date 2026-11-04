@@ -12,6 +12,7 @@ const backend = vi.hoisted(() => ({
   invoke: vi.fn(),
 }));
 vi.mock("../../../api/backend", () => ({ ...backend, hasLocalBackend: true, isDesktopApp: false }));
+vi.mock('../../../../../../shared/platform/localBackend', async () => await import('../../../api/backend'));
 
 let root: Root;
 let container: HTMLDivElement;

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import type { Conversation } from '../src/pages/codexGui/types';
+import type { Conversation } from '../../../shared/conversation/types';
 
 function conversation(count: number): Conversation {
   return { thread: { id: 'bounded', cwd: '', preview: '', updatedAt: 1 }, activeTurn: null, error: '', tokens: 0,

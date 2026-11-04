@@ -3,7 +3,7 @@ import { CalendarClock, RefreshCw } from "lucide-react";
 import { formatRemoteError } from "../../../../../shared/localization/errors";
 import type { Language, Translate } from "../../i18n";
 import type { ResetCreditsLoadState } from "../../types";
-import { formatSystemTime } from "../../utils/format";
+import { formatSystemTime } from "../../../../../shared/accounts/format";
 
 export function ResetCreditsPanel({ state, onRetry, language, t, missingState = "loading" }: {
   state?: ResetCreditsLoadState;

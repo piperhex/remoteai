@@ -1,10 +1,10 @@
-import { displayText, displayError } from '../../i18n/uiText';
+import { displayText, displayError } from '../../../../../shared/localization/uiText';
 import { useEffect, useState } from 'react';
 import { Alert, Button, Modal, Switch, Tooltip, Typography } from 'antd';
 import { Check, CircleHelp, Clipboard, Copy, FileText, Monitor, Mouse, Power, Upload, Volume2, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { invoke } from '../../api/backend';
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import type { DesktopPermissions } from '../../../../../shared/remote-desktop/protocol';
 import { UnattendedDesktopSettings } from './UnattendedDesktopSettings';
 import { DesktopSystemPermissions } from './DesktopSystemPermissions';

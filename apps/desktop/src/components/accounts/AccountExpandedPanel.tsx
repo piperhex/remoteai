@@ -3,7 +3,7 @@ import { Check, Copy, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import type { Language, Translate } from "../../i18n";
 import type { Account, ResetCreditsLoadState } from "../../types";
-import { formatSystemTime } from "../../utils/format";
+import { formatSystemTime } from "../../../../../shared/accounts/format";
 import { AccountTotpPreview } from "./AccountTotpPreview";
 import { ResetCreditsPanel } from "./ResetCreditsPanel";
 

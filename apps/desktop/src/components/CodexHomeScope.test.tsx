@@ -10,6 +10,7 @@ const backend = vi.hoisted(() => ({
   loadAppSettings: vi.fn(), read: vi.fn(), patch: vi.fn(), save: vi.fn(),
 }));
 vi.mock("../api/backend", () => ({ loadAppSettings: backend.loadAppSettings, hasLocalBackend: true }));
+vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 vi.mock("../api/codexConfig", () => ({
   readCodexConfigDocument: backend.read,
   patchCodexConfigDocument: backend.patch,

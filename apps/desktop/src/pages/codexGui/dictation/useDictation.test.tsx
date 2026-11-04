@@ -5,12 +5,12 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { useDictation } from '../../../../../../shared/chat/dictation/useDictation';
 import { dictationClient } from './client';
 import { startRecording, type Recording } from '../../../../../../shared/chat/dictation/recording';
-import { subscribeGuiEvent } from '../webEvents';
+import { subscribeGuiEvent } from '../../../../../../shared/conversation/webEvents';
 
 vi.mock('./client', () => ({ dictationClient: { prepare: vi.fn(), cancel: vi.fn(), transcribe: vi.fn(),
   subscribeAccountChange: (changed: () => void) => subscribeGuiEvent('codex-gui-account-changed', changed) } }));
 vi.mock('../../../../../../shared/chat/dictation/recording', () => ({ startRecording: vi.fn() }));
-vi.mock('../webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
+vi.mock('../../../../../../shared/conversation/webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

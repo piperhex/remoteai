@@ -1,4 +1,4 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   patchCodexConfigDocument,

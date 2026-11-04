@@ -1,7 +1,7 @@
 import { useCallback, useContext, type ReactNode } from 'react';
 import { AttachmentMetadataContext, readAttachmentMetadata } from '../../../../../shared/chat/attachmentMetadata';
-import { fileApi, FileThreadContext } from './fileApi';
-import { FileEnvironmentContext } from './fileEnvironment';
+import { fileApi, FileThreadContext } from '../../../../../shared/conversation/fileApi';
+import { FileEnvironmentContext } from '../../../../../shared/conversation/fileEnvironment';
 
 /** Inherit the selected remote computer's reader; local composers can inspect files before a chat exists. */
 export function AttachmentMetadataProvider({ children }: { children: ReactNode }) {

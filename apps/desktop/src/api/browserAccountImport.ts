@@ -1,4 +1,4 @@
-import { uiText } from "../i18n/uiText";
+import { uiText } from "../../../../shared/localization/uiText";
 
 const ACCOUNT_FILE_ACCEPT = ".json,.jsonl,.ndjson";
 const MAX_ACCOUNT_FILE_BYTES = 20 * 1024 * 1024;

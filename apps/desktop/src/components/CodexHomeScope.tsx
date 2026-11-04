@@ -1,10 +1,10 @@
-import { displayError } from '../i18n/uiText';
+import { displayError } from '../../../../shared/localization/uiText';
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { Alert, Button, Empty, Select, Spin } from "antd";
 import { loadAppSettings } from "../api/backend";
 import { DEFAULT_CODEX_HOME_ID, GUI_CODEX_HOME_ID, type CodexHomeEntry } from "../types";
-import { uiText } from "../i18n/uiText";
-import { useGuiLanguage } from "../i18n/useGuiLanguage";
+import { uiText } from "../../../../shared/localization/uiText";
+import { useGuiLanguage } from "../../../../shared/localization/useGuiLanguage";
 import type { Language } from "../../../../shared/localization/language";
 import styles from "./CodexHomeScope.module.less";
 

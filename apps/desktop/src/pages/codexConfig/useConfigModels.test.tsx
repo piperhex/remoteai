@@ -6,6 +6,7 @@ import { readCodexConfigModelNames } from "../../api/codexConfig";
 import { useConfigModels } from "./useConfigModels";
 
 vi.mock("../../api/backend", () => ({ hasLocalBackend: true }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock("../../api/codexConfig", () => ({ readCodexConfigModelNames: vi.fn() }));
 
 let root: Root;

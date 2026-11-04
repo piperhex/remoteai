@@ -1,7 +1,7 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { loadGuiAutoSwitchSettings, saveGuiAutoSwitchSettings, updateGuiAccountRule } from "./autoSwitchSettings";
-import type { GuiAutoSwitchAccountRule, GuiAutoSwitchSettings } from "./autoSwitchSettings";
+import { loadGuiAutoSwitchSettings, saveGuiAutoSwitchSettings, updateGuiAccountRule } from "../../../../../shared/conversation/autoSwitchSettings";
+import type { GuiAutoSwitchAccountRule, GuiAutoSwitchSettings } from "../../../../../shared/conversation/autoSwitchSettings";
 
 export function useGuiAutoSwitchSettings() {
   const [settings, setSettings] = useState<GuiAutoSwitchSettings | null>(null);

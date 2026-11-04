@@ -1,10 +1,10 @@
-import { displayText } from '../../i18n/uiText';
-import { uiText } from "../../i18n/uiText";
+import { displayText } from '../../../../../shared/localization/uiText';
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Button, Input, Popover, Tooltip } from "antd";
 import { Check, ChevronLeft, ChevronRight, RefreshCw, RotateCcw, Search, Zap } from "lucide-react";
-import type { Model } from "./types";
-import { modelSelectionError, resolveModelSelection, type ModelSelection } from "./modelSelection";
+import type { Model } from "../../../../../shared/conversation/types";
+import { modelSelectionError, resolveModelSelection, type ModelSelection } from "../../../../../shared/conversation/modelSelection";
 import styles from "./ModelPicker.module.less";
 import { GuiSpeedButton } from './GuiSpeedButton';
 import { EFFORT_LABELS, type RequestSpeed } from '../../../../../shared/remote-chat/composer';

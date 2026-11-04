@@ -9,6 +9,7 @@ import { modelReasoningConfigs, type ModelReasoningConfig } from "./providerUtil
 
 const backend = vi.hoisted(() => ({ fetchRelayModels: vi.fn() }));
 vi.mock("../../api/backend", () => backend);
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock("antd", () => ({
   Button: ({ children, disabled, onClick }: {
     children: ReactNode; disabled: boolean; onClick: () => void;

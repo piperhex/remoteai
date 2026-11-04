@@ -1,24 +1,24 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { remoteErrorText } from "../../../../../shared/localization/errors";
 import { useMemo, type ReactNode } from "react";
 import { Spin } from "antd";
 import { ArrowDown, Terminal } from "lucide-react";
-import type { Conversation } from "./types";
-import { lastUserMessage, type EditMessage, type DeleteMessage } from "./editMessage";
+import type { Conversation } from "../../../../../shared/conversation/types";
+import { lastUserMessage, type EditMessage, type DeleteMessage } from "../../../../../shared/conversation/editMessage";
 import { TurnMessage } from "./TurnMessage";
 import { useFollowScroll } from "./useFollowScroll";
 import { useMessageWindow } from "./useMessageWindow";
 import { WorkingStatus } from "./WorkingStatus";
-import type { PendingRequest } from "./processing";
-import { useQuoteSelection } from "./useQuoteSelection";
+import type { PendingRequest } from "../../../../../shared/conversation/processing";
+import { useQuoteSelection } from "../../../../../shared/conversation/useQuoteSelection";
 import { QuoteSelectionButton } from "./QuoteSelectionButton";
-import { selectedQuote } from "./selectedQuote";
-import type { ReplyQuote } from "./replyQuotes";
-import styles from "./styles.module.less";
-import { ImageThreadContext } from "./useImageSource";
-import { FileThreadContext } from "./fileApi";
+import { selectedQuote } from "../../../../../shared/conversation/selectedQuote";
+import type { ReplyQuote } from "../../../../../shared/conversation/replyQuotes";
+import styles from "../../../../../shared/conversation/styles.module.less";
+import { ImageThreadContext } from "../../../../../shared/conversation/useImageSource";
+import { FileThreadContext } from "../../../../../shared/conversation/fileApi";
 import { MessageEditContext } from "./messageEditContext";
-import type { CapacityRetryControl } from "./CapacityErrorNotice";
+import type { CapacityRetryControl } from "../../../../../shared/conversation/CapacityErrorNotice";
 import { groupVisibleTurns } from "./messageErrorGroups";
 
 export function Messages({ value, selected, active = true, footer, pendingRequest, onQuote,

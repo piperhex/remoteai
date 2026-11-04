@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { invoke } from '../../api/backend';
-import { subscribeGuiEvent } from './webEvents';
+import { subscribeGuiEvent } from '../../../../../shared/conversation/webEvents';
 import { RequestSpeedBridge } from './requestSpeedBridge';
 
 vi.mock('../../api/backend', () => ({ invoke: vi.fn() }));
-vi.mock('./webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
+vi.mock('../../../../../shared/conversation/webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
 const normal = { running: true, fastModeEnabled: false };
 const fast = { ...normal, fastModeEnabled: true };
 beforeEach(() => {

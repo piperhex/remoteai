@@ -1,7 +1,7 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useState } from "react";
-import { guiApi } from "./api";
-import type { ComposerPlugin, PluginsResponse } from "./attachmentTypes";
+import { guiApi } from "../../../../../shared/conversation/api";
+import type { ComposerPlugin, PluginsResponse } from "../../../../../shared/conversation/attachmentTypes";
 
 export function useComposerPlugins({ cwd, active }: { cwd: string; active: boolean }) {
   const [result, setResult] = useState({ cwd, plugins: [] as ComposerPlugin[], loading: false, error: "" });

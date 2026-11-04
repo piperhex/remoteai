@@ -1,11 +1,12 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { DEFAULT_CHAT_POLICY, MIB, setChatPolicy } from '../../../../../shared/remote-chat/policy';
 import { invoke } from '../../api/backend';
-import { guiApi } from './api';
-import type { Request } from './types';
+import { guiApi } from '../../../../../shared/conversation/api';
+import type { Request } from '../../../../../shared/conversation/types';
 
 vi.mock('../../api/backend', () => ({ invoke: vi.fn(async () => ({ data: {} })), isHostedWebApp: false }));
-vi.mock('./webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
+vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
+vi.mock('../../../../../shared/conversation/webEvents', () => ({ subscribeGuiEvent: vi.fn() }));
 afterEach(() => { setChatPolicy(DEFAULT_CHAT_POLICY); vi.clearAllMocks(); });
 const attachment = { kind: 'file' as const, name: 'notes.txt', path: '',
   data: Buffer.alloc(2 * MIB + 1, 1).toString('base64') };

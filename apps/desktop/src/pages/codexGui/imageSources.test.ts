@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { generatedImageSource, localImageSource } from "./imageSources";
+import { generatedImageSource, localImageSource } from "../../../../../shared/conversation/imageSources";
 
 it("recognizes local screenshot paths without allowing application endpoints or network shares", () => {
   for (const source of ["C:/screenshots/page.png", "C:\\screenshots\\page.png", "/tmp/page.png",

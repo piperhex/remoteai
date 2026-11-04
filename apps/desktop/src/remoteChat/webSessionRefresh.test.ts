@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { getActiveSession, refreshSession, setActiveSession } from '../../../web/src/api';
-import { t } from '../../../web/src/i18n';
+import { t } from '../../../../shared/localization/browserClient';
 
 const session = { baseUrl: 'https://test.example', email: 'owner@example.com',
   accessToken: 'old-access', refreshToken: 'old-refresh' };

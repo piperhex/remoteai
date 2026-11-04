@@ -1,6 +1,6 @@
-import { conversation } from '../src/pages/codexGui/events';
-import { MODEL_CAPACITY_MESSAGE } from '../src/pages/codexGui/requestError';
-import type { Turn } from '../src/pages/codexGui/types';
+import { conversation } from '../../../shared/conversation/events';
+import { MODEL_CAPACITY_MESSAGE } from '../../../shared/conversation/requestError';
+import type { Turn } from '../../../shared/conversation/types';
 
 const error = { message: MODEL_CAPACITY_MESSAGE };
 const turns: Turn[] = [

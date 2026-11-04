@@ -1,5 +1,5 @@
 import { Download } from 'lucide-react';
-import { DownloadCountIcon } from '../../../web/src/downloads/DownloadCountIcon';
+import { DownloadCountIcon } from '../../../../shared/downloads/DownloadCountIcon';
 import { LOCAL_DOWNLOAD_OWNER } from './localGitDownloads';
 
 export function DownloadNavigationIcon({ owner }: { owner?: string }) {

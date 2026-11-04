@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { test, expect } from "@playwright/test";
-import type { Conversation } from "../src/pages/codexGui/types";
+import type { Conversation } from "../../../shared/conversation/types";
 
 const source = (process.env.CHAT_TEST_SCREENSHOT ?? "C:/screenshots/tool-capture.png").replace(/\\/g, "/");
 const markdownSource = /^[a-z]:\//i.test(source) ? "/" + source : source;

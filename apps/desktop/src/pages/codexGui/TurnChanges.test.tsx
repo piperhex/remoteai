@@ -2,10 +2,10 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { DetailsContext } from "./detailsContext";
+import { DetailsContext } from "../../../../../shared/conversation/detailsContext";
 import { TurnMessage } from "./TurnMessage";
 import { RunningChangesSummary } from "./RunningChangesSummary";
-import type { Conversation, Item, Turn } from "./types";
+import type { Conversation, Item, Turn } from "../../../../../shared/conversation/types";
 
 let root: Root;
 let container: HTMLDivElement;

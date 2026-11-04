@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Button, ConfigProvider, Popover } from "antd";
-import { Installer } from "../src/pages/codexGui/Installer";
+import { Installer } from "../../../shared/conversation/Installer";
 import { useCliInstaller } from "../src/pages/codexGui/useCliInstaller";
-import { CliUpdateIcon } from "../src/pages/codexGui/CliUpdateIcon";
+import { CliUpdateIcon } from "../../../shared/conversation/CliUpdateIcon";
 import { invoke } from "../src/api/backend";
 import { createGuiToolsClient } from "../../../shared/remote-chat/guiTools";
 import { useRemoteCliInstaller } from "../../../shared/remote-chat/useRemoteCliInstaller";

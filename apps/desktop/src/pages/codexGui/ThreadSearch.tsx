@@ -1,9 +1,9 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useRef, useState } from "react";
 import { Button, Input, Modal, Spin, type InputRef } from "antd";
 import { ArrowUpRight, Folder, MessageSquare, Search } from "lucide-react";
 import type { GuiController } from "./controller";
-import type { GuiState } from "./types";
+import type { GuiState } from "../../../../../shared/conversation/types";
 import { projectName, threadTitle } from "./ThreadSidebar";
 import styles from "./threadSearch.module.less";
 

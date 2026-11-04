@@ -1,14 +1,14 @@
-import { displayError, displayText } from '../../../i18n/uiText';
+import { displayError, displayText } from '../../../../../../shared/localization/uiText';
 import { useEffect, useId, useState } from 'react';
 import { Alert, Button, ConfigProvider, Modal } from 'antd';
 import { ArrowLeft, Cable, Check, Cloud, CloudUpload, LockKeyhole, Plus, X } from 'lucide-react';
-import { uiText as t } from "../../../i18n/uiText";
+import { uiText as t } from "../../../../../../shared/localization/uiText";
 import { usePortForwarding } from './usePortForwarding';
 import { MappingForm, MappingFormActions } from './MappingForm';
 import { MappingList } from './MappingList';
 import { MAX_PORT_MAPPINGS } from './settings';
 import type { ForwardingClient, ForwardingEntry } from './service';
-import launcherStyles from '../GuiRemoteDesktop.module.less';
+import launcherStyles from '../../../../../../shared/conversation/GuiRemoteDesktop.module.less';
 import styles from './portForwarding.module.less';
 
 type MappingView = { type: 'list' } | { type: 'create' } | { type: 'edit'; entry: ForwardingEntry };

@@ -1,4 +1,4 @@
-import type { GuiEvent, Thread } from '../pages/codexGui/types';
+import type { GuiEvent, Thread } from '../../../../shared/conversation/types';
 import { updateThread } from '../../../../shared/remote-chat/client/events';
 import { discardStaleRunningTurns, mergeHistory } from '../../../../shared/remote-chat/client/history';
 

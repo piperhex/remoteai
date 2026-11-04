@@ -6,7 +6,7 @@ import { flattenGroupingTree, groupingTree } from '../../../../../shared/chat/gr
 import { createGuiGroups, loadGrouping } from './groupActions';
 import { initialState } from './preferences';
 import { SidebarBridge } from './sidebarBridge';
-import { guiApi } from './api';
+import { guiApi } from '../../../../../shared/conversation/api';
 
 const seeded = (): Grouping => ({ ...emptyGrouping(), groups: [
   { id: 'work', name: 'Work', parentId: null }, { id: 'child', name: 'Child', parentId: 'work' },

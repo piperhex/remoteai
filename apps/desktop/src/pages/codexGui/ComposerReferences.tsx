@@ -1,6 +1,6 @@
-import { uiText } from "../../i18n/uiText";
+import { uiText } from "../../../../../shared/localization/uiText";
 import { Blocks, File, Folder, GitBranch, MessageSquare, X } from "lucide-react";
-import { attachmentKey, type AttachmentReference } from "./attachmentTypes";
+import { attachmentKey, type AttachmentReference } from "../../../../../shared/conversation/attachmentTypes";
 import { isDesktopApp } from "../../api/backend";
 import { ComposerFileImage } from "./ComposerFileImage";
 import imageStyles from "./ImageAttachments.module.less";

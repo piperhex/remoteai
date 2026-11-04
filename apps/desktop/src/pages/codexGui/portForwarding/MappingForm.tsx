@@ -1,8 +1,8 @@
-import { displayError } from '../../../i18n/uiText';
+import { displayError } from '../../../../../../shared/localization/uiText';
 import { useState, type FormEvent } from 'react';
 import { Button, Input, InputNumber, Radio } from 'antd';
 import { ArrowRight } from 'lucide-react';
-import { guiLocale, uiText as t } from "../../../i18n/uiText";
+import { guiLocale, uiText as t } from "../../../../../../shared/localization/uiText";
 import { MAX_PORT } from './settings';
 import type { MappingProtocol } from '../../../../../../shared/port-mapping/settings';
 import { DEFAULT_MAPPING_HOST, mappingAddress } from '../../../../../../shared/port-mapping/target';

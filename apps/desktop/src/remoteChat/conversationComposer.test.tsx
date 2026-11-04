@@ -2,14 +2,14 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { ChatComposer } from '../../../web/src/chat/ChatComposer';
-import type { ComposerProps } from '../../../web/src/chat/composerProps';
-import { guiApi } from '../pages/codexGui/api';
-import { testModels } from '../pages/codexGui/testModels';
+import { ChatComposer } from '../../../../shared/remote-chat/views/ChatComposer';
+import type { ComposerProps } from '../../../../shared/remote-chat/views/composerProps';
+import { guiApi } from '../../../../shared/conversation/api';
+import { testModels } from '../../../../shared/conversation/testing/models';
 import type { ListResponse, Thread } from '../../../../shared/remote-chat/client/types';
 import type { ProjectFilesResponse } from '../../../../shared/remote-chat/projectFiles';
 
-vi.mock('../pages/codexGui/api', () => ({ guiApi: { request: vi.fn() } }));
+vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 const threads: Thread[] = [
   { id: 'current', name: '当前对话', preview: '', cwd: '/remote/project', updatedAt: 3 },
   { id: 'design', name: '远程设计讨论', preview: '', cwd: '/remote/design', updatedAt: 2 },

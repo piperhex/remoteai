@@ -1,6 +1,6 @@
 import { useConversationCandidates as useCandidates,
   type ConversationSearch } from "../../../../../shared/chat/useConversationCandidates";
-import { guiApi } from "./api";
+import { guiApi } from "../../../../../shared/conversation/api";
 
 const load: ConversationSearch = ({ search, ...options }) =>
   guiApi.request({ operation: "list", ...options, search: search || undefined });

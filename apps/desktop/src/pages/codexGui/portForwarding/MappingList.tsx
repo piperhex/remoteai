@@ -1,6 +1,6 @@
 import { Button } from 'antd';
 import { Cable, Plus } from 'lucide-react';
-import { uiText as t } from "../../../i18n/uiText";
+import { uiText as t } from "../../../../../../shared/localization/uiText";
 import { MappingRow } from './MappingRow';
 import type { ForwardingEntry, PortForwardingService } from './service';
 import styles from './portForwarding.module.less';
