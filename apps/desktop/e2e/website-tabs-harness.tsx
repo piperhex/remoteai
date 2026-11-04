@@ -10,6 +10,7 @@ import { useThemeMode } from '../src/hooks/useThemeMode';
 import { setGuiLanguage } from '../../../shared/localization/uiText';
 import { BrowserClientContext, localBrowserClient } from '../../../shared/file-preview/workspace/browserClient';
 import type { BrowserClient } from '../../../shared/browser/automation';
+import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
 import '../src/styles.css';
 import 'antd/dist/reset.css';
 
@@ -50,7 +51,9 @@ function Harness() {
       <p>浏览期间仍可操作界面。</p>
     </Modal>
   </main>;
-  return <ConfigProvider theme={{ algorithm: appearance === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm }}>
+  const algorithms = [appearance === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm];
+  if (mode !== 'web') algorithms.push(theme.compactAlgorithm);
+  return <ConfigProvider theme={{ algorithm: algorithms }}>
     <BrowserClientContext.Provider value={params.has('automation') ? automationClient : localBrowserClient}>
     <FileEnvironmentContext.Provider value={mode === 'remote' ? environment : null}>
       <div style={{ height: '100vh' }}>{mode === 'local'
@@ -60,4 +63,4 @@ function Harness() {
     </BrowserClientContext.Provider>
   </ConfigProvider>;
 }
-createRoot(document.getElementById('root')!).render(<Harness />);
+createRoot(document.getElementById('root')!).render(<ApplicationTypography><Harness /></ApplicationTypography>);

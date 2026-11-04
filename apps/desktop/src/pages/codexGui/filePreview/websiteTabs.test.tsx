@@ -84,6 +84,28 @@ it('can return from a website to a file resource without resolving a local file 
   expect(tabs.tabs[0].url).toBe('file:///demo.html');
 });
 
+it('closes batches atomically, releases resources once and cancels pending navigation', async () => {
+  const release = vi.fn();
+  await act(async () => {
+    tabs.open('https://one.test');
+    tabs.openResource({ key: 'file', title: 'file.html', url: 'file:///file.html', render: () => null, release });
+    tabs.open('https://two.test');
+  });
+  const [first, file, last] = tabs.tabs.map(tab => tab.id);
+  await act(async () => tabs.onAction(file, 'reload'));
+  await act(async () => tabs.onCloseTabs([file, last, file]));
+  expect(tabs.tabs.map(tab => tab.id)).toEqual([first]); expect(tabs.activeId).toBe(first);
+  expect(tabs.commands).toEqual({}); expect(release).toHaveBeenCalledOnce();
+  await act(async () => resolves.get('https://two.test')!('https://resolved.test/two'));
+  expect(tabs.tabs.map(tab => tab.id)).toEqual([first]);
+  await act(async () => tabs.onCloseTabs([first]));
+  expect(tabs.tabs).toEqual([]); expect(tabs.activeId).toBe('');
+  await act(async () => tabs.open('https://two.test'));
+  expect(tabs.tabs).toHaveLength(1); expect(tabs.activeId).toBe(tabs.tabs[0].id);
+  await act(async () => tabs.reset());
+  expect(release).toHaveBeenCalledOnce();
+});
+
 it('parks a native tab only after its previous placement has completed', async () => {
   let finish!: () => void;
   vi.mocked(invoke).mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; }));
