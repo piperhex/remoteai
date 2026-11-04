@@ -32,7 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: git submodule update --init shared packages/i18n apps/web
+      # Export also refreshes Native parity fixtures; Native itself is not built here.
+      - run: git submodule update --init shared packages/i18n apps/web apps/native
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
