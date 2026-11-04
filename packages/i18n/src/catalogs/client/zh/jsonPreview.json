@@ -1,6 +1,0 @@
-{
-  "client.filePreview.jsonHighlightLimit": "JSON 高亮大小上限（MB）",
-  "client.filePreview.jsonHighlightHint": "不超过此大小的 JSON 文件会完整高亮，超出时显示为纯文本。可设置 {min}–{max} MB，默认 10 MB。",
-  "client.filePreview.jsonLines": "JSON · {count} 行",
-  "client.filePreview.jsonPlainText": "文件超过 {limit} MB，已显示为纯文本。可在设置中调整高亮上限。"
-}

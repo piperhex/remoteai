@@ -1,8 +1,0 @@
-{
-  "client.discovery.title": "見つける",
-  "client.discovery.twoFactor": "2FA",
-  "client.discovery.back": "見つけるに戻る",
-  "client.discovery.ssh": "SSH",
-  "client.discovery.sshComputerHint": "SSH ターミナルを開くには、オンラインのパソコンを選択してください。",
-  "client.discovery.sshViaComputer": "{name} 経由で接続"
-}

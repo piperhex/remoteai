@@ -1,8 +1,0 @@
-{
-  "client.remoteDesktop.takeoverTitle": "中断现有连接？",
-  "client.remoteDesktop.takeoverMessage": "另一台设备正在连接这台电脑。继续连接将断开对方的远程桌面。",
-  "client.remoteDesktop.takeoverConfirm": "中断并连接",
-  "client.remoteDesktop.takeoverCancel": "取消",
-  "client.remoteDesktop.connectionInUse": "这台电脑已有远程桌面连接。",
-  "client.remoteDesktop.connectionCancelled": "已取消连接，原有连接不受影响。"
-}

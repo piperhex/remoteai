@@ -158,7 +158,7 @@ sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev
 Установите зависимости и запустите приложение для компьютера:
 
 ```powershell
-git submodule update --init shared
+git submodule update --init shared packages/i18n
 npm install
 npm run dev:app
 ```

@@ -10,3 +10,6 @@
 [submodule "apps/admin-ui"]
 	path = apps/admin-ui
 	url = https://github.com/piperhex/remoteai-admin-ui.git
+[submodule "packages/i18n"]
+	path = packages/i18n
+	url = https://github.com/piperhex/remoteai-i18n.git

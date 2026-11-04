@@ -1,9 +1,0 @@
-{
-  "client.gitBlame.annotate": "Annotate with Git Blame",
-  "client.gitBlame.hideAnnotations": "Hide Git Blame Annotations",
-  "client.gitBlame.uncommitted": "Uncommitted",
-  "client.gitBlame.loading": "Loading Git Blame…",
-  "client.gitBlame.unavailable": "Git Blame could not be loaded. Please try again later.",
-  "client.gitBlame.notRepository": "This file is not in a Git repository.",
-  "client.gitBlame.changed": "This file changed elsewhere. Reload it to view Git Blame."
-}

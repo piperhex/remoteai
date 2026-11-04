@@ -24,15 +24,6 @@ function copy(source, target) {
   fs.writeFileSync(target, contents);
 }
 
-function copyTree(source, target) {
-  for (const entry of fs.readdirSync(path.join(root, source), { withFileTypes: true })) {
-    const from = path.join(source, entry.name);
-    const to = path.join(target, entry.name);
-    if (entry.isDirectory()) copyTree(from, to);
-    else copy(from, to);
-  }
-}
-
 function pack(directory, metadata) {
   fs.writeFileSync(path.join(directory, 'package.json'), JSON.stringify(metadata, null, 2) + '\n');
   copy('LICENSE', path.join(directory, 'LICENSE'));
@@ -98,19 +89,19 @@ async function sharedPackage() {
     name: '@remoteai/shared', version: '0.1.0', private: true, type: 'module', license: 'Apache-2.0', exports,
     dependencies: { '@noble/ciphers': '^1.3.0', '@noble/curves': '^1.9.7', '@noble/hashes': '^1.8.0',
       'base64-js': '^1.5.1' },
-    peerDependencies: { '@remoteai/i18n': '0.1.0', antd: '^5.29.3', react: '^18.3.1', 'lucide-react': '^0.468.0' },
+    peerDependencies: { '@remoteai/i18n': '^0.1.0', antd: '^5.29.3', react: '^18.3.1', 'lucide-react': '^0.468.0' },
   });
 }
 
 try {
   const shared = await sharedPackage();
-  const directory = path.join(temporary, 'i18n');
-  copyTree('packages/i18n/src', path.join(directory, 'src'));
   const original = JSON.parse(fs.readFileSync(path.join(root, 'packages/i18n/package.json'), 'utf8'));
-  const { scripts, devDependencies, ...metadata } = original;
-  delete metadata.exports['./tooling/dream-skin'];
-  const i18n = pack(directory, metadata);
+  const version = original.version;
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('Export a published stable i18n version.');
+  const i18n = `https://github.com/piperhex/remoteai-i18n/releases/download/i18n-v${version}/remoteai-i18n-${version}.tgz`;
   const revision = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+  const languageRevision = execFileSync('git', ['rev-parse', '--verify', `refs/tags/i18n-v${version}^{commit}`],
+    { cwd: path.join(root, 'packages/i18n'), encoding: 'utf8' }).trim();
   fs.writeFileSync(manifestPath, JSON.stringify({
     sharedSource: {
       repository: 'https://github.com/piperhex/remoteai-shared.git',
@@ -119,11 +110,13 @@ try {
       }).trim(),
     },
     repository: 'https://github.com/piperhex/remoteai.git', revision,
-    packages: { shared, i18n }, files,
+    languageSource: { repository: 'https://github.com/piperhex/remoteai-i18n.git',
+      revision: languageRevision, version, artifact: i18n },
+    packages: { shared }, files,
   }, null, 2) + '\n');
   const manifest = JSON.parse(fs.readFileSync(path.join(destination, 'package.json'), 'utf8'));
   manifest.dependencies['@remoteai/shared'] = `file:vendor/${shared}`;
-  manifest.dependencies['@remoteai/i18n'] = `file:vendor/${i18n}`;
+  manifest.dependencies['@remoteai/i18n'] = i18n;
   fs.writeFileSync(path.join(destination, 'package.json'), JSON.stringify(manifest, null, 2) + '\n');
   for (const filename of previousPackages) {
     if (![shared, i18n].includes(filename) && path.basename(filename) === filename) {

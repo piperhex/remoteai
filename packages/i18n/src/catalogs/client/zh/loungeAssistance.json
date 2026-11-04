@@ -1,6 +1,0 @@
-{
-  "client.lounge.assistance.confirm": "向 {email} 请求远程协助？",
-  "client.lounge.assistance.desktopRequired": "请在需要协助的电脑上打开 Remote AI，在群聊右上角点击“远程协助”，输入对方邮箱发送邀请。",
-  "client.lounge.assistance.recipient": "对方账号：{email}",
-  "client.lounge.assistance.understood": "知道了"
-}

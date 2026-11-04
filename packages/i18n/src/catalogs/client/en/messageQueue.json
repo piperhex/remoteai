@@ -1,7 +1,0 @@
-{
-  "client.messageQueue.settings": "Message sending",
-  "client.messageQueue.enabled": "Queue messages",
-  "client.messageQueue.description": "When enabled, new messages wait in the queue while a task is running and are sent after the current turn ends. Turn this off to send them immediately.",
-  "client.messageQueue.hint": "Changes take effect immediately. Messages already in the queue are not affected.",
-  "client.messageQueue.saveError": "Could not save the setting. Please try again."
-}

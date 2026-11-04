@@ -1,9 +1,0 @@
-{
-  "settings.quotaDisplay.average": "Average quota across all accounts",
-  "settings.quotaDisplay.hint": "Use equal account weights for 5-hour and weekly remaining quota in both widgets. Missing data does not count as 0%.",
-  "settings.quotaDisplay.unsupported": "Set this option on the computer displaying the bubble and pet.",
-  "settings.quotaDisplay.short": "All average",
-  "settings.quotaDisplay.summary": "Average remaining quota: 5-hour {primary}/{total} accounts, weekly {secondary}/{total} accounts. Click to refresh all accounts.",
-  "settings.quotaDisplay.stale": "Some data is out of date",
-  "settings.quotaDisplay.compact": "All-account average"
-}

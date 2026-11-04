@@ -1,5 +1,0 @@
-{
-  "client.npmScripts.run": "{name} を実行",
-  "client.npmScripts.stop": "{name} を停止",
-  "client.npmScripts.invalid": "このコマンドを実行できません。package.json を確認して、もう一度お試しください。"
-}

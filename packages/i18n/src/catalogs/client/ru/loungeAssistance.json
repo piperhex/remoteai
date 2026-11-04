@@ -1,6 +1,0 @@
-{
-  "client.lounge.assistance.confirm": "Попросить {email} об удалённой помощи?",
-  "client.lounge.assistance.desktopRequired": "Откройте Remote AI на компьютере, с которым нужна помощь. Нажмите «Удалённая помощь» в правом верхнем углу группового чата и введите адрес электронной почты получателя, чтобы отправить приглашение.",
-  "client.lounge.assistance.recipient": "Аккаунт получателя: {email}",
-  "client.lounge.assistance.understood": "Понятно"
-}

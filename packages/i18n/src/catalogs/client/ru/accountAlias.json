@@ -1,6 +1,0 @@
-{
-  "client.accounts.alias": "Псевдоним аккаунта",
-  "client.accounts.aliasPlaceholder": "Например, Работа",
-  "client.accounts.aliasHint": "В группе рядом с моделью показывается этот псевдоним. До 16 символов.",
-  "client.accounts.aliasInvalid": "Введите до 16 символов без переносов строк."
-}

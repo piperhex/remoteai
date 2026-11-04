@@ -1,8 +1,0 @@
-{
-  "client.conversationWorkspace.more": "More project options",
-  "client.conversationWorkspace.currentWorktree": "Current worktree",
-  "client.conversationWorkspace.mainWorktree": "Main worktree",
-  "client.conversationWorkspace.linkedWorktree": "Worktree: {name}",
-  "client.conversationWorkspace.loading": "Loading…",
-  "client.conversationWorkspace.unavailable": "Unavailable"
-}

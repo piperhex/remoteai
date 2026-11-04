@@ -1,6 +1,0 @@
-{
-  "client.lounge.muteNotifications": "消息免打扰",
-  "client.lounge.unmuteNotifications": "取消免打扰",
-  "client.lounge.notificationsMuted": "已开启免打扰",
-  "client.lounge.notificationSaveFailed": "未能保存免打扰设置，请稍后重试。"
-}

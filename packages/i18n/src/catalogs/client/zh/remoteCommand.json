@@ -1,3 +1,0 @@
-{
-  "client.remoteCommand.busy": "远程命令数量已达上限，请等待正在执行的命令完成后重试。"
-}

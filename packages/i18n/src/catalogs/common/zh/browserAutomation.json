@@ -1,8 +1,0 @@
-{
-  "market.browserTabUnavailable": "此标签页已关闭，请重新打开页面。",
-  "market.browserStaleReference": "页面已变化，请重新读取页面后继续。",
-  "market.browserLimit": "打开的网页太多了，请关闭部分标签页后重试。",
-  "market.browserCaptureUnsupported": "此电脑暂不支持实时网页预览。",
-  "market.browserMoreTabs": "更多标签页",
-  "market.browserHiddenTabs": "隐藏的标签页"
-}

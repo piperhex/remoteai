@@ -1,6 +1,0 @@
-{
-  "client.lounge.assistance.confirm": "{email} にリモートアシスタンスを依頼しますか？",
-  "client.lounge.assistance.desktopRequired": "サポートが必要なコンピュータで Remote AI を開いてください。グループチャット右上の「リモートアシスタンス」を選び、相手のメールアドレスを入力して招待を送信します。",
-  "client.lounge.assistance.recipient": "相手のアカウント：{email}",
-  "client.lounge.assistance.understood": "閉じる"
-}

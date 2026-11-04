@@ -1,3 +1,0 @@
-{
-  "client.remoteCommand.busy": "The remote command limit has been reached. Wait for running commands to finish, then try again."
-}

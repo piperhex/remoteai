@@ -1,6 +1,0 @@
-{
-  "note.alias": "Account alias",
-  "note.aliasPlaceholder": "For example, Work",
-  "note.aliasHint": "In a group, shows the model name and this alias. Up to 16 characters.",
-  "note.aliasInvalid": "Use an alias of up to 16 characters without line breaks."
-}

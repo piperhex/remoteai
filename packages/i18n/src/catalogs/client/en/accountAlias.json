@@ -1,6 +1,0 @@
-{
-  "client.accounts.alias": "Account alias",
-  "client.accounts.aliasPlaceholder": "For example, Work",
-  "client.accounts.aliasHint": "In a group, shows the model name and this alias. Up to 16 characters.",
-  "client.accounts.aliasInvalid": "Use an alias of up to 16 characters without line breaks."
-}

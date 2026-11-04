@@ -43,6 +43,12 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: '0'
     steps:
       - uses: actions/checkout@v7
+      - name: Initialize language package
+        shell: bash
+        run: |
+          if git config -f .gitmodules --get submodule.packages/i18n.path > /dev/null; then
+            git submodule update --init packages/i18n
+          fi
       - uses: actions/setup-node@v6
         with:
           node-version: lts/*

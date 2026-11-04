@@ -1,8 +1,0 @@
-{
-  "client.projectBrowser.openInExplorer": "ファイルマネージャーで開く",
-  "client.projectBrowser.openInTerminal": "ターミナルで開く",
-  "client.projectBrowser.largePlainText": "大きなファイルをプレーンテキストで開いています。検索・置換・保存は利用できます。",
-  "client.projectBrowser.largeImagePreview": "5 MB を超える画像はプレビューできません。",
-  "client.projectBrowser.enterFullscreen": "全画面表示",
-  "client.projectBrowser.exitFullscreen": "全画面表示を終了"
-}

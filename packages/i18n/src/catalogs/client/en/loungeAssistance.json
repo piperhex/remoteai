@@ -1,6 +1,0 @@
-{
-  "client.lounge.assistance.confirm": "Ask {email} for remote assistance?",
-  "client.lounge.assistance.desktopRequired": "Open Remote AI on the computer you need help with. Select Remote assistance at the top right of the group chat, then enter the other person's email to send an invitation.",
-  "client.lounge.assistance.recipient": "Recipient account: {email}",
-  "client.lounge.assistance.understood": "Got it"
-}
