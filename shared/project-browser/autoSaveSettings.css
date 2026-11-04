@@ -1,5 +1,0 @@
-.pf-auto-save-settings { width: 100%; max-width: 400px; font: inherit; }
-.pf-auto-save-settings label { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.pf-auto-save-settings select { max-width: 60%; padding: 6px 8px; border: 1px solid var(--line, #ccd5d0);
-  border-radius: 6px; font: inherit; background: var(--panel, #fff); color: var(--ink, #202c29); }
-.pf-auto-save-settings p { margin: 10px 0 0; color: var(--muted, #718078); font-size: 12px; overflow-wrap: anywhere; }

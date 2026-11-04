@@ -1,6 +1,0 @@
-.lounge-unread-avatar { position: relative; display: inline-flex; flex-shrink: 0; }
-.lounge-avatar-unread { position: absolute; top: -5px; right: -7px; z-index: 1; box-sizing: border-box;
-  min-width: 18px; padding: 1px 5px; border-radius: 12px; background: #e54d57; color: #fff;
-  font-size: 11px; line-height: 16px; text-align: center; white-space: nowrap; pointer-events: none; }
-.lounge-notification-error { max-width: 400px; color: var(--app-danger, #c8434b); font-size: 12px;
-  line-height: 1.6; margin: 8px 12px; overflow-wrap: anywhere; }

@@ -1,9 +1,0 @@
-.lounge-avatar { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 50%; display: grid; overflow: hidden;
-  place-items: center; background: #dee9f7; color: #4b6c96; font-size: 15px; font-weight: 600; }
-.is-own .lounge-avatar { background: #d9e8fa; color: #3275ad; }
-.lounge-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.lounge-avatar-direct { border: 0; padding: 0; font-family: inherit; cursor: pointer; }
-.lounge-avatar-direct:focus-visible { outline: 2px solid var(--lounge-text); outline-offset: 2px; }
-.lounge-avatar-settings { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 12px 0; }
-.lounge-avatar-settings p { margin: 0; max-width: 352px; line-height: 1.7; }
-.lounge-avatar-settings > div { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }

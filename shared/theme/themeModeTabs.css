@@ -1,5 +1,0 @@
-.theme-mode-tabs.ant-segmented { flex: 0 0 auto; }
-.theme-mode-tabs-label {
-  display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 28px;
-}
-.theme-mode-tabs-label > svg { flex: 0 0 auto; }

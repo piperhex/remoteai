@@ -1,8 +1,0 @@
-.json-highlight-settings { width: 100%; max-width: 400px; margin-top: 16px; font: inherit; }
-.json-highlight-settings label { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.json-highlight-settings label span { min-width: 0; overflow-wrap: anywhere; }
-.json-highlight-settings input { flex: 0 0 80px; width: 80px; max-width: 40%; padding: 6px 8px;
-  border: 1px solid var(--line, #ccd5d0); border-radius: 6px;
-  font: inherit; background: var(--panel, #fff); color: var(--ink, #202c29); }
-.json-highlight-settings p { margin: 10px 0 0; color: var(--muted, #718078); font-size: 12px;
-  line-height: 1.6; overflow-wrap: anywhere; }

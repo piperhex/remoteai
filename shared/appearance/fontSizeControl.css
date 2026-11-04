@@ -1,7 +1,0 @@
-.font-size-control { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; min-width: 0; }
-.font-size-control > svg { flex-shrink: 0; color: var(--muted, var(--app-muted)); }
-.font-size-control > .ant-slider { flex: 1; min-width: 100px; }
-.font-size-control > .ant-input-number-affix-wrapper { width: 100px; }
-.global-font-settings { display: grid; gap: 16px; width: 100%; min-width: 0; }
-.global-font-settings p { margin: 0; line-height: 1.6; }
-.font-size-error { color: var(--ant-color-error, #c43c3c); max-width: 400px; overflow-wrap: anywhere; }

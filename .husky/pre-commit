@@ -1,1 +1,4 @@
+# Tests create foreign Git repositories; keep the committing repository out of their environment.
+# https://git-scm.com/docs/githooks#_description
+unset $(git rev-parse --local-env-vars)
 npm run check

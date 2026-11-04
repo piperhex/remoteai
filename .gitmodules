@@ -1,3 +1,6 @@
+[submodule "shared"]
+	path = shared
+	url = https://github.com/piperhex/remoteai-shared.git
 [submodule "apps/coze"]
 	path = apps/coze
 	url = https://github.com/piperhex/remoteai-coze.git

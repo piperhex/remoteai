@@ -1,6 +1,0 @@
-.lounge-context-menu.ant-dropdown .ant-dropdown-menu { min-width: 168px; padding: 6px; border-radius: 12px; }
-.lounge-context-menu.ant-dropdown .ant-dropdown-menu .ant-dropdown-menu-item {
-  min-height: 44px; padding: 10px 16px; border-radius: 7px; font-size: 16px; line-height: 24px;
-}
-.lounge-avatar-menu { display: inline-flex; align-self: flex-start; flex-shrink: 0; border-radius: 50%; }
-.lounge-copy-notice .ant-message-notice-content { max-width: min(400px, calc(100vw - 32px)); overflow-wrap: anywhere; }

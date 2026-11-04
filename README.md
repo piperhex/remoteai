@@ -172,9 +172,13 @@ sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev
 安装依赖并启动桌面应用：
 
 ```powershell
+git submodule update --init shared
 npm install
 npm run dev:app
 ```
+
+`shared/` 是必需的共享源码子模块。拉取主仓库更新后，请再次执行上述子模块命令，
+检出对应版本；维护方式见[共享源码仓库说明](docs/shared-submodule.md)。
 
 使用演示数据启动浏览器预览（不会访问真实凭据）：
 

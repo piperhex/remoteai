@@ -10,6 +10,7 @@ on:
       - 'scripts/**'
       - 'package*.json'
       - '.github/workflows/i18n.yml'
+      - 'shared'
   pull_request:
     paths:
       - 'packages/i18n/**'
@@ -18,6 +19,7 @@ on:
       - 'scripts/**'
       - 'package*.json'
       - '.github/workflows/i18n.yml'
+      - 'shared'
 
 permissions:
   contents: read
@@ -31,5 +33,7 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Initialize shared sources
+        run: git submodule update --init shared
       - run: npm ci --workspace @remoteai/i18n --include-workspace-root=false --ignore-scripts
       - run: npm run check:i18n

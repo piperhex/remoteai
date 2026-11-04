@@ -1,3 +1,0 @@
-.interface-language-select.ant-select { width: 144px; max-width: 100%; flex-shrink: 0; }
-.interface-language-options { max-width: min(400px, calc(100vw - 24px)); }
-.interface-language-options .ant-select-item-option-content { white-space: normal; overflow-wrap: anywhere; }

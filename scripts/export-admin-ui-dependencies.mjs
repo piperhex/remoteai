@@ -112,6 +112,12 @@ try {
   const i18n = pack(directory, metadata);
   const revision = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
   fs.writeFileSync(manifestPath, JSON.stringify({
+    sharedSource: {
+      repository: 'https://github.com/piperhex/remoteai-shared.git',
+      revision: execFileSync('git', ['rev-parse', 'HEAD'], {
+        cwd: path.join(root, 'shared'), encoding: 'utf8',
+      }).trim(),
+    },
     repository: 'https://github.com/piperhex/remoteai.git', revision,
     packages: { shared, i18n }, files,
   }, null, 2) + '\n');

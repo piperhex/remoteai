@@ -1,8 +1,0 @@
-.cs-usage-amounts { font: inherit; color: inherit; white-space: nowrap; cursor: help; }
-.cs-usage-quota { white-space: nowrap; }
-.cs-usage-remaining { cursor: help; }
-.cs-usage-current .cs-usage-token-value { color: var(--app-accent, #0a8469); font-weight: 700; }
-.cs-usage-current .cs-usage-cost-value { color: var(--app-warning, #b45d00); font-weight: 700; }
-.cs-usage-amounts:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 2px; }
-:root[data-theme='dark'] .cs-usage-current .cs-usage-token-value { color: #54d6b1; }
-:root[data-theme='dark'] .cs-usage-current .cs-usage-cost-value { color: #f5b141; }

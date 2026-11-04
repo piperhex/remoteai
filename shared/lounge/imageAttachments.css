@@ -1,7 +1,0 @@
-.lounge-attachments .lounge-attachment-edit {
-  position: static; width: 100%; height: auto; min-height: 28px; padding: 3px 4px;
-  border-radius: 0 0 7px 7px; background: var(--lounge-bg); color: var(--lounge-text); font-size: 12px;
-}
-.lounge-attachments img { display: block; }
-.lounge-mobile .lounge-attachment-edit { min-height: 36px; }
-.lounge-attachments button:disabled { opacity: .45; cursor: default; }

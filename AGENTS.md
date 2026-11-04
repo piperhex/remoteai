@@ -240,6 +240,17 @@ Keep all instructions in this `AGENTS.md` file in English.
 - For changes to proxy, Provider, concurrent-routing, cloud-sync, or token-usage UI flows, verify responsiveness while requests are active and while the relevant polling view is open. Run Rust formatting and tests plus the desktop TypeScript/Vite production build before handing off the change.
 
 
+## Shared Source Submodule
+
+- `shared` is the required `https://github.com/piperhex/remoteai-shared.git` source submodule.
+  Initialize it with `git submodule update --init shared` before building or checking application sources.
+- Follow `shared/AGENTS.md`. Commit and push shared changes before updating the parent gitlink.
+  Preserve existing import paths, cross-platform behavior and public `@remoteai/i18n` imports.
+- Shared sources still use application adapters and types; this Git split does not make them a standalone
+  npm application. Validate them with the consuming desktop, native and web applications.
+- Application CI must initialize the pinned shared revision. Translation ownership checks must include
+  shared tracked and untracked source files, and dependency exports must record its repository and revision.
+
 ## Clean Code Constraints
 
 1. A single source file should generally not exceed **500 lines**. If it does, split it by responsibility.

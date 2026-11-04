@@ -1,6 +1,0 @@
-.pf-editor { position: relative; }
-.pf-selection-menu { z-index: 22; }
-.pf-selection-menu.pf-selection-touch { position: absolute; left: auto; top: auto; right: 12px; bottom: 12px;
-  width: auto; min-width: 140px; max-width: min(400px, calc(100% - 24px)); }
-.pf-selection-error { max-width: 400px; white-space: normal; overflow-wrap: anywhere;
-  padding: 4px 8px; color: var(--pf-ink); }

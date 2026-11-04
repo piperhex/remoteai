@@ -1,0 +1,42 @@
+name: Shared consumer integration
+
+on:
+  push:
+    paths:
+      - 'shared'
+      - '.gitmodules'
+      - 'scripts/export-admin-ui-dependencies.mjs'
+      - '.husky/pre-commit'
+      - 'scripts/git-hook-environment.test.mjs'
+      - '.github/workflows/shared-integration.yml'
+  pull_request:
+    paths:
+      - 'shared'
+      - '.gitmodules'
+      - 'scripts/export-admin-ui-dependencies.mjs'
+      - '.husky/pre-commit'
+      - 'scripts/git-hook-environment.test.mjs'
+      - '.github/workflows/shared-integration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  consumers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Initialize required source repositories
+        run: |
+          git submodule update --init shared
+          if git config -f .gitmodules --get submodule.packages/i18n.path > /dev/null; then
+            git submodule update --init packages/i18n
+          fi
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --test scripts/git-hook-environment.test.mjs
+      - run: npm run check:i18n
+      - run: npx lerna run check --stream

@@ -47,6 +47,8 @@ jobs:
         with:
           node-version: lts/*
           cache: npm
+      - name: Initialize shared sources
+        run: git submodule update --init shared
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy

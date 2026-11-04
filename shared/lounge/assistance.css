@@ -1,7 +1,0 @@
-.lounge-assistance-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 4px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
-.lounge-assistance-button:hover { background: var(--lounge-line); }
-.lounge-assistance-button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
-.lounge-heading .lounge-assistance-button { font-size: 13px; }
-.lounge-assistance-copy, .lounge-assistance-confirm .ant-popconfirm-message-text { overflow-wrap: anywhere; }
-.lounge-assistance-confirm .ant-popconfirm-buttons { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }

@@ -1,4 +1,0 @@
-.provider-website-icon { display: inline-grid; flex: none; vertical-align: middle; }
-.provider-website-icon > :is(img, svg) { grid-area: 1 / 1; width: 100%; height: 100%; }
-.provider-website-icon > img { object-fit: contain; visibility: hidden; }
-.provider-website-icon > img[data-loaded="true"] { visibility: visible; }

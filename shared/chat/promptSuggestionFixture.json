@@ -1,6 +1,0 @@
-{
-  "reported": "把 pc 安装包也给我",
-  "mixed": "把 pc 安装包也给我，附上下载链接",
-  "wrapped": "按照这个方案开始实现，先检查现有项目结构和相关测试，然后逐步完成修改",
-  "unbroken": "查看 CodexSwitchDesktopInstallerForWindowsArm64AndX64 的下载链接"
-}

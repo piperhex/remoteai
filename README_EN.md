@@ -155,6 +155,7 @@ sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev
 Install dependencies and start the desktop app:
 
 ```powershell
+git submodule update --init shared
 npm install
 npm run dev:app
 ```

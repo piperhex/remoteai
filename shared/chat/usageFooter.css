@@ -1,9 +1,0 @@
-.cs-usage-footer-container { container: cs-usage-footer / inline-size; }
-.cs-daily-usage { align-items: center; gap: 10px; white-space: nowrap; }
-.cs-daily-usage, [data-codex-switch-usage-statusline] [data-today-usage] { display: none !important; }
-
-/* Measure the space left by side panels and zoom, rather than the outer window. */
-@container cs-usage-footer (min-width: 720px) {
-  .cs-daily-usage:not([hidden]),
-  [data-codex-switch-usage-statusline] [data-today-usage]:not([hidden]) { display: inline-flex !important; }
-}
