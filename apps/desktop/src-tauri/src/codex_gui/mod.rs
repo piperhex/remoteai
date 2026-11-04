@@ -213,6 +213,14 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
     };
     let client = connected(state).await?;
     match request {
+        GuiRequest::GroupThreadSummaries(query) => {
+            return group_members::summaries::load(
+                client.home.clone(),
+                client.projectless_root.clone(),
+                query,
+            )
+            .await;
+        }
         GuiRequest::GroupMembersPage(query) => {
             return group_members::load(
                 client.home.clone(),

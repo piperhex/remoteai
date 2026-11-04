@@ -1,6 +1,7 @@
 //! Read only the requested page of grouping metadata, without loading conversation bodies.
 mod query;
 mod storage;
+pub(super) mod summaries;
 #[cfg(test)]
 mod tests;
 

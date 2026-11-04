@@ -19,6 +19,7 @@ const PAGE_SIZE: u64 = 50;
 )]
 pub(crate) enum GuiRequest {
     GroupMembersPage(super::group_members::Query),
+    GroupThreadSummaries(super::group_members::summaries::Query),
     CozeCatalog,
     DownloadBrowse(super::downloads::Browse),
     DownloadOpen(super::downloads::Open),
@@ -227,7 +228,9 @@ impl GuiRequest {
     // Only this closed set of methods is exposed to the WebView.
     pub(super) fn into_rpc(self) -> Result<(&'static str, Value)> {
         match self {
-            Self::GroupMembersPage(_) => Err(GuiError::InvalidRequest),
+            Self::GroupMembersPage(_) | Self::GroupThreadSummaries(_) => {
+                Err(GuiError::InvalidRequest)
+            }
             Self::DownloadBrowse(_) | Self::DownloadOpen(_) | Self::PreviewOpen(_) => {
                 Err(GuiError::InvalidRequest)
             }
