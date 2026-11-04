@@ -74,7 +74,7 @@ For SSH cloud sync, start the real Go profile API against a disposable PostgreSQ
 
 ```powershell
 $env:SSH_PROFILES_TEST_DSN = 'host=127.0.0.1 port=15432 user=parity password=local-parity-only dbname=ssh_profiles_test sslmode=disable'
-go -C apps/admin-go run ./testsupport/ssh-profiles
+go -C apps/admin run ./testsupport/ssh-profiles
 ```
 
 In another terminal set `EXPO_PUBLIC_SSH_CLOUD_FIXTURE=1` before building the native fixture, then run

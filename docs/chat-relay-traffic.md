@@ -15,7 +15,7 @@ Admin 仪表盘展示累计总流量、所选时段流量、每日流量和所�
 
 ## 持久化与接口
 
-先执行 `apps/admin-go/sql/20260922-chat-relay-traffic.sql`，再更新后台和 admin UI。
+先执行 `apps/admin/sql/20260922-chat-relay-traffic.sql`，再更新后台和 admin UI。
 数据库按 UTC 小时保存各进程的累计字节数，读取时合并进程并按北京时间分组。
 写入每 5 秒合并一次；读取仪表盘和正常关闭服务时也会写入待保存的统计。
 同一进程的重复写入取较大累计值，避免数据库响应丢失后重试造成重复计数。
@@ -38,7 +38,7 @@ Admin 仪表盘展示累计总流量、所选时段流量、每日流量和所�
 
 ## 每位用户的聊天流量与额度
 
-先执行 `apps/admin-go/sql/20260923-chat-user-traffic.sql`，再更新 admin-go 和管理页面。
+先执行 `apps/admin/sql/20260923-chat-user-traffic.sql`，再更新 admin-go 和管理页面。
 全新空数据库会自动初始化新增的三张表。升级脚本可重复执行，不修改已有聊天或全站统计。
 
 独立的「聊天流量」页面支持选择月份、搜索邮箱、分页查看所有用户（包括零流量用户），
@@ -75,6 +75,6 @@ Admin 仪表盘展示累计总流量、所选时段流量、每日流量和所�
 
 `go test ./...` 覆盖月份边界和补零。启动固定本地 PostgreSQL 测试环境后，
 设置 `ADMIN_GO_TRAFFIC_DB_TEST=1` 再运行 `go test ./internal/chattraffic`，验证并发额度、写入失败回滚、
-不限量和跨月用量。`node apps/admin-go/scripts/chat-traffic-smoke.mjs` 验证真实 WebSocket、
+不限量和跨月用量。`node apps/admin/scripts/chat-traffic-smoke.mjs` 验证真实 WebSocket、
 HTTP 权限、参数校验、用户检索、双向流量、会话恢复、旧版协议及额度调整。
 桌面端 `relayQuota.test.ts` 验证加密 P2P 在额度用完后继续工作，`connection-details.pw.ts` 验证实时更新期间的交互。

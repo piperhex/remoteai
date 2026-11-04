@@ -171,7 +171,7 @@ Web 容器构建包含共享代码，开发代理包含 `/device-chat`；部署�
 
 ## 部署 admin-go
 
-云端使用 [admin-go 部署入口](../apps/admin-go/DEPLOYMENT.md)。PC 和手机也需要支持对应聊天协议；仅安装手机 APK 无法替代服务端和 PC 更新。
+云端使用 [admin-go 部署入口](../apps/admin/DEPLOYMENT.md)。PC 和手机也需要支持对应聊天协议；仅安装手机 APK 无法替代服务端和 PC 更新。
 
 - HTTP 反向代理必须转发 `/device-chat` 的 WebSocket Upgrade。它和 `/device-switch` 一样，
   在 WebSocket 首帧校验 JWT，不能要求浏览器握手时携带 Authorization 请求头。
@@ -182,8 +182,8 @@ Web 容器构建包含共享代码，开发代理包含 `/device-chat`；部署�
   域名需要解析到服务器公网 IPv4 地址，也可以直接填写公网 IPv4 地址。
   云安全组和服务器防火墙均需允许 UDP 3478；面向任意网络的客户端时，IPv4 来源设为 `0.0.0.0/0`。
   无需开放 TCP 3478，也无需新增 Kong STUN 路由。
-- 使用 `apps/admin-go/compose.yml`，保留已有 Go 覆盖文件。默认 HTTP 仅绑定本机，UDP 3478 对外开放。
-  按 [部署文档](../apps/admin-go/DEPLOYMENT.md) 加载已验证镜像，只更新 `admin-go`。
+- 使用 `apps/admin/compose.yml`，保留已有 Go 覆盖文件。默认 HTTP 仅绑定本机，UDP 3478 对外开放。
+  按 [部署文档](../apps/admin/DEPLOYMENT.md) 加载已验证镜像，只更新 `admin-go`。
   验证服务器外部的 STUN Binding 响应；HTTP 正常或端口已发布不能替代公网 UDP 实测。
 - `CHAT_STUN_PORT` 默认 `3478`，`CHAT_STUN_BIND` 默认 `0.0.0.0`。填 `CHAT_STUN_PORT=0`
   可停用内置 IPv4 STUN，并在 `CHAT_STUN_URLS` 中配置其他 STUN 服务，多个地址用逗号分隔。

@@ -70,7 +70,6 @@ function checkFile(file) {
 const repositoryFiles = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
   { cwd: root, encoding: 'utf8' }).split('\0').filter(Boolean);
 const candidates = [...new Set(repositoryFiles)].filter(file => /^(apps|shared|scripts)\//.test(file)
-  && !/^(apps\/admin\/)/.test(file)
   && !/(?:^|\/)(?:vendor|fixtures|__tests__|e2e|gen)\/|\.(?:test|spec|pw|generated)\./.test(file)
   && !generated.has(file) && fs.existsSync(path.join(root, file)));
 for (const file of candidates.filter(file => /\.strings$|\/(?:_locales|locales)\/.*\.json$/.test(file))) {

@@ -43,8 +43,8 @@
 1. 在 Expo 创建项目，登记 Apple App ID，为该 iOS 应用配置 APNs 凭据。
 2. 原生发布环境设置 `EXPO_PUBLIC_EAS_PROJECT_ID` 和 `IOS_BUNDLE_IDENTIFIER`；
    `apps/native/app.config.js` 会把它们写入应用配置。项目 ID 是公开标识，不是密钥。
-3. 按 `apps/admin-go/DEPLOYMENT.md` 的数据库升级流程执行
-   `apps/admin-go/sql/20260928-chat-push.sql`，再更新 Go 镜像。
+3. 按 `apps/admin/DEPLOYMENT.md` 的数据库升级流程执行
+   `apps/admin/sql/20260928-chat-push.sql`，再更新 Go 镜像。
 4. Go 容器设置 `CHAT_PUSH_ENABLED=true`。启用 Expo 推送访问令牌保护时，将
    `EXPO_PUSH_ACCESS_TOKEN` 配置在服务器私有环境中，不放入原生 App、Web 包或仓库。
 5. 重新构建并签名 iOS 安装包，在真机授权通知。应用会在登录及返回前台时更新订阅，

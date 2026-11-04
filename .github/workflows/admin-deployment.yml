@@ -3,7 +3,9 @@ name: Admin and Web deployment configuration
 on:
   push:
     paths:
-      - 'apps/admin-go/**'
+      - 'apps/admin'
+      - 'apps/admin-ui'
+      - 'scripts/admin-integration.test.mjs'
       - 'apps/web/compose*.yml'
       - 'scripts/deploy.mjs'
       - 'scripts/lib/web-deployment.mjs'
@@ -12,7 +14,9 @@ on:
       - '.github/workflows/admin-deployment.yml'
   pull_request:
     paths:
-      - 'apps/admin-go/**'
+      - 'apps/admin'
+      - 'apps/admin-ui'
+      - 'scripts/admin-integration.test.mjs'
       - 'apps/web/compose*.yml'
       - 'scripts/deploy.mjs'
       - 'scripts/lib/web-deployment.mjs'
@@ -24,15 +28,6 @@ permissions:
   contents: read
 
 jobs:
-  compose-guard:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Verify relay configuration and deployment guards
-        env:
-          COMPOSE_CONFIG_TEST: '1'
-        run: python3 -B -m unittest discover -s apps/admin-go/scripts -p 'test_deployment_*.py' -v
-
   web-compose-guard:
     runs-on: ubuntu-latest
     steps:
@@ -45,13 +40,16 @@ jobs:
           COMPOSE_CONFIG_TEST: '1'
         run: node --test scripts/web-deployment.test.mjs
 
-  kong-routes:
+  admin-integration:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - name: Initialize pinned admin repositories
+        run: git submodule update --init apps/admin apps/admin-ui
+      - uses: actions/setup-node@v6
         with:
-          go-version-file: apps/admin-go/go.mod
-          cache-dependency-path: apps/admin-go/go.sum
-      - name: Verify Kong covers registered Go endpoints and authentication boundaries
-        run: go -C apps/admin-go test ./internal/server -run TestKong -count=1
+          node-version: '22'
+      - name: Verify client and backend contract defaults
+        run: node --test scripts/admin-integration.test.mjs
+      - name: Build the pinned backend and UI together
+        run: docker build --build-context admin-ui=apps/admin-ui -f apps/admin/Dockerfile -t remoteai-admin:check apps/admin

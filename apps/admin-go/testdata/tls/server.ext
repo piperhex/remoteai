@@ -1,4 +1,0 @@
-subjectAltName=DNS:chatgpt.com,DNS:auth.openai.com,DNS:api.currencyapi.com
-basicConstraints=critical,CA:FALSE
-keyUsage=critical,digitalSignature,keyEncipherment
-extendedKeyUsage=serverAuth

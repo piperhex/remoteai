@@ -47,7 +47,7 @@ File System Access 输出只有 close 成功才显示完成。普通浏览器下
 relay 每连接、账号、实例的 bulk 队列分别限制为 256 KiB、2 MiB、32 MiB，读入 bulk 时先检查
 类型和上限再分配帧缓冲。配额及限速仍由 Go 后端检查；批量租约与协议开关独立，默认继续逐帧计费。
 上线迁移、独立 `CHAT_BULK_LEASES_ENABLED` 开关、未知额度对账及回滚要求见
-[Go 部署说明](../apps/admin-go/DEPLOYMENT.md)。
+[Go 部署说明](../apps/admin/DEPLOYMENT.md)。
 
 ## 原有兼容模式
 

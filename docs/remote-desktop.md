@@ -170,7 +170,7 @@ video received on the native and Web viewers.
   Direct retries use 5/15/30/60-second backoff, including direct connections that fail within 30 seconds.
   Automatic media reconnects retain that backoff; 30 seconds of stable direct service resets it. Closing the
   desktop releases both peers. Older hosts keep the previous reconnection behavior until updated.
-  See [video relay deployment](../apps/admin-go/DESKTOP-RELAY.md) for credentials, quotas and network requirements.
+  See [video relay deployment](../apps/admin/DESKTOP-RELAY.md) for credentials, quotas and network requirements.
 - Android receives encrypted media directly in native libwebrtc. Decryption, jitter buffering and decoding
   run on native WebRTC threads; `RTCView` renders through `SurfaceViewRenderer`. JavaScript receives only stream
   handles, low-frequency statistics and small control messages. It never receives video frames/base64 data.

@@ -402,11 +402,3 @@ test("malformed and unavailable context settings storage uses official defaults"
   const { cost } = createHarness({ brokenStorage: true });
   closeTo(cost.estimateTokenCost(entry(), []), 9.56);
 });
-
-test("admin and desktop ship identical verified pricing defaults", () => {
-  const admin = JSON.parse(readFileSync(
-    new URL("../apps/admin-go/internal/tokenpricing/defaults.json", import.meta.url), "utf8",
-  ));
-  assert.deepEqual(admin, catalog);
-  assert.equal(catalog.models.find((model) => model.model === "gpt-5.6-cyber").fastModeMultiplier, null);
-});

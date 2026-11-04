@@ -12,27 +12,23 @@ Keep all instructions in this `AGENTS.md` file in English.
   compatible signed runtime. Parent builds must work without initializing the optional submodule.
 - Coze translations live only in its `packages/i18n`; the parent's package owns desktop integration copy.
 
-## Admin Backend: Go Only
+## Admin Submodules
 
-- The NestJS backend in `apps/admin` is no longer maintained. Its source is frozen: do not add features,
-  fix business logic, or use it as a production deployment target.
-- Use `apps/admin-go` for all backend features, fixes, database upgrades, and production deployments.
-  Continue using `apps/admin-ui` for the admin interface.
-- Keep the NestJS source only as a historical API contract and a baseline for local compatibility tests.
-  Do not modify the frozen implementation to update contracts or pass tests; implement new features in Go
-  and add corresponding tests.
-- Production builds, deployment configuration, and operations documentation must not reintroduce the NestJS service.
-  Use verified admin-go images for both updates and rollbacks.
-- Store database upgrade scripts in `apps/admin-go/sql`.
-  Follow `apps/admin-go/DEPLOYMENT.md` for production deployments.
-- Use the `check`, `up`, and `verify` commands in `apps/admin-go/scripts/deployment_compose.py`
-  for all admin-go updates and rollbacks. Preserve the complete Compose file list recorded by the current container;
-  when TURN is enabled, retain `compose.desktop-relay.yml`.
-  Check relay ports and networking before and after deployment. Working HTTP, chat WebSocket, or STUN connections
-  alone do not establish that remote desktop works.
-- When adding Go endpoints, check route coverage and authentication rules in
-  `apps/admin-go/kong/existing-kong.example.yml`. Keep existing production routes in the repository as well.
-  `go -C apps/admin-go test ./internal/server -run TestKong` must pass.
+- `apps/admin` is the Go backend submodule from `https://github.com/piperhex/remoteai-admin.git`.
+- `apps/admin-ui` is the independent interface submodule from `https://github.com/piperhex/remoteai-admin-ui.git`.
+  Follow each repository's `AGENTS.md`. Commit and push child changes before updating parent gitlinks.
+- The retired NestJS backend has been removed. Historical API contracts and validation fixtures live in
+  the Go repository; do not restore the NestJS implementation or deployment targets.
+- Each child owns its dependencies, tests, build and CI. Parent installs and releases must work without
+  initializing either optional submodule. Never add them back to the parent's npm workspaces.
+- Shared UI and translation sources remain in the parent. Export versioned dependency artifacts with
+  `npm run export:admin-ui`; commit the artifacts and source manifest in the UI repository. Do not edit
+  generated dependency contents. Backend platform translations are owned by its `packages/i18n`.
+- Production deployments use `apps/admin/DEPLOYMENT.md` and the `check`, `up`, and `verify` commands in
+  `apps/admin/scripts/deployment_compose.py`. Preserve the recorded Compose files, relay networking,
+  production service names and environment variables. Do not redeploy merely because paths changed.
+- Database upgrades live in `apps/admin/sql`. New endpoints require Kong route and authentication coverage;
+  `go -C apps/admin test ./internal/server -run TestKong` must pass.
 
 ## Browser Tests on Windows
 

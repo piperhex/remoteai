@@ -57,7 +57,7 @@ The desktop React frontend receives redacted models such as `AccountSummary`, `P
 
 ## Cloud Backend and Mobile Responsibilities
 
-- `apps/admin-go` is the production backend and exposes registration/login, refresh-token, account sync, Provider sync, mobile-summary, and admin-management routes.
+- `apps/admin` is the production backend and exposes registration/login, refresh-token, account sync, Provider sync, mobile-summary, and admin-management routes.
 - PostgreSQL stores users, dynamic RBAC roles, built-in and custom permission definitions, role-permission assignments, refresh tokens, synchronized account credentials, Provider API keys, admin audit data, customizable email templates, encrypted custom SMTP services, announcement link-click details, feedback with image attachments, and the optional official-account pool. Redis caches account and Provider lists.
 - The admin console at `/admin` manages roles and permissions (including custom permission definitions for external systems), users, their synchronized accounts and Providers, invitations, approval requests, notification email templates and sending services, feedback and replies, audit logs, and official-account assignments. The SMTP service from environment variables remains the read-only default; templates and manual feedback replies can select an enabled custom service.
 - An official account assigned to a user is merged into that user's effective sync list. The assigned system copy wins when its stable account ID collides with a personal copy, and it must be edited or removed from the official pool.

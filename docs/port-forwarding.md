@@ -61,7 +61,7 @@ or embedded mapping previews. Existing saved settings remain available to the de
 
 ## Configuration synchronization
 
-Deploy `apps/admin-go/sql/20261015-port-mappings.sql` before updating admin-go, then update the clients.
+Deploy `apps/admin/sql/20261015-port-mappings.sql` before updating admin-go, then update the clients.
 Fresh databases include the identical `015_port_mappings.sql` migration. The authenticated
 `GET/PUT /devices/:deviceId/port-mappings` endpoint checks device ownership and is covered by the existing
 Kong `/devices` JWT route (`strip_path: false`). No public route or new mapping listener is needed.

@@ -7,9 +7,9 @@ const [target, ...arguments_] = process.argv.slice(2);
 const action = arguments_[0] && !arguments_[0].startsWith("-") ? arguments_.shift() : "up";
 
 function deployAdmin() {
-  const python = process.platform === "win32" ? "python" : "python3";
+  const python = process.env.PYTHON ?? (process.platform === "win32" ? "py" : "python3");
   const result = spawnSync(python, [
-    "-B", "apps/admin-go/scripts/deployment_compose.py", action, ...arguments_,
+    "-B", "apps/admin/scripts/deployment_compose.py", action, ...arguments_,
   ], { cwd: repository, stdio: "inherit" });
   if (result.error) throw new Error("无法启动 Python 3，请安装后重试。");
   process.exitCode = result.status ?? 1;

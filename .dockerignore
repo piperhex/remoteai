@@ -16,9 +16,8 @@ target
 **/target
 coverage
 **/coverage
-apps/admin/public/admin.html
-apps/admin/public/admin-assets
-apps/admin-go/public
+apps/admin
+apps/admin-ui
 **/.env
 **/compose.override.yml
 **/docker-compose.override.yml

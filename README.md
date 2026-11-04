@@ -185,6 +185,8 @@ npm run dev
 启动管理控制台或云端后端：
 
 ```powershell
+git submodule update --init apps/admin apps/admin-ui
+npm ci --prefix apps/admin-ui
 npm run dev:admin
 npm run dev:backend
 ```
@@ -195,7 +197,7 @@ npm run dev:backend
 npm run start -w @codex-switch/native
 ```
 
-移动端需要已部署的云端后端，会读取已同步的账号摘要和短期 Codex access token，由手机直接刷新用量与重置卡，同时显示在线 PC，并可分别切换每台 PC 的官方模型或已同步 Provider。远程切换 Provider 前，需要先在目标 PC 启动本地代理；在官方模型与 Provider 间切换后，移动端会提示重启 ChatGPT/Codex。详细配置请参阅 [移动端文档](apps/native/README.md) 和 [管理后端文档](apps/admin-go/README.md)。
+移动端需要已部署的云端后端，会读取已同步的账号摘要和短期 Codex access token，由手机直接刷新用量与重置卡，同时显示在线 PC，并可分别切换每台 PC 的官方模型或已同步 Provider。远程切换 Provider 前，需要先在目标 PC 启动本地代理；在官方模型与 Provider 间切换后，移动端会提示重启 ChatGPT/Codex。详细配置请参阅 [移动端文档](apps/native/README.md) 和 [管理后端文档](apps/admin/README.md)。
 
 构建桌面安装包：
 
@@ -316,9 +318,8 @@ apps/desktop/        Tauri 桌面应用工作区
   pages/             页面级组合
   utils/             无副作用的格式化工具
   src-tauri/src/     Rust 后端
-apps/admin-ui/       React 管理控制台工作区
-apps/admin-go/       Go 云端后端与生产部署
-apps/admin/          已冻结的 NestJS 兼容测试基线
+apps/admin-ui/       React 管理控制台（独立 Git 子模块）
+apps/admin/          Go 云端后端与生产部署（独立 Git 子模块）
 apps/native/         Expo 移动端账号用量伴侣应用
 docs/                架构和开发文档
 ```
@@ -336,7 +337,7 @@ docs/                架构和开发文档
 部署管理后端与 Web 时，使用 `npm run deploy:admin -- --project-name <现有项目名>`
 和 `npm run deploy:web -- --project-name <现有项目名>`。
 命令更新当前 Docker 环境中已准备好的镜像；构建、上传、检查与回滚步骤见
-[生产部署](apps/admin-go/DEPLOYMENT.md#加载并更新-go)。
+[生产部署](apps/admin/DEPLOYMENT.md#加载并更新-go)。
 
 推送版本标签后，GitHub Actions 会自动发布构建产物：
 

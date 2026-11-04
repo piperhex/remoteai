@@ -68,7 +68,7 @@ improvement to the capture pipeline. No production capture or adaptation changes
 
 The authenticated chat connection carries desktop offer/answer, ICE and display settings. Video
 and controls use a separate WebRTC peer connection. The Go coordinator's `iceServers` implementation
-in `apps/admin-go/internal/devices/stun.go` accepts only STUN URLs, and the shared `IceServer` type
+in `apps/admin/internal/devices/stun.go` accepts only STUN URLs, and the shared `IceServer` type
 contains only `urls`. There is no TURN credential provisioning or video relay in this path.
 
 Chat can therefore work through its WebSocket relay while the desktop media connection fails on a
@@ -110,7 +110,7 @@ separately before adopting their implementations.
 ## Proposed implementation and acceptance criteria
 
 1. **Make media relay work.** Provision authenticated, short-lived TURN credentials through
-   `apps/admin-go`; preserve them across the shared protocol, desktop, native and Web clients.
+   `apps/admin`; preserve them across the shared protocol, desktop, native and Web clients.
    Deploy coturn with the required listener/relay ports and certificate configuration. Integrate
    allocation limits and traffic accounting with the existing quotas. A public unauthenticated
    relay or a chat-label change is not a substitute for this work.

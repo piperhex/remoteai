@@ -1,3 +1,9 @@
 [submodule "apps/coze"]
 	path = apps/coze
 	url = https://github.com/piperhex/remoteai-coze.git
+[submodule "apps/admin"]
+	path = apps/admin
+	url = https://github.com/piperhex/remoteai-admin.git
+[submodule "apps/admin-ui"]
+	path = apps/admin-ui
+	url = https://github.com/piperhex/remoteai-admin-ui.git

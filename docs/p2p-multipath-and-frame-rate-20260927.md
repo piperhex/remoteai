@@ -27,7 +27,7 @@ Android 的 `SO_REUSEADDR` 实测无法共用活跃监听端口；系统 NIO 的
 Android `Os` 套接字适配，绑定前设置 Linux `SO_REUSEPORT`，不使用隐藏 API。
 普通 TCP、HTTP 媒体服务和 TLS 仍走库原来的实现。iOS 尚未接入这个平台适配。
 
-部署参数见 [Go 部署说明](../apps/admin-go/DEPLOYMENT.md)。本次没有部署线上服务。
+部署参数见 [Go 部署说明](../apps/admin/DEPLOYMENT.md)。本次没有部署线上服务。
 TCP simultaneous open 仍受 NAT 的映射方式和防火墙规则限制，不能保证穿透所有运营商网络。
 本地/设备测试不能替代 Wi-Fi、5G、双重 NAT、IPv6 的跨网验收，尚无新增跨网成功率数据。
 

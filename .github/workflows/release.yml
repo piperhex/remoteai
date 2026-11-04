@@ -212,12 +212,6 @@ jobs:
           node-version: '22'
           cache: npm
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: apps/admin-go/go.mod
-          cache-dependency-path: apps/admin-go/go.sum
-
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -284,17 +278,6 @@ jobs:
           path: ${{ runner.temp }}/linux-peer-network.log
           if-no-files-found: ignore
 
-      # The large CodeMirror/jsdom fixtures exceed Vitest's default five seconds on shared runners.
-      # Keep every admin check, with a bounded integration-test budget and no concurrent workspace builds.
-      - name: Check admin UI
-        shell: bash
-        working-directory: apps/admin-ui
-        run: |
-          set -euo pipefail
-          npx tsc --noEmit -p tsconfig.json
-          npm run test -- --testTimeout 30000
-          npm run build
-
       - name: Run checks in isolated test processes
         if: runner.os != 'Windows'
         shell: bash
@@ -305,9 +288,7 @@ jobs:
           if [[ "$RUNNER_OS" == "macOS" ]]; then
             sudo sysctl -w net.inet.udp.maxdgram=65535
           fi
-          npx lerna run check --ignore @codex-switch/backend --ignore @codex-switch/admin-ui \
-            --stream
-          npm run check:backend
+          npx lerna run check --stream
           cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
           cargo nextest run --locked --manifest-path apps/desktop/src-tauri/Cargo.toml \
             --test-threads 1 --no-fail-fast
@@ -320,10 +301,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          npx lerna run check --ignore @codex-switch/backend --ignore @codex-switch/admin-ui `
-            --stream
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          npm run check:backend
+          npx lerna run check --stream
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

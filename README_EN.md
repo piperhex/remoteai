@@ -163,6 +163,8 @@ Other common commands:
 
 ```powershell
 npm run dev
+git submodule update --init apps/admin apps/admin-ui
+npm ci --prefix apps/admin-ui
 npm run dev:admin
 npm run dev:backend
 npm run start -w @codex-switch/native
@@ -170,7 +172,7 @@ npm run build:app
 npm run check
 ```
 
-The development browser preview uses demo data and never accesses real credentials. The mobile companion requires a deployed cloud backend; it receives redacted summaries plus a short-lived Codex access token for direct usage/reset-credit refreshes. The mobile and standalone Web apps can remotely switch a selected online PC between official models and synchronized Providers. Provider switching requires the local proxy to be running on the target PC, and cross-source switches prompt for a ChatGPT/Codex restart. See [the mobile README](apps/native/README.md) and [the admin backend README](apps/admin-go/README.md).
+The development browser preview uses demo data and never accesses real credentials. The mobile companion requires a deployed cloud backend; it receives redacted summaries plus a short-lived Codex access token for direct usage/reset-credit refreshes. The mobile and standalone Web apps can remotely switch a selected online PC between official models and synchronized Providers. Provider switching requires the local proxy to be running on the target PC, and cross-source switches prompt for a ChatGPT/Codex restart. See [the mobile README](apps/native/README.md) and [the admin backend README](apps/admin/README.md).
 
 ## Usage
 
@@ -218,7 +220,7 @@ The custom cloud server setting is hidden by default. Self-hosted users can set
 
 Use `npm run deploy:admin -- --project-name <existing-project>` and
 `npm run deploy:web -- --project-name <existing-project>` to update prepared images in the current Docker environment.
-See [production deployment](apps/admin-go/DEPLOYMENT.md#加载并更新-go) for image preparation, checks and rollback.
+See [production deployment](apps/admin/DEPLOYMENT.md#加载并更新-go) for image preparation, checks and rollback.
 
 - [Linux installation and usage (Chinese)](docs/linux.md)
 - [Architecture and data flow](docs/architecture.md)

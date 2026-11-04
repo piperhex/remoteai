@@ -28,7 +28,7 @@ Windows 使用无窗口、非交互的 Windows PowerShell；macOS/Linux 使用 `
 
 ## 实现边界
 
-- 执行链路位于 `apps/desktop` 和 Go 后端 `apps/admin-go`，配置界面位于 `apps/admin-ui`；NestJS 保持冻结。
+- 执行链路位于 `apps/desktop` 和 Go 后端 `apps/admin`，配置界面位于 `apps/admin-ui`；NestJS 保持冻结。
 - 桌面插件安装器管理 MCP 配置、技能及每个 Home 的凭据，无需 Node/Python/SSH 或额外下载。
   仓库中的 manifest、技能和工具定义共同描述这个内置插件；运行时入口由安装器写入，
   不要把仅含资源的目录当成独立通用 MCP 服务安装。
@@ -65,8 +65,8 @@ npx vitest run --root apps/desktop src/pages/skillsMarket/RemoteCommandCard src/
 cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
 cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests
-go -C apps/admin-go test ./...
-go -C apps/admin-go test ./internal/server -run TestKong
+go -C apps/admin test ./...
+go -C apps/admin test ./internal/server -run TestKong
 npm run generate:i18n
 npm run check:i18n
 ```

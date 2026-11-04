@@ -25,9 +25,9 @@ PC 每次启动只请求一次 `/token-cost-presets`，无需登录；子窗口�
 
 - 公开读取：`GET /token-cost-presets`，只返回价格数据并禁用 HTTP 缓存。
 - 管理读取/保存：`GET/PATCH /admin/api/token-cost-presets`。
-- 已有数据库先执行 `apps/admin-go/sql/20260923-token-cost-presets.sql`，新增独立配置表。
+- 已有数据库先执行 `apps/admin/sql/20260923-token-cost-presets.sql`，新增独立配置表。
 - 新空数据库初始化时会创建该表。没有保存记录时返回内置预设；重复迁移不会覆盖已保存价格。
-- 后端只使用 admin-go，部署前按 [部署说明](../apps/admin-go/DEPLOYMENT.md)备份并验证迁移。
+- 后端只使用 admin-go，部署前按 [部署说明](../apps/admin/DEPLOYMENT.md)备份并验证迁移。
 
 两份内置 JSON 分别供 PC 和 Go 编译使用，一致性由 `scripts/token-cost-presets.test.mjs` 检查。
 官方价格变化时应同时更新这两份文件并复核模型来源链接。

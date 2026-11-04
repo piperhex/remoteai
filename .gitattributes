@@ -1,4 +1,3 @@
-apps/admin-go/scripts/turn-entrypoint.sh text eol=lf
 crates/ssh-client/src/shell_integration/* text eol=lf
 shared/coze/signature-fixture.txt text eol=lf
 shared/coze/signature-fixture.txt.sig text eol=lf

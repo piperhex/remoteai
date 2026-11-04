@@ -1,9 +1,6 @@
 import { expect, it } from 'vitest';
-import NodeWebSocket, { type WebSocket as ServerSocket } from 'ws';
+import NodeWebSocket, { WebSocketServer, type WebSocket as ServerSocket } from 'ws';
 import { DeviceStatusConnection } from '../../../../shared/realtime/deviceStatusConnection';
-
-// The existing workspace resolves ws 6 at runtime and ws 8 declarations; both expose Server.
-const WebSocketServer = (NodeWebSocket as unknown as { Server: typeof import('ws').WebSocketServer }).Server;
 
 it('real loopback subscription recovers two clients at different times and stops cleanly', async () => {
   const server = new WebSocketServer({ host: '127.0.0.1', port: 0 });

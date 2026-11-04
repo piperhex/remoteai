@@ -14,7 +14,7 @@ const excludedDirectories = [
 const excludedPaths = [
   'apps/native/(?:android|ios)',
   'apps/native/plugins/connectivity/build',
-  'apps/admin-go/testdata/(?:bin|results)',
+  'apps/admin/testdata/(?:bin|results)',
   '\\.codex-tmp-.+',
 ];
 const excludedFileNames = [

@@ -69,4 +69,4 @@ checks passed, and the public unauthenticated API returned 401. No database migr
 
 The preceding baseline and upstream design references are in
 [the investigation](remote-desktop-investigation-20260926.md). Deployment requirements are in
-[DESKTOP-RELAY.md](../apps/admin-go/DESKTOP-RELAY.md).
+[DESKTOP-RELAY.md](../apps/admin/DESKTOP-RELAY.md).

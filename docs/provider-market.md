@@ -9,12 +9,12 @@ not activate the Provider. Prices are reference information and do not modify pr
 
 This feature requires an updated **admin-go** server, admin UI and desktop clients. No production
 deployment is part of this change. Existing databases must apply
-`apps/admin-go/sql/20261029_provider_market.sql` before the new server is started. It adds the market
+`apps/admin/sql/20261029_provider_market.sql` before the new server is started. It adds the market
 tables and the optional `synced_providers.balanceScript` column. New databases use embedded migration
 026. Keep the complete production Compose stack, including desktop relay services, and follow
-`apps/admin-go/DEPLOYMENT.md` for a later deployment.
+`apps/admin/DEPLOYMENT.md` for a later deployment.
 
-Update Kong with the additional routes in `apps/admin-go/kong/existing-kong.example.yml`, preserving
+Update Kong with the additional routes in `apps/admin/kong/existing-kong.example.yml`, preserving
 all existing routes. Public GETs are anonymous; publishing, own entries and usage recording require
 authentication. The Go handlers enforce authentication and ownership even if reached without Kong.
 Old servers display an unavailable/update message in clients.
@@ -34,7 +34,7 @@ maintenance, not model-vendor certification.
 
 ## Review and marketing badges
 
-Apply `apps/admin-go/sql/20261102_provider_market_review.sql` before starting the updated Go service.
+Apply `apps/admin/sql/20261102_provider_market_review.sql` before starting the updated Go service.
 New databases use embedded migration 029. Existing community entries enter review and become hidden
 from public browsing until an administrator approves them; existing official presets remain approved.
 Reapplying the upgrade does not reset completed reviews. This task does not deploy production services.
@@ -104,7 +104,7 @@ headers show an explicit Windows desktop requirement instead of silently omittin
 also report that limitation for custom headers. Remote account pickers and the standalone Web model
 switcher do not contain a personal Provider table; their existing entry placement is preserved.
 
-Deploy the upgraded Go server with `apps/admin-go/sql/20261030_provider_market_page.sql` before using
+Deploy the upgraded Go server with `apps/admin/sql/20261030_provider_market_page.sql` before using
 cloud synchronization of website settings. New databases apply embedded migration 027. This task does
 not deploy production services or change Kong routes.
 

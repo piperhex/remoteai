@@ -22,6 +22,6 @@ before the fix was deployed. Users whose credentials have already been cleared m
 ## Verification
 
 Run `npm run check:backend` for the maintained Go implementation. The isolated identity parity
-suite in [admin-go](../apps/admin-go/README.md#本地-docker-对照测试) verifies rotation, concurrent
+suite in [admin-go](../apps/admin/README.md#本地-docker-对照测试) verifies rotation, concurrent
 retries, logout, and encrypted recovery against real disposable PostgreSQL and Redis instances.
 The frozen NestJS tests remain historical regression evidence; they are not a deployment entrypoint.

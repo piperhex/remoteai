@@ -6,7 +6,7 @@
 
 ## 启用与停用
 
-1. 按 `apps/admin-go/DEPLOYMENT.md` 执行两份 20260928 升级脚本，更新 Go 和网关，
+1. 按 `apps/admin/DEPLOYMENT.md` 执行两份 20260928 升级脚本，更新 Go 和网关，
    设置 `DESKTOP_SERVICE_ENABLED=true`。协调地址必须使用 HTTPS/WSS。
 2. 使用 `npm run build:app` 构建 Windows x64 包。脚本先生成视频 helper 和独立服务宿主，
    下载并校验固定版本 Node，再把资源摘要编译进程序。仅构建前端不会生成可安装系统服务。
@@ -59,7 +59,7 @@
 
 ```powershell
 node scripts/test-desktop-service.mjs
-go -C apps/admin-go test -tags integration ./internal/devices -run TestServiceCredentialLifecycle -count=1
+go -C apps/admin test -tags integration ./internal/devices -run TestServiceCredentialLifecycle -count=1
 ```
 
 第二项只连接仓库隔离测试环境的 localhost:15432，测试数据通过事务回滚。

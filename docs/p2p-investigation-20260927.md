@@ -102,7 +102,7 @@ Web 使用浏览器自己的 WebRTC，没有 Android ConnectivityManager，也�
 
 更广义的低成功率还有以下代码层面限制，但不能视作本次已实测的公网故障：
 
-- `apps/admin-go/internal/devices/stun.go` 的 `CHAT_STUN_URLS` 默认空；内置 STUN 监听与
+- `apps/admin/internal/devices/stun.go` 的 `CHAT_STUN_URLS` 默认空；内置 STUN 监听与
   向客户端下发可达公网 URL 是两个配置项。未正确下发时，跨 NAT 难以得到可用公网映射。
 - 内置 STUN 是 IPv4 UDP。跨运营商、对称 NAT、双层 NAT 或 UDP 受限时，仍需分别测试。
 - 聊天数据直连使用 WebRTC，回退是应用已有的加密 WebSocket 中继；聊天 STUN 配置不是 TURN 配置。

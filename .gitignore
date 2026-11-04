@@ -3,7 +3,7 @@ node_modules/
 .idea/
 dist/
 apps/*/dist/
-apps/admin-go/public/
+apps/admin/public/
 apps/backend/coverage/
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/installer-helper/target/

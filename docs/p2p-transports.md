@@ -3,7 +3,7 @@
 聊天、终端和控制请求共用 `shared/remote-chat` 的连接协商、保活、重试和直连/中转切换逻辑。
 Android、iOS 与 PC 原生客户端在服务器确认双方能力后，并行尝试 WebRTC、原生 TCP 和 EasyTier 用户态连接。
 各条直连路径独立探测；相近延迟保持既有优先级，持续更快的路径经过切换门槛后接管，失败时继续使用现有中转。
-EasyTier 路径需要更新原生包及配置自有发现节点，具体见 [部署说明](../apps/admin-go/DEPLOYMENT.md)。
+EasyTier 路径需要更新原生包及配置自有发现节点，具体见 [部署说明](../apps/admin/DEPLOYMENT.md)。
 Windows 开启 Clash/Mihomo TUN 时的接口选择与双机实测，见 [Fake-IP TUN 兼容说明](p2p-windows-tun.md)。
 
 | 客户端 | WebRTC | 原生 TCP 打洞 |

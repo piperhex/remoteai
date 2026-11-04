@@ -136,7 +136,7 @@ The ownership scan includes application/shared TypeScript, platform JavaScript a
 tuples, concatenated or nested language branches (including English-only leftovers), raw translated JSX text,
 accessibility labels, translation parameter fragments, mapped Chinese message keys and unregistered permission resources.
 Protocol error matching, user content, theme artwork/provenance metadata and test expectations are not translation
-sources. Frozen `apps/admin` and vendored implementations are excluded. Generated platform outputs can still contain
+sources. Independent submodules and vendored implementations have their own ownership checks. Generated outputs can contain
 translated text; edit their package sources instead.
 
 Default Rust proxy renderers and canonical client status/error tables are package resources too. Classifiers,

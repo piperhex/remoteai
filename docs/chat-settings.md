@@ -46,7 +46,7 @@ Relay 设置影响后续的图片和文件添加、查看和保存操作。已�
 
 ## 安装与权限
 
-先执行 `apps/admin-go/sql/20260913-chat-settings.sql`，再更新后台、admin UI、桌面端、网页和手机 App。
+先执行 `apps/admin/sql/20260913-chat-settings.sql`，再更新后台、admin UI、桌面端、网页和手机 App。
 数据库没有保存记录时使用上述默认值。配置保存在 `chat_settings`，保存与审计记录在同一事务中提交。
 
 - `admin.chat-settings.read`：查看配置。

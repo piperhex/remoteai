@@ -1,9 +1,0 @@
-# Fast iteration uses the exact same statically linked Go executable inside Docker.
-# Build it using scripts/build-local.ps1; the production Dockerfile builds from source.
-FROM node:22-alpine AS certificates
-FROM scratch
-WORKDIR /app
-COPY --from=certificates /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY apps/admin-go/testdata/bin/admin-go /admin-go
-EXPOSE 8080 3478/udp
-ENTRYPOINT ["/admin-go"]

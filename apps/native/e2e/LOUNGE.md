@@ -141,7 +141,7 @@ remote-device updates, clearing, long-press sheet labels and server recovery aft
 The fixture runs at font scales 1.0 and 1.3; inspect `names-*.png` for Chinese glyphs and keyboard layout.
 `apps/desktop/e2e/lounge-names.pw.ts` covers desktop local/remote/Web and 320px/390px mobile Web.
 Actual PostgreSQL persistence, authenticated ownership and remark privacy are verified separately by
-`go -C apps/admin-go test ./internal/lounge -run TestLoungeNames` with `LOUNGE_TEST_DATABASE_URL` set.
+`go -C apps/admin test ./internal/lounge -run TestLoungeNames` with `LOUNGE_TEST_DATABASE_URL` set.
 
 ```powershell
 npm run check -w @codex-switch/native
@@ -161,4 +161,4 @@ testing the reported macOS Chrome version on macOS hardware.
 Native unit tests cover image byte limits, temporary image cleanup, 48px avatar crops, picker
 cancellation, lifecycle behavior without DOM globals, and SQLite restart/account isolation, literal
 search, pagination beyond 200 messages and image-heavy page bounds. Server deployment remains separate and
-follows `apps/admin-go/DEPLOYMENT.md`.
+follows `apps/admin/DEPLOYMENT.md`.

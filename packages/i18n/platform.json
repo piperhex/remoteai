@@ -1,10 +1,6 @@
 {
   "mirrors": [
     {
-      "source": "platform/admin-go/remote_command_messages.go",
-      "target": "apps/admin-go/internal/devices/remote_command_messages.go"
-    },
-    {
       "source": "platform/desktop/src-tauri/src/remote_command/messages.rs",
       "target": "apps/desktop/src-tauri/src/remote_command/messages.rs"
     },

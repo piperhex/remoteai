@@ -1,5 +1,8 @@
 # System Prompt Plugin Market Implementation Plan
 
+> Historical plan: the NestJS implementation described below has been removed.
+> Current backend changes belong to the Go `apps/admin` submodule; see [admin repositories](../../admin-submodules.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add an independent system-prompt plugin marketplace tab where users publish, install, enable, upgrade, and uninstall structured injection/filter prompts.

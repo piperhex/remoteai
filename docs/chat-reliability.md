@@ -48,7 +48,7 @@ Web 同步任务状态和体检界面，本次不新增浏览器系统推送。
 ## 验证入口
 
 - Rust：`cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests`
-- Go：`go -C apps/admin-go test ./internal/chatpush`
+- Go：`go -C apps/admin test ./internal/chatpush`
 - 原生：`npm run test -w @codex-switch/native`
 - Web：`npm run test:chat:e2e -w @codex-switch/web -- --grep "shows only task issues"`
 
