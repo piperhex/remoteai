@@ -226,7 +226,21 @@ pub(crate) fn status(platform: &str) -> DreamSkinStatus {
     }
 }
 
-pub(crate) fn theme_preview(theme_id: &str) -> Result<Option<String>, String> {
+pub(crate) fn theme_preview(theme_id: &str, thumbnail: bool) -> Result<Option<String>, String> {
+    let theme = preview_theme(theme_id)?;
+    if thumbnail {
+        return thumbnail::encode(&theme.image_bytes)
+            .map(Some)
+            .map_err(|error| error.to_string());
+    }
+    Ok(Some(format!(
+        "data:{};base64,{}",
+        theme.mime,
+        BASE64.encode(theme.image_bytes)
+    )))
+}
+
+fn preview_theme(theme_id: &str) -> Result<LoadedTheme, String> {
     if !valid_theme_id(theme_id) {
         return Err("Theme id is invalid.".to_string());
     }
@@ -234,27 +248,13 @@ pub(crate) fn theme_preview(theme_id: &str) -> Result<Option<String>, String> {
     if let Ok(root) = active_theme_root() {
         if let Ok(theme) = load_theme(&root) {
             if theme.document.get("id").and_then(Value::as_str) == Some(theme_id) {
-                return Ok(Some(format!(
-                    "data:{};base64,{}",
-                    theme.mime,
-                    BASE64.encode(theme.image_bytes)
-                )));
+                return Ok(theme);
             }
         }
     }
     if BUILT_IN_THEME_IDS.contains(&theme_id) {
         let root = crate::dream_skin_resources::installed_pack_root()?;
-        let theme = load_theme(&built_in_theme_directory(&root, theme_id)?)?;
-        return Ok(Some(format!(
-            "data:{};base64,{}",
-            theme.mime,
-            BASE64.encode(theme.image_bytes)
-        )));
+        return load_theme(&built_in_theme_directory(&root, theme_id)?);
     }
-    let theme = load_theme(&saved_theme_directory(theme_id)?)?;
-    Ok(Some(format!(
-        "data:{};base64,{}",
-        theme.mime,
-        BASE64.encode(theme.image_bytes)
-    )))
+    load_theme(&saved_theme_directory(theme_id)?)
 }

@@ -3027,9 +3027,9 @@ export async function openDreamSkinFolder(): Promise<void> {
   if (hasLocalBackend) await invoke("open_dream_skin_folder");
 }
 
-export async function loadDreamSkinThemePreview(themeId: string): Promise<string | null> {
+export async function loadDreamSkinThemePreview(themeId: string, thumbnail = false): Promise<string | null> {
   if (!hasLocalBackend) return null;
-  return invoke<string | null>("get_dream_skin_theme_preview", { themeId });
+  return invoke<string | null>("get_dream_skin_theme_preview", { themeId, ...(thumbnail ? { thumbnail } : {}) });
 }
 
 export async function loadDreamSkinMarket(): Promise<DreamSkinMarketResult> {

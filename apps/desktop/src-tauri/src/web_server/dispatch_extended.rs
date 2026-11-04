@@ -424,7 +424,9 @@ fn dispatch_extended_command(app: AppHandle, command: &str, args: Value) -> Resu
         "restore_dream_skin" => serialize(block_on(crate::dream_skin::restore_dream_skin(app))),
         "open_dream_skin_folder" => serialize(crate::dream_skin::open_dream_skin_folder(app)),
         "get_dream_skin_theme_preview" => serialize(block_on(
-            crate::dream_skin::get_dream_skin_theme_preview(argument(&args, "themeId")?),
+            crate::dream_skin::get_dream_skin_theme_preview(
+                argument(&args, "themeId")?, argument(&args, "thumbnail")?,
+            ),
         )),
         "get_dream_skin_market" => serialize(block_on(crate::dream_skin::get_dream_skin_market())),
         "install_dream_skin_market_theme" => serialize(block_on(

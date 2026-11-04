@@ -23,6 +23,7 @@ use crate::codex_runtime::refresh_after_launch;
 include!("runtime_launch.rs");
 include!("runtime_entry.rs");
 include!("theme_commands.rs");
+mod thumbnail;
 
 #[cfg(all(test, target_os = "windows"))]
 mod tests_recovery_integration;

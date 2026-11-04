@@ -332,16 +332,30 @@ pub(crate) fn open_dream_skin_folder(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub(crate) async fn get_dream_skin_theme_preview(
     theme_id: String,
+    thumbnail: Option<bool>,
 ) -> Result<Option<String>, String> {
-    run_blocking(move || read_dream_skin_theme_preview(theme_id)).await
+    // Bound full-image decoding across cards and hosted browser clients, off the UI thread.
+    static PREVIEW_SLOTS: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(2);
+    let permit = PREVIEW_SLOTS
+        .acquire()
+        .await
+        .map_err(|error| error.to_string())?;
+    run_blocking(move || {
+        let _permit = permit;
+        read_dream_skin_theme_preview(theme_id, thumbnail.unwrap_or(false))
+    })
+    .await
 }
 
-fn read_dream_skin_theme_preview(theme_id: String) -> Result<Option<String>, String> {
+fn read_dream_skin_theme_preview(
+    theme_id: String,
+    thumbnail: bool,
+) -> Result<Option<String>, String> {
     #[cfg(any(target_os = "windows", target_os = "macos"))]
-    return crate::dream_skin_native::theme_preview(&theme_id);
+    return crate::dream_skin_native::theme_preview(&theme_id, thumbnail);
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
-        let _ = theme_id;
+        let _ = (theme_id, thumbnail);
         Err("Codex Dream Skin currently supports Windows and macOS.".to_string())
     }
 }

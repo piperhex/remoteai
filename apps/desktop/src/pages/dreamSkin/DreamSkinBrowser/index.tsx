@@ -1,10 +1,12 @@
 import { Alert, Button } from "antd";
+import { useEffect } from 'react';
 import { ImagePlus, RefreshCw, WandSparkles } from "lucide-react";
 import { BUILT_IN_DREAM_SKIN_THEMES } from "../../../dreamSkinBuiltIns";
 import type { Translate } from "../../../i18n";
 import type { DreamSkinStatus, DreamSkinThemeSummary } from "../../../types";
 import type { CatalogState, SavedThemeLibrary, ThemeActions, ThemeTab } from "../types";
 import { CommunityThemeCard, MarketThemeCard, SavedThemeCard, ThemeCard } from "../ThemeCards";
+import { themeThumbnails } from '../ThemeCards/themeThumbnails';
 import styles from "./index.module.less";
 
 type Props = {
@@ -25,6 +27,7 @@ type Props = {
 };
 
 export function DreamSkinBrowser(props: Props) {
+  useEffect(() => themeThumbnails.retain(), []);
   const { status, t, themeTab } = props;
   return <>
     {props.showInstallHint !== false && !status?.installed && <Alert className={styles.prerequisite} type="info" showIcon

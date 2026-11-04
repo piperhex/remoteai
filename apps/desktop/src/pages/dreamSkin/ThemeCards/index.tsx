@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from "react";
 import { Button, Checkbox, Tooltip } from "antd";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Check, CloudDownload, Eye, Github, WandSparkles } from "lucide-react";
-import { loadDreamSkinThemePreview } from "../../../api/backend";
+import { useThemePreview } from './useThemePreview';
 import type { Translate } from "../../../i18n";
 import type {
   DreamSkinCommunityTheme,
@@ -35,7 +34,7 @@ type ThemeCardProps = {
 export function ThemeCard(props: ThemeCardProps) {
   const { active, busy, description, disabled = false, id, name, preview } = props;
   const { previewEnabled = false, selection, tone, onApply, t } = props;
-  const { cardRef, resolvedPreview } = useLazyPreview({ id, preview, previewEnabled });
+  const { cardRef, resolvedPreview } = useThemePreview({ id, preview, previewEnabled });
   return (
     <article ref={cardRef}
       className={`${styles.themeCard}${active ? ` ${styles.active}` : ""}${
@@ -59,41 +58,6 @@ export function ThemeCard(props: ThemeCardProps) {
       </div>
     </article>
   );
-}
-
-function useLazyPreview(options: Pick<ThemeCardProps, "id" | "preview" | "previewEnabled">) {
-  const { id, preview, previewEnabled } = options;
-  const cardRef = useRef<HTMLElement | null>(null);
-  const previewRequested = useRef(false);
-  const [visible, setVisible] = useState(false);
-  const [lazyPreview, setLazyPreview] = useState<string | null>(null);
-
-  useEffect(() => {
-    const element = cardRef.current;
-    if (!element || typeof IntersectionObserver === "undefined") {
-      setVisible(true);
-      return;
-    }
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      setVisible(true);
-      observer.disconnect();
-    }, { rootMargin: "240px" });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!previewEnabled || !visible || previewRequested.current || preview) return;
-    previewRequested.current = true;
-    let cancelled = false;
-    void loadDreamSkinThemePreview(id)
-      .then((value) => { if (!cancelled) setLazyPreview(value); })
-      .catch(() => undefined);
-    return () => { cancelled = true; };
-  }, [id, preview, previewEnabled, visible]);
-
-  return { cardRef, resolvedPreview: preview ?? lazyPreview };
 }
 
 export function SavedThemeCard(props: {
