@@ -1,8 +1,0 @@
-{
-  "client.projectBrowser.openInExplorer": "Открыть в файловом менеджере",
-  "client.projectBrowser.openInTerminal": "Открыть в терминале",
-  "client.projectBrowser.largePlainText": "Большой файл открыт как обычный текст. Доступны поиск, замена и сохранение.",
-  "client.projectBrowser.largeImagePreview": "Предпросмотр изображений размером более 5 МБ недоступен.",
-  "client.projectBrowser.enterFullscreen": "На весь экран",
-  "client.projectBrowser.exitFullscreen": "Выйти из полноэкранного режима"
-}

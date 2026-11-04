@@ -64,6 +64,15 @@ test("keeps download links compatible with legacy mobile release names", () => {
   assert.match(body, /\/CodexSwitch-ios-unsigned\.app\.zip\)/);
 });
 
+test("desktop releases link to the independent native repository without requiring mobile artifacts", () => {
+  const release = fixture();
+  release.assets = release.assets.filter(asset => !asset.name.startsWith("RemoteAI-"));
+  const body = createReleaseBody(release);
+  assert.match(body, /https:\/\/github.com\/piperhex\/remoteai-native\/releases\/latest/);
+  assert.match(body, /_windows-x64-setup.exe/);
+  assert.doesNotMatch(body, /\/RemoteAI-android-/);
+});
+
 test("replaces its generated section without duplicating release notes", () => {
   const firstBody = createReleaseBody(fixture("Original notes"));
   const secondBody = createReleaseBody(fixture(firstBody));

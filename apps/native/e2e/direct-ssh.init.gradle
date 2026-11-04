@@ -1,9 +1,0 @@
-// A separate application ID keeps the signed-in app and its data untouched.
-gradle.afterProject { project ->
-    if (project.path == ':app') {
-        project.layout.buildDirectory.set(new File(project.projectDir, 'build-direct-ssh'))
-        project.android.defaultConfig.applicationId = 'com.codexswitch.mobile.directsshtest'
-        project.extensions.getByName('react').entryFile = new File(project.rootDir, '../e2e/DirectSshFixture.tsx')
-        project.extensions.getByName('react').debuggableVariants = []
-    }
-}

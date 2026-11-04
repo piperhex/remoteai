@@ -155,10 +155,12 @@ sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev
 Install dependencies and start the desktop app:
 
 ```powershell
-git submodule update --init shared
+git submodule update --init shared packages/i18n
 npm install
 npm run dev:app
 ```
+
+The optional [Native submodule](docs/native-submodule.md) owns Android/iOS dependencies and releases. Its `v*` tags publish mobile artifacts in [remoteai-native](https://github.com/piperhex/remoteai-native), independently of desktop releases.
 
 Other common commands:
 
@@ -168,7 +170,9 @@ git submodule update --init apps/admin apps/admin-ui
 npm ci --prefix apps/admin-ui
 npm run dev:admin
 npm run dev:backend
-npm run start -w @codex-switch/native
+git submodule update --init apps/native
+npm --prefix apps/native ci
+npm --prefix apps/native start
 npm run build:app
 npm run check
 ```

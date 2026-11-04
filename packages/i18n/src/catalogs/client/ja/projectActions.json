@@ -1,5 +1,0 @@
-{
-  "client.projectActions.longPressHint": "長押ししてプロジェクトを管理",
-  "client.projectActions.removeTitle": "このプロジェクトをリストから外しますか？",
-  "client.projectActions.removeDescription": "プロジェクトをリストから外します。チャットは「最近」に残り、パソコン上のファイルは削除されません。"
-}

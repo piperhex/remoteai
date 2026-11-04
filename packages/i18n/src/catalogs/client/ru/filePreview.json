@@ -1,6 +1,0 @@
-{
-  "client.filePreview.someHtmlAssetsUnavailable": "Не удалось загрузить некоторые изображения или медиафайлы. Откройте предпросмотр заново.",
-  "client.filePreview.tooLarge": "Размер файла превышает 64 МБ. Скачайте его для просмотра.",
-  "client.filePreview.unavailable": "Сейчас предпросмотр недоступен. Скачайте файл для просмотра.",
-  "client.filePreview.pdfUnavailable": "Не удалось открыть PDF. Скачайте его и откройте в программе для чтения PDF."
-}

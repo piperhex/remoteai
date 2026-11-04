@@ -1,8 +1,0 @@
-{
-  "client.remoteDesktop.takeoverTitle": "現在の接続を切断しますか？",
-  "client.remoteDesktop.takeoverMessage": "別のデバイスがこのパソコンに接続しています。続行すると、そのリモートデスクトップ接続が切断されます。",
-  "client.remoteDesktop.takeoverConfirm": "切断して接続",
-  "client.remoteDesktop.takeoverCancel": "キャンセル",
-  "client.remoteDesktop.connectionInUse": "このパソコンには既にリモートデスクトップ接続があります。",
-  "client.remoteDesktop.connectionCancelled": "接続をキャンセルしました。既存の接続は維持されます。"
-}

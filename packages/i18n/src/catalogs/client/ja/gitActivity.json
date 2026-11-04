@@ -1,6 +1,0 @@
-{
-  "client.gitActivity.filesBusy": "以下のファイルは実行中のタスクで使用されています。該当するタスクの終了後に再試行してください：\n{details}",
-  "client.gitActivity.tasksBusy": "以下のタスクがこの作業フォルダーを使用しています。タスクの終了後に操作を続けてください：\n{details}",
-  "client.gitActivity.preparing": "この作業フォルダーでタスクが開始しています。しばらくしてから再試行してください。",
-  "client.gitActivity.operationBusy": "この作業フォルダーで別のファイル操作またはブランチ操作が進行中です。しばらくしてから再試行してください。"
-}

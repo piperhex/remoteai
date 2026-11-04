@@ -96,8 +96,8 @@ PC 与手机均将上述浏览器结果分为 131 段，PC 对照见 `final-brow
 Markdown、代码高亮及审查指令的 12 项测试包含在原生测试中。可在仓库根目录复查：
 
 ```powershell
-npm run check -w @codex-switch/native
-npm run test -w @codex-switch/native -- markdownTree codeHighlight markdownContent
+npm --prefix apps/native run check
+npm --prefix apps/native run test -- markdownTree codeHighlight markdownContent
 ```
 
 这些检查覆盖格式保留、代码高亮的性能上限、审查指令边界及文件链接校验；真实聊天与最终安装包仍以真机记录为准。

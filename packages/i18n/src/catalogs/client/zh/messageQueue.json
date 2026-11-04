@@ -1,7 +1,0 @@
-{
-  "client.messageQueue.settings": "消息发送",
-  "client.messageQueue.enabled": "待发送",
-  "client.messageQueue.description": "开启后，任务运行期间的新消息会先进入待发送，待本轮结束后自动发出。关闭后立即发送。",
-  "client.messageQueue.hint": "更改立即生效，已有待发送消息不受影响。",
-  "client.messageQueue.saveError": "未能保存设置，请重试。"
-}

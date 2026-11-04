@@ -3,16 +3,10 @@ on:
   push:
     paths:
       - 'crates/chat-connectivity/**'
-      - 'apps/native/plugins/connectivity/**'
-      - 'apps/native/plugins/withChatConnectivity.cjs'
-      - 'apps/native/scripts/build-chat-connectivity.cjs'
       - '.github/workflows/chat-connectivity.yml'
   pull_request:
     paths:
       - 'crates/chat-connectivity/**'
-      - 'apps/native/plugins/connectivity/**'
-      - 'apps/native/plugins/withChatConnectivity.cjs'
-      - 'apps/native/scripts/build-chat-connectivity.cjs'
       - '.github/workflows/chat-connectivity.yml'
   workflow_dispatch:
 permissions:
@@ -50,7 +44,6 @@ jobs:
         run: echo "version=$(xcodebuild -version | shasum -a 256 | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
       - uses: swatinem/rust-cache@v2
         with:
-          # iOS releases can reuse the default branch's device and simulator dependencies.
           shared-key: chat-connectivity-${{ matrix.os }}-${{ steps.apple-cache.outputs.version }}
           cache-bin: false
           workspaces: crates/chat-connectivity
@@ -66,5 +59,3 @@ jobs:
           peers::conn --lib
       - run: cargo test --locked --manifest-path crates/chat-connectivity/Cargo.toml
       - run: cargo clippy --locked --manifest-path crates/chat-connectivity/Cargo.toml --all-targets -- -D warnings
-      - if: runner.os == 'macOS'
-        run: node apps/native/scripts/build-chat-connectivity.cjs ios

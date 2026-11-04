@@ -1,6 +1,0 @@
-{
-  "client.mappingHub.noDevices": "暂无可用设备，请先在电脑上登录同一账号。",
-  "client.mappingHub.retrying": "正在连接，连接恢复后会自动启动映射。",
-  "client.mappingHub.portConflict": "这个本地端口已用于其他映射，请换一个端口。",
-  "client.mappingHub.device": "电脑"
-}

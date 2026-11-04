@@ -1,8 +1,0 @@
-{
-  "client.discovery.title": "Discover",
-  "client.discovery.twoFactor": "2FA",
-  "client.discovery.back": "Back to Discover",
-  "client.discovery.ssh": "SSH",
-  "client.discovery.sshComputerHint": "Choose an online computer to open an SSH terminal.",
-  "client.discovery.sshViaComputer": "Connect through {name}"
-}

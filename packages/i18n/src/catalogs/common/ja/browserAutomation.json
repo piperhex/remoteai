@@ -1,8 +1,0 @@
-{
-  "market.browserTabUnavailable": "このタブは閉じられました。ページをもう一度開いてください。",
-  "market.browserStaleReference": "ページが変わりました。もう一度読み取ってから続けてください。",
-  "market.browserLimit": "開いているタブが多すぎます。いくつか閉じてからお試しください。",
-  "market.browserCaptureUnsupported": "このコンピューターではライブページプレビューを利用できません。",
-  "market.browserMoreTabs": "その他のタブ",
-  "market.browserHiddenTabs": "隠れているタブ"
-}

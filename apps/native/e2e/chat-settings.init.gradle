@@ -1,9 +1,0 @@
-// A separate package preserves the installed application and its account data.
-gradle.afterProject { project ->
-    if (project.path == ':app') {
-        project.layout.buildDirectory.set(new File(project.projectDir, 'build-chat-settings'))
-        project.android.defaultConfig.applicationId = 'com.codexswitch.mobile.settingsuitest'
-        project.extensions.getByName('react').entryFile = new File(project.rootDir, '../e2e/ChatSettingsFixture.tsx')
-        project.extensions.getByName('react').debuggableVariants = []
-    }
-}

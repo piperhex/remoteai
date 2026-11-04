@@ -1,8 +1,0 @@
-{
-  "client.remoteDesktop.takeoverTitle": "Disconnect the current connection?",
-  "client.remoteDesktop.takeoverMessage": "Another device is connected to this computer. Continuing will disconnect its remote desktop session.",
-  "client.remoteDesktop.takeoverConfirm": "Disconnect and connect",
-  "client.remoteDesktop.takeoverCancel": "Cancel",
-  "client.remoteDesktop.connectionInUse": "This computer already has a remote desktop connection.",
-  "client.remoteDesktop.connectionCancelled": "Connection cancelled. The existing connection is unchanged."
-}

@@ -1,4 +1,0 @@
-{
-  "client.chat.modelUnavailableForAccount": "This account doesn't support the selected model. Switch accounts or choose another model to send.",
-  "client.chat.effortUnavailableForAccount": "This account doesn't support the selected reasoning effort. Switch accounts or adjust the effort to send."
-}

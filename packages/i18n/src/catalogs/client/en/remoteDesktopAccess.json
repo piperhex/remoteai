@@ -1,5 +1,0 @@
-{
-  "client.remoteDesktop.privacyFailed": "The privacy screen could not be switched. Check its settings on the computer and try again. If you turn it off to reconnect, remote activity will also be visible on the computer's screen.",
-  "client.remoteDesktop.lockedRequiresUnattended": "This computer is locked. Unattended access is required to continue remote control. Unlock the computer, enable unattended access in Remote settings, then reconnect.",
-  "client.remoteDesktop.privacyRequiresUnattended": "Privacy screen requires unattended access. Enable it in Remote settings on the computer, then reconnect and try again."
-}

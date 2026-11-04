@@ -1,5 +1,0 @@
-{
-  "client.npmScripts.run": "Run {name}",
-  "client.npmScripts.stop": "Stop {name}",
-  "client.npmScripts.invalid": "Could not run this command. Check package.json and try again."
-}

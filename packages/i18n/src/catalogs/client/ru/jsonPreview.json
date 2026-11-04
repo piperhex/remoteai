@@ -1,6 +1,0 @@
-{
-  "client.filePreview.jsonHighlightLimit": "Лимит подсветки JSON (МБ)",
-  "client.filePreview.jsonHighlightHint": "JSON-файлы до этого размера подсвечиваются целиком. Более крупные отображаются как обычный текст. Диапазон: {min}–{max} МБ, по умолчанию — 10 МБ.",
-  "client.filePreview.jsonLines": "JSON · строк: {count}",
-  "client.filePreview.jsonPlainText": "Размер файла превышает {limit} МБ. Он отображается как обычный текст. Лимит подсветки можно изменить в настройках."
-}

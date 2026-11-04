@@ -19,6 +19,7 @@ coverage
 **/coverage
 apps/admin
 apps/admin-ui
+apps/native
 **/.env
 **/compose.override.yml
 **/docker-compose.override.yml

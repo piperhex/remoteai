@@ -1,5 +1,0 @@
-{
-  "client.projectActions.longPressHint": "Long press to manage this project",
-  "client.projectActions.removeTitle": "Remove this project?",
-  "client.projectActions.removeDescription": "The project will be removed from the list. Its chats will stay in Recent, and files on your computer will remain unchanged."
-}

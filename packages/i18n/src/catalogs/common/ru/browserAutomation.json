@@ -1,8 +1,0 @@
-{
-  "market.browserTabUnavailable": "Эта вкладка закрыта. Откройте страницу ещё раз.",
-  "market.browserStaleReference": "Страница изменилась. Прочитайте её заново перед продолжением.",
-  "market.browserLimit": "Открыто слишком много вкладок. Закройте часть из них и повторите попытку.",
-  "market.browserCaptureUnsupported": "На этом компьютере недоступен просмотр страницы в реальном времени.",
-  "market.browserMoreTabs": "Ещё вкладки",
-  "market.browserHiddenTabs": "Скрытые вкладки"
-}

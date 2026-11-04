@@ -4,7 +4,7 @@ on:
   push:
     branches: [master]
     paths:
-      - 'packages/i18n/**'
+      - 'packages/i18n'
       - 'shared/**'
       - 'apps/**'
       - 'scripts/**'
@@ -13,7 +13,7 @@ on:
       - 'shared'
   pull_request:
     paths:
-      - 'packages/i18n/**'
+      - 'packages/i18n'
       - 'shared/**'
       - 'apps/**'
       - 'scripts/**'
@@ -29,6 +29,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Initialize language package
+        shell: bash
+        run: |
+          if git config -f .gitmodules --get submodule.packages/i18n.path > /dev/null; then
+            git submodule update --init packages/i18n
+          fi
       - uses: actions/setup-node@v6
         with:
           node-version: '22'

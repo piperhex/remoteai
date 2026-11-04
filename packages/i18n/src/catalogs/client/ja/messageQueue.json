@@ -1,7 +1,0 @@
-{
-  "client.messageQueue.settings": "メッセージ送信",
-  "client.messageQueue.enabled": "送信待ち",
-  "client.messageQueue.description": "オンの場合、タスクの実行中に送信した新しいメッセージは送信待ちになり、現在のターンが終了すると自動送信されます。オフの場合はすぐに送信されます。",
-  "client.messageQueue.hint": "変更はすぐに反映されます。すでに送信待ちのメッセージには影響しません。",
-  "client.messageQueue.saveError": "設定を保存できませんでした。もう一度お試しください。"
-}

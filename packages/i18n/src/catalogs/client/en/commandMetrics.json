@@ -1,4 +1,0 @@
-{
-  "client.chat.commandSuccessRateValue": "Command success rate {value}",
-  "client.chat.commandSuccessRateDescription": "Successful commands as a percentage of completed commands in this conversation. Running, canceled and unknown results are excluded."
-}

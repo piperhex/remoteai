@@ -1,9 +1,0 @@
-{
-  "client.gitBlame.annotate": "Показать Git Blame",
-  "client.gitBlame.hideAnnotations": "Скрыть аннотации Git Blame",
-  "client.gitBlame.uncommitted": "Не закоммичено",
-  "client.gitBlame.loading": "Загрузка Git Blame…",
-  "client.gitBlame.unavailable": "Не удалось загрузить Git Blame. Повторите попытку позже.",
-  "client.gitBlame.notRepository": "Этот файл не находится в репозитории Git.",
-  "client.gitBlame.changed": "Файл изменён в другом месте. Перезагрузите его, чтобы посмотреть Git Blame."
-}

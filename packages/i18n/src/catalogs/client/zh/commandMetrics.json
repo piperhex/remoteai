@@ -1,4 +1,0 @@
-{
-  "client.chat.commandSuccessRateValue": "命令执行成功率 {value}",
-  "client.chat.commandSuccessRateDescription": "当前对话中执行成功的命令占已完成命令的比例。执行中、已取消和结果未知的命令不计入。"
-}

@@ -1,9 +1,0 @@
-// Exercise the production composer without replacing the installed app or its data.
-gradle.afterProject { project ->
-    if (project.path == ':app') {
-        project.layout.buildDirectory.set(new File(project.projectDir, 'build-document-picker'))
-        project.android.defaultConfig.applicationId = 'com.codexswitch.mobile.documentpickertest'
-        project.extensions.getByName('react').entryFile = new File(project.rootDir, '../e2e/DocumentPickerFixture.tsx')
-        project.extensions.getByName('react').debuggableVariants = []
-    }
-}

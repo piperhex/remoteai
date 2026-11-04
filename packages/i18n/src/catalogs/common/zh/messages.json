@@ -1,9 +1,0 @@
-{
-  "common.actions.copy": "复制",
-  "common.actions.apply": "应用",
-  "common.actions.cancel": "取消",
-  "common.items.count": {
-    "other": "{count} 项"
-  },
-  "common.greeting": "你好，{name}"
-}

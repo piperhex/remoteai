@@ -1,5 +1,0 @@
-{
-  "client.projectActions.longPressHint": "长按管理项目",
-  "client.projectActions.removeTitle": "移除这个项目？",
-  "client.projectActions.removeDescription": "项目将从列表中移除，对话会保留在“最近”中。电脑上的文件不会删除。"
-}

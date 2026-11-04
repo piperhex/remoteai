@@ -1,6 +1,0 @@
-{
-  "client.gitActivity.filesBusy": "以下文件正被运行中的任务使用，请等待对应任务结束后重试：\n{details}",
-  "client.gitActivity.tasksBusy": "以下任务仍在使用此工作目录，请等待任务结束后再执行此操作：\n{details}",
-  "client.gitActivity.preparing": "此工作目录有任务正在启动，请稍后重试。",
-  "client.gitActivity.operationBusy": "此工作目录正在执行另一项文件或分支操作，请稍后重试。"
-}

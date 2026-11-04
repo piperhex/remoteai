@@ -100,8 +100,8 @@ Android 10 及以上使用 MediaStore；Android 7–9 在首次下载时请求�
 验证命令：
 
 ```powershell
-npm run check -w @codex-switch/native
-npm test -w @codex-switch/native
+npm --prefix apps/native run check
+npm --prefix apps/native test
 npm run build:desktop
 cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
 cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings

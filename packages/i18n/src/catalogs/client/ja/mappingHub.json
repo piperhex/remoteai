@@ -1,6 +1,0 @@
-{
-  "client.mappingHub.noDevices": "利用できるデバイスがありません。パソコンで同じアカウントにログインしてください。",
-  "client.mappingHub.retrying": "接続中です。接続が復旧するとマッピングが自動で開始されます。",
-  "client.mappingHub.portConflict": "このローカルポートは別のマッピングで使用されています。別のポートを選んでください。",
-  "client.mappingHub.device": "パソコン"
-}

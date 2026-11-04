@@ -1,6 +1,0 @@
-{
-  "note.alias": "アカウントの別名",
-  "note.aliasPlaceholder": "例：仕事用",
-  "note.aliasHint": "グループ内ではモデル名とこの別名を表示します。16文字以内。",
-  "note.aliasInvalid": "別名は改行を含めず、16文字以内で入力してください。"
-}

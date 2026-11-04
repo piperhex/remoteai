@@ -1,6 +1,0 @@
-{
-  "client.filePreview.jsonHighlightLimit": "JSON highlighting limit (MB)",
-  "client.filePreview.jsonHighlightHint": "JSON files up to this size are fully highlighted. Larger files appear as plain text. Choose {min}–{max} MB; the default is 10 MB.",
-  "client.filePreview.jsonLines": "JSON · {count} lines",
-  "client.filePreview.jsonPlainText": "This file exceeds {limit} MB and is shown as plain text. You can change the highlighting limit in Settings."
-}

@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 const DOWNLOADS_START = "<!-- codex-switch-downloads:start -->";
 const DOWNLOADS_END = "<!-- codex-switch-downloads:end -->";
 const LEGACY_INTRO = "Windows, macOS, Linux, Android, and iOS build artifacts are attached below.";
+const DESKTOP_INTRO = "Windows, macOS, and Linux build artifacts are attached below.";
 const UPDATE_HEADING = "## 更新内容";
 
 const DOWNLOAD_SECTIONS = [
@@ -43,6 +44,7 @@ const DOWNLOAD_SECTIONS = [
     ],
   },
   {
+    id: "mobile",
     heading: "### 移动端",
     items: [
       downloadItem("Android", [
@@ -76,6 +78,10 @@ export function createReleaseBody(release) {
 
 function renderDownloadBlock(assets, tagName) {
   const sections = DOWNLOAD_SECTIONS.map((section) => {
+    if (section.id === "mobile" && !section.items.some(item =>
+      item.assets.some(definition => assets.some(asset => definition.matches(asset.name))))) {
+      return `${section.heading}\n\n- [Android / iOS](https://github.com/piperhex/remoteai-native/releases/latest)`;
+    }
     const items = section.items.map((item) => renderDownloadItem(item, assets, tagName));
     return `${section.heading}\n\n${items.join("\n")}`;
   });
@@ -134,6 +140,7 @@ function extractReleaseNotes(body) {
   let notes = removeManagedDownloads(body).trim();
   notes = removeLeadingSection(notes, UPDATE_HEADING);
   notes = removeLeadingSection(notes, LEGACY_INTRO);
+  notes = removeLeadingSection(notes, DESKTOP_INTRO);
   return notes.trim();
 }
 

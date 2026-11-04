@@ -94,7 +94,7 @@ Web also preserves the bottom safe area in landscape, fits text and display
 settings to the visual keyboard viewport, and only offers browser fullscreen when the browser supports it.
 Remote video continues to play inline, so its mouse and keyboard controls remain accessible.
 
-`npm run export:ios -w @codex-switch/native` checks the iOS production JavaScript bundle on any development host.
+`npm --prefix apps/native run export:ios` checks the iOS production JavaScript bundle on any development host.
 The release workflow builds the native iOS app on macOS. The Web desktop Playwright suite includes iPhone and
 iPad WebKit layout tests; Windows WebKit does not provide WebRTC, so those tests deliberately hold signaling
 pending. Chromium tests separately exercise real video/control transport. These checks do not replace an
@@ -382,8 +382,8 @@ capture/playback limits, the missing media-relay path and references to mature o
 npx vitest run src/remoteDesktop src/remoteChat/guiTools.test.ts src/remoteChat/hostRecovery.test.ts
 # Run the command above from apps/desktop.
 npm run test:remote-desktop:e2e -w @codex-switch/web
-npm run check -w @codex-switch/native
-npm run export:android -w @codex-switch/native
+npm --prefix apps/native run check
+npm --prefix apps/native run export:android
 cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests
 cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --tests -- -D warnings
 # Build the native helper and compare controlled idle/local/full-motion scenes through a real H.264 decoder:

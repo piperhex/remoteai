@@ -1,8 +1,0 @@
-{
-  "client.discovery.title": "Обзор",
-  "client.discovery.twoFactor": "2FA",
-  "client.discovery.back": "Назад к обзору",
-  "client.discovery.ssh": "SSH",
-  "client.discovery.sshComputerHint": "Выберите компьютер в сети, чтобы открыть терминал SSH.",
-  "client.discovery.sshViaComputer": "Подключение через {name}"
-}

@@ -1,8 +1,0 @@
-{
-  "client.settings.followSystem": "Как в системе",
-  "client.appearance.globalFontSize": "Общий размер шрифта",
-  "client.appearance.globalFontDescription": "Настройте размер текста во всём приложении. По умолчанию Codex GUI использует этот размер.",
-  "client.appearance.followGlobalFont": "Использовать общий размер шрифта",
-  "client.appearance.followGlobalFontDescription": "Следовать общей настройке. Выбор размера здесь отключает эту опцию.",
-  "client.appearance.guiFontSettings": "Размер шрифта Codex GUI"
-}

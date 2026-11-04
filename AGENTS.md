@@ -2,6 +2,26 @@
 
 Keep all instructions in this `AGENTS.md` file in English.
 
+## Internationalization Submodule
+
+- `packages/i18n` is the required `https://github.com/piperhex/remoteai-i18n.git` submodule.
+  Initialize it before npm installs. Follow its own `AGENTS.md`; push child changes before updating the gitlink.
+- The child owns source resources, language metadata, package validation and immutable releases. Source
+  exports remain a parent workspace; independent consumers can install the versioned GitHub release archive.
+- Parent `generate:i18n` and `check:i18n` also generate/check application platform files and scan ownership.
+  Keep those integration checks when changing CI; the child's standalone checks do not scan a parent implicitly.
+- Preserve admin and Coze submodule boundaries. Never modify their pinned dependency snapshots implicitly.
+
+## Native Submodule
+
+- `apps/native` is the optional `https://github.com/piperhex/remoteai-native.git` submodule.
+  Follow its `AGENTS.md`; commit and push child changes before updating the parent gitlink.
+- Native owns its dependencies, tests, Android/iOS builds, versions and CI releases. Keep it out of the
+  parent npm workspaces and desktop releases; parent installs and checks must work without initializing it.
+- Export shared/application/Rust dependency snapshots with `npm run export:native`. Do not hand-edit
+  generated vendor files. Native uses the independent published `@remoteai/i18n` package.
+- See `docs/native-submodule.md` for development, release and update-mirror integration.
+
 ## Coze Submodule
 
 - `apps/coze` is the independent `https://github.com/piperhex/remoteai-coze.git` Git submodule.
@@ -21,9 +41,10 @@ Keep all instructions in this `AGENTS.md` file in English.
   the Go repository; do not restore the NestJS implementation or deployment targets.
 - Each child owns its dependencies, tests, build and CI. Parent installs and releases must work without
   initializing either optional submodule. Never add them back to the parent's npm workspaces.
-- Shared UI and translation sources remain in the parent. Export versioned dependency artifacts with
-  `npm run export:admin-ui`; commit the artifacts and source manifest in the UI repository. Do not edit
-  generated dependency contents. Backend platform translations are owned by its `packages/i18n`.
+- Shared UI sources live in the required `shared` submodule; translation sources live in `packages/i18n`.
+  Export shared-component artifacts with `npm run export:admin-ui`; language dependencies stay pinned to a
+  published i18n archive. Commit artifacts, provenance and lockfiles in the child. Never edit generated contents.
+  Backend platform translation sources live in `remoteai-i18n`; its `admin` profile generates the Go copy.
 - Production deployments use `apps/admin/DEPLOYMENT.md` and the `check`, `up`, and `verify` commands in
   `apps/admin/scripts/deployment_compose.py`. Preserve the recorded Compose files, relay networking,
   production service names and environment variables. Do not redeploy merely because paths changed.

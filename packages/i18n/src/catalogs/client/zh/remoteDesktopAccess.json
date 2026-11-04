@@ -1,5 +1,0 @@
-{
-  "client.remoteDesktop.privacyFailed": "隐私屏切换失败。请在电脑端检查隐私屏设置后重试。若关闭隐私屏继续连接，电脑本机也会显示远程操作画面。",
-  "client.remoteDesktop.lockedRequiresUnattended": "电脑已锁屏，需要无人值守才能继续远程操作。请先在电脑上解锁，再到「远程设置」开启无人值守后重连。",
-  "client.remoteDesktop.privacyRequiresUnattended": "使用隐私屏需要先开启无人值守。请在电脑端「远程设置」开启后，重新连接再试。"
-}

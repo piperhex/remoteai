@@ -1,6 +1,0 @@
-{
-  "client.filePreview.someHtmlAssetsUnavailable": "一部の画像やメディアを読み込めませんでした。プレビューを開き直してお試しください。",
-  "client.filePreview.tooLarge": "このファイルは 64 MB を超えています。ダウンロードしてご確認ください。",
-  "client.filePreview.unavailable": "現在このファイルをプレビューできません。ダウンロードしてご確認ください。",
-  "client.filePreview.pdfUnavailable": "この PDF を開けませんでした。ダウンロードして PDF リーダーで開いてください。"
-}

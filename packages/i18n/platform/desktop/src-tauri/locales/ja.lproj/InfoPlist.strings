@@ -1,4 +1,0 @@
-/* macOS permission prompts. Keep the keys in sync with Info.plist. */
-"NSMicrophoneUsageDescription" = "音声を録音してテキストに変換するために使用します。";
-"NSScreenCaptureUsageDescription" = "パソコンアシスタントが指示された操作を行うため、画面の内容を確認します。";
-"NSAppleEventsUsageDescription" = "タスクに必要な場合、パソコンアシスタントが他のアプリを操作します。";

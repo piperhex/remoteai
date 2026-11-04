@@ -1,6 +1,0 @@
-{
-  "client.lounge.muteNotifications": "通知をミュート",
-  "client.lounge.unmuteNotifications": "通知のミュートを解除",
-  "client.lounge.notificationsMuted": "通知はミュート中",
-  "client.lounge.notificationSaveFailed": "通知設定を保存できませんでした。しばらくしてからもう一度お試しください。"
-}

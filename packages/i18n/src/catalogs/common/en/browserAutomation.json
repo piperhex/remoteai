@@ -1,8 +1,0 @@
-{
-  "market.browserTabUnavailable": "This browser tab is no longer available. Open the page again.",
-  "market.browserStaleReference": "The page has changed. Read the page again before continuing.",
-  "market.browserLimit": "Too many browser tabs are open. Close a tab and try again.",
-  "market.browserCaptureUnsupported": "Live page previews are not available on this computer.",
-  "market.browserMoreTabs": "More tabs",
-  "market.browserHiddenTabs": "Hidden tabs"
-}

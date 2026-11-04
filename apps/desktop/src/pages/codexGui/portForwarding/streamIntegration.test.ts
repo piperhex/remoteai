@@ -9,9 +9,7 @@ import { BulkCipher } from '../../../../../../shared/remote-chat/bulkCipher';
 import { BulkTransport, type BinaryChannel } from '../../../../../../shared/remote-chat/bulkTransport';
 import { MappingStreamClient } from '../../../../../../shared/port-mapping/streamClient';
 import type { MappingStreamLink } from '../../../../../../shared/port-mapping/streamMux';
-import type { ForwardingClient } from '../../../../../../shared/port-mapping/service';
 import type { TerminalLinkRequest } from '../../../../../../shared/terminal/links';
-import { bridgeSocket } from '../../../../../native/src/chat/portMapping/socketBridge';
 
 vi.mock('../../../api/backend', () => ({ invoke: vi.fn() }));
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -25,9 +23,7 @@ async function fixture(server: net.Server) {
     (args as { request: TerminalLinkRequest }).request) as ReturnType<typeof invoke>);
   const timers = new Set<ReturnType<typeof setTimeout>>();
   const transports: BulkTransport[] = [];
-  let direct = true;
   const deliver = (side: number, path: 'direct' | 'relay', bytes: Uint8Array) => {
-    if (path === 'direct' && !direct) return;
     const timer = setTimeout(() => {
       timers.delete(timer); transports[1 - side].receive(bytes, path);
     }, 30);
@@ -57,10 +53,7 @@ async function fixture(server: net.Server) {
         : await host.request(body as Record<string, unknown>);
       await wait(30); return result as T;
     } });
-  const client: ForwardingClient = { openResource: async () => 'resource', closeResource: async () => {},
-    link: (_resource, request) => sockets.request(request), stream: streams.open };
-  return { origin, client, host, streams, failReceiver: () => failReceiver(),
-    switchPath: () => { direct = false; transports.forEach(value => value.setMode('relay')); },
+  return { origin, streams, failReceiver: () => failReceiver(),
     close: async () => {
       streams.close(); host.close(); transports.forEach(value => value.close());
       timers.forEach(clearTimeout); await sockets.close();
@@ -79,33 +72,3 @@ it('stops real TCP forwarding after receiver failure without silently downgradin
     await expect(service.streams.open('resource', service.origin)).rejects.toThrow('重新连接');
   } finally { await service.close(); }
 });
-
-it('carries simultaneous binary upload/download through the mobile TCP bridge and closes pending reads', async () => {
-  const service = await fixture(net.createServer(socket => socket.pipe(socket)));
-  const bridges: ReturnType<typeof bridgeSocket>[] = [];
-  const listener = net.createServer(socket => bridges.push(bridgeSocket({
-    socket: socket as unknown as Parameters<typeof bridgeSocket>[0]['socket'],
-    client: service.client, resource: 'resource', url: service.origin,
-  })));
-  await new Promise<void>(resolve => listener.listen(0, '127.0.0.1', resolve));
-  const browser = net.connect((listener.address() as net.AddressInfo).port, '127.0.0.1');
-  const body = randomBytes(4 * 1024 * 1024);
-  try {
-    const received = new Promise<Buffer>((resolve, reject) => {
-      const parts: Buffer[] = []; let size = 0;
-      browser.on('error', reject).on('data', data => {
-        const chunk = Buffer.isBuffer(data) ? data : Buffer.from(data);
-        parts.push(chunk); size += chunk.length; if (size === body.length) resolve(Buffer.concat(parts));
-      });
-    });
-    browser.write(body);
-    const switching = setTimeout(service.switchPath, 120);
-    expect((await received).equals(body)).toBe(true);
-    clearTimeout(switching);
-    browser.destroy();
-    await Promise.all(bridges.map(bridge => bridge.done));
-  } finally {
-    browser.destroy(); bridges.forEach(bridge => bridge.close());
-    await new Promise<void>(resolve => listener.close(() => resolve())); await service.close();
-  }
-}, 15_000);

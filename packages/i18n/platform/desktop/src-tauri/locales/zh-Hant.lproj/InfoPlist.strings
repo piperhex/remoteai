@@ -1,4 +1,0 @@
-/* macOS permission prompts. Traditional Chinese systems keep the existing Info.plist text. */
-"NSMicrophoneUsageDescription" = "用于录制语音并转换为输入文字。";
-"NSScreenCaptureUsageDescription" = "电脑助手需要查看屏幕，以便按你的要求操作应用。";
-"NSAppleEventsUsageDescription" = "电脑助手会在任务需要时请求操作其他应用。";

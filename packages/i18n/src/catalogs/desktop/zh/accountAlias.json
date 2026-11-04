@@ -1,6 +1,0 @@
-{
-  "note.alias": "账户别名",
-  "note.aliasPlaceholder": "例如：工作号",
-  "note.aliasHint": "分组中的模型将显示此别名，最多 16 个字。",
-  "note.aliasInvalid": "别名最多 16 个字，请勿包含换行。"
-}
