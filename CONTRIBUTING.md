@@ -29,6 +29,9 @@ Thank you for improving Remote AI. Because the project handles login credentials
 
 ## Tests and Checks
 
+Use `npm run clean:preview` to inspect disposable build and AI scratch files, then `npm run clean` to remove them.
+See [Project cleanup](docs/project-cleanup.md) for filters, submodule support and preserved files.
+
 ```powershell
 npm run check
 ```
