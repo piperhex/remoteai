@@ -13,7 +13,8 @@ async function open(page: Page, mode: string, dark = false) {
   await page.setViewportSize({ width: dark ? 1024 : 1600, height: dark ? 768 : 1000 });
   await page.goto(`/e2e/project-explorer-harness.html?mode=${mode}${dark ? '&dark' : ''}`,
     { waitUntil: 'domcontentloaded' });
-  await page.locator('button[aria-haspopup="dialog"]').first().click();
+  await page.locator('button[aria-haspopup="menu"]').first().click();
+  await page.getByRole('button', { name: '新建项目', exact: true }).click();
   await expect(page.getByRole('option', { name: /README.md/ })).toBeVisible();
 }
 async function navigate(page: Page, path: string) {

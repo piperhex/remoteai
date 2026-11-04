@@ -9,7 +9,8 @@ test.beforeEach(async ({ page }) => {
 async function open(page: Page, mode = 'local', query = '') {
   await page.setViewportSize({ width: 1600, height: 1000 });
   await page.goto(`/e2e/project-explorer-harness.html?mode=${mode}${query}`, { waitUntil: 'domcontentloaded' });
-  await page.locator('button[aria-haspopup="dialog"]').first().click();
+  await page.locator('button[aria-haspopup="menu"]').first().click();
+  await page.getByRole('button', { name: '新建项目', exact: true }).click();
   await expect(page.getByRole('option', { name: /README.md/ })).toBeVisible();
 }
 const option = (page: Page, name: string) => page.locator(`.pe-entry[data-path="${explorerRoot}/${name}"]`);

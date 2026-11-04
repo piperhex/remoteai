@@ -16,7 +16,8 @@ for (const mode of ['local', 'remote', 'web']) {
     await page.goto(`/e2e/project-explorer-harness.html?mode=${mode}&computer&stalled`,
       { waitUntil: 'domcontentloaded' });
     await page.clock.install();
-    await page.locator('button[aria-haspopup="dialog"]').first().click();
+    await page.locator('button[aria-haspopup="menu"]').first().click();
+    await page.getByRole('button', { name: '新建项目', exact: true }).click();
     await expect(page.locator('.pe-files')).toHaveAttribute('aria-busy', 'true');
     await expect(page.getByRole('button', { name: '刷新', exact: true })).toBeEnabled();
     await page.clock.fastForward(15_000);
@@ -37,7 +38,8 @@ for (const mode of ['local', 'remote', 'web']) {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto(`/e2e/project-explorer-harness.html?mode=${mode}&stalled&dark`,
       { waitUntil: 'domcontentloaded' });
-    await page.locator('button[aria-haspopup="dialog"]').first().click();
+    await page.locator('button[aria-haspopup="menu"]').first().click();
+    await page.getByRole('button', { name: '新建项目', exact: true }).click();
     await expect(page.locator('.pe-files')).toHaveAttribute('aria-busy', 'true');
     await page.locator('.pe-shortcuts button').first().click();
     await expect(page.locator('.pe-footer input')).toHaveValue(explorerShortcuts.home);

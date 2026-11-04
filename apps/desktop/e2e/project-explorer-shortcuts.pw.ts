@@ -10,7 +10,8 @@ for (const mode of ['local', 'remote', 'web']) {
   test(`${mode}: host shortcuts precede drives and support navigation and selection`, async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 1000 });
     await page.goto(`/e2e/project-explorer-harness.html?mode=${mode}`, { waitUntil: 'domcontentloaded' });
-    await page.locator('button[aria-haspopup="dialog"]').first().click();
+    await page.locator('button[aria-haspopup="menu"]').first().click();
+    await page.getByRole('button', { name: '新建项目', exact: true }).click();
     const shortcuts = page.locator('.pe-shortcuts button');
     await expect(shortcuts).toHaveText(['Home', '桌面', '下载']);
     const shortcutsBox = (await page.locator('.pe-shortcuts').boundingBox())!;
@@ -38,7 +39,8 @@ for (const mode of ['local', 'remote', 'web']) {
   test(`${mode}: compact dark shortcuts and offline language changes`, async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto(`/e2e/project-explorer-harness.html?mode=${mode}&dark=1`, { waitUntil: 'domcontentloaded' });
-    await page.locator('button[aria-haspopup="dialog"]').first().click();
+    await page.locator('button[aria-haspopup="menu"]').first().click();
+    await page.getByRole('button', { name: '新建项目', exact: true }).click();
     await page.locator('.pe-shortcuts button').nth(1).click();
     await expect(page.locator('.pe-footer input')).toHaveValue(explorerShortcuts.desktop);
     expect(await page.locator('.pe-shell').evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
@@ -62,7 +64,8 @@ test('older hosts keep drive navigation usable without guessing shortcut paths',
       .replace('shortcuts: directory ? void 0 : explorerShortcuts', 'shortcuts: undefined') });
   });
   await page.goto('/e2e/project-explorer-harness.html?mode=remote', { waitUntil: 'domcontentloaded' });
-  await page.locator('button[aria-haspopup="dialog"]').first().click();
+  await page.locator('button[aria-haspopup="menu"]').first().click();
+  await page.getByRole('button', { name: '新建项目', exact: true }).click();
   await expect(page.locator('.pe-footer input')).toHaveValue(explorerRoot);
   for (const shortcut of await page.locator('.pe-shortcuts button').all()) await expect(shortcut).toBeDisabled();
   await page.locator('.pe-computer').click();

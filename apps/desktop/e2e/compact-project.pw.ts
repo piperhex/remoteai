@@ -37,7 +37,7 @@ async function installNativeEvents(page: Page) {
           });
         }
       },
-      listenerCount: () => listeners.size,
+      listenerCount: () => [...listeners.values()].filter(listener => listener.event.startsWith('tauri://drag-')).length,
     } });
   });
 }
@@ -58,6 +58,7 @@ async function chooseProject(page: Page, width: number, screenshot: string) {
   if (width < 768) await page.getByRole('button', { name: '更多项目选项', exact: true }).click();
   await page.getByRole('button', { name: '选择项目文件夹：项目 空格' }).click();
   if (width >= 768) {
+    await page.getByRole('button', { name: '新建项目', exact: true }).click();
     await page.locator('.pe-address-edit').click();
     await page.getByRole('textbox', { name: '文件夹地址' }).fill('C:/第二个目录');
     await page.keyboard.press('Enter');
