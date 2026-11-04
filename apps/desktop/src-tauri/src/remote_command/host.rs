@@ -18,7 +18,7 @@ struct ExecutionGuard;
 impl ExecutionGuard {
     fn acquire(limit: usize) -> super::Result<Self> {
         EXECUTING
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+            .try_update(Ordering::AcqRel, Ordering::Acquire, |count| {
                 (count < limit).then_some(count + 1)
             })
             .map(|_| Self)
