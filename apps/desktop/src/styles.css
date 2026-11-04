@@ -367,6 +367,7 @@ main.providers-main .providers-page-panel { flex: 1; display: flex; flex-directi
   color: #7b8980;
   font-size: 9px;
   font-weight: 700;
+  line-height: 1.5;
 }
 .token-heatmap-today { display: flex; align-items: baseline; gap: 3px; letter-spacing: 0; white-space: nowrap; }
 .token-heatmap-today b { color: var(--green-dark); font-size: 11px; letter-spacing: -.01em; cursor: help; }
