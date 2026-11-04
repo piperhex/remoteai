@@ -1,5 +1,0 @@
-.git-context-trigger { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
-@media (pointer: coarse) {
-  .git-file-context-menu .ant-dropdown-menu-item,
-  .git-commit-context-menu .ant-dropdown-menu-item { min-height: 44px; }
-}

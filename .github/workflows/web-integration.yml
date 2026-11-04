@@ -1,0 +1,49 @@
+name: Web and desktop integration
+
+on:
+  push:
+    paths:
+      - 'apps/web'
+      - 'apps/desktop/package.json'
+      - 'apps/desktop/vite.config.ts'
+      - 'scripts/export-web-dependencies.mjs'
+      - '.github/workflows/web-integration.yml'
+  pull_request:
+    paths:
+      - 'apps/web'
+      - 'apps/desktop/package.json'
+      - 'apps/desktop/vite.config.ts'
+      - 'scripts/export-web-dependencies.mjs'
+      - '.github/workflows/web-integration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  clients:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: git submodule update --init shared packages/i18n apps/web
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            apps/web/package-lock.json
+      - run: npm ci
+      - run: npm ci --prefix apps/web
+      - run: npm run check:web
+      - run: npm run build:desktop
+      - name: Verify reused desktop components
+        run: >-
+          npm exec -w @codex-switch/desktop -- vitest run
+          src/remoteChat/sshDownloads.test.ts src/remoteDesktop/errorBoundary.test.tsx
+          src/remoteDesktop/useDesktopClipboard.browser.test.tsx
+      - name: Verify existing deployment configuration
+        env:
+          COMPOSE_CONFIG_TEST: '1'
+        run: node --test scripts/web-deployment.test.mjs
+      - name: Build the standalone Web image
+        run: docker build -t remoteai-web:check apps/web

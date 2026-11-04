@@ -6,7 +6,7 @@ on:
       - 'apps/admin'
       - 'apps/admin-ui'
       - 'scripts/admin-integration.test.mjs'
-      - 'apps/web/compose*.yml'
+      - 'apps/web'
       - 'scripts/deploy.mjs'
       - 'scripts/lib/web-deployment.mjs'
       - 'scripts/web-deployment.test.mjs'
@@ -17,7 +17,7 @@ on:
       - 'apps/admin'
       - 'apps/admin-ui'
       - 'scripts/admin-integration.test.mjs'
-      - 'apps/web/compose*.yml'
+      - 'apps/web'
       - 'scripts/deploy.mjs'
       - 'scripts/lib/web-deployment.mjs'
       - 'scripts/web-deployment.test.mjs'
@@ -32,6 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Initialize pinned Web configuration
+        run: git submodule update --init apps/web
       - uses: actions/setup-node@v6
         with:
           node-version: '22'

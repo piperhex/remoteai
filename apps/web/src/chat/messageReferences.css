@@ -1,7 +1,0 @@
-.chat-message-references { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
-.chat-message-references:not(:last-child) { margin-bottom: 10px; }
-.chat-message-reference {
-  max-width: min(100%, 400px); box-sizing: border-box; padding: 5px 9px; border-radius: 8px;
-  background: var(--app-accentSoft, #e6f8f1); color: var(--app-accent, #14806f);
-  font-size: 13px; line-height: 20px; white-space: pre-wrap; overflow-wrap: anywhere;
-}

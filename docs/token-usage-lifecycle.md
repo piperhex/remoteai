@@ -131,7 +131,7 @@ also passed. Task 04 has no production Rust modifications.
 
 The final coordinated verification passed with exit 0 on the recorded source hashes:
 `npm run build --workspace @codex-switch/desktop` (TypeScript, service TypeScript, Vite),
-`npm run build --workspace @codex-switch/web` (TypeScript, Vite), and
+`npm --prefix apps/web run build` (TypeScript, Vite), and
 `cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check`.
 Logs are `desktop-build-final.log`, `web-build-final.log`, and `rust-fmt-final.log` under
 `.codex-tmp/token-lifecycle/`. Vite reported non-fatal chunk-size and shared static/dynamic

@@ -1,7 +1,0 @@
-.chat-desktop-account-picker {
-  --sidebar-inline-padding: 8px;
-  --sidebar-bottom-padding: 12px;
-  flex-shrink: 0;
-  min-width: 0;
-  padding: 0 var(--sidebar-inline-padding) var(--sidebar-bottom-padding);
-}

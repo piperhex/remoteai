@@ -37,7 +37,7 @@
 ## 回归检查
 
 - `npm exec -w @codex-switch/desktop -- vitest run src/components/modals/CloudLoginModal.test.tsx`
-- `npm run test:management:e2e -w @codex-switch/web -- agreement.pw.ts`
+- `npm --prefix apps/web run test:management:e2e -- agreement.pw.ts`
 - `npm --prefix apps/native run test -- src/auth/AgreementConsent.test.tsx`
 
 网页端用例覆盖 320px、390px、1440px 宽度及 667×375 横屏、中文和英文、

@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [react(), imageEditorPlugin()],
   css: { postcss: { plugins: [fontSizePlugin()] } },
   clearScreen: false,
+  resolve: { dedupe: ['react', 'react-dom', 'antd', 'antd-mobile', '@ant-design/cssinjs', '@remoteai/i18n'] },
   optimizeDeps: { include: ['pdfjs-dist/legacy/build/pdf.mjs'] },
   server: {
     port: 1420,

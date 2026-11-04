@@ -261,6 +261,19 @@ Keep all instructions in this `AGENTS.md` file in English.
 - For changes to proxy, Provider, concurrent-routing, cloud-sync, or token-usage UI flows, verify responsiveness while requests are active and while the relevant polling view is open. Run Rust formatting and tests plus the desktop TypeScript/Vite production build before handing off the change.
 
 
+## Web Submodule
+
+- `apps/web` is the independent `https://github.com/piperhex/remoteai-web.git` submodule.
+  Follow its own `AGENTS.md`; commit and push child changes before updating the parent gitlink.
+- Web owns its npm dependencies, checks, build output, Docker context and CI. Keep it out of parent
+  npm workspaces; use the explicit `dev:web`, `build:web`, `check:web` and `export:web` commands.
+- Desktop still reuses Web remote-desktop and download components. Initialize `apps/web` together with
+  `shared` and `packages/i18n` for desktop development, checks and releases. Preserve host module deduplication.
+- Web standalone commands use generated dependency snapshots with repository revisions and source hashes.
+  Refresh them through `npm run export:web`; never edit `vendor/` or `.workspace/` contents manually.
+- Keep the existing Web service, gateway alias, image variable and network configuration. Do not deploy
+  or restart production merely because the source repository or Docker build context changed.
+
 ## Shared Source Submodule
 
 - `shared` is the required `https://github.com/piperhex/remoteai-shared.git` source submodule.

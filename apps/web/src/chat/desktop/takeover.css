@@ -1,9 +1,0 @@
-.rd-takeover { width: min(400px, calc(100% - 32px)); max-height: calc(100% - 32px); padding: 24px;
-  margin: auto; border: 1px solid #39455b; border-radius: 16px; background: #171c28;
-  color: var(--app-faint, #e7edf8); overflow: auto; overflow-wrap: anywhere; }
-.rd-takeover::backdrop { background: #0009; }
-.rd-takeover h2 { margin: 0 0 12px; font-size: 18px; }
-.rd-takeover p { margin: 0 0 20px; font-size: 14px; line-height: 1.6; }
-.rd-takeover-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
-.rd-takeover-actions button { padding: 9px 14px; border-radius: 8px; background: #293449; }
-.rd-takeover-actions .rd-takeover-confirm { background: #355987; }

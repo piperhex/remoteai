@@ -1,9 +1,0 @@
-.chat-prompt-suggestion { display: flex; align-items: center; gap: 10px; width: 100%;
-  max-width: 400px; flex-shrink: 0; min-height: 44px; padding: 6px 8px; border: 0; border-radius: 10px;
-  background: transparent; color: var(--app-ink, #25332b); font: inherit; font-size: 14px;
-  line-height: 1.6; text-align: start; cursor: pointer; }
-.chat-prompt-suggestion > span { flex: 1; opacity: .5; white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
-.chat-prompt-suggestion > small { flex-shrink: 0; font-size: 12px; opacity: .7;
-  border: 1px solid currentColor; border-radius: 5px; padding: 1px 5px; }
-.chat-prompt-suggestion:focus-visible { outline: 2px solid var(--app-accent, #14806f); outline-offset: -2px; }
-.chat-prompt-suggestion:hover { background: var(--app-elevated, #edf2ef); }

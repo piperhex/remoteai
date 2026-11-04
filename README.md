@@ -172,7 +172,7 @@ sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev
 安装依赖并启动桌面应用：
 
 ```powershell
-git submodule update --init shared packages/i18n
+git submodule update --init shared packages/i18n apps/web
 npm install
 npm run dev:app
 ```

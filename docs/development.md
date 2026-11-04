@@ -8,6 +8,10 @@ Native is also an optional, independent submodule. Run `git submodule update --i
 `npm --prefix apps/native ci` before mobile commands. It owns its dependencies and release tags; see
 [the Native repository guide](native-submodule.md).
 
+Web is independently installed with `npm ci --prefix apps/web`, and its standalone commands run through
+`npm run dev:web`, `npm run build:web` and `npm run check:web`. Its source submodule is required by the
+desktop application's reused components; see [the Web repository guide](web-submodule.md).
+
 For installed Linux packages, headless servers, systemd, and proxy setup, see
 [Linux installation and usage (Chinese)](linux.md). The dependencies below are for building from source.
 
@@ -16,7 +20,7 @@ For installed Linux packages, headless servers, systemd, and proxy setup, see
 Install Node.js, npm, the Go toolchain declared in `apps/admin/go.mod`, the latest stable Rust toolchain, and the Tauri 2 dependencies for your platform. Then install project dependencies:
 
 ```powershell
-git submodule update --init shared packages/i18n
+git submodule update --init shared packages/i18n apps/web
 npm install
 ```
 

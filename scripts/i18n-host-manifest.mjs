@@ -9,8 +9,9 @@ export function withHostManifest(root, run) {
   manifest.mirrors = (manifest.mirrors ?? []).filter(ownedByHost);
   manifest.sections = (manifest.sections ?? []).filter(ownedByHost);
   manifest.ownership = {
+    ...manifest.ownership,
     include: manifest.ownership?.include ?? ['apps', 'shared', 'scripts'],
-    exclude: [...new Set([...(manifest.ownership?.exclude ?? ['apps/admin']), 'apps/native'])],
+    exclude: [...new Set([...(manifest.ownership?.exclude ?? ['apps/admin']), 'apps/native', 'apps/web'])],
   };
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'remoteai-host-i18n-'));
   const filename = path.join(temporary, 'platform.json');

@@ -1,9 +1,0 @@
-.git-commit-context-menu { max-width: min(400px, calc(100vw - 24px)); }
-.git-commit-context-menu .ant-dropdown-menu-title-content { overflow-wrap: anywhere; white-space: normal; }
-.git-revision-dialog .ant-modal-body { max-width: 400px; overflow-wrap: anywhere; }
-.git-revision-dialog [role="alert"] { color: #c74e47; }
-.git-revision-target { margin: 0 0 12px; }
-.git-reset-modes { display: grid; gap: 12px; }
-.git-reset-modes .ant-radio-wrapper { align-items: flex-start; margin: 0; }
-.git-reset-modes strong { display: block; font-weight: 500; }
-.git-reset-modes small { display: block; margin-top: 3px; opacity: .7; line-height: 1.5; }

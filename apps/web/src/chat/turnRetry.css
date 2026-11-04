@@ -1,9 +1,0 @@
-.chat-turn-error { max-width: 400px; min-width: 0; overflow-wrap: anywhere;
-  color: var(--app-danger, #b84f49); font-size: 12px; line-height: 20px; }
-.chat-error-actions { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; white-space: nowrap; }
-.chat-turn-retry { display: inline-flex; align-items: center; justify-content: center; gap: 2px;
-  padding: 2px; border: 1px solid currentColor; border-radius: 4px; background: transparent;
-  color: inherit; font: inherit; line-height: 16px; cursor: pointer; }
-.chat-turn-retry:hover:not(:disabled) { background: #b84f4910; }
-.chat-turn-retry:disabled { opacity: 0.5; cursor: default; }
-.chat-turn-retry:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }

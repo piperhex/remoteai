@@ -11,7 +11,7 @@ Shared sources are required for parent desktop and Web builds, including Rust re
 git submodule update --init shared
 npm ci
 npm run build:desktop
-npm run check -w @codex-switch/web
+npm --prefix apps/web run check
 npm run check:i18n
 ```
 

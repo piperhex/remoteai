@@ -160,4 +160,6 @@ test("actual Web Compose renders with a custom gateway and image without startin
   const deployment = new WebDeployment(f.options, run);
   deployment.verify();
   assert.equal(deployment.config.services.web.image, "web:verified");
+  assert.equal(deployment.config.services.web.build.context, resolve("apps/web"));
+  assert.equal(deployment.config.services.web.build.dockerfile, "Dockerfile");
 });

@@ -1,5 +1,0 @@
-.chat-file-menu { max-width: 400px; overflow-wrap: anywhere; }
-.chat-file-menu .chat-menu-options > button { display: flex; flex-direction: row; align-items: flex-start; gap: 10px; }
-.chat-file-menu .chat-menu-options > button > svg { flex-shrink: 0; margin-top: 2px; }
-.chat-file-menu .chat-menu-options > button > span { min-width: 0; }
-.chat-file-menu .chat-menu-options small { white-space: normal; overflow-wrap: anywhere; }

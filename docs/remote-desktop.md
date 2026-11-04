@@ -381,7 +381,7 @@ capture/playback limits, the missing media-relay path and references to mature o
 ```powershell
 npx vitest run src/remoteDesktop src/remoteChat/guiTools.test.ts src/remoteChat/hostRecovery.test.ts
 # Run the command above from apps/desktop.
-npm run test:remote-desktop:e2e -w @codex-switch/web
+npm --prefix apps/web run test:remote-desktop:e2e
 npm --prefix apps/native run check
 npm --prefix apps/native run export:android
 cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests

@@ -65,7 +65,7 @@ API 位于已认证的 `/chat-push/status`、`/chat-push/subscription` 和 `/cha
 npm run check
 cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --tests -- -D warnings
 node scripts/test-desktop-adaptation.mjs
-npm run test:remote-desktop:e2e -w @codex-switch/web
+npm --prefix apps/web run test:remote-desktop:e2e
 ```
 
 `test-desktop-adaptation.mjs` 在专用测试窗口中分别运行 GPU/GDI，验证同一发送进程内降码率、降帧率、
