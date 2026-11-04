@@ -198,7 +198,9 @@ npm run dev:backend
 启动 Expo 移动端：
 
 ```powershell
-npm run start -w @codex-switch/native
+git submodule update --init apps/native
+npm --prefix apps/native ci
+npm --prefix apps/native start
 ```
 
 移动端需要已部署的云端后端，会读取已同步的账号摘要和短期 Codex access token，由手机直接刷新用量与重置卡，同时显示在线 PC，并可分别切换每台 PC 的官方模型或已同步 Provider。远程切换 Provider 前，需要先在目标 PC 启动本地代理；在官方模型与 Provider 间切换后，移动端会提示重启 ChatGPT/Codex。详细配置请参阅 [移动端文档](apps/native/README.md) 和 [管理后端文档](apps/admin/README.md)。
@@ -324,7 +326,7 @@ apps/desktop/        Tauri 桌面应用工作区
   src-tauri/src/     Rust 后端
 apps/admin-ui/       React 管理控制台（独立 Git 子模块）
 apps/admin/          Go 云端后端与生产部署（独立 Git 子模块）
-apps/native/         Expo 移动端账号用量伴侣应用
+apps/native/         独立 Native 子模块（Android / iOS）
 docs/                架构和开发文档
 ```
 
@@ -350,9 +352,9 @@ npm run release
 npm run release-beta
 ```
 
-`npm run release` 会读取 `package.json`，将补丁版本加 1，同步更新桌面端和移动端的版本文件（包括 Android `versionCode`）、创建提交和带注释标签，然后推送分支与标签。`npm run release-beta` 会创建或递增类似 `v0.1.1-beta.0` 的预发布标签。可通过 `npm run release -- v0.2.0` 或 `npm run release-beta -- v0.2.0-beta.1` 指定准确版本。
+`npm run release` 会读取 `package.json`，将补丁版本加 1，同步更新桌面端的版本文件、创建提交和带注释标签，然后推送分支与标签。`npm run release-beta` 会创建或递增类似 `v0.1.1-beta.0` 的预发布标签。可通过 `npm run release -- v0.2.0` 或 `npm run release-beta -- v0.2.0-beta.1` 指定准确版本。
 
-发布工作流构建 Windows x64、Windows ARM64、Ubuntu/Linux x64、macOS Apple Silicon 与 Intel、Android APK 以及未签名的 iOS Release `.app.zip`，并上传到对应 GitHub Release。iOS 产物用于验证构建，安装到设备或提交 App Store 前仍需要 Apple 签名凭据。
+主仓库发布工作流构建 Windows x64、Windows ARM64、Ubuntu/Linux x64、macOS Apple Silicon 与 Intel，并上传到对应 GitHub Release。Android APK 和未签名的 iOS `.app.zip` 由 [Native 独立仓库](https://github.com/piperhex/remoteai-native) 的 CI 按自己的 `v*` 标签发布；安装 iOS 产物到设备或提交 App Store 仍需 Apple 签名。维护方式见 [Native 子模块说明](docs/native-submodule.md)。
 
 ## 参与贡献
 

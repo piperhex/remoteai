@@ -1,9 +1,0 @@
-// Keep the installed application and its data separate from preview verification.
-gradle.afterProject { project ->
-    if (project.path == ':app') {
-        project.layout.buildDirectory.set(new File(project.projectDir, 'build-file-preview'))
-        project.android.defaultConfig.applicationId = 'com.codexswitch.mobile.filepreviewtest'
-        project.extensions.getByName('react').entryFile = new File(project.rootDir, '../e2e/FilePreviewFixture.tsx')
-        project.extensions.getByName('react').debuggableVariants = []
-    }
-}

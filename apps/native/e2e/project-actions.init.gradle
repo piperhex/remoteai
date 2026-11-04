@@ -1,9 +1,0 @@
-// Keep the installed app and its account data separate from this UI fixture.
-gradle.afterProject { project ->
-    if (project.path == ':app') {
-        project.layout.buildDirectory.set(new File(project.projectDir, 'build-project-actions'))
-        project.android.defaultConfig.applicationId = 'com.codexswitch.mobile.projectactionstest'
-        project.extensions.getByName('react').entryFile = new File(project.rootDir, '../e2e/ProjectActionsFixture.tsx')
-        project.extensions.getByName('react').debuggableVariants = []
-    }
-}

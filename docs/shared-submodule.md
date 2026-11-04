@@ -2,8 +2,8 @@
 
 `shared/` is the required Git submodule of https://github.com/piperhex/remoteai-shared.
 The extracted repository preserves the directory's history and the existing application import paths.
-Unlike the optional Coze and Admin repositories, shared sources are required for desktop, native and
-Web builds, including Rust resources embedded with `include_str!` and `include_bytes!`.
+Shared sources are required for parent desktop and Web builds, including Rust resources embedded with
+`include_str!` and `include_bytes!`. The independent Native repository consumes an exported shared snapshot.
 
 ## Checkout and development
 
@@ -12,7 +12,6 @@ git submodule update --init shared
 npm ci
 npm run build:desktop
 npm run check -w @codex-switch/web
-npm run check -w @codex-switch/native
 npm run check:i18n
 ```
 
@@ -29,8 +28,10 @@ Make the change inside `shared/`, validate the affected consumers and commit and
 first. Then commit `shared` in the parent to select the published commit. UI behavior changes still need
 the usual parity and screenshot verification; changing the repository boundary alone changes no UI.
 
-Admin UI continues to consume generated archives using `npm run export:admin-ui`. The export records
-the parent and shared repository revisions alongside source hashes. Never edit archived dependencies.
+Admin UI consumes generated archives using `npm run export:admin-ui`. Native uses `npm run export:native`;
+initialize it and install its dependencies before running `npm --prefix apps/native run check` and its tests.
+Both exports record the parent and shared repository revisions alongside source hashes. Never edit generated
+dependencies. See [Native development and releases](native-submodule.md) for its complete validation commands.
 
 The parent still controls desktop integration with Coze. Its signed runtime pin remains at
 `shared/coze/runtime.json`; changes to that file now follow the shared-child-first commit order.

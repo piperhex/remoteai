@@ -201,8 +201,8 @@ Expo Go 不包含该原生模块，需要开发构建或安装 APK；升级旧 A
 以支持自部署的局域网服务器。生产地址应使用 HTTPS。
 
 ```powershell
-npm run check -w @codex-switch/native
-npm run export:android -w @codex-switch/native
+npm --prefix apps/native run check
+npm --prefix apps/native run export:android
 npm run build:apk
 ```
 
@@ -213,7 +213,7 @@ iOS 可以在 macOS 上使用现有 `prebuild:ios` / Xcode 工作流构建；Win
 ```powershell
 npm run test:backend
 npm run build:backend
-npm run test -w @codex-switch/native
+npm --prefix apps/native run test
 npm run test -w @codex-switch/desktop
 npm run build:desktop
 cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check

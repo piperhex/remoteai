@@ -17,11 +17,6 @@ COPY shared ./shared
 COPY packages/i18n ./packages/i18n
 # Shared chat logic imports model selection and turn timing from the desktop sources.
 COPY apps/desktop/src ./apps/desktop/src
-# Account formatting and 2FA lists share pure helpers with the mobile client.
-COPY apps/native/src/accounts/formatters.ts ./apps/native/src/accounts/formatters.ts
-COPY apps/native/src/i18n/index.ts ./apps/native/src/i18n/index.ts
-COPY apps/native/src/utils/expiration.ts ./apps/native/src/utils/expiration.ts
-COPY apps/native/src/totp/entryList.ts apps/native/src/totp/types.ts ./apps/native/src/totp/
 RUN npm run build -w @codex-switch/web
 
 FROM nginx:1.27-alpine AS runtime

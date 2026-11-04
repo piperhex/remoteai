@@ -1,9 +1,0 @@
-// Use a separate test package and output directory; preserve the installed application and its accounts.
-gradle.afterProject { project ->
-    if (project.path == ':app') {
-        project.layout.buildDirectory.set(new File(project.projectDir, 'build-git-file-conflicts'))
-        project.android.defaultConfig.applicationId = 'com.codexswitch.mobile.gitactivitytest'
-        project.extensions.getByName('react').entryFile = new File(project.rootDir, '../e2e/GitFileConflictsFixture.tsx')
-        project.extensions.getByName('react').debuggableVariants = []
-    }
-}

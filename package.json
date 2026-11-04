@@ -6,7 +6,6 @@
   "packageManager": "npm@10.8.2",
   "workspaces": [
     "apps/desktop",
-    "apps/native",
     "apps/web",
     "apps/website",
     "packages/i18n"
@@ -31,7 +30,7 @@
     "deploy:web": "node scripts/deploy.mjs web",
     "test:backend": "go -C apps/admin test ./...",
     "check:backend": "npm --prefix apps/admin run check",
-    "build:apk": "npm run build:apk -w @codex-switch/native",
+    "build:apk": "npm --prefix apps/native run build:apk",
     "build:app": "npm run build:app -w @codex-switch/desktop",
     "build:app:mac": "npm run build:app:mac -w @codex-switch/desktop",
     "build:app:win-arm64": "npm run build:app:win-arm64 -w @codex-switch/desktop",
@@ -51,7 +50,8 @@
     "check:i18n": "node scripts/i18n.mjs check",
     "generate:i18n": "node scripts/i18n.mjs generate",
     "check:admin": "npm --prefix apps/admin-ui run check",
-    "export:admin-ui": "node scripts/export-admin-ui-dependencies.mjs"
+    "export:admin-ui": "node scripts/export-admin-ui-dependencies.mjs",
+    "export:native": "node scripts/export-native-dependencies.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",

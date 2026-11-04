@@ -55,13 +55,13 @@ SSH 沿用统一的 5 MB 纯文本切换阈值和图片预览范围，大文本�
 - 保存携带读取时的内容摘要，暂存后再次校验，使用临时文件替换目标。外部修改导致保存失败时，编辑草稿保持不变；不会自动覆盖冲突。
 - 原生 WebView 只加载随应用打包的编辑器；禁止导航、网络和本机文件访问。项目根目录由原生宿主决定。
 
-修改共享编辑器后运行 `node apps/native/scripts/build-project-browser.cjs` 更新原生资源，`npm run check -w @codex-switch/native` 会检查资源是否过期。
+修改共享编辑器后，先运行 `npm run export:native` 更新 Native 的依赖快照，再运行 `node apps/native/scripts/build-project-browser.cjs` 更新原生资源。`npm --prefix apps/native run check` 会检查资源是否过期；首次开发需按 [Native 子模块说明](native-submodule.md) 初始化并安装依赖。
 
 ## 验证
 
 - Rust：`cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests codex_gui::project_`。
 - 桌面：`npx vitest run src/remoteChat/projectBrowser src/remoteChat/operations.test.ts`。
-- 原生消息桥：`npm run test -w @codex-switch/native -- src/chat/projectBrowserBridge.test.ts`。
+- 原生消息桥：`npm --prefix apps/native run test -- src/chat/projectBrowserBridge.test.ts`。
 - 界面与原生资源：`npm run test:chat:e2e -w @codex-switch/desktop -- project-browser`。
 - Android 独立测试包：在 `apps/native/android` 执行 `gradlew assembleRelease -I ../e2e/project-browser.init.gradle -PreactNativeArchitectures=arm64-v8a`，应用 ID 为 `com.codexswitch.mobile.filebrowsertest`。
 - 设置 `ANDROID_SERIAL` 后运行 `node apps/native/e2e/project-browser-test.mjs`，测试会安装独立测试包并在结束后卸载，恢复此前打开的应用。

@@ -3,7 +3,7 @@ use super::{cache::Artifact, Error, Result, Service, MAX_PACKAGE_BYTES};
 use serde::Deserialize;
 use std::{sync::Arc, time::Duration};
 
-const RELEASE_API: &str = "https://api.github.com/repos/piperhex/remoteai/releases/latest";
+const RELEASE_API: &str = "https://api.github.com/repos/piperhex/remoteai-native/releases/latest";
 const POLL_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 const IDLE_DELAY: Duration = Duration::from_secs(60);
 
@@ -29,9 +29,12 @@ pub(super) fn official_url(value: &str) -> bool {
             && url.port().is_none()
             && url.query().is_none()
             && url.fragment().is_none()
-            && url
-                .path()
-                .starts_with("/piperhex/remoteai/releases/download/")
+            && [
+                "/piperhex/remoteai-native/releases/download/",
+                "/piperhex/remoteai/releases/download/",
+            ]
+            .iter()
+            .any(|prefix| url.path().starts_with(prefix))
             && url.path().ends_with(".apk")
     })
 }
@@ -148,5 +151,9 @@ mod tests {
             Artifact::android("1.0.0".into(), url.replace("piperhex", "other"), digest, 3).is_err()
         );
         assert!(!official_url(&url.replace("https:", "http:")));
+        assert!(official_url(&url.replace("remoteai/", "remoteai-native/")));
+        assert!(!official_url(
+            &url.replace("remoteai/", "remoteai-native-evil/")
+        ));
     }
 }

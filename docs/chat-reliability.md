@@ -49,7 +49,7 @@ Web 同步任务状态和体检界面，本次不新增浏览器系统推送。
 
 - Rust：`cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests`
 - Go：`go -C apps/admin test ./internal/chatpush`
-- 原生：`npm run test -w @codex-switch/native`
+- 原生：`npm --prefix apps/native run test`
 - Web：`npm run test:chat:e2e -w @codex-switch/web -- --grep "shows only task issues"`
 
 回归覆盖超过旧队列容量的落盘、数据库重开、退避和去重、账号隔离、HTTP 回执校验、

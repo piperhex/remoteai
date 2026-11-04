@@ -163,6 +163,8 @@ npm install
 npm run dev:app
 ```
 
+Необязательный [подмодуль Native](docs/native-submodule.md) управляет зависимостями и выпусками Android/iOS. Теги `v*` публикуют мобильные сборки в [remoteai-native](https://github.com/piperhex/remoteai-native) независимо от настольного приложения.
+
 Другие часто используемые команды:
 
 ```powershell
@@ -171,7 +173,9 @@ git submodule update --init apps/admin apps/admin-ui
 npm ci --prefix apps/admin-ui
 npm run dev:admin
 npm run dev:backend
-npm run start -w @codex-switch/native
+git submodule update --init apps/native
+npm --prefix apps/native ci
+npm --prefix apps/native start
 npm run build:app
 npm run check
 ```

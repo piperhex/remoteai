@@ -13,3 +13,6 @@
 [submodule "packages/i18n"]
 	path = packages/i18n
 	url = https://github.com/piperhex/remoteai-i18n.git
+[submodule "apps/native"]
+	path = apps/native
+	url = https://github.com/piperhex/remoteai-native.git

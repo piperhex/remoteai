@@ -7,6 +7,11 @@ on:
       - 'packages/i18n'
       - '.gitmodules'
       - 'scripts/export-admin-ui-dependencies.mjs'
+      - 'scripts/export-native-dependencies.mjs'
+      - 'scripts/*release*.mjs'
+      - 'scripts/i18n*.mjs'
+      - 'package*.json'
+      - '.github/workflows/release.yml'
       - '.husky/pre-commit'
       - 'scripts/git-hook-environment.test.mjs'
       - '.github/workflows/shared-integration.yml'
@@ -16,6 +21,11 @@ on:
       - 'packages/i18n'
       - '.gitmodules'
       - 'scripts/export-admin-ui-dependencies.mjs'
+      - 'scripts/export-native-dependencies.mjs'
+      - 'scripts/*release*.mjs'
+      - 'scripts/i18n*.mjs'
+      - 'package*.json'
+      - '.github/workflows/release.yml'
       - '.husky/pre-commit'
       - 'scripts/git-hook-environment.test.mjs'
       - '.github/workflows/shared-integration.yml'
@@ -39,6 +49,9 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      - run: node --test scripts/git-hook-environment.test.mjs
+      - name: Verify hooks and independent releases
+        run: >-
+          node --test scripts/git-hook-environment.test.mjs scripts/native-release-isolation.test.mjs
+          scripts/release-workflow.test.mjs scripts/organize-release-downloads.test.mjs
       - run: npm run check:i18n
       - run: npx lerna run check --stream

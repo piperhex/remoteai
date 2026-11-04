@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { withHostManifest } from './i18n-host-manifest.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
@@ -15,14 +16,16 @@ if (!fs.existsSync(path.join(child, 'scripts/cli.mjs'))) {
 const run = args => execFileSync(process.execPath, args, { cwd: root, stdio: 'inherit' });
 const cli = (action, ...args) => run([path.join(child, 'scripts/cli.mjs'), action, ...args]);
 
-if (command === 'generate') {
-  cli('generate');
-  cli('integrate', '--root', root);
-} else {
-  if (command === 'check') {
-    if (!process.env.npm_execpath) throw new Error('Run this check through npm run check:i18n.');
-    run([process.env.npm_execpath, 'run', 'check', '--workspace', '@remoteai/i18n']);
+withHostManifest(root, manifest => {
+  if (command === 'generate') {
+    cli('generate');
+    cli('integrate', '--manifest', manifest, '--root', root);
+  } else {
+    if (command === 'check') {
+      if (!process.env.npm_execpath) throw new Error('Run this check through npm run check:i18n.');
+      run([process.env.npm_execpath, 'run', 'check', '--workspace', '@remoteai/i18n']);
+    }
+    cli('integrate', '--manifest', manifest, '--root', root, '--check');
+    cli('scan', '--manifest', manifest, '--root', root);
   }
-  cli('integrate', '--root', root, '--check');
-  cli('scan', '--root', root);
-}
+});

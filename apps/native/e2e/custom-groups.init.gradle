@@ -1,9 +1,0 @@
-// Isolate the fixture from the installed app and its account data.
-gradle.afterProject { project ->
-    if (project.path == ':app') {
-        project.layout.buildDirectory.set(new File(project.projectDir, 'build-custom-groups'))
-        project.android.defaultConfig.applicationId = 'com.codexswitch.mobile.customgroupstest'
-        project.extensions.getByName('react').entryFile = new File(project.rootDir, '../e2e/CustomGroupsFixture.tsx')
-        project.extensions.getByName('react').debuggableVariants = []
-    }
-}

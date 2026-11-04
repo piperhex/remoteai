@@ -5,7 +5,7 @@ import { Button, Dialog, Empty, Input, PullToRefresh, SpinLoading, Toast } from 
 import { ListFilter, Plus, QrCode, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 import type { TotpEntry } from '../types';
 import type { useTotpVault } from '../useTotpVault';
-import { selectTotpEntries, type TotpSortOrder } from '../../../native/src/totp/entryList';
+import { selectTotpEntries, type TotpSortOrder } from '../../../../shared/totp/entryList';
 import { TotpCodeCard } from '../totp/TotpCodeCard';
 import { TotpForm } from '../totp/TotpForm';
 import { useTotpCodes } from '../totp/useTotpCodes';

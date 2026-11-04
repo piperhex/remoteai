@@ -1,7 +1,7 @@
 import { displayError } from '../i18n/index';
 import { getLocale, t } from '../i18n';
-export { maskEmail } from '../../../native/src/accounts/formatters';
-export { earliestExpirationDate } from '../../../native/src/utils/expiration';
+export { maskEmail } from '../../../../shared/accounts/maskEmail';
+export { earliestExpirationDate } from '../../../../shared/accounts/expiration';
 
 export function resetLabel(timestamp?: number | null) {
   const remaining = timestamp ? timestamp * 1000 - Date.now() : NaN;

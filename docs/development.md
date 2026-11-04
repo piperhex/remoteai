@@ -4,6 +4,10 @@ The admin backend and UI are optional, independent submodules. Initialize them w
 `git submodule update --init apps/admin apps/admin-ui` and install UI dependencies with
 `npm ci --prefix apps/admin-ui` before using admin commands. See [admin repositories](admin-submodules.md).
 
+Native is also an optional, independent submodule. Run `git submodule update --init apps/native` and
+`npm --prefix apps/native ci` before mobile commands. It owns its dependencies and release tags; see
+[the Native repository guide](native-submodule.md).
+
 For installed Linux packages, headless servers, systemd, and proxy setup, see
 [Linux installation and usage (Chinese)](linux.md). The dependencies below are for building from source.
 
@@ -12,6 +16,7 @@ For installed Linux packages, headless servers, systemd, and proxy setup, see
 Install Node.js, npm, the Go toolchain declared in `apps/admin/go.mod`, the latest stable Rust toolchain, and the Tauri 2 dependencies for your platform. Then install project dependencies:
 
 ```powershell
+git submodule update --init shared packages/i18n
 npm install
 ```
 
@@ -50,10 +55,10 @@ Dependency versions are locked by the root `package-lock.json` and `apps/desktop
 | `npm run dev:app` | Start the complete Tauri desktop application |
 | `npm run dev:admin` | Start the admin console |
 | `npm run dev:backend` | Start the Go backend (configuration in `apps/admin/.env`) |
-| `npm run start -w @codex-switch/native` | Start the Expo mobile development server |
-| `npm run android -w @codex-switch/native` | Start Expo and open the Android target |
-| `npm run ios -w @codex-switch/native` | Start Expo and open the iOS target |
-| `npm run build` | Build maintained npm workspaces and the Go backend |
+| `npm --prefix apps/native run start` | Start the Expo mobile development server |
+| `npm --prefix apps/native run android` | Start Expo and open the Android target |
+| `npm --prefix apps/native run ios` | Start Expo and open the iOS target |
+| `npm run build` | Build the parent npm workspaces |
 | `npm run build:desktop` | Type-check and build the desktop frontend |
 | `npm run build:admin` | Build the admin console |
 | `npm run build:backend` | Build the Go backend into `apps/admin/dist/` |
@@ -61,7 +66,7 @@ Dependency versions are locked by the root `package-lock.json` and `apps/desktop
 | `npm run build:app:mac` | Build a universal macOS bundle |
 | `npm run build:app:win-arm64` | Build a Windows ARM64 bundle |
 | `npm run check:rust` | Check Rust formatting and run Rust tests |
-| `npm run check` | Check maintained frontend workspaces, Go contract/vet/tests, and Rust |
+| `npm run check` | Check parent frontend workspaces and desktop Rust |
 | `npm run test` | Run workspace test scripts where present |
 | `npm run nx -- graph` | Open the Nx project graph |
 | `npm run release` | Bump the patch version, tag, and push a stable release |
@@ -103,15 +108,19 @@ For local Windows ARM64 app builds, install the Rust `aarch64-pc-windows-msvc` t
 
 ## Release Workflow
 
-`npm run release` and `npm run release-beta` require a clean working tree. The script updates `package.json`, `package-lock.json`, `apps/desktop/package.json`, `apps/desktop/src-tauri/tauri.conf.json`, `apps/native/package.json`, and `apps/native/app.json`. Desktop prerelease tags receive a numeric WiX/MSI version such as `0.2.3-beta.0` -> `0.2.3.0`; Android receives a monotonically increasing `versionCode`, while its visible `versionName` matches the release tag. The script commits the version bump when needed, creates an annotated tag, then pushes both the current branch and tag to `origin`.
+`npm run release` and `npm run release-beta` require a clean working tree. They update the root package and
+lockfile, `apps/desktop/package.json`, and `apps/desktop/src-tauri/tauri.conf.json`. Desktop prerelease tags
+receive a numeric WiX/MSI version such as `0.2.3-beta.0` -> `0.2.3.0`. The script commits the version bump,
+creates an annotated tag, and pushes the current branch and tag to `origin`.
 
 The GitHub Actions release workflow starts from `v*` tags or a manual run with an existing tag. It creates or
 finds the GitHub Release, generates release notes when needed, and runs the relevant checks. It uploads Windows
-x64 and ARM64, Ubuntu/Linux x64, macOS Apple Silicon and Intel artifacts, a versioned Android APK such as
-`CodexSwitch-android-v1.2.3.apk`, and an unsigned iOS Release `.app.zip`. Before publishing, the workflow adds a
-download section that groups installers by platform, architecture, and package format. The Android app checks
-this published Release for updates and uses the system DownloadManager plus package installer. The iOS artifact
-validates the build only; producing an installable IPA requires signing credentials and a provisioning profile.
+x64 and ARM64, Ubuntu/Linux x64, and macOS Apple Silicon and Intel artifacts. Before publishing, the workflow
+adds a download section grouped by platform, architecture, and package format, with a link to Native releases.
+
+The Native repository's own `v*` tags publish its Android APK and unsigned iOS `.app.zip`. Its version command
+updates the mobile version and Android `versionCode` independently. Android update checks use that repository;
+producing an installable iOS IPA still requires signing credentials and a provisioning profile.
 
 ## Adding a Feature
 
