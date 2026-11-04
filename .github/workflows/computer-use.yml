@@ -51,7 +51,8 @@ jobs:
           fi
       - uses: actions/setup-node@v6
         with:
-          node-version: lts/*
+          # Match release builds instead of changing the runtime with each new LTS.
+          node-version: '22'
           cache: npm
       - name: Initialize shared sources
         run: git submodule update --init shared apps/web
@@ -73,7 +74,10 @@ jobs:
         run: node scripts/build-desktop-video-macos.mjs
       - name: Build the universal privacy helper and test recovery protocol without changing displays
         run: node scripts/prepare-desktop-privacy.mjs
-      - run: npm run build:desktop
+      - name: Build desktop frontend
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npm run build:desktop
       - run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
       - run: cargo clippy --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
       # Re-entering Cargo for each filter rebuilt the Tauri test binary on Intel and exhausted the job deadline.
