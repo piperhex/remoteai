@@ -17,7 +17,9 @@ Keep all instructions in this `AGENTS.md` file in English.
 - `apps/native` is the optional `https://github.com/piperhex/remoteai-native.git` submodule.
   Follow its `AGENTS.md`; commit and push child changes before updating the parent gitlink.
 - Native owns its dependencies, tests, Android/iOS builds, versions and CI releases. Keep it out of the
-  parent npm workspaces and desktop releases; parent installs and checks must work without initializing it.
+  parent npm workspaces and build jobs; parent installs and checks must work without initializing it.
+  Parent releases mirror verified, published Native packages for downloads and legacy Android updates.
+  Preserve their original versions and bytes; never rebuild or relabel them as desktop versions.
 - Export shared/application/Rust dependency snapshots with `npm run export:native`. Do not hand-edit
   generated vendor files. Native uses the independent published `@remoteai/i18n` package.
 - See `docs/native-submodule.md` for development, release and update-mirror integration.

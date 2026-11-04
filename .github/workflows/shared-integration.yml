@@ -53,6 +53,7 @@ jobs:
         run: >-
           node --test scripts/git-hook-environment.test.mjs scripts/native-release-isolation.test.mjs
           scripts/release-workflow.test.mjs scripts/organize-release-downloads.test.mjs
+          scripts/sync-native-release.test.mjs
           scripts/i18n-host-manifest.test.mjs
       - run: npm run check:i18n
       - run: npx lerna run check --stream

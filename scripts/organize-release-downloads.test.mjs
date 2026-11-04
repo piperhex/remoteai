@@ -64,6 +64,16 @@ test("keeps download links compatible with legacy mobile release names", () => {
   assert.match(body, /\/CodexSwitch-ios-unsigned\.app\.zip\)/);
 });
 
+test("links mirrored Native packages under the parent tag without changing their independent version", () => {
+  const release = fixture();
+  const apk = release.assets.find(asset => asset.name.endsWith('.apk'));
+  apk.name = 'RemoteAI-android-v2.4.0.apk';
+  apk.browser_download_url = apk.browser_download_url.replace('RemoteAI-android-v1.2.3.apk', apk.name);
+  const body = createReleaseBody(release);
+  assert.match(body, /\/releases\/download\/v1\.2\.3\/RemoteAI-android-v2\.4\.0\.apk\)/);
+  assert.match(body, /\/releases\/download\/v1\.2\.3\/RemoteAI-ios-unsigned\.app\.zip\)/);
+});
+
 test("desktop releases link to the independent native repository without requiring mobile artifacts", () => {
   const release = fixture();
   release.assets = release.assets.filter(asset => !asset.name.startsWith("RemoteAI-"));
