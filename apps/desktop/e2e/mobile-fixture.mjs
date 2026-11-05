@@ -15,6 +15,10 @@ const devices = [{ deviceId: 'computer', name: '我的工作电脑', platform: '
   localProxyRunning: false, capabilities: [], lastSeenAt: new Date().toISOString() }];
 let page;
 let blockMobileConnections = false;
+let initialRelayIssue = null;
+const relayIssueFrame = reason => reason ? { type: 'relay-quota', reason } : { type: 'relay-usage', usage: {
+  monthUsedBytes: 0, monthlyLimitBytes: -1, resetAt: '2027-01-01T00:00:00Z',
+} };
 const previewImage = await readFile(new URL('../src-tauri/icons/32x32.png', import.meta.url));
 const httpServer = http.createServer((request, response) => {
   if (request.url === '/test/preview.png') {
@@ -101,6 +105,7 @@ const httpServer = http.createServer((request, response) => {
   }
   if (request.url === '/test/reset' && request.method === 'POST') {
     blockMobileConnections = false;
+    initialRelayIssue = null;
     for (const client of mobileClients) client.terminate();
     relayFrames = 0;
     // The page load event can precede the chat harness's asynchronous initialization.
@@ -121,6 +126,18 @@ const httpServer = http.createServer((request, response) => {
   if (request.url === '/test/fallback' && request.method === 'POST') {
     void page.evaluate(() => window.chatTest.fallback()).then(() => response.end('{}'))
       .catch(() => response.writeHead(503).end('{}'));
+    return;
+  }
+  if (request.url === '/test/relay-issue' && request.method === 'POST') {
+    void (async () => {
+      let body = '';
+      for await (const chunk of request) body += chunk.toString();
+      const { reason, initial } = JSON.parse(body);
+      if (![null, 'unavailable', 'quota'].includes(reason)) throw new Error('Invalid fixture reason');
+      if (initial) initialRelayIssue = reason;
+      for (const client of mobileClients) client.send(JSON.stringify(relayIssueFrame(reason)));
+      response.end('{}');
+    })().catch(() => response.writeHead(400).end('{}'));
     return;
   }
   if (request.url === '/test/disconnect' && request.method === 'POST') {
@@ -172,6 +189,7 @@ wss.on('connection', (socket, request) => {
         mobileClients.add(socket);
         mobileConnections += 1;
         if (blockMobileConnections) { socket.close(4004, 'Emulator unavailable test'); return; }
+        if (initialRelayIssue) socket.send(JSON.stringify(relayIssueFrame(initialRelayIssue)));
       }
       session.join(socket, { role: frame.role, deviceId: 'computer', ownerId: profile.id,
         expiresAt: Date.now() + 3600_000 }, frame, []);

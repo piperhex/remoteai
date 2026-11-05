@@ -14,6 +14,7 @@ vi.mock('../../../../shared/remote-chat/link', () => ({ ChatLink: class {
   offer = async () => undefined;
   send = state.send;
   setRelayAvailable = state.relay;
+  setRelayQuotaBlocked = vi.fn();
   renew = state.renew;
   close = state.close;
 } }));
@@ -34,6 +35,7 @@ let connection: ChatConnection;
 const mode = vi.fn();
 const ready = vi.fn();
 const error = vi.fn();
+const relayIssue = vi.fn();
 const upload = vi.fn();
 const renewAuthorization = vi.fn(async (): Promise<void> => undefined);
 const credentials = { baseUrl: 'https://test', accessToken: 'token' };
@@ -43,7 +45,8 @@ beforeEach(async () => {
   credentials.accessToken = 'token';
   Socket.instances = [];
   vi.stubGlobal('WebSocket', Socket);
-  connection = new ChatConnection({ deviceId: 'pc', retryRandom: () => 1, mode, ready, error, upload, event: vi.fn(), renewAuthorization,
+  connection = new ChatConnection({ deviceId: 'pc', retryRandom: () => 1, mode, ready, error, relayIssue,
+    upload, event: vi.fn(), renewAuthorization,
     authorize: async () => credentials,
     randomBytes: (size) => new Uint8Array(size).fill(1),
     createPeer: () => { throw new Error('unused'); },
@@ -60,6 +63,20 @@ afterEach(() => { connection.stop(); vi.useRealTimers(); vi.unstubAllGlobals(); 
 
 it('applies the initial authenticated lease to the created transport', () => {
   expect(state.renew).toHaveBeenCalledWith(Date.now() + 120_000);
+});
+
+it.each(['unavailable', 'quota'])('reports relay %s separately from chat failures and clears it on recovery', async reason => {
+  Socket.instances[0].receive({ type: 'relay-quota', reason });
+  await vi.advanceTimersByTimeAsync(0);
+  expect(relayIssue).toHaveBeenLastCalledWith(reason);
+  expect(error).not.toHaveBeenCalled();
+  expect(ready).toHaveBeenCalledOnce();
+  Socket.instances[0].receive({ type: 'relay-usage', usage: {
+    monthUsedBytes: 0, monthlyLimitBytes: -1, resetAt: '2026-12-01T00:00:00Z',
+  } });
+  await vi.advanceTimersByTimeAsync(0);
+  expect(relayIssue).toHaveBeenLastCalledWith(null);
+  expect(error).not.toHaveBeenCalled();
 });
 
 it('does not reset coordinator failures when the retained P2P path changes mode', async () => {
