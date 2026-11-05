@@ -21,6 +21,9 @@ use super::{
 };
 
 type Socket = WebSocket<MaybeTlsStream<TcpStream>>;
+#[path = "client_file_runtime.rs"]
+mod file;
+pub(super) use file::run_file;
 #[cfg(test)]
 #[path = "client_assistance_tests.rs"]
 mod assistance_tests;
@@ -93,6 +96,7 @@ fn connect(
     );
     let now = Instant::now();
     ClientRuntime {
+        file_only: false,
         auth_renewal: super::auth_renewal::AuthRenewal::default(),
         socket,
         tcp: super::tcp::ClientSession::new(life.tcp_authority.clone(), request.client_id.clone()),
@@ -115,7 +119,7 @@ fn authentication_message(request: &OpenRequest, config: &Config, bulk: bool) ->
         "type": "authenticate", "role": "mobile", "accessToken": config.access_token,
         "deviceId": request.device_id, "publicKey": request.public_key,
         "transportVersion": 2, "binaryRelay": true, "tcpPunch": true, "nativeTraversal": true,
-        "fileBulkV1": bulk,
+        "fileBulkV1": bulk, "fileConnectionV1": true,
         "clientInfo": { "name": "Remote AI PC", "platform": std::env::consts::OS },
     });
     // Both backends treat the presence of resume as a recovery attempt, including null.
@@ -130,6 +134,7 @@ fn authentication_message(request: &OpenRequest, config: &Config, bulk: bool) ->
 }
 
 struct ClientRuntime {
+    file_only: bool,
     auth_renewal: super::auth_renewal::AuthRenewal,
     socket: Socket,
     tcp: super::tcp::ClientSession,
@@ -153,7 +158,7 @@ impl ClientRuntime {
             let Some(current) = current.filter(|current| config.same_owner(current)) else {
                 return Ok(4001);
             };
-            if current.access_token != config.access_token {
+            if !self.file_only && current.access_token != config.access_token {
                 let Some(frame) = self.auth_renewal.request(&current.access_token) else {
                     return Ok(1006);
                 };
@@ -196,6 +201,9 @@ impl ClientRuntime {
                 Ok(ClientCommand::BulkAck(sequence)) => self.bulk.acknowledge(sequence),
                 Ok(ClientCommand::Bulk(request)) => self.send_bulk(request)?,
                 Ok(ClientCommand::Send(message)) => {
+                    if self.file_only {
+                        return Err(ChatError::InvalidFrame);
+                    }
                     if self.session_id.as_deref() != Some(message.session_id()) {
                         return Err(ChatError::InvalidFrame);
                     }
@@ -274,6 +282,20 @@ impl ClientRuntime {
         let frame: serde_json::Value =
             serde_json::from_str(&data).map_err(|_| ChatError::InvalidFrame)?;
         self.auth_renewal.receive(&frame);
+        if self.file_only {
+            if frame["sessionId"].as_str() != self.session_id.as_deref()
+                || !matches!(
+                    frame["type"].as_str(),
+                    Some("file-relay-ready" | "relay-quota")
+                )
+            {
+                return Err(ChatError::InvalidFrame);
+            }
+            if frame["type"] == "file-relay-ready" {
+                self.binary_relay = true;
+                self.bulk.negotiate(frame["fileBulkV1"] == true);
+            }
+        }
         if frame["type"] == "chat-policy" {
             self.binary_relay |= frame["binaryRelay"] == true;
             self.bulk.negotiate(frame["fileBulkV1"] == true);
@@ -281,9 +303,11 @@ impl ClientRuntime {
         if matches!(frame["type"].as_str(), Some("paired" | "resumed")) {
             self.session_id = frame["sessionId"].as_str().map(str::to_owned);
         }
-        self.tcp
-            .receive(&frame)
-            .map_err(|_| ChatError::InvalidFrame)?;
+        if !self.file_only {
+            self.tcp
+                .receive(&frame)
+                .map_err(|_| ChatError::InvalidFrame)?;
+        }
         if !self.bridge.enqueue(Envelope {
             generation: 0,
             event: Event::Message { data },

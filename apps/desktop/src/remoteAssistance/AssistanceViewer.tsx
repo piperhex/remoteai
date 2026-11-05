@@ -8,6 +8,7 @@ import { createDesktopPeer } from '../remoteChat/peer';
 import { createDesktopNativePath } from '../remoteChat/nativePath';
 import { createDesktopPacketCompression } from '../remoteChat/packetCompression';
 import { NativeGuiSocket } from '../pages/codexGui/remote/nativeSocket';
+import { NativeFileSocket } from '../remoteChat/fileSocket';
 import type { GuiCloudIdentity } from '../../../../shared/conversation/remote/types';
 import { localDesktopClipboard } from '../../../../shared/remote-desktop/local/localClipboard';
 import { uiText } from "../../../../shared/localization/uiText";
@@ -28,6 +29,7 @@ export function AssistanceViewer({ invitation, identity, close }: {
     randomBytes: length => crypto.getRandomValues(new Uint8Array(length)),
     authorize: async () => ({ baseUrl: identity.baseUrl, accessToken: '' }),
     createSocket: () => new NativeGuiSocket(identity, invitation.id),
+    createFileSocket: () => new NativeFileSocket(),
     createPeer: createDesktopPeer, createNativePath: createDesktopNativePath,
     createPacketCompression: createDesktopPacketCompression,
     mode: mode => { if (mode === 'offline' || mode === 'connecting') setReady(false); },

@@ -15,6 +15,9 @@ mod renewal_tests;
 #[path = "client_bulk_runtime_tests.rs"]
 mod bulk_runtime_tests;
 
+#[path = "client_file_tests.rs"]
+mod file_tests;
+
 fn request() -> OpenRequest {
     OpenRequest {
         client_id: uuid::Uuid::new_v4().to_string(),

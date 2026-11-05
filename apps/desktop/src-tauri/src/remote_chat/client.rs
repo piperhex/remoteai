@@ -13,6 +13,7 @@ use tokio::sync::{mpsc, watch, Mutex};
 use super::{bridge::Batch, config::Config, protocol::Outgoing, ClientRequest};
 
 const UNAVAILABLE: &str = "连接暂时不可用，请重新选择电脑。";
+const MAX_CLIENT_CONNECTIONS: usize = 64;
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -129,6 +130,60 @@ impl ClientConnections {
 struct ClientState {
     connections: Arc<Mutex<ClientConnections>>,
     configs: watch::Receiver<Option<Config>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct FileOpenRequest {
+    pub(super) client_id: String,
+    pub(super) session_id: String,
+    pub(super) ticket: String,
+    bulk_events: tauri::ipc::JavaScriptChannelId,
+}
+
+#[tauri::command]
+pub(crate) async fn gui_remote_file_open(
+    app: AppHandle,
+    window: Webview,
+    request: FileOpenRequest,
+    events: Channel<Batch>,
+) -> Result<(), String> {
+    require_main(&window)?;
+    for value in [&request.client_id, &request.session_id, &request.ticket] {
+        uuid::Uuid::parse_str(value).map_err(|_| UNAVAILABLE)?;
+    }
+    let state = app.try_state::<ClientState>().ok_or(UNAVAILABLE)?;
+    let (commands, receiver) = mpsc::channel(super::protocol::COMMAND_LIMIT);
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let connections = state.connections.clone();
+    let mut guard = connections.lock().await;
+    if guard.0.len() >= MAX_CLIENT_CONNECTIONS {
+        return Err(UNAVAILABLE.into());
+    }
+    guard.insert(
+        request.client_id.clone(),
+        ConnectionHandle {
+            cancelled: cancelled.clone(),
+            commands,
+        },
+    );
+    drop(guard);
+    let life = super::client_runtime::Lifecycle {
+        configs: state.configs.clone(),
+        cancelled: cancelled.clone(),
+        tcp_authority: app.state::<super::tcp::State>().client_authority.clone(),
+        bulk_events: Some(request.bulk_events.channel_on(window)),
+        port_streams: app
+            .state::<Arc<crate::port_mapping::State>>()
+            .inner()
+            .clone(),
+    };
+    std::thread::spawn(move || {
+        let client_id = request.client_id.clone();
+        super::client_runtime::run_file(request, events, receiver, life);
+        connections.blocking_lock().finished(&client_id, &cancelled);
+    });
+    Ok(())
 }
 
 pub(super) fn require_main(window: &Webview) -> Result<(), String> {

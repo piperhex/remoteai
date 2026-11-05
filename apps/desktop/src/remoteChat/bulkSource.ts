@@ -81,6 +81,7 @@ export class BulkSource {
   private async prepare(open: BulkOpen): Promise<BulkOpened> {
     encodeBulkHeader({ transferId: open.transferId, epoch: open.epoch, requestId: open.id,
       block: 0, offset: 0, length: 1, sequence: 1 });
+    await this.link.bulk?.prepare();
     bulkAssert(this.link.bulk?.path === open.path && ['direct', 'relay'].includes(open.path), 'PATH_UNAVAILABLE');
     bulkAssert(!this.transfers.has(open.transferId) && !this.preparing.has(open.transferId)
       && this.transfers.size + this.preparing.size < BULK_LIMITS.activeFiles, 'RESOURCE_LIMIT');

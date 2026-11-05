@@ -26,6 +26,8 @@ import { RelayQuota } from '../../../../shared/remote-chat/relayUsage';
 import { BulkSource } from './bulkSource';
 import { BULK_OPERATION } from '../../../../shared/remote-chat/bulkControl';
 import { AssistanceHostAccess } from '../remoteAssistance/hostAccess';
+import { FileRelay } from '../../../../shared/remote-chat/fileRelay';
+import { NativeFileSocket } from './fileSocket';
 
 export class ChatHost {
   private readonly assistance = new AssistanceHostAccess(id => this.drop(id));
@@ -35,6 +37,7 @@ export class ChatHost {
   private readonly leases = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly links = new Map<string, ChatLink>();
   private readonly bulkSources = new Map<string, BulkSource>();
+  private readonly fileRelays = new Map<string, FileRelay>();
   private readonly connectedSessions = new Set<string>();
   private operations = new ChatOperations();
   private stream = new EventStream((event) => this.broadcast(event));
@@ -103,6 +106,8 @@ export class ChatHost {
     this.assistance.reset();
     for (const source of this.bulkSources.values()) source.close();
     this.bulkSources.clear();
+    for (const relay of this.fileRelays.values()) relay.close();
+    this.fileRelays.clear();
     connectionDetails.reset();
     this.quota = new RelayQuota();
     const links = [...this.links.values()];
@@ -168,6 +173,9 @@ export class ChatHost {
     if (message.type === 'peer-open') { this.open(sessionId, message); return; }
     const link = this.links.get(sessionId);
     if (!link) return;
+    if (message.type === 'resumed' || message.type === 'file-relay-reset') {
+      this.fileRelays.get(sessionId)?.configure(message.fileRelay);
+    }
     if (message.type === 'resumed') {
       this.lease(sessionId, message.expiresAt);
       if (Array.isArray(message.desktopIceServers)) {
@@ -189,12 +197,18 @@ export class ChatHost {
     this.operations.desktop.register(sessionId, (message.desktopIceServers ?? message.iceServers) as IceServer[],
       typeof message.expiresAt === 'number' ? message.expiresAt : undefined);
     const keys = keyPair((size) => crypto.getRandomValues(new Uint8Array(size)));
+    const fileRelay = new FileRelay({ sessionId,
+      createSocket: () => new NativeFileSocket(),
+      record: bytes => this.links.get(sessionId)?.bulk?.receive(bytes, 'relay'),
+      changed: () => this.links.get(sessionId)?.bulk?.relayChanged(), quota: data => { void this.receive(data); },
+      fallback: { available: () => this.bulkRelayAvailable && this.transport.ready,
+        send: bytes => this.transport.sendBulk(sessionId, [bytes]),
+        sendBatch: records => this.transport.sendBulk(sessionId, records) },
+    });
     const link = new ChatLink({
       binaryBulk: true,
       createPacketCompression: createDesktopPacketCompression,
-      bulkRelay: { available: () => this.bulkRelayAvailable && this.transport.ready,
-        send: bytes => this.transport.sendBulk(sessionId, [bytes]),
-        sendBatch: records => this.transport.sendBulk(sessionId, records) },
+      bulkRelay: fileRelay,
       sessionId, desktop: true, secret: keys.secret, publicKey: String(message.publicKey),
       transportVersion: Number(message.transportVersion),
       diagnosticsEnabled: () => this.diagnosticsEnabled,
@@ -225,6 +239,7 @@ export class ChatHost {
     });
     keys.secret.fill(0);
     this.links.set(sessionId, link);
+    this.fileRelays.set(sessionId, fileRelay); fileRelay.configure(message.fileRelay);
     this.operations.attachMappingStreams(sessionId, link);
     this.bulkSources.set(sessionId, new BulkSource(link, sessionId));
     if (message.transportVersion === 2 && typeof message.resumeToken === 'string') {
@@ -249,6 +264,7 @@ export class ChatHost {
   private drop(sessionId: string) {
     this.assistance.release(sessionId);
     this.bulkSources.get(sessionId)?.close(); this.bulkSources.delete(sessionId);
+    this.fileRelays.get(sessionId)?.close(); this.fileRelays.delete(sessionId);
     this.operations.release(sessionId);
     connectionDetails.remove(sessionId);
     const link = this.links.get(sessionId);
@@ -285,5 +301,7 @@ export class ChatHost {
     for (const link of this.links.values()) link.close();
     this.links.clear();
     this.transport.close();
+    for (const relay of this.fileRelays.values()) relay.close();
+    this.fileRelays.clear();
   }
 }

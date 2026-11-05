@@ -23,6 +23,18 @@ function fixture() {
   return { transport, record, relay, receive, failed, invalidated };
 }
 
+it('keeps independent direct file traffic through chat mode changes and relay failure', async () => {
+  const test = fixture(); test.transport.isolate(); const file = channel(); test.transport.attach(file);
+  test.invalidated.mockClear(); test.transport.setMode('connecting'); test.transport.relayChanged();
+  test.transport.setMode('relay'); test.transport.setRelayBlocked(true);
+  expect(test.transport.path).toBe('direct'); expect(test.invalidated).not.toHaveBeenCalled();
+  await test.transport.send(test.record, 'direct', new AbortController().signal);
+  expect(file.send).toHaveBeenCalledOnce();
+  file.close(); expect(test.transport.path).toBeUndefined();
+  test.transport.setRelayBlocked(false); expect(test.transport.path).toBe('relay');
+  test.transport.close(); expect(test.transport.path).toBeUndefined();
+});
+
 it('keeps a live relay transfer when background direct attempts attach, replace and close', async () => {
   const test = fixture(); const first = channel(), second = channel();
   test.transport.attach(first); test.transport.attach(second); second.close();

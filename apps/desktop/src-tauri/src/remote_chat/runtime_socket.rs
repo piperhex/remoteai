@@ -52,7 +52,7 @@ impl Runtime {
         self.binary_bulk = false;
         let config = self.config.as_ref().ok_or(ChatError::Transport)?;
         let frame = json!({ "type": "authenticate", "role": "desktop", "transportVersion": 2,
-            "binaryRelay": true, "fileBulkV1": true,
+            "binaryRelay": true, "fileBulkV1": true, "fileConnectionV1": true,
             "tcpPunch": true,
             "nativeTraversal": true,
             "remoteAssistance": cfg!(any(windows, target_os = "macos")),

@@ -434,6 +434,7 @@ pub fn run() {
             remote_chat::traversal::remote_chat_local_addresses,
             codex_gui::clipboard_images::codex_gui_remote_clipboard_images,
             remote_chat::gui_remote_open,
+            remote_chat::gui_remote_file_open,
             remote_chat::gui_remote_send,
             remote_chat::client_bulk_send::gui_remote_bulk_send,
             remote_chat::gui_remote_ack,
