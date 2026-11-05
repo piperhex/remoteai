@@ -1,5 +1,20 @@
 import { expect, test } from '@playwright/test';
 
+test('running activity text stays readable without continuous text animation', async ({ page }, info) => {
+  const local = info.project.name === 'desktop-local';
+  const mode = local ? 'local' : info.project.name === 'desktop-remote' ? 'remote' : 'web';
+  await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ body: '' }));
+  for (const dark of [false, true]) {
+    await page.goto(`deferred-tool-details-harness.html?mode=${mode}${dark ? '&dark' : ''}`);
+    const text = local ? page.locator('summary > span').first() : page.locator('.chat-activity-text');
+    await expect(text).toContainText('npm test');
+    await expect(text).toHaveCSS('animation-name', 'none');
+    await expect(text).toHaveCSS('background-image', 'none');
+    expect(await text.evaluate(node => getComputedStyle(node).color)).not.toBe('rgba(0, 0, 0, 0)');
+    await page.screenshot({ path: `../../.codex-tmp/static-activity-${info.project.name}-${dark ? 'dark' : 'light'}.png` });
+  }
+});
+
 test('loads only expanded command details, updates the final result, and stops on collapse', async ({ page }, info) => {
   const local = info.project.name === 'desktop-local';
   const mode = local ? 'local' : info.project.name === 'desktop-remote' ? 'remote' : 'web';

@@ -26,16 +26,21 @@ beforeEach(async () => {
 });
 afterEach(() => controller.dispose());
 
-it('does not read unselected history and ignores large background deltas without notifying React', async () => {
+it.each(['item/agentMessage/delta', 'item/plan/delta', 'item/commandExecution/outputDelta',
+  'item/fileChange/outputDelta', 'item/reasoning/summaryTextDelta', 'item/reasoning/textDelta'])(
+  'ignores background %s without reading history or notifying React after a frame', async method => {
   expect(vi.mocked(guiApi.request).mock.calls.filter(([request]) => request.operation === 'read')).toHaveLength(0);
   await controller.select('one');
   receive({ method: 'thread/started', params: { thread: thread('two') } });
   receive({ method: 'turn/started', params: { threadId: 'two', turn: { id: 't', status: 'inProgress', items: [] } } });
   const updated = vi.fn(); const stop = controller.subscribe(updated);
   for (let index = 0; index < 1000; index++) {
-    receive({ method: 'item/agentMessage/delta', params: { threadId: 'two', turnId: 't', itemId: 'i',
+    receive({ method, params: { threadId: 'two', turnId: 't', itemId: 'i',
       delta: 'x'.repeat(1024) } });
   }
+  expect(updated).not.toHaveBeenCalled();
+  // Wait past StreamFrame's fallback so a mistakenly queued delta cannot escape the assertion.
+  await new Promise(resolve => setTimeout(resolve, 80));
   expect(updated).not.toHaveBeenCalled();
   expect(controller.getSnapshot().conversations.two.turns[0].items).toEqual([]);
   const reads = vi.mocked(guiApi.request).mock.calls.filter(([request]) => request.operation === 'read');

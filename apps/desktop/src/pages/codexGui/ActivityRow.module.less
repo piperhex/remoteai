@@ -1,5 +1,3 @@
-@import "./activeText.less";
-
 .row { min-width: 0; color: var(--muted); font-size: calc(var(--gui-font-size, 14px) - 1px); }
 .row + .row { margin-top: -10px; }
 .summary {
@@ -38,7 +36,7 @@
 .row[data-status='inProgress'] > .summary > .icon {
   color: var(--green-dark); animation: breathe 1.5s ease-in-out infinite;
 }
-.row[data-status='inProgress'] > .summary > .preview { .activeText(); }
+.row[data-status='inProgress'] > .summary > .preview { color: var(--green-dark); }
 .row[data-status='failed'] > .summary > .icon { color: #c24047; }
 @keyframes breathe { 50% { opacity: .4; } }
 @media (hover: none) { .toggle { opacity: 1; } }
