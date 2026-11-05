@@ -18,6 +18,7 @@ const PAGE_SIZE: u64 = 50;
     rename_all_fields = "camelCase"
 )]
 pub(crate) enum GuiRequest {
+    ToolDetails(super::tool_details::Target),
     GroupMembersPage(super::group_members::Query),
     GroupThreadSummaries(super::group_members::summaries::Query),
     CozeCatalog,
@@ -87,6 +88,8 @@ pub(crate) enum GuiRequest {
     Read {
         thread_id: String,
         window: Option<super::history_page::HistoryWindow>,
+        #[serde(default)]
+        include_tool_details: bool,
     },
     Compact {
         thread_id: String,
@@ -231,6 +234,7 @@ impl GuiRequest {
     // Only this closed set of methods is exposed to the WebView.
     pub(super) fn into_rpc(self) -> Result<(&'static str, Value)> {
         match self {
+            Self::ToolDetails(_) => Err(GuiError::InvalidRequest),
             Self::GroupMembersPage(_) | Self::GroupThreadSummaries(_) => {
                 Err(GuiError::InvalidRequest)
             }

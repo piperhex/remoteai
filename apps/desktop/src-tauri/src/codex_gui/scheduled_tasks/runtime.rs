@@ -174,6 +174,7 @@ async fn refresh_run(app: AppHandle, task: &ScheduledTask) -> Result<()> {
     let observation = match request(
         &app,
         GuiRequest::Read {
+            include_tool_details: false,
             thread_id,
             window: None,
         },

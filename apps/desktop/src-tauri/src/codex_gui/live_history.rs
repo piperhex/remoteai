@@ -17,6 +17,18 @@ pub(super) struct LiveHistory {
 }
 
 impl LiveHistory {
+    pub(super) fn item(&self, thread_id: &str, turn_id: &str, item_id: &str) -> Option<Value> {
+        let turn = self.turns.get(thread_id)?;
+        if turn["id"] != turn_id {
+            return None;
+        }
+        turn["items"]
+            .as_array()?
+            .iter()
+            .find(|item| item["id"] == item_id)
+            .cloned()
+    }
+
     pub(super) fn receive(&mut self, event: &GuiEvent) {
         let Some(id) = event.params["threadId"]
             .as_str()

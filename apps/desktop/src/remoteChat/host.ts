@@ -75,7 +75,7 @@ export class ChatHost {
     }).catch(() => this.close());
     void guiApi.subscribe((event) => {
       guiSidebar.receive(event); this.stream.receive(this.operations.prepareEvent(event));
-    }).then((unsubscribe) => {
+    }, true).then((unsubscribe) => {
       if (this.closed) unsubscribe();
       else this.unsubscribe = unsubscribe;
     }).catch(() => this.close());

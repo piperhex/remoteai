@@ -49,7 +49,7 @@ function activitySummary(item: Item, text: string) {
     const action = item.commandActions?.find((entry) => entry.type !== "unknown");
     const labels: Record<string, string> = { read: uiText("client.chat.readFile"), listFiles: uiText("client.chat.browseFiles"), search: uiText("client.chat.searchCode") };
     const preview = action ? uiText("client.interface.message.7c639b", { value1: labels[action.type] || uiText("client.chat.runCommand"), value2: action.name || action.query || action.path || "" })
-      : `${commandLabel(item.status)} ${commandPreview(item.command ?? "")}`;
+      : `${commandLabel(item.status)} ${commandPreview(item.commandPreview ?? item.command ?? "")}`;
     return { icon: SquareTerminal, preview };
   }
   if (item.type === "sleep") return { icon: Clock,

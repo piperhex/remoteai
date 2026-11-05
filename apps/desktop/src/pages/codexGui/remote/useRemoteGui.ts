@@ -25,6 +25,7 @@ export function useRemoteGui(identity: GuiCloudIdentity, deviceId: string, activ
     createPacketCompression: createDesktopPacketCompression,
     registerMappingStream: registerDesktopMappingStream,
   }), undefined, undefined, createDesktopSshProfiles(identity)), [identity.baseUrl, identity.userId, deviceId]);
+  controller.deferToolDetails = true;
   const state = useSyncExternalStore(controller.subscribe, controller.snapshot);
   useActiveChatPolicy(active, state.mode);
   useEffect(() => { controller.start(); return () => controller.stop(); }, [controller]);

@@ -48,6 +48,7 @@ mod mcp_approval;
 mod message_edit;
 mod model_catalog_cache;
 mod model_discovery;
+mod tool_details;
 pub(crate) use model_catalog_cache::cached_catalog;
 pub(crate) mod model_context;
 pub(crate) mod model_settings;
@@ -216,6 +217,7 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
     };
     let client = connected(state).await?;
     match request {
+        GuiRequest::ToolDetails(target) => return tool_details::read(client, target).await,
         GuiRequest::GroupThreadSummaries(query) => {
             return group_members::summaries::load(
                 client.home.clone(),
@@ -298,6 +300,13 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
         )
         .await;
     }
+    let include_tool_details = matches!(
+        &request,
+        GuiRequest::Read {
+            include_tool_details: true,
+            ..
+        }
+    );
     let summary_only = matches!(
         &request,
         GuiRequest::Resume {
@@ -351,6 +360,11 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
         }
         if let Some(window) = history_window {
             history_page::apply(&mut data, &window)?;
+        }
+        if !include_tool_details {
+            if let Some(thread) = data.get_mut("thread") {
+                tool_details::summarize_thread(thread);
+            }
         }
         workspaces::hide_project_paths(&mut data, &response_root);
         Ok(GuiResponse { data })

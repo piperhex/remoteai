@@ -100,16 +100,33 @@ impl EventLog {
 }
 
 #[derive(Default)]
-pub(crate) struct WebEventState(Mutex<EventLog>, Mutex<HashSet<String>>);
+pub(crate) struct WebEventState(
+    Mutex<EventLog>,
+    Mutex<HashSet<String>>,
+    Mutex<HashSet<String>>,
+);
 
 #[tauri::command]
 pub(crate) async fn codex_gui_watch(
     state: tauri::State<'_, WebEventState>,
     thread_ids: Vec<String>,
+    full_detail_threads: Option<Vec<String>>,
 ) -> Result<(), String> {
     if thread_ids.len() > 256 || thread_ids.iter().any(|id| id.is_empty() || id.len() > 256) {
         return Err(super::error::GuiError::InvalidRequest.to_string());
     }
+    let full_detail_threads = full_detail_threads.unwrap_or_default();
+    if full_detail_threads
+        .iter()
+        .any(|id| !thread_ids.contains(id))
+    {
+        return Err(super::error::GuiError::InvalidRequest.to_string());
+    }
+    *state
+        .2
+        .lock()
+        .map_err(|_| super::error::GuiError::Disconnected.to_string())? =
+        full_detail_threads.into_iter().collect();
     *state
         .1
         .lock()
@@ -122,10 +139,12 @@ fn visible(event: WebEvent, viewed: &HashSet<String>) -> Option<WebEvent> {
     if event.name != "codex-gui-event" {
         return Some(event);
     }
-    super::event_visibility::filter(event.payload, viewed).map(|payload| WebEvent {
-        name: event.name,
-        payload,
-    })
+    super::event_visibility::filter(event.payload, viewed)
+        .and_then(super::tool_details::event)
+        .map(|payload| WebEvent {
+            name: event.name,
+            payload,
+        })
 }
 
 pub(crate) fn publish<R: tauri::Runtime>(
@@ -149,6 +168,33 @@ pub(crate) fn publish<R: tauri::Runtime>(
         name: name.to_owned(),
         payload,
     };
+    // Older remote clients still need complete events. New GUI views receive summaries only.
+    if name == "codex-gui-event" {
+        let legacy = state
+            .2
+            .lock()
+            .map(|ids| {
+                super::event_visibility::thread_id(&event.payload)
+                    .is_some_and(|id| ids.contains(id))
+            })
+            .unwrap_or(false);
+        let transport =
+            super::event_visibility::filter(event.payload.clone(), &viewed).and_then(|event| {
+                if legacy {
+                    Some(event)
+                } else {
+                    super::tool_details::event(event)
+                }
+            });
+        if let Some(payload) = transport {
+            if app
+                .emit_to("main", "codex-gui-transport-event", payload)
+                .is_err()
+            {
+                eprintln!("Codex GUI could not deliver a transport event");
+            }
+        }
+    }
     if let Some(desktop) = visible(event.clone(), &viewed) {
         if app.emit_to("main", name, desktop.payload).is_err() {
             eprintln!("Codex GUI could not deliver a desktop event");

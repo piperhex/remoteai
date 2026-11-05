@@ -2,6 +2,7 @@ import { fileDownloadByteLimit, imagePreviewByteLimit, textPreviewByteLimit, vid
   from '../../../../shared/remote-chat/policy';
 import { remoteAttachments } from '../../../../shared/remote-chat/composerAttachments';
 import { guiApi } from '../../../../shared/conversation/api';
+import { summarizeTools } from '../../../../shared/conversation/toolDetails';
 import type { ApprovalReply, GuiEvent, ListResponse, Request, SkillsResponse, Thread } from '../../../../shared/conversation/types';
 import { object, type ConnectionMode, type RpcRequest, type RpcResponse }
   from '../../../../shared/remote-chat/protocol';
@@ -58,6 +59,7 @@ import { RemoteDictation } from './dictation';
 import { DICTATION_OPERATION } from '../../../../shared/remote-chat/dictation';
 
 const OPERATIONS = new Set([
+  'toolDetails',
   'projectFileRead', 'projectFileBlame', 'projectFileWrite', 'projectEntryAction',
   'suggestNextPrompt',
   'guiGitGenerateMessage',
@@ -89,6 +91,7 @@ function terminalLinkRequest(request: RpcRequest): Cached['terminalLink'] {
     action: udpActions[String(stream.type)] ?? stream.type };
 }
 const READ_OPERATIONS = new Set([
+  'toolDetails',
   'viewThread',
   CODEX_STATUS_OPERATION,
   'projectFileRead',
@@ -182,6 +185,7 @@ export class ChatOperations {
       // Range reads are repeatable; caching their payloads would retain an entire file in memory.
       // Upload chunks retry fixed ranges; retaining every acknowledgement would cap large uploads at 512 requests.
       if (operation === 'videoRead' || operation === 'fileRead' || operation === 'projectFileRead'
+        || operation === 'toolDetails'
         || operation === 'projectFileBlame'
         || operation === 'guiFilePreviewText'
         || (operation === 'projectFileWrite' && typeof object(request.body).upload === 'object'
@@ -235,11 +239,12 @@ export class ChatOperations {
     if (request.method === 'connect') return this.connect(request.body);
     const body = { ...object(request.body) };
     if (request.method === 'request' && body.operation === 'viewThread') {
-      await this.views.select(owner, body.threadId);
+      await this.views.select(owner, body.threadId, true, body.deferToolDetails === true);
       return {};
     }
     if (request.method === 'request' && ['syncHistory', 'read'].includes(String(body.operation))) {
-      await this.views.select(owner, body.threadId, false);
+      await this.views.select(owner, body.threadId, false, body.deferToolDetails === true);
+      body.includeToolDetails = !this.views.deferred(owner);
     }
     if (request.method === 'request' && body.operation === GROUPS_OPERATION) return remoteGroups(body);
     if (request.method === 'request' && ['editMessage', 'deleteMessage'].includes(String(body.operation))) {
@@ -288,11 +293,12 @@ export class ChatOperations {
       let page: HistoryPage | undefined;
       const thread = await this.liveHistory.read(threadId, async () => {
         const result = await guiApi.request<{ thread: Thread; page?: HistoryPage }>({ operation: 'read', threadId,
+          includeToolDetails: !this.views.deferred(owner),
           window: { ...window, pageSize: getChatPolicy().historyPageSize } });
         page = result.page;
         return result;
       });
-      const current = effectiveProjectThread(thread);
+      const current = effectiveProjectThread(this.views.deferred(owner) ? summarizeTools(thread) : thread);
       this.commandMetrics.seed(current);
       const sliced = sliceHistory(acknowledgedMessages.merge(current), page ? { start: page.start } : window);
       return { ...historyDelta(this.images.prepare(sliced.thread, thread.id), known),

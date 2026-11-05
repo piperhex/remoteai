@@ -425,6 +425,18 @@ impl Client {
         }
     }
 
+    pub(super) fn live_item(
+        &self,
+        thread_id: &str,
+        turn_id: &str,
+        item_id: &str,
+    ) -> Result<Option<Value>> {
+        self.live_history
+            .lock()
+            .map(|history| history.item(thread_id, turn_id, item_id))
+            .map_err(|_| GuiError::Disconnected)
+    }
+
     async fn disconnect(&self, notify: bool) {
         // EOF can follow an explicit stop; always retire any final buffered lifecycle events.
         if notify {

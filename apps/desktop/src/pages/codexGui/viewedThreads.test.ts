@@ -15,10 +15,10 @@ it('serializes rapid changes and resolves only after the newest union reaches na
   expect(backend.invoke).toHaveBeenCalledTimes(1);
   finish();
   await Promise.all([first, second, third]);
-  expect(backend.invoke).toHaveBeenLastCalledWith('codex_gui_watch', { threadIds: ['b', 'c'] });
+  expect(backend.invoke).toHaveBeenLastCalledWith('codex_gui_watch', { threadIds: ['b', 'c'], fullDetailThreads: [] });
   await watchConversation(local, null);
   expect(viewedThreadIds()).toEqual(['c']);
-  expect(backend.invoke).toHaveBeenLastCalledWith('codex_gui_watch', { threadIds: ['c'] });
+  expect(backend.invoke).toHaveBeenLastCalledWith('codex_gui_watch', { threadIds: ['c'], fullDetailThreads: [] });
 });
 
 it('retries a failed subscription without losing the latest selection', async () => {
@@ -38,5 +38,5 @@ it('applies a selection changed between native acknowledgement and synchronizer 
   await Promise.resolve();
   const second = watchConversation(owner, 'b');
   await Promise.all([first, second]);
-  expect(backend.invoke).toHaveBeenLastCalledWith('codex_gui_watch', { threadIds: ['b'] });
+  expect(backend.invoke).toHaveBeenLastCalledWith('codex_gui_watch', { threadIds: ['b'], fullDetailThreads: [] });
 });

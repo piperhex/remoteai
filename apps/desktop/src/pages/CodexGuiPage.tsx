@@ -1,6 +1,7 @@
 import { displayText } from '../../../../shared/localization/uiText';
 import { ImageAiContext } from '../../../../shared/chat/ImageAiContext';
 import { DesktopUsageContext } from '../../../../shared/chat/DesktopUsageContext';
+import { ToolDetailsContext, localToolDetails } from '../../../../shared/chat/DeferredToolDetails';
 import { useUsageStatus } from './codexGui/useUsageStatus';
 import { prepareImageEdit } from '../../../../shared/remote-chat/views/prepareImageEdit';
 import { uiText } from "../../../../shared/localization/uiText";
@@ -111,7 +112,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
   const running = state.sending || Object.values(state.conversations).some((value) => value.activeTurn);
   const canQuote = state.connection === "ready" && !state.sending && !state.archived
     && state.compacting !== state.selected;
-  return <DesktopUsageContext.Provider value={{ usage, visible }}>
+  return <ToolDetailsContext.Provider value={{ load: localToolDetails, active: conversationActive && state.connection === 'ready' }}>
+    <DesktopUsageContext.Provider value={{ usage, visible }}>
     <ImageAiContext.Provider value={{ enabled: conversationActive && canQuote && !state.workspaceBusy,
     send: async (text, source) => {
       const image = await prepareImageEdit(source);
@@ -199,5 +201,5 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
   </ChatFileReferencesProvider></DetailsWorkspace>
   </TerminalWorkspaceProvider>
   </WorkspaceOperationContext.Provider></DiffTextContext.Provider></ImageAiContext.Provider>
-  </DesktopUsageContext.Provider>;
+  </DesktopUsageContext.Provider></ToolDetailsContext.Provider>;
 }

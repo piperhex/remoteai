@@ -48,3 +48,17 @@ it('supports older clients through implicit history subscriptions', async () => 
   await views.select('old-phone', 'two', false);
   expect(viewedThreadIds()).toEqual(['two']);
 });
+
+it('sends summaries to new viewers while preserving full events for legacy viewers and approvals', async () => {
+  await views.select('browser', 'one', true, true);
+  await views.select('old-phone', 'one');
+  const event: GuiEvent = { method: 'item/completed', params: { threadId: 'one', turnId: 'turn',
+    item: { id: 'command', type: 'commandExecution', command: 'echo full', aggregatedOutput: 'x'.repeat(1_000_000) } } };
+  expect(JSON.stringify(views.event('browser', event)).length).toBeLessThan(1000);
+  expect(views.event('browser', event)?.params.item?.detailsRef?.itemId).toBe('command');
+  expect(views.event('old-phone', event)).toBe(event);
+  expect(views.event('browser', { ...event, id: 0 })).toBeDefined();
+  expect(views.event('browser', { ...event, id: 0 })?.params.item?.aggregatedOutput).toHaveLength(1_000_000);
+  expect(views.event('browser', { method: 'item/commandExecution/outputDelta',
+    params: { threadId: 'one', itemId: 'command', delta: 'large' } })).toBeUndefined();
+});

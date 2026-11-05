@@ -13,6 +13,7 @@ import { CollaborationDetails } from "./CollaborationDetails";
 import { isCollaborationActivity } from "../../../../../shared/conversation/collaborationActivity";
 import { CommandOutput } from "../../../../../shared/chat/CommandOutput";
 import { toolResultPresentation } from "../../../../../shared/chat/toolResult";
+import { DeferredToolDetails } from "../../../../../shared/chat/DeferredToolDetails";
 
 function record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -62,6 +63,10 @@ function ToolResult({ item }: { item: Item }) {
 }
 
 export function ToolDetails({ item, text }: { item: Item; text: string }) {
+  return <DeferredToolDetails item={item}>{loaded => <ToolDetailsBody item={loaded} text={text} />}</DeferredToolDetails>;
+}
+
+function ToolDetailsBody({ item, text }: { item: Item; text: string }) {
   if (["reasoning", "plan", "enteredReviewMode", "exitedReviewMode"].includes(item.type)) {
     return <ToolText text={text} markdown />;
   }
