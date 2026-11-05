@@ -4,8 +4,8 @@ use super::*;
 
 fn connection() -> (TcpStream, TcpStream) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    listener.set_nonblocking(true).unwrap();
     let client = TcpStream::connect(listener.local_addr().unwrap()).unwrap();
+    // CI delays loopback packets, so wait for the server-side handshake before accepting.
     let (server, _) = listener.accept().unwrap();
     // Reproduce Windows inheritance on every test platform.
     server.set_nonblocking(true).unwrap();
