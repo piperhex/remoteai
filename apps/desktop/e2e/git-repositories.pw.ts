@@ -31,7 +31,8 @@ for (const mode of ['local', 'remote', 'web']) {
       const tree = page.getByRole('tree', { name: 'Git 仓库', exact: true });
       const childFile = page.getByRole('checkbox', { name: '选择 packages/shared/src/app.ts', exact: true });
       await expect(childFile).toBeVisible();
-      await expect(tree.getByRole('checkbox', { name: '选择 apps/native', exact: true })).toBeDisabled();
+      await expect(tree.getByRole('checkbox', { name: '选择 apps/native', exact: true })).toHaveCount(0);
+      await expect(tree.getByRole('checkbox', { name: '选择 apps', exact: true })).toHaveCount(0);
       if (enlarged) await page.getByRole('separator', { name: '调整详情抽屉宽度' }).press('Home');
       if (!enlarged) await checkTreeMenus(page);
       await childFile.check();
@@ -72,6 +73,14 @@ for (const mode of ['local', 'remote', 'web']) {
       await expect(childFile).toHaveCount(0);
       await expect(page.getByRole('checkbox', { name: '选择 src/app.ts', exact: true })).toHaveCount(0);
       await expect(page.getByRole('checkbox', { name: '选择 packages/shared/README.md', exact: true })).toBeVisible();
+      await page.getByRole('checkbox', { name: '全选', exact: true }).check();
+      await page.getByRole('textbox', { name: '提交说明', exact: true }).fill('docs: update readme files');
+      await page.getByRole('button', { name: /^提交 2 个文件$/ }).click();
+      await expect(tree.getByRole('treeitem')).toHaveCount(0);
+      await expect(tree).toContainText('工作区没有未提交的改动。');
+      await page.screenshot({ path: info.outputPath(`${mode}-clean-workspace.png`), animations: 'disabled' });
+      await page.getByRole('tab', { name: '提交记录', exact: true }).click();
+      await expect(repository.locator('option[value="C:/project/packages/shared"]')).toHaveCount(1);
     });
   }
 }

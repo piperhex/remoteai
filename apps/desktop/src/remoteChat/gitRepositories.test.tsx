@@ -41,7 +41,7 @@ function fixture() {
   return { client, states, events, workspace: createGitWorkspaceClient(client, '/project').client };
 }
 
-it('merges file paths into one tree and keeps missing or clean submodules visible without reading them', async () => {
+it('merges changed paths into one tree without adding empty repository nodes', async () => {
   const test = fixture();
   const state = await test.workspace.changes('/project');
   expect(state.files.map(file => file.path)).toEqual(['file.txt', 'child/file.txt', 'child/nested/file.txt']);
@@ -50,7 +50,8 @@ it('merges file paths into one tree and keeps missing or clean submodules visibl
   expect(child.repository?.root).toBe('/project/child');
   expect(child.files).toHaveLength(2);
   expect(child.children.find(node => node.name === 'nested')?.repository?.available).toBe(true);
-  expect(tree.find(node => node.path === 'missing')?.repository?.available).toBe(false);
+  expect(tree.find(node => node.path === 'missing')).toBeUndefined();
+  expect(fileTree([], state.repositories)).toEqual([]);
   expect(test.client.changes).not.toHaveBeenCalledWith('/project/missing');
   await test.workspace.diff('/project', 'child/nested/file.txt');
 });
