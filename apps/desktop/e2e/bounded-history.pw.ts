@@ -60,7 +60,7 @@ for (const width of [390, 1280]) {
     await expect(page.locator('[data-message-id="message-239"]')).toBeInViewport();
     await page.getByRole('button', { name: '离开对话' }).click();
     await publish(page, 300);
-    await expect(messages).toHaveCount(0);
+    await expect(page.locator('[data-message-id]:visible')).toHaveCount(0);
     await page.getByRole('button', { name: '返回对话' }).click();
     await expect(messages).toHaveCount(10);
     await expect(page.locator('[data-message-id="message-299"]')).toBeInViewport();

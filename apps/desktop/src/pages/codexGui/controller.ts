@@ -310,6 +310,15 @@ export class GuiController {
     selectionGeneration: () => this.selectionGeneration, select: this.select, refresh: () => this.refresh(false, false),
   }, threadId, turnId);
 
+  loadOlderHistory = async () => {
+    this.flushStream();
+    const id = this.state.selected;
+    const generation = this.selectionGeneration;
+    if (!id) return;
+    try { return await this.history.loadOlder(id, () => generation === this.selectionGeneration); }
+    catch (error) { if (generation === this.selectionGeneration) this.report(error); }
+  };
+
   /** Load the phone's conversation without changing the conversation selected on the PC. */
   loadRemoteThread = (threadId: string): Promise<void> => {
     this.conversationCache.touch(threadId);

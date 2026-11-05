@@ -109,10 +109,11 @@ test("a cached 2000-message conversation mounts ten at entry and preserves the a
   await expect(page.locator("[data-message-id]")).toHaveCount(10);
   await expect(page.locator('[data-message-id="message-1999"]')).toBeInViewport();
   await older(page, 20);
+  const readingAnchor = await page.locator('[data-message-id]').first().getAttribute('data-message-id');
   await page.getByRole("button", { name: "离开对话" }).click();
   await page.getByRole("button", { name: "返回对话" }).click();
-  await expect(page.locator("[data-message-id]")).toHaveCount(10);
-  await expect(page.locator('[data-message-id="message-1999"]')).toBeInViewport();
+  await expect(page.locator("[data-message-id]")).toHaveCount(20);
+  await expect(page.locator('[data-message-id]').first()).toHaveAttribute('data-message-id', readingAnchor!);
 });
 
 test("streamed replies and typing stay live while browsing older components", async ({ page }) => {
@@ -121,15 +122,17 @@ test("streamed replies and typing stay live while browsing older components", as
   await page.getByRole("button", { name: "开始回复" }).click();
   const live = page.locator('[data-message-id="live"]');
   await expect(live).toContainText("实时回复");
-  await older(page, 20);
   const previous = await live.textContent();
+  await older(page, 20);
   const before = Number(await page.getByLabel("刷新次数").textContent());
   await page.getByLabel("消息", { exact: true }).fill("加载历史时继续输入");
   await expect(page.getByLabel("消息", { exact: true })).toHaveValue("加载历史时继续输入");
-  await expect.poll(() => live.textContent()).not.toBe(previous);
+  // Offscreen message bodies are virtualized; verify the stream after returning to it.
   await expect.poll(async () => Number(await page.getByLabel("刷新次数").textContent())).toBeGreaterThan(before + 3);
   await expect(page.locator("[data-message-id]")).toHaveCount(20);
   await expect(page.getByRole("button", { name: "回到最新消息" })).toBeVisible();
   await page.getByRole("button", { name: "回到最新消息" }).click();
   await expect(live).toBeInViewport();
+  await expect(live).toContainText('实时回复');
+  await expect.poll(() => live.textContent()).not.toBe(previous);
 });

@@ -32,6 +32,7 @@ pub(crate) mod git;
 mod goals;
 mod group_members;
 pub(crate) mod help_assistant;
+mod history_page;
 mod home;
 mod icons;
 mod identity;
@@ -295,6 +296,13 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
         )
         .await;
     }
+    let history_window = match &request {
+        GuiRequest::Read { window, .. } => window.clone(),
+        _ => None,
+    };
+    if let Some(window) = &history_window {
+        window.validate()?;
+    }
     let projectless_root = client.projectless_root.clone();
     let response_root = projectless_root.clone();
     let upload_policy = Arc::clone(&state.upload_policy);
@@ -322,9 +330,18 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
     } else {
         None
     };
-    let mut data = icons::resolve(method, client.request(method, params).await?).await?;
-    workspaces::hide_project_paths(&mut data, &response_root);
-    Ok(GuiResponse { data })
+    let data = icons::resolve(method, client.request(method, params).await?).await?;
+    // Discard unrequested history before serializing IPC, away from the UI and async workers.
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut data = data;
+        if let Some(window) = history_window {
+            history_page::apply(&mut data, &window)?;
+        }
+        workspaces::hide_project_paths(&mut data, &response_root);
+        Ok(GuiResponse { data })
+    })
+    .await
+    .map_err(|_| GuiError::InvalidRequest)?
 }
 
 #[tauri::command]

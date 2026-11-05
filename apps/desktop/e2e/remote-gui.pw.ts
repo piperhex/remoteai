@@ -1,10 +1,9 @@
-import { createRequire } from 'node:module';
 import { once } from 'node:events';
+import { fileURLToPath } from 'node:url';
 import { test, expect, type Page } from '@playwright/test';
-import type { WebSocketServer as Server } from 'ws';
+import { WebSocketServer, type WebSocketServer as Server } from 'ws';
 import type { AddressInfo } from 'node:net';
-import type { ChatSessions as Sessions } from '../../admin/src/modules/devices/chat/chat-sessions';
-import type { ChatIdentity } from '../../admin/src/modules/devices/chat/protocol';
+import { ChatSessionsFixture } from '../../../shared/testing/chatSessions.mjs';
 import type { desktopTest } from '../../web/e2e/remote-desktop-fixture';
 import './chat-harness-types';
 import { checkGitDiffReview } from './git-diff-checks';
@@ -17,16 +16,11 @@ import { checkModelAvailability } from './model-availability-checks';
 
 declare global { interface Window { desktopTest: typeof desktopTest } }
 
-const require = createRequire(import.meta.url);
-const { WebSocketServer } = createRequire(new URL('../../admin/package.json', import.meta.url))('ws') as {
-  WebSocketServer: typeof Server;
-};
-const { ChatSessions } = require('../../admin/dist/modules/devices/chat/chat-sessions.js') as { ChatSessions: typeof Sessions };
 let server: Server;
 let endpoint: string;
 
 test.beforeEach(async () => {
-  const sessions = new ChatSessions();
+  const sessions = new ChatSessionsFixture();
   server = new WebSocketServer({ port: 0, host: '127.0.0.1' });
   await once(server, 'listening');
   endpoint = `ws://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -36,7 +30,7 @@ test.beforeEach(async () => {
       const frame = JSON.parse(raw.toString());
       if (joined) { sessions.route(socket, frame); return; }
       joined = true;
-      const identity: ChatIdentity = { role: frame.role, deviceId: frame.deviceId, ownerId: 'owner',
+      const identity = { role: frame.role, deviceId: frame.deviceId, ownerId: 'owner',
         expiresAt: Date.now() + 300_000 };
       sessions.join(socket, identity, frame, []);
     });
@@ -156,11 +150,11 @@ test('remote GUI switches to Japanese without losing its connection or draft', a
   await page.getByRole('button', { name: 'My project', exact: true }).click();
   await expect(page.locator('.chat-connection-status')).toContainText('Relay');
   await page.getByRole('textbox', { name: '聊天消息', exact: true }).fill('保留草稿 / draft');
-  await page.evaluate(async () => {
-    const module = '/src/i18n/uiText.ts';
+  const languageModule = fileURLToPath(new URL('../../../shared/localization/uiText.ts', import.meta.url));
+  await page.evaluate(async module => {
     const { setGuiLanguage }: typeof import('../../../shared/localization/uiText') = await import(module);
     setGuiLanguage('ja');
-  });
+  }, `/@fs/${languageModule.replaceAll('\\', '/')}`);
   await expect(page.getByRole('textbox', { name: 'チャットメッセージ', exact: true })).toHaveValue('保留草稿 / draft');
   await expect(page.getByRole('button', { name: 'メッセージを送信', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: 'ポートマッピング', exact: true })).toBeVisible();
@@ -348,10 +342,10 @@ for (const blocked of [false, true]) {
     await expect(page.getByRole('button', { name: '打开 Git', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '打开工具箱', exact: true })).toHaveCount(0);
     await page.screenshot({ path: `../../.codex-tmp/gui-local-git-${blocked ? 'relay' : 'p2p'}.png` });
-    await page.getByRole('button', { name: '打开 Git', exact: true }).click();
-    await expect(page.getByRole('dialog', { name: 'Git', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '选择项目文件夹：workspace', exact: true }))
       .toHaveAttribute('title', '/local/workspace');
+    await page.getByRole('button', { name: '打开 Git', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Git', exact: true })).toBeVisible();
     await checkGitDiffReview(page, `gui-local-git-diff-${blocked ? 'relay' : 'p2p'}`);
     await page.getByRole('button', { name: '关闭详情抽屉', exact: true }).click();
     await chooseComputer(page, 'Office PC');
@@ -364,10 +358,10 @@ for (const blocked of [false, true]) {
     await cliUpdate.click();
     await expect(page.getByRole('button', { name: '打开工具箱', exact: true })).toHaveCount(0);
     await page.screenshot({ path: `../../.codex-tmp/gui-remote-git-${blocked ? 'relay' : 'p2p'}.png` });
-    await page.locator('.gui-remote-project').getByRole('button', { name: '打开 Git', exact: true }).click();
-    await expect(page.getByRole('dialog', { name: 'Git', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '选择远程项目', exact: true }))
       .toHaveAttribute('title', 'F:/projects/demo');
+    await page.locator('.gui-remote-project').getByRole('button', { name: '打开 Git', exact: true }).click();
+    await expect(page.getByRole('dialog', { name: 'Git', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '切换主机：Office PC', exact: true })).toBeVisible();
     await expect.poll(() => office.evaluate(() => window.chatTest.demoState().operations
       .some(operation => operation.operation === 'guiGitChanges' && operation.cwd === 'F:/projects/demo'))).toBe(true);
@@ -562,6 +556,7 @@ test('searches hosts beside the project picker and stays usable during slow disc
     await page.screenshot({ path: '../../.codex-tmp/gui-host-picker-narrow.png' });
     await menu.getByRole('menuitemradio', { name: '本地', exact: true }).click();
     await expect(page.getByRole('textbox', { name: '本机草稿' })).toHaveValue('Local unsent draft');
+    await page.getByRole('button', { name: '更多项目选项', exact: true }).click();
     await expect(page.getByRole('button', { name: '选择项目文件夹：workspace', exact: true })).toBeVisible();
   });
 
@@ -687,7 +682,9 @@ test('keeps the account panel and device dropdown compact and responsive during 
   await search.press('Escape');
   await chooseComputer(page, 'Office PC');
   await expect(page.getByRole('region', { name: 'Codex GUI：Office PC' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '发送消息', exact: true })).toBeDisabled();
+  await expect(page.getByRole('alert')).toContainText('电脑的聊天连接尚未就绪');
+  await expect(page.getByRole('button', { name: '发送消息', exact: true })
+    .and(page.locator(':enabled'))).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: '本机草稿' })).toHaveCount(0);
   await page.getByRole('button', { name: '打开聊天列表', exact: true }).click();
   await chooseComputer(page, '本机');

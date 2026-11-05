@@ -39,6 +39,7 @@ async fn delete_thread(
     thread_id: String,
 ) -> Result<DeletionReport> {
     GuiRequest::Read {
+        window: None,
         thread_id: thread_id.clone(),
     }
     .into_rpc()?;

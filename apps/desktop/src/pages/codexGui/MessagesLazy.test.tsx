@@ -200,3 +200,23 @@ it("does not mount old generated image previews until their history batch is loa
   await older();
   expect(container.querySelector('[aria-label="生成的图片"] img')).not.toBeNull();
 });
+
+it('keeps an inspected process expanded when a backend page prepends activities to the same turn', async () => {
+  const full = conversation();
+  full.turns[0].items.forEach(entry => { entry.phase = 'commentary'; });
+  let value = { ...full, turns: [{ ...full.turns[0], items: full.turns[0].items.slice(-10) }],
+    historyPage: { hasMore: true } };
+  const draw = () => root.render(<Messages selected="chat" value={value} onLoadOlder={async () => {
+    value = { ...value, turns: full.turns, historyPage: { hasMore: false } };
+    draw();
+    return value.turns;
+  }} />);
+  await act(async () => draw());
+  const details = container.querySelector('details')!;
+  await act(async () => { details.open = true; details.dispatchEvent(new Event('toggle')); });
+  await older();
+  expect(container.querySelector('details')).toBe(details);
+  expect(details.open).toBe(true);
+  expect(count()).toBe(35);
+  expect(button()).toBeUndefined();
+});

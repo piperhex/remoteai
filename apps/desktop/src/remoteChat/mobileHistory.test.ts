@@ -26,7 +26,11 @@ it('transfers the newest ten items from oversized history and exactly ten older 
   const remote = conversation();
   for (const item of remote.turns![0].items) item.text = 'old'.repeat(250_000);
   expect(JSON.stringify(remote).length).toBeGreaterThan(8 * 1024 * 1024);
-  vi.mocked(guiApi.request).mockResolvedValue({ thread: remote });
+  vi.mocked(guiApi.request).mockImplementation(async request => {
+    expect(request).toMatchObject({ operation: 'read', threadId: remote.id, window: { pageSize: 10 } });
+    if (request.operation !== 'read') throw new Error('Unexpected request');
+    return sliceHistory(remote, request.window);
+  });
   const operations = new ChatOperations();
   let selected: Thread = { ...remote, turns: [] };
   let page: PagedHistoryDelta['page'];

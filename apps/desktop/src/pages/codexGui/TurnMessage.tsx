@@ -18,6 +18,7 @@ import { isModelCapacityError } from "../../../../../shared/conversation/request
 import { TurnProcess } from "./TurnProcess";
 import type { TurnMessageGroup } from "./turnMessageGroups";
 import { groupVisibleTurns } from "./messageErrorGroups";
+import { useStableProcessGroups } from './useStableProcessGroups';
 export { groupTurnItems } from "../../../../../shared/chat/turnGroups";
 
 export const TurnMessage = memo(function TurnMessage({ turn, running, active, followsInterruption = false,
@@ -36,9 +37,9 @@ export const TurnMessage = memo(function TurnMessage({ turn, running, active, fo
   const edit = useCommittedCallback<Parameters<SubmitMessageEdit>, ReturnType<SubmitMessageEdit>>(
     content => onEdit ? onEdit(content) : Promise.resolve(false));
   const remove = useCommittedCallback(() => onDelete ? onDelete() : Promise.resolve(false));
-  const groups = useMemo(() => messageGroups ?? groupVisibleTurns([
+  const groups = useStableProcessGroups(useMemo(() => messageGroups ?? groupVisibleTurns([
     { turn, items: visibleItems, followsInterruption },
-  ])[0].groups, [turn, followsInterruption, visibleItems, messageGroups]);
+  ])[0].groups, [turn, followsInterruption, visibleItems, messageGroups]));
   const files = useTurnChangedFiles(turn);
   const showChanges = !running && turn.status !== "inProgress" && files.length > 0;
   const responseIndex = groups.findIndex((group) => group.type !== "error" && group.items[0].type !== "userMessage");

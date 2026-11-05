@@ -13,7 +13,8 @@ import { GROUPS_OPERATION } from '../../../../shared/chat/groups/model';
 import { remoteGroups } from './groups';
 import { historyDelta, parseHistoryVersion } from '../../../../shared/remote-chat/historySync';
 import { RemoteImages } from './images';
-import { parseHistoryWindow, sliceHistory } from '../../../../shared/remote-chat/historyPage';
+import { parseHistoryWindow, sliceHistory, type HistoryPage } from '../../../../shared/remote-chat/historyPage';
+import { getChatPolicy } from '../../../../shared/remote-chat/policy';
 import { historyNotification } from '../../../../shared/remote-chat/historyNotification';
 import { LiveHistory } from './liveHistory';
 import { CommandMetricsStore } from './commandMetrics';
@@ -273,12 +274,18 @@ export class ChatOperations {
       const known = parseHistoryVersion(body.known);
       const window = parseHistoryWindow(body.window);
       const threadId = body.threadId;
-      const thread = await this.liveHistory.read(threadId,
-        () => guiApi.request<{ thread: Thread }>({ operation: 'read', threadId }));
+      let page: HistoryPage | undefined;
+      const thread = await this.liveHistory.read(threadId, async () => {
+        const result = await guiApi.request<{ thread: Thread; page?: HistoryPage }>({ operation: 'read', threadId,
+          window: { ...window, pageSize: getChatPolicy().historyPageSize } });
+        page = result.page;
+        return result;
+      });
       const current = effectiveProjectThread(thread);
       this.commandMetrics.seed(current);
-      const sliced = sliceHistory(acknowledgedMessages.merge(current), window);
-      return { ...historyDelta(this.images.prepare(sliced.thread, thread.id), known), page: sliced.page };
+      const sliced = sliceHistory(acknowledgedMessages.merge(current), page ? { start: page.start } : window);
+      return { ...historyDelta(this.images.prepare(sliced.thread, thread.id), known),
+        page: { ...sliced.page, hasMore: Boolean(page?.hasMore || sliced.page.hasMore) } };
     }
     if (request.method === 'request' && body.operation === 'composerSet') {
       return guiComposer.update(body.settings, composerThreadId(body.threadId));

@@ -175,6 +175,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
       {!installer.version ? <Installer installer={installer} /> :
         <ConversationRetryProvider controller={controller} state={state}>
         <Messages value={current} selected={state.selected} active={conversationActive}
+          onLoadOlder={controller.loadOlderHistory}
           retry={state.capacityRetry} onCancelRetry={() => controller.capacityRetry.cancel()}
           editCwd={state.selected ? state.projectOverrides[state.selected] : undefined}
           onEdit={controller.messageEditor.submit} editDisabled={!canEditMessage(state)}

@@ -4,6 +4,7 @@ import { App, ConfigProvider } from "antd";
 import { Messages } from "../src/pages/codexGui/Messages";
 import type { Conversation, Item, Turn } from "../../../shared/conversation/types";
 import styles from "../../../shared/conversation/styles.module.less";
+import { sliceHistory } from "../../../shared/remote-chat/historyPage";
 
 const MESSAGE_COUNT = 2_000;
 const ITEMS_PER_TURN = 20;
@@ -47,9 +48,15 @@ const params = new URLSearchParams(location.search);
 const fixtures: Record<string, Conversation> = { compact, "activity-history": activityHistory };
 const cached = fixtures[[...params.keys()][0]] ?? large;
 const other: Conversation = { ...cached, thread: { ...cached.thread, id: "other" }, turns: [] };
+const paged = params.has('paged');
+function readPage(start?: Conversation['historyPage']) {
+  const response = sliceHistory({ ...cached.thread, turns: cached.turns },
+    { start: start?.start, older: Boolean(start) });
+  return { ...cached, turns: response.thread.turns!, historyPage: response.page };
+}
 
 function Harness() {
-  const [value, setValue] = useState(cached);
+  const [value, setValue] = useState(paged ? readPage() : cached);
   const [selected, setSelected] = useState("large");
   const [active, setActive] = useState(true);
   const [streaming, setStreaming] = useState(false);
@@ -82,6 +89,12 @@ function Harness() {
       <main className={`${styles.page} ${styles.collapsed}`} style={{ flex: 1 }}>
         <div className={styles.workspace} hidden={!active}>
           <Messages selected={selected} value={selected === "large" ? value : other} active={active}
+            onLoadOlder={paged ? async () => {
+              await new Promise(resolve => setTimeout(resolve, 300));
+              const next = readPage(value.historyPage);
+              setValue(next);
+              return next.turns;
+            } : undefined}
             footer={<div className={styles.composerWrap}><div className={styles.composer}>
               <input aria-label="消息" placeholder="输入消息…" style={{ width: "95%", padding: 12 }} />
             </div></div>} />

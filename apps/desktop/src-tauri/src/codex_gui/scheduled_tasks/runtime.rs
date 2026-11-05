@@ -171,7 +171,15 @@ pub(super) fn submitted_turn(response: GuiResult<Value>) -> Result<Option<String
 
 async fn refresh_run(app: AppHandle, task: &ScheduledTask) -> Result<()> {
     let thread_id = task.last_thread_id.clone().ok_or(TaskError::Execution)?;
-    let observation = match request(&app, GuiRequest::Read { thread_id }).await {
+    let observation = match request(
+        &app,
+        GuiRequest::Read {
+            thread_id,
+            window: None,
+        },
+    )
+    .await
+    {
         Ok(value) => observe_turn(&value, task.last_turn_id.as_deref()),
         // A transient read failure cannot prove that the turn stopped; keep its execution slot.
         Err(_) if codex_gui::connected(&app.state::<GuiState>()).await.is_ok() => None,

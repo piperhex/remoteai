@@ -13,6 +13,8 @@ interface Options {
   movement: ScrollMovement;
   pauseFollowing: () => void;
   away: boolean;
+  hasEarlier?: boolean;
+  loadEarlier?: () => Promise<Turn[] | undefined>;
 }
 
 function hasNestedScroller(target: EventTarget, viewport: Element): boolean {
@@ -26,10 +28,12 @@ function hasNestedScroller(target: EventTarget, viewport: Element): boolean {
 }
 
 export function useMessageWindow({ turns = EMPTY_TURNS, selected, active, viewport, movement,
-  pauseFollowing, away }: Options) {
+  pauseFollowing, away, hasEarlier, loadEarlier }: Options) {
   const [window, setWindow] = useState<{ selected: string | null; start?: MessageCursor }>({ selected });
   const [loading, setLoading] = useState(false);
   const frame = useRef<number>();
+  const pending = useRef(false);
+  const generation = useRef(0);
   const anchor = useRef<{ node: Element; top: number }>();
   const current = window.selected === selected;
   const start = current && away ? window.start : undefined;
@@ -49,6 +53,8 @@ export function useMessageWindow({ turns = EMPTY_TURNS, selected, active, viewpo
     movement.remember(viewport.current);
     setLoading(false);
     return () => {
+      generation.current++;
+      pending.current = false;
       if (frame.current !== undefined) cancelAnimationFrame(frame.current);
       frame.current = undefined;
     };
@@ -64,9 +70,11 @@ export function useMessageWindow({ turns = EMPTY_TURNS, selected, active, viewpo
     if (!loading) anchor.current = undefined;
   }, [range, loading, viewport, movement]);
 
-  const load = (update: () => void): boolean => {
+  const load = (update: () => void | Promise<void>): boolean => {
     const node = viewport.current;
-    if (!node || !active || frame.current !== undefined) return false;
+    if (!node || !active || pending.current) return false;
+    pending.current = true;
+    const version = generation.current;
     const top = node.getBoundingClientRect().top;
     const visible = [...node.querySelectorAll("[data-message-id], [data-history-anchor]")]
       .find((entry) => entry.getClientRects().length > 0 && entry.getBoundingClientRect().bottom > top);
@@ -79,18 +87,30 @@ export function useMessageWindow({ turns = EMPTY_TURNS, selected, active, viewpo
         frame.current = undefined;
         const next = latest.current;
         if (next.selected !== selected || !next.active) return;
-        update();
-        setLoading(false);
+        const finish = () => {
+          if (version !== generation.current) return;
+          pending.current = false;
+          setLoading(false);
+        };
+        const result = update();
+        if (result) void result.finally(finish);
+        else finish();
       });
     });
     return true;
   };
   const loadPage = (direction: 'older' | 'newer') => {
-    if (!(direction === 'older' ? range.hasMore : range.hasNewer)) return false;
+    if (!(direction === 'older' ? range.hasMore || (hasEarlier && loadEarlier) : range.hasNewer)) return false;
     return load(() => {
-      const next = latest.current;
-      setWindow({ selected,
-        start: messageWindow(next.turns, { start: next.range.start, [direction]: true }).start });
+      const version = generation.current;
+      const apply = (fetched?: Turn[]) => {
+        if (version !== generation.current) return;
+        const next = latest.current;
+        setWindow({ selected,
+          start: messageWindow(fetched ?? next.turns, { start: next.range.start, [direction]: true }).start });
+      };
+      if (direction === 'older' && !latest.current.range.hasMore && loadEarlier) return loadEarlier().then(apply);
+      apply();
     });
   };
   const loadOlder = () => loadPage('older');
@@ -99,7 +119,7 @@ export function useMessageWindow({ turns = EMPTY_TURNS, selected, active, viewpo
     const node = viewport.current;
     if (!node) return 0;
     const offsetChange = movement.read(node);
-    if (frame.current !== undefined || offsetChange === 0) return 0;
+    if (pending.current || offsetChange === 0) return 0;
     if (offsetChange < 0 && node.scrollTop < LOAD_DISTANCE && loadOlder()) return 0;
     const nearBottom = node.scrollHeight - node.scrollTop - node.clientHeight < LOAD_DISTANCE;
     if (offsetChange > 0 && nearBottom && loadNewer()) return 0;
@@ -111,10 +131,11 @@ export function useMessageWindow({ turns = EMPTY_TURNS, selected, active, viewpo
     const node = viewport.current;
     if (!node) return;
     if (hasNestedScroller(event.target, node)) return;
-    if (frame.current !== undefined) return;
+    if (pending.current) return;
     // Collapsed activity can leave the viewport too short to emit a scroll event.
     if (event.deltaY < 0 && node.scrollTop <= 0) loadOlder();
     if (event.deltaY > 0 && node.scrollHeight - node.scrollTop - node.clientHeight < LOAD_DISTANCE) loadNewer();
   };
-  return { ...range, loading, onScroll, onWheel, loadOlder, loadNewer };
+  return { ...range, hasMore: range.hasMore || Boolean(hasEarlier && loadEarlier),
+    loading, onScroll, onWheel, loadOlder, loadNewer };
 }

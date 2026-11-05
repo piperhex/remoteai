@@ -86,6 +86,7 @@ pub(crate) enum GuiRequest {
     },
     Read {
         thread_id: String,
+        window: Option<super::history_page::HistoryWindow>,
     },
     Compact {
         thread_id: String,
@@ -318,7 +319,7 @@ impl GuiRequest {
                 access.apply_to_thread(&mut params);
                 Ok(("thread/resume", params))
             }
-            Self::Read { thread_id } => {
+            Self::Read { thread_id, .. } => {
                 let mut params = thread_params(thread_id)?;
                 params["includeTurns"] = json!(true);
                 Ok(("thread/read", params))

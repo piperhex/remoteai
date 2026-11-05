@@ -3,7 +3,7 @@ import { remoteErrorText } from "../../../../../shared/localization/errors";
 import { useMemo, type ReactNode } from "react";
 import { Spin } from "antd";
 import { ArrowDown, Terminal } from "lucide-react";
-import type { Conversation } from "../../../../../shared/conversation/types";
+import type { Conversation, Turn } from "../../../../../shared/conversation/types";
 import { lastUserMessage, type EditMessage, type DeleteMessage } from "../../../../../shared/conversation/editMessage";
 import { TurnMessage } from "./TurnMessage";
 import { useFollowScroll } from "./useFollowScroll";
@@ -22,18 +22,20 @@ import type { CapacityRetryControl } from "../../../../../shared/conversation/Ca
 import { groupVisibleTurns } from "./messageErrorGroups";
 
 export function Messages({ value, selected, active = true, footer, pendingRequest, onQuote,
-  onEdit, onDelete, editDisabled, editCwd, onFork, forkDisabled, retry, onCancelRetry }: {
+  onEdit, onDelete, editDisabled, editCwd, onFork, forkDisabled, retry, onCancelRetry, onLoadOlder }: {
   value?: Conversation; selected: string | null; active?: boolean; footer?: ReactNode;
   pendingRequest?: PendingRequest;
   onQuote?: (quote: ReplyQuote) => boolean;
   onEdit?: EditMessage; editDisabled?: boolean; editCwd?: string;
   onDelete?: DeleteMessage;
+  onLoadOlder?: () => Promise<Turn[] | undefined>;
   onFork?: (threadId: string, turnId: string) => Promise<boolean>; forkDisabled?: boolean;
 } & CapacityRetryControl) {
   const last = lastUserMessage(value);
   const { viewport, content, movement, away, showJumpToLatest, onScroll, jumpToLatest, pauseFollowing }
     = useFollowScroll(selected, active);
-  const history = useMessageWindow({ turns: value?.turns, selected, active, viewport, movement, pauseFollowing, away });
+  const history = useMessageWindow({ turns: value?.turns, selected, active, viewport, movement, pauseFollowing, away,
+    hasEarlier: value?.historyPage?.hasMore, loadEarlier: onLoadOlder });
   const entries = useMemo(() => groupVisibleTurns(history.entries), [history.entries]);
   const quote = useQuoteSelection({ root: content, selected, enabled: active && Boolean(onQuote) });
   const sending = pendingRequest && pendingRequest.threadId === selected && !value?.activeTurn;
