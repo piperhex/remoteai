@@ -52,7 +52,7 @@ function Harness() {
         <section style={{ maxWidth: 920, margin: '0 auto' }}>
           <h2>Codex GUI</h2><p>检查项目测试结果</p>
           {mode === 'local' ? <ActivityRow item={item} text="" />
-            : <ChatActivity item={item} inline onOpen={() => {}} />}
+            : <ChatActivity item={item} running={item.status === 'inProgress'} inline onOpen={() => {}} />}
           <p style={{ marginTop: 24 }}>测试正在执行，完成后汇总结果。</p>
         </section><output hidden aria-label="heartbeat">{beats}</output>
       </main>

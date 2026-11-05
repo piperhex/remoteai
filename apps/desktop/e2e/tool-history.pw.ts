@@ -65,7 +65,7 @@ test("mouse scrolling reads a command's complete output without paging or losing
   const activity = page.locator('[data-message-id="command"] > details');
   await activity.locator(":scope > summary").click();
   const preview = activity.locator(":scope > summary > span");
-  expect(await preview.evaluate((node) => getComputedStyle(node).animationName)).toContain("activeTextSweep");
+  await expect(preview).toHaveCSS("animation-name", "none");
   const output = activity.getByRole("region", { name: "工具内容" });
   await expect(output).toHaveCount(1);
   await expect(output.locator("pre code").last()).toHaveText(commandOutput);

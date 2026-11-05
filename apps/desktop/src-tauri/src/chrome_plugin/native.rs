@@ -23,6 +23,10 @@ const STATUS_TIMEOUT: Duration = Duration::from_secs(1);
 const REVOCATION_INTERVAL: Duration = Duration::from_millis(250);
 type Pending = HashMap<String, mpsc::Sender<BrowserReply>>;
 
+#[cfg(test)]
+#[path = "native_tests.rs"]
+mod tests;
+
 struct Host {
     root: PathBuf,
     writer: Mutex<io::Stdout>,
@@ -139,12 +143,7 @@ fn serve(host: Arc<Host>, listener: TcpListener) {
 }
 
 fn handle(host: &Host, mut stream: TcpStream) -> Result<()> {
-    stream
-        .set_read_timeout(Some(Duration::from_secs(5)))
-        .map_err(|_| BrowserError::Transport)?;
-    stream
-        .set_write_timeout(Some(Duration::from_secs(5)))
-        .map_err(|_| BrowserError::Transport)?;
+    configure_stream(&stream)?;
     let request: HostRequest = transport::read_frame(&mut stream, transport::MAX_REQUEST_BYTES)?
         .ok_or(BrowserError::InvalidRequest)?;
     let request = match request {
@@ -153,6 +152,20 @@ fn handle(host: &Host, mut stream: TcpStream) -> Result<()> {
     };
     let result = forward(host, request).unwrap_or_else(BrowserReply::error);
     transport::write_frame(&mut stream, &result, transport::MAX_RESPONSE_BYTES)
+}
+
+fn configure_stream(stream: &TcpStream) -> Result<()> {
+    // Windows accepts inherit the listener's nonblocking mode. Frame reads and
+    // session leases need blocking I/O so their timeouts actually wait.
+    stream
+        .set_nonblocking(false)
+        .map_err(|_| BrowserError::Transport)?;
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .map_err(|_| BrowserError::Transport)?;
+    stream
+        .set_write_timeout(Some(Duration::from_secs(5)))
+        .map_err(|_| BrowserError::Transport)
 }
 
 fn session(host: &Host, stream: &mut TcpStream, request: SessionRequest) -> Result<()> {
