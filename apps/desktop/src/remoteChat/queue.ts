@@ -48,6 +48,8 @@ function messageInput(body: Record<string, unknown>, mode: ConnectionMode) {
     throw new Error('消息内容无效，请检查后重试。');
   }
   return { text, images: images as string[], skills, ...(mode === 'direct' ? { transferMode: 'direct' as const } : {}),
+    ...(typeof body.clientId === 'string' && body.clientId.length <= MAX_REQUEST_ID_LENGTH
+      ? { clientId: body.clientId } : {}),
     ...(attachments.length ? { attachments } : {}) };
 }
 
@@ -68,6 +70,7 @@ export class RemoteQueue {
           id: item.id, text: queueTextPreview(item.text || item.attachments?.map((file) => file.name).join('、') || ''),
           imageCount: item.images.length, attachmentCount: item.attachments?.length ?? 0,
           busy: Boolean(item.busy), error: item.error,
+          ...(item.clientId ? { clientId: item.clientId } : {}),
         }))])) };
     return this.snapshot;
   };

@@ -15,6 +15,7 @@ let revision = 0;
 export function demoQueueSnapshot(): QueueSnapshot {
   return { revision, threads: Object.fromEntries([...pending].filter(([, items]) => items.length)
     .map(([threadId, items]) => [threadId, items.map(({ id, input }) => ({ id, text: String(input.text),
+      ...(typeof input.clientId === 'string' ? { clientId: input.clientId } : {}),
       imageCount: Array.isArray(input.images) ? input.images.length : 0, attachmentCount: 0, busy: false }))])) };
 }
 

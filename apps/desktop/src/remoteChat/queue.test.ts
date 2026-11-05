@@ -94,12 +94,15 @@ it('continues a retained remote chat with the detached directory marker after re
 
 it('returns each enqueue receipt even when another writer updates the same queue before acknowledgement', async () => {
   const [first, second] = await Promise.all([
-    queue.request({ ...input, text: 'first retry' }), queue.request({ ...input, text: 'second retry' }),
+    queue.request({ ...input, text: 'first retry', clientId: 'local-first' }),
+    queue.request({ ...input, text: 'second retry', clientId: 'local-second' }),
   ]);
   const messages = queue.read().threads.phone;
   expect(first).toMatchObject({ enqueuedId: messages.find(message => message.text === 'first retry')?.id });
   expect(second).toMatchObject({ enqueuedId: messages.find(message => message.text === 'second retry')?.id });
   expect(messages).toHaveLength(2);
+  expect(messages.find(message => message.text === 'first retry')?.clientId).toBe('local-first');
+  expect(messages.find(message => message.text === 'second retry')?.clientId).toBe('local-second');
 });
 
 it('generates a title when the first successful phone message goes through the queue', async () => {
