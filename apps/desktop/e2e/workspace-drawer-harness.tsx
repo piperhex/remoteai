@@ -1,3 +1,5 @@
+import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
+import { repositoryFixture } from './git-repositories-fixture';
 import { useContext, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ConfigProvider, theme } from 'antd';
@@ -30,7 +32,8 @@ const params = new URLSearchParams(location.search);
 const mode = params.get('mode') ?? 'local';
 const dark = params.has('dark');
 const client = createGuiToolsClient(<T,>(request: object) => browserRequest<T>(request as ProjectBrowserRequest));
-client.git = createAsyncGitFixture();
+client.git = params.has('submodules') ? repositoryFixture(browserRoot) : createAsyncGitFixture();
+if (params.has('font')) localStorage.setItem('codex-switch:global-font-size', params.get('font')!);
 let gitReads = 0;
 const readChanges = client.git.changes;
 client.git.changes = async cwd => { document.body.dataset.gitReads = String(++gitReads); return readChanges(cwd); };
@@ -91,6 +94,9 @@ function App() {
     : <ChatFileContext.Provider value={remoteFiles}>
       <ChatDetailsWorkspace selected={cwd} active enabled>{tools}</ChatDetailsWorkspace>
     </ChatFileContext.Provider>;
+  if (params.has('submodules')) return <ConfigProvider theme={{ algorithm: [
+    dark ? theme.darkAlgorithm : theme.defaultAlgorithm, ...(mode === 'web' ? [] : [theme.compactAlgorithm]),
+  ] }}><ApplicationTypography><div style={{ height: '100dvh' }}>{content}</div></ApplicationTypography></ConfigProvider>;
   return <ConfigProvider theme={{ algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm }}>
     <div style={{ height: '100dvh' }}>{content}</div>
   </ConfigProvider>;

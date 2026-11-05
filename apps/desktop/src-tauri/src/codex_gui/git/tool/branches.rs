@@ -11,6 +11,8 @@ pub(crate) struct Repository {
     pub upstream: Option<String>,
     pub ahead: usize,
     pub behind: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub repositories: Option<Vec<super::repositories::Entry>>,
 }
 
 #[derive(Serialize)]
@@ -103,6 +105,7 @@ pub(super) fn read(root: &Path) -> Result<Repository> {
         .split_whitespace()
         .map(|value| value.parse().unwrap_or(0));
     Ok(Repository {
+        repositories: None,
         branches,
         remotes: output(root, &["remote"])?
             .lines()

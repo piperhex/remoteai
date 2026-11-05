@@ -158,7 +158,12 @@ fn command_options(cwd: &Path, disable_hooks: bool) -> Command {
     let mut command = Command::new("git");
     command
         .current_dir(cwd)
-        .args(["-c", "core.fsmonitor=false"])
+        .args([
+            "-c",
+            "core.fsmonitor=false",
+            "-c",
+            "submodule.recurse=false",
+        ])
         .env("GIT_TERMINAL_PROMPT", "0");
     if disable_hooks {
         command.args(["-c", "core.hooksPath="]);
@@ -202,7 +207,11 @@ fn directory(cwd: &str) -> Result<PathBuf> {
 
 fn repository(cwd: &Path) -> Result<PathBuf> {
     let root = output(cwd, &["rev-parse", "--show-toplevel"])?;
-    directory(&root)
+    let root = directory(&root)?;
+    if cwd != root && tool::repositories::contains(&root, cwd)? {
+        return Err(GitError::Repository);
+    }
+    Ok(root)
 }
 
 fn validate_branch(cwd: &Path, branch: &str) -> Result<()> {

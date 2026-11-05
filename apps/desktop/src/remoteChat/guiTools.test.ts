@@ -34,6 +34,17 @@ it('routes remote Git generation and host preferences through the native Git ser
     request: { operation: 'settings', autoMessage: true } });
 });
 
+it('keeps repository discovery and the selected child cwd in remote Git requests', async () => {
+  const operations = new ChatOperations();
+  await operations.execute(request('discover-repos', {
+    operation: 'guiGitRepository', cwd: '/project', includeChildren: true }));
+  expect(invoke).toHaveBeenLastCalledWith('codex_gui_git_tool', { request: {
+    operation: 'repository', cwd: '/project', includeChildren: true } });
+  await operations.execute(request('child-changes', { operation: 'guiGitChanges', cwd: '/project/child' }));
+  expect(invoke).toHaveBeenLastCalledWith('codex_gui_git_tool', { request: {
+    operation: 'changes', cwd: '/project/child' } });
+});
+
 it.each(['read', 'udpRead', 'udpWrite'])('keeps %s retries idempotent across long transfers and isolates reconnects',
   async type => {
   const operations = new ChatOperations();

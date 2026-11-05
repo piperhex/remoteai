@@ -25,6 +25,9 @@ pub(crate) struct Change {
     pub status: String,
     pub conflict: bool,
     pub version: String,
+    pub submodule: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reference_changed: Option<bool>,
 }
 
 pub(super) fn head(root: &Path) -> Option<String> {
@@ -41,6 +44,7 @@ pub(super) fn read(root: &Path) -> Result<Changes> {
             "--porcelain=v1",
             "-z",
             "--untracked-files=all",
+            "--ignore-submodules=none",
         ],
     )?;
     if !result.status.success() {
@@ -52,10 +56,22 @@ pub(super) fn read(root: &Path) -> Result<Changes> {
         &["rev-parse", "--path-format=absolute", "--git-path", "index"],
     )?;
     let index_stamp = stamp(Path::new(&index));
+    let submodules = super::repositories::paths(root)?;
     let files = parse(&result.stdout)?
         .into_iter()
         .map(|mut file| {
+            file.submodule = submodules.contains(&file.path);
             let mut hash = Sha256::new();
+            if file.submodule && super::repositories::initialized(root, &file.path) {
+                let child_head = self::head(&root.join(&file.path));
+                let recorded = output(
+                    root,
+                    &["rev-parse", "--verify", &format!("HEAD:{}", file.path)],
+                )
+                .ok();
+                file.reference_changed = Some(child_head != recorded);
+                hash.update(format!("{child_head:?}"));
+            }
             hash.update(format!(
                 "{head:?}:{index_stamp}:{}:{}:{}",
                 file.status,
@@ -114,6 +130,8 @@ pub(super) fn parse(bytes: &[u8]) -> Result<Vec<Change>> {
             status: status.to_owned(),
             conflict: status.contains('U') || matches!(status, "AA" | "DD"),
             version: String::new(),
+            submodule: false,
+            reference_changed: None,
         });
         if files.len() > MAX_FILES {
             return Err(GitError::TooManyFiles);
