@@ -27,6 +27,7 @@ test('publishing requires a page and persists query strings and custom headers',
 
 for (const mode of ['local', 'hosted']) {
   test(`${mode}: only market Providers open tabs from names and actions`, async ({ page }, info) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
     await setupMarket(page, mode);
     await page.goto(`/e2e/provider-market-harness.html?mode=${mode}&browser=1&language=zh`);
     await expect(page.getByRole('button', { name: '前往页面', exact: true })).toHaveCount(2);

@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App, ConfigProvider, theme } from 'antd';
 import { ProvidersPage } from '../src/pages/ProvidersPage';
 import { RemoteAccountPicker } from '../../../shared/conversation/remote/RemoteAccountPicker';
 import { RemoteModelSwitchSheet } from '../../web/src/components/RemoteModelSwitchSheet';
-import { ProviderMarketPage } from '../../admin-ui/src/pages/ProviderMarketPage';
-import { I18nProvider } from '../../admin-ui/src/i18n-context';
 import { isAppLanguage } from '@remoteai/i18n';
 import { setLanguage, useLanguage } from '../../../shared/localization/browserLanguage';
 import { loadStoredSession } from '../../web/src/api';
@@ -19,6 +17,12 @@ import { ChatDesktopAccountPicker } from '../../../shared/remote-chat/views/Chat
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
 import 'antd/dist/reset.css';
 import '../src/styles.css';
+
+// Desktop browser checks must not load the optional Admin application's standalone dependencies.
+const ProviderMarketPage = lazy(() => import('../../admin-ui/src/pages/ProviderMarketPage')
+  .then(module => ({ default: module.ProviderMarketPage })));
+const I18nProvider = lazy(() => import('../../admin-ui/src/i18n-context')
+  .then(module => ({ default: module.I18nProvider })));
 
 loadStoredSession();
 const query = new URLSearchParams(location.search);
@@ -76,10 +80,11 @@ function Harness() {
       <RemoteAccountPicker active ready client={guiClient} privacyMode={false}
         computers={{ current: null, devices: [], authenticated: true, loading: false, error: '',
           refresh: nothing, choose: nothing, login: nothing }} />
-    </aside> : mode === 'admin' ? <I18nProvider language={language} onLanguageChange={setLanguage}>
+    </aside> : mode === 'admin' ? <Suspense fallback={null}>
+      <I18nProvider language={language} onLanguageChange={setLanguage}>
       <ProviderMarketPage api={adminApi} canManage={!query.has('readOnly')} canOrder={!query.has('readOnly')}
         canReview={!query.has('readOnly')} canPromote={!query.has('readOnly')} />
-    </I18nProvider> : <RemoteModelSwitchSheet device={{ deviceId: 'test-computer', name: 'Test computer',
+    </I18nProvider></Suspense> : <RemoteModelSwitchSheet device={{ deviceId: 'test-computer', name: 'Test computer',
       platform: 'windows', localProxyRunning: true, capabilities: [], lastSeenAt: '', online: true }}
       accounts={[]} providers={[]} switchingAccountId={null} switchingProviderId={null} onClose={nothing}
       onSwitchAccount={yes} onSwitchProvider={yes} onSwitchProviderGroup={yes} />}

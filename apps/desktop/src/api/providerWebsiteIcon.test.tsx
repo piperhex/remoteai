@@ -3,6 +3,7 @@ import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ProviderWebsiteIcon } from '../../../../shared/provider-market/ProviderWebsiteIcon';
+import { Globe } from 'lucide-react';
 import { providerIconSources, providerWebsiteOrigin } from '../../../../shared/provider-market/providerWebsite';
 
 let container: HTMLDivElement;
@@ -13,6 +14,13 @@ beforeEach(() => {
   root = createRoot(container);
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
+
+it.each(['', 'file:///preview.txt'])('uses the browser fallback without requesting icons for %s', async url => {
+  await act(async () => root.render(<ProviderWebsiteIcon url={url} size={14} fallback={<Globe size={14} />} />));
+  expect(container.querySelector('img')).toBeNull();
+  expect(container.querySelector('.lucide-globe')).not.toBeNull();
+  expect(container.querySelector('span')?.style.width).toBe('14px');
+});
 
 it('prefers the configured page and strips API paths, queries, fragments and page credentials', () => {
   const provider = { baseUrl: 'https://api.example.test/v1?key=private', marketSource: {
