@@ -66,23 +66,41 @@ it('pages the selected repository and preserves mixed selection and the commit d
   expect(panel.selected).toEqual(selected);
   expect(panel.message).toBe('keep draft');
   await act(async () => panel.selectHistoryRepository(project));
-  expect(panel.commits).toHaveLength(3);
+  expect(panel.commits).toHaveLength(5);
   expect(panel.commits.every(commit => commit.repository === project)).toBe(true);
 });
 
-it('waits for background reads before switching and retries failed history in the selected repository', async () => {
+it('switches and pages immediately during a slow workspace scan without rescanning other repositories', async () => {
   const page = await workspace.client.history(project, 0);
   let finish!: () => void;
   vi.mocked(source.history).mockImplementationOnce(() => new Promise(resolve => { finish = () => resolve(page); }));
   await act(async () => vi.advanceTimersByTimeAsync(1000));
-  let switching!: Promise<void>;
-  await act(async () => { switching = panel.selectHistoryRepository(child); });
-  expect(panel.busy).toBe(true);
-  expect(panel.historyRepository).toBe(project);
-  vi.mocked(source.history).mockRejectedValueOnce(new Error('history unavailable'));
-  await act(async () => { finish(); await switching; });
+  const reads = vi.mocked(source.repository).mock.calls.length;
+  await act(async () => panel.selectHistoryRepository(child));
+  expect(panel.busy).toBe(false);
   expect(panel.historyRepository).toBe(child);
-  expect(panel.commits).toEqual([]);
+  await act(async () => panel.more());
+  expect(panel.commits).toHaveLength(5);
+  expect(source.repository).toHaveBeenCalledTimes(reads);
+  await act(async () => finish());
+  expect(panel.historyRepository).toBe(child);
+  expect(panel.commits.every(commit => commit.repository === child)).toBe(true);
+});
+
+it('shows cached history immediately and retries failed reads in the selected repository', async () => {
+  const page = await workspace.client.history(project, 0);
+  await act(async () => panel.selectHistoryRepository(child));
+  let finish!: () => void;
+  vi.mocked(source.history).mockImplementationOnce(() => new Promise(resolve => { finish = () => resolve(page); }));
+  let switching!: Promise<void>;
+  await act(async () => { switching = panel.selectHistoryRepository(project); });
+  expect(panel.commits).toHaveLength(3);
+  expect(panel.commits.every(commit => commit.repository === project)).toBe(true);
+  await act(async () => { finish(); await switching; });
+  vi.mocked(source.history).mockRejectedValueOnce(new Error('history unavailable'));
+  await act(async () => panel.selectHistoryRepository(child));
+  expect(panel.historyRepository).toBe(child);
+  expect(panel.commits.every(commit => commit.repository === child)).toBe(true);
   expect(panel.error).toBe('history unavailable');
   await act(async () => panel.refresh());
   expect(panel.error).toBe('');
