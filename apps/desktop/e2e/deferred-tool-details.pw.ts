@@ -1,5 +1,27 @@
 import { expect, test } from '@playwright/test';
 
+test('shows the routed command summary while running and requests no collapsed details', async ({ page }, info) => {
+  const local = info.project.name === 'desktop-local';
+  const mode = local ? 'local' : info.project.name === 'desktop-remote' ? 'remote' : 'web';
+  const details: string[] = [];
+  page.on('request', request => {
+    if (request.url().includes('deferred-tool-details-response') || request.postData()?.includes('toolDetails')) {
+      details.push(request.url());
+    }
+  });
+  await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ body: '' }));
+  await page.goto(`deferred-tool-details-harness.html?mode=${mode}&routed`);
+  const text = local ? page.locator('summary > span').first() : page.locator('.chat-activity-text');
+  await expect(text).toContainText('npm test -- --runInBand');
+  const payload = await page.evaluate(() => JSON.parse(document.documentElement.dataset.routedPayload!));
+  expect(payload.status).toBe('inProgress');
+  expect(payload.command).toBeUndefined();
+  expect(payload.aggregatedOutput).toBeUndefined();
+  await page.waitForTimeout(1200);
+  expect(details).toEqual([]);
+  await page.screenshot({ path: `../../.codex-tmp/running-command-summary-${info.project.name}.png` });
+});
+
 test('running activity text stays readable without continuous text animation', async ({ page }, info) => {
   const local = info.project.name === 'desktop-local';
   const mode = local ? 'local' : info.project.name === 'desktop-remote' ? 'remote' : 'web';
@@ -18,6 +40,7 @@ test('running activity text stays readable without continuous text animation', a
 test('loads only expanded command details, updates the final result, and stops on collapse', async ({ page }, info) => {
   const local = info.project.name === 'desktop-local';
   const mode = local ? 'local' : info.project.name === 'desktop-remote' ? 'remote' : 'web';
+  const outputView = page.locator('.cs-command-output, .chat-virtual-command:not(.is-command)');
   let count = 0;
   let fail = false;
   let releaseDetails!: () => void;
@@ -51,7 +74,7 @@ test('loads only expanded command details, updates the final result, and stops o
   await expect(page.locator('[role="status"]')).toContainText('加载');
   await page.screenshot({ path: `../../.codex-tmp/deferred-tool-details-${info.project.name}-light-loading.png` });
   releaseDetails();
-  await expect(page.locator('.cs-command-output')).toContainText('PASS: 128 tests');
+  await expect(outputView).toContainText('PASS: 128 tests');
   expect(count).toBeGreaterThan(0);
   const beats = Number(await page.getByLabel('heartbeat').textContent());
   await page.waitForTimeout(1100);
@@ -59,23 +82,23 @@ test('loads only expanded command details, updates the final result, and stops o
   await page.screenshot({ path: `../../.codex-tmp/deferred-tool-details-${info.project.name}-light-expanded.png` });
   output = 'FINAL: all tests passed';
   await page.evaluate(() => window.dispatchEvent(new CustomEvent('deferred-tool-details-update', { detail: { status: 'completed' } })));
-  await expect(page.locator('.cs-command-output')).toContainText('FINAL: all tests passed');
+  await expect(outputView).toContainText('FINAL: all tests passed');
   const completedCount = count;
   await page.waitForTimeout(1200);
   expect(count).toBe(completedCount);
   await toggle.click();
-  await expect(page.locator('.cs-command-output')).toHaveCount(0);
+  await expect(outputView).toHaveCount(0);
   await page.waitForTimeout(1200);
   expect(count).toBe(completedCount);
   fail = true; await toggle.click();
   await expect(page.locator('[role="status"] button')).toBeVisible();
   await page.screenshot({ path: `../../.codex-tmp/deferred-tool-details-${info.project.name}-light-error.png` });
   fail = false; await page.locator('[role="status"] button').click();
-  await expect(page.locator('.cs-command-output')).toContainText('FINAL: all tests passed');
-  await page.setViewportSize({ width: 900, height: 900 });
+  await expect(outputView).toContainText('FINAL: all tests passed');
+  await page.setViewportSize({ width: info.project.name === 'web-mobile' ? 390 : 900, height: 900 });
   await page.goto(`deferred-tool-details-harness.html?mode=${mode}&dark`);
   await toggle.click();
-  await expect(page.locator('.cs-command-output')).toContainText('FINAL: all tests passed');
+  await expect(outputView).toContainText('FINAL: all tests passed');
   await page.screenshot({ path: `../../.codex-tmp/deferred-tool-details-${info.project.name}-dark-narrow-expanded.png` });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });

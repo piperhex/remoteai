@@ -32,7 +32,7 @@ const controller = new ChatController(() => ({ start() {}, stop() {},
 const initial: Item = { id: 'command', type: 'commandExecution', status: 'inProgress', commandPreview: 'npm test',
   detailsRef: { threadId: 'chat', turnId: 'turn', itemId: 'command' } };
 
-function Harness() {
+function Harness({ initial }: { initial: Item }) {
   const [item, setItem] = useState(initial);
   const [beats, setBeats] = useState(0);
   useEffect(() => {
@@ -59,4 +59,22 @@ function Harness() {
     </ToolDetailsContext.Provider></ApplicationTypography>
   </ConfigProvider>;
 }
-createRoot(document.getElementById('root')!).render(<Harness />);
+async function renderHarness() {
+  let item = initial;
+  if (query.has('routed')) {
+    const { ChatOperations } = await import('../src/remoteChat/operations');
+    const host = new ChatOperations();
+    await host.execute({ kind: 'request', id: 'select', method: 'request',
+      body: { operation: 'viewThread', threadId: 'chat', deferToolDetails: true } },
+    'relay', 'viewer-connection', 'persistent-account');
+    const event = host.views.event('viewer-connection', host.prepareEvent({ method: 'item/started',
+      params: { threadId: 'chat', turnId: 'turn', item: { id: 'command', type: 'commandExecution',
+        status: 'inProgress', command: 'npm test -- --runInBand', aggregatedOutput: 'private output' } } }));
+    host.release();
+    if (!event?.params.item) throw new Error('Running command event was dropped');
+    item = event.params.item;
+    document.documentElement.dataset.routedPayload = JSON.stringify(item);
+  }
+  createRoot(document.getElementById('root')!).render(<Harness initial={item} />);
+}
+void renderHarness();

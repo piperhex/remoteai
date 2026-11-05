@@ -217,7 +217,8 @@ export class ChatOperations {
       if (GUI_FILE_OPERATIONS.has(String(body.operation))) return this.files.request(body, options.owner);
       if (body.operation === DESKTOP_OPERATION) return this.desktop.request(request.body, options.owner);
     }
-    return this.run(request, options.mode, options.terminalOwner);
+    // Conversation subscriptions belong to the live connection; only terminals survive reconnection.
+    return this.run(request, options);
   }
 
   private pruneTerminalLink(request: RpcRequest, owner: string) {
@@ -235,7 +236,8 @@ export class ChatOperations {
     }
   }
 
-  private async run(request: RpcRequest, mode: ConnectionMode, owner: string): Promise<unknown> {
+  private async run(request: RpcRequest,
+    { mode, owner, terminalOwner }: { mode: ConnectionMode; owner: string; terminalOwner: string }): Promise<unknown> {
     if (request.method === 'connect') return this.connect(request.body);
     const body = { ...object(request.body) };
     if (request.method === 'request' && body.operation === 'viewThread') {
@@ -259,7 +261,7 @@ export class ChatOperations {
     if (request.method === 'request' && body.operation === 'forkLatest') return forkRemoteConversation(body.threadId);
     if (request.method === 'request' && GUI_TOOL_OPERATIONS.has(String(body.operation))) {
       return String(body.operation).startsWith('guiTerminal')
-        ? this.terminals.request(body, owner) : guiToolRequest(body);
+        ? this.terminals.request(body, terminalOwner) : guiToolRequest(body);
     }
     if (request.method === 'request'
       && [CONTEXT_READ_OPERATION, CONTEXT_WRITE_OPERATION].includes(String(body.operation))) {

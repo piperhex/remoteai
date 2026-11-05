@@ -10,6 +10,8 @@ export default defineConfig({
     { name: 'desktop-local', use: { baseURL: 'http://127.0.0.1:1536', viewport: { width: 1280, height: 900 } } },
     { name: 'desktop-remote', use: { baseURL: 'http://127.0.0.1:1536', viewport: { width: 1280, height: 900 } } },
     { name: 'web-desktop', use: { baseURL: 'http://127.0.0.1:1537/web/', viewport: { width: 1280, height: 900 } } },
+    { name: 'web-mobile', use: { baseURL: 'http://127.0.0.1:1537/web/', viewport: { width: 390, height: 844 },
+      isMobile: true, hasTouch: true } },
   ],
   webServer: [
     { command: 'npx vite --config e2e/deferred-tool-details.vite.ts --port 1536',
