@@ -2,9 +2,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { imageEditorPlugin } from '../../shared/chat/imageEditorPlugin';
 import { fontSizePlugin } from '../../shared/appearance/fontSizePlugin';
+import { pdfAssetsPlugin } from '../../shared/file-preview/pdfAssetsPlugin';
 
 export default defineConfig({
-  plugins: [react(), imageEditorPlugin()],
+  plugins: [react(), imageEditorPlugin(), pdfAssetsPlugin()],
   css: { postcss: { plugins: [fontSizePlugin()] } },
   clearScreen: false,
   resolve: { dedupe: ['react', 'react-dom', 'antd', 'antd-mobile', '@ant-design/cssinjs', '@remoteai/i18n'] },

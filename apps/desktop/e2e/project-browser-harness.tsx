@@ -20,10 +20,12 @@ import { ChatDetailsWorkspace } from '../../../shared/remote-chat/views/ChatDeta
 import '../src/styles.css';
 import 'antd/dist/reset.css';
 import { previewBrowserRequest, setPreviewFiles, previewReads } from './browser-preview-fixture';
+import { cmapPdf } from './cmap-pdf-fixture';
 
 const params = new URLSearchParams(location.search);
 const dark = params.has('dark');
 const mode = params.get('mode') ?? 'local';
+if (params.has('cmapPdf')) setPreviewFiles({ 'cmap.pdf': btoa(String.fromCharCode(...cmapPdf())) });
 if (params.has('largeDirectory')) seedLargeDirectory(10_001);
 if (params.has('largeText')) seedLargeText(params.has('atThreshold'));
 function fixtureRequest<T>(request: object): Promise<T> {
