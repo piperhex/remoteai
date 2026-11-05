@@ -10,7 +10,9 @@ afterEach(() => controller?.stop());
 
 async function harness() {
   let events!: ConnectionEvents;
-  const request = vi.fn<ChatConnection['request']>(async (method, body) => {
+  const request = vi.fn(async (
+    method: Parameters<ChatConnection['request']>[0], body?: unknown,
+  ): Promise<unknown> => {
     if (method === 'connect') return [];
     if ((body as { operation?: string })?.operation === 'syncHistory') return historyDelta(thread);
     return { data: [], nextCursor: null };
