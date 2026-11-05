@@ -1,7 +1,7 @@
 # CUA Computer Use for Codex GUI
 
 Remote AI's community marketplace includes **Computer Use 电脑助手**. It installs CUA Driver
-0.37.0-remoteai.2 (based on upstream 0.37.0) for the selected Codex Home and exposes its native tools through STDIO MCP.
+0.37.0-remoteai.3 (based on upstream 0.37.0) for the selected Codex Home and exposes its native tools through STDIO MCP.
 The installer supports Windows x64/ARM64 and macOS 13+ on Intel and Apple Silicon. macOS uses the
 pinned universal binary archive. Older macOS versions and other operating systems show an unsupported state.
 
@@ -67,8 +67,8 @@ use screenshots to verify desktop actions.
 - The release version and each package's official SHA-256 are pinned in code. Downloads are bounded,
   verified before extraction, and extracted through an exact filename allowlist into a staging directory.
   The installer uses the application's proxy configuration. It does not execute the upstream installer.
-- Binaries live under `%LOCALAPPDATA%/dev.codex.switch/computer-use/0.37.0-remoteai.2-windows-<architecture>`.
-  On macOS they live under `~/Library/Application Support/dev.codex.switch/computer-use/0.37.0-remoteai.2-darwin-universal`.
+- Binaries live under `%LOCALAPPDATA%/dev.codex.switch/computer-use/0.37.0-remoteai.3-windows-<architecture>`.
+  On macOS they live under `~/Library/Application Support/dev.codex.switch/computer-use/0.37.0-remoteai.3-darwin-universal`.
   The flat macOS tarball is extracted through a filename allowlist; executable bits are restored,
   while links, duplicates, missing members and oversized files are rejected.
   They are shared only as cached files. Uninstalling one Home retains this cache for other Homes and
@@ -111,7 +111,7 @@ cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
 cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests
 cargo build --manifest-path apps/desktop/src-tauri/Cargo.toml --bin csw
-$env:CSW_CUA_DRIVER_DIRECTORY = '<verified extracted CUA 0.37.0-remoteai.2 directory>'
+$env:CSW_CUA_DRIVER_DIRECTORY = '<verified extracted CUA 0.37.0-remoteai.3 directory>'
 $env:CSW_CUA_CODEX_BINARY = '<GUI-managed codex.exe path>'
 node --test scripts/computer-use-protocol.test.mjs
 ```
@@ -128,7 +128,7 @@ retry, later version changes, and disable/removal/reinstall while a download is 
 On macOS, build the debug `csw` binary, then run the same protocol script with these variables set:
 
 ```sh
-export CSW_CUA_DRIVER_DIRECTORY='<verified extracted CUA 0.37.0-remoteai.2 universal binary directory>'
+export CSW_CUA_DRIVER_DIRECTORY='<verified extracted CUA 0.37.0-remoteai.3 universal binary directory>'
 export CSW_CUA_CODEX_BINARY='<GUI-managed codex path>'
 node --test scripts/computer-use-protocol.test.mjs
 ```
@@ -142,7 +142,7 @@ it does not grant TCC permissions or claim an interactive desktop test.
 ## Upstream
 
 - [CUA source and MIT license](https://github.com/trycua/cua)
-- [Pinned Remote AI driver release](https://github.com/piperhex/remoteai/releases/tag/cua-v0.37.0-remoteai.2)
+- [Pinned Remote AI driver release](https://github.com/piperhex/remoteai/releases/tag/cua-v0.37.0-remoteai.3)
 - [Independent CUA package and release workflow](../packages/cua/README.md)
 - [Driver integration boundaries](https://github.com/trycua/cua/blob/cua-driver-rs-v0.37.0/libs/cua-driver/README.md)
 - [Windows MCP tools](https://cua.ai/docs/reference/cua-driver/mcp-tools-windows)

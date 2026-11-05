@@ -14,7 +14,7 @@ const supported = ['win32', 'darwin'].includes(process.platform) && ['x64', 'arm
 const executable = path.resolve('apps/desktop/src-tauri/target/debug', process.platform === 'win32' ? 'csw.exe' : 'csw');
 const source = process.env.CSW_CUA_DRIVER_DIRECTORY;
 const codex = process.env.CSW_CUA_CODEX_BINARY;
-const version = '0.37.0-remoteai.2';
+const version = '0.37.0-remoteai.3';
 const driverVersion = '0.37.0';
 const timeoutMs = 30000;
 const cleanupOptions = { recursive: true, force: true, maxRetries: 10, retryDelay: 100 };

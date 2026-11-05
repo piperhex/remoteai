@@ -50,11 +50,11 @@ pub(super) fn select(os: &str, architecture: &str) -> Result<Asset> {
         }
         ("windows", "x86_64") => (
             "windows-x86_64",
-            "cc395c8a7f2f291b4a4bcadff7dd95f96050f4c70004700b92acc970c7c77f1a",
+            "d202ac38a0fcb20e4277e08511e63c45edc70efdf463f86c81f9dcb60728adec",
         ),
         ("windows", "aarch64") => (
             "windows-arm64",
-            "b1b83f810ce48c834c08d7bb5a689eb2c4c811901714c13552e8b964d2562151",
+            "c43b23c578163f0aa209fceed78e307d34273074b42d5d67b4770647b18ff4ff",
         ),
         _ => return Err(ComputerError::Unsupported),
     };

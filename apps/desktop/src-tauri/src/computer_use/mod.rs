@@ -19,7 +19,7 @@ pub(crate) use client::ComputerSession;
 pub(crate) use upgrade::start;
 static CHANGES: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
-const VERSION: &str = "0.37.0-remoteai.2";
+const VERSION: &str = "0.37.0-remoteai.3";
 // run_script allows 120 seconds; leave time for dispatch and the final response.
 const TOOL_TIMEOUT_SECONDS: u64 = 150;
 const MCP_SERVER: &str = "codex_switch_computer_use";
