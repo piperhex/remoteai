@@ -109,6 +109,7 @@ it('resets a failed page when switching repositories', async () => {
   vi.mocked(client.history).mockRejectedValueOnce(new Error('History unavailable'));
   await scroll(300);
   await render({ cwd: '/another-project' });
-  expect(rows()).toHaveLength(5);
-  expect(client.history).toHaveBeenLastCalledWith('/another-project', 3);
+  expect(rows()).toHaveLength(3);
+  expect(history().scrollTop).toBe(0);
+  expect(client.history).toHaveBeenLastCalledWith('/another-project', 0);
 });

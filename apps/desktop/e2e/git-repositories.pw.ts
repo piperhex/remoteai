@@ -43,12 +43,25 @@ for (const mode of ['local', 'remote', 'web']) {
       await expect(page.locator('body')).toHaveAttribute('data-git-diff-cwd', 'C:/project/packages/shared');
       await page.getByRole('tab', { name: 'Git', exact: true }).click();
       await page.getByRole('tab', { name: '提交记录', exact: true }).click();
+      const repository = page.getByRole('combobox', { name: 'Git 仓库', exact: true });
+      await expect(repository).toHaveValue('C:/project');
+      await expect(repository.locator('option[value="C:/project/apps/native"]')).toHaveJSProperty('disabled', true);
+      await expect(page.locator('.git-history-row')).not.toHaveCount(0);
+      await expect(page.locator('.git-history .git-refs').filter({ hasText: 'packages/shared' })).toHaveCount(0);
+      await page.screenshot({ path: info.outputPath(`${mode}-history-root.png`), animations: 'disabled' });
+      await repository.selectOption('C:/project/packages/shared');
       await expect(page.locator('.git-history .git-refs').filter({ hasText: 'packages/shared' }).first()).toBeVisible();
-      await page.screenshot({ path: info.outputPath(`${mode}-unified-history.png`), animations: 'disabled' });
+      await page.screenshot({ path: info.outputPath(`${mode}-history-child.png`), animations: 'disabled' });
       await page.locator('.git-history-row').filter({ hasText: 'packages/shared' }).first().click();
       await expect(page.locator('body')).toHaveAttribute('data-git-files-cwd', 'C:/project/packages/shared');
       await page.getByRole('button', { name: '返回提交记录', exact: true }).click();
+      await expect(repository).toHaveValue('C:/project/packages/shared');
+      await page.getByRole('button', { name: '刷新 Git', exact: true }).click();
+      await expect(repository).toHaveValue('C:/project/packages/shared');
+      await repository.selectOption('C:/project');
+      await expect(page.locator('.git-history .git-refs').filter({ hasText: 'packages/shared' })).toHaveCount(0);
       await page.getByRole('tab', { name: /^改动/ }).click();
+      await expect(repository).toHaveCount(0);
       await page.getByRole('button', { name: '提交并推送', exact: true }).click();
       await expect(page.locator('body')).toHaveAttribute('data-git-submissions', JSON.stringify([
         { operation: 'commit', cwd: 'C:/project/packages/shared' },
