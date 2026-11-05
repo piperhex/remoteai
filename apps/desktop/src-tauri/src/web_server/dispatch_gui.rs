@@ -106,7 +106,9 @@ fn dispatch_gui_command(app: AppHandle, command: &str, args: Value) -> Result<Va
         "codex_gui_respond" => serialize(block_on(codex_gui::codex_gui_respond(
             app.state::<GuiState>(), argument(&args, "reply")?,
         ))),
-        "codex_gui_events" => serialize(codex_gui::web::poll(&app, argument(&args, "cursor")?)),
+        "codex_gui_events" => serialize(codex_gui::web::poll(
+            &app, argument(&args, "cursor")?, argument(&args, "viewedThreads")?,
+        )),
         "codex_gui_usage_summary" => serialize(block_on(codex_gui::usage::codex_gui_usage_summary(app))),
         _ => dispatch_extended_command(app, command, args),
     }

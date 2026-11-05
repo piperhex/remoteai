@@ -9,7 +9,7 @@ import { sliceHistory, type PagedHistoryDelta } from '../../../../shared/remote-
 import { EventStream } from './eventStream';
 
 vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
-vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false }));
+vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false, isDesktopApp: false }));
 vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 beforeEach(() => vi.resetAllMocks());
 afterEach(() => vi.useRealTimers());
@@ -116,6 +116,7 @@ it('keeps a new live turn when it starts during an idle PC history read', async 
     let finish!: (value: { thread: Thread }) => void;
     vi.mocked(guiApi.request).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
     const refresh = controller.refreshSelected();
+    await vi.waitFor(() => expect(finish).toBeTypeOf('function'));
     emit({ method: 'turn/started', params: { threadId: remote.id,
       turn: { id: 'new', status: 'inProgress', items: [] } } });
     emit({ method: 'item/completed', params: { threadId: remote.id, turnId: 'new',

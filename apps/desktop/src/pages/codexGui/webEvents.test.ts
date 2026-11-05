@@ -27,7 +27,7 @@ it("establishes a cursor before connect, shares polling and delivers ordered GUI
     { name: "codex-gui-download", payload: { downloaded: 100 } },
   ]));
   await vi.advanceTimersByTimeAsync(250);
-  expect(backend.invoke).toHaveBeenLastCalledWith("codex_gui_events", { cursor: batch(0).cursor });
+  expect(backend.invoke).toHaveBeenLastCalledWith("codex_gui_events", { cursor: batch(0).cursor, viewedThreads: [] });
   expect(gui).toHaveBeenCalledWith({ method: "turn/started" });
   expect(install).toHaveBeenCalledWith({ downloaded: 100 });
 });

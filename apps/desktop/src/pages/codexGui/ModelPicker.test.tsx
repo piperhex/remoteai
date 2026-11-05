@@ -8,7 +8,8 @@ import { ModelPicker } from "./ModelPicker";
 import { useUsageStatus } from "./useUsageStatus";
 import type { Model } from "../../../../../shared/conversation/types";
 
-vi.mock("../../api/backend", () => ({ invoke: vi.fn(), isHostedWebApp: false, canManageCodexConnection: true }));
+vi.mock("../../api/backend", () => ({ invoke: vi.fn(), isDesktopApp: false,
+  isHostedWebApp: false, canManageCodexConnection: true }));
 vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const models: Model[] = ["kimi-k3", "deepseek-v3"].map((model) => ({
   id: model, model, displayName: model, isDefault: true, defaultReasoningEffort: "high",
@@ -65,7 +66,7 @@ it("updates an open menu and accepts selections while usage polling waits for a 
     menu.querySelector<HTMLButtonElement>("button")!.click();
   });
   expect(controller.getSnapshot().settings.model).toBe("deepseek-v3");
-  expect(invoke).toHaveBeenCalledTimes(2);
+  expect(vi.mocked(invoke).mock.calls.filter(([command]) => command === 'codex_gui_usage_summary')).toHaveLength(1);
   await act(async () => finish.forEach((resolve) => resolve({
     totalTokens: 123, estimatedCostUsd: 0.1, running: true,
   })));

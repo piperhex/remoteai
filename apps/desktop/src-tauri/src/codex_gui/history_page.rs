@@ -5,6 +5,22 @@ use super::error::{GuiError, Result};
 
 const DEFAULT_PAGE_SIZE: usize = 10;
 
+/// Resuming a background queue needs the latest lifecycle state, never the old message bodies.
+pub(super) fn summarize(data: &mut Value) {
+    let Some(turns) = data["thread"]["turns"].as_array_mut() else {
+        return;
+    };
+    if turns.len() > 1 {
+        turns.drain(..turns.len() - 1);
+    }
+    if let Some(turn) = turns.last_mut().and_then(Value::as_object_mut) {
+        turn.insert("items".into(), json!([]));
+        for key in ["diff", "plan", "planExplanation"] {
+            turn.remove(key);
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct HistoryCursor {
@@ -102,6 +118,19 @@ pub(super) fn apply(data: &mut Value, window: &HistoryWindow) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn background_resume_keeps_lifecycle_state_without_message_bodies() {
+        let mut data = history();
+        data["thread"]["turns"][2]["status"] = json!("inProgress");
+        data["thread"]["turns"][2]["diff"] = json!("large diff".repeat(100_000));
+        summarize(&mut data);
+        let turns = data["thread"]["turns"].as_array().unwrap();
+        assert_eq!(turns.len(), 1);
+        assert_eq!(turns[0]["status"], "inProgress");
+        assert_eq!(turns[0]["items"], json!([]));
+        assert!(turns[0]["diff"].is_null());
+    }
 
     fn history() -> Value {
         let turns: Vec<Value> = (0..3).map(|group| {

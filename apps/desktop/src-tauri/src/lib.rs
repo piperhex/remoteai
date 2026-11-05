@@ -454,6 +454,7 @@ pub fn run() {
             codex_gui::releases::manual::codex_gui_cli_manual_download,
             codex_gui::releases::manual::codex_gui_cli_import,
             codex_gui::codex_gui_request,
+            codex_gui::web::codex_gui_watch,
             codex_gui::file_stream::bulk::codex_gui_file_bulk_read,
             codex_gui::codex_gui_respond,
             codex_gui::git::codex_gui_git,

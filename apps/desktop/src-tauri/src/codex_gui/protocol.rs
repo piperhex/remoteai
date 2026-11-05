@@ -100,6 +100,8 @@ pub(crate) enum GuiRequest {
         thread_id: String,
         access: AccessMode,
         cwd: Option<String>,
+        #[serde(default)]
+        summary_only: bool,
     },
     Fork {
         thread_id: String,
@@ -310,6 +312,7 @@ impl GuiRequest {
                 thread_id,
                 access,
                 cwd,
+                ..
             } => {
                 let mut params = thread_params(thread_id)?;
                 if let Some(cwd) = cwd {

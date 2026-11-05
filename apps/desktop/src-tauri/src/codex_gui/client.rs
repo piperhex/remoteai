@@ -59,6 +59,7 @@ pub(super) struct Client {
     pending: Mutex<Pending>,
     approvals: Mutex<HashMap<String, GuiEvent>>,
     active_turns: Mutex<HashMap<String, String>>,
+    live_history: std::sync::Mutex<super::live_history::LiveHistory>,
     completion_notifications: Mutex<completion_notifications::CompletionNotifications>,
     context_capacity: context_capacity::ContextCapacity,
     context_usage: Mutex<context_usage::UsageCache>,
@@ -132,6 +133,7 @@ impl Client {
             pending: Mutex::new(HashMap::new()),
             approvals: Mutex::new(HashMap::new()),
             active_turns: Mutex::new(HashMap::new()),
+            live_history: std::sync::Mutex::default(),
             completion_notifications: Mutex::default(),
             context_capacity: context_capacity::ContextCapacity::default(),
             context_usage: Mutex::default(),
@@ -409,7 +411,18 @@ impl Client {
         }
         super::push_notifications::receive(&self.app, &event, &self.notification_session);
         super::conversation_context::display(&mut event.params);
+        match self.live_history.lock() {
+            Ok(mut history) => history.receive(&event),
+            Err(_) => eprintln!("Codex GUI live history is unavailable"),
+        }
         super::web::publish(&self.app, "codex-gui-event", event);
+    }
+
+    pub(super) fn merge_live_history(&self, data: &mut Value) {
+        match self.live_history.lock() {
+            Ok(history) => history.merge(data),
+            Err(_) => eprintln!("Codex GUI live history is unavailable"),
+        }
     }
 
     async fn disconnect(&self, notify: bool) {

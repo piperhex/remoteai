@@ -23,6 +23,7 @@ pub(crate) mod dictation;
 mod downloads;
 pub(crate) mod dropped_files;
 mod error;
+mod event_visibility;
 pub(crate) mod file_actions;
 pub(crate) mod file_preview;
 pub(crate) mod file_stream;
@@ -41,6 +42,7 @@ mod image_download;
 mod image_preview;
 mod image_thumbnail;
 mod images;
+mod live_history;
 mod local_file;
 mod mcp_approval;
 mod message_edit;
@@ -296,6 +298,13 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
         )
         .await;
     }
+    let summary_only = matches!(
+        &request,
+        GuiRequest::Resume {
+            summary_only: true,
+            ..
+        }
+    );
     let history_window = match &request {
         GuiRequest::Read { window, .. } => window.clone(),
         _ => None,
@@ -334,6 +343,12 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
     // Discard unrequested history before serializing IPC, away from the UI and async workers.
     tauri::async_runtime::spawn_blocking(move || {
         let mut data = data;
+        if method == "thread/read" {
+            client.merge_live_history(&mut data);
+        }
+        if summary_only {
+            history_page::summarize(&mut data);
+        }
         if let Some(window) = history_window {
             history_page::apply(&mut data, &window)?;
         }

@@ -18,7 +18,7 @@ it.each([undefined, chatHandshake])('connects compatible phones and preserves pe
   expect(chatApprovals(result.data)).toEqual(approvals);
   expect(guiApi.connect).toHaveBeenCalledWith({ reuseExisting: true });
   if (body) expect(result.data).toEqual({ ...chatHandshake, fileBulkV1: true, filePreviewsV1: true,
-    portStreamsV1: true, approvals });
+    portStreamsV1: true, conversationViewsV1: true, approvals });
   else expect(result.data).toEqual(approvals);
 });
 

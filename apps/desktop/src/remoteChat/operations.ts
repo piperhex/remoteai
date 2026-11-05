@@ -17,6 +17,7 @@ import { parseHistoryWindow, sliceHistory, type HistoryPage } from '../../../../
 import { getChatPolicy } from '../../../../shared/remote-chat/policy';
 import { historyNotification } from '../../../../shared/remote-chat/historyNotification';
 import { LiveHistory } from './liveHistory';
+import { ConversationViews } from './conversationViews';
 import { CommandMetricsStore } from './commandMetrics';
 import { composerCatalog } from './composerCatalog';
 import { remoteQueue } from './queue';
@@ -88,6 +89,7 @@ function terminalLinkRequest(request: RpcRequest): Cached['terminalLink'] {
     action: udpActions[String(stream.type)] ?? stream.type };
 }
 const READ_OPERATIONS = new Set([
+  'viewThread',
   CODEX_STATUS_OPERATION,
   'projectFileRead',
   'projectFileBlame',
@@ -126,6 +128,7 @@ function response(request: RpcRequest, data: unknown, mode: ConnectionMode): Rpc
 }
 
 export class ChatOperations {
+  readonly views = new ConversationViews();
   private readonly dictation = new RemoteDictation();
   private readonly files = new RemoteFiles();
   attachMappingStreams(owner: string, link: import('../../../../shared/remote-chat/link').ChatLink) {
@@ -193,6 +196,7 @@ export class ChatOperations {
   }
 
   release(owner?: string) {
+    this.views.release(owner);
     this.dictation.release(owner);
     this.files.release(owner);
     this.desktop.release(owner);
@@ -230,6 +234,13 @@ export class ChatOperations {
   private async run(request: RpcRequest, mode: ConnectionMode, owner: string): Promise<unknown> {
     if (request.method === 'connect') return this.connect(request.body);
     const body = { ...object(request.body) };
+    if (request.method === 'request' && body.operation === 'viewThread') {
+      await this.views.select(owner, body.threadId);
+      return {};
+    }
+    if (request.method === 'request' && ['syncHistory', 'read'].includes(String(body.operation))) {
+      await this.views.select(owner, body.threadId, false);
+    }
     if (request.method === 'request' && body.operation === GROUPS_OPERATION) return remoteGroups(body);
     if (request.method === 'request' && ['editMessage', 'deleteMessage'].includes(String(body.operation))) {
       return this.images.prepare(await changeRemoteMessage(body), String(body.threadId));
@@ -361,7 +372,8 @@ export class ChatOperations {
       const approvals = await guiApi.connect({ reuseExisting: true });
       this.titles.refreshSettings();
       return body === undefined ? approvals
-        : { ...chatHandshake, approvals, fileBulkV1: true, filePreviewsV1: true, portStreamsV1: true };
+        : { ...chatHandshake, approvals, fileBulkV1: true, filePreviewsV1: true, portStreamsV1: true,
+          conversationViewsV1: true };
     } catch (error) { throw new Error(guiConnectionError(error)); }
   }
 

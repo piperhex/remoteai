@@ -1,6 +1,9 @@
 //! Bounded replay for authenticated browser clients. Publishers run on background workers;
 //! reads run in the web request worker and never touch files or the GUI process lock.
-use std::{collections::VecDeque, sync::Mutex};
+use std::{
+    collections::{HashSet, VecDeque},
+    sync::Mutex,
+};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -97,39 +100,88 @@ impl EventLog {
 }
 
 #[derive(Default)]
-pub(crate) struct WebEventState(Mutex<EventLog>);
+pub(crate) struct WebEventState(Mutex<EventLog>, Mutex<HashSet<String>>);
+
+#[tauri::command]
+pub(crate) async fn codex_gui_watch(
+    state: tauri::State<'_, WebEventState>,
+    thread_ids: Vec<String>,
+) -> Result<(), String> {
+    if thread_ids.len() > 256 || thread_ids.iter().any(|id| id.is_empty() || id.len() > 256) {
+        return Err(super::error::GuiError::InvalidRequest.to_string());
+    }
+    *state
+        .1
+        .lock()
+        .map_err(|_| super::error::GuiError::Disconnected.to_string())? =
+        thread_ids.into_iter().collect();
+    Ok(())
+}
+
+fn visible(event: WebEvent, viewed: &HashSet<String>) -> Option<WebEvent> {
+    if event.name != "codex-gui-event" {
+        return Some(event);
+    }
+    super::event_visibility::filter(event.payload, viewed).map(|payload| WebEvent {
+        name: event.name,
+        payload,
+    })
+}
 
 pub(crate) fn publish<R: tauri::Runtime>(
     app: &AppHandle<R>,
     name: &str,
     payload: impl Serialize + Clone,
 ) {
-    if app.emit_to("main", name, payload.clone()).is_err() {
-        eprintln!("Codex GUI could not deliver a desktop event");
-    }
     let Ok(payload) = serde_json::to_value(payload) else {
         eprintln!("Codex GUI could not serialize a browser event");
         return;
     };
-    let bytes = payload.to_string().len() + name.len();
     let state = app.state::<WebEventState>();
+    let viewed = match state.1.lock() {
+        Ok(viewed) => viewed.clone(),
+        Err(_) => {
+            eprintln!("Codex GUI view subscriptions are unavailable");
+            return;
+        }
+    };
+    let event = WebEvent {
+        name: name.to_owned(),
+        payload,
+    };
+    if let Some(desktop) = visible(event.clone(), &viewed) {
+        if app.emit_to("main", name, desktop.payload).is_err() {
+            eprintln!("Codex GUI could not deliver a desktop event");
+        }
+    }
+    let bytes = event.payload.to_string().len() + name.len();
     match state.0.lock() {
-        Ok(mut log) => log.push(
-            WebEvent {
-                name: name.to_owned(),
-                payload,
-            },
-            bytes,
-        ),
+        Ok(mut log) => log.push(event, bytes),
         Err(_) => eprintln!("Codex GUI browser event log is unavailable"),
     };
 }
 
-pub(crate) fn poll(app: &AppHandle, cursor: Option<Cursor>) -> Result<EventBatch, String> {
+pub(crate) fn poll(
+    app: &AppHandle,
+    cursor: Option<Cursor>,
+    viewed: Option<Vec<String>>,
+) -> Result<EventBatch, String> {
     app.state::<WebEventState>()
         .0
         .lock()
-        .map(|log| log.read(cursor))
+        .map(|log| {
+            let mut batch = log.read(cursor);
+            // Each browser supplies its own interests; it must not change another viewer's subscription.
+            if let Some(viewed) = viewed {
+                let viewed = viewed.into_iter().collect();
+                batch.events = batch
+                    .events
+                    .into_iter()
+                    .filter_map(|event| visible(event, &viewed))
+                    .collect();
+            }
+            batch
+        })
         .map_err(|_| "暂时无法接收消息，请重新连接。".to_string())
 }
 

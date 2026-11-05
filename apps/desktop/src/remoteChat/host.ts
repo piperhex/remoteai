@@ -1,4 +1,5 @@
 import { guiApi } from '../../../../shared/conversation/api';
+import type { GuiEvent } from '../../../../shared/conversation/types';
 import { CHAT_POLICY_MESSAGE, setChatPolicy } from '../../../../shared/remote-chat/policy';
 import { keyPair } from '../../../../shared/remote-chat/cipher';
 import { ChatLink } from '../../../../shared/remote-chat/link';
@@ -123,9 +124,14 @@ export class ChatHost {
     clearTimeout(this.leases.get(sessionId));
     this.leases.set(sessionId, setTimeout(() => this.drop(sessionId), Math.max(0, expiresAt - Date.now())));
   }
-  private broadcast(event: unknown) {
+  private broadcast(event: { method: string; params: object }) {
     for (const [id, link] of this.links) {
-      if (!this.assistance.restricted(id)) void link.send({ kind: 'event', event }).catch(() => link.close());
+      // Queue/composer/sidebar messages use their own schemas and are always lightweight.
+      const conversation = /^(item|turn|thread)\//.test(event.method);
+      const visible = conversation ? this.operations.views.event(id, event as GuiEvent) : event;
+      if (visible && !this.assistance.restricted(id)) {
+        void link.send({ kind: 'event', event: visible }).catch(() => link.close());
+      }
     }
   }
 

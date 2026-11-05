@@ -13,7 +13,7 @@ import { ChatSettings } from '../../../../shared/remote-chat/views/ChatSettings'
 import { useDesktopLayout } from '../../../../shared/layout/useDesktopLayout';
 
 vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
-vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false }));
+vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false, isDesktopApp: false }));
 vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 vi.mock('../../../../shared/layout/useDesktopLayout', () => ({ useDesktopLayout: vi.fn(() => false) }));
 vi.mock('../../../../shared/layout/AdaptiveSheet', () => ({

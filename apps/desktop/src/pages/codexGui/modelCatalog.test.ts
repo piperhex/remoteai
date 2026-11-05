@@ -10,7 +10,8 @@ import type { Model } from "../../../../../shared/conversation/types";
 
 vi.mock("../../../../../shared/conversation/api", () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), subscribe: vi.fn() } }));
 vi.mock("../../../../../shared/conversation/webEvents", () => ({ subscribeGuiEvent: vi.fn() }));
-vi.mock("../../api/backend", () => ({ isHostedWebApp: false, subscribeToProviderEvents: () => () => {} }));
+vi.mock("../../api/backend", () => ({ isDesktopApp: false, isHostedWebApp: false,
+  subscribeToProviderEvents: () => () => {} }));
 vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const model = (name: string): Model => ({ id: name, model: name, displayName: name, isDefault: true,
   defaultReasoningEffort: "medium",

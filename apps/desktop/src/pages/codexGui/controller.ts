@@ -1,4 +1,7 @@
 import { guiApi } from "../../../../../shared/conversation/api";
+import { watchConversation } from '../../../../../shared/conversation/viewedThreads';
+import { visibleConversationEvent } from '../../../../../shared/conversation/eventVisibility';
+import { trackProcessing } from '../../../../../shared/conversation/processing';
 import { CapacityRetry } from "../../../../../shared/conversation/capacityRetry";
 import { ConversationCache } from "./conversationCache";
 import { GuiThreadList } from "./threadList";
@@ -100,7 +103,10 @@ export class GuiController {
     if (!streaming) this.state.conversations = this.conversationCache.trim(this.state, this.capacityRetry.retainedThreads());
     if (previous.queued !== this.state.queued) this.queueJournal.remember(this.state.queued);
     this.capacityRetry.sync(previous, this.state);
-    if (previous.selected !== this.state.selected) savePreferences(this.state);
+    if (previous.selected !== this.state.selected) {
+      savePreferences(this.state);
+      void watchConversation(this, this.state.selected).catch(this.report);
+    }
     if (!streaming && previous.conversations !== this.state.conversations) {
       this.messageListeners.forEach(listener => listener());
     }
@@ -159,6 +165,9 @@ export class GuiController {
   };
   private receive = (event: GuiEvent) => {
     if (this.disposed) return;
+    const visible = visibleConversationEvent(event, this.state.selected);
+    if (!visible) return;
+    event = visible;
     if (!isTextDelta(event)) this.flushStream();
     const threadId = event.params.threadId ?? event.params.thread?.id;
     const known = threadId ? this.state.conversations[threadId]?.thread : undefined;
@@ -185,7 +194,13 @@ export class GuiController {
   };
 
   private receiveSettled(event: GuiEvent) {
-    this.patch(reduceEvent(this.state, event));
+    const id = event.params.threadId;
+    const background = id && id !== this.state.selected ? this.state.conversations[id] : undefined;
+    if (background && event.id == null && ['item/started', 'item/completed'].includes(event.method)) {
+      // Background item summaries update the sidebar phase without accumulating item placeholders.
+      const updated = trackProcessing(background, event);
+      this.patch({ conversations: { ...this.state.conversations, [id!]: updated } });
+    } else this.patch(reduceEvent(this.state, event));
     const listed = this.threadList.peek(this.state);
     if (listed) this.patch({ threads: listed.data });
     this.capacityRetry.receive(event);
@@ -299,9 +314,11 @@ export class GuiController {
     this.conversationCache.touch(id);
     const generation = ++this.selectionGeneration;
     this.patch({ selected: id, error: "" });
-    await this.modelSettings.select(id);
-    if (generation !== this.selectionGeneration) return;
-    try { await this.history.select(id, () => generation === this.selectionGeneration); }
+    try {
+      await Promise.all([watchConversation(this, id), this.modelSettings.select(id)]);
+      if (generation !== this.selectionGeneration) return;
+      await this.history.select(id, () => generation === this.selectionGeneration);
+    }
     catch (error) { if (generation === this.selectionGeneration) this.report(error); }
   };
 
@@ -380,6 +397,7 @@ export class GuiController {
       const { thread } = response;
       if (!currentCatalog()) return false;
       this.acceptSentThread(thread, { selected, startedAtMs, projectOverride, settings });
+      await watchConversation(this, this.state.selected);
       // Loaded threads can ignore resume overrides; apply project and access settings to each new turn.
       const { turn } = await guiApi.request<{ turn: Turn }>({ operation: "send", threadId: thread.id,
         text, images, skills, ...(attachments.length ? { attachments } : {}), model: settings.model || undefined,
@@ -531,6 +549,7 @@ export class GuiController {
 
   activate = () => { this.disposed = false; this.modelCatalog.activate(); };
   suspend = () => {
+    void watchConversation(this, null).catch(this.report);
     this.threadList.invalidate();
     this.modelCatalog.suspend();
     this.unlisten?.(); this.unlisten = undefined;
@@ -538,6 +557,7 @@ export class GuiController {
     this.patch({ ...reduceEvent(this.state, { method: "connection/closed", params: {} }), error: "" });
   };
   dispose = () => {
+    void watchConversation(this, null).catch(error => console.error('Could not release conversation subscription', error));
     this.flushStream();
     this.threadList.invalidate();
     this.modelCatalog.suspend();

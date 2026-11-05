@@ -8,7 +8,7 @@ import type { Thread } from '../../../../shared/conversation/types';
 import type { PagedHistoryDelta } from '../../../../shared/remote-chat/historyPage';
 import { CONVERSATION_METRICS_OPERATION } from '../../../../shared/remote-chat/conversationMetrics';
 
-vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false }));
+vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false, isDesktopApp: false }));
 vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 beforeEach(() => vi.clearAllMocks());

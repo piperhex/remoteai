@@ -2,11 +2,25 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { invoke } from "../../api/backend";
 import { guiApi } from "../../../../../shared/conversation/api";
+import { watchConversation } from '../../../../../shared/conversation/viewedThreads';
 
-vi.mock("../../api/backend", () => ({ invoke: vi.fn(), isHostedWebApp: true }));
+vi.mock("../../api/backend", () => ({ invoke: vi.fn(), isHostedWebApp: true, isDesktopApp: false }));
 vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 vi.mock("../../../../../shared/conversation/webEvents", () => ({ subscribeGuiEvent: vi.fn() }));
 beforeEach(() => vi.resetAllMocks());
+
+it('resumes background queues with summaries and keeps content for an explicitly viewed thread', async () => {
+  const owner = {};
+  vi.mocked(invoke).mockResolvedValue({ data: { thread: { id: 'thread' } } });
+  const request = { operation: 'resume' as const, threadId: 'thread', access: 'workspace-write' as const };
+  await guiApi.request(request);
+  expect(invoke).toHaveBeenLastCalledWith('codex_gui_request', { request: { ...request, summaryOnly: true } });
+  await watchConversation(owner, 'thread');
+  try {
+    await guiApi.request(request);
+    expect(invoke).toHaveBeenLastCalledWith('codex_gui_request', { request });
+  } finally { await watchConversation(owner, null); }
+});
 
 it("sends text and image input through the hosted backend and unwraps the protocol result", async () => {
   const request = { operation: "send" as const, threadId: "host-thread", text: "hello",
