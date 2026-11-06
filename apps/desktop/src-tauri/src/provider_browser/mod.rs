@@ -120,8 +120,11 @@ fn browser_builder(
     .on_navigation(move |url| {
         let allowed = allowed_url(url, dev_origin.as_ref());
         if allowed {
-            if let Err(error) = app.emit_to("main", &event, serde_json::json!({"url":url.as_str()}))
-            {
+            if let Err(error) = app.emit_to(
+                "main",
+                &event,
+                serde_json::json!({"url":url.as_str(),"loading":true}),
+            ) {
                 eprintln!("Provider browser navigation notification failed: {error}");
             }
         }
@@ -231,6 +234,7 @@ pub(crate) enum Action {
     Back,
     Forward,
     Reload,
+    Stop,
 }
 
 #[tauri::command]
@@ -245,10 +249,16 @@ pub(crate) async fn provider_browser_action(
             .app_handle()
             .get_webview(&label)
             .ok_or(BrowserError::Unavailable)?;
+        if matches!(action, Action::Stop) {
+            platform::stop(&view)?;
+            lifecycle::notify_loading(&view, false);
+            return Ok(());
+        }
         let script = match action {
             Action::Back => "history.back()",
             Action::Forward => "history.forward()",
             Action::Reload => "location.reload()",
+            Action::Stop => return Err(BrowserError::Invalid),
         };
         view.eval(script).map_err(|_| BrowserError::Unavailable)
     })

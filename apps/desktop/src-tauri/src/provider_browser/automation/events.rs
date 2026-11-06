@@ -9,6 +9,12 @@ pub(super) fn listen(app: &AppHandle, thread: &str, id: &str) -> tauri::EventId 
         let Ok(payload) = serde_json::from_str::<Value>(event.payload()) else {
             return;
         };
+        if let Some(loading) = payload["loading"].as_bool() {
+            loading_changed(handle.clone(), thread.clone(), id.clone(), loading);
+            if payload["url"].as_str().is_none() {
+                return;
+            }
+        }
         let Some(address) = payload["url"].as_str().map(str::to_owned) else {
             return;
         };
@@ -30,4 +36,19 @@ pub(super) fn listen(app: &AppHandle, thread: &str, id: &str) -> tauri::EventId 
             });
         }
     })
+}
+
+fn loading_changed(app: AppHandle, thread: String, id: String, loading: bool) {
+    tauri::async_runtime::spawn_blocking(move || {
+        if let Err(error) = app.state::<State>().loading(&id, loading) {
+            eprintln!("Browser loading update failed: {error}");
+        }
+        crate::codex_gui::web::publish(
+            &app,
+            "codex-gui-event",
+            serde_json::json!({
+                "method":"browser/loading", "params":{"threadId":thread,"tabId":id,"loading":loading}
+            }),
+        );
+    });
 }

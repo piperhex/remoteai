@@ -85,6 +85,16 @@ pub(crate) async fn execute(app: AppHandle, request: Request) -> Result<Value> {
     let _operation = tab.operation.lock().await;
     let browser = view(&app, &tab.id)?;
     let value = match request.action {
+        Action::Stop => {
+            tauri::async_runtime::spawn_blocking(move || {
+                super::platform::stop(&browser).map_err(|_| Error::Unavailable)?;
+                super::lifecycle::notify_loading(&browser, false);
+                Ok::<_, Error>(())
+            })
+            .await
+            .map_err(|_| Error::Unavailable)??;
+            json!({"stopped":true,"loading":false})
+        }
         Action::Close => {
             let closing = browser.clone();
             tauri::async_runtime::spawn_blocking(move || closing.close())
@@ -108,6 +118,7 @@ pub(crate) async fn execute(app: AppHandle, request: Request) -> Result<Value> {
                 .map_err(|_| Error::Unavailable)?
                 .map_err(|_| Error::Unavailable)?;
             image["url"] = json!(address.as_str());
+            image["loading"] = json!(state.get(&tab.thread_id, &tab.id)?.loading);
             image
         }
         Action::Navigate { url: address } => {

@@ -4,6 +4,14 @@ use std::collections::BTreeMap;
 #[cfg(windows)]
 mod windows;
 
+pub(super) fn stop(view: &tauri::Webview) -> Result<()> {
+    #[cfg(windows)]
+    return windows::stop(view);
+    #[cfg(not(windows))]
+    view.eval("window.stop()")
+        .map_err(|_| BrowserError::Unavailable)
+}
+
 pub(super) fn configure(
     view: &tauri::Webview,
     origin: &str,

@@ -2,7 +2,8 @@ import { defineConfig } from '@playwright/test';
 import { testBrowserLaunchOptions } from '../../scripts/test-browser.mjs';
 
 export default defineConfig({
-  testDir: './e2e', testMatch: ['website-tabs.pw.ts', 'reply-resources.pw.ts', 'reply-image-menu.pw.ts'],
+  testDir: './e2e', testMatch: ['website-tabs.pw.ts', 'reply-resources.pw.ts', 'reply-image-menu.pw.ts',
+    'browser-loading.pw.ts'],
   workers: 1, timeout: 45_000,
   outputDir: '../../.codex-tmp/website-tabs',
   use: { baseURL: 'http://127.0.0.1:1552', launchOptions: testBrowserLaunchOptions(),

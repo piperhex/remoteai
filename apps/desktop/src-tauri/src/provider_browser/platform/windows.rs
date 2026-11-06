@@ -7,6 +7,27 @@ use webview2_com::{
 };
 use windows::core::{w, HSTRING, PWSTR};
 
+pub(super) fn stop(view: &tauri::Webview) -> Result<()> {
+    let (sender, receiver) = mpsc::sync_channel(1);
+    view.with_webview(move |view| {
+        // SAFETY: Tauri runs this callback on the live WebView2 controller's COM apartment.
+        // Stop also cancels navigation before a document exists, when script evaluation cannot.
+        let result = unsafe {
+            view.controller()
+                .CoreWebView2()
+                .and_then(|core| core.Stop())
+        };
+        if sender.send(result).is_err() {
+            eprintln!("Browser stop receiver closed");
+        }
+    })
+    .map_err(|_| BrowserError::Unavailable)?;
+    receiver
+        .recv_timeout(Duration::from_secs(10))
+        .map_err(|_| BrowserError::Unavailable)?
+        .map_err(|_| BrowserError::Unavailable)
+}
+
 pub(super) fn configure_headers(
     view: &tauri::Webview,
     origin: &str,

@@ -40,7 +40,7 @@ export function useProviderBrowser() {
     addTab({ ...next, title: new URL(url).hostname, headers: { ...parent.headers }, headerOrigin: parent.headerOrigin });
   };
   const action = (id: string, action: BrowserAction) => {
-    if (!isTauri() && action !== 'reload') {
+    if (!isTauri() && (action === 'back' || action === 'forward')) {
       setTabs((current) => current.map((tab) => tab.id === id ? moveTab(tab, action === 'back' ? -1 : 1) : tab));
       return;
     }

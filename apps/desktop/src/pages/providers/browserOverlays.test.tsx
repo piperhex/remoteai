@@ -39,7 +39,7 @@ async function mountBrowser(managed: boolean, embedded = true) {
     ...(managed ? { automationThread: 'thread' } : {}) };
   const Surface = managed ? WebsiteBrowserSurface : ProviderBrowserSurface;
   await act(async () => root.render(<BrowserClientContext.Provider value={{ native: true,
-    request: vi.fn(), subscribe: vi.fn() }}>
+    request: vi.fn().mockResolvedValue({ tabs: [] }), subscribe: vi.fn(async () => () => {}) }}>
     <section aria-modal={embedded ? undefined : 'true'}>
       <Surface tab={tab} active command={null} hideForModal={embedded} onNavigate={() => {}}
         onPopup={() => {}} t={marketText('zh')} />

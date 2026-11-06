@@ -17,6 +17,7 @@ pub(crate) enum Action {
     Back,
     Forward,
     Reload,
+    Stop,
     Close,
     Click { reference: String },
     Type { reference: String, text: String },
