@@ -170,7 +170,7 @@ describe('application lifetime lounge', () => {
     const socket = Socket.instances[0];
     expect(String(socket.url)).toBe('wss://example.test/lounge/socket');
     socket.onopen?.(); expect(socket.send).toHaveBeenCalledWith(
-      '{"type":"authenticate","ticket":"ticket","direct":true,"receipts":true,"groupAcks":true,"avatarCache":true}');
+      '{"type":"authenticate","ticket":"ticket","direct":true,"receipts":true,"groupAcks":true,"groupReads":true,"avatarCache":true}');
     socket.ready(); socket.message('one'); socket.message('one'); socket.message('own', true);
     expect(controller.snapshot().unread).toBe(1);
     expect(controller.snapshot().messages).toHaveLength(2);
@@ -187,7 +187,7 @@ describe('application lifetime lounge', () => {
     await vi.advanceTimersByTimeAsync(1000); await settle();
     const next = Socket.instances[1]; next.onopen?.(); next.ready();
     expect(next.send.mock.calls).toEqual([
-      ['{"type":"authenticate","ticket":"ticket","direct":true,"receipts":true,"groupAcks":true,"avatarCache":true}']]);
+      ['{"type":"authenticate","ticket":"ticket","direct":true,"receipts":true,"groupAcks":true,"groupReads":true,"avatarCache":true}']]);
     expect(controller.snapshot().messages).toHaveLength(1);
   });
   it('acknowledges only the authenticated sender echo and keeps renewal on the same connection', async () => {
