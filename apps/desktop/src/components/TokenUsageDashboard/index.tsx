@@ -161,13 +161,6 @@ export function TokenUsageDashboard({
       {error ? <div className={styles.tokenUsageError} role="alert">
         {(language !== "zh" && language !== "en" ? uiText("client.usage.couldNotRefreshTokenDataPleaseTryAgain", {}, language) : language === "zh" ? inlineCopy["Token_e999b69f"] : inlineCopy["Could_not_refresh_token_usage_34377d98"])}
       </div> : null}
-      <OfficialAccountUsage language={language} refreshSeconds={refreshSeconds}
-        startTs={startTs} refreshKey={officialRefreshKey} />
-      <AccountQuotaChart history={quotaHistory} startTs={startTs} endTs={endTs}
-        language={language} dark={dark} themeColor={themeColor} loading={loading}
-        error={quotaError ? ((language !== "zh" && language !== "en" ? uiText("client.usage.couldNotRefreshQuotaHistoryPleaseTryAgain", {}, language) : language === "zh" ? inlineCopy["text_760eab7b"] : inlineCopy["Could_not_refresh_quota_history_19d0ef0f"])) : undefined} />
-      <ConsumptionCharts daily={breakdown} dateKeys={dateKeys} language={language} palette={palette}
-        thresholdTokens={thresholdTokens} loading={loading} error={analyticsError} />
       <div className={`${styles.tokenDashboardGrid} ${styles.tokenDashboardGridTop}`}>
         <section className={`${styles.tokenChartPanel} ${styles.tokenChartPanelHeatmap}`}>
           <div className={styles.tokenChartHeading}><h2>{labels.heatmap}</h2><span>{labels.heatmapHint}</span></div>
@@ -178,6 +171,13 @@ export function TokenUsageDashboard({
           <EChart option={trendOption} label={labels.trend} className="tokenEchartTrend" />
         </section>
       </div>
+      <ConsumptionCharts daily={breakdown} dateKeys={dateKeys} language={language} palette={palette}
+        thresholdTokens={thresholdTokens} loading={loading} error={analyticsError} />
+      <OfficialAccountUsage language={language} refreshSeconds={refreshSeconds}
+        startTs={startTs} refreshKey={officialRefreshKey} />
+      <AccountQuotaChart history={quotaHistory} startTs={startTs} endTs={endTs}
+        language={language} dark={dark} themeColor={themeColor} loading={loading}
+        error={quotaError ? ((language !== "zh" && language !== "en" ? uiText("client.usage.couldNotRefreshQuotaHistoryPleaseTryAgain", {}, language) : language === "zh" ? inlineCopy["text_760eab7b"] : inlineCopy["Could_not_refresh_quota_history_19d0ef0f"])) : undefined} />
       <div className={`${styles.tokenDashboardGrid} ${styles.tokenDashboardGridBottom}`}>
         <section className={styles.tokenChartPanel}>
           <div className={styles.tokenChartHeading}><h2>{labels.breakdown}</h2><span>{labels.period}</span></div>

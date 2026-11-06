@@ -17,7 +17,7 @@ for (const width of [1440, 390]) test(`remote summary pauses, resumes, and switc
     expect(requests).toBeGreaterThanOrEqual(3);
     await page.getByRole('spinbutton').fill('3');
     await page.getByRole('button', { name: /^(应用|Apply)$/ }).click();
-    await expect(page.locator('.chat-token-card h3').first()).toContainText('3');
+    await expect(page.getByRole('heading', { name: /周.*Token.*总消耗|weeks.*Total tokens/ })).toContainText('3');
     await page.screenshot({ path: `${directory}/after-web-remote-open-${width}.png`, animations: 'disabled' });
     await page.getByRole('button', { name: /^(关闭|关闭详情抽屉|Close|Close details)$/ }).last().click();
     await expect(page.locator('.chat-token-summary')).not.toBeAttached();
