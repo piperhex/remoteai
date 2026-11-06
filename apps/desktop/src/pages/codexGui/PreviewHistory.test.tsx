@@ -78,7 +78,7 @@ it("does not duplicate the current target and keeps history across tab switches 
   const tab = (name: string) => [...host.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
     .find(element => element.textContent === name)!;
   await act(async () => tab("文件更改").click());
-  await act(async () => tab("预览").click());
+  await act(async () => tab("浏览器").click());
   await click("最小化详情抽屉");
   await act(async () => [...host.querySelectorAll("button")].find(element => element.textContent === "恢复预览")!.click());
   await click("返回上一页"); expect(heading()).toBe("first.md");

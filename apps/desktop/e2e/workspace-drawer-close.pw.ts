@@ -22,8 +22,8 @@ for (const mode of ['local', 'remote', 'web']) {
     await expect(page.locator('.pf-status:visible')).toContainText('未保存');
     await page.getByRole('button', { name: '打开预览', exact: true }).click();
     await closeTab(page, '文件更改');
-    await expect(tabs(page).getByRole('tab', { name: '预览', exact: true })).toHaveAttribute('aria-selected', 'true');
-    await closeTab(page, '预览');
+    await expect(tabs(page).getByRole('tab', { name: '浏览器', exact: true })).toHaveAttribute('aria-selected', 'true');
+    await closeTab(page, '浏览器');
     await expect(tabs(page).getByRole('tab', { name: '文件浏览', exact: true })).toHaveAttribute('aria-selected', 'true');
     await page.getByRole('button', { name: '打开任务验收', exact: true }).click();
     await page.getByRole('textbox', { name: '验收草稿' }).fill('保留验收意见');
@@ -50,7 +50,7 @@ test('narrow drawer keeps each tab close button reachable', async ({ page }, inf
   await drawer(page).getByRole('button', { name: '关闭详情抽屉', exact: true }).click();
   await page.getByRole('button', { name: '打开任务验收', exact: true }).click();
   await closeTab(page, '文件更改');
-  await closeTab(page, '预览');
+  await closeTab(page, '浏览器');
   await expect(tabs(page).getByRole('tab', { name: '任务验收', exact: true })).toHaveAttribute('aria-selected', 'true');
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.screenshot({ path: info.outputPath('drawer-tabs-narrow.png') });

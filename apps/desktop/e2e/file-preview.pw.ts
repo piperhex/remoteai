@@ -85,7 +85,7 @@ test("videos play, pause and seek using browser controls", async ({ page }) => {
   await video.evaluate((element: HTMLVideoElement) => element.play());
   await page.getByRole("tab", { name: "文件更改" }).click();
   expect(await video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
-  await page.getByRole("tab", { name: "预览", exact: true }).click();
+  await page.getByRole("tab", { name: "浏览器", exact: true }).click();
   await page.screenshot({ path: "../../.codex-tmp/file-preview-video.png" });
 });
 
@@ -133,7 +133,7 @@ test("file previews share the changes sidebar, resize, restore, and close withou
   await page.getByRole("button", { name: "查看文件更改" }).click();
   await expect(page.getByText("暂无文件更改", { exact: true })).toBeVisible();
   await expect(content).toBeHidden();
-  await page.getByRole("tab", { name: "预览", exact: true }).click();
+  await page.getByRole("tab", { name: "浏览器", exact: true }).click();
   await expect(content).toBeVisible();
   await page.getByRole("button", { name: "最小化详情抽屉" }).click();
   await expect(sidebar).toBeHidden();
@@ -164,7 +164,7 @@ test("web links use the same sidebar with explicit browser and reload actions", 
   await expect(frame.getByRole("button", { name: "试一试" })).toBeVisible();
   await page.getByRole("tab", { name: "文件更改" }).click();
   await expect(page.getByText("暂无文件更改", { exact: true })).toBeVisible();
-  await page.getByRole("tab", { name: "预览", exact: true }).click();
+  await page.getByRole("tab", { name: "浏览器", exact: true }).click();
   await page.getByRole("button", { name: "切换主机：本地" }).click();
   await expect(page.getByRole("menu", { name: "主机列表" })).toBeVisible();
   await page.getByRole("textbox", { name: "搜索主机" }).press("Escape");

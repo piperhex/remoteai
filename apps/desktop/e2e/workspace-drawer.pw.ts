@@ -44,7 +44,7 @@ for (const mode of ['local', 'web', 'remote']) {
     await expect(page.locator('body')).toHaveAttribute('data-terminal-opens', '1');
     await switchTab(page, '文件浏览');
     await expect(page.getByRole('textbox', { name: '文件内容', exact: true })).toContainText('保留文件编辑');
-    await switchTab(page, '预览');
+    await switchTab(page, '浏览器');
     await expect(drawer(page).locator('pre').filter({ hasText: 'Retained preview' })).toBeVisible();
     await expect(page.locator('body')).not.toHaveAttribute('data-preview-closed', 'true');
     await page.screenshot({ path: `../../.codex-tmp/workspace-drawer-${mode}.png` });

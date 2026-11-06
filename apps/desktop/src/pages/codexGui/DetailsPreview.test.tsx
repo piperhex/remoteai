@@ -85,11 +85,17 @@ it("opens previews requested by child effects after workspace initialization and
   }
 });
 
-it("offers to open changes after switching away from a conversation with an open drawer", async () => {
-  await click("查看文件更改");
+it("opens the start page for a conversation without content tabs", async () => {
+  await click("侧栏内容");
+  expect(host.querySelector('aside')?.getAttribute('aria-label')).toBe('新标签页');
+  expect(host.querySelector('nav')?.textContent).toBe('浏览器Git文件浏览');
+  expect([...host.querySelectorAll<HTMLButtonElement>('nav button')].map(button => button.disabled))
+    .toEqual([false, true, true]);
+  await click("侧栏内容");
+  expect(host.querySelector('aside')?.hidden).toBe(true);
   await act(async () => root.render(<Fixture selected="other" />));
-  expect(host.querySelector('[aria-label="查看文件更改"]')).not.toBeNull();
-  await click("查看文件更改");
+  expect(host.querySelector('[aria-label="侧栏内容"]')).not.toBeNull();
+  await click("侧栏内容");
   expect(host.querySelector("aside")?.hidden).toBe(false);
 });
 
