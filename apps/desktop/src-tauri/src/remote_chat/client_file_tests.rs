@@ -13,14 +13,15 @@ fn file_socket_authenticates_with_capability_and_receives_raw_bytes_without_chat
         stream
             .set_read_timeout(Some(Duration::from_secs(5)))
             .unwrap();
-        let mut socket = tungstenite::accept_hdr(
-            stream,
-            |request: &tungstenite::handshake::server::Request, response| {
-                assert_eq!(request.uri(), "/device-chat?channel=file");
-                Ok(response)
-            },
-        )
-        .unwrap();
+        #[allow(
+            clippy::result_large_err,
+            reason = "Tungstenite requires its concrete HTTP error response for handshake callbacks."
+        )]
+        let validate_request = |request: &tungstenite::handshake::server::Request, response| {
+            assert_eq!(request.uri(), "/device-chat?channel=file");
+            Ok(response)
+        };
+        let mut socket = tungstenite::accept_hdr(stream, validate_request).unwrap();
         let auth: Value = serde_json::from_str(socket.read().unwrap().to_text().unwrap()).unwrap();
         assert_eq!(
             auth,
