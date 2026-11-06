@@ -149,7 +149,8 @@ describe("Codex GUI controller", () => {
     vi.mocked(guiApi.request).mockClear();
     receive({ method: "connection/restored", params: {} });
     await controller.connect();
-    expect(guiApi.request).toHaveBeenCalledWith({ operation: "read", threadId: thread.id, window: {} });
+    expect(guiApi.request).toHaveBeenCalledWith({ operation: "read", threadId: thread.id,
+      window: { start: undefined, deferProcesses: true } });
     expect(controller.getSnapshot().connection).toBe("ready");
     controller.dispose();
   });

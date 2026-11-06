@@ -63,7 +63,7 @@ it('opens remote Markdown in the shared drawer and navigates nested links on the
 
 it('retains source mode across drawer controls and clears the preview on conversation changes', async () => {
   await click('交接文档'); await click('原文');
-  await click('文件更改'); await click('预览');
+  await click('文件更改'); await click('浏览器');
   expect(content()?.querySelector('pre')?.textContent).toContain('# 远程交接文档');
   await click('最小化详情抽屉'); expect(panel()?.hidden).toBe(true);
   await click('恢复预览'); expect(panel()?.hidden).toBe(false);
