@@ -1,4 +1,5 @@
 import type { OfficialAccountTotal } from '../../../../shared/officialUsage';
+import { accountQuota } from '../../../../shared/token-usage/officialUsageChartData';
 import {
   DEFAULT_TOKEN_COST_DISPLAY_SETTINGS,
   formatEstimatedCostValue,
@@ -14,8 +15,7 @@ export function formatAvailableQuota(
   settings = DEFAULT_TOKEN_COST_DISPLAY_SETTINGS,
 ): string | null {
   if (account?.remainingUsd == null) return null;
-  // Match the limiting window selected by the server so both amounts describe the same quota.
-  const quota = [account.primary, account.secondary].find((item) => item?.remainingUsd === account.remainingUsd);
+  const quota = accountQuota(account);
   const remaining = formatQuotaAmount(account.remainingUsd, settings);
   const capacity = quota?.capacityUsd == null ? '—' : formatQuotaAmount(quota.capacityUsd, settings);
   return `${remaining} / ${capacity}${settings.unit}`;

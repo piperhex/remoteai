@@ -84,8 +84,8 @@ it("opens from Settings and updates all official costs and quotas after saving",
   expect(container.textContent).toContain("70.00 元");
   expect(container.textContent).toContain("210 / 700元");
   expect(container.textContent).toContain("700.00 元");
-  await click(".ant-table-row-expand-icon");
-  expect(container.querySelector(".ant-table-expanded-row")?.textContent).toContain("70.00 元");
+  await click('.official-usage-identity button[aria-expanded="false"]');
+  expect(container.querySelector(".official-usage-devices")?.textContent).toContain("70.00 元");
 });
 
 it("does not save cancelled or invalid drafts and reopens with the saved values", async () => {
