@@ -4,6 +4,7 @@ import { File, Folder, GitBranch, MessageSquare, Target } from "lucide-react";
 import { ComposerSkillIcon } from "./ComposerSkillIcon";
 import type { ComposerOption } from "./composerOptions";
 import styles from "./SkillInput.module.less";
+import { useChatSurfaceTheme } from "../../../../../shared/remote-chat/views/useChatSurfaceTheme";
 
 function menuLabels(kind: "coze" | "conversation" | "skill" | "command" | "file") {
   if (kind === "file") return { heading: uiText("client.fileReferences.referenceAFileOrFolder"), label: uiText("client.projectBrowser.projectFiles"),
@@ -38,6 +39,7 @@ export function SkillMenu({ id, options, selected, loading, error, onChoose, bel
   below?: boolean; skillsOnly?: boolean; conversations?: boolean; coze?: boolean; files?: boolean; truncated?: boolean;
 }) {
   const list = useRef<HTMLDivElement>(null);
+  const surfaceTheme = useChatSurfaceTheme();
   useEffect(() => {
     list.current?.querySelector('[aria-selected="true"]')?.scrollIntoView?.({ block: "nearest" });
   }, [selected]);
@@ -46,7 +48,7 @@ export function SkillMenu({ id, options, selected, loading, error, onChoose, bel
   if (coze) kind = "coze";
   if (files) kind = "file";
   const labels = menuLabels(kind);
-  return <div className={`${styles.menu} ${below ? styles.menuBelow : ""}`}
+  return <div className={`${styles.menu} ${below ? styles.menuBelow : ""}`} style={surfaceTheme}
     onMouseDown={(event) => event.preventDefault()}>
     <div className={styles.menuHeading}>{labels.heading}</div>
     <div ref={list} id={id} role="listbox" aria-label={labels.label}

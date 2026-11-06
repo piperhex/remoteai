@@ -1,0 +1,8 @@
+.surface-theme-host { display: flex; flex-direction: column; height: 100dvh; }
+.surface-theme-toolbar { display: flex; gap: 12px; padding: 24px; }
+.surface-theme-composer { width: min(800px, calc(100% - 48px)); margin: auto auto 32px; position: relative; }
+.surface-theme-composer:has([contenteditable]) {
+  border: 1px solid var(--gui-border); border-radius: 16px; padding: 16px;
+}
+.surface-theme-host .chat-composer-dock { width: 100%; padding: 0; }
+body { min-width: 0; }
