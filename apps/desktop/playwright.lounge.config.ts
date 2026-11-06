@@ -5,7 +5,7 @@ export default defineConfig({
   testDir: './e2e', testMatch: ['lounge-mobile-gestures.pw.ts', 'lounge-group-send.pw.ts', 'lounge.pw.ts', 'lounge-replies.pw.ts',
     'lounge-direct.pw.ts', 'lounge-receipts.pw.ts', 'lounge-admin-badge.pw.ts',
     'lounge-mobile-redesign.pw.ts', 'lounge-mobile-scroll.pw.ts', 'lounge-history-timeline.pw.ts',
-    'lounge-desktop-history.pw.ts', 'lounge-client-version.pw.ts',
+    'lounge-desktop-history.pw.ts', 'lounge-client-version.pw.ts', 'lounge-device-presence.pw.ts',
     'lounge-opening-limit.pw.ts', 'lounge-avatars.pw.ts', 'lounge-avatar-cache.pw.ts',
     'settings-avatars.pw.ts', 'lounge-images.pw.ts',
     'lounge-emoji.pw.ts', 'lounge-text.pw.ts', 'lounge-presence.pw.ts', 'lounge-profile.pw.ts',
