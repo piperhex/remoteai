@@ -162,7 +162,7 @@ it("shows every edit to a selected file, keeps live updates scoped, and reopens 
   await act(async () => root.render(<Fixture changes={[changes[0], ...updated]} />));
   expect(panel().textContent).toContain("live change");
   expect(panel().textContent).not.toContain("first file");
-  await act(async () => panel().querySelector<HTMLButtonElement>('button[aria-expanded]')!.click());
+  await act(async () => panel().querySelector<HTMLButtonElement>('section > button[aria-expanded]')!.click());
   expect(panel().textContent).not.toContain("live change");
   await act(async () => fileTrigger("target.ts").click());
   expect(panel().textContent).toContain("live change");
