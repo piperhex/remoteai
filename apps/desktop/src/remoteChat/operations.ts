@@ -60,6 +60,7 @@ import { DICTATION_OPERATION } from '../../../../shared/remote-chat/dictation';
 
 const OPERATIONS = new Set([
   'toolDetails',
+  'processDetails',
   'projectFileRead', 'projectFileBlame', 'projectFileWrite', 'projectEntryAction',
   'suggestNextPrompt',
   'guiGitGenerateMessage',
@@ -92,6 +93,7 @@ function terminalLinkRequest(request: RpcRequest): Cached['terminalLink'] {
 }
 const READ_OPERATIONS = new Set([
   'toolDetails',
+  'processDetails',
   'viewThread',
   CODEX_STATUS_OPERATION,
   'projectFileRead',
@@ -186,6 +188,7 @@ export class ChatOperations {
       // Upload chunks retry fixed ranges; retaining every acknowledgement would cap large uploads at 512 requests.
       if (operation === 'videoRead' || operation === 'fileRead' || operation === 'projectFileRead'
         || operation === 'toolDetails'
+        || operation === 'processDetails'
         || operation === 'projectFileBlame'
         || operation === 'guiFilePreviewText'
         || (operation === 'projectFileWrite' && typeof object(request.body).upload === 'object'
@@ -302,7 +305,8 @@ export class ChatOperations {
       });
       const current = effectiveProjectThread(this.views.deferred(owner) ? summarizeTools(thread) : thread);
       this.commandMetrics.seed(current);
-      const sliced = sliceHistory(acknowledgedMessages.merge(current), page ? { start: page.start } : window);
+      const sliced = sliceHistory(acknowledgedMessages.merge(current),
+        page ? { start: page.start, deferProcesses: window.deferProcesses } : window);
       return { ...historyDelta(this.images.prepare(sliced.thread, thread.id), known),
         page: { ...sliced.page, hasMore: Boolean(page?.hasMore || sliced.page.hasMore) } };
     }

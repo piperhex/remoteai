@@ -1,4 +1,4 @@
-import { commandOutcome, countCommandOutcomes, type CommandMetricTurn }
+import { commandOutcome, summarizeCommands, type CommandMetricItem, type CommandMetricTurn }
   from '../../../../shared/remote-chat/commandMetrics';
 import type { GuiEvent, Thread } from '../../../../shared/conversation/types';
 
@@ -8,11 +8,11 @@ const RESET_EVENTS = new Set(['thread/started', 'thread/resumed', 'thread/archiv
 
 /** Retain only command outcomes from full host history, before remote pagination. */
 export class CommandMetricsStore {
-  private readonly threads = new Map<string, Map<string, boolean>>();
+  private readonly threads = new Map<string, Map<string, CommandMetricItem>>();
 
   seed(thread: Thread) {
     if (!thread.turns) return;
-    const outcomes = new Map<string, boolean>();
+    const outcomes = new Map<string, CommandMetricItem>();
     this.update(outcomes, thread.turns);
     this.threads.delete(thread.id);
     this.threads.set(thread.id, outcomes);
@@ -21,7 +21,7 @@ export class CommandMetricsStore {
 
   read(threadId: string) {
     const outcomes = this.threads.get(threadId);
-    return outcomes ? countCommandOutcomes(outcomes.values()) : {};
+    return outcomes ? summarizeCommands([{ id: threadId, items: [...outcomes.values()] }]) : {};
   }
 
   clear() { this.threads.clear(); }
@@ -38,12 +38,13 @@ export class CommandMetricsStore {
     if (turnId && item) this.update(outcomes, [{ id: turnId, items: [item] }]);
   }
 
-  private update(outcomes: Map<string, boolean>, turns: readonly CommandMetricTurn[]) {
+  private update(outcomes: Map<string, CommandMetricItem>, turns: readonly CommandMetricTurn[]) {
     for (const turn of turns) {
       for (const item of turn.items) {
         const key = JSON.stringify([turn.id, item.id]);
         const outcome = commandOutcome(item);
-        if (outcome !== undefined) outcomes.set(key, outcome);
+        if (outcome !== undefined || item.processCommandMetrics) outcomes.set(key, { id: key, type: item.type,
+          status: item.status, exitCode: item.exitCode, processCommandMetrics: item.processCommandMetrics });
       }
     }
   }

@@ -9,7 +9,7 @@ import type { GuiState, Thread } from '../../../../../shared/conversation/types'
 vi.mock('../../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 const source: Thread = { id: 'chat', cwd: '', preview: '', updatedAt: 1,
   turns: [{ id: 'turn', status: 'completed', items: Array.from({ length: 35 }, (_, index) => ({
-    id: `item-${index}`, type: 'agentMessage', text: `Message ${index}`,
+    id: `item-${index}`, type: 'agentMessage', phase: 'final_answer', text: `Message ${index}`,
   })) }] };
 let state: GuiState;
 let history: ConversationHistory;

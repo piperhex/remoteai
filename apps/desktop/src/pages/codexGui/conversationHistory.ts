@@ -30,7 +30,7 @@ export class ConversationHistory {
     const before = this.host.getSnapshot().conversations[id];
     const start = before?.historyPage?.start;
     const { thread, page } = await guiApi.request<HistoryResponse>({ operation: 'read', threadId: id,
-      window: { start } });
+      window: { start, deferProcesses: true } });
     const state = this.host.getSnapshot();
     if (!current()) return;
     this.host.patch({ conversations: { ...state.conversations,
@@ -53,7 +53,7 @@ export class ConversationHistory {
     const previous = this.host.getSnapshot().conversations[id];
     if (!previous?.historyPage?.hasMore) return;
     const { thread, page } = await guiApi.request<HistoryResponse>({ operation: 'read', threadId: id,
-      window: { start: previous.historyPage.start, older: true } });
+      window: { start: previous.historyPage.start, older: true, deferProcesses: true } });
     if (!current()) return;
     const state = this.host.getSnapshot();
     const loaded = { ...conversation(thread, state.conversations[id], previous), historyPage: page };
@@ -75,7 +75,7 @@ export class ConversationHistory {
     const events: GuiEvent[] = [];
     this.events.set(id, events);
     const { thread, page } = await guiApi.request<HistoryResponse>({ operation: 'read', threadId: id,
-      window: { start: before?.historyPage?.start } });
+      window: { start: before?.historyPage?.start, deferProcesses: true } });
     const state = this.host.getSnapshot();
     // Lifecycle events received during the read are newer than its history response.
     if (state.conversations[id] !== before) return;

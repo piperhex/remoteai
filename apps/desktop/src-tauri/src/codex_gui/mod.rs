@@ -48,6 +48,7 @@ mod mcp_approval;
 mod message_edit;
 mod model_catalog_cache;
 mod model_discovery;
+mod process_details;
 mod tool_details;
 pub(crate) use model_catalog_cache::cached_catalog;
 pub(crate) mod model_context;
@@ -218,6 +219,7 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
     let client = connected(state).await?;
     match request {
         GuiRequest::ToolDetails(target) => return tool_details::read(client, target).await,
+        GuiRequest::ProcessDetails(target) => return process_details::read(client, target).await,
         GuiRequest::GroupThreadSummaries(query) => {
             return group_members::summaries::load(
                 client.home.clone(),
@@ -360,6 +362,12 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
         }
         if let Some(window) = history_window {
             history_page::apply(&mut data, &window)?;
+        }
+        // Sending or retrying a viewed conversation must not refill its folded history.
+        if method == "thread/resume" && !summary_only {
+            if let Some(thread) = data.get_mut("thread") {
+                process_details::summarize_thread(thread);
+            }
         }
         if !include_tool_details {
             if let Some(thread) = data.get_mut("thread") {

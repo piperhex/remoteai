@@ -41,3 +41,33 @@ it.each(['direct', 'relay'] as const)('transports one opened item and keeps %s h
     .toBe(item.aggregatedOutput);
   host.release();
 });
+
+it.each(['direct', 'relay'] as const)('defers whole processes across the %s boundary until explicitly opened', async mode => {
+  const items: Item[] = Array.from({ length: 2_000 }, (_, index) => ({ id: `work-${index}`,
+    type: 'agentMessage', phase: 'commentary', text: 'internal-details'.repeat(100) }));
+  const thread: Thread = { id: 'chat', cwd: '', preview: '', updatedAt: 0,
+    turns: [{ id: 'turn', status: 'completed', items: [{ id: 'question', type: 'userMessage' }, ...items,
+      { id: 'answer', type: 'agentMessage', phase: 'final_answer', text: 'done' }] }] };
+  vi.mocked(guiApi.request).mockImplementation(async request =>
+    (request.operation === 'processDetails' ? { items } : { thread }) as never);
+  const host = new ChatOperations();
+  let sequence = 0;
+  const request = async <T,>(method: 'request' | 'connect' | 'respond', body?: unknown): Promise<T> => {
+    const result = await host.execute({ kind: 'request', id: `process:${++sequence}`, method, body }, mode);
+    if (result.error) throw new Error(result.error);
+    return result.data as T;
+  };
+  const history = await request<PagedHistoryDelta>('request', { operation: 'syncHistory', threadId: 'chat',
+    deferToolDetails: true, window: { deferProcesses: true } });
+  const restored = applyHistoryDelta({ ...thread, turns: [] }, history);
+  expect(history.page?.hasMore).toBe(false);
+  expect(restored.turns![0].items).toHaveLength(3);
+  expect(JSON.stringify(history).length).toBeLessThan(1_500);
+  expect(JSON.stringify(history)).not.toContain('internal-details');
+  expect(guiApi.request).not.toHaveBeenCalledWith(expect.objectContaining({ operation: 'processDetails' }));
+  const client = new ChatController(() => ({ request, start: vi.fn(), stop: vi.fn() }));
+  const target = restored.turns![0].items[1].processRef!;
+  expect(await client.processDetails(target)).toEqual({ items });
+  expect(guiApi.request).toHaveBeenLastCalledWith({ operation: 'processDetails', ...target });
+  host.release();
+});

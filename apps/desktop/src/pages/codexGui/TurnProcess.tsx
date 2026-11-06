@@ -4,6 +4,8 @@ import { ChevronRight } from "lucide-react";
 import type { Item, Turn } from "../../../../../shared/conversation/types";
 import { TurnDuration } from "./TurnDuration";
 import { WorkItems } from "./WorkItems";
+import { DeferredProcessDetails } from "../../../../../shared/chat/DeferredProcessDetails";
+import { processActivityCount } from "../../../../../shared/conversation/processDetails";
 import styles from "../../../../../shared/conversation/styles.module.less";
 
 export { hasVisibleProcessContent } from "../../../../../shared/chat/processContent";
@@ -26,11 +28,15 @@ export function TurnProcess({ turn, items, running, active, timed }: {
     if (event.currentTarget.open === state.open) return;
     setState({ automaticOpen, open: event.currentTarget.open, inspected: true });
   }}>
-    <summary data-history-anchor aria-label={uiText("client.workspaceActions.progressActivities", { value1: items.length })}>
+    <summary data-history-anchor aria-label={uiText("client.workspaceActions.progressActivities", {
+      value1: processActivityCount(items),
+    })}>
       {timed ? <TurnDuration turn={turn} running={running} active={active} fallback={uiText("client.chat.activity")} inline />
         : <span>{uiText("client.chat.activity")}</span>}
       <ChevronRight size={14} aria-hidden="true" />
     </summary>
-    {state.open && <WorkItems items={items} startedAt={turn.startedAt} running={running} />}
+    {state.open && <DeferredProcessDetails items={items} active={active}>
+      {loaded => <WorkItems items={loaded} startedAt={turn.startedAt} running={running} />}
+    </DeferredProcessDetails>}
   </details>;
 }

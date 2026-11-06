@@ -19,6 +19,7 @@ const PAGE_SIZE: u64 = 50;
 )]
 pub(crate) enum GuiRequest {
     ToolDetails(super::tool_details::Target),
+    ProcessDetails(super::process_details::Target),
     GroupMembersPage(super::group_members::Query),
     GroupThreadSummaries(super::group_members::summaries::Query),
     CozeCatalog,
@@ -235,6 +236,7 @@ impl GuiRequest {
     pub(super) fn into_rpc(self) -> Result<(&'static str, Value)> {
         match self {
             Self::ToolDetails(_) => Err(GuiError::InvalidRequest),
+            Self::ProcessDetails(_) => Err(GuiError::InvalidRequest),
             Self::GroupMembersPage(_) | Self::GroupThreadSummaries(_) => {
                 Err(GuiError::InvalidRequest)
             }
