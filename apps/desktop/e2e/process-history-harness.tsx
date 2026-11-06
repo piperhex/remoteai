@@ -12,6 +12,7 @@ import { darkColors } from '../../../shared/theme/mode';
 import { Messages } from '../src/pages/codexGui/Messages';
 import styles from '../../../shared/conversation/styles.module.less';
 import '../../../shared/remote-chat/views/chat.css';
+import '../src/pages/codexGui/remote/remoteGui.less';
 
 interface Page { thread: Thread; page: HistoryPage }
 const params = new URLSearchParams(location.search);
@@ -50,7 +51,8 @@ function Harness() {
           <strong>{mode === 'local' ? '桌面本地' : mode === 'remote' ? '桌面远程' : 'Web'} · 处理过程</strong>
           <button onClick={() => setActive(!active)}>{active ? '离开对话' : '返回对话'}</button>
         </header>
-        <main className={mode === 'local' ? `${styles.page} ${styles.collapsed}` : 'chat-page'}
+        <main className={mode === 'local' ? `${styles.page} ${styles.collapsed}`
+          : mode === 'remote' ? `${styles.page} chat-page gui-remote-workspace` : 'chat-page'}
           style={{ flex: 1, minHeight: 0 }} hidden={!active}>
           {mode === 'local' ? <div className={styles.workspace}>
             <Messages selected={value?.thread.id ?? null}

@@ -69,12 +69,13 @@ for (const width of [390, 1280]) {
     const command = page.locator('[data-message-id="activity-150"] > details');
     await command.locator('summary').click();
     await expect(command).toContainText('output-150');
-    await scrollHistory(page, 'older');
+    const list = group.locator('[data-activity-list]');
+    await list.evaluate(node => { node.scrollTop = 0; });
     await expect(page.locator('[data-message-id="activity-0"]')).toBeInViewport();
-    await scrollHistory(page, 'newer');
+    await list.evaluate(node => { node.scrollTop = node.scrollHeight; });
     await expect(page.locator('[data-message-id="activity-179"]')).toBeInViewport();
     await expect(command).toHaveAttribute('open');
-    await scrollHistory(page, 'older');
+    await list.evaluate(node => { node.scrollTop = 0; });
     await group.locator(':scope > summary').click();
     await expect(page.locator('[data-message-id], pre')).toHaveCount(0);
     await group.locator(':scope > summary').click();
