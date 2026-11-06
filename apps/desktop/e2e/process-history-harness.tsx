@@ -13,8 +13,10 @@ import { Messages } from '../src/pages/codexGui/Messages';
 import styles from '../../../shared/conversation/styles.module.less';
 import '../../../shared/remote-chat/views/chat.css';
 import '../src/pages/codexGui/remote/remoteGui.less';
+import { readCachedProcess } from './process-history-merge-data';
+import type { CommandMetrics } from '../../../shared/remote-chat/commandMetrics';
 
-interface Page { thread: Thread; page: HistoryPage }
+interface Page { thread: Thread; page: HistoryPage; commandMetrics?: CommandMetrics }
 const params = new URLSearchParams(location.search);
 const mode = params.get('mode') ?? 'local';
 const dark = params.has('dark');
@@ -31,7 +33,10 @@ function Harness() {
   const [value, setValue] = useState<Page>();
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(true);
-  useEffect(() => { void fetch('process-history.json').then(response => response.json()).then(setValue); }, []);
+  useEffect(() => {
+    void fetch('process-history.json').then(response => response.json())
+      .then(result => params.has('cached') ? readCachedProcess(result, mode) : result).then(setValue);
+  }, []);
   const older = async () => {
     setLoading(true);
     try {
@@ -53,7 +58,9 @@ function Harness() {
         </header>
         <main className={mode === 'local' ? `${styles.page} ${styles.collapsed}`
           : mode === 'remote' ? `${styles.page} chat-page gui-remote-workspace` : 'chat-page'}
-          style={{ flex: 1, minHeight: 0 }} hidden={!active}>
+          style={{ flex: 1, minHeight: 0 }} hidden={!active}
+          data-command-count={value?.commandMetrics?.completedCommandCount}
+          data-successful-command-count={value?.commandMetrics?.successfulCommandCount}>
           {mode === 'local' ? <div className={styles.workspace}>
             <Messages selected={value?.thread.id ?? null}
               value={value ? { ...conversation(value.thread), historyPage: value.page } : undefined}

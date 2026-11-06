@@ -41,6 +41,6 @@ export class LiveHistory {
     const empty = { ...snapshot, turns: [], tokenUsage: undefined };
     const current = discardStaleRunningTurns(snapshot, live, before ?? empty);
     this.threads.set(snapshot.id, current);
-    return mergeHistory(snapshot, current, empty);
+    return mergeHistory(snapshot, current, before ?? empty, { retainCached: true });
   }
 }
