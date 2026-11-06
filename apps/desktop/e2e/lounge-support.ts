@@ -2,6 +2,7 @@ import { expect, type Page, type WebSocketRoute } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import type { LoungeReply } from '../../../shared/lounge/reply';
 import type { LoungeAccount } from '../../../shared/lounge/types';
+import type { LoungeClientInfo } from '../../../shared/lounge/clientVersion';
 import { LoungeNamesFixture } from './lounge-names-support';
 import type { LoungeContactsFixture } from './lounge-contact-support';
 import { LoungeNotificationsFixture } from './lounge-notifications-support';
@@ -28,6 +29,7 @@ export async function setupLounge(page: Page, web = false, reset = false, savedC
   let directState = 'new';
   let lookupReply = true;
   let deviceSync = false;
+  const reportedVersions: string[] = [];
   const lookups: string[] = [];
   const receipts: { type: string; id: string; to: string; status: string }[] = [];
   const moderation: { userId: string; minutes: number }[] = [];
@@ -53,6 +55,7 @@ export async function setupLounge(page: Page, web = false, reset = false, savedC
       notifications.handle(route, frame);
       savedContacts?.handle(route, frame);
       if (frame.type === 'authenticate') {
+        if (typeof frame.clientVersion === 'string') reportedVersions.push(frame.clientVersion);
         route.send(JSON.stringify({ type: 'ready', profiles: true, accountLookup: true, names: names.enabled,
           avatarCache: avatarCache.enabled,
           savedContacts: !!savedContacts, deviceSync,
@@ -138,6 +141,9 @@ export async function setupLounge(page: Page, web = false, reset = false, savedC
     } });
   }, web);
   return {
+    reportedVersions,
+    versions: (clientVersions: string[], clients?: LoungeClientInfo[]) => socket.send(JSON.stringify({
+      type: 'client-versions', users: [{ id: 'bob', clientVersions, clients }] })),
     avatarCache,
     notifications,
     enableDeviceSync: () => { deviceSync = true; },

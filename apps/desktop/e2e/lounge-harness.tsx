@@ -17,6 +17,7 @@ import { DownloadsPage } from '../src/pages/DownloadsPage';
 import { CloudAccountIdentity } from '../src/components/dashboard/CloudAccountIdentity';
 import { CloudAccountMenu } from '../src/components/dashboard/CloudAccountMenu';
 import { CloudAccountModal } from '../src/components/modals/CloudAccountModal';
+import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
 
 const parameters = new URLSearchParams(location.search);
 const dark = parameters.has('dark');
@@ -38,7 +39,8 @@ function Fixture() {
   const lounge = useDesktopLounge(auth);
   const [accountOpen, setAccountOpen] = useState(false);
   const t = (key: string, values?: Record<string, string | number>) => translate(language, key, values);
-  return <ConfigProvider theme={{ algorithm: themeMode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm }}>
+  return <ConfigProvider theme={{ algorithm: [themeMode === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
+    theme.compactAlgorithm] }}><ApplicationTypography>
     <div className="app-shell sidebar-navigation-shell" style={{ gridTemplateRows: '38px 0 minmax(0, 1fr)' }}>
       <div className="window-titlebar" style={{ padding: 8 }}>Remote AI · {parameters.get('mode') ?? 'local'}
         <div className="window-titlebar-tools"><CloudAccountMenu email={auth.userEmail} user={lounge.state.user}
@@ -62,6 +64,6 @@ function Fixture() {
     {accountOpen && <CloudAccountModal email={auth.userEmail} baseUrl={auth.baseUrl}
       loungeController={lounge.controller} changingPassword={false} onChangePassword={async () => true}
       onClose={() => setAccountOpen(false)} onOpenPasswordReset={() => {}} t={t} />}
-  </ConfigProvider>;
+  </ApplicationTypography></ConfigProvider>;
 }
 createRoot(document.getElementById('root')!).render(<Fixture />);

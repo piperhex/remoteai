@@ -67,8 +67,8 @@ for (const width of [320, 390]) {
     await hold(page, bubble);
     const menu = page.getByRole('menu', { name: '消息操作' });
     await expect(menu).toBeVisible();
-    await expect(menu.getByRole('menuitem')).toHaveText(['复制', '引用回复', '发起私聊', '屏蔽此人']);
-    expect(await menu.locator('svg').count()).toBe(4);
+    await expect(menu.getByRole('menuitem')).toHaveText(['复制', '引用回复', '个人资料', '发起私聊', '屏蔽此人']);
+    expect(await menu.locator('svg').count()).toBe(5);
     await expect(menu).toHaveCSS('background-color', 'rgb(91, 91, 91)');
     const bounds = (await menu.boundingBox())!;
     expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
@@ -77,7 +77,7 @@ for (const width of [320, 390]) {
     await expect(menu).toBeHidden();
     await expect.poll(() => page.evaluate(() => sessionStorage.getItem('copied-text'))).toBe('长按消息操作');
     await bubble.click({ button: 'right' });
-    await expect(menu.getByRole('menuitem')).toHaveText(['复制', '引用回复', '发起私聊', '屏蔽此人']);
+    await expect(menu.getByRole('menuitem')).toHaveText(['复制', '引用回复', '个人资料', '发起私聊', '屏蔽此人']);
     await menu.getByRole('menuitem', { name: '引用回复' }).click();
     await expect(page.locator('.lounge-reply-draft')).toContainText('长按消息操作');
     await expect(input).toHaveValue('前@bob 后');

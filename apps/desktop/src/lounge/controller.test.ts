@@ -50,6 +50,7 @@ describe('application lifetime lounge', () => {
     ready();
     expect(controller.snapshot().user?.avatar).toBe(avatar);
     expect(JSON.parse(socket.send.mock.calls.at(-1)![0])).toEqual({ type: 'profile-watch', watch: ['self'],
+      clientVersions: true,
       avatarVersions: { self: loungeAvatarVersion(avatar) } });
     socket.message('first');
     expect(JSON.parse(socket.send.mock.calls.at(-1)![0])).toMatchObject({ watch: ['self', 'other'],
@@ -149,7 +150,8 @@ describe('application lifetime lounge', () => {
     const socket = Socket.instances[0];
     socket.frame({ type: 'ready', profiles: true, user: { id: 'self', account: 'alice@example.test' } });
     socket.message('original');
-    expect(JSON.parse(socket.send.mock.calls.at(-1)![0])).toEqual({ type: 'profile-watch', watch: ['other'] });
+    expect(JSON.parse(socket.send.mock.calls.at(-1)![0])).toEqual({ type: 'profile-watch', watch: ['other'],
+      clientVersions: true });
     const avatar = 'data:image/png;base64,AAAA';
     socket.frame({ type: 'profiles', profiles: [{ id: 'other', avatar }] });
     expect(controller.snapshot().contacts[0].user.avatar).toBe(avatar);
