@@ -4,6 +4,7 @@ import { testBrowserLaunchOptions } from '../../scripts/test-browser.mjs';
 export default defineConfig({
   testDir: './e2e', testMatch: ['lounge-mobile-gestures.pw.ts', 'lounge-group-send.pw.ts', 'lounge.pw.ts', 'lounge-replies.pw.ts',
     'lounge-direct.pw.ts', 'lounge-receipts.pw.ts', 'lounge-group-reads.pw.ts', 'lounge-admin-badge.pw.ts',
+    'group-read-observer.pw.ts', 'lounge-group-read-visibility.pw.ts',
     'lounge-mobile-redesign.pw.ts', 'lounge-mobile-scroll.pw.ts', 'lounge-history-timeline.pw.ts',
     'lounge-desktop-history.pw.ts', 'lounge-client-version.pw.ts', 'lounge-device-presence.pw.ts',
     'lounge-opening-limit.pw.ts', 'lounge-avatars.pw.ts', 'lounge-avatar-cache.pw.ts',
