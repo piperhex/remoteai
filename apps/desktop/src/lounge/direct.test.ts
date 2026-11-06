@@ -60,6 +60,32 @@ it('uses server permissions after switching devices and ignores stale permission
   expect(controller.snapshot().messages.at(-1)?.text).toBe('reply received on another device');
 });
 
+it.each([false, true])('allows moderator openings with a waiting server state: %s', async waiting => {
+  const { controller, socket } = await start(); socket.ready(); controller.selectConversation(bob);
+  if (waiting) socket.frame({ type: 'direct-permissions', states: { [bob.id]: 'waiting' } });
+  socket.frame({ type: 'policy', policy: { moderator: true, mutedUntil: null } });
+  await Promise.all(['first', 'second', 'third'].map(text => controller.send({ text, images: [], to: bob.id })));
+  expect(controller.snapshot().messages.map(item => item.text)).toEqual(['first', 'second', 'third']);
+  socket.frame({ type: 'policy', policy: { moderator: false, mutedUntil: null } });
+  await expect(controller.send({ text: 'revoked', images: [], to: bob.id })).rejects.toThrow('awaitingReply');
+  socket.frame({ ...message('answer', true), receipts: true }); await settle();
+  socket.frame({ type: 'direct-permissions', states: { [bob.id]: 'open' } });
+  await controller.send({ text: 'after reply', images: [], to: bob.id });
+  expect(controller.snapshot().messages.at(-1)?.text).toBe('after reply');
+});
+
+it('requires current conversation permissions for moderators after reconnect', async () => {
+  const { controller, socket } = await start();
+  socket.frame({ type: 'ready', user: { ...alice, moderator: true }, direct: true, receipts: true, directReset: true,
+    policy: { moderator: true, mutedUntil: null } });
+  controller.selectConversation(bob);
+  await expect(controller.send({ text: 'not synced', images: [], to: bob.id })).rejects.toThrow('directUnavailable');
+  socket.frame({ type: 'direct-permissions', states: { bob: 'new' }, generations: { bob: 2 } });
+  await controller.send({ text: 'first', images: [], to: bob.id });
+  await controller.send({ text: 'second', images: [], to: bob.id });
+  expect(controller.snapshot().messages.map(item => item.generation)).toEqual([2, 2]);
+});
+
 it('deletes a contact only after acknowledgement and rejects old deliveries after the reset', async () => {
   const { controller, socket } = await start();
   socket.frame({ type: 'ready', user: alice, direct: true, receipts: true, directReset: true });
