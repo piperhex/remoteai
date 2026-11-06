@@ -8,7 +8,7 @@ use std::{
 };
 use tauri::{AppHandle, Listener, Manager};
 
-const MAX_TABS: usize = 32;
+pub(super) const MAX_TABS: usize = 32;
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) struct Tab {
@@ -48,13 +48,14 @@ impl State {
         Ok(())
     }
     pub(super) fn get(&self, thread: &str, id: &str) -> Result<Tab> {
-        self.tabs
-            .lock()
-            .map_err(|_| Error::Unavailable)?
-            .get(id)
-            .filter(|tab| tab.thread_id == thread)
-            .cloned()
-            .ok_or(Error::Missing)
+        self.find(thread, id)?.ok_or(Error::Missing)
+    }
+    pub(super) fn find(&self, thread: &str, id: &str) -> Result<Option<Tab>> {
+        let tabs = self.tabs.lock().map_err(|_| Error::Unavailable)?;
+        match tabs.get(id) {
+            Some(tab) if tab.thread_id != thread => Err(Error::Missing),
+            tab => Ok(tab.cloned()),
+        }
     }
     pub(super) fn list(&self, thread: &str) -> Result<Value> {
         let mut tabs: Vec<Tab> = self
@@ -173,3 +174,7 @@ fn create(app: &AppHandle, id: &str, url: url::Url) -> Result<()> {
     }
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "registry_tests.rs"]
+mod tests;

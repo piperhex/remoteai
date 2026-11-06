@@ -6,6 +6,14 @@ async fn browser_capture_tool(app: tauri::AppHandle, params: Value) -> Value {
     super::protocol::tool_result(super::browser_tools::execute(app, params).await)
 }
 
+#[tauri::command]
+async fn browser_capture_events(
+    app: tauri::AppHandle,
+    cursor: Option<crate::codex_gui::web::Cursor>,
+) -> Result<crate::codex_gui::web::EventBatch, String> {
+    crate::codex_gui::web::poll(&app, cursor, None)
+}
+
 #[test]
 #[ignore = "requires Vite on 1552, fixture server on 1553 and browser-capture-native.mjs"]
 fn opens_browser_capture_tool() {
@@ -27,6 +35,7 @@ fn opens_browser_capture_tool() {
         .on_page_load(provider_browser::handle_page_load)
         .invoke_handler(tauri::generate_handler![
             browser_capture_tool,
+            browser_capture_events,
             automation::codex_gui_browser,
             automation::codex_gui_browser_place,
             provider_browser::provider_browser_sync,

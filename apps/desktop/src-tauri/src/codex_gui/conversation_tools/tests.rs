@@ -91,7 +91,7 @@ fn tools_reject_unexpected_permissions_invalid_targets_and_empty_messages() {
         );
     }
     let tools = protocol::tools().unwrap();
-    assert_eq!(tools["tools"].as_array().unwrap().len(), 6);
+    assert_eq!(tools["tools"].as_array().unwrap().len(), 7);
     assert!(protocol::parse(&json!({"name":"gui_list_running_conversations"})).is_ok());
 }
 
@@ -336,12 +336,21 @@ fn mcp_handshake_and_listing_do_not_require_a_connected_engine() {
     let initialize = http::dispatch(json!({"id":1,"method":"initialize"}), no_engine);
     assert_eq!(initialize["result"]["serverInfo"]["name"], "codex_gui");
     let listing = http::dispatch(json!({"id":2,"method":"tools/list"}), no_engine);
-    assert_eq!(listing["result"]["tools"].as_array().unwrap().len(), 6);
+    assert_eq!(listing["result"]["tools"].as_array().unwrap().len(), 7);
     assert!(listing["result"]["tools"]
         .as_array()
         .unwrap()
         .iter()
         .any(|tool| tool["name"] == "gui_browser_open"));
+    assert!(listing["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|tool| tool["name"] == "gui_browser_finish"));
+    assert!(initialize["result"]["instructions"]
+        .as_str()
+        .unwrap()
+        .contains("gui_browser_finish"));
     let failure = http::dispatch(json!({"id":3,"method":"tools/call", "params":{}}), |_| {
         Err(Error::Invalid)
     });

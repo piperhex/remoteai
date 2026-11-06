@@ -80,6 +80,13 @@ limited to conversation-owned tabs, excluding Provider account pages and other c
 The same browser session can be previewed from desktop local mode, remote mode and the web client.
 Do not silently launch, resume or reconfigure an unavailable Chrome profile to avoid this fallback.
 
+Track the exact built-in tab IDs used in the task, including popups. Before the final reply, call
+`gui_browser_finish` with the calling conversation's `threadId` and those `tabIds`, even after failure.
+It closes temporary task tabs and releases their preview resources across all connected clients.
+Include pages the user explicitly asked to retain in both `tabIds` and `keepTabIds`. Existing manual
+previews and other conversations' tabs stay open. Never sweep unrelated tabs from `list`. Check
+`failedTabIds`, retry those IDs once, and report any leftovers. Do not finish between task steps.
+
 When the user asks to receive a screenshot, an image returned by a tool or forwarded with `image(...)`
 is only execution evidence; it does not automatically appear in the assistant's final reply.
 Built-in screenshots also return `result.screenshot.path` and `result.screenshot.markdown` for a saved

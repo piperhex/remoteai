@@ -1,5 +1,5 @@
 use super::{Error, Result};
-use crate::provider_browser::automation::{self, Action, Request};
+use crate::provider_browser::automation::{self, finish, Action, Request};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use tauri::AppHandle;
@@ -17,6 +17,11 @@ pub(super) async fn execute(app: AppHandle, params: Value) -> Result<Value> {
         .get("arguments")
         .cloned()
         .unwrap_or_else(|| json!({}));
+    if params["name"] == "gui_browser_finish" {
+        let request: finish::Finish = serde_json::from_value(arguments)?;
+        validate_caller(&params, &request.thread_id)?;
+        return Ok(serde_json::to_value(finish::execute(app, request).await?)?);
+    }
     let request = match params["name"].as_str() {
         Some("gui_browser_open") => {
             let args: Open = serde_json::from_value(arguments)?;
@@ -32,13 +37,7 @@ pub(super) async fn execute(app: AppHandle, params: Value) -> Result<Value> {
         Some("gui_browser_use") => serde_json::from_value(arguments)?,
         _ => return Err(Error::Invalid),
     };
-    let caller = &params["_meta"]["x-codex-turn-metadata"];
-    if caller["thread_id"]
-        .as_str()
-        .is_some_and(|id| id != request.thread_id)
-    {
-        return Err(Error::Invalid);
-    }
+    validate_caller(&params, &request.thread_id)?;
     let screenshot = matches!(request.action, Action::Screenshot);
     let mut response = automation::execute(app.clone(), request)
         .await
@@ -47,4 +46,14 @@ pub(super) async fn execute(app: AppHandle, params: Value) -> Result<Value> {
         response = super::screenshot_artifact::attach(app, response).await?;
     }
     Ok(response)
+}
+
+fn validate_caller(params: &Value, thread_id: &str) -> Result<()> {
+    if params["_meta"]["x-codex-turn-metadata"]["thread_id"]
+        .as_str()
+        .is_some_and(|id| id != thread_id)
+    {
+        return Err(Error::Invalid);
+    }
+    Ok(())
 }

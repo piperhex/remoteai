@@ -84,7 +84,7 @@ pub(super) fn shutdown(app: &AppHandle) {
 async fn execute(app: AppHandle, params: Value) -> Result<Value> {
     if matches!(
         params["name"].as_str(),
-        Some("gui_browser_open" | "gui_browser_use")
+        Some("gui_browser_open" | "gui_browser_use" | "gui_browser_finish")
     ) {
         return browser_tools::execute(app, params).await;
     }

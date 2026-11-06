@@ -2,6 +2,7 @@
 #[cfg(windows)]
 mod devtools;
 mod events;
+pub(crate) mod finish;
 mod page;
 mod protocol;
 mod registry;
@@ -96,19 +97,7 @@ pub(crate) async fn execute(app: AppHandle, request: Request) -> Result<Value> {
             json!({"stopped":true,"loading":false})
         }
         Action::Close => {
-            let closing = browser.clone();
-            tauri::async_runtime::spawn_blocking(move || closing.close())
-                .await
-                .map_err(|_| Error::Unavailable)?
-                .map_err(|_| Error::Unavailable)?;
-            state.remove(&app, &tab.id)?;
-            crate::codex_gui::web::publish(
-                &app,
-                "codex-gui-event",
-                json!({
-                    "method":"browser/closed", "params":{"threadId":tab.thread_id,"tabId":tab.id}
-                }),
-            );
+            close(&app, &tab).await?;
             json!({"closed":true,"tabId":tab.id})
         }
         Action::Screenshot => {
@@ -132,6 +121,23 @@ pub(crate) async fn execute(app: AppHandle, request: Request) -> Result<Value> {
         action => page::execute(&browser, &action).await?,
     };
     Ok(json!({"tabId":tab.id,"threadId":tab.thread_id,"result":value}))
+}
+
+/// The caller holds the tab's operation lock through native closure and registry cleanup.
+async fn close(app: &AppHandle, tab: &registry::Tab) -> Result<()> {
+    if let Some(browser) = app.get_webview(&format!("{LABEL_PREFIX}{}", tab.id)) {
+        tauri::async_runtime::spawn_blocking(move || browser.close())
+            .await
+            .map_err(|_| Error::Unavailable)?
+            .map_err(|_| Error::Unavailable)?;
+    }
+    app.state::<State>().remove(app, &tab.id)?;
+    crate::codex_gui::web::publish(
+        app,
+        "codex-gui-event",
+        json!({"method":"browser/closed", "params":{"threadId":tab.thread_id,"tabId":tab.id}}),
+    );
+    Ok(())
 }
 
 #[tauri::command]

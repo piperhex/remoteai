@@ -2,7 +2,7 @@
   "tools": [
     {
       "name": "gui_browser_open",
-      "description": "Open an HTTP(S) page in this conversation's built-in browser and display it in the user's preview sidebar. Prefer the Remote AI Chrome browser assistant by default. Use the built-in browser if the user explicitly requests it, or Chrome assistance is not installed or unavailable (including disconnected, paused, disabled, or failed connection). Do not repeatedly retry an unavailable assistant or require installation before falling back. This browser has a separate session; Chrome login state is not transferred. Supply the calling conversation's threadId. Reuse requestId and URL after uncertain results to avoid duplicate tabs. Retain returned tab.id for gui_browser_use. Opening a preview does not authorize unrelated submissions or credential disclosure. Leave requested preview pages open for the user.",
+      "description": "Open an HTTP(S) page in this conversation's built-in browser and display it in the user's preview sidebar. Prefer the Remote AI Chrome browser assistant by default. Use the built-in browser if the user explicitly requests it, or Chrome assistance is not installed or unavailable (including disconnected, paused, disabled, or failed connection). Do not repeatedly retry an unavailable assistant or require installation before falling back. This browser has a separate session; Chrome login state is not transferred. Supply the calling conversation's threadId. Reuse requestId and URL after uncertain results to avoid duplicate tabs. Retain returned tab.id for gui_browser_use and gui_browser_finish. Before the final reply, call gui_browser_finish with the exact tabIds used in the task, including after failure; include pages the user explicitly asked to retain in keepTabIds. Opening a preview does not authorize unrelated submissions or credential disclosure.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,
@@ -215,6 +215,39 @@
         "readOnlyHint": false,
         "destructiveHint": true,
         "idempotentHint": false,
+        "openWorldHint": true
+      }
+    },
+    {
+      "name": "gui_browser_finish",
+      "description": "Finish built-in browser work before the final reply, including after task failure. Supply the calling conversation's threadId and the exact tabIds used in this task, including popups. Closes recorded temporary tabs and releases their native views and preview resources across desktop local, remote and web viewers. Existing manual previews, unlisted tabs and other conversations' tabs stay open. Include task-created pages the user explicitly asked to retain in both tabIds and keepTabIds. Returns closedTabIds, keptTabIds and failedTabIds. Repeating closure of an already closed tab succeeds. Check failedTabIds, retry those exact IDs once, and report any leftovers. Never sweep all tabs from list or finish between task steps.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "threadId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "tabIds": {
+            "type": "array",
+            "maxItems": 32,
+            "items": { "type": "string", "format": "uuid" }
+          },
+          "keepTabIds": {
+            "type": "array",
+            "maxItems": 32,
+            "items": { "type": "string", "format": "uuid" }
+          }
+        },
+        "required": ["threadId", "tabIds"]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
         "openWorldHint": true
       }
     }
