@@ -6,6 +6,8 @@ import { summarizeCommands } from '../../../../../shared/remote-chat/commandMetr
 import { CommandMetricsStore } from '../../remoteChat/commandMetrics';
 import { conversation } from '../../../../../shared/conversation/events';
 import { conversationSnapshot } from './conversationSnapshot';
+import { conversationEntries } from '../../../../../shared/chat/turnPresentation';
+import { activityTimeline } from '../../../../../shared/chat/activityTimeline';
 
 const history = (): Thread => ({ id: 'chat', cwd: '', preview: '', updatedAt: 0,
   turns: Array.from({ length: 7 }, (_, turn) => ({ id: `turn-${turn}`, status: 'completed', items: [
@@ -51,6 +53,8 @@ it('preserves errors between work segments and keeps public file/image results o
   expect(result.requestErrors?.[0].afterItemId).toBe('work-0-0');
   expect(result.items[2].processOutputs?.[0].id).toBe('image');
   expect(summarizeProcesses({ ...source, turns: [result] }).turns![0]).toEqual(result);
+  const timeline = activityTimeline(conversationEntries([result], new Map([[result.id, true]])));
+  expect(timeline.filter(entry => entry.kind === 'process' && entry.item.processRef)).toHaveLength(2);
 });
 
 it('keeps command totals available without sending command bodies', () => {
