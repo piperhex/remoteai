@@ -45,6 +45,9 @@ pub(super) async fn has_pending(app: AppHandle, thread_ids: &[String]) -> Result
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct QueueMessage {
     id: String,
+    /// Preserve the originating client's receipt when the durable queue is restored.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    client_id: Option<String>,
     text: String,
     images: Vec<String>,
     skills: Vec<Skill>,
@@ -218,6 +221,29 @@ pub(crate) async fn codex_gui_queue_save(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn preserves_remote_client_receipts_after_reopening() {
+        for transfer_mode in ["direct", "relay"] {
+            let root = tempfile::tempdir().unwrap();
+            let mut payload = serde_json::json!({"revision":0,"threads":{
+                "thread":[{"id":"message","clientId":"local-phone-request","text":"hello",
+                    "images":[],"skills":[],"model":"model","effort":"high",
+                    "access":"read-only","transferMode":transfer_mode}]
+            }});
+            let snapshot: QueueSnapshot = serde_json::from_value(payload.clone()).unwrap();
+            let mut connection = connect(root.path()).unwrap();
+            let saved = save(&mut connection, snapshot).unwrap();
+            payload["revision"] = serde_json::json!(1);
+            assert_eq!(serde_json::to_value(saved).unwrap(), payload);
+            drop(connection);
+
+            let connection = connect(root.path()).unwrap();
+            let restored = read(&connection).unwrap();
+            assert_eq!(serde_json::to_value(restored).unwrap(), payload);
+        }
+    }
+
     #[test]
     fn persists_across_connections_and_rejects_stale_snapshots() {
         let root = std::env::temp_dir().join(format!("csw-outbox-{}", uuid::Uuid::new_v4()));
