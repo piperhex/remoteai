@@ -87,11 +87,12 @@ for (const mode of ['local', 'remote', 'web'] as const) {
       const height = (await list.boundingBox())!.height;
       await rows.last().click();
       await expect(list).toContainText(`RESULT-${COUNT - 1}`);
-      expect((await list.boundingBox())!.height).toBeCloseTo(height, 0);
+      await expect.poll(async () => (await list.boundingBox())!.height).toBeGreaterThan(height);
       await list.evaluate(node => { node.scrollTop = node.scrollHeight; });
       await expect(list.getByText(`RESULT-${COUNT - 1}`, { exact: false }).last()).toBeInViewport();
       await page.screenshot({ path: `${EVIDENCE}/${label}-last-command.png` });
       await rows.last().click();
+      await expect.poll(async () => (await list.boundingBox())!.height).toBeCloseTo(height, 0);
       await list.focus();
       await page.keyboard.press('Home');
       await expect.poll(() => list.evaluate(node => node.scrollTop)).toBe(0);
