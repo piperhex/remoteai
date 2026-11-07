@@ -45,6 +45,7 @@ import { MobileConnectionStatus } from "./codexGui/MobileConnectionStatus";
 import { AssistanceButton } from '../remoteAssistance/AssistanceButton';
 import { GUI_VIEW_TITLES, type GuiView } from "./codexGui/GuiNavigation";
 import type { SkillsMarketPageProps } from "./skillsMarket/types";
+import type { SyncComputerDirectory } from './codexGui/syncHosts';
 import paneStyles from "./codexGui/workspacePanes.module.less";
 import { useOpenNotifiedThread, type ThreadNavigation } from "./codexGui/useNotificationNavigation";
 
@@ -60,6 +61,7 @@ type CodexGuiPageProps = {
   hostPicker?: ReactNode;
   focusMode?: GuiFocusMode;
   notificationTarget?: ThreadNavigation;
+  syncComputers?: SyncComputerDirectory;
 };
 
 export function CodexGuiPage(props: CodexGuiPageProps) {
@@ -72,7 +74,7 @@ export function CodexGuiPage(props: CodexGuiPageProps) {
   return <Workspace {...props} {...(props.focusMode ?? focusMode)} />;
 }
 
-function Workspace({ active, accountPicker, windowControls, plugins, hostPicker, notificationTarget,
+function Workspace({ active, accountPicker, windowControls, plugins, hostPicker, notificationTarget, syncComputers,
   focused, onToggleFocus }: CodexGuiPageProps & GuiFocusMode) {
   const language = useGuiLanguage();
   const diffText = useCallback((source: string, values?: Record<string, string | number>) =>
@@ -170,7 +172,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
           {view === "scheduled-tasks" && <ScheduledTasksPage active={active} cwd={project}
             onOpenThread={openTaskConversation} />}
           {view === "plugins" && <GuiPluginsPage {...plugins} active={active} />}
-          {view === "conversation-migration" && <GuiMigrationPage active={active} notify={plugins.notify} />}
+          {view === "conversation-migration" && <GuiMigrationPage active={active} notify={plugins.notify}
+            computers={syncComputers} />}
         </Suspense>
       </div>}
       <div className={paneStyles.conversation} hidden={view !== "conversation"}>

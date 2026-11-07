@@ -24,6 +24,7 @@ import { useDesktopDownloads } from '../../../downloads/useDesktopDownloads';
 import { RemoteFileEnvironment } from './RemoteFileEnvironment';
 import { PortForwarding } from '../portForwarding/PortForwarding';
 import { RemoteUserMessage } from './RemoteUserMessage';
+import { RemoteConversationSync } from './RemoteConversationSync';
 
 const TerminalPanel = lazy(() => import('../../../../../../shared/terminal/views/TerminalPanel'));
 const nativeFileDrop = { subscribe: subscribeFileDrop, readFiles: readDroppedFiles };
@@ -67,7 +68,9 @@ export default function RemoteGuiWorkspace(props: {
           active={active} connected={chat.state.ready} />}
         <GuiRemoteDesktop client={chat.controller.guiTools.desktop} active={active}
           connected={chat.state.mode === 'direct' || chat.state.mode === 'relay'} /></>}
-      headerActions={<><RemoteGuiTools controller={chat.controller} state={chat.state} active={active}
+      headerActions={<><RemoteConversationSync identity={identity} devices={computers.devices} device={device} active={active}
+        onSynced={() => { void chat.controller.list(); }} />
+        <RemoteGuiTools controller={chat.controller} state={chat.state} active={active}
         installer={installer} terminal={terminal} />
         <span className="gui-remote-focus"><FocusModeButton {...props.focusMode} /></span></>}
       headerEnd={props.focusMode.focused && props.windowControls

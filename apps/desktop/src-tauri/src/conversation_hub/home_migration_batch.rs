@@ -7,6 +7,7 @@ struct PreparedSession {
     source_files: Vec<(PathBuf, PathBuf)>,
     target_before: BinManifest,
     target_index: Option<Value>,
+    target_files: Vec<(PathBuf, PathBuf)>,
     created_files: Vec<PathBuf>,
     target_touched: bool,
     source_touched: bool,
@@ -96,13 +97,14 @@ fn prepare_session(
         source_files,
         target_before,
         target_index,
+        target_files: Vec::new(),
         created_files: Vec::new(),
         target_touched: false,
         source_touched: false,
     })
 }
 
-fn copy_verified_file(source: &Path, target: &Path) -> Result<(), String> {
+pub(super) fn copy_verified_file(source: &Path, target: &Path) -> Result<(), String> {
     let parent = target.parent().ok_or_else(|| "迁移目录无效".to_string())?;
     fs::create_dir_all(parent).map_err(|error| error.to_string())?;
     let mut input = File::open(source).map_err(|error| error.to_string())?;
@@ -298,9 +300,137 @@ fn rollback_target(target: &Path, item: &PreparedSession) -> Result<(), String> 
     }
     let id = &item.backup.manifest.session_id;
     finish_bin_removal(target, id)?;
+    for (path, backup) in &item.target_files {
+        if !path.exists() {
+            copy_verified_file(backup, path)?;
+        }
+    }
     restore_bin_state(target, &item.target_before)?;
     if let Some(entry) = &item.target_index {
         append_index_entry(target, id, entry)?;
+    }
+    Ok(())
+}
+
+/// Apply a prepared synchronization batch, retaining overwritten target data until commit.
+pub(super) fn synchronize_batch(
+    source: Option<&Path>,
+    destination: MigrationDestination<'_>,
+    batch: &Path,
+    snapshots: Vec<BinSnapshot>,
+) -> Result<(), MigrationFailure> {
+    let mut existing = merge_bin_snapshots(
+        gather_snapshots(destination.path)
+            .map_err(|error| MigrationFailure::new(MigrationStage::ReadDestination, error))?,
+    )
+    .into_iter()
+    .map(|item| (item.session_id.clone(), item))
+    .collect::<HashMap<_, _>>();
+    let mut prepared = Vec::new();
+    for snapshot in snapshots {
+        let previous = existing.remove(&snapshot.manifest.session_id);
+        let options = SyncPreparation {
+            source,
+            target: destination.path,
+            batch,
+            existing: previous,
+        };
+        let item = prepare_sync_session(options, snapshot)
+            .map_err(|error| MigrationFailure::new(MigrationStage::Backup, error))?;
+        prepared.push(item);
+    }
+    let result = replace_sync_targets(destination.path, &mut prepared)
+        .and_then(|()| restore_batch_target(destination, &mut prepared))
+        .and_then(|()| match source {
+            Some(source) => remove_batch_source(source, &mut prepared),
+            None => Ok(()),
+        });
+    if let Err(mut error) = result {
+        error.recovery = MigrationRecovery::Restored;
+        if let Err(rollback) = rollback_batch(
+            source.unwrap_or(destination.path),
+            destination.path,
+            &prepared,
+        ) {
+            error.recovery = MigrationRecovery::Incomplete;
+            error.rollback_error = Some(rollback);
+        }
+        return Err(error);
+    }
+    Ok(())
+}
+
+struct SyncPreparation<'a> {
+    source: Option<&'a Path>,
+    target: &'a Path,
+    batch: &'a Path,
+    existing: Option<RolloutSnapshot>,
+}
+
+fn prepare_sync_session(
+    options: SyncPreparation<'_>,
+    backup: BinSnapshot,
+) -> Result<PreparedSession, String> {
+    let SyncPreparation {
+        source,
+        target,
+        batch,
+        existing,
+    } = options;
+    let id = &backup.manifest.session_id;
+    let mut target_files = Vec::new();
+    if let Some(snapshot) = &existing {
+        for path in &snapshot.physical_paths {
+            let saved = batch
+                .join("previous")
+                .join(id)
+                .join(bin_rollout_relative(path, target)?);
+            copy_verified_file(path, &saved)?;
+            target_files.push((path.clone(), saved));
+        }
+    }
+    let mut target_before = match existing {
+        Some(snapshot) => bin_manifest_for_snapshot(target, snapshot)?,
+        None => backup.manifest.clone(),
+    };
+    target_before.state_backup = Some(snapshot_bin_state(target, id)?);
+    let previous = batch.join("previous").join(id);
+    fs::create_dir_all(&previous).map_err(|error| error.to_string())?;
+    write_bin_manifest(&previous, &target_before)?;
+    let target_index = index_values(target)?.remove(id);
+    let source_files = match source {
+        Some(source) => bin_restore_targets(source, &backup)?
+            .into_iter()
+            .map(|(saved, original)| (original, saved))
+            .collect(),
+        None => Vec::new(),
+    };
+    Ok(PreparedSession {
+        backup,
+        source_files,
+        target_before,
+        target_index,
+        target_files,
+        created_files: Vec::new(),
+        target_touched: false,
+        source_touched: false,
+    })
+}
+
+fn replace_sync_targets(
+    target: &Path,
+    prepared: &mut [PreparedSession],
+) -> Result<(), MigrationFailure> {
+    for item in prepared {
+        item.target_touched = true;
+        for (path, _) in &item.target_files {
+            fs::remove_file(path).map_err(|error| {
+                MigrationFailure::new(MigrationStage::WriteDestinationFiles, error)
+            })?;
+        }
+        finish_bin_removal(target, &item.backup.manifest.session_id).map_err(|error| {
+            MigrationFailure::new(MigrationStage::WriteDestinationHistory, error)
+        })?;
     }
     Ok(())
 }

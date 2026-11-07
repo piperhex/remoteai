@@ -288,8 +288,8 @@ it("opens feature pages during a reply without creating or changing a conversati
   expect(onNavigate).toHaveBeenCalledExactlyOnceWith("scheduled-tasks");
   const navigation = container.querySelector('nav[aria-label="Codex GUI 导航"]')!;
   expect([...navigation.querySelectorAll("button")].map((entry) => entry.textContent))
-    .toEqual(["新对话", "定时任务", "插件", "对话迁移"]);
-  await act(async () => button("对话迁移").click());
+    .toEqual(["新对话", "定时任务", "插件", "对话同步"]);
+  await act(async () => button("对话同步").click());
   expect(onNavigate).toHaveBeenLastCalledWith("conversation-migration");
   expect(start).not.toHaveBeenCalled();
   expect(select).not.toHaveBeenCalled();

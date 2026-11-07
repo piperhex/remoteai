@@ -1,22 +1,17 @@
-import { uiText } from "../../../../../shared/localization/uiText";
-import { GUI_CODEX_HOME_ID } from "../../types";
-import { CodexThreadsPage } from "../CodexThreadsPage";
+import { ConversationSyncPanel } from '../../../../../shared/conversation/sync/ConversationSyncPanel';
+import { useDesktopSyncHosts, type SyncComputerDirectory } from './syncHosts';
 import { getGuiController } from "./session";
-import styles from "./GuiMigrationPage.module.less";
 
-const EXCLUDED_SOURCE_HOMES = [GUI_CODEX_HOME_ID];
-
-function refreshMigratedConversations(targetHomeId: string) {
-  if (targetHomeId === GUI_CODEX_HOME_ID) void getGuiController().refresh();
-}
-
-export default function GuiMigrationPage({ active, notify }: {
+export default function GuiMigrationPage({ computers, active }: {
   active: boolean;
   notify: (message: string) => void;
+  computers?: SyncComputerDirectory;
 }) {
-  return <section className={styles.page} aria-label={uiText("client.workspaceSettings.conversationMigration")}>
-    <CodexThreadsPage language="zh" notify={notify} active={active} embedded
-      excludedHomeIds={EXCLUDED_SOURCE_HOMES} migrationTargetHomeId={GUI_CODEX_HOME_ID}
-      onHomeMigrated={refreshMigratedConversations} />
-  </section>;
+  return active ? <ActiveSync computers={computers} /> : null;
+}
+
+function ActiveSync({ computers }: { computers?: SyncComputerDirectory }) {
+  const hosts = useDesktopSyncHosts(computers);
+  return <ConversationSyncPanel hosts={hosts} destination={hosts[0]}
+    onSynced={() => { void getGuiController().refresh(); }} />;
 }

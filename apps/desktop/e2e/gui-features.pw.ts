@@ -26,6 +26,22 @@ async function mockCommands(page: Page, migrationError?: string) {
     const { command, args = {} } = body;
     calls.push({ command, args });
     let result: unknown = {};
+    if (command === 'codex_conversation_sync') {
+      const request = args.request as { action: string; query?: string };
+      if (request.action === 'homes') result = { name: 'Local PC', homes: migrationHomes };
+      if (request.action === 'list') result = migrated || request.query === '没有这个对话' ? [] : [sourceThread];
+      if (request.action === 'prepare') result = { id: 'prepared-local', size: 0, sha256: '' };
+      if (request.action === 'plan') result = { count: 1, duplicateIds: [] };
+      if (request.action === 'commit') {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        if (migrationError) {
+          await route.fulfill({ json: { ok: false, error: migrationError } });
+          return;
+        }
+        migrated = true;
+        result = { completedCount: 1, skippedCount: 0 };
+      }
+    }
     if (command === "get_app_settings") result = { codexHomes: migrationHomes };
     if (command === "browse_codex_threads") {
       await new Promise((resolve) => setTimeout(resolve, 400));
@@ -218,137 +234,64 @@ test("feature pages stay within a narrow dark viewport", async ({ page }) => {
   await page.screenshot({ path: "../../.codex-tmp/gui-plugins-dark-narrow.png", animations: "disabled" });
 });
 
-test("migration reuses session management in the chat pane and excludes the GUI only as a source", async ({ page }) => {
+test("sync moves local conversations into the GUI and retains the conversation draft", async ({ page }) => {
   const calls = await mockCommands(page);
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
   await page.setViewportSize({ width: 1440, height: 1000 });
   await openGui(page);
   await page.getByRole("button", { name: "保留的对话", exact: true }).click();
-  await page.getByRole("textbox", { name: "消息", exact: true }).fill("迁移后继续编辑");
+  await page.getByRole("textbox", { name: "消息", exact: true }).fill("同步后继续编辑");
   const navigation = page.getByRole("navigation", { name: "Codex GUI 导航" });
-  await expect(navigation.getByRole("button")).toHaveText(["新对话", "定时任务", "插件", "对话迁移"]);
-  await navigation.getByRole("button", { name: "对话迁移", exact: true }).click();
-  await expect(navigation.getByRole("button", { name: "对话迁移" })).toHaveAttribute("aria-current", "page");
-  const pane = page.getByRole("region", { name: "对话迁移", exact: true });
+  await expect(navigation.getByRole("button")).toHaveText(["新对话", "定时任务", "插件", "对话同步"]);
+  await navigation.getByRole("button", { name: "对话同步", exact: true }).click();
+  const pane = page.getByRole("region", { name: "对话同步", exact: true });
+  await expect(pane.getByText(sourceThread.title, { exact: true })).toBeVisible();
+  await pane.getByRole("combobox", { name: "来源目录" }).press("ArrowDown");
+  await expect(page.locator(".ant-select-item-option")).toHaveText([
+    "Local PC · C:/Users/test/.codex", "Local PC · D:/work/.codex",
+  ]);
+  await page.locator(".ant-select-item-option").filter({ hasText: "C:/Users/test" }).click();
+  const search = pane.getByPlaceholder("搜索标题和对话内容");
+  await search.fill("没有这个对话");
+  await expect(pane.getByText("没有可同步的对话")).toBeVisible();
+  await search.clear();
+  await expect(pane.getByText(sourceThread.title, { exact: true })).toBeVisible();
+  await pane.getByRole("checkbox").last().check();
+  await pane.getByRole("button", { name: "对话同步", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "确认同步对话？", exact: true });
+  await expect(dialog).toContainText("从来源目录移除");
+  await expect(dialog.getByText("传输速度")).toHaveCount(0);
+  await expect(dialog.getByText("连接方式")).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "开始同步", exact: true })).toBeEnabled();
+  await page.screenshot({ path: "../../.codex-tmp/conversation-sync-local-confirm.png", animations: "disabled" });
+  await dialog.getByRole("button", { name: "开始同步", exact: true }).click();
   const before = Number(await page.getByLabel("刷新次数").textContent());
   await expect.poll(async () => Number(await page.getByLabel("刷新次数").textContent())).toBeGreaterThan(before + 3);
-  await expect(pane.getByText("example", { exact: true })).toBeVisible();
-  expect((await pane.boundingBox())!.x).toBeGreaterThan((await navigation.boundingBox())!.x);
-  await pane.getByRole("combobox", { name: "选择管理的 Codex Home" }).press("ArrowDown");
-  await expect(page.locator(".ant-select-item-option")).toHaveText([
-    "默认目录 · C:/Users/test/.codex", "D:/work/.codex",
-  ]);
-  await page.locator(".ant-select-item-option").filter({ hasText: "默认目录" }).click();
-  const search = pane.getByPlaceholder("搜索标题和会话内容");
-  await search.fill("没有这个对话");
-  await expect(pane.getByText("没有匹配的会话")).toBeVisible();
-  await search.clear();
-  await expect(pane.getByText("example", { exact: true })).toBeVisible();
-  await pane.getByRole("button", { name: "条会话", exact: true }).click();
-  await expect(pane.getByText(sourceThread.title, { exact: true })).toBeVisible();
-  await pane.getByRole("checkbox", { name: "全选全部会话" }).check();
-  await pane.getByRole("button", { name: "对话迁移", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "确认迁移对话？", exact: true });
-  const provider = dialog.getByRole("combobox", { name: "模型提供方（model provider）" });
-  await expect(dialog.getByRole("combobox")).toHaveCount(1);
-  await expect(dialog.getByText("codex-switch-gui", { exact: true })).toBeVisible();
-  await provider.press("ArrowDown");
-  await expect(page.locator(".ant-select-dropdown:visible .ant-select-item-option")).toHaveText([
-    "openai", "codex-switch-local", "codex-switch-gui",
-  ]);
-  await page.locator(".ant-select-dropdown:visible .ant-select-item-option")
-    .filter({ hasText: "codex-switch-local" }).click();
-  await expect(dialog.getByText("默认目录 · C:/Users/test/.codex", { exact: true })).toBeVisible();
-  await expect(dialog.getByText("内置 Codex GUI", { exact: true })).toBeVisible();
-  await expect(dialog.getByText("所选对话", { exact: true })).toBeVisible();
-  await expect(dialog.getByText("1 条", { exact: true })).toBeVisible();
-  await expect(dialog).toHaveCSS("transform", "none");
-  await page.screenshot({ path: "../../.codex-tmp/gui-migration-confirm.png", animations: "disabled" });
-  expect(calls.filter((call) => call.command === "migrate_codex_threads_to_home")).toEqual([]);
-  await dialog.getByRole("button", { name: /^关\s*闭$/ }).click();
   await expect(dialog).toBeHidden();
-  expect(calls.filter((call) => call.command === "migrate_codex_threads_to_home")).toEqual([]);
-  await pane.getByRole("button", { name: "对话迁移", exact: true }).click();
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByText("codex-switch-gui", { exact: true })).toBeVisible();
-  await provider.press("ArrowDown");
-  await page.locator(".ant-select-dropdown:visible .ant-select-item-option")
-    .filter({ hasText: /^openai$/ }).click();
-  await expect(pane.getByRole("combobox", { name: "选择管理的 Codex Home" })).toBeDisabled();
-  await dialog.getByRole("button", { name: "开始迁移", exact: true }).click();
-  await expect(provider).toBeDisabled();
-  const migrationBeat = Number(await page.getByLabel("刷新次数").textContent());
-  await expect.poll(async () => Number(await page.getByLabel("刷新次数").textContent()))
-    .toBeGreaterThan(migrationBeat + 3);
-  await expect(dialog).toBeHidden();
-  expect(calls.find((call) => call.command === "migrate_codex_threads_to_home")?.args).toEqual({
-    request: { homeId: "default", targetHomeId: "codex-gui", sessionIds: [sourceThread.sessionId],
-      modelProvider: "openai" },
-  });
-  expect(calls.filter((call) => call.command === "browse_codex_threads")
-    .every((call) => call.args.homeId !== "codex-gui")).toBe(true);
-  await expect(pane.getByText("暂无 Codex 会话")).toBeVisible();
-  await expect(page.getByRole("button", { name: sourceThread.title, exact: true })).toBeVisible();
+  expect(calls.filter(call => call.command === "codex_conversation_sync")
+    .some(call => (call.args.request as { action: string }).action === "commit")).toBe(true);
+  expect(calls.find(call => (call.args.request as { action?: string } | undefined)?.action === "commit")?.args)
+    .toEqual({ request: { action: "commit", id: "prepared-local", overwriteIds: [], modelProvider: "codex-switch-gui" } });
+  await expect(pane.getByText("没有可同步的对话")).toBeVisible();
   await page.getByRole("button", { name: "保留的对话", exact: true }).click();
-  await expect(page.getByRole("textbox", { name: "消息", exact: true })).toHaveText("迁移后继续编辑");
-  expect(errors).toEqual([]);
+  await expect(page.getByRole("textbox", { name: "消息", exact: true })).toHaveText("同步后继续编辑");
 });
 
-test("migration list fits a narrow dark chat pane", async ({ page }) => {
-  await mockCommands(page);
-  await page.setViewportSize({ width: 390, height: 844 });
-  await openGui(page, "?dark=1");
-  await page.getByRole("navigation").getByRole("button", { name: "对话迁移", exact: true }).click();
-  await page.getByRole("button", { name: "收起对话列表" }).click();
-  const pane = page.getByRole("region", { name: "对话迁移", exact: true });
-  await expect(pane.getByText("example", { exact: true })).toBeVisible();
-  await pane.getByRole("button", { name: "条会话", exact: true }).click();
-  await expect(pane.getByText(sourceThread.title, { exact: true })).toBeVisible();
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-  expect(await pane.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
-  await page.screenshot({ path: "../../.codex-tmp/gui-migration-dark-narrow.png", animations: "disabled" });
-  await pane.getByRole("checkbox", { name: "全选全部会话" }).check();
-  await pane.getByRole("button", { name: "对话迁移", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "确认迁移对话？", exact: true });
-  await expect(dialog.getByRole("combobox", { name: "模型提供方（model provider）" })).toBeVisible();
-  expect((await dialog.boundingBox())!.width).toBeLessThanOrEqual(390);
-  expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
-  await page.screenshot({ path: "../../.codex-tmp/gui-migration-provider-dark-narrow.png", animations: "disabled" });
-});
-
-for (const width of [390, 1280]) {
-  test(`migration failure shows a copyable reason and keeps the selection at ${width}px`, async ({ page }) => {
-    const failure = "迁移未完成：保存目标对话时，目标尚未准备好。请先用目标目录启动一次 Codex，再重试迁移。"
-      + "\n本次更改已撤销，原对话已保留。\n错误编号：abc123456789";
-    await mockCommands(page, failure);
-    let copied = "";
-    await page.exposeFunction("captureMigrationError", (value: string) => { copied = value; });
-    await page.addInitScript(() => {
-      Object.defineProperty(navigator, "clipboard", { value: {
-        writeText: (value: string) => Reflect.get(window, "captureMigrationError")(value),
-      } });
-    });
+for (const width of [800, 1280]) {
+  test(`local sync failures retain the source selection at ${width}px`, async ({ page }) => {
+    await mockCommands(page, "CONVERSATION_SYNC_CHANGED");
     await page.setViewportSize({ width, height: 1000 });
-    await openGui(page);
-    await page.getByRole("navigation").getByRole("button", { name: "对话迁移", exact: true }).click();
-    if (width < 500) await page.getByRole("button", { name: "收起对话列表" }).click();
-    const pane = page.getByRole("region", { name: "对话迁移", exact: true });
-    await expect(pane.getByText("example", { exact: true })).toBeVisible();
-    await pane.getByRole("checkbox", { name: "全选全部会话" }).check();
-    await pane.getByRole("button", { name: "对话迁移", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "确认迁移对话？", exact: true });
-    await dialog.getByRole("button", { name: "开始迁移", exact: true }).click();
-    const alert = dialog.getByRole("alert");
-    await expect(alert).toContainText("目标尚未准备好");
-    await expect(alert).toContainText("错误编号：abc123456789");
-    await expect(dialog.getByRole("button", { name: "开始迁移", exact: true })).toBeEnabled();
-    await expect(pane.getByRole("checkbox", { name: "全选全部会话" })).toBeChecked();
-    expect((await alert.boundingBox())!.width).toBeLessThanOrEqual(400);
-    expect(await dialog.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
-    await alert.getByRole("button", { name: "复制错误信息", exact: true }).click();
-    await expect(alert.getByRole("button", { name: "已复制", exact: true })).toBeVisible();
-    expect(copied).toBe(failure);
-    await page.screenshot({ path: `../../.codex-tmp/gui-migration-error-${width}.png`, animations: "disabled" });
+    await openGui(page, "?dark=1");
+    await page.getByRole("navigation").getByRole("button", { name: "对话同步", exact: true }).click();
+    const pane = page.getByRole("region", { name: "对话同步", exact: true });
+    await expect(pane.getByText(sourceThread.title, { exact: true })).toBeVisible();
+    await pane.getByRole("checkbox").last().check();
+    await pane.getByRole("button", { name: "对话同步", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "确认同步对话？", exact: true });
+    await dialog.getByRole("button", { name: "开始同步", exact: true }).click();
+    await expect(dialog.getByRole("alert")).toContainText("对话内容已发生变化");
+    await expect(dialog.getByRole("button", { name: "开始同步", exact: true })).toBeEnabled();
+    await expect(pane.getByRole("checkbox").last()).toBeChecked();
+    expect((await dialog.getByRole("alert").boundingBox())!.width).toBeLessThanOrEqual(400);
+    await page.screenshot({ path: `../../.codex-tmp/conversation-sync-local-error-${width}.png`, animations: "disabled" });
   });
 }

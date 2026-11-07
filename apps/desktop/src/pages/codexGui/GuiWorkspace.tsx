@@ -34,6 +34,7 @@ export function GuiWorkspace(props: {
   const selection = useGuiAccountSelection({ ...props, active: localActive });
   return <><div hidden={Boolean(remote)} style={{ height: '100%' }}>
     <CodexGuiPage active={localActive} notificationTarget={props.notificationTarget}
+    syncComputers={computers}
     focusMode={focusMode} providers={selection.providers} aggregateApis={selection.aggregateApis ?? []}
     hostPicker={isDesktopApp && <GuiHostPicker navigation={computers} active={localActive} />}
     windowControls={props.windowControls} plugins={props.plugins} accountPicker={

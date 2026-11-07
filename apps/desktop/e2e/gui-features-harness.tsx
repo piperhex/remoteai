@@ -15,8 +15,8 @@ function Harness() {
     const timer = setInterval(() => setBeats((value) => value + 1), 50);
     return () => clearInterval(timer);
   }, []);
-  return <ConfigProvider theme={{ algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm,
-    token: { colorPrimary: "#28837f" } }}><App>
+  return <ConfigProvider theme={{ algorithm: [dark ? theme.darkAlgorithm : theme.defaultAlgorithm, theme.compactAlgorithm],
+    token: { fontSize: 14, colorPrimary: "#28837f" } }}><App>
     <div style={{ height: "100vh" }}><CodexGuiPage active accountPicker={null} providers={[]} aggregateApis={[]}
       plugins={{ authenticated: false, onLogin: () => {}, notify: () => {}, t }} /></div>
     <output aria-label="刷新次数" hidden>{beats}</output>

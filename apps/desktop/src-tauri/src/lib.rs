@@ -532,6 +532,7 @@ pub fn run() {
             open_code::restart_open_code,
             commands::restore_non_proxy_conversations,
             conversation_hub::browse_codex_threads,
+            conversation_hub::synchronization::codex_conversation_sync,
             conversation_hub::measure_codex_thread_tokens,
             conversation_hub::discard_codex_threads,
             conversation_hub::browse_codex_thread_bin,

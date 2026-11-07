@@ -298,6 +298,9 @@ fn dispatch_command(app: AppHandle, command: &str, args: Value) -> Result<Value,
         "restore_non_proxy_conversations" => serialize(block_on(
             crate::commands::restore_non_proxy_conversations(app),
         )),
+        "codex_conversation_sync" => serialize(block_on(
+            crate::conversation_hub::synchronization::codex_conversation_sync(app, argument(&args, "request")?),
+        )),
         "browse_codex_threads" => {
             serialize(crate::conversation_hub::browse_codex_threads_blocking(
                 crate::conversation_hub::ThreadContext::new(app, argument(&args, "homeId")?)?,

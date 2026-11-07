@@ -10,6 +10,7 @@ mod context;
 pub(crate) use context::ThreadContext;
 mod deletion_batch;
 pub(crate) mod deletion_plan;
+pub(crate) mod synchronization;
 mod thread_relations;
 
 use std::{

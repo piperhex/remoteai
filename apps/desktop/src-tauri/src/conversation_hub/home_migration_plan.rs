@@ -71,7 +71,7 @@ fn has_target_path(item: &RolloutSnapshot, source: &Path, target: &Path) -> Resu
     Ok(false)
 }
 
-fn connected_sessions(
+pub(super) fn connected_sessions(
     all: &[RolloutSnapshot],
     edges: &[(String, String)],
     requested: &HashSet<String>,
@@ -100,7 +100,10 @@ fn connected_sessions(
     }
 }
 
-fn retain_required_source_history(all: &[RolloutSnapshot], moving: &mut HashSet<String>) {
+pub(super) fn retain_required_source_history(
+    all: &[RolloutSnapshot],
+    moving: &mut HashSet<String>,
+) {
     loop {
         let required = all
             .iter()

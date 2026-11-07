@@ -57,6 +57,8 @@ import { sha256 } from '@noble/hashes/sha256';
 import { bytesToHex } from '@noble/hashes/utils';
 import { RemoteDictation } from './dictation';
 import { DICTATION_OPERATION } from '../../../../shared/remote-chat/dictation';
+import { SYNC_OPERATION } from '../../../../shared/conversation/sync/types';
+import { RemoteConversationSync } from './conversationSync';
 
 const OPERATIONS = new Set([
   'toolDetails',
@@ -133,6 +135,7 @@ function response(request: RpcRequest, data: unknown, mode: ConnectionMode): Rpc
 }
 
 export class ChatOperations {
+  private readonly conversationSync = new RemoteConversationSync();
   readonly views = new ConversationViews();
   private readonly dictation = new RemoteDictation();
   private readonly files = new RemoteFiles();
@@ -153,7 +156,7 @@ export class ChatOperations {
     const operation = (request.body as { operation?: string } | undefined)?.operation;
     const serialized = JSON.stringify([request.method, request.body]);
     // Retry matching must not retain SSH credentials or uploaded file contents in the response cache.
-    const fingerprint = operation === DICTATION_OPERATION
+    const fingerprint = operation === DICTATION_OPERATION || operation === SYNC_OPERATION
       || (typeof operation === 'string' && operation.startsWith('guiTerminalSsh'))
       ? bytesToHex(sha256(new TextEncoder().encode(serialized))) : serialized;
     const cacheKey = JSON.stringify([owner, request.id]);
@@ -186,7 +189,9 @@ export class ChatOperations {
       if (entry.terminalLink && reply.error) entry.readOnly = true;
       // Range reads are repeatable; caching their payloads would retain an entire file in memory.
       // Upload chunks retry fixed ranges; retaining every acknowledgement would cap large uploads at 512 requests.
-      if (operation === 'videoRead' || operation === 'fileRead' || operation === 'projectFileRead'
+      if (operation === SYNC_OPERATION && ['read', 'write', 'list', 'homes']
+        .includes(String(object(object(request.body).request).action))
+        || operation === 'videoRead' || operation === 'fileRead' || operation === 'projectFileRead'
         || operation === 'toolDetails'
         || operation === 'processDetails'
         || operation === 'projectFileBlame'
@@ -203,6 +208,7 @@ export class ChatOperations {
   }
 
   release(owner?: string) {
+    this.conversationSync.release(owner);
     this.views.release(owner);
     this.dictation.release(owner);
     this.files.release(owner);
@@ -216,6 +222,7 @@ export class ChatOperations {
   private async dispatch(request: RpcRequest, options: { mode: ConnectionMode; owner: string; terminalOwner: string }) {
     if (request.method === 'request') {
       const body = object(request.body);
+      if (body.operation === SYNC_OPERATION) return this.conversationSync.request(body, options);
       if (body.operation === DICTATION_OPERATION) return this.dictation.request(body, options.owner);
       if (GUI_FILE_OPERATIONS.has(String(body.operation))) return this.files.request(body, options.owner);
       if (body.operation === DESKTOP_OPERATION) return this.desktop.request(request.body, options.owner);
