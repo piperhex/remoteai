@@ -1,15 +1,3 @@
-async function loadNativeUsageService() {
-  const links = document.querySelectorAll('link[rel="modulepreload"]');
-  const url = [...links].map(link => new URL(link.href, location.href)).find(url =>
-    url.protocol === location.protocol && url.host === location.host
-    && /^\/assets\/app-shared-[\w-]+\.js$/.test(url.pathname));
-  if (!url) return null;
-  const exports = await import(url.href);
-  return Object.values(exports).find(value => value && typeof value === "object"
-    && typeof value.appServerManagers?.subscribe === "function"
-    && typeof value.appServerManagers?.openAccount === "function")?.appServerManagers ?? null;
-}
-
 function nativeUsageResources() {
   const resources = new Set();
   let disposed = false;
