@@ -3,8 +3,14 @@ import { createRoot } from "react-dom/client";
 import { Messages } from "../src/pages/codexGui/Messages";
 import { conversation, reduceConversation } from "../../../shared/conversation/events";
 import styles from "../../../shared/conversation/styles.module.less";
+import { ChatMessages } from "../../../shared/remote-chat/views/ChatMessages";
+import type { Conversation } from "../../../shared/conversation/types";
+import "../../web/src/styles.css";
+import "../../../shared/remote-chat/views/chat.css";
+import "../src/pages/codexGui/remote/remoteGui.less";
 
 const REFRESH_MS = 100;
+const remote = new URLSearchParams(location.search).has('remote');
 const initial = reduceConversation(conversation({ id: "test", cwd: "", preview: "", updatedAt: 1,
   turns: [{ id: "first", status: "inProgress", items: [
     { id: "question", type: "userMessage", content: [{ type: "text", text: "请检查连接" }] },
@@ -13,6 +19,17 @@ const initial = reduceConversation(conversation({ id: "test", cwd: "", preview: 
   error: { message: "Reconnecting... 4/5 unexpected status 502 Bad Gateway: upstream timed out, "
     + "url: http://localhost:8080/v1/responses",
   additionalDetails: `upstream timed out\n${"response".repeat(100)}` } } });
+
+function MessageSurface({ value }: { value: Conversation }) {
+  const footer = <input aria-label="消息" />;
+  if (remote) return <main className={`chat-page ${styles.page} gui-remote-workspace`}
+    style={{ flex: 1, minHeight: 0 }}><div className="chat-conversation">
+    <ChatMessages thread={{ ...value.thread, turns: value.turns }} footer={footer} />
+  </div></main>;
+  return <main className={`${styles.page} ${styles.collapsed}`} style={{ flex: 1 }}>
+    <div className={styles.workspace}><Messages selected="test" value={value} footer={footer} /></div>
+  </main>;
+}
 
 function Harness() {
   const [value, setValue] = useState(initial);
@@ -41,11 +58,7 @@ function Harness() {
   return <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
     <nav><button onClick={resume}>恢复连接</button><button onClick={nextReply}>继续对话</button>
       <output aria-label="刷新次数">{value.tokens}</output></nav>
-    <main className={`${styles.page} ${styles.collapsed}`} style={{ flex: 1 }}>
-      <div className={styles.workspace}>
-        <Messages selected="test" value={value} footer={<input aria-label="消息" />} />
-      </div>
-    </main>
+    <MessageSurface value={value} />
   </div>;
 }
 

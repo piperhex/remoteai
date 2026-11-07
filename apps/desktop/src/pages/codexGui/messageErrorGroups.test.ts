@@ -29,12 +29,12 @@ it("does not merge different causes or failures separated by real work or a new 
   }
 });
 
-it("collapses repeated records in one turn without changing persisted errors", () => {
+it("only shows the final unresolved failure without changing persisted retry errors", () => {
   const turn = { ...failed("turn"), requestErrors: [true, true, false].map((willRetry, index) => ({
     id: `error-${index}`, afterItemId: null, itemCount: 0, willRetry, error,
   })) };
   expect(groups([turn])[0].groups).toMatchObject([
-    { type: "error", count: 3, error: { id: "error-2", willRetry: false } },
+    { type: "error", error: { id: "error-2", willRetry: false } },
   ]);
   expect(turn.requestErrors).toHaveLength(3);
 });

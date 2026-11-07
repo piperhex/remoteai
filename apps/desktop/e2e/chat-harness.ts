@@ -3,7 +3,8 @@ import { ChatLink } from '../../../shared/remote-chat/link';
 import { RtcPeer } from '../../../shared/remote-chat/rtcPeer';
 import { ChatRpc } from '../../../shared/remote-chat/rpc';
 import { parseMessage, type IceServer, type RpcMessage, type Signal } from '../../../shared/remote-chat/protocol';
-import { demoResponse, demoState, changeDemoSidebar } from './demo-conversation';
+import { demoResponse, demoState, changeDemoSidebar, emitDemoEvent } from './demo-conversation';
+import type { GuiEvent } from '../../../shared/conversation/types';
 import { setDemoReview } from './demo-task-review';
 import { changeDemoComposer } from './demo-composer';
 import { demoSkillsDelay, setDemoSkills } from './demo-skills';
@@ -142,6 +143,7 @@ declare global {
     chatTest: { modes: string[]; errors: string[]; events: unknown[]; request: (text: string) => Promise<unknown>;
       fallback: () => void; stream: (text: string) => Promise<void>; executions: () => number; beats: () => number;
       demoState: typeof demoState; setReview: typeof setDemoReview;
+      emitEvent: (event: GuiEvent) => Promise<void>;
       setComposer: (input: unknown) => void; setSidebar: (action: string) => void;
       setSettingsDelay: (milliseconds: number) => void; setHistoryDelay: (milliseconds: number) => void;
       setSkills: typeof setDemoSkills;
@@ -154,6 +156,7 @@ declare global {
 window.chatTest = { modes, errors, events, request: (text) => rpc.request('request', { text }),
   fallback: () => link.fallback(), stream: (text) => broadcastLink.send({ kind: 'event', event: { text } }),
   executions: () => executions, beats: () => heartbeats, demoState, setReview: setDemoReview,
+  emitEvent: event => emitDemoEvent(event, broadcastLink),
   setComposer: (input) => { changeDemoComposer(input, broadcastLink); },
   setSkills: setDemoSkills,
   setSubmissionDelay: (milliseconds) => { submissionDelay = Math.max(0, Math.min(20000, milliseconds)); },

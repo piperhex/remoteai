@@ -28,7 +28,7 @@ function occursBefore(first: Element, second: Element) {
   expect(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 }
 
-it("keeps an expanded notice between activities through streaming, completion, and history refresh", async () => {
+it("removes an expanded retry notice after streaming resumes and through history refresh", async () => {
   let value = conversation({ id: "thread", cwd: "", preview: "", updatedAt: 1,
     turns: [{ id: "turn", status: "inProgress", items: [before] }] });
   value = reduceConversation(value, { method: "error", params: { turnId: "turn", willRetry: true,
@@ -39,22 +39,19 @@ it("keeps an expanded notice between activities through streaming, completion, a
   await act(async () => { notice.open = true; notice.dispatchEvent(new Event("toggle")); });
   value = reduceConversation(value, { method: "item/completed", params: { turnId: "turn", item: after } });
   await render(value);
-  occursBefore(notice, container.querySelector('[data-message-id="after"]')!);
-  expect(notice.textContent).toContain("现已恢复");
+  expect(container.querySelector("[data-request-error]")).toBeNull();
+  expect(container.textContent).not.toContain("现已恢复");
   value = reduceConversation(value, { method: "turn/completed", params: {
     turn: { id: "turn", status: "completed", items: [final], error: null } } });
   value = conversation({ ...value.thread, turns: [{ id: "turn", status: "completed", items: [before, after, final] }] },
     value);
   await render(value);
-  expect(container.querySelector('[role="status"]')!.closest("details")).toBe(notice);
-  expect(notice.open).toBe(true);
-  expect(notice.textContent).toContain("HTTP 502");
-  expect(notice.parentElement?.closest("details")).toBeNull();
-  occursBefore(notice, container.querySelector('[data-message-id="final"]')!);
+  expect(container.querySelector("[data-request-error]")).toBeNull();
+  expect(container.textContent).not.toContain("HTTP 502");
+  expect(value.turns[0].requestErrors).toHaveLength(1);
   const processes = container.querySelectorAll<HTMLDetailsElement>('details:has(> summary[data-history-anchor])');
-  expect(processes).toHaveLength(2);
-  occursBefore(processes[0], notice);
-  occursBefore(notice, processes[1]);
+  expect(processes).toHaveLength(1);
+  occursBefore(processes[0], container.querySelector('[data-message-id="final"]')!);
 });
 
 it("places a history-only failure after its content and before the plan summary", async () => {

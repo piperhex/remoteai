@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 for (const width of [390, 1280]) {
-  test(`proxy details remain with their reply and responsive at ${width}px`, async ({ page }, info) => {
+  test(`retry warnings disappear after recovery at ${width}px`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/e2e/request-error-harness.html");
     const first = page.locator('[data-turn-id="first"]');
@@ -27,20 +27,37 @@ for (const width of [390, 1280]) {
     const before = first.locator('[data-message-id="before"]');
     expect((await before.boundingBox())!.y).toBeLessThan((await notice.boundingBox())!.y);
     await page.getByRole("button", { name: "恢复连接" }).click();
-    await expect(notice).toContainText("现已恢复");
-    await expect(notice.locator("pre")).toBeVisible();
+    await expect(notice).toHaveCount(0);
+    await expect(first).not.toContainText("现已恢复");
     const after = first.locator('[data-message-id="after"]');
-    expect((await notice.boundingBox())!.y).toBeLessThan((await after.boundingBox())!.y);
+    await expect(after).toBeVisible();
+    await page.screenshot({ path: info.outputPath('desktop-local-resumed.png'), animations: 'disabled' });
     await page.getByRole("button", { name: "继续对话" }).click();
-    await expect(notice).toContainText("现已恢复");
-    await expect(notice.locator("pre")).toBeVisible();
+    await expect(notice).toHaveCount(0);
     await expect(page.locator('[data-turn-id="second"] details')).toHaveCount(0);
     const final = first.locator('[data-message-id="final"]');
-    expect((await notice.boundingBox())!.y).toBeLessThan((await final.boundingBox())!.y);
-    await notice.locator("summary").click();
-    await expect(notice.locator("pre")).toHaveCount(0);
-    await expect(notice.locator('summary')).toContainText("现已恢复");
-    await expect(notice).not.toContainText("Reconnecting");
-    await page.screenshot({ path: info.outputPath('desktop-local-recovered.png') });
+    await expect(final).toBeVisible();
+    await expect(first).not.toContainText("现已恢复");
+    await expect(first).not.toContainText("Reconnecting");
+    await page.screenshot({ path: info.outputPath('desktop-local-recovered.png'), animations: 'disabled' });
+  });
+
+  test(`remote retry warnings disappear after recovery at ${width}px`, async ({ page }, info) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/e2e/request-error-harness.html?remote");
+    const notice = page.locator('.chat-turn-error');
+    await expect(notice).toContainText("连接暂时中断，Codex 正在重试…");
+    await page.getByRole('button', { name: '查看报错详情', exact: true }).click();
+    await expect(page.getByText('Reconnecting... 4/5 unexpected status 502', { exact: false })).toBeVisible();
+    await page.getByRole("button", { name: "恢复连接" }).dispatchEvent('click');
+    await expect(notice).toHaveCount(0);
+    await expect(page.getByText('报错详情', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('连接已恢复，正在继续检查。', { exact: true })).toBeVisible();
+    await page.screenshot({ path: info.outputPath('desktop-remote-resumed.png'), animations: 'disabled' });
+    await page.getByRole("button", { name: "继续对话" }).click();
+    await expect(page.getByText('连接检查完成。', { exact: true })).toBeVisible();
+    await expect(notice).toHaveCount(0);
+    await expect(page.locator('body')).not.toContainText('本次回复曾出现连接中断，现已恢复。');
+    await page.screenshot({ path: info.outputPath('desktop-remote-recovered.png'), animations: 'disabled' });
   });
 }

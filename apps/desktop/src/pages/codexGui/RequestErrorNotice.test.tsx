@@ -29,23 +29,32 @@ afterEach(async () => {
 const cases = [
   { status: "inProgress", willRetry: true, resumed: false,
     key: "client.chat.connectionInterruptedCodexIsRetrying" },
+  { status: "inProgress", willRetry: false, resumed: false,
+    key: "client.chat.thisReplyStoppedBecauseOfAProblem" },
   { status: "inProgress", willRetry: true, resumed: true,
-    key: "client.chat.theConnectionWasInterruptedAndHasRecovered" },
+    key: null },
   { status: "completed", willRetry: true, resumed: false,
-    key: "client.chat.theConnectionWasInterruptedAndHasRecovered" },
+    key: null },
+  { status: "completed", willRetry: false, resumed: false,
+    key: null },
   { status: "interrupted", willRetry: true, resumed: false,
-    key: "client.chat.theConnectionWasInterruptedDuringThisReply" },
+    key: null },
   { status: "failed", willRetry: false, resumed: false,
     key: "client.chat.thisReplyStoppedBecauseOfAProblem" },
 ] as const;
 
 for (const language of ["zh", "en", "ja", "ru"] as const) {
-  it.each(cases)(`${language}: keeps diagnostics collapsed for $status (resumed=$resumed)`, async sample => {
+  it.each(cases)(`${language}: only shows unresolved errors for $status (resumed=$resumed)`, async sample => {
     setGuiLanguage(language);
     const turn: Turn = { id: "turn", status: sample.status,
       items: sample.resumed ? [{ id: "resumed", type: "agentMessage", text: "Resumed" }] : [] };
     await act(async () => root.render(<RequestErrorNotice turn={turn}
       record={{ ...record, willRetry: sample.willRetry }} />));
+    if (sample.key === null) {
+      expect(container.textContent).toBe("");
+      expect(container.querySelector("details")).toBeNull();
+      return;
+    }
     const details = container.querySelector("details")!;
     const summary = details.querySelector("summary")!;
     expect(summary.textContent).toBe(uiText(sample.key));

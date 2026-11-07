@@ -36,7 +36,7 @@ it("shows capacity cards inline with a countdown only on the latest failure, and
   const render = (seconds: number) => act(async () => root.render(<Messages value={value} selected="one"
     retry={{ threadId: "one", turnId: "failed", seconds }} onCancelRetry={onCancelRetry} />));
   await render(3);
-  expect(container.textContent?.split(uiText('client.chat.modelAtCapacity'))).toHaveLength(3);
+  expect(container.textContent?.split(uiText('client.chat.modelAtCapacity'))).toHaveLength(2);
   expect(container.textContent).not.toContain("查看报错详情");
   expect(container.querySelectorAll('[role="status"]')).toHaveLength(1);
   expect(container.textContent).toContain("3 秒后自动重试");

@@ -39,6 +39,17 @@ const httpServer = http.createServer((request, response) => {
     })().catch(() => response.writeHead(400).end('{}'));
     return;
   }
+  if (request.url === '/test/chat-event' && request.method === 'POST') {
+    void (async () => {
+      let body = '';
+      for await (const chunk of request) body += chunk.toString();
+      const event = JSON.parse(body);
+      if (typeof event.method !== 'string' || !event.params) throw new Error('Invalid fixture event');
+      await page.evaluate(value => window.chatTest.emitEvent(value), event);
+      response.end('{}');
+    })().catch(() => response.writeHead(400).end('{}'));
+    return;
+  }
   if (request.url === '/test/task-review' && request.method === 'POST') {
     void (async () => {
       let body = '';

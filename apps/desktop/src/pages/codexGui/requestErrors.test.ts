@@ -4,7 +4,8 @@ import { initialState } from "./preferences";
 import type { GuiEvent, Thread } from "../../../../../shared/conversation/types";
 import { requestErrorDetails } from "../../../../../shared/conversation/requestError";
 import { turnMessageGroups } from "./turnMessageGroups";
-import { requestErrorPosition } from "../../../../../shared/conversation/turnRequestErrors";
+import { requestErrorPosition, visibleTurnRequestErrors }
+  from "../../../../../shared/conversation/turnRequestErrors";
 
 const thread: Thread = { id: "one", cwd: "", preview: "", updatedAt: 1,
   turns: [{ id: "first", status: "inProgress", items: [] }] };
@@ -52,7 +53,7 @@ describe("request errors belong to their turn", () => {
     expect(turn.requestErrors?.map((record) => record.afterItemId)).toEqual([null, "command"]);
     expect(turn.requestErrors?.map((record) => record.willRetry)).toEqual([true, false]);
     expect(turnMessageGroups(turn, { visibleItems: turn.items, followsInterruption: false })
-      .map((group) => group.type)).toEqual(["error", "work", "error"]);
+      .map((group) => group.type)).toEqual(["work", "error"]);
   });
 
   it("anchors final errors delivered only by completion and avoids duplicate lifecycle errors", () => {
@@ -78,15 +79,16 @@ describe("request errors belong to their turn", () => {
       item: { id: "server", type: "userMessage" } } });
     value = reduceConversation(value, { method: "item/started", params: { turnId: "first", item: items[1] } });
     value = reduceConversation(value, retry());
+    const options = { visibleItems: value.turns[0].items, followsInterruption: false };
+    expect(turnMessageGroups(value.turns[0], options).map(group => group.type)).toEqual(["message", "error"]);
     value = reduceConversation(value, { method: "item/completed", params: { turnId: "first",
       item: { id: "answer", type: "agentMessage", text: "完成" } } });
     const turn = value.turns[0];
     expect(turn.requestErrors?.map((record) => requestErrorPosition(turn, record))).toEqual([1, 2]);
-    const options = { visibleItems: turn.items, followsInterruption: false };
-    expect(turnMessageGroups(turn, options).map((group) => group.type))
-      .toEqual(["message", "error", "error", "message"]);
+    expect(turnMessageGroups(turn, { ...options, visibleItems: turn.items }).map((group) => group.type))
+      .toEqual(["message", "message"]);
     expect(turnMessageGroups(turn, { ...options, visibleItems: turn.items.slice(2) })
-      .filter((group) => group.type === "error")).toHaveLength(1);
+      .filter((group) => group.type === "error")).toHaveLength(0);
   });
 
   it("replaces retry details with the latest error and retains the final failure", () => {
@@ -99,10 +101,20 @@ describe("request errors belong to their turn", () => {
     expect(value.turns[0].error?.additionalDetails).toBe("quota exceeded");
   });
 
+  it("shows a final history failure even when its stored records only contain retries", () => {
+    const turn = { ...reduceConversation(conversation(thread), retry()).turns[0],
+      status: "failed", error: { message: "HTTP 429" } };
+    expect(visibleTurnRequestErrors(turn)).toMatchObject([
+      { willRetry: false, error: { message: "HTTP 429" } },
+    ]);
+    expect(turn.requestErrors).toHaveLength(1);
+    expect(turn.requestErrors![0].willRetry).toBe(true);
+  });
+
   it('keeps errors beyond the newer edge of a bounded window unmounted', () => {
     const items = Array.from({ length: 100 }, (_, index) => ({ id: `item-${index}`, type: 'agentMessage' }));
-    const turn = { id: 'long', status: 'completed', items, requestErrors: items.map((item, index) => ({
-      id: `error-${index}`, afterItemId: item.id, itemCount: index + 1, willRetry: true,
+    const turn = { id: 'long', status: 'failed', items, requestErrors: items.map((item, index) => ({
+      id: `error-${index}`, afterItemId: item.id, itemCount: index + 1, willRetry: false,
       error: { message: 'Retry' },
     })) };
     const groups = turnMessageGroups(turn, { visibleItems: items.slice(0, 10), followsInterruption: false });

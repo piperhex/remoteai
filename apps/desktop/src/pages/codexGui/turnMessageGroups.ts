@@ -1,7 +1,8 @@
 import { groupTurnItems, type TurnItemGroup } from "../../../../../shared/chat/turnGroups";
 import { hasVisibleProcessContent } from "../../../../../shared/chat/processContent";
 import { visibleContinuationItems } from "../../../../../shared/conversation/continuation";
-import { requestErrorPosition, turnRequestErrors, type TurnRequestError } from "../../../../../shared/conversation/turnRequestErrors";
+import { requestErrorPosition, visibleTurnRequestErrors, type TurnRequestError }
+  from "../../../../../shared/conversation/turnRequestErrors";
 import type { Item, Turn } from "../../../../../shared/conversation/types";
 
 type MessageGroup = { type: "work" | "message"; key: string; items: Item[] };
@@ -19,7 +20,7 @@ function errorBoundaries(turn: Turn, visible: Set<string>): Map<string | null, T
   let lastVisible = turn.items.length - 1;
   while (lastVisible >= 0 && !visible.has(turn.items[lastVisible].id)) lastVisible--;
   const boundaries = new Map<string | null, TurnMessageGroup[]>();
-  for (const error of turnRequestErrors(turn)) {
+  for (const error of visibleTurnRequestErrors(turn)) {
     const position = requestErrorPosition(turn, error);
     if (position < firstVisible || (lastVisible >= 0 && position > lastVisible + 1)) continue;
     const anchor = turn.items[position - 1]?.id ?? null;
