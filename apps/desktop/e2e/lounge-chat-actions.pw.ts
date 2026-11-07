@@ -57,7 +57,7 @@ for (const width of [320, 390]) for (const theme of ['light', 'dark']) {
     await expect(sheet).toBeHidden();
     await verifyLongAccount({ page, sheet, relay, variant: `${width}-${theme}` });
     relay.offline(); relay.close(); await longPress(row);
-    await expect(sheet.getByRole('menuitem', { name: '删除', exact: true })).toHaveAttribute('aria-disabled', 'true');
+    await expect(sheet.getByRole('menuitem', { name: '删除', exact: true })).not.toHaveAttribute('aria-disabled', 'true');
     expect(await sheet.locator('.ant-drawer-content').evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
   });
 }

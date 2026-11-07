@@ -13,7 +13,7 @@ export default defineConfig({
     'lounge-emoji.pw.ts', 'lounge-text.pw.ts', 'lounge-presence.pw.ts', 'lounge-profile.pw.ts',
     'lounge-navigation.pw.ts', 'lounge-new-chat.pw.ts', 'lounge-new-chat-mobile.pw.ts', 'lounge-ordering.pw.ts',
     'lounge-chat-actions.pw.ts', 'lounge-names.pw.ts', 'lounge-my-account.pw.ts',
-    'lounge-context-menus.pw.ts', 'lounge-contact-sync.pw.ts', 'lounge-image-annotation.pw.ts'],
+    'lounge-context-menus.pw.ts', 'lounge-contact-sync.pw.ts', 'lounge-image-annotation.pw.ts', 'lounge-deletion.pw.ts'],
   workers: 1, timeout: 60_000,
   outputDir: '../../../.codex-tmp/lounge-playwright',
   use: { baseURL: 'http://127.0.0.1:1487', launchOptions: testBrowserLaunchOptions(),

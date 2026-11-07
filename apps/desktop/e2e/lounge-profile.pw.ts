@@ -69,7 +69,7 @@ for (const width of [320, 390]) for (const theme of ['light', 'dark']) {
   });
 }
 
-test('mobile deletion: swipe, both menu gestures, failure, restart and fresh exchange', async ({ page }) => {
+test('mobile deletion: swipe, both menu gestures, restart and fresh exchange', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const relay = await setupLounge(page, true, true);
   await page.goto('http://127.0.0.1:1486/web/'); await relay.ready(); await enter(page);
@@ -96,16 +96,12 @@ test('mobile deletion: swipe, both menu gestures, failure, restart and fresh exc
   await swipeRight(page, session);
   await page.screenshot({ path: '../../.codex-tmp/lounge-profile-swipe.png' });
   await row.getByRole('button', { name: '删除', exact: true }).click();
-  relay.rejectDelete(true);
-  await page.getByRole('dialog').getByRole('button', { name: '删除', exact: true }).click();
-  await expect(page.getByRole('alert')).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: '取消', exact: true }).click();
   await expect(row).toContainText('old private history');
-  relay.rejectDelete(false);
   await button(page, privateLabel).click();
   await page.locator('.lounge-heading .lounge-avatar').click(); await button(page, '删除').click();
   await expect(page.getByRole('alert')).toHaveCount(0);
-  await page.getByRole('dialog').filter({ hasText: '将移除该用户' })
+  await page.getByRole('dialog').filter({ hasText: '你所有设备' })
     .getByRole('button', { name: '删除', exact: true }).click();
   await expect(button(page, privateLabel)).toHaveCount(0);
   await page.reload(); await relay.ready(); await enter(page);
@@ -116,12 +112,13 @@ test('mobile deletion: swipe, both menu gestures, failure, restart and fresh exc
   const input = page.getByRole('textbox', { name: '消息', exact: true });
   await input.fill('new opening'); await button(page, '发送').click(); await expect(input).toHaveValue('');
   const sentCount = relay.sent.length;
-  await input.fill('wait for reply'); await button(page, '发送').click();
-  await expect(page.getByRole('alert')).toHaveText('对方回复后才能继续发送。');
-  expect(relay.sent).toHaveLength(sentCount);
-  relay.private('fresh answer'); await expect(page.getByText('fresh answer', { exact: true })).toBeVisible();
-  await button(page, '发送').click(); await expect(input).toHaveValue('');
+  await input.fill('continue without resetting permissions'); await button(page, '发送').click();
+  await expect(input).toHaveValue('');
   expect(relay.sent).toHaveLength(sentCount + 1);
+  relay.private('fresh answer'); await expect(page.getByText('fresh answer', { exact: true })).toBeVisible();
+  await input.fill('continue after reply');
+  await button(page, '发送').click(); await expect(input).toHaveValue('');
+  expect(relay.sent).toHaveLength(sentCount + 2);
   await button(page, '返回聊天列表').click();
   await expect(row).toBeVisible();
   // A successful swipe deletion is independently exercised after the profile deletion.
