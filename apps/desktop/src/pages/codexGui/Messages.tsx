@@ -20,6 +20,9 @@ import { FileThreadContext } from "../../../../../shared/conversation/fileApi";
 import { MessageEditContext } from "./messageEditContext";
 import type { CapacityRetryControl } from "../../../../../shared/conversation/CapacityErrorNotice";
 import { groupVisibleTurns } from "./messageErrorGroups";
+import { ConversationImageGallery } from '../../../../../shared/chat/ImageGallery';
+
+const EMPTY_TURNS: Turn[] = [];
 
 export function Messages({ value, selected, active = true, footer, pendingRequest, onQuote,
   onEdit, onDelete, editDisabled, editCwd, onFork, forkDisabled, retry, onCancelRetry, onLoadOlder }: {
@@ -43,7 +46,9 @@ export function Messages({ value, selected, active = true, footer, pendingReques
   const activeTurn = value?.turns.find((turn) => turn.id === value.activeTurn);
   return <MessageEditContext.Provider value={{ cwd: editCwd ?? value?.thread.cwd ?? "", active }}>
     <FileThreadContext.Provider value={selected}>
-    <ImageThreadContext.Provider value={selected}><div className={styles.messageArea}>
+    <ImageThreadContext.Provider value={selected}>
+    <ConversationImageGallery turns={value?.turns ?? EMPTY_TURNS}>
+    <div className={styles.messageArea}>
     {quote.selection && <QuoteSelectionButton selection={quote.selection} onQuote={() => {
       const current = content.current ? selectedQuote(content.current) : null;
       if (!current || !onQuote?.(current.quote)) return;
@@ -101,5 +106,6 @@ export function Messages({ value, selected, active = true, footer, pendingReques
         </div>
       </div>
     </div>
-  </div></ImageThreadContext.Provider></FileThreadContext.Provider></MessageEditContext.Provider>;
+  </div></ConversationImageGallery>
+  </ImageThreadContext.Provider></FileThreadContext.Provider></MessageEditContext.Provider>;
 }

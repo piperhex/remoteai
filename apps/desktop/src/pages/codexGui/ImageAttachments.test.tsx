@@ -103,6 +103,18 @@ it("opens the selected full-size image and closes with Escape without changing o
   expect(removed).not.toHaveBeenCalled(); expect(submitted).not.toHaveBeenCalled();
 });
 
+it('switches draft attachments with buttons and arrow keys while respecting gallery boundaries', async () => {
+  await render(); await click('放大查看：图片 2');
+  expect(host.querySelector<HTMLButtonElement>('.cs-image-next')?.disabled).toBe(true);
+  await act(async () => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' })); });
+  expect(dialog()?.querySelector('img')?.getAttribute('src')).toBe(images[0].url);
+  expect(host.querySelector<HTMLButtonElement>('.cs-image-previous')?.disabled).toBe(true);
+  await click('下一个');
+  expect(dialog()?.querySelector('img')?.getAttribute('src')).toBe(images[1].url);
+  expect(host.querySelector('textarea')?.value).toBe('尚未发送的内容');
+  expect(removed).not.toHaveBeenCalled(); expect(submitted).not.toHaveBeenCalled();
+});
+
 it("keeps removal separate from preview and still allows preview while sending", async () => {
   await render({ disabled: true });
   await click("移除图片 1");

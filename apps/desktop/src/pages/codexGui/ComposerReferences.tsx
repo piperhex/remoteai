@@ -22,7 +22,7 @@ export function ComposerReferences({ items, disabled, active = true, onRemove }:
   const references = items.filter((item) => !isImage(item));
   return <AttachmentMetadataProvider>
     {images.length > 0 && <div className={imageStyles.attachments} aria-label={uiText("client.composer.localImageAttachments")}>
-      {images.map((item) => <ComposerFileImage key={item.path} item={item} disabled={disabled}
+      {images.map((item) => <ComposerFileImage key={item.path} item={item} images={images} disabled={disabled}
         active={active} onRemove={onRemove} />)}
     </div>}
     {references.length > 0 && <div className={styles.references} aria-label={uiText("client.composer.filePluginAndConversationReferences")}>

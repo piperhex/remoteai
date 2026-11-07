@@ -16,6 +16,12 @@ export function ImageAttachments({ images, disabled, active = true, onRemove, on
   const editing = images.find((image) => image.id === editingId);
   const preview = images.find((image) => image.id === previewId);
   const previewUrl = preview?.url;
+  const available = images.filter(image => image.url);
+  const previewIndex = available.findIndex(image => image.id === previewId);
+  const navigation = {
+    previous: previewIndex > 0 ? () => setPreviewId(available[previewIndex - 1].id) : undefined,
+    next: previewIndex < available.length - 1 ? () => setPreviewId(available[previewIndex + 1].id) : undefined,
+  };
   useEffect(() => { if (!active || !preview) setPreviewId(null); }, [active, preview]);
   useEffect(() => { if (!active || disabled || !editing) setEditingId(null); }, [active, disabled, editing]);
   if (!images.length) return null;
@@ -35,6 +41,7 @@ export function ImageAttachments({ images, disabled, active = true, onRemove, on
   </div>
     {active && preview && previewUrl && <ImagePreview key={preview.id} thumbnail={previewUrl} description={preview.name}
       load={async () => previewUrl}
+      navigation={navigation}
       close={() => setPreviewId(null)} />}
     {active && !disabled && editing?.url && <ImageEditor key={editing.id} dataUrl={editing.url}
       translate={displayText} language={guiLanguage()} mode="direct"

@@ -12,6 +12,7 @@ import { setThemeMode } from '../../web/src/theme/preference';
 import type { Conversation } from '../../../shared/conversation/types';
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
 import { guiFontStyle, useGuiFontSize } from '../../../shared/appearance/fontSize';
+import { ImageAiContext } from '../../../shared/chat/ImageAiContext';
 import styles from '../../../shared/conversation/styles.module.less';
 import '../../web/src/styles.css';
 import '../../../shared/remote-chat/views/chat.css';
@@ -57,6 +58,8 @@ function Harness() {
   const algorithm = [dark ? theme.darkAlgorithm : theme.defaultAlgorithm,
     ...mode === 'web' ? [] : [theme.compactAlgorithm]];
   return <ApplicationTypography><ConfigProvider theme={{ algorithm }}><App>
+    <ImageAiContext.Provider value={new URLSearchParams(location.search).has('editor')
+      ? { enabled: true, send: async () => true } : null}>
     <main className={mode === 'local' ? `${styles.page} ${styles.collapsed}`
       : `chat-page ${mode === 'remote' ? `gui-remote-workspace ${styles.page} ${styles.collapsed}` : ''}`}
       style={{ height: '100vh', ...guiFontStyle(fontSize) }}>
@@ -72,6 +75,7 @@ function Harness() {
           </FileEnvironmentContext.Provider>}
       </div>
     </main>
+    </ImageAiContext.Provider>
   </App></ConfigProvider></ApplicationTypography>;
 }
 

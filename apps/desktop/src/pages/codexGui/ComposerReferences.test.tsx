@@ -79,6 +79,25 @@ it("allows retry and removal when a preview cannot be read", async () => {
   expect(remove).toHaveBeenCalledWith(photo.path);
 });
 
+it('navigates local image files in order and reads the selected original', async () => {
+  const second = { ...photo, name: 'second.png', path: 'C:/second.png' };
+  await render([photo, document, second]);
+  await click(`放大查看：${photo.name}`);
+  expect(host.querySelector<HTMLButtonElement>('.cs-image-previous')?.disabled).toBe(true);
+  vi.mocked(invoke).mockResolvedValue({ url: original });
+  await click('下一个');
+  expect(invoke).toHaveBeenLastCalledWith('codex_gui_attachment_preview', {
+    request: { path: second.path, variant: 'original' },
+  });
+  expect(host.querySelector('dialog img')?.getAttribute('src')).toBe(original);
+  expect(host.querySelector<HTMLButtonElement>('.cs-image-next')?.disabled).toBe(true);
+  await click('上一个');
+  expect(invoke).toHaveBeenLastCalledWith('codex_gui_attachment_preview', {
+    request: { path: photo.path, variant: 'original' },
+  });
+  expect(remove).not.toHaveBeenCalled();
+});
+
 it("does not treat image-named folders or plugins as images and ignores reads after removal", async () => {
   let resolve!: (result: { url: string }) => void;
   vi.mocked(invoke).mockImplementation(() => new Promise((done) => { resolve = done; }));

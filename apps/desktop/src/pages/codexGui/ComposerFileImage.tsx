@@ -6,6 +6,7 @@ import type { AttachmentReference } from "../../../../../shared/conversation/att
 import { ImagePreview } from "../../../../../shared/conversation/ImagePreview";
 import { isInlineImage } from "../../../../../shared/conversation/imageSources";
 import styles from "./ImageAttachments.module.less";
+import { EMPTY_IMAGE, useImageGallery } from '../../../../../shared/chat/ImageGallery';
 
 const RESOURCE_ERROR = "图片过大，暂时无法预览。请缩小尺寸后重试。";
 
@@ -21,8 +22,9 @@ async function loadImage(path: string, variant: "thumbnail" | "original") {
   return url;
 }
 
-export function ComposerFileImage({ item, disabled, active, onRemove }: {
+export function ComposerFileImage({ item, images = [item], disabled, active, onRemove }: {
   item: AttachmentReference; disabled: boolean; active: boolean; onRemove: (path: string) => void;
+  images?: AttachmentReference[];
 }) {
   const [url, setUrl] = useState<string>();
   const [error, setError] = useState("");
@@ -49,7 +51,17 @@ export function ComposerFileImage({ item, disabled, active, onRemove }: {
     {!error && !url && <span role="status">{uiText("client.composer.loading")}</span>}
     <button type="button" className={styles.remove} disabled={disabled} aria-label={uiText("client.composer.removeAttachment", { value1: item.name })}
       onClick={() => onRemove(item.path)}><X size={14} /></button>
-    {active && preview && url && <ImagePreview thumbnail={url} description={item.name}
-      load={() => loadImage(item.path, "original")} close={() => setPreview(false)} />}
+    {active && preview && url && <ComposerImagePreview item={item} images={images} thumbnail={url}
+      close={() => setPreview(false)} />}
   </div>;
+}
+
+function ComposerImagePreview({ item, images, thumbnail, close }: {
+  item: AttachmentReference; images: AttachmentReference[]; thumbnail: string; close: () => void;
+}) {
+  const { current, navigation } = useImageGallery({ source: item.path, description: item.name },
+    images.map(image => ({ source: image.path, description: image.name })));
+  return <ImagePreview key={current.source} thumbnail={current.source === item.path ? thumbnail : EMPTY_IMAGE}
+    description={current.description ?? item.name} navigation={navigation}
+    load={() => loadImage(current.source, 'original')} close={close} />;
 }
