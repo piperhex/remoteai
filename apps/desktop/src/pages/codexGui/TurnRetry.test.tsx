@@ -37,8 +37,8 @@ for (const surface of ['desktop', 'web']) {
     const send = vi.fn(() => new Promise<boolean>(resolve => { finish = resolve; }));
     await render([failed], send);
     expect(retryButton()).toBeDefined();
-    expect(container.textContent).toContain(surface === 'desktop' ? 'HTTP 502 Bad Gateway'
-      : '本次回复遇到问题，已中断。');
+    expect(container.textContent).toContain('本次回复遇到问题，已中断。');
+    expect(container.textContent).not.toContain('HTTP 502 Bad Gateway');
     await act(async () => { retryButton()!.click(); retryButton()!.click(); });
     expect(send).toHaveBeenCalledOnce();
     expect(send).toHaveBeenCalledWith({ threadId: 'thread', turnId: 'failed' });

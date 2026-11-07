@@ -10,7 +10,9 @@ const initial = reduceConversation(conversation({ id: "test", cwd: "", preview: 
     { id: "question", type: "userMessage", content: [{ type: "text", text: "请检查连接" }] },
     { id: "before", type: "agentMessage", phase: "commentary", text: "正在检查连接，这是中断前的进度。" },
   ] }] }), { method: "error", params: { turnId: "first", willRetry: true,
-  error: { message: "HTTP 502 Bad Gateway", additionalDetails: `upstream timed out\n${"response".repeat(100)}` } } });
+  error: { message: "Reconnecting... 4/5 unexpected status 502 Bad Gateway: upstream timed out, "
+    + "url: http://localhost:8080/v1/responses",
+  additionalDetails: `upstream timed out\n${"response".repeat(100)}` } } });
 
 function Harness() {
   const [value, setValue] = useState(initial);

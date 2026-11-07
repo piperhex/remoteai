@@ -10,6 +10,8 @@ for (const remote of [false, true]) {
       const retry = page.getByRole('button', { name: '重试', exact: true });
       await expect(retry).toHaveCount(1);
       await expect(retry).toBeVisible();
+      await expect(page.getByText('本次回复遇到问题，已中断。', { exact: true })).toBeVisible();
+      await expect(page.locator('body')).not.toContainText('HTTP 502 Bad Gateway');
       await page.getByLabel('消息草稿').fill('保留这份草稿');
       await page.getByLabel('暂不可用').check();
       await expect(retry).toBeDisabled();

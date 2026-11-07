@@ -33,7 +33,7 @@ export function RequestErrorNotice({ turn, record, count = 1, retry, onCancelRet
     <DeferredDetails className={styles.errorRow} summary={
       <summary className={styles.summary} aria-label={uiText("client.chat.viewErrorDetails")}>
         <CircleAlert size={15} aria-hidden="true" />
-        <span className={styles.preview} role="status">{details.replace(/\s+/g, " ")}</span>
+        <span className={styles.preview} role="status">{message}</span>
         {count > 1 && <span className={styles.count}>×{count}</span>}
         <ChevronDown className={styles.toggle} size={15} aria-hidden="true" />
       </summary>}>

@@ -13,7 +13,8 @@ for (const width of [390, 1280]) {
     await expect(preview).toHaveCSS('white-space', 'nowrap');
     await expect(preview).toHaveCSS('text-overflow', 'ellipsis');
     await expect(preview).toHaveCSS('color', 'rgb(193, 139, 37)');
-    expect(await preview.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(true);
+    await expect(preview).toHaveText('本次回复遇到问题，已中断。');
+    await expect(notice).not.toContainText('读取响应时连接已关闭');
     await expect(notice.locator('pre')).toHaveCount(0);
     await expect(page.getByRole('button', { name: '重试', exact: true })).toHaveCount(1);
     await page.screenshot({ path: info.outputPath('collapsed-errors.png') });
