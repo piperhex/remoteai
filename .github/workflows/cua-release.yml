@@ -48,13 +48,13 @@ jobs:
       - name: Verify release version and package scripts
         shell: bash
         run: |
-          node packages/cua/test.mjs
+          node packages/cua/scripts/test.mjs
           node --input-type=module -e '
-            import {tag} from "./packages/cua/common.mjs";
+            import {tag} from "./packages/cua/scripts/common.mjs";
             if (process.env.GITHUB_REF_TYPE === "tag" && process.env.GITHUB_REF_NAME !== tag)
               throw new Error("CUA tag and package version differ");'
       - name: Verify repository source
-        run: node packages/cua/prepare.mjs
+        run: node packages/cua/scripts/prepare.mjs
       - name: Install pinned Rust toolchain
         if: startsWith(matrix.target, 'windows-')
         shell: pwsh
@@ -65,7 +65,7 @@ jobs:
       - name: Install Spectre libraries
         if: startsWith(matrix.target, 'windows-')
         shell: pwsh
-        run: ./packages/cua/install-spectre.ps1 -Architecture ${{ matrix.architecture }}
+        run: ./packages/cua/scripts/install-spectre.ps1 -Architecture ${{ matrix.architecture }}
       - uses: swatinem/rust-cache@v2
         if: startsWith(matrix.target, 'windows-')
         with:
@@ -83,7 +83,7 @@ jobs:
           cargo clippy --locked -p platform-windows --lib
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build verified package
-        run: node packages/cua/build.mjs ${{ matrix.target }}
+        run: node packages/cua/scripts/build.mjs ${{ matrix.target }}
       - name: Test packaged MCP and runtime dependencies
         shell: pwsh
         env:
@@ -100,9 +100,9 @@ jobs:
               node scripts/verify-windows-runtime.mjs "$directory/$binary"
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             }
-            node packages/cua/smoke.mjs "$directory/cua-driver.exe"
+            node packages/cua/scripts/smoke.mjs "$directory/cua-driver.exe"
           } else {
-            node packages/cua/smoke.mjs .codex-tmp/cua-smoke/cua-driver
+            node packages/cua/scripts/smoke.mjs .codex-tmp/cua-smoke/cua-driver
           }
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
@@ -132,7 +132,7 @@ jobs:
           merge-multiple: true
       - name: Verify all artifacts and provenance
         run: |
-          node packages/cua/manifest.mjs
+          node packages/cua/scripts/manifest.mjs
           cp packages/cua/LICENSE.upstream .codex-tmp/cua-release/
           cp packages/cua/README.md .codex-tmp/cua-release/README.md
       - name: Publish independent CUA release

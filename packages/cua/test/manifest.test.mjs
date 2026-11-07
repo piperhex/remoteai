@@ -3,9 +3,9 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { asset, sha256, tag, upstream, version } from '../common.mjs';
-import { manifest } from '../manifest.mjs';
-import { patchBytes, sourceLockBytes } from '../prepare.mjs';
+import { asset, sha256, tag, upstream, version } from '../scripts/common.mjs';
+import { manifest } from '../scripts/manifest.mjs';
+import { patchBytes, sourceLockBytes } from '../scripts/prepare.mjs';
 
 test('release manifest rejects mixed builds, altered archives, and absent targets', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'remoteai-cua-manifest-'));

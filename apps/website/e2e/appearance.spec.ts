@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { basePath } from '../site.config.mjs';
+import { basePath } from '../scripts/site.config.mjs';
 
 const storageKey = 'remoteai-website-theme';
 const white = 'rgb(255, 255, 255)';

@@ -61,8 +61,8 @@ Use bundled Chromium through `scripts/test-browser.mjs` for browser tests:
 
 ```powershell
 cd apps/desktop
-npx playwright test --config playwright.website-tabs.config.ts
-npx playwright test --config playwright.provider-market.config.ts provider-browser.pw.ts
+npx playwright test --config scripts/playwright.website-tabs.config.ts
+npx playwright test --config scripts/playwright.provider-market.config.ts provider-browser.pw.ts
 ```
 
 The website suite covers local, remote and web layouts at 1440/light and 1024/dark, preserving tab contents,
@@ -70,7 +70,7 @@ closing/adding tabs, refreshing, invalid addresses, expansion and conversation c
 `.codex-tmp/website-tabs`.
 
 The Windows native integration test uses its own test window and WebView profile. Start the fixture
-server (`node e2e/website-tabs-server.mjs`) and Vite on port 1552 with `vite.website-tabs.config.ts`, then run
+server (`node e2e/website-tabs-server.mjs`) and Vite on port 1552 with `scripts/vite.website-tabs.config.ts`, then run
 the ignored Rust test `provider_browser::automation::tests::opens_conversation_browser`. Run
 `node e2e/website-tabs-native.mjs` against its test-only CDP port 9333. For remote image verification,
 start `node e2e/website-tabs-bridge.mjs`, then run `node e2e/website-tabs-remote-native.mjs`.
@@ -82,7 +82,7 @@ For screenshot delivery, start the same Vite and fixture servers, run the ignore
 `node e2e/browser-capture-native.mjs`. It uses the test window's CDP port 9335 to exercise the MCP tool
 path, compares saved bytes with the image block, closes the tab and checks the image still exists.
 It also confirms that preview polling does not produce saved-image metadata. Run
-`npx playwright test --config playwright.browser-capture.config.ts` to render that exact saved image
+`npx playwright test --config scripts/playwright.browser-capture.config.ts` to render that exact saved image
 through local, remote and web reply components at 1440/light and 1024/dark. The browser test mocks
 the transport only, so it does not establish connectivity to a second physical computer.
 Results and screenshots are in `.codex-tmp/browser-capture` and `.codex-tmp/browser-capture-parity`.

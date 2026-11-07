@@ -122,7 +122,7 @@ adb -s emulator-5580 shell am instrument -w `
 ```
 
 测试必须指定 `-e class`，避免平台测试运行器扫描整个 React Native 应用导致启动超时。
-Web 下载回归使用 `apps/web/playwright.chat.config.ts` 下的 `downloads.pw.ts`、`download-actions.pw.ts`
+Web 下载回归使用 `apps/web/scripts/playwright.chat.config.ts` 下的 `downloads.pw.ts`、`download-actions.pw.ts`
 和 `download-sharing.pw.ts`，覆盖手机和桌面布局、离线分享、取消、失效缓存及点击授权恢复。
 原生页面可使用 `e2e/download-manager.init.gradle` 构建独立包 `com.codexswitch.mobile.downloaduitest`，
 直接查看紧凑布局，并点击已完成文件的“分享”验证系统面板。

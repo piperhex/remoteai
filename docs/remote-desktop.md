@@ -379,7 +379,7 @@ The [1.6.2 physical-device investigation](remote-desktop-investigation-20260926.
 capture/playback limits, the missing media-relay path and references to mature open-source implementations.
 
 ```powershell
-npx vitest run src/remoteDesktop src/remoteChat/guiTools.test.ts src/remoteChat/hostRecovery.test.ts
+npx vitest run --config scripts/vitest.config.ts src/remoteDesktop src/remoteChat/guiTools.test.ts src/remoteChat/hostRecovery.test.ts
 # Run the command above from apps/desktop.
 npm --prefix apps/web run test:remote-desktop:e2e
 npm --prefix apps/native run check

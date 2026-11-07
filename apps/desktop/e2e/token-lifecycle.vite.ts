@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { defineConfig, mergeConfig } from 'vite';
-import config from '../vite.config';
+import config from '../scripts/vite.config';
 
 // Measurement-only transforms. Both runs use the same running UI and preview data;
 // the baseline restores the original hook and always-mounted panel from this task's starting commit.

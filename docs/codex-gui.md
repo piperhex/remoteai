@@ -486,7 +486,7 @@ npm run build:desktop
 cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
 cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests
-npm exec -w @codex-switch/desktop -- playwright test --config playwright.chat.config.ts file-menu.pw.ts
+npm exec -w @codex-switch/desktop -- playwright test --config scripts/playwright.chat.config.ts file-menu.pw.ts
 ```
 
 The opt-in proxy regression uses the installed CLI with local fixtures only. It starts the CLI with

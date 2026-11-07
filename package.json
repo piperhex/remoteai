@@ -41,7 +41,7 @@
     "test": "lerna run test --stream",
     "preview": "npm run preview -w @codex-switch/desktop",
     "tauri": "npm run tauri -w @codex-switch/desktop",
-    "commitlint": "commitlint",
+    "commitlint": "commitlint --config scripts/commitlint.config.cjs",
     "prepare": "husky",
     "nx": "nx",
     "graph": "nx graph",

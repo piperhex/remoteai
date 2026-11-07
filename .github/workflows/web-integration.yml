@@ -9,7 +9,7 @@ on:
       - 'apps/desktop/src/**'
       - 'apps/desktop/e2e/**'
       - 'apps/desktop/package.json'
-      - 'apps/desktop/vite.config.ts'
+      - 'apps/desktop/scripts/vite.config.ts'
       - 'scripts/export-web-dependencies.mjs'
       - '.github/workflows/web-integration.yml'
   pull_request:
@@ -20,7 +20,7 @@ on:
       - 'apps/desktop/src/**'
       - 'apps/desktop/e2e/**'
       - 'apps/desktop/package.json'
-      - 'apps/desktop/vite.config.ts'
+      - 'apps/desktop/scripts/vite.config.ts'
       - 'scripts/export-web-dependencies.mjs'
       - '.github/workflows/web-integration.yml'
 
@@ -50,7 +50,7 @@ jobs:
       - run: npm run build:desktop
       - name: Verify reused desktop components
         run: >-
-          npm exec -w @codex-switch/desktop -- vitest run
+          npm exec -w @codex-switch/desktop -- vitest run --config scripts/vitest.config.ts
           src/remoteChat/sshDownloads.test.ts src/remoteDesktop/errorBoundary.test.tsx
           src/remoteDesktop/useDesktopClipboard.browser.test.tsx
       - name: Verify existing deployment configuration

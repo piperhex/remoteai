@@ -101,7 +101,7 @@ Keep the bridge running, and in another Windows PowerShell terminal:
 ```powershell
 $env:SSH_FIXTURE_CONFIG = "$PWD/.codex-tmp/ssh-wsl/config.json"
 Set-Location apps/desktop
-npx playwright test --config playwright.chat.config.ts ssh.pw.ts --workers 1
+npx playwright test --config scripts/playwright.chat.config.ts ssh.pw.ts --workers 1
 ```
 
 Playwright starts Vite if needed. It exercises the production local, remote and
@@ -126,7 +126,7 @@ Start the bridge with `SSH_FIXTURE_CONFIG` pointing to that JSON and
 ```powershell
 $env:SSH_DIRECTORY_FIXTURE = '1'
 Set-Location apps/desktop
-npx playwright test --config playwright.chat.config.ts ssh-directory.pw.ts --workers 1
+npx playwright test --config scripts/playwright.chat.config.ts ssh-directory.pw.ts --workers 1
 ```
 
 This covers local, remote and Web PC shell-to-browser navigation, queued

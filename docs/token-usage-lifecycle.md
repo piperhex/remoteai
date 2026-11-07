@@ -83,7 +83,7 @@ results distinguish those warnings from failing tests.
 From `apps/desktop`:
 
 ```powershell
-npx vitest run src/components/TokenUsageDashboard/useWindowVisible.test.tsx src/components/TokenUsageDashboard/lifecycle.test.tsx src/components/TokenUsageDashboard/queryCache.test.ts src/components/TokenUsageDashboard/EChart.test.tsx src/remoteChat/useTokenSummary.test.tsx src/remoteChat/tokenSummary.test.ts src/remoteChat/hostFormattedCopy.test.ts src/i18n/tokenSummaryLanguage.test.tsx --maxWorkers 1 --reporter=default --reporter=json --outputFile.json=../../.codex-tmp/token-lifecycle/unit-tests.json
+npx vitest run --config scripts/vitest.config.ts src/components/TokenUsageDashboard/useWindowVisible.test.tsx src/components/TokenUsageDashboard/lifecycle.test.tsx src/components/TokenUsageDashboard/queryCache.test.ts src/components/TokenUsageDashboard/EChart.test.tsx src/remoteChat/useTokenSummary.test.tsx src/remoteChat/tokenSummary.test.ts src/remoteChat/hostFormattedCopy.test.ts src/i18n/tokenSummaryLanguage.test.tsx --maxWorkers 1 --reporter=default --reporter=json --outputFile.json=../../.codex-tmp/token-lifecycle/unit-tests.json
 $env:TOKEN_BASELINE='1'
 npx playwright test --config e2e/token-lifecycle.config.ts token-lifecycle.pw.ts
 $env:TOKEN_BASELINE='0'
@@ -101,7 +101,7 @@ in `after-before-native-hide-fix.json`; it is not used as proof of the corrected
 From `apps/web`:
 
 ```powershell
-npx playwright test --config playwright.token-lifecycle.config.ts
+npx playwright test --config scripts/playwright.token-lifecycle.config.ts
 ```
 
 Both desktop (1440 px) and mobile (390 px) actual App routes passed: ChatPage is hidden while

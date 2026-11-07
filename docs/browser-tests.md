@@ -6,6 +6,15 @@ Install the browsers matching the repository's Playwright version from the repos
 npx playwright install chromium
 ```
 
+Build and browser-test configurations live in each application's `scripts/` directory. Prefer its
+`npm run dev`, `npm run build`, `npm test` and `npm run test:e2e` commands where available. When invoking
+a runner directly, pass the configuration explicitly, for example from `apps/desktop`:
+
+```powershell
+npx playwright test --config scripts/playwright.chat.config.ts
+npx vitest run --config scripts/vitest.config.ts
+```
+
 Desktop, web, website, and native-test browser fixtures default to Playwright's bundled Chromium.
 Headless runs without a `channel` use the bundled headless shell. Headed and extension tests use
 the bundled full browser. Missing browser binaries are an installation error; do not fall back

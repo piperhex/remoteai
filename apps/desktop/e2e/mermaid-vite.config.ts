@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { defineConfig, mergeConfig, type Plugin } from 'vite';
-import desktopConfig from '../vite.config';
+import desktopConfig from '../scripts/vite.config';
 
 function baselineMeasurement(): Plugin {
   return { name: 'mermaid-baseline-measurement', enforce: 'pre', transform(source, id) {

@@ -6,5 +6,5 @@
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["scripts/vite.config.ts"]
 }

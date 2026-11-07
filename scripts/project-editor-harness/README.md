@@ -30,7 +30,7 @@ For actual app-component browser tests, use Playwright's bundled Chromium:
 
 ```powershell
 cd apps/desktop
-npx playwright test --config playwright.project-editor.config.ts
+npx playwright test --config scripts/playwright.project-editor.config.ts
 ```
 
 The browser adapter connects production local/remote/Web entry components and the generated native

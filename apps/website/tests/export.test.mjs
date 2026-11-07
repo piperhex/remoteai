@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import test from 'node:test';
-import { siteUrl, basePath, resolveSiteUrl } from '../site.config.mjs';
+import { siteUrl, basePath, resolveSiteUrl } from '../scripts/site.config.mjs';
 
 const dist = resolve('dist');
 const sitemap = readFileSync(resolve(dist, 'sitemap.xml'), 'utf8');

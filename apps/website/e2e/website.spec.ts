@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { basePath } from '../site.config.mjs';
+import { basePath } from '../scripts/site.config.mjs';
 
 for (const appearance of ['dark', 'light']) {
   test(`every exported page hydrates and loads its images in ${appearance}`, async ({ page, request }) => {

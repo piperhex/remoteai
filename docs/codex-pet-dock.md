@@ -56,7 +56,7 @@ npm run generate:i18n
 npm run check:i18n
 npm run build:desktop
 npm run build:web
-npm exec --workspace @codex-switch/desktop -- vitest run src/pages/settings/PetDockSettingsCard.test.tsx
+npm exec --workspace @codex-switch/desktop -- vitest run --config scripts/vitest.config.ts src/pages/settings/PetDockSettingsCard.test.tsx
 cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib pet_dock
 cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib pet_surface_tests
 cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check

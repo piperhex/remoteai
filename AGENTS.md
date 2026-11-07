@@ -2,6 +2,15 @@
 
 Keep all instructions in this `AGENTS.md` file in English.
 
+## Script Organization
+
+- Keep maintenance, build and test scripts and executable tool configurations in the owning repository
+  or application's `scripts/` directory. Pass configuration paths explicitly from npm scripts and CI.
+- Preserve application roots, fixture working directories and report paths when moving configuration.
+  Keep only tool-required discovery entries, such as Expo's `app.config.js` and `metro.config.js`, at the root.
+- Keep package manifests, TypeScript project files, deployment definitions and application source modules
+  in their established locations. Generated dependency snapshots must be refreshed through export tooling.
+
 ## Internationalization Submodule
 
 - `packages/i18n` is the required `https://github.com/piperhex/remoteai-i18n.git` submodule.

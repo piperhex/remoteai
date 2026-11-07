@@ -28,10 +28,10 @@ macOS 通用包逐字节镜像上游归属宿主进程的运行时，保留原�
 需要 Node.js 20 及以上、Git、tar；Windows 还需要 Rust、Visual C++ Build Tools 和 Spectre 库。
 
 ```powershell
-node packages/cua/test.mjs
-node packages/cua/prepare.mjs
-powershell -File packages/cua/install-spectre.ps1
-node packages/cua/build.mjs windows-x86_64
+node packages/cua/scripts/test.mjs
+node packages/cua/scripts/prepare.mjs
+powershell -File packages/cua/scripts/install-spectre.ps1
+node packages/cua/scripts/build.mjs windows-x86_64
 ```
 
 `build.mjs` 也接受 `windows-arm64`、`darwin-universal`。
@@ -39,11 +39,11 @@ node packages/cua/build.mjs windows-x86_64
 `prepare.mjs` 只校验仓库内源码，不下载、不改写源码；下载辅助运行时仍会验证固定哈希，
 构建使用 `cargo --locked`。
 
-修改源码后先检查差异，将新增文件加入 Git，再运行 `node packages/cua/prepare.mjs --record`，
+修改源码后先检查差异，将新增文件加入 Git，再运行 `node packages/cua/scripts/prepare.mjs --record`，
 将更新后的 `source-lock.json` 与源码一起提交。该清单用于发现漏提交、字节变化或构建目录混入。
 升级上游时同时更新 `upstream.json`、源码和补丁记录，保留原始许可及第三方声明。
 
-`node packages/cua/smoke.mjs <解压后的程序路径>` 验证标准权限模式下的 MCP 协议及工具发现。
+`node packages/cua/scripts/smoke.mjs <解压后的程序路径>` 验证标准权限模式下的 MCP 协议及工具发现。
 Windows 设置 `CUA_NATIVE_LAUNCH_TEST=1` 后，还会分别通过直接启动和 Shell 启动字符映射表，
 检查子进程令牌及窗口快照，最后清理测试创建的进程。CI 在两种 Windows 架构上执行这项测试。
 本机关闭 UAC 时，上游两项隔离浏览器测试仍会因 SAFER 无法降权而失败；这不在本次原生应用补丁范围内。

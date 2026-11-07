@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/prepare-assets.mjs && vite --host 127.0.0.1",
-    "build": "tsc --noEmit && node scripts/prepare-assets.mjs && vite build && vite build --ssr src/entry-server.tsx --outDir .prerender && node scripts/prerender.mjs",
+    "dev": "node scripts/prepare-assets.mjs && vite --config scripts/vite.config.ts --host 127.0.0.1",
+    "build": "tsc --noEmit && node scripts/prepare-assets.mjs && vite build --config scripts/vite.config.ts && vite build --config scripts/vite.config.ts --ssr src/entry-server.tsx --outDir .prerender && node scripts/prerender.mjs",
     "check": "npm run build && npm run test",
     "test": "node --test tests/export.test.mjs",
-    "test:e2e": "playwright test",
-    "preview": "vite preview --host 127.0.0.1 --port 4175"
+    "test:e2e": "playwright test --config scripts/playwright.config.ts",
+    "preview": "vite preview --config scripts/vite.config.ts --host 127.0.0.1 --port 4175"
   },
   "dependencies": {
     "@ant-design/cssinjs": "^1.24.0",

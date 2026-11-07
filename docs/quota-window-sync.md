@@ -51,7 +51,7 @@ already sent may still finish.
   detection, single-flight throttling, persisted attempt markers, and settings defaults. Probe tests
   pass service-shaped responses through the actual quota parser before exercising the worker.
 - A settings-storage regression test covers stale writes and disabling the feature.
-- `npx playwright test --config playwright.quota-window-sync.config.ts` from `apps/desktop`
+- `npx playwright test --config scripts/playwright.quota-window-sync.config.ts` from `apps/desktop`
   checks local IPC and hosted HTTP transports, persistence, load/save errors, cloud Web guidance,
   and all four released languages. These fixtures mock account-service responses and spend no quota.
 - Run the desktop TypeScript/Vite build, Web type check/build, i18n generation/check, Rust formatting,

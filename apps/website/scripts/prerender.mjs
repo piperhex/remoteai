@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { siteUrl } from '../site.config.mjs';
+import { siteUrl } from './site.config.mjs';
 
 // External React/Ant Design modules must use the same production mode as the client bundle.
 process.env.NODE_ENV = 'production';

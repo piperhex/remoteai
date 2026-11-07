@@ -108,7 +108,7 @@ Deploy the upgraded Go server with `apps/admin/sql/20261030_provider_market_page
 cloud synchronization of website settings. New databases apply embedded migration 027. This task does
 not deploy production services or change Kong routes.
 
-Browser checks use `playwright.provider-market.config.ts`. The optional real Windows WebView test is
+Browser checks use `scripts/playwright.provider-market.config.ts`. The optional real Windows WebView test is
 `provider_browser::smoke::opens_provider_browser` (ignored by default); start the market Vite harness on
 1499 and `node apps/desktop/e2e/provider-browser-server.mjs` first. It uses a separate app identifier
 and `PROVIDER_BROWSER_DEBUG_PORT` for inspection. The fixture exposes received query strings and
@@ -184,7 +184,7 @@ prices and deduplicated saved usage. Other relevant suites are accounts, identit
 Rust tests cover the sandbox, DTOs and personal storage; run desktop Rust tests serially as described
 in `scripts/check-desktop-rust.mjs`, plus Clippy and formatting.
 
-`apps/desktop/playwright.provider-market.config.ts` uses bundled Chromium and the repository launch
+`apps/desktop/scripts/playwright.provider-market.config.ts` uses bundled Chromium and the repository launch
 helper, an isolated Vite cache and port 1499. It renders actual local, hosted, remote, Web and admin
 components with controlled IPC/HTTP fixtures. It verifies entry placement/gradients, light and dark
 layouts, optional prices, publishing, account switching and explicit adding. These browser tests do

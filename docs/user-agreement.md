@@ -36,7 +36,7 @@
 
 ## 回归检查
 
-- `npm exec -w @codex-switch/desktop -- vitest run src/components/modals/CloudLoginModal.test.tsx`
+- `npm exec -w @codex-switch/desktop -- vitest run --config scripts/vitest.config.ts src/components/modals/CloudLoginModal.test.tsx`
 - `npm --prefix apps/web run test:management:e2e -- agreement.pw.ts`
 - `npm --prefix apps/native run test -- src/auth/AgreementConsent.test.tsx`
 

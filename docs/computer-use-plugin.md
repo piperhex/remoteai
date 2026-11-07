@@ -106,7 +106,7 @@ it does not automatically register this source bundle in OpenAI's official plugi
 
 ```powershell
 npm run build:desktop
-npm exec -w @codex-switch/desktop -- vitest run --pool=threads src/pages/skillsMarket/ComputerUseCard/useComputerUse.test.tsx src/pages/codexGui/ConversationDetails.test.tsx
+npm exec -w @codex-switch/desktop -- vitest run --config scripts/vitest.config.ts --pool=threads src/pages/skillsMarket/ComputerUseCard/useComputerUse.test.tsx src/pages/codexGui/ConversationDetails.test.tsx
 cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
 cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests

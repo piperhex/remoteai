@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { join } from 'node:path';
-import { directory, run } from '../common.mjs';
+import { directory, run } from '../scripts/common.mjs';
 
 function structured(reply) {
   assert.ok(!reply.error && !reply.result?.isError, JSON.stringify(reply));

@@ -78,8 +78,8 @@ so source changes require restarting the server. Earlier cold-start attempts tim
 Re-run the browser suites with:
 
 ```powershell
-npm --prefix apps/web run test:browser -- --config playwright.chat-rendering.config.ts
-npm exec -w @codex-switch/desktop -- playwright test --config playwright.stream-rendering.config.ts
+npm --prefix apps/web run test:browser -- --config scripts/playwright.chat-rendering.config.ts
+npm exec -w @codex-switch/desktop -- playwright test --config scripts/playwright.stream-rendering.config.ts
 ```
 
 ## Repository validation

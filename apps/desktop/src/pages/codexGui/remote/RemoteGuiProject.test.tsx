@@ -170,7 +170,7 @@ it('browses another remote folder for an idle existing conversation', async () =
   Object.assign(controller.snapshot(), { selected: { id: 'existing', cwd: original.cwd, turns: [] } });
   await render(); expect(button('选择远程项目').disabled).toBe(false);
   await click('选择远程项目'); await click('新建项目'); await click('child');
-  await click('选择此文件夹');
+  await click('使用此文件夹');
   expect(controller.snapshot().selected?.cwd).toBe('/remote/project/child');
   expect(request).toHaveBeenCalledWith('request', {
     operation: 'guiProjectSelect', cwd: '/remote/project/child', threadId: 'existing',

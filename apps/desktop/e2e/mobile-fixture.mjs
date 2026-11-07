@@ -208,7 +208,8 @@ wss.on('connection', (socket, request) => {
   socket.on('close', () => { mobileClients.delete(socket); session.disconnect(socket); });
 });
 await new Promise((resolve) => httpServer.listen(apiPort, '127.0.0.1', resolve));
-const vite = await createServer({ optimizeDeps: { entries: ['e2e/chat-harness.html'] },
+const vite = await createServer({ configFile: 'scripts/vite.config.ts',
+  optimizeDeps: { entries: ['e2e/chat-harness.html'] },
   cacheDir: process.env.CHAT_TEST_CACHE, server: { port: uiPort, host: '127.0.0.1' } });
 await vite.listen();
 const browser = await chromium.launch(testBrowserLaunchOptions({

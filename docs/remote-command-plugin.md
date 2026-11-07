@@ -61,7 +61,7 @@ Windows 使用无窗口、非交互的 Windows PowerShell；macOS/Linux 使用 `
 
 ```powershell
 npm run build:desktop
-npx vitest run --root apps/desktop src/pages/skillsMarket/RemoteCommandCard src/pages/codexGui/GuiPluginsPage.test.tsx
+npx vitest run --config apps/desktop/scripts/vitest.config.ts --root apps/desktop src/pages/skillsMarket/RemoteCommandCard src/pages/codexGui/GuiPluginsPage.test.tsx
 cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
 cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests

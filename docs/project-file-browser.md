@@ -60,7 +60,7 @@ SSH 沿用统一的 5 MB 纯文本切换阈值和图片预览范围，大文本�
 ## 验证
 
 - Rust：`cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --test codex_switch_lib_tests codex_gui::project_`。
-- 桌面：`npx vitest run src/remoteChat/projectBrowser src/remoteChat/operations.test.ts`。
+- 桌面：`npx vitest run --config scripts/vitest.config.ts src/remoteChat/projectBrowser src/remoteChat/operations.test.ts`。
 - 原生消息桥：`npm --prefix apps/native run test -- src/chat/projectBrowserBridge.test.ts`。
 - 界面与原生资源：`npm run test:chat:e2e -w @codex-switch/desktop -- project-browser`。
 - Android 独立测试包：在 `apps/native/android` 执行 `gradlew assembleRelease -I ../e2e/project-browser.init.gradle -PreactNativeArchitectures=arm64-v8a`，应用 ID 为 `com.codexswitch.mobile.filebrowsertest`。

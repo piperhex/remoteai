@@ -1,5 +1,5 @@
 import { mergeConfig } from 'vite';
-import desktop from '../vite.config';
+import desktop from '../scripts/vite.config';
 
 export default mergeConfig(desktop, {
   cacheDir: '../../.codex-tmp/task1-rendering/vite-cache',

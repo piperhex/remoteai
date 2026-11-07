@@ -12,7 +12,7 @@ const original = resolve(evidence, 'project-256/large.log');
 const file = resolve(directory, 'large.ts');
 const log = createWriteStream(resolve(evidence, 'native-runtime.log'));
 const server = spawn(process.execPath, [resolve(root, 'node_modules/vite/bin/vite.js'),
-  '--config', 'vite.project-editor.config.ts', '--host', '127.0.0.1', '--port', '1496'],
+  '--config', 'scripts/vite.project-editor.config.ts', '--host', '127.0.0.1', '--port', '1496'],
   { cwd: resolve(root, 'apps/desktop'), windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
 server.stdout.pipe(log, { end: false }); server.stderr.pipe(log, { end: false });
 let app;

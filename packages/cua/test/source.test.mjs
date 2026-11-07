@@ -3,8 +3,8 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { asset, run, upstream, version } from '../common.mjs';
-import { sourceManifest, verifySource } from '../prepare.mjs';
+import { asset, run, upstream, version } from '../scripts/common.mjs';
+import { sourceManifest, verifySource } from '../scripts/prepare.mjs';
 
 test('release targets preserve the upstream runtime contract', () => {
   assert.match(version, new RegExp(`^${upstream.version.replaceAll('.', '\\.')}\\-remoteai\\.\\d+$`));

@@ -16,7 +16,7 @@ const slash = value => value.replaceAll('\\', '/');
 const hash = contents => createHash('sha256').update(contents).digest('hex');
 const pending = new Set([
   'scripts/test-browser.mjs', 'scripts/test-browser.d.mts', 'scripts/i18n-fixture.mjs',
-  'apps/desktop/vite.config.ts', 'apps/desktop/e2e/chat-harness.html',
+  'apps/desktop/scripts/vite.config.ts', 'apps/desktop/e2e/chat-harness.html',
   'apps/desktop/e2e/chat-harness.ts', 'apps/desktop/e2e/mobile-fixture.mjs',
   'apps/desktop/src-tauri/icons/32x32.png', 'apps/desktop/src-tauri/icons/128x128.png',
   'apps/desktop/src-tauri/tauri.conf.json', 'shared/localization/testLocale.ts',
