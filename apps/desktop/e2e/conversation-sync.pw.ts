@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 for (const path of ['relay', 'direct']) {
   test(`remote copy displays ${path} and measured speed`, async ({ page }) => {
     await page.goto(`/e2e/conversation-sync-harness.html?mode=remote&path=${path}&duplicates=1&hold=1`);
+    await page.getByRole('button', { name: '展开项目: F:/projects/remoteai', exact: true }).click();
     await expect(page.getByText('排查项目中的登录问题')).toBeVisible();
     await expect(page.locator('.ant-select-selection-item').first()).toHaveText('Office PC · D:/work/.codex');
     await page.getByRole('checkbox').last().check();
@@ -33,6 +34,7 @@ for (const path of ['relay', 'direct']) {
 
 test('switching from Relay to P2P updates the progress display', async ({ page }) => {
   await page.goto('/e2e/conversation-sync-harness.html?mode=remote&switchPath=1');
+  await page.getByRole('button', { name: '展开项目: F:/projects/remoteai', exact: true }).click();
   await expect(page.getByText('排查项目中的登录问题')).toBeVisible();
   await page.getByRole('checkbox').last().check();
   await page.getByRole('button', { name: '对话同步', exact: true }).click();
@@ -46,6 +48,7 @@ for (const mode of ['local', 'remote']) {
   test(`${mode} sync fits an enlarged narrow desktop window`, async ({ page }) => {
     await page.setViewportSize({ width: 860, height: 900 });
     await page.goto(`/e2e/conversation-sync-harness.html?mode=${mode}&duplicates=1&font=20&dark=1`);
+    await page.getByRole('button', { name: '展开项目: F:/projects/remoteai', exact: true }).click();
     await expect(page.getByText('排查项目中的登录问题')).toBeVisible();
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(860);
     await page.screenshot({ path: `../../.codex-tmp/conversation-sync-${mode}-font20-narrow.png`, animations: 'disabled' });
@@ -74,6 +77,7 @@ test('English copy switches without exposing fallback keys or Relay limits', asy
 
 test('remote transfer can be cancelled without changing the destination', async ({ page }) => {
   await page.goto('/e2e/conversation-sync-harness.html?mode=remote&hold=1');
+  await page.getByRole('button', { name: '展开项目: F:/projects/remoteai', exact: true }).click();
   await expect(page.getByText('排查项目中的登录问题')).toBeVisible();
   await page.getByRole('checkbox').last().check();
   await page.getByRole('button', { name: '对话同步', exact: true }).click();

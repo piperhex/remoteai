@@ -17,9 +17,12 @@ const sourceThread = { sessionId: "source-conversation", sessionKind: "conversat
   cwd: "D:/projects/example", updatedAt: Math.floor(Date.now() / 1000), sizeBytes: 1024, matchExcerpt: null,
   accountId: null, accountEmail: null, accountActive: false };
 
-async function mockCommands(page: Page, migrationError?: string) {
+async function mockCommands(page: Page, migrationError?: string, grouped = false) {
   const calls: { command: string; args: Record<string, unknown> }[] = [];
   let migrated = false;
+  const sourceThreads = grouped ? [sourceThread, ...Array.from({ length: 70 }, (_, index) => ({
+    ...sourceThread, sessionId: `source-${index}`, title: `项目历史对话 ${index + 1}`,
+  }))] : [sourceThread];
   await page.route("https://fonts.googleapis.com/**", (route) => route.abort());
   await page.route("**/__codex_switch__/api/invoke", async (route) => {
     const body = route.request().postDataJSON() as { command: string; args?: Record<string, unknown> };
@@ -29,7 +32,7 @@ async function mockCommands(page: Page, migrationError?: string) {
     if (command === 'codex_conversation_sync') {
       const request = args.request as { action: string; query?: string };
       if (request.action === 'homes') result = { name: 'Local PC', homes: migrationHomes };
-      if (request.action === 'list') result = migrated || request.query === '没有这个对话' ? [] : [sourceThread];
+      if (request.action === 'list') result = migrated || request.query === '没有这个对话' ? [] : sourceThreads;
       if (request.action === 'prepare') result = { id: 'prepared-local', size: 0, sha256: '' };
       if (request.action === 'plan') result = { count: 1, duplicateIds: [] };
       if (request.action === 'commit') {
@@ -244,6 +247,7 @@ test("sync moves local conversations into the GUI and retains the conversation d
   await expect(navigation.getByRole("button")).toHaveText(["新对话", "定时任务", "插件", "对话同步"]);
   await navigation.getByRole("button", { name: "对话同步", exact: true }).click();
   const pane = page.getByRole("region", { name: "对话同步", exact: true });
+  await pane.getByRole('button', { name: '展开项目: D:/projects/example', exact: true }).click();
   await expect(pane.getByText(sourceThread.title, { exact: true })).toBeVisible();
   await pane.getByRole("combobox", { name: "来源目录" }).press("ArrowDown");
   await expect(page.locator(".ant-select-item-option")).toHaveText([
@@ -254,6 +258,7 @@ test("sync moves local conversations into the GUI and retains the conversation d
   await search.fill("没有这个对话");
   await expect(pane.getByText("没有可同步的对话")).toBeVisible();
   await search.clear();
+  await pane.getByRole('button', { name: '展开项目: D:/projects/example', exact: true }).click();
   await expect(pane.getByText(sourceThread.title, { exact: true })).toBeVisible();
   await pane.getByRole("checkbox").last().check();
   await pane.getByRole("button", { name: "对话同步", exact: true }).click();
@@ -276,6 +281,34 @@ test("sync moves local conversations into the GUI and retains the conversation d
   await expect(page.getByRole("textbox", { name: "消息", exact: true })).toHaveText("同步后继续编辑");
 });
 
+for (const width of [860, 1440]) {
+  test(`local sync keeps its toolbar and table inside the GUI viewport at ${width}px`, async ({ page }) => {
+    await mockCommands(page, undefined, true);
+    await page.setViewportSize({ width, height: 800 });
+    await openGui(page);
+    await page.getByRole('navigation').getByRole('button', { name: '对话同步', exact: true }).click();
+    const pane = page.getByRole('region', { name: '对话同步', exact: true });
+    const expand = pane.getByRole('button', { name: '展开项目: D:/projects/example', exact: true });
+    await expect(expand).toBeVisible();
+    await expand.click();
+    const body = pane.locator('.ant-table-body');
+    const header = pane.locator('.ant-table-header');
+    const headerTop = (await header.boundingBox())!.y;
+    const height = await body.evaluate(element => element.clientHeight);
+    expect(height).toBeGreaterThan(100);
+    expect(await body.evaluate(element => element.scrollHeight)).toBeGreaterThan(height);
+    expect((await body.boundingBox())!.y + height).toBeLessThanOrEqual(800);
+    await body.evaluate(element => { element.scrollTop = element.scrollHeight; });
+    await expect(pane.getByText('项目历史对话 70', { exact: true })).toBeInViewport();
+    await expect(pane.getByRole('button', { name: '对话同步', exact: true })).toBeInViewport();
+    expect((await header.boundingBox())!.y).toBe(headerTop);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(800);
+    expect(await pane.evaluate(element => element.parentElement!.scrollTop)).toBe(0);
+    await page.screenshot({ path: `../../.codex-tmp/sync-table-local-gui-${width}-scrolled.png`,
+      animations: 'disabled' });
+  });
+}
+
 for (const width of [800, 1280]) {
   test(`local sync failures retain the source selection at ${width}px`, async ({ page }) => {
     await mockCommands(page, "CONVERSATION_SYNC_CHANGED");
@@ -283,6 +316,7 @@ for (const width of [800, 1280]) {
     await openGui(page, "?dark=1");
     await page.getByRole("navigation").getByRole("button", { name: "对话同步", exact: true }).click();
     const pane = page.getByRole("region", { name: "对话同步", exact: true });
+    await pane.getByRole('button', { name: '展开项目: D:/projects/example', exact: true }).click();
     await expect(pane.getByText(sourceThread.title, { exact: true })).toBeVisible();
     await pane.getByRole("checkbox").last().check();
     await pane.getByRole("button", { name: "对话同步", exact: true }).click();
