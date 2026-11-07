@@ -76,5 +76,8 @@ fn expanding_a_process_only_loads_summaries_of_nested_commands() {
     assert!(items[0]["aggregatedOutput"].is_null());
     assert!(items[1]["arguments"].is_null());
     assert!(items[1]["result"].is_null());
-    assert!(items.to_string().len() < 1_000);
+    let preview = items[0]["commandPreview"].as_str().unwrap();
+    assert_eq!(preview.chars().count(), 1_024);
+    assert!(preview.ends_with('…'));
+    assert!(items.to_string().len() < 2_000);
 }

@@ -20,21 +20,22 @@ fn history_only_transports_bounded_summaries_and_exact_references() {
     );
     assert_eq!(
         item["commandPreview"].as_str().unwrap().chars().count(),
-        PREVIEW_CHARS
+        command_preview::MAX_PREVIEW_CHARS
     );
     assert!(item["aggregatedOutput"].is_null());
     assert!(item["command"].is_null());
     assert_eq!(item["exitCode"], 0);
     assert_eq!(thread["turns"][0]["items"][1]["text"], "visible reply");
     assert!(thread["turns"][0]["items"][2]["result"].is_null());
-    assert!(thread.to_string().len() < 2000);
+    assert!(item["commandPreview"].as_str().unwrap().ends_with('…'));
+    assert!(thread.to_string().len() < 6000);
 }
 
 #[test]
 fn streaming_payloads_stay_on_host_and_approvals_remain_complete() {
     let notification = json!({"method":"item/completed", "params":{"threadId":"chat", "turnId":"turn",
         "item":command()}});
-    assert!(event(notification.clone()).unwrap().to_string().len() < 1500);
+    assert!(event(notification.clone()).unwrap().to_string().len() < 5000);
     let mut approval = notification;
     approval["id"] = json!(0);
     assert_eq!(event(approval.clone()), Some(approval));

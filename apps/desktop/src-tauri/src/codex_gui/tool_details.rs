@@ -8,7 +8,7 @@ use super::{
     protocol::{self, GuiResponse},
 };
 
-const PREVIEW_CHARS: usize = 160;
+mod command_preview;
 
 #[cfg(test)]
 #[path = "tool_details_tests.rs"]
@@ -35,12 +35,7 @@ fn summarize_item(item: &mut Value, thread_id: &str, turn_id: &str) {
     }
     let reference = json!({"threadId": thread_id, "turnId": turn_id, "itemId": item["id"]});
     let action = action_preview(item);
-    let preview: String = item["command"]
-        .as_str()
-        .unwrap_or_default()
-        .chars()
-        .take(PREVIEW_CHARS)
-        .collect();
+    let preview = command_preview::preview(item["command"].as_str().unwrap_or_default());
     if let Some(fields) = item.as_object_mut() {
         fields.retain(|key, _| {
             matches!(
@@ -67,7 +62,7 @@ fn action_preview(item: &Value) -> Option<Value> {
     let fields = ["type", "name", "query", "path"]
         .into_iter()
         .filter_map(|key| {
-            let text: String = action[key].as_str()?.chars().take(PREVIEW_CHARS).collect();
+            let text = command_preview::text_preview(action[key].as_str()?);
             Some((key.to_owned(), json!(text)))
         })
         .collect::<serde_json::Map<_, _>>();

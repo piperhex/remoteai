@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App, ConfigProvider, theme } from 'antd';
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
+import { guiFontStyle, useGuiFontSize } from '../../../shared/appearance/fontSize';
 import { ProcessDetailsContext, type ProcessDetailsLoader } from '../../../shared/chat/DeferredProcessDetails';
 import { ToolDetailsContext, type ToolDetailsLoader } from '../../../shared/chat/DeferredToolDetails';
 import { conversation } from '../../../shared/conversation/events';
@@ -30,6 +31,7 @@ const loadTool: ToolDetailsLoader = target => fetch(`tool-details.json?${new URL
   .then(response => response.json());
 
 function Harness() {
+  const fontSize = useGuiFontSize();
   const [value, setValue] = useState<Page>();
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(true);
@@ -58,7 +60,7 @@ function Harness() {
         </header>
         <main className={mode === 'local' ? `${styles.page} ${styles.collapsed}`
           : mode === 'remote' ? `${styles.page} chat-page gui-remote-workspace` : 'chat-page'}
-          style={{ flex: 1, minHeight: 0 }} hidden={!active}
+          style={{ flex: 1, minHeight: 0, ...guiFontStyle(fontSize) }} hidden={!active}
           data-command-count={value?.commandMetrics?.completedCommandCount}
           data-successful-command-count={value?.commandMetrics?.successfulCommandCount}>
           {mode === 'local' ? <div className={styles.workspace}>

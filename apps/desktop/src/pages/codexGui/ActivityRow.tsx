@@ -10,6 +10,7 @@ import { DeferredDetails } from "./DeferredDetails";
 import { collaborationSummary, isCollaborationActivity } from "../../../../../shared/conversation/collaborationActivity";
 import styles from "./ActivityRow.module.less";
 import { commandPreview } from "./commandPreview";
+import { activityPreview } from '../../../../../shared/chat/activityPreview';
 
 const TOOL_ACTIVITIES: Record<string, { label: string; icon: LucideIcon }> = {
   fileChange: { get label() { return uiText("client.shared.fileChanges"); }, icon: FilePenLine },
@@ -69,7 +70,7 @@ export function ActivitySummary({ item, text, count }: { item: Item; text: strin
   const reasoning = item.type === "reasoning";
   const summary = activitySummary(item, text);
   const Icon = summary.icon;
-  const preview = summary.preview.slice(0, MAX_ACTIVITY_PREVIEW).replace(/\s+/g, " ").trim();
+  const preview = activityPreview(summary.preview);
   const label = reasoning ? uiText("client.composer.reasoning", { value1: preview }) : preview;
   return <summary className={styles.summary} aria-label={count ? uiText("client.mobile.viewAllActivities", { value1: label, value2: count }) : label}>
       <Icon className={styles.icon} size={15} aria-hidden="true" />
