@@ -13,6 +13,9 @@ const documents: Record<string, string> = {
   'notes.txt': 'Project notes\nFind this sentence\nA plain text paragraph\n\nSecond paragraph\nAnother line\n',
   'README.md': '# Project\n\nThis is plain documentation.\n',
   'settings.json': '{\n  "enabled": true,\n  "theme": "dark"\n}\n',
+  'docker-compose.yml': 'services:\n' + Array.from({ length: 32 }, (_, index) =>
+    `  database${index + 1}:\n    image: mysql:8.0\n    restart: unless-stopped\n`
+    + '    environment:\n      MYSQL_DATABASE: sample\n    ports:\n      - "3306"\n').join(''),
   'nested/子目录/测试.py': 'def hello():\n    return "你好"\n',
 };
 const revisions: Record<string, number> = {};
