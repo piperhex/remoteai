@@ -4,6 +4,7 @@ pub(crate) mod hosted;
 mod lifecycle;
 #[cfg(all(test, windows))]
 mod native_smoke;
+mod navigation;
 mod range;
 mod server;
 pub(crate) mod website;

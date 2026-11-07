@@ -73,7 +73,7 @@ function Conversation() {
   const openFile = panel?.openFile;
   useEffect(() => {
     if (!websiteOnly && !params.has("manual")) {
-      void openFile?.({ path: params.get("path") ?? data.path, threadId: null });
+      void openFile?.({ path: params.get("path") ?? data.path, threadId: null }, { browser: params.has("browser") });
     }
   }, [openFile]);
   return <div style={{ padding: 24 }}>
@@ -90,7 +90,8 @@ function Conversation() {
 }
 function Harness() {
   const { mode } = useThemeMode();
-  return <ConfigProvider theme={{ algorithm: mode === "dark" ? theme.darkAlgorithm : theme.defaultAlgorithm }}>
+  const algorithm = mode === "dark" ? theme.darkAlgorithm : theme.defaultAlgorithm;
+  return <ConfigProvider theme={{ algorithm: params.has("browser") ? [algorithm, theme.compactAlgorithm] : algorithm }}>
     <div style={{ height: "100vh" }}><DetailsWorkspace selected="fixture" active>
       <Conversation />
     </DetailsWorkspace></div>

@@ -22,6 +22,9 @@ fn opens_real_webview_preview() {
         .any_thread()
         .manage(GuiState::default())
         .manage(PreviewSessions::default())
+        .manage(std::sync::Arc::new(
+            crate::gui_terminal::links::LinkState::default(),
+        ))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .on_window_event(handle_window_event)
@@ -38,6 +41,7 @@ fn opens_real_webview_preview() {
             let mut url = url::Url::parse("http://127.0.0.1:1489/e2e/file-preview-harness.html")?;
             url.query_pairs_mut()
                 .append_pair("native", "1")
+                .append_pair("browser", "1")
                 .append_pair("path", &path);
             if let Ok(website) = std::env::var("WEBSITE_PREVIEW_SMOKE_URL") {
                 url.query_pairs_mut()

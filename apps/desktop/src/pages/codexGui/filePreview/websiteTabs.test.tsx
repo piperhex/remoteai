@@ -84,6 +84,29 @@ it('can return from a website to a file resource without resolving a local file 
   expect(tabs.tabs[0].url).toBe('file:///demo.html');
 });
 
+it('records registered file pages in the same tab and truncates forward history after a new image', async () => {
+  const document = { key: 'document', title: 'page.html', url: 'file:///page.html', render: () => null };
+  const image = { key: 'image', title: 'first.png', url: 'file:///first.png', render: () => null };
+  const second = { key: 'second', title: 'second.png', url: 'file:///second.png', render: () => null };
+  const pages = new Map([image, second].map(page => [page.url, page]));
+  await act(async () => tabs.openResource({ ...document, page: url => pages.get(url) }));
+  const id = tabs.activeId;
+  await act(async () => tabs.onPageNavigate(id, image.url));
+  expect(tabs.tabs).toHaveLength(1);
+  expect(tabs.tabs[0]).toMatchObject({ url: image.url, title: image.title, historyIndex: 1 });
+  await act(async () => tabs.onAction(id, 'back'));
+  expect(tabs.tabs[0]).toMatchObject({ url: document.url, title: document.title, historyIndex: 0 });
+  await act(async () => tabs.onAction(id, 'forward'));
+  expect(tabs.tabs[0]).toMatchObject({ url: image.url, title: image.title });
+  await act(async () => tabs.onAction(id, 'back'));
+  await act(async () => tabs.onPageNavigate(id, second.url));
+  await act(async () => tabs.onAction(id, 'forward'));
+  expect(tabs.tabs[0]).toMatchObject({ url: second.url, history: [document.url, second.url], historyIndex: 1 });
+  await act(async () => tabs.onPageNavigate(id, 'file:///unregistered-secret.png'));
+  expect(tabs.tabs[0].url).toBe(second.url);
+  expect(resolves.size).toBe(0);
+});
+
 it('closes batches atomically, releases resources once and cancels pending navigation', async () => {
   const release = vi.fn();
   await act(async () => {

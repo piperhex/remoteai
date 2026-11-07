@@ -1,5 +1,5 @@
 //! A per-preview loopback stream, scoped to the selected file and adjacent web assets.
-use super::{content, range, PreviewError, Result};
+use super::{content, navigation, range, PreviewError, Result};
 use std::{
     fs::File,
     io::{Read, Seek, SeekFrom},
@@ -233,7 +233,11 @@ pub(super) fn prepare_asset(request: &Request, scope: &Scope) -> Result<tiny_htt
     if !matches!(request.method(), Method::Get | Method::Head) {
         return Ok(Response::empty(StatusCode(403)).boxed());
     }
-    let path = resolve(scope, request.url()).ok_or(PreviewError::Read)?;
+    let target = request.url().split('?').next().ok_or(PreviewError::Read)?;
+    let path = resolve(scope, target).ok_or(PreviewError::Read)?;
+    if let Some(response) = navigation::response(request, &path)? {
+        return Ok(response);
+    }
     stream(request, &path)
 }
 
@@ -278,7 +282,7 @@ fn stream(request: &Request, path: &Path) -> Result<tiny_http::ResponseBox> {
     .boxed())
 }
 
-fn response_headers(path: &Path) -> Result<Vec<Header>> {
+pub(super) fn response_headers(path: &Path) -> Result<Vec<Header>> {
     let mime = mime_guess::from_path(path).first_or_octet_stream();
     let mime_type = if matches!(content::extension(path).as_str(), "ts" | "mts" | "m2ts") {
         "video/mp2t"

@@ -29,6 +29,48 @@ fn client() -> reqwest::blocking::Client {
 }
 
 #[test]
+fn image_navigation_retains_the_document_policy_and_existing_asset_scope() {
+    let fixture = Fixture::new();
+    let html = "<!doctype html><html><body><a href=\"photo.png\">Photo</a></body></html>";
+    let path = fixture.file("index.html", html.as_bytes());
+    fixture.file("photo.png", b"image bytes");
+    let server = PreviewServer::start(&path).unwrap();
+    let client = client();
+    assert_eq!(
+        client.get(&server.url).send().unwrap().text().unwrap(),
+        html
+    );
+    let mut url = url::Url::parse(&server.url).unwrap();
+    let channel = uuid::Uuid::new_v4().to_string();
+    url.query_pairs_mut()
+        .append_pair("__preview_navigation", &channel);
+    let response = client.get(url.as_str()).send().unwrap();
+    assert_eq!(response.status(), 200);
+    assert!(response.headers()["content-security-policy"]
+        .to_str()
+        .unwrap()
+        .contains("sandbox allow-scripts"));
+    let body = response.text().unwrap();
+    assert!(body.starts_with(html));
+    assert!(body.contains(&format!("const channel = \"{channel}\"")));
+    assert!(body.contains("parent.postMessage"));
+    let head = client.head(url.as_str()).send().unwrap();
+    assert_eq!(head.headers()["content-length"], body.len().to_string());
+    assert!(head.bytes().unwrap().is_empty());
+    let image = url.join("photo.png").unwrap();
+    assert_eq!(
+        client.get(image).send().unwrap().text().unwrap(),
+        "image bytes"
+    );
+    let escaped = url
+        .join(&format!("../index.html?__preview_navigation={channel}"))
+        .unwrap();
+    assert_eq!(client.get(escaped).send().unwrap().status(), 404);
+    url.set_query(Some("__preview_navigation=invalid"));
+    assert_eq!(client.get(url).send().unwrap().text().unwrap(), html);
+}
+
+#[test]
 fn remote_preview_allows_only_the_registered_loopback_host_and_keeps_asset_and_range_scope() {
     let fixture = Fixture::new();
     let path = fixture.file("index.html", b"<img src=\"photo.png\">");
