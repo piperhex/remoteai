@@ -13,20 +13,24 @@ for (const width of [540, 1440]) {
     const markdown = page.getByRole("heading", { name: "项目说明" });
     await expect(back).toBeDisabled(); await expect(forward).toBeDisabled();
     await page.getByRole("button", { name: "预览文件：C:/project/docs/settings.yaml" }).click();
-    await expect(page.getByLabel("文件内容", { exact: true })).toContainText("name: preview");
+    await expect(page.getByRole('region', { name: '文件预览', exact: true })
+      .getByLabel("文件内容", { exact: true })).toContainText("name: preview");
     await back.click(); await expect(markdown).toBeVisible();
     await expect(back).toBeDisabled(); await expect(forward).toBeEnabled();
     await page.screenshot({ path: `../../.codex-tmp/preview-history-${width}.png` });
     await forward.click();
-    await expect(page.getByLabel("文件内容", { exact: true })).toContainText("name: preview");
+    await expect(page.getByRole('region', { name: '文件预览', exact: true })
+      .getByLabel("文件内容", { exact: true })).toContainText("name: preview");
     await expect(forward).toBeDisabled();
     await back.click();
     await page.getByRole("button", { name: "预览文件：C:/project/docs/LICENSE" }).click();
-    await expect(page.getByLabel("文件内容", { exact: true })).toContainText("Apache License");
+    await expect(page.getByRole('region', { name: '文件预览', exact: true })
+      .getByLabel("文件内容", { exact: true })).toContainText("Apache License");
     await expect(forward).toBeDisabled();
     await back.click(); await expect(markdown).toBeVisible();
     await forward.click();
-    await expect(page.getByLabel("文件内容", { exact: true })).toContainText("Apache License");
+    await expect(page.getByRole('region', { name: '文件预览', exact: true })
+      .getByLabel("文件内容", { exact: true })).toContainText("Apache License");
     const sidebar = await page.locator('aside[data-details-panel]').boundingBox();
     const bounds = await back.boundingBox();
     expect(bounds!.x).toBeGreaterThanOrEqual(sidebar!.x);
@@ -42,14 +46,16 @@ test("renders Markdown with relative assets and keeps original actions in the to
   await expect(page.locator(".katex")).toBeVisible();
   await page.getByRole("button", { name: "预览文件：C:/project/docs/settings.yaml" }).click();
   await expect(page.locator("body")).toHaveAttribute("data-opened", /"line":2/);
-  await expect(page.getByLabel("文件内容", { exact: true })).toContainText("name: preview");
+  await expect(page.getByRole('region', { name: '文件预览', exact: true })
+    .getByLabel("文件内容", { exact: true })).toContainText("name: preview");
   await page.getByRole("button", { name: "预览文件：C:/project/docs/项目说明.md", exact: true }).click();
   await page.getByRole("button", { name: "文件操作：C:/project/docs/项目说明.md" }).click();
   await expect(page.getByRole("menuitem", { name: "另存为…", exact: true })).toBeVisible();
   await page.getByRole("menuitem", { name: "在 VS Code 中打开", exact: true }).click();
   await expect(page.locator("body")).toHaveAttribute("data-action", /"application":"vscode"/);
   await page.getByRole("button", { name: "源码", exact: true }).click();
-  await expect(page.getByLabel("文件内容", { exact: true })).toContainText("# 项目说明");
+  await expect(page.getByRole('region', { name: '文件预览', exact: true })
+    .getByLabel("文件内容", { exact: true })).toContainText("# 项目说明");
   await page.screenshot({ path: "../../.codex-tmp/file-preview-markdown.png" });
 });
 
@@ -83,9 +89,9 @@ test("videos play, pause and seek using browser controls", async ({ page }) => {
   await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.seeking)).toBe(false);
   expect(await video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeGreaterThan(0);
   await video.evaluate((element: HTMLVideoElement) => element.play());
-  await page.getByRole("tab", { name: "文件更改" }).click();
+  await page.getByRole('button', { name: '侧栏内容', exact: true }).click();
   expect(await video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
-  await page.getByRole("tab", { name: "浏览器", exact: true }).click();
+  await page.getByRole('button', { name: '侧栏内容', exact: true }).click();
   await page.screenshot({ path: "../../.codex-tmp/file-preview-video.png" });
 });
 
@@ -130,10 +136,10 @@ test("file previews share the changes sidebar, resize, restore, and close withou
   const grip = page.getByRole("separator", { name: "调整详情抽屉宽度" });
   await grip.focus(); await page.keyboard.press("ArrowLeft");
   await expect.poll(async () => (await sidebar.boundingBox())!.width).toBeGreaterThan(before.width);
-  await page.getByRole("button", { name: "查看文件更改" }).click();
-  await expect(page.getByText("暂无文件更改", { exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: '文件更改', exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "侧栏内容", exact: true }).click();
   await expect(content).toBeHidden();
-  await page.getByRole("tab", { name: "浏览器", exact: true }).click();
+  await page.getByRole("button", { name: "侧栏内容", exact: true }).click();
   await expect(content).toBeVisible();
   await page.getByRole("button", { name: "最小化详情抽屉" }).click();
   await expect(sidebar).toBeHidden();
@@ -162,9 +168,11 @@ test("web links use the same sidebar with explicit browser and reload actions", 
   await expect(page.getByRole("button", { name: "在浏览器中打开" })).toBeVisible();
   await page.getByRole("button", { name: "刷新", exact: true }).click();
   await expect(frame.getByRole("button", { name: "试一试" })).toBeVisible();
-  await page.getByRole("tab", { name: "文件更改" }).click();
-  await expect(page.getByText("暂无文件更改", { exact: true })).toBeVisible();
-  await page.getByRole("tab", { name: "浏览器", exact: true }).click();
+  await expect(page.getByRole('tab', { name: '文件更改', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: '侧栏内容', exact: true }).click();
+  await expect(sidebar).toBeHidden();
+  await page.getByRole('button', { name: '侧栏内容', exact: true }).click();
+  await expect(sidebar).toBeVisible();
   await page.getByRole("button", { name: "切换主机：本地" }).click();
   await expect(page.getByRole("menu", { name: "主机列表" })).toBeVisible();
   await page.getByRole("textbox", { name: "搜索主机" }).press("Escape");

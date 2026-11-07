@@ -41,7 +41,7 @@ async function clippedNames(strip: Locator) {
 for (const [mode, width] of [['local', 900], ['remote', 900], ['web', 900], ['web', 390]] as const) {
   test(`${mode} ${width}: drawer overflow reveals, selects and closes hidden tabs`, async ({ page }, info) => {
     await page.setViewportSize({ width, height: 844 });
-    await page.goto(`/e2e/workspace-drawer-harness.html?mode=${mode}${mode === 'remote' ? '&dark' : ''}`);
+    await page.goto(`/e2e/workspace-drawer-harness.html?mode=${mode}&changes${mode === 'remote' ? '&dark' : ''}`);
     const tabCount = width === 390 ? 4 : 5;
     await openTabs(page, { mode, withGit: tabCount === 5 });
     const bar = drawer(page).locator('.workspace-drawer-tabs-bar');

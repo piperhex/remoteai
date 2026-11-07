@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from 'react';
+import { act, useContext } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ChatDetailsWorkspace } from '../../../../shared/remote-chat/views/ChatDetailsWorkspace';
@@ -7,6 +7,8 @@ import { ChatFileContext } from '../../../../shared/remote-chat/views/ChatFileLi
 import type { FilePreviewContext } from '../../../../shared/remote-chat/views/ChatFilePreview';
 import { ChatMarkdown } from '../../../../shared/remote-chat/views/ChatMarkdown';
 import { filePreviewApi } from '../../../../shared/file-preview/workspace/api';
+import { DetailsContext } from '../../../../shared/conversation/detailsContext';
+import { changedFiles } from '../../../../shared/conversation/diff';
 
 let root: Root;
 let host: HTMLDivElement;
@@ -22,8 +24,15 @@ function Fixture({ selected = 'remote-thread', active = true }: { selected?: str
   return <ChatFileContext.Provider value={{ ...context, threadId: selected }}>
     <ChatDetailsWorkspace selected={selected} active={active} enabled>
       <ChatMarkdown text={'[交接文档](F:/remote/docs/handoff.md)\n\n[另一份](F:/remote/other.md)'} />
+      <AppliedChanges />
     </ChatDetailsWorkspace>
   </ChatFileContext.Provider>;
+}
+function AppliedChanges() {
+  const details = useContext(DetailsContext)!;
+  return <button onClick={() => details.open({ id: 'edit', title: 'Applied edit',
+    files: changedFiles([{ path: 'example.ts', kind: { type: 'add' }, diff: 'export const value = 1;\n' }]),
+  })}>打开修改</button>;
 }
 
 beforeEach(async () => {
@@ -63,7 +72,7 @@ it('opens remote Markdown in the shared drawer and navigates nested links on the
 
 it('retains source mode across drawer controls and clears the preview on conversation changes', async () => {
   await click('交接文档'); await click('原文');
-  await click('文件更改'); await click('浏览器');
+  await click('打开修改'); await click('浏览器');
   expect(content()?.querySelector('pre')?.textContent).toContain('# 远程交接文档');
   await click('最小化详情抽屉'); expect(panel()?.hidden).toBe(true);
   await click('恢复预览'); expect(panel()?.hidden).toBe(false);

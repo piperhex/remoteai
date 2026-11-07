@@ -67,9 +67,10 @@ test("embedded terminal themes, tab lifecycle, resize, input and concurrent chat
   const ticks = (await snapshot(page)).ticks;
   await page.evaluate(() => window.terminalHarness.stream());
   await page.getByRole("textbox", { name: "聊天输入" }).fill("终端运行时仍能输入");
-  await page.getByRole("button", { name: "查看文件更改" }).click();
-  await expect(page.getByText("暂无文件更改")).toBeVisible();
-  await page.getByRole("button", { name: "收起文件更改" }).click();
+  await page.getByRole("button", { name: "侧栏内容", exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '新标签页', exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: '文件更改', exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "侧栏内容", exact: true }).click();
   await expect(page.getByRole("textbox", { name: "聊天输入" })).toHaveValue("终端运行时仍能输入");
   expect((await snapshot(page)).ticks).toBeGreaterThan(ticks);
   await page.setViewportSize({ width: 640, height: 600 });
@@ -96,7 +97,8 @@ for (const remote of [false, true]) {
     expect((await menu.boundingBox())!.width).toBeLessThanOrEqual(400);
     await page.screenshot({ path: testInfo.outputPath('terminal-link-menu.png') });
     await menu.getByRole('button', { name: '内部预览' }).click();
-    await expect(page.frameLocator('iframe[title="网页预览"]').getByRole('heading', { name: '终端网页预览成功' }))
+    await expect(page.frameLocator('.pm-browser-page:not([hidden]) iframe')
+      .getByRole('heading', { name: '终端网页预览成功' }))
       .toBeVisible();
     if (remote) expect((await snapshot(page)).links).toEqual([`1:${url}`]);
     await page.getByRole('button', { name: '关闭详情抽屉' }).click();

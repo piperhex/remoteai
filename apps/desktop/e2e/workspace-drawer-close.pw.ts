@@ -8,14 +8,14 @@ for (const mode of ['local', 'remote', 'web']) {
   test(`${mode}: close drawer tabs independently, restore drafts and hide the last tab`, async ({ page }, info) => {
     await page.setViewportSize({ width: 1440, height: 960 });
     await page.addInitScript(() => localStorage.setItem('codex-switch.project-browser.auto-save', '0'));
-    await page.goto(`/e2e/workspace-drawer-harness.html?mode=${mode}${mode === 'remote' ? '&dark' : ''}`);
+    await page.goto(`/e2e/workspace-drawer-harness.html?mode=${mode}&changes${mode === 'remote' ? '&dark' : ''}`);
     await page.getByRole('button', { name: '文件浏览', exact: true }).click();
     await page.getByRole('treeitem', { name: 'notes.txt', exact: true }).click();
     const editor = page.getByRole('textbox', { name: '文件内容', exact: true });
     await editor.fill('保留未保存的文件内容');
     await closeTab(page, '文件浏览');
     await expect(tabs(page).getByRole('tab', { name: '文件更改', exact: true })).toHaveAttribute('aria-selected', 'true');
-    await expect(drawer(page)).toContainText('暂无文件更改');
+    await expect(drawer(page)).toContainText('example.ts');
     await expect(tabs(page).getByRole('tab', { name: '文件浏览', exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: '文件浏览', exact: true }).click();
     await expect(editor).toContainText('保留未保存的文件内容');
@@ -45,7 +45,7 @@ for (const mode of ['local', 'remote', 'web']) {
 
 test('narrow drawer keeps each tab close button reachable', async ({ page }, info) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/e2e/workspace-drawer-harness.html?mode=web');
+  await page.goto('/e2e/workspace-drawer-harness.html?mode=web&changes');
   await page.getByRole('button', { name: '打开预览', exact: true }).click();
   await drawer(page).getByRole('button', { name: '关闭详情抽屉', exact: true }).click();
   await page.getByRole('button', { name: '打开任务验收', exact: true }).click();

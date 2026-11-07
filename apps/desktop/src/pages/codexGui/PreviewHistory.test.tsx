@@ -6,6 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { DetailsWorkspace } from "../../../../../shared/conversation/DetailsWorkspace";
 import { DetailsContext } from "../../../../../shared/conversation/detailsContext";
 import { filePreviewApi, type FilePreviewData } from "../../../../../shared/file-preview/workspace/api";
+import { changedFiles } from '../../../../../shared/conversation/diff';
 
 vi.mock("@tauri-apps/api/core", () => ({ isTauri: () => false, invoke: vi.fn() }));
 let root: Root;
@@ -24,6 +25,9 @@ function Links() {
     {["first.md", "second.md", "third.md"].map(name => <button key={name} aria-label={name}
       onClick={() => { void panel.openFile({ path: name, threadId: "thread", line: 3, column: 2 }); }}>{name}</button>)}
     <button aria-label="website" onClick={() => panel.openWebsite("https://example.com")}>Website</button>
+    <button aria-label="changes" onClick={() => panel.open({ id: 'edit', title: 'Applied edit',
+      files: changedFiles([{ path: 'example.ts', kind: { type: 'add' }, diff: 'export const value = 1;\n' }]),
+    })}>Changes</button>
   </>;
 }
 function Fixture({ selected = "thread", enabled = true }: { selected?: string; enabled?: boolean }) {
@@ -77,6 +81,7 @@ it("does not duplicate the current target and keeps history across tab switches 
   await click("second.md");
   const tab = (name: string) => [...host.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
     .find(element => element.textContent === name)!;
+  await click('changes');
   await act(async () => tab("文件更改").click());
   await act(async () => tab("浏览器").click());
   await click("最小化详情抽屉");

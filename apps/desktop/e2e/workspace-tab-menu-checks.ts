@@ -52,7 +52,7 @@ async function openDrafts(page: Page, mode: string) {
   await page.getByRole('textbox', { name: '提交说明', exact: true }).fill('保留 Git 草稿');
   await hide(page); await page.getByRole('button', { name: '打开任务验收', exact: true }).click();
   await page.getByRole('textbox', { name: '验收草稿', exact: true }).fill('保留验收草稿');
-  await expect(tabBar(page).getByRole('tab')).toHaveCount(5);
+  await expect(tabBar(page).getByRole('tab')).toHaveCount(4);
 }
 
 async function checkBatchClose(options: { page: Page; info: TestInfo; label: string; mode: string }) {
@@ -61,7 +61,7 @@ async function checkBatchClose(options: { page: Page; info: TestInfo; label: str
   await expect(tab(page, '任务验收')).toHaveAttribute('aria-selected', 'true');
   await shot(page, info, `${label}-multiple-right-click`);
   await menu(page).getByRole('menuitem', { name: '关闭右侧标签页', exact: true }).click();
-  await expect(tabBar(page).getByRole('tab')).toHaveText(['文件更改', '浏览器', '文件浏览']);
+  await expect(tabBar(page).getByRole('tab')).toHaveText(['浏览器', '文件浏览']);
   await expect(tab(page, '文件浏览')).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('textbox', { name: '文件内容', exact: true })).toContainText('保留文件草稿');
   await tab(page, '文件浏览').focus(); await page.keyboard.press('Shift+F10');

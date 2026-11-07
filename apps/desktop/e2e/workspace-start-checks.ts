@@ -20,8 +20,21 @@ export async function checkWorkspaceStart(options: {
   const drawer = page.locator('aside[data-details-panel]');
   await expect(drawer.getByRole('tab', { name: '浏览器', exact: true })).toHaveAttribute('aria-selected', 'true');
   await expect(drawer.getByRole('textbox', { name: '页面地址', exact: true })).toBeVisible();
+  const sidebar = page.getByRole('button', { name: '侧栏内容', exact: true });
+  await expect(sidebar).toHaveAttribute('aria-expanded', 'true');
+  for (const action of ['关闭详情抽屉', '最小化详情抽屉', '侧栏内容']) {
+    await page.getByRole('button', { name: action, exact: true }).click();
+    await expect(drawer).toBeHidden();
+    await expect(sidebar).toHaveAttribute('aria-expanded', 'false');
+    await sidebar.click();
+    await expect(drawer).toBeVisible();
+    await expect(drawer.getByRole('tablist', { name: '侧栏内容', exact: true }).getByRole('tab'))
+      .toHaveText(['浏览器']);
+    await expect(drawer.getByRole('tab', { name: '浏览器', exact: true })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByText('暂无文件更改', { exact: true })).toHaveCount(0);
+  }
   await page.screenshot({ path: info.outputPath(`${label}-browser.png`), animations: 'disabled' });
-  await drawer.getByRole('button', { name: '关闭文件更改', exact: true }).click();
+  await expect(drawer.getByRole('tab', { name: '文件更改', exact: true })).toHaveCount(0);
   await drawer.getByRole('button', { name: '关闭浏览器', exact: true }).click();
   await expect(drawer).toBeHidden();
   await page.getByRole('button', { name: '侧栏内容', exact: true }).click();
@@ -30,10 +43,16 @@ export async function checkWorkspaceStart(options: {
   await start.getByRole('button', { name: 'Git', exact: true }).click();
   await expect(drawer.getByRole('tab', { name: 'Git', exact: true })).toHaveAttribute('aria-selected', 'true');
   await expect(drawer.locator('.chat-git')).toBeVisible();
+  await sidebar.click(); await expect(drawer).toBeHidden(); await sidebar.click();
+  await expect(drawer.getByRole('tab', { name: 'Git', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(drawer.getByRole('tab', { name: '文件更改', exact: true })).toHaveCount(0);
   await page.screenshot({ path: info.outputPath(`${label}-git.png`), animations: 'disabled' });
   start = await openStart();
   await start.getByRole('button', { name: '文件浏览', exact: true }).click();
   await expect(drawer.getByRole('tab', { name: '文件浏览', exact: true })).toHaveAttribute('aria-selected', 'true');
   await expect(drawer.getByRole('treeitem', { name: 'notes.txt', exact: true })).toBeVisible();
+  await sidebar.click(); await expect(drawer).toBeHidden(); await sidebar.click();
+  await expect(drawer.getByRole('tab', { name: '文件浏览', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(drawer.getByRole('tab', { name: '文件更改', exact: true })).toHaveCount(0);
   await page.screenshot({ path: info.outputPath(`${label}-files.png`), animations: 'disabled' });
 }

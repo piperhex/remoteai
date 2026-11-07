@@ -14,6 +14,8 @@ let container: HTMLDivElement;
 const visibility = vi.fn();
 const panel = () => container.querySelector<HTMLElement>('[role="dialog"]')!;
 const button = (label: string) => container.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!;
+const changes = { turns: [{ id: 'edit', status: 'completed', items: [],
+  diff: 'diff --git a/example.ts b/example.ts\n--- a/example.ts\n+++ b/example.ts\n@@ -1 +1 @@\n-old\n+new\n' }] };
 function Fixture({ cwd = '/project' }: { cwd?: string }) {
   return <DetailsWorkspace active selected={cwd}><Tools cwd={cwd} /></DetailsWorkspace>;
 }
@@ -22,7 +24,7 @@ function Tools({ cwd }: { cwd: string }) {
   const workspace = useContext(WorkspaceDrawerContext)!;
   return <>
     <button onClick={() => workspace.tabs.open(workspaceTabId.git(cwd))}>打开 Git</button>
-    <ConversationChangesButton />
+    <ConversationChangesButton value={changes} />
     {open && <GitDrawer key={cwd} cwd={cwd} active desktopDiffs
       onClose={() => setOpen(false)} onVisibilityChange={visibility}>
       {() => <input aria-label="草稿" defaultValue="draft" />}</GitDrawer>}

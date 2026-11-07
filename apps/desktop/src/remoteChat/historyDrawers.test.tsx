@@ -53,5 +53,5 @@ it('retains message drawers and review drafts across other details, closing and 
   expect(draft.value).toBe('继续保留这条验收意见');
   expect(draft.closest<HTMLElement>('[role="tabpanel"]')?.hidden).toBe(false);
   await click('打开修改'); await click('打开验收');
-  expect(host.querySelectorAll('[aria-label="侧栏内容"] [role="tab"]')).toHaveLength(3);
+  expect(host.querySelectorAll('[aria-label="侧栏内容"] [role="tab"]')).toHaveLength(2);
 });
