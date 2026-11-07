@@ -40,15 +40,17 @@ struct DirectoryShortcuts {
     home: Option<String>,
     desktop: Option<String>,
     downloads: Option<String>,
+    documents: Option<String>,
 }
 
 fn directory_shortcuts() -> DirectoryShortcuts {
     // OS known folders preserve redirected Windows folders and Linux XDG preferences.
-    let [home, desktop, downloads] = super::platform::directory_shortcuts();
+    let [home, desktop, downloads, documents] = super::platform::directory_shortcuts();
     DirectoryShortcuts {
         home: home.as_deref().map(execution_path),
         desktop: desktop.as_deref().map(execution_path),
         downloads: downloads.as_deref().map(execution_path),
+        documents: documents.as_deref().map(execution_path),
     }
 }
 

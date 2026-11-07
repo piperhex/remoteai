@@ -127,6 +127,10 @@ fn root_shortcuts_use_host_known_folders_without_changing_drive_entries() {
         shortcuts.downloads,
         dirs::download_dir().as_deref().map(execution_path)
     );
+    assert_eq!(
+        shortcuts.documents,
+        dirs::document_dir().as_deref().map(execution_path)
+    );
     let paths: Vec<_> = listing
         .entries
         .iter()

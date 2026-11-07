@@ -17,14 +17,27 @@ pub(super) fn directory_roots() -> Vec<std::path::PathBuf> {
 }
 
 /// Resolve shortcuts without checking redirected folders over a network connection.
-pub(super) fn directory_shortcuts() -> [Option<std::path::PathBuf>; 3] {
+pub(super) fn directory_shortcuts() -> [Option<std::path::PathBuf>; 4] {
     #[cfg(windows)]
     {
-        use windows::Win32::UI::Shell::{FOLDERID_Desktop, FOLDERID_Downloads, FOLDERID_Profile};
-        [FOLDERID_Profile, FOLDERID_Desktop, FOLDERID_Downloads].map(|id| known_folder(&id))
+        use windows::Win32::UI::Shell::{
+            FOLDERID_Desktop, FOLDERID_Documents, FOLDERID_Downloads, FOLDERID_Profile,
+        };
+        [
+            FOLDERID_Profile,
+            FOLDERID_Desktop,
+            FOLDERID_Downloads,
+            FOLDERID_Documents,
+        ]
+        .map(|id| known_folder(&id))
     }
     #[cfg(not(windows))]
-    [dirs::home_dir(), dirs::desktop_dir(), dirs::download_dir()]
+    [
+        dirs::home_dir(),
+        dirs::desktop_dir(),
+        dirs::download_dir(),
+        dirs::document_dir(),
+    ]
 }
 
 #[cfg(windows)]
