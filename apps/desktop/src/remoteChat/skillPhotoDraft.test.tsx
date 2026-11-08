@@ -114,3 +114,19 @@ it('recovers edited text and attachments once without overwriting an existing co
   expect(consumeRecovered).toHaveBeenCalledTimes(1);
   expect(draft.images).toHaveLength(1);
 });
+
+it('adds a preview annotation to existing text, photos and references without sending', async () => {
+  const attachments = [{ kind: 'file' as const, name: 'note.txt', path: '/project/note.txt' }];
+  const edited = 'data:image/png;base64,ZWRpdGVk';
+  await render({ threadId: 'chat' });
+  await act(async () => draft.restore({ text: '$review 补充', images, attachments, skills: [skill] }));
+  await act(async () => draft.addAnnotatedImage(edited));
+  expect(draft.text).toBe('$review 补充');
+  expect(draft.images.map(image => image.url)).toEqual([...images, edited]);
+  expect(draft.references).toEqual(attachments);
+  expect(options.send).not.toHaveBeenCalled();
+  await act(async () => draft.restore({ text: 'keep', images: Array(8).fill(images[0]), skills: [] }));
+  expect(() => draft.addAnnotatedImage(edited)).toThrow();
+  expect(draft.text).toBe('keep');
+  expect(draft.images).toHaveLength(8);
+});

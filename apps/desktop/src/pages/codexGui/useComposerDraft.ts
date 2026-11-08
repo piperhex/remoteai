@@ -8,6 +8,7 @@ import { validateUploadedFiles } from "../../../../../shared/remote-chat/compose
 import { MAX_REPLY_QUOTES, MAX_QUOTE_CHARACTERS, quoteKey, quotedReply, type ReplyQuote } from "../../../../../shared/conversation/replyQuotes";
 import { queuedMessageText } from "../../../../../shared/conversation/queuedMessageDraft";
 import { MAX_CONVERSATION_REFERENCES } from "../../../../../shared/conversation/conversationReferences";
+import { validateChatImages } from '../../../../../shared/remote-chat/attachments';
 
 import { IMAGE_TYPES, MAX_IMAGES, MAX_IMAGE_BYTES, readImage, type DraftImage } from "./draftImages";
 export { IMAGE_TYPES, MAX_IMAGES, MAX_IMAGE_BYTES, readImage, type DraftImage } from "./draftImages";
@@ -102,6 +103,12 @@ export function useComposerDraft(key: string, controller: GuiController) {
     ({ ...value, images: value.images.filter((image) => image.id !== id) }));
   const editImage = (id: string, url: string) => update((value) =>
     ({ ...value, images: value.images.map((image) => image.id === id ? { ...image, url } : image) }));
+  const addAnnotatedImage = (url: string) => {
+    const current = latestDrafts.current[key] ?? EMPTY_DRAFT;
+    validateChatImages([...current.images.map(image => image.url ?? ''), url], 'direct');
+    update(value => ({ ...value, images: [...value.images,
+      { id: crypto.randomUUID(), name: uiText('client.chat.image'), url }] }));
+  };
   const addImages = (files: File[]) => {
     const valid = files.filter((file) => IMAGE_TYPES.includes(file.type) && file.size > 0
       && file.size <= MAX_IMAGE_BYTES);
@@ -148,6 +155,6 @@ export function useComposerDraft(key: string, controller: GuiController) {
     } finally { submitting.current = false; }
   };
   return { draft, reading, editText, editContent, appendDictation, removeImage, editImage, addImages, paste, pasteKeyDown,
-    send, addAttachments, removeAttachment,
+    send, addAttachments, removeAttachment, addAnnotatedImage,
     addQuote, removeQuote, clearQuotes, editQueued };
 }

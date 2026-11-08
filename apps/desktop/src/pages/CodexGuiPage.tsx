@@ -20,6 +20,7 @@ import { canForkConversation } from "./codexGui/forkConversation";
 import { ThreadSidebar, threadTitle } from "./codexGui/ThreadSidebar";
 import { Composer, type ComposerHandle } from "./codexGui/Composer";
 import { ChatFileReferencesProvider } from '../../../../shared/chat/ChatFileReferences';
+import { ImageAnnotationsProvider } from '../../../../shared/chat/ImageAnnotations';
 import { Messages } from "./codexGui/Messages";
 import { ConversationRetryProvider } from "./codexGui/ConversationRetryProvider";
 import { Approvals } from "./codexGui/Approvals";
@@ -126,7 +127,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
     setBusy: controller.setWorkspaceBusy }}>
     <TerminalWorkspaceProvider panel={isDesktopApp ? terminal : undefined}>
     <DetailsWorkspace selected={state.selected} active={conversationActive}>
-    <ChatFileReferencesProvider>
+    <ChatFileReferencesProvider><ImageAnnotationsProvider>
     <div className={`${styles.page} ${collapsed ? styles.collapsed : ""}`}
       data-dream-skin={skinStyle ? "true" : undefined} style={skinStyle}>
     {!collapsed && <ThreadSidebar state={state} controller={controller} accountPicker={accountPicker}
@@ -201,7 +202,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
       </div>
     </div>
     </div>
-  </ChatFileReferencesProvider></DetailsWorkspace>
+  </ImageAnnotationsProvider></ChatFileReferencesProvider></DetailsWorkspace>
   </TerminalWorkspaceProvider>
   </WorkspaceOperationContext.Provider></DiffTextContext.Provider></ImageAiContext.Provider>
   </DesktopUsageContext.Provider></ToolDetailsContext.Provider>;

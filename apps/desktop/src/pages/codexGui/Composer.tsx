@@ -38,6 +38,7 @@ import { GuiToolbox } from "../../../../../shared/conversation/GuiToolbox";
 import { useLocalGitDownloads } from '../../downloads/localGitDownloads';
 import { LocalProjectBrowser } from './LocalProjectBrowser';
 import { useComposerFileReferences } from '../../../../../shared/chat/ChatFileReferences';
+import { useComposerImageAnnotations } from '../../../../../shared/chat/ImageAnnotations';
 import { localGitClient } from "./localGitClient";
 import { SkillInput, type SkillInputHandle } from "./SkillInput";
 import { useNextPromptSuggestion } from './useNextPromptSuggestion';
@@ -65,8 +66,9 @@ export const Composer = forwardRef<ComposerHandle, {
   const usageSnapshot = useContext(DesktopUsageContext);
   const metrics = useConversationMetrics(loadConversationMetrics, state.selected, active && state.connection === 'ready');
   const workspaceBusy = Boolean(state.workspaceBusy);
-  const { draft, reading: draftReading, editContent, appendDictation, removeImage, editImage, addImages, paste, pasteKeyDown,
-    send: sendDraft, addAttachments, removeAttachment, addQuote, removeQuote, clearQuotes, editQueued }
+  const { draft, reading: draftReading, editContent, appendDictation, removeImage, editImage, addImages,
+    paste, pasteKeyDown, send: sendDraft, addAttachments, removeAttachment, addQuote, removeQuote,
+    clearQuotes, editQueued, addAnnotatedImage }
     = useComposerDraft(key, controller);
   // Creating a goal first creates its conversation; keep the form until the goal request succeeds.
   useEffect(() => { if (!controller.getSnapshot().goalBusy || !active) setDialog(null); }, [key, active, controller]);
@@ -82,6 +84,9 @@ export const Composer = forwardRef<ComposerHandle, {
     disabled: disabled || draftReading || !!dialog, addAttachments, addImages,
     setProject: controller.setProject, report: controller.report, focus: () => skillInput.current?.focus() });
   const reading = draftReading || drop.reading || dictating;
+  useComposerImageAnnotations({ scope: `${key}:${project}`, mode: 'direct',
+    enabled: active && !disabled && !reading && !goalMode.enabled,
+    add: addAnnotatedImage, focus: () => skillInput.current?.focus() });
   useComposerFileReferences({ scope: `${key}:${project}`,
     enabled: active && !disabled && !reading && !goalMode.enabled,
     add: reference => addAttachments([reference]), addQuote, focus: () => skillInput.current?.focus() });
