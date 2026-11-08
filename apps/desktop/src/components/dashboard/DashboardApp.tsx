@@ -6,7 +6,10 @@ import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
 import ruRU from "antd/locale/ru_RU";
 import jaJP from "antd/locale/ja_JP";
-import { CalendarClock, Check, CircleHelp, PanelLeftClose, PanelLeftOpen, Play, Plus, RefreshCw, RotateCcw, ShieldCheck } from "lucide-react";
+import {
+  CalendarClock, Check, CircleHelp, FileSliders, PanelLeftClose, PanelLeftOpen,
+  Play, Plus, RefreshCw, RotateCcw, ShieldCheck,
+} from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { findAndroidReleaseAsset } from "../../../../../shared/app-update/androidRelease";
 import {
@@ -1218,6 +1221,9 @@ export function DashboardApp() {
       {(page === "accounts" || page === "providers") && <>
         {titlebarProxyRunning && <CloudRecycleBin t={t} disabled={!cloud.state.authenticated}
           triggerClassName="refresh-all" />}
+        <button type="button" className="refresh-all" onClick={() => setPage("codexConfig")}>
+          <FileSliders size={14} /><span>{t("nav.codexConfig")}</span>
+        </button>
         <CodexConfigRepairButton disabled={providerManager.proxyBusy} notify={notify} t={t} />
         <AccountDisplayTabs displayMode={accountDisplayMode.displayMode}
           onChange={accountDisplayMode.setDisplayMode} t={t} />

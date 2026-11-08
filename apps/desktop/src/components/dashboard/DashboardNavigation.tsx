@@ -3,7 +3,6 @@ import {
   Bot,
   Download,
   FolderOpen,
-  FileSliders,
   PackageOpen,
   Palette,
   SquareTerminal,
@@ -76,7 +75,8 @@ const TOOLBOX_NAVIGATION_ITEMS = [
 ] as const;
 
 export function isToolboxPage(page: DashboardPage) {
-  return page === "systemPrompts" || page === "logDiagnostics" || page === "downloads" || page === "lounge" || page === "totp"
+  return page === "codexConfig" || page === "systemPrompts" || page === "logDiagnostics"
+    || page === "downloads" || page === "lounge" || page === "totp"
     || TOOLBOX_NAVIGATION_ITEMS.some((item) => item.page === page);
 }
 
@@ -91,9 +91,9 @@ export function DashboardNavigation({
   variant = "top",
 }: DashboardNavigationProps) {
   const navigationButton = (item: typeof NAVIGATION_ITEMS[number] | typeof TOOLBOX_NAVIGATION_ITEMS[number] | typeof LOUNGE_ITEM | {
-    page: "settings" | "codexConfig" | "logDiagnostics" | "downloads" | "totp";
+    page: "settings" | "logDiagnostics" | "downloads" | "totp";
     icon: typeof Settings;
-    labelKey: "nav.settings" | "nav.codexConfig" | "logDiagnostics.title" | "downloads.title" | "totp.action";
+    labelKey: "nav.settings" | "logDiagnostics.title" | "downloads.title" | "totp.action";
   }) => {
     const Icon = item.icon;
     const label = "label" in item ? item.label : t(item.labelKey);
@@ -127,7 +127,6 @@ export function DashboardNavigation({
           {navigationButton(DOWNLOADS_ITEM)}
           {navigationButton(LOG_DIAGNOSTICS_ITEM)}
           {navigationButton(TOTP_ITEM)}
-          {navigationButton({ page: "codexConfig", icon: FileSliders, labelKey: "nav.codexConfig" })}
           {navigationButton({ page: "settings", icon: Settings, labelKey: "nav.settings" })}
         </div>
       )}
