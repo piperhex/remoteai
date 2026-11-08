@@ -101,3 +101,19 @@ it('never retains history and does not share summaries between sessions', async 
   expect((await second.read(active)).data).toEqual([thread]);
   expect(fetch).toHaveBeenCalledTimes(2);
 });
+
+it('updates activity on start and completion without moving backwards or waiting for another list', async () => {
+  const fetch = vi.fn().mockResolvedValue(page([{ ...thread, id: 'recent', updatedAt: 20 }, thread]));
+  const cache = new ThreadListCache(fetch);
+  await cache.read(active);
+  cache.receive({ method: 'turn/started', params: { threadId: thread.id,
+    turn: { id: 'turn', status: 'inProgress', items: [], startedAt: 30 } } });
+  expect(cache.peek(active)?.data[0]).toMatchObject({ id: thread.id, updatedAt: 30, status: { type: 'active' } });
+  cache.receive({ method: 'turn/completed', params: { threadId: thread.id,
+    turn: { id: 'turn', status: 'completed', items: [], completedAt: 40 } } });
+  expect(cache.peek(active)?.data[0]).toMatchObject({ id: thread.id, updatedAt: 40, status: { type: 'idle' } });
+  cache.receive({ method: 'turn/started', params: { threadId: thread.id,
+    turn: { id: 'older-turn', status: 'inProgress', items: [], startedAt: 10 } } });
+  expect(cache.peek(active)?.data[0].updatedAt).toBe(40);
+  expect(fetch).toHaveBeenCalledTimes(1);
+});

@@ -323,6 +323,24 @@ it.each(["D:/project", ""])("temporarily promotes running chats within %j before
   expect(state.threads.map((thread) => thread.id)).toEqual(Array.from({ length: 7 }, (_, index) => `chat-${index}`));
 });
 
+it("orders conversations merged from different projects into a custom group by activity", async () => {
+  state = { ...state, grouping: { groups: [{ id: 'custom', name: 'Custom', parentId: null }], projects: {},
+    threads: { oldest: 'custom', latest: 'custom', running: 'custom' } }, threads: [
+    { id: 'oldest', cwd: '/first', preview: 'Oldest', updatedAt: 1 },
+    { id: 'latest', cwd: '/second', preview: 'Latest', updatedAt: 30 },
+    { id: 'running', cwd: '/first', preview: 'Running', updatedAt: 10, status: { type: 'active' } },
+  ] };
+  await render();
+  const titles = () => [...container.querySelectorAll(`.${styles.threadTitle}`)].map(entry => entry.textContent);
+  expect(titles()).toEqual(['Running', 'Latest', 'Oldest']);
+  state = { ...state, pins: ['oldest'] };
+  await render();
+  expect(titles()).toEqual(['Running', 'Oldest', 'Latest']);
+  state = { ...state, threads: state.threads.map(thread => ({ ...thread, status: { type: 'idle' } })) };
+  await render();
+  expect(titles()).toEqual(['Oldest', 'Latest', 'Running']);
+});
+
 it("returns to the conversation when selecting the already selected thread from a feature page", async () => {
   const onNavigate = vi.fn();
   const select = vi.spyOn(controller, "select").mockResolvedValue();

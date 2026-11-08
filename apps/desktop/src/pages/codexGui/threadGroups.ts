@@ -2,7 +2,14 @@ import { uiText } from "../../../../../shared/localization/uiText";
 import { projectName } from "../../../../../shared/conversation/projectCatalog";
 import type { GuiState, Thread } from "../../../../../shared/conversation/types";
 import { isThreadRunning } from "./threadRunning";
-import { prioritizeRunningThreads } from "../../../../../shared/chat/threadOrder";
+import { orderThreadsByActivity } from "../../../../../shared/chat/threadOrder";
+
+export function orderGuiThreads(threads: readonly Thread[], state: GuiState) {
+  return orderThreadsByActivity(threads, {
+    isRunning: thread => isThreadRunning(state, thread),
+    isPinned: thread => state.pins.includes(thread.id),
+  });
+}
 
 export function threadGroups(state: GuiState) {
   const pinnedIds = new Set(state.threads.filter(thread => state.pins.includes(thread.id)
@@ -22,6 +29,6 @@ export function threadGroups(state: GuiState) {
     ...(pinned.length ? [{ id: "pinned", label: uiText("client.conversation.pin"), pinned: true, cwd: "", threads: pinned }] : []),
     ...projects,
   ].map((group) => ({ ...group,
-    threads: prioritizeRunningThreads(group.threads, (thread) => isThreadRunning(state, thread)),
+    threads: orderGuiThreads(group.threads, state),
   }));
 }

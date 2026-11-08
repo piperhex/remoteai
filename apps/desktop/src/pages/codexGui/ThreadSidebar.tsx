@@ -10,7 +10,7 @@ import type { GuiState, Thread } from "../../../../../shared/conversation/types"
 import { ThreadGroup } from "./ThreadGroup";
 import { ThreadSearch } from "./ThreadSearch";
 import { useThreadGroupViews } from "./useThreadGroupViews";
-import { threadGroups } from "./threadGroups";
+import { orderGuiThreads, threadGroups } from "./threadGroups";
 import { isThreadRunning } from "./threadRunning";
 import { canForkLatestConversation } from "./forkConversation";
 import { ProjectGroupMenu } from "./ProjectGroupMenu";
@@ -69,7 +69,8 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
   const scope = state.archived ? 'archived' : 'recent';
   const collapsed = new Set(views.collapsed.filter(key => key.startsWith(`${scope}:`))
     .map(key => key.slice(scope.length + 1)));
-  const groups = flattenGroupingTree(sections, state.search.trim() ? new Set() : collapsed);
+  const groups = flattenGroupingTree(sections, state.search.trim() ? new Set() : collapsed)
+    .map(group => ({ ...group, data: orderGuiThreads(group.data, state) }));
   const renderThread = (thread: Thread) => {
     const running = isThreadRunning(state, thread);
     const busy = state.sending || Boolean(state.deleting);
