@@ -44,8 +44,9 @@ describe.each([
       const button = buttons.find((item) => item.textContent === label);
       expect(button).toBeDefined();
       if (page === "coze") {
-        const pluginsIndex = buttons.findIndex((item) => item.textContent === t("nav.skills"));
-        expect(buttons[pluginsIndex + 1]).toBe(button);
+        const previousLabel = t(variant === "toolbox" ? "nav.skills" : "nav.dreamSkin");
+        const previousIndex = buttons.findIndex((item) => item.textContent === previousLabel);
+        expect(buttons[previousIndex + 1]).toBe(button);
       }
       await act(async () => button?.click());
       expect(onPageChange).toHaveBeenCalledWith(page);

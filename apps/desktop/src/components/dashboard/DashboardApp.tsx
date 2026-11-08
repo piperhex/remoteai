@@ -7,7 +7,7 @@ import zhCN from "antd/locale/zh_CN";
 import ruRU from "antd/locale/ru_RU";
 import jaJP from "antd/locale/ja_JP";
 import {
-  CalendarClock, Check, CircleHelp, FileSliders, PanelLeftClose, PanelLeftOpen,
+  CalendarClock, Check, CircleHelp, FileSliders, PackageOpen, PanelLeftClose, PanelLeftOpen,
   Play, Plus, RefreshCw, RotateCcw, ShieldCheck,
 } from "lucide-react";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -1218,6 +1218,9 @@ export function DashboardApp() {
       navigation={sidebarNavigationEnabled ? undefined : {
         page, onPageChange: setPage, downloadOwner,
         loungeUnread: lounge.state.unread, loungeAvailable: cloud.state.authenticated }}>
+      {sidebarNavigationEnabled && <button type="button" className="refresh-all" onClick={() => setPage("skills")}>
+        <PackageOpen size={15} /><span>{t("nav.skills")}</span>
+      </button>}
       {(page === "accounts" || page === "providers") && <>
         {titlebarProxyRunning && <CloudRecycleBin t={t} disabled={!cloud.state.authenticated}
           triggerClassName="refresh-all" />}
