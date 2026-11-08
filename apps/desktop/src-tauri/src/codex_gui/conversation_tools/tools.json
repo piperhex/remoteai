@@ -15,6 +15,10 @@
             "type": "string",
             "description": "Absolute existing project directory on the GUI host. For work continuing in the same project, supply its known exact directory. Omit for an independent projectless chat."
           },
+          "title": {
+            "type": "string", "minLength": 1, "maxLength": 120,
+            "description": "Optional conversation title. Use this when the user specifies a name. Saved before the first message is sent, with surrounding whitespace removed; model naming is skipped. Omit to generate a title from the first message using the configured naming model. Must contain visible text and no control characters."
+          },
           "model": {
             "type": "string", "minLength": 1, "maxLength": 200,
             "description": "Exact model ID for the new conversation. Omit to inherit the invoking conversation's model."

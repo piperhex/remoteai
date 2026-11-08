@@ -13,9 +13,12 @@ impl Client {
         let skipped = || GuiResponse {
             data: json!({"title": null}),
         };
-        let Ok(_slot) = self.title_slots.try_acquire() else {
-            return Ok(skipped());
-        };
+        // Queue excess naming jobs instead of leaving bursts of new conversations unnamed.
+        let _slot = self
+            .title_slots
+            .acquire()
+            .await
+            .map_err(|_| GuiError::Disconnected)?;
         if !self
             .title_jobs
             .lock()

@@ -7,13 +7,17 @@ use super::{
     protocol::{Create, Mutation, Send},
     Error, Result,
 };
-use crate::codex_gui::{connection::Connection, model_settings, protocol::GuiRequest, workspaces};
+use crate::codex_gui::{
+    connection::Connection, model_settings, protocol::GuiRequest,
+    title_generation::MAX_PROMPT_CHARS, workspaces,
+};
 use model_settings::ModelSelection;
 
 /// The host service and pure state-machine tests use the same operation ordering.
 pub(super) trait Backend {
     async fn request(&self, method: &str, params: Value) -> Result<Value>;
     async fn save_model(&self, id: &str, selection: &ModelSelection) -> Result<()>;
+    fn generate_title(&self, id: &str, prompt: String);
 }
 
 struct GuiBackend<'a> {
@@ -34,12 +38,17 @@ impl Backend for GuiBackend<'_> {
         model_settings::persist_created(self.app.clone(), id.to_owned(), selection.clone()).await?;
         Ok(())
     }
+
+    fn generate_title(&self, id: &str, prompt: String) {
+        super::titles::generate(self.app.clone(), id.to_owned(), prompt);
+    }
 }
 
 pub(super) struct PreparedCreate {
     pub params: Value,
     pub selection: ModelSelection,
     pub message: String,
+    pub title: Option<String>,
 }
 
 pub(super) async fn execute(
@@ -95,6 +104,7 @@ pub(super) async fn prepare_create(root: PathBuf, args: Create) -> Result<Prepar
         params,
         selection,
         message: args.message,
+        title: args.title.map(|title| title.trim().to_owned()),
     })
 }
 
@@ -109,14 +119,31 @@ pub(super) async fn create(
         .update(json!({"threadId":id, "status":"unknown"}))
         .await?;
     backend.save_model(id, &prepared.selection).await?;
+    if let Some(title) = &prepared.title {
+        backend
+            .request("thread/name/set", json!({"threadId":id, "name":title}))
+            .await?;
+    }
+    let title_prompt = prepared.title.is_none().then(|| {
+        prepared
+            .message
+            .trim()
+            .chars()
+            .take(MAX_PROMPT_CHARS)
+            .collect()
+    });
     let mut params = prompt(id, prepared.message);
     params["model"] = json!(prepared.selection.model);
     params["effort"] = json!(prepared.selection.effort);
     let response = backend.request("turn/start", params).await?;
     let turn_id = response["turn"]["id"].as_str().ok_or(Error::Changed)?;
-    entry
+    let receipt = entry
         .update(json!({"threadId":id, "turnId":turn_id, "status":"sent"}))
-        .await
+        .await;
+    if let Some(prompt) = title_prompt {
+        backend.generate_title(id, prompt);
+    }
+    receipt
 }
 
 pub(super) async fn send(backend: &impl Backend, args: Send, entry: &mut Entry) -> Result<Value> {

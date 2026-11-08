@@ -21,7 +21,7 @@ const requests = [];
 const calls = [];
 const authorizations = [];
 const createArguments = { requestId: "create-model-smoke", message: "Model choice smoke",
-  model: "fixture-other", effort: "low" };
+  title: "Initial title smoke", model: "fixture-other", effort: "low" };
 
 function mcp(message, response, authorized) {
   authorizations.push(authorized);
@@ -115,6 +115,14 @@ try {
   for (const selection of [{ model: caller.model, effort: caller.reasoning_effort }, createArguments]) {
     const { thread: child } = await client.rpc("thread/start", { cwd: home, model: selection.model,
       sandbox: "workspace-write", approvalPolicy: "never", config: { model_reasoning_effort: selection.effort } });
+    if (selection.title) {
+      const before = requests.length;
+      await client.rpc("thread/name/set", { threadId: child.id, name: selection.title });
+      assert.equal(requests.length, before, "An explicit title must not call the model");
+      const named = await client.waitFor(event => event.method === "thread/name/updated"
+        && event.params.threadId === child.id);
+      assert.equal(named.params.threadName, selection.title, "All connected views must receive the initial title");
+    }
     for (let index = 0; index < 2; index++) {
       if (index) await client.rpc("thread/resume", { threadId: child.id });
       const start = requests.length;
@@ -127,10 +135,14 @@ try {
         assert.equal(request.model, selection.model);
         assert.equal(request.reasoning.effort, selection.effort);
       }
+      if (selection.title) {
+        const saved = await client.rpc("thread/read", { threadId: child.id });
+        assert.equal(saved.thread.name, selection.title, "The initial title must survive the first send and follow-up");
+      }
     }
   }
   assert.ok(authorizations.length >= 3 && authorizations.every(Boolean), "MCP authentication missing");
-  console.log("PASS: GUI MCP tools expose model choices and caller metadata; inherited/explicit choices survive follow-up.");
+  console.log("PASS: GUI MCP exposes initial titles and model choices; explicit titles skip naming and survive follow-up.");
 } finally {
   await client.close();
   server.closeAllConnections(); server.close();

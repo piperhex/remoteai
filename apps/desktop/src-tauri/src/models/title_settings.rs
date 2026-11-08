@@ -21,6 +21,15 @@ pub(crate) enum TitleEffort {
     Xhigh,
 }
 
+impl Default for TitleSettings {
+    fn default() -> Self {
+        Self {
+            model: "gpt-5.6-luna".into(),
+            effort: TitleEffort::Low,
+        }
+    }
+}
+
 impl TitleSettings {
     pub(crate) fn is_valid(&self) -> bool {
         self.model.len() <= MAX_MODEL_LENGTH

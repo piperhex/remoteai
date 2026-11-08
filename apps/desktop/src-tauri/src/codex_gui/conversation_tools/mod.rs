@@ -11,6 +11,7 @@ mod selection;
 mod summaries;
 #[cfg(test)]
 mod tests;
+mod titles;
 
 use serde_json::{json, Value};
 use std::sync::Mutex;

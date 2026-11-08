@@ -11,6 +11,8 @@ use tokio::sync::Mutex;
 
 #[path = "model_tests.rs"]
 mod model_tests;
+#[path = "title_tests.rs"]
+mod title_tests;
 
 struct Fake(Mutex<VecDeque<(&'static str, Value, Result<Value>)>>);
 
@@ -27,6 +29,18 @@ impl Backend for Fake {
         self.request("save/model", json!({"threadId":id, "selection":selection}))
             .await
             .map(|_| ())
+    }
+
+    fn generate_title(&self, id: &str, prompt: String) {
+        let (method, params, result) = self
+            .0
+            .try_lock()
+            .unwrap()
+            .pop_front()
+            .expect("unexpected title generation");
+        assert_eq!(method, "generate/title");
+        assert_eq!(params, json!({"threadId":id, "prompt":prompt}));
+        result.unwrap();
     }
 }
 
@@ -59,6 +73,7 @@ fn prepared(params: Value) -> operations::PreparedCreate {
         params,
         selection: selection(),
         message: "补充要求".into(),
+        title: None,
     }
 }
 
@@ -235,6 +250,7 @@ async fn creation_checkpoints_thread_before_sending_and_reports_uncertain_outcom
         request_id: "create-one".into(),
         message: "补充要求".into(),
         cwd: None,
+        title: None,
         model: None,
         effort: None,
         caller: Some(selection()),
@@ -301,6 +317,7 @@ async fn successful_creation_returns_a_durable_receipt_without_resending() {
         request_id: "create-success".into(),
         message: "补充要求".into(),
         cwd: None,
+        title: None,
         model: None,
         effort: None,
         caller: Some(selection()),
@@ -315,6 +332,11 @@ async fn successful_creation_returns_a_durable_receipt_without_resending() {
             "turn/start",
             creation_prompt(),
             Ok(json!({"turn":{"id":"created-turn"}})),
+        ),
+        (
+            "generate/title",
+            json!({"threadId":"target", "prompt":"补充要求"}),
+            Ok(json!({})),
         ),
     ])));
     let receipt = operations::create(&fake, prepared(json!({})), &mut entry)
