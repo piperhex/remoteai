@@ -96,7 +96,7 @@ jobs:
         timeout-minutes: 5
         env:
           CSW_CUA_TEST_ARCHIVE: ${{ runner.temp }}/cua-driver.tar.gz
-          CUA_VERSION: 0.37.0-remoteai.3
+          CUA_VERSION: 0.37.0-remoteai.4
         run: |
           release="https://github.com/piperhex/remoteai/releases/download/cua-v$CUA_VERSION"
           curl --fail --location --retry 3 --connect-timeout 15 --max-time 60 --output "$CSW_CUA_TEST_ARCHIVE" \
