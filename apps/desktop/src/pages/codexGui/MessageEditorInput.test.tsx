@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { UserMessage } from "./UserMessage";
 import { MessageEditContext } from "./messageEditContext";
 import { guiApi } from "../../../../../shared/conversation/api";
-import * as draftImages from "./draftImages";
+import * as draftImages from "../../../../../shared/chat/draftImages";
 import { readEditor } from "./skillEditorDom";
 import type { Content } from "../../../../../shared/conversation/types";
 
@@ -61,7 +61,7 @@ it("pastes images inside the editor, blocks sending until loaded, and preserves 
   let finish!: (url: string) => void;
   vi.spyOn(draftImages, "readImage").mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
   await render([{ type: "image", url: image }]);
-  await paste(); await key("Enter", { ctrlKey: true });
+  await paste(); await key("Enter");
   expect(submit).not.toHaveBeenCalled(); expect(button("发送").disabled).toBe(true);
   await act(async () => finish(image));
   expect(editor().closest("article")?.querySelectorAll('[aria-label^="放大查看"]')).toHaveLength(2);
@@ -106,7 +106,7 @@ it("selects a project skill with slash and sends its explicit reference alongsid
   expect(host.querySelectorAll('[role="option"]')).toHaveLength(1);
   await key("Enter");
   expect(submit).not.toHaveBeenCalled(); expect(host.querySelector('[data-skill]')).not.toBeNull();
-  await key("Enter", { ctrlKey: true });
+  await key("Enter");
   expect(submit).toHaveBeenCalledWith({ text: "请用 $review ", images: [image],
     skills: [{ name: skill.name, path: skill.path }] });
   expect(readEditor(editor()).mentions).toHaveLength(1);
@@ -125,4 +125,18 @@ it("dismisses the skill menu before Escape cancels editing", async () => {
   await render(); await type("/"); await key("Escape");
   expect(editor()).not.toBeNull(); expect(host.querySelector('[role="listbox"]')).toBeNull();
   await key("Escape"); expect(editor()).toBeNull();
+});
+
+it('sends edits with Enter, reserves Shift+Enter for a newline, and ignores IME confirmation', async () => {
+  const insert = vi.fn();
+  Object.defineProperty(document, 'execCommand', { configurable: true, value: insert });
+  await render();
+  await key('Enter', { shiftKey: true });
+  expect(insert).toHaveBeenCalledWith('insertLineBreak');
+  await key('Enter', { isComposing: true });
+  await key('Enter', { keyCode: 229 });
+  expect(submit).not.toHaveBeenCalled();
+  await key('Enter');
+  expect(submit).toHaveBeenCalledExactlyOnceWith({ text: '原问题' });
+  Reflect.deleteProperty(document, 'execCommand');
 });

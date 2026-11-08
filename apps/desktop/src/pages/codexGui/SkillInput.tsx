@@ -153,7 +153,7 @@ export const SkillInput = forwardRef<SkillInputHandle, {
     if (event.key === "Escape" && editing) { event.preventDefault(); editing.onCancel(); return; }
     if (event.key !== "Enter") return;
     event.preventDefault();
-    if (event.shiftKey || (editing && !event.ctrlKey && !event.metaKey)) {
+    if (event.shiftKey) {
       document.execCommand("insertLineBreak"); change();
     }
     else onSend();

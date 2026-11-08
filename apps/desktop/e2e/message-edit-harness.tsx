@@ -1,20 +1,31 @@
 import { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ConfigProvider, theme } from 'antd';
+import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
+import { guiFontStyle, saveGlobalFontSize, useGuiFontSize } from '../../../shared/appearance/fontSize';
 import { Messages } from '../src/pages/codexGui/Messages';
 import { RemoteUserMessage } from '../src/pages/codexGui/remote/RemoteUserMessage';
 import { ChatMessages } from '../../../shared/remote-chat/views/ChatMessages';
+import { EditableChatMessage } from '../../../shared/remote-chat/views/EditableChatMessage';
 import { conversation } from '../../../shared/conversation/events';
 import { initialChatState, type Thread } from '../../../shared/remote-chat/client/types';
 import { ChatController } from '../../../shared/remote-chat/client/controller';
 import type { MessageEdit, MessageTarget } from '../../../shared/conversation/editMessage';
+import { applyThemeMode } from '../src/utils/themeMode';
+import { setThemeMode } from '../../web/src/theme/preference';
 import styles from '../../../shared/conversation/styles.module.less';
 import '../../../shared/remote-chat/views/chat.css';
 import '../src/pages/codexGui/remote/remoteGui.less';
 
-const remote = new URLSearchParams(location.search).has('remote');
-const dark = new URLSearchParams(location.search).has('dark');
-document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+const params = new URLSearchParams(location.search);
+const mode = params.get('mode') ?? (params.has('remote') ? 'remote' : 'local');
+const remote = mode !== 'local';
+const web = mode === 'web';
+const dark = params.has('dark');
+await (web ? import('../../web/src/styles.css') : import('../src/styles.css'));
+saveGlobalFontSize(params.has('large') ? 20 : 14);
+localStorage.removeItem('codex-switch:gui-font-size');
+(web ? setThemeMode : applyThemeMode)(dark ? 'dark' : 'light');
 const initial: Thread = { id: 'thread', cwd: '', preview: '', updatedAt: 1, turns: [
   { id: 'first', status: 'completed', items: [{ id: 'old', type: 'userMessage',
     content: [{ type: 'text', text: '请保留这条消息。' }] },
@@ -25,8 +36,9 @@ const initial: Thread = { id: 'thread', cwd: '', preview: '', updatedAt: 1, turn
 ] };
 
 function Harness() {
+  const fontSize = useGuiFontSize();
   const [thread, setThread] = useState(initial);
-  const state = { ...initialChatState(), ready: true, selected: thread };
+  const state = { ...initialChatState(), ready: true, mode: 'direct' as const, selected: thread };
   const change = async (target: MessageTarget | MessageEdit) => {
     setThread(previous => ({ ...previous, turns: previous.turns!.flatMap(turn => {
       if (turn.id !== target.turnId) return [turn];
@@ -40,14 +52,21 @@ function Harness() {
   })), []);
   controller.messageEditor.submit = change;
   controller.messageEditor.remove = change;
-  return <ConfigProvider theme={{ algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm }}>
-    <main className={`${styles.page} ${styles.collapsed} ${remote ? 'chat-page gui-remote-workspace' : ''}`}>
+  const algorithm = dark ? theme.darkAlgorithm : theme.defaultAlgorithm;
+  return <ApplicationTypography><ConfigProvider theme={{
+    algorithm: web ? algorithm : [algorithm, theme.compactAlgorithm],
+  }}>
+    <main style={guiFontStyle(fontSize)}
+      className={`${styles.page} ${styles.collapsed} ${remote ? 'chat-page' : ''}`
+        + ` ${mode === 'remote' ? 'gui-remote-workspace' : ''}`}>
       {remote ? <div className="chat-conversation"><ChatMessages thread={thread}
-        renderUserMessage={props => <RemoteUserMessage {...props} state={state} controller={controller} active />} /></div>
+        renderUserMessage={props => web
+          ? <EditableChatMessage {...props} state={state} controller={controller} active />
+          : <RemoteUserMessage {...props} state={state} controller={controller} active />} /></div>
         : <div className={styles.workspace}><Messages selected={thread.id} value={conversation(thread)}
           onEdit={change} onDelete={change} /></div>}
     </main>
-  </ConfigProvider>;
+  </ConfigProvider></ApplicationTypography>;
 }
 
 const css = document.createElement('style');

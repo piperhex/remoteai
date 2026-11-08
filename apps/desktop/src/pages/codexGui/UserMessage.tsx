@@ -15,6 +15,7 @@ import { MessageAttachments } from "../../../../../shared/chat/SentMessageAttach
 import { AttachmentMetadataProvider } from './AttachmentMetadataProvider';
 import { CONVERSATION_PREFIX } from "../../../../../shared/conversation/conversationReferences";
 import { isMessageImage, type SubmitMessageEdit } from "../../../../../shared/conversation/messageEditContent";
+import editorStyles from "../../../../../shared/conversation/MessageEditor.module.less";
 import userStyles from "./UserMessage.module.less";
 import styles from "../../../../../shared/conversation/styles.module.less";
 
@@ -45,12 +46,12 @@ export function UserMessage({ item, startedAt, onEdit, onDelete, editDisabled = 
   const sentAt = date && Number.isFinite(date.getTime()) ? date : null;
   const showBubble = editing || Boolean(message.text || message.quotes.length || mentions.length);
   if (!showBubble && !images.length) return null;
-  return <article className={`${styles.userMessage} ${editing ? userStyles.editingMessage : ""}`}>
+  return <article className={`${styles.userMessage} ${editing ? editorStyles.editingMessage : ""}`}>
     {!editing && images.length > 0 && <div className={userStyles.attachments}>
       {images.map((part, index) =>
         <MessageImage key={index} src={part.url || part.path} alt={uiText("client.conversation.imageAttachment", { value1: index + 1 })} />)}
     </div>}
-    {showBubble && <div className={`${styles.userBubble} ${userStyles.bubble}`}>
+    {showBubble && <div className={`${styles.userBubble} ${userStyles.bubble} ${editing ? editorStyles.bubble : ""}`}>
       {files.references.map((part, index) =>
         <span className={styles.imageLabel} key={`reference-${index}`}>
           {referenceLabel(part.path)}：{part.name || part.path}
