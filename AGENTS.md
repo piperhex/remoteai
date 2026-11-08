@@ -84,24 +84,31 @@ Keep all instructions in this `AGENTS.md` file in English.
 
 ## End-of-Conversation Review
 
+- Scope this review to conversations associated with the current project, identified by their project directory
+  or repository/workspace association. Conversations from unrelated projects do not count toward activity or
+  exclusivity and are outside the cleanup scope.
 - Before ending a conversation and sending the final response, query active conversations to determine
-  whether the current conversation is the only active one. Prefer `gui_list_running_conversations` and read every page;
-  running conversations waiting for input or approval also count as active.
-  If the query is unavailable or the result is inconclusive, state that limitation instead of assuming exclusivity.
-- If other conversations are still active, finalize and commit only completed, verified changes for the current task.
+  whether the current conversation is the only active one for the current project.
+  Prefer `gui_list_running_conversations`, read every page, and filter the results to the current project;
+  running conversations for this project waiting for input or approval also count as active.
+  If the query is unavailable or project association or exclusivity is inconclusive, state that limitation
+  instead of assuming exclusivity.
+- If other conversations for the current project are still active, finalize and commit only completed,
+  verified changes for the current task.
   Do not take over uncommitted work from other conversations.
-- If the current conversation is confirmed to be the only active one, inspect all local uncommitted changes
-  in this repository, including staged, unstaged, untracked, and line-ending-only changes.
+- If the current conversation is confirmed to be the only active one for the current project, inspect all
+  local uncommitted changes in this repository, including staged, unstaged, untracked, and line-ending-only changes.
   Match each change to its conversation, original requirements, implementation status, and verification results;
   use `gui_read_conversation` for known conversations. An idle conversation or a final response is not proof
   of completion: assess the actual changes and verification evidence.
 - For tasks with clear ownership and fully implemented requirements, finish necessary cleanup and run relevant checks.
   After verification passes, create a separate commit for each task and push under the rules above.
-  This explicitly allows finalizing completed work from other ended conversations, while excluding unrelated
-  or incomplete changes from each commit.
+  This explicitly allows finalizing completed work from other ended conversations for the current project,
+  while excluding unrelated or incomplete changes from each commit.
 - If tests or checks previously failed because concurrent conversations made interfering changes, first confirm
-  that the current conversation is the only active one. Review the affected requirements and current code together,
-  eliminate concurrent interference, and rerun both task-specific checks and checks covering their combined impact.
+  that the current conversation is the only active one for the current project.
+  Review the affected requirements and current code together, eliminate concurrent interference, and rerun
+  both task-specific checks and checks covering their combined impact.
   Use the new results to assess completion. Separately commit and push each fully implemented, verified task;
   do not leave it pending solely because earlier checks failed.
   Do not attribute failures to concurrency without evidence or skip checks. Report tasks that still fail verification
@@ -110,8 +117,8 @@ Keep all instructions in this `AGENTS.md` file in English.
   and their staging state. Do not commit prematurely, discard work, or create temporary commits to clear the workspace.
   Include a report table in the final response with these columns:
   `Conversation/task | Files | Completed work | Remaining work or uncertainties | Verification | Reason not committed and next steps`.
-- Recheck that no other conversations are active before taking over work from ended conversations and before
-  committing that work. Stop cross-conversation cleanup if activity changes.
+- Recheck that no other conversations for the current project are active before taking over work from ended
+  conversations for this project and before committing that work. Stop cross-conversation cleanup if activity changes.
   Preserve and report mixed changes that cannot be reliably separated; never stage everything indiscriminately
   and include unverified work in a commit.
 
