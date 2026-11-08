@@ -117,7 +117,7 @@ export function DashboardNavigation({
       data-tauri-drag-region={variant === "sidebar" ? true : undefined}>
       {variant !== "toolbox" && NAVIGATION_ITEMS.map(navigationButton)}
       {variant !== "top" && TOOLBOX_NAVIGATION_ITEMS
-        .filter((item) => variant === "toolbox" || item.page !== "skills")
+        .filter((item) => variant === "toolbox" || (item.page !== "skills" && item.page !== "dreamSkin"))
         .map(navigationButton)}
       {variant === "toolbox" && loungeAvailable && navigationButton(LOUNGE_ITEM)}
       {variant === "toolbox" && navigationButton(DOWNLOADS_ITEM)}

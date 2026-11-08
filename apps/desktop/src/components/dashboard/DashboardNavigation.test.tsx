@@ -44,7 +44,7 @@ describe.each([
       const button = buttons.find((item) => item.textContent === label);
       expect(button).toBeDefined();
       if (page === "coze") {
-        const previousLabel = t(variant === "toolbox" ? "nav.skills" : "nav.dreamSkin");
+        const previousLabel = t(variant === "toolbox" ? "nav.skills" : "nav.tokenUsage");
         const previousIndex = buttons.findIndex((item) => item.textContent === previousLabel);
         expect(buttons[previousIndex + 1]).toBe(button);
       }
