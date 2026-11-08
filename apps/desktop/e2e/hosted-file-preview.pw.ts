@@ -19,7 +19,14 @@ async function setup(page: Page, kind: FilePreviewData["kind"]) {
   await page.route("**/__codex_switch__/api/invoke", async route => {
     const { command, args } = route.request().postDataJSON();
     expect(route.request().headers()["x-api-key"]).toBe("test-lan-key");
-    expect(["codex_gui_open_file_preview", "codex_gui_close_file_preview"]).toContain(command);
+    expect(["codex_gui_open_file_preview", "codex_gui_close_file_preview", "codex_gui_browser", "codex_gui_events"])
+      .toContain(command);
+    if (command === "codex_gui_browser" || command === "codex_gui_events") {
+      const result = command === "codex_gui_browser" ? { tabs: [] }
+        : { cursor: { streamId: "fixture", sequence: 0 }, reset: false, events: [] };
+      await route.fulfill({ json: { ok: true, result } });
+      return;
+    }
     if (command === "codex_gui_close_file_preview") {
       closed.push(args.sessionId);
       await route.fulfill({ json: { ok: true, result: null } });
@@ -127,7 +134,7 @@ for (const kind of ["text", "image", "video", "audio", "pdf"] as const) {
         .evaluate((image: HTMLImageElement) => image.naturalWidth))
         .toBeGreaterThan(0);
     } else if (kind === "pdf") {
-      await expect(page.locator('object[type="application/pdf"]')).toBeVisible();
+      await expect(page.locator('[data-resource-pdf] .file-pdf-page canvas')).toBeVisible();
       const response = await pdfResponse;
       expect(response?.status()).toBe(200);
       expect(response?.headers()["content-type"]).toBe("application/pdf");

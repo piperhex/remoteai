@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useContext, useState, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ConfigProvider, theme } from 'antd';
 import { fromByteArray } from 'base64-js';
 import { DetailsWorkspace } from '../../../shared/conversation/DetailsWorkspace';
+import { DetailsContext } from '../../../shared/conversation/detailsContext';
 import { ChatDetailsWorkspace } from '../../../shared/remote-chat/views/ChatDetailsWorkspace';
+import { ChatRemoteFilePreview } from '../../../shared/remote-chat/views/ChatRemoteFilePreview';
 import { RichText } from '../../../shared/conversation/RichText';
 import { ChatMarkdown } from '../../../shared/remote-chat/views/ChatMarkdown';
 import { FileEnvironmentContext, type FileEnvironment } from '../../../shared/conversation/fileEnvironment';
@@ -32,6 +34,8 @@ const names = ['page.html', 'image.svg', 'video.mp4', 'sound.wav', 'report.PDF',
   'settings.json', 'archive.zip', 'setup.exe', '项目资源与动画素材归档-用于检查较长文件名称在窄窗口中的换行显示.zip'];
 const address = (path: string) => new URL(`/resource/${path.split(/[\\/]/).at(-1)}`, location.href).href;
 filePreviewApi.open = async target => {
+  document.body.dataset.previewReads = String(Number(document.body.dataset.previewReads ?? 0) + 1);
+  if (params.has('previewUnavailable')) throw new Error('Preview tunnel unavailable');
   const response = await fetch(address(target.path));
   const kind = filePreviewKind(target.path) ?? 'text';
   return { ...target, kind, name: target.path.split('/').at(-1)!, sessionId: crypto.randomUUID(),
@@ -47,18 +51,24 @@ const environment: FileEnvironment = { remote: true, previews: filePreviewApi, a
   resolveWebsite: async () => { throw new Error('File resources must not resolve as remote websites'); },
   image: props => <ChatImage source={props.src} description={props.alt} /> };
 const transfers = new Map<string, Uint8Array>();
+document.body.dataset.transfers = '0';
 const client: FileClient = {
   open: async (_thread, path) => {
     const response = await fetch(address(path));
     const bytes = new Uint8Array(await response.arrayBuffer());
     const id = crypto.randomUUID(); transfers.set(id, bytes);
+    document.body.dataset.transfers = String(transfers.size);
     return { id, size: bytes.length, name: path.split('/').at(-1)!, mimeType: response.headers.get('Content-Type')! };
   },
   read: async ({ id, offset, length }) => ({ offset,
     data: fromByteArray(transfers.get(id)!.subarray(offset, offset + length)) }),
-  close: async (_thread, id) => { transfers.delete(id); },
+  close: async (_thread, id) => { transfers.delete(id); document.body.dataset.transfers = String(transfers.size); },
 };
-const load = async (_thread: string, path: string) => ({ path, text: await (await fetch(address(path))).text() });
+const load = async (_thread: string, path: string) => {
+  document.body.dataset.textRead = path;
+  if (filePreviewKind(path) === 'pdf') throw new Error('PDF must not use text preview');
+  return { path, text: await (await fetch(address(path))).text() };
+};
 const browser = { native: false, request: async () => ({ tabs: [] }), subscribe: async () => () => {} };
 const imageLoad = async (_thread: string, source: string, original = false): Promise<string> => {
   const response = await fetch('/image-preview.json', { method: 'POST',
@@ -70,6 +80,29 @@ if (params.has('source')) guiApi.request = async <T,>(request: Parameters<typeof
   return { url: await imageLoad('resource-thread', request.source, request.variant === 'original') } as T;
 };
 
+function PdfEntries({ threadId }: { threadId: string }) {
+  const details = useContext(DetailsContext);
+  if (!details) return null;
+  const target = { path: 'C:/project/report.PDF', threadId };
+  return <div>
+    <button onClick={() => { void details.openFile(target); }}>默认入口 PDF</button>
+    <button onClick={() => { void details.openFile(target, { browser: false }); }}>备用文件入口 PDF</button>
+    {details.openRemoteFile && <button onClick={() => { void details.openRemoteFile?.(target); }}>备用远程入口 PDF</button>}
+  </div>;
+}
+
+function Workspace({ threadId, children }: { threadId: string; children: ReactNode }) {
+  if (params.has('standalone')) return <DetailsWorkspace selected={threadId} active enabled={false}>
+    {children}</DetailsWorkspace>;
+  if (mode === 'local') return <DetailsWorkspace selected={threadId} active>{children}</DetailsWorkspace>;
+  if (!params.has('legacy')) {
+    return <ChatDetailsWorkspace selected={threadId} active enabled>{children}</ChatDetailsWorkspace>;
+  }
+  return <DetailsWorkspace selected={threadId} active
+    renderRemoteFile={props => <ChatRemoteFilePreview {...props}
+      context={{ client, threadId, ready: true, load }} />}>{children}</DetailsWorkspace>;
+}
+
 function Harness() {
   const { mode: appearance } = useThemeMode();
   const [threadId, setThread] = useState('resource-thread');
@@ -79,19 +112,18 @@ function Harness() {
   const content = <main style={{ padding: 24, maxWidth: 520 }}><h2>项目资源</h2>
     <p>文件已准备好，点击即可查看。</p>
     {mode === 'local' ? <RichText text={text} /> : <ChatMarkdown text={text} desktop />}
+    {params.has('pdfRouting') && <PdfEntries threadId={threadId} />}
     <button onClick={() => setThread('other-thread')}>切换会话</button></main>;
   const algorithm = appearance === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm;
   return <ApplicationTypography><ConfigProvider theme={{
     algorithm: mode === 'web' ? algorithm : [algorithm, theme.compactAlgorithm] }}>
     <BrowserClientContext.Provider value={browser}>
-    <FileEnvironmentContext.Provider value={mode === 'remote' ? environment : null}>
+    <FileEnvironmentContext.Provider value={mode === 'remote' && !params.has('standalone') ? environment : null}>
     <FileThreadContext.Provider value={threadId}>
     <ChatFileContext.Provider value={{ client, threadId, ready: true, load }}>
     <ImageThreadContext.Provider value={threadId}>
     <ChatImageContext.Provider value={params.has('source') ? { threadId, ready: true, load: imageLoad } : null}>
-      <div style={{ height: '100vh' }}>{mode === 'local'
-        ? <DetailsWorkspace selected={threadId} active>{content}</DetailsWorkspace>
-        : <ChatDetailsWorkspace selected={threadId} active enabled>{content}</ChatDetailsWorkspace>}</div>
+      <div style={{ height: '100vh' }}><Workspace threadId={threadId}>{content}</Workspace></div>
     </ChatImageContext.Provider></ImageThreadContext.Provider>
     </ChatFileContext.Provider></FileThreadContext.Provider>
     </FileEnvironmentContext.Provider></BrowserClientContext.Provider>
