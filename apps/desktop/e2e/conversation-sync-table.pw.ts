@@ -33,7 +33,8 @@ for (const mode of ['local', 'remote']) {
         if (mode === 'remote') await page.getByRole('button', { name: '对话同步', exact: true }).click();
         const pane = page.getByRole('region', { name: '对话同步', exact: true });
         const project = pane.getByRole('row').filter({ has: page.getByText(projectPath, { exact: true }) });
-        await expect(pane.getByRole('button', { name: /^展开项目:/ })).toHaveCount(3);
+        await expect(pane.getByRole('button', { name: /^展开项目:/ })).toHaveCount(2);
+        await expect(pane.getByRole('button', { name: '收起: 最近', exact: true })).toBeVisible();
         await expect(project.getByRole('cell', { name: '65', exact: true })).toBeVisible();
         await expect(pane.getByText('排查项目中的登录问题')).toBeHidden();
         const prefix = `../../.codex-tmp/sync-table-${mode}-${enlarged ? 'font20-dark-narrow' : 'font14-light-wide'}`;

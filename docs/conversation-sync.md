@@ -4,6 +4,10 @@ The conversation synchronization page accepts configured Codex Home folders from
 on the signed-in account. Each source is identified by PC name and its unchanged path, joined with ` · `.
 The built-in GUI home is excluded only when it is also the destination.
 
+Projectless conversations appear together in the expanded Recent group with their conversation titles.
+Scratch directories exposed by older hosts are treated as projectless conversations rather than projects.
+Project groups retain their paths and can be expanded separately. Folding a group preserves its selection.
+
 Synchronization within the destination PC moves conversations after the destination commits successfully.
 Synchronization between PCs copies conversations and retains every source file and database row.
 Related conversations are included. Credentials, provider configuration and application settings are excluded.
