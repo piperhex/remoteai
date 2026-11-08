@@ -81,6 +81,30 @@ fn completed_items_and_turns_replace_partial_snapshots_before_paging() {
 }
 
 #[test]
+fn terminal_command_results_cannot_be_restarted_by_cached_or_delayed_starts() {
+    for status in ["completed", "failed", "declined", "interrupted"] {
+        let mut history = LiveHistory::default();
+        started(&mut history, "a");
+        let params = json!({"threadId":"a","turnId":"turn","item":{
+            "id":"cmd","type":"commandExecution","status":"inProgress",
+            "exitCode":null,"durationMs":null,"aggregatedOutput":""}});
+        history.receive(&event("item/started", params.clone()));
+        let command = json!({"id":"cmd","type":"commandExecution","status":status,
+            "exitCode":1,"durationMs":15000,"aggregatedOutput":"final output"});
+        let mut snapshot = json!({"thread":{"id":"a","turns":[{
+            "id":"turn","status":"inProgress","items":[command.clone()]}]}});
+        history.merge(&mut snapshot);
+        assert_eq!(snapshot["thread"]["turns"][0]["items"][0], command);
+        history.receive(&event(
+            "item/completed",
+            json!({"threadId":"a","turnId":"turn","item":command}),
+        ));
+        history.receive(&event("item/started", params));
+        assert_eq!(history.item("a", "turn", "cmd"), Some(command));
+    }
+}
+
+#[test]
 fn edits_clear_the_tail_and_completed_cache_does_not_evict_running_threads() {
     let mut history = LiveHistory::default();
     started(&mut history, "running");

@@ -62,8 +62,9 @@ function ToolResult({ item }: { item: Item }) {
   </>;
 }
 
-export function ToolDetails({ item, text }: { item: Item; text: string }) {
-  return <DeferredToolDetails item={item}>{loaded => <ToolDetailsBody item={loaded} text={text} />}</DeferredToolDetails>;
+export function ToolDetails({ item, text, onLoad }: { item: Item; text: string; onLoad?: (item: Item) => void }) {
+  return <DeferredToolDetails item={item} onLoad={onLoad}>
+    {loaded => <ToolDetailsBody item={loaded} text={text} />}</DeferredToolDetails>;
 }
 
 function ToolDetailsBody({ item, text }: { item: Item; text: string }) {

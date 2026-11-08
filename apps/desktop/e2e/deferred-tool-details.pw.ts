@@ -1,5 +1,52 @@
 import { expect, test } from '@playwright/test';
 
+test('recovers a missed failed command completion without leaving a running header or refresh timer',
+  async ({ page }, info) => {
+    const local = info.project.name === 'desktop-local';
+    const mobile = info.project.name === 'web-mobile';
+    const mode = local ? 'local' : info.project.name === 'desktop-remote' ? 'remote' : 'web';
+    let failed = false;
+    let requests = 0;
+    const response = () => {
+      requests++;
+      return { item: { id: 'command', type: 'commandExecution', command: 'npm test',
+        cwd: 'F:/projects/example', status: failed ? 'failed' : 'inProgress',
+        aggregatedOutput: failed ? 'Command failed: configuration validation did not pass.' : 'Checking configuration…',
+        exitCode: failed ? 1 : null, durationMs: failed ? 15_000 : null } };
+    };
+    await page.route('**/deferred-tool-details-response', route => route.fulfill({ json: response() }));
+    await page.route('**/__codex_switch__/api/invoke', route => route.fulfill({
+      json: { ok: true, result: { data: response() } },
+    }));
+    for (const dark of [false, true]) {
+      failed = false;
+      await page.setViewportSize({ width: mobile ? 390 : dark ? 960 : 1280, height: 900 });
+      await page.addInitScript(font => localStorage.setItem('codex-switch:global-font-size', String(font)),
+        dark ? 20 : 14);
+      await page.goto(`deferred-tool-details-harness.html?mode=${mode}${dark ? '&dark' : ''}`);
+      const toggle = page.locator(local ? 'summary' : '.chat-activity').first();
+      await expect(toggle).toContainText('正在运行');
+      await toggle.click();
+      await expect(page.getByText('Checking configuration…', { exact: true })).toBeVisible();
+      const appearance = dark ? 'dark-narrow' : 'light';
+      const evidence = `../../.codex-tmp/command-status-evidence/${info.project.name}-${appearance}`;
+      await page.screenshot({ path: `${evidence}-running.png` });
+      failed = true;
+      await expect(toggle).toContainText('运行失败');
+      await expect(page.getByText(/退出码.*1/)).toBeVisible();
+      await expect(page.locator('[data-status="inProgress"], .is-running')).toHaveCount(0);
+      const finalRequests = requests;
+      await page.waitForTimeout(1200);
+      expect(requests).toBe(finalRequests);
+      await page.screenshot({ path: `${evidence}-failed.png` });
+      await toggle.click();
+      await expect(toggle).toContainText('运行失败');
+      await expect(page.locator('.cs-command-output, .chat-virtual-command')).toHaveCount(0);
+      await page.screenshot({ path: `${evidence}-collapsed.png` });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    }
+  });
+
 test('shows the routed command summary while running and requests no collapsed details', async ({ page }, info) => {
   const local = info.project.name === 'desktop-local';
   const mode = local ? 'local' : info.project.name === 'desktop-remote' ? 'remote' : 'web';

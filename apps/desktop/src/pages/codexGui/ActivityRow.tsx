@@ -11,6 +11,7 @@ import { collaborationSummary, isCollaborationActivity } from "../../../../../sh
 import styles from "./ActivityRow.module.less";
 import { commandPreview } from "./commandPreview";
 import { activityPreview } from '../../../../../shared/chat/activityPreview';
+import { commandStatusLabel, useToolSummary } from '../../../../../shared/chat/useToolSummary';
 
 const TOOL_ACTIVITIES: Record<string, { label: string; icon: LucideIcon }> = {
   fileChange: { get label() { return uiText("client.shared.fileChanges"); }, icon: FilePenLine },
@@ -33,15 +34,6 @@ const TOOL_STATUS_LABELS: Record<string, string> = {
   get inProgress() { return uiText("client.chat.inProgress"); }, get completed() { return uiText("client.chat.completed"); }, get failed() { return uiText("client.taskReview.failed"); }, get declined() { return uiText("client.chat.declined"); }, get interrupted() { return uiText("client.chat.stopped"); },
 };
 
-function commandLabel(status: Item["status"]) {
-  if (status === "inProgress") return uiText("client.mobile.running");
-  if (status === "completed") return uiText("client.mobile.ran");
-  if (status === "failed") return uiText("client.mobile.runFailed");
-  if (status === "declined") return uiText("client.chat.declined");
-  if (status === "interrupted") return uiText("client.chat.stopped");
-  return uiText("client.chat.runCommand");
-}
-
 function activitySummary(item: Item, text: string) {
   if (isCollaborationActivity(item)) return { icon: Users, preview: collaborationSummary(item) };
   if (item.type === "reasoning") return { icon: Brain,
@@ -50,7 +42,7 @@ function activitySummary(item: Item, text: string) {
     const action = item.commandActions?.find((entry) => entry.type !== "unknown");
     const labels: Record<string, string> = { read: uiText("client.chat.readFile"), listFiles: uiText("client.chat.browseFiles"), search: uiText("client.chat.searchCode") };
     const preview = action ? uiText("client.interface.message.7c639b", { value1: labels[action.type] || uiText("client.chat.runCommand"), value2: action.name || action.query || action.path || "" })
-      : `${commandLabel(item.status)} ${commandPreview(item.commandPreview ?? item.command ?? "")}`;
+      : `${commandStatusLabel(item.status)} ${commandPreview(item.commandPreview ?? item.command ?? "")}`;
     return { icon: SquareTerminal, preview };
   }
   if (item.type === "sleep") return { icon: Clock,
@@ -79,11 +71,12 @@ export function ActivitySummary({ item, text, count }: { item: Item; text: strin
     </summary>;
 }
 
-export function ActivityRow({ item, text }: { item: Item; text: string }) {
+export function ActivityRow({ item: source, text }: { item: Item; text: string }) {
+  const { item, onLoad } = useToolSummary(source);
   const reasoning = item.type === "reasoning";
   return <DeferredDetails className={styles.row} status={item.status}
     summary={<ActivitySummary item={item} text={text} />}>
     {() => <div className={reasoning ? styles.reasoningBody : styles.commandBody}>
-      <ToolDetails item={item} text={text} /></div>}
+      <ToolDetails item={source} text={text} onLoad={onLoad} /></div>}
   </DeferredDetails>;
 }

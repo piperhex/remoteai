@@ -146,11 +146,23 @@ fn merge_turn(turn: &mut Value, incoming: &Value) {
         for (index, item) in items.iter().enumerate() {
             insert_before_next_known(turn, item, &items[index + 1..]);
             let target = item_mut(turn, &item["id"]);
-            if let (Some(target), Some(source)) = (target.as_object_mut(), item.as_object()) {
-                for (key, value) in source {
-                    target.insert(key.clone(), value.clone());
-                }
-            }
+            merge_item(target, item);
+        }
+    }
+}
+
+fn merge_item(target: &mut Value, incoming: &Value) {
+    // History can catch up before the cached live tail or a delayed start notification.
+    let finished = matches!(
+        target["status"].as_str(),
+        Some("completed" | "failed" | "declined" | "interrupted")
+    );
+    if finished && incoming["status"] == "inProgress" {
+        return;
+    }
+    if let (Some(target), Some(source)) = (target.as_object_mut(), incoming.as_object()) {
+        for (key, value) in source {
+            target.insert(key.clone(), value.clone());
         }
     }
 }
@@ -194,7 +206,7 @@ fn update_turn(turn: &mut Value, event: &GuiEvent) {
         "item/started" | "item/completed" => {
             let item = &params["item"];
             if item["id"].is_string() {
-                *item_mut(turn, &item["id"]) = item.clone();
+                merge_item(item_mut(turn, &item["id"]), item);
             }
         }
         "turn/diff/updated" => turn["diff"] = params["diff"].clone(),

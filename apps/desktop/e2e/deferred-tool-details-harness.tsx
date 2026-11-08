@@ -6,6 +6,7 @@ import { ChatActivity } from '../../../shared/remote-chat/views/ChatActivity';
 import { ToolDetailsContext, localToolDetails } from '../../../shared/chat/DeferredToolDetails';
 import { ChatController } from '../../../shared/remote-chat/client/controller';
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
+import { guiFontStyle, useGuiFontSize } from '../../../shared/appearance/fontSize';
 import type { Item } from '../../../shared/conversation/types';
 import { setThemeMode } from '../../web/src/theme/preference';
 import guiStyles from '../../../shared/conversation/styles.module.less';
@@ -33,6 +34,7 @@ const initial: Item = { id: 'command', type: 'commandExecution', status: 'inProg
   detailsRef: { threadId: 'chat', turnId: 'turn', itemId: 'command' } };
 
 function Harness({ initial }: { initial: Item }) {
+  const fontSize = useGuiFontSize();
   const [item, setItem] = useState(initial);
   const [beats, setBeats] = useState(0);
   useEffect(() => {
@@ -48,7 +50,8 @@ function Harness({ initial }: { initial: Item }) {
     }}>
       <main className={`chat-page ${mode === 'web' ? '' : guiStyles.page}
         ${mode === 'remote' ? 'gui-remote-workspace' : ''}`}
-        style={{ display: 'block', height: '100vh', width: '100%', padding: 32 }}>
+        style={{ display: 'block', height: '100vh', width: '100%', padding: 32,
+          ...(mode === 'web' ? {} : guiFontStyle(fontSize)) }}>
         <section style={{ maxWidth: 920, margin: '0 auto' }}>
           <h2>Codex GUI</h2><p>检查项目测试结果</p>
           {mode === 'local' ? <ActivityRow item={item} text="" />

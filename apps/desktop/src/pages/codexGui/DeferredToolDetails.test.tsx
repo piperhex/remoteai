@@ -89,3 +89,30 @@ it('discards an old conversation response after switching to another item', asyn
   expect(container.textContent).not.toContain('PASS: payload');
   expect(container.textContent).toContain('NEW CONVERSATION');
 });
+
+it.each(['local', 'remote', 'web'])('%s reconciles a missed completion from details and keeps it after collapse',
+  async mode => {
+    const load = vi.fn(async () => ({ item: { ...full, status: 'failed', exitCode: 1, durationMs: 15_000 } }));
+    await render(load, mode);
+    await toggle(mode);
+    const label = () => container.querySelector(mode === 'local' ? 'summary' : '.chat-activity')!;
+    expect(label().textContent).toContain('运行失败');
+    expect(container.querySelector('[data-status="inProgress"], .is-running')).toBeNull();
+    expect(container.textContent).toContain('退出码');
+    await act(async () => vi.advanceTimersByTimeAsync(5000));
+    expect(load).toHaveBeenCalledTimes(1);
+    await toggle(mode, false);
+    expect(label().textContent).toContain('运行失败');
+    await toggle(mode);
+    expect(label().textContent).toContain('运行失败');
+  });
+
+it.each(['local', 'remote', 'web'])('%s keeps a successful detail result out of the running state', async mode => {
+  const load = vi.fn(async () => ({ item: { ...full, status: 'completed', exitCode: 0 } }));
+  await render(load, mode);
+  await toggle(mode);
+  const label = container.querySelector(mode === 'local' ? 'summary' : '.chat-activity')!;
+  expect(label.textContent).toContain('已运行');
+  await act(async () => vi.advanceTimersByTimeAsync(5000));
+  expect(load).toHaveBeenCalledTimes(1);
+});
