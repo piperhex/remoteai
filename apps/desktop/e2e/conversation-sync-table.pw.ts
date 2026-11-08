@@ -76,7 +76,7 @@ test('search expands matching projects and source changes reset selection and ex
   await pane.getByRole('button', { name: `折叠项目: ${projectPath}`, exact: true }).click();
   await expect(pane.getByText('项目对话 64', { exact: true })).toBeHidden();
   await pane.getByRole('combobox', { name: '来源目录' }).press('ArrowDown');
-  await page.locator('.ant-select-item-option').filter({ hasText: 'Office PC · D:/Remote AI/.codex' }).click();
+  await page.locator('.ant-select-item-option').filter({ hasText: 'Office PC · CodexGUI' }).click();
   await expect(pane.getByPlaceholder('搜索标题和对话内容')).toBeEmpty();
   await expect(pane.getByRole('button', { name: toggleName, exact: true })).toBeVisible();
   await expect(pane.getByRole('button', { name: '对话同步', exact: true })).toBeDisabled();

@@ -1,7 +1,9 @@
 # Codex GUI conversation synchronization
 
 The conversation synchronization page accepts configured Codex Home folders from this PC and online PCs
-on the signed-in account. Each source is identified by PC name and its unchanged path, joined with ` · `.
+on the signed-in account. Each source is identified by PC name and its path, joined with ` · `.
+Built-in GUI homes and paths containing `dev.codex.switch` display `CodexGUI` in place of their path.
+Their configured IDs and paths remain unchanged for synchronization.
 The built-in GUI home is excluded only when it is also the destination.
 
 Projectless conversations appear together in the expanded Recent group with their conversation titles.
