@@ -73,3 +73,15 @@ test('search displays a named projectless conversation inside Recent', async ({ 
   await expect(pane.getByText('整理本周工作计划', { exact: true })).toBeVisible();
   await expect(pane.getByText('准备周末出行清单', { exact: true })).toBeHidden();
 });
+
+for (const mode of ['local', 'remote']) {
+  test(`${mode}: empty search results remain readable`, async ({ page }) => {
+    const suffix = mode === 'remote' ? '&dialog=1' : '';
+    await page.goto(`/e2e/conversation-sync-harness.html?mode=${mode}&projectless=1${suffix}`);
+    if (mode === 'remote') await page.getByRole('button', { name: '对话同步', exact: true }).click();
+    const pane = page.getByRole('region', { name: '对话同步', exact: true });
+    await pane.getByPlaceholder('搜索标题和对话内容').fill('不存在的对话');
+    await expect(pane.getByText('没有可同步的对话')).toBeVisible();
+    await page.screenshot({ path: `../../.codex-tmp/sync-empty-${mode}-light.png`, animations: 'disabled' });
+  });
+}

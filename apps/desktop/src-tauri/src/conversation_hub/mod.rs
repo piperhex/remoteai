@@ -261,6 +261,9 @@ include!("tests.rs");
 mod thread_title_tests;
 
 #[cfg(test)]
+mod discovery_tests;
+
+#[cfg(test)]
 mod visibility_provider_tests;
 
 #[cfg(test)]

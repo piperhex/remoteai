@@ -5,6 +5,7 @@ struct StateThreadTitle {
     title: Option<String>,
     first_user_message: Option<String>,
     preview: Option<String>,
+    cwd: Option<String>,
 }
 
 fn index_values(codex_home: &Path) -> Result<HashMap<String, Value>, String> {
@@ -61,12 +62,13 @@ fn selected_column(columns: &HashSet<String>, column: &str, fallback: &str) -> S
 fn state_title_query(columns: &HashSet<String>) -> String {
     format!(
         "SELECT id, {} AS history_mode, {} AS name, {} AS title, \
-         {} AS first_user_message, {} AS preview FROM threads",
+         {} AS first_user_message, {} AS preview, {} AS cwd FROM threads",
         selected_column(columns, "history_mode", "'legacy'"),
         selected_column(columns, "name", "NULL"),
         selected_column(columns, "title", "NULL"),
         selected_column(columns, "first_user_message", "NULL"),
         selected_column(columns, "preview", "NULL"),
+        selected_column(columns, "cwd", "NULL"),
     )
 }
 
@@ -97,6 +99,7 @@ fn state_thread_titles(codex_home: &Path) -> Result<HashMap<String, StateThreadT
                     title: row.get(3)?,
                     first_user_message: row.get(4)?,
                     preview: row.get(5)?,
+                    cwd: row.get(6)?,
                 },
             ))
         })

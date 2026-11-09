@@ -188,7 +188,11 @@ fn gather_snapshots(codex_home: &Path) -> Result<Vec<RolloutSnapshot>, String> {
         let explicit_name = explicit_thread_name(state_title, indexed);
         let title = resolved_thread_title(state_title, indexed)
             .unwrap_or_else(|| session_id.clone());
-        let cwd = snapshot_cwd(&meta).unwrap_or_else(|| "未知工作目录".to_string());
+        let cwd = state_title
+            .and_then(|state| state.cwd.as_ref())
+            .map(|cwd| cwd.trim().to_owned())
+            .or_else(|| snapshot_cwd(&meta))
+            .unwrap_or_default();
         let updated_at = index_timestamp(indexed).or_else(|| modified_seconds(&path));
         let relative_path = path.strip_prefix(codex_home).unwrap_or(&path).to_path_buf();
         let index_value = indexed.cloned().unwrap_or_else(|| {
@@ -365,6 +369,24 @@ pub(crate) fn browse_codex_threads_blocking<R: Runtime>(
             account_active,
         });
     }
+    Ok(merge_thread_entries(entries))
+}
+
+fn merge_thread_entries(entries: Vec<ThreadEntry>) -> Vec<ThreadEntry> {
+    let mut unique = HashMap::<String, ThreadEntry>::new();
+    for mut entry in entries {
+        let Some(current) = unique.get_mut(&entry.session_id) else {
+            unique.insert(entry.session_id.clone(), entry);
+            continue;
+        };
+        let size_bytes = current.size_bytes.saturating_add(entry.size_bytes);
+        if entry.updated_at > current.updated_at {
+            std::mem::swap(current, &mut entry);
+        }
+        current.size_bytes = size_bytes;
+        current.match_excerpt = current.match_excerpt.take().or(entry.match_excerpt);
+    }
+    let mut entries = unique.into_values().collect::<Vec<_>>();
     entries.sort_by(|left, right| {
         right
             .updated_at
@@ -372,8 +394,9 @@ pub(crate) fn browse_codex_threads_blocking<R: Runtime>(
             .cmp(&left.updated_at.unwrap_or_default())
             .then_with(|| left.cwd.cmp(&right.cwd))
             .then_with(|| left.title.cmp(&right.title))
+            .then_with(|| left.session_id.cmp(&right.session_id))
     });
-    Ok(entries)
+    entries
 }
 
 fn token_totals(path: &Path) -> Option<(u64, u64, u64)> {

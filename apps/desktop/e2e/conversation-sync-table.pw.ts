@@ -4,7 +4,7 @@ const projectPath = 'F:/projects/remoteai';
 const toggleName = `展开项目: ${projectPath}`;
 
 async function expectBoundedTable(page: Page, pane: Locator) {
-  const body = pane.locator('.ant-table-body');
+  const body = pane.locator('.ant-table-tbody-virtual-holder');
   const header = pane.locator('.ant-table-header');
   const headerTop = (await header.boundingBox())!.y;
   const before = await body.evaluate(element => ({ height: element.clientHeight, total: element.scrollHeight,

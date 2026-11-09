@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { groupSyncThreads, SYNC_RECENT_KEY } from '../../../../shared/conversation/sync/threadGroups';
+import { groupSyncThreads, uniqueSyncThreads, SYNC_RECENT_KEY }
+  from '../../../../shared/conversation/sync/threadGroups';
 import type { SyncThread } from '../../../../shared/conversation/sync/types';
 
 const scratchId = '0300e13d-5059-40fe-925f-53e639c4f0cb';
@@ -9,6 +10,20 @@ const thread = (sessionId: string, cwd: string, updatedAt: number | null = null)
 });
 
 describe('conversation synchronization groups', () => {
+  it('merges older hosts rollout copies by ID without coupling distinct conversations with the same title', () => {
+    const old = { ...thread('same-id', 'F:/old-project', 1), title: 'Same title', matchExcerpt: 'Archived match' };
+    const latest = { ...thread('same-id', '', 3), title: 'Same title' };
+    const other = { ...thread('other-id', '', 2), title: 'Same title' };
+    const unique = uniqueSyncThreads([old, other, latest, latest]);
+    expect(unique).toHaveLength(2);
+    expect(unique[0]).toEqual({ ...latest, matchExcerpt: 'Archived match' });
+    expect(uniqueSyncThreads([latest, old])[0]).toEqual(unique[0]);
+    const [recent] = groupSyncThreads([old, other, latest]);
+    expect(recent.key).toBe(SYNC_RECENT_KEY);
+    expect(recent.children.map(item => item.sessionId)).toEqual(['same-id', 'other-id']);
+    expect(new Set(recent.children.map(item => item.key)).size).toBe(2);
+  });
+
   it('collects projectless conversations from different hosts in Recent and retains their names and paths', () => {
     const threads = [
       thread('empty', '', 1),
