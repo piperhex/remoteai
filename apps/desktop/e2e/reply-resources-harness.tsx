@@ -30,6 +30,7 @@ const mode = params.get('mode') ?? 'local';
 Object.defineProperty(globalThis, 'isTauri', { value: mode === 'local', configurable: true });
 localStorage.setItem('codex-switch:theme-mode', params.has('dark') ? 'dark' : 'light');
 setGuiLanguage('zh');
+Object.assign(window, { setPreviewLanguage: setGuiLanguage });
 const names = ['page.html', 'image.svg', 'video.mp4', 'sound.wav', 'report.PDF', 'guide.md',
   'settings.json', 'archive.zip', 'setup.exe', '项目资源与动画素材归档-用于检查较长文件名称在窄窗口中的换行显示.zip'];
 const address = (path: string) => new URL(`/resource/${path.split(/[\\/]/).at(-1)}`, location.href).href;

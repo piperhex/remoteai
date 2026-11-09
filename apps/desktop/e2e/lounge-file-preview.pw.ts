@@ -68,10 +68,10 @@ for (const mode of ['local', 'remote', 'web', 'mobile', 'mobile-320']) {
     }
     await (mode.startsWith('mobile') ? page.locator('.lounge-file-sheet') : card)
       .getByRole('button', { name: '预览', exact: true }).click();
-    await expect(page.locator('.file-pdf-page canvas')).toBeVisible();
+    await expect(page.locator('.file-pdf-page[data-pdf-page="1"] canvas')).toBeVisible();
     await page.getByRole('button', { name: '下一页', exact: true }).click();
     await expect(page.locator('.file-pdf-toolbar')).toContainText('2 / 2');
-    await expect(page.locator('.file-pdf-page canvas')).toBeVisible();
+    await expect(page.locator('.file-pdf-page[data-pdf-page="2"] canvas')).toBeVisible();
     await page.screenshot({ path: `../../.codex-tmp/lounge-file-cards/${mode}-pdf.png` });
     await page.locator('.lounge-file-preview-tools').getByRole('button', { name: '下载', exact: true }).click();
     await expect.poll(async () => (await downloadTasks(page))[0]?.status).toBe('ready');

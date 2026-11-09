@@ -134,7 +134,7 @@ for (const kind of ["text", "image", "video", "audio", "pdf"] as const) {
         .evaluate((image: HTMLImageElement) => image.naturalWidth))
         .toBeGreaterThan(0);
     } else if (kind === "pdf") {
-      await expect(page.locator('[data-resource-pdf] .file-pdf-page canvas')).toBeVisible();
+      await expect(page.locator('[data-resource-pdf] .file-pdf-page[data-pdf-page="1"] canvas')).toBeVisible();
       const response = await pdfResponse;
       expect(response?.status()).toBe(200);
       expect(response?.headers()["content-type"]).toBe("application/pdf");

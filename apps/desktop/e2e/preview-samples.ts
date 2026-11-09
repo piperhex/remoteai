@@ -14,6 +14,10 @@ export function samplePdf(paddingBytes = 0) {
   if (paddingBytes) {
     objects.push(`<< /Length ${paddingBytes} >>\nstream\n${'\0'.repeat(paddingBytes)}\nendstream`);
   }
+  return pdfFixture(objects);
+}
+
+export function pdfFixture(objects: readonly string[]) {
   let text = '%PDF-1.4\n';
   const offsets = [0];
   objects.forEach((object, index) => {

@@ -24,8 +24,8 @@ async function expectPdfBrowser(page: Page) {
   const browser = page.locator('.website-preview-browser, .pm-browser[role="dialog"]');
   const active = browser.locator('.pm-browser-page:not([hidden])');
   await expect(browser.getByRole('tab', { selected: true })).toContainText('report.PDF');
-  await expect(active.locator('.file-pdf-page canvas')).toBeVisible();
-  await expect(active.getByText('1 / 2', { exact: true })).toBeVisible();
+  await expect(active.locator('.file-pdf-page[data-pdf-page="1"] canvas')).toBeVisible();
+  await expect(active.getByRole('textbox', { name: '页码', exact: true })).toHaveValue('1');
   await expect(page.locator('body')).not.toHaveAttribute('data-text-read');
   await expect(page.locator('body')).not.toHaveAttribute('data-action');
   await expect(page.locator('body')).toHaveAttribute('data-transfers', '0');
@@ -48,12 +48,12 @@ for (const mode of ['local', 'remote', 'web']) {
       await page.locator('main').getByRole('button').filter({ hasText: 'report.PDF' }).click();
       const { browser, active } = await expectPdfBrowser(page);
       await active.getByRole('button', { name: '下一页', exact: true }).click();
-      await expect(active.getByText('2 / 2', { exact: true })).toBeVisible();
-      await expect(active.locator('canvas')).toBeVisible();
+      await expect(active.getByRole('textbox', { name: '页码', exact: true })).toHaveValue('2');
+      await expect(active.locator('.file-pdf-page[data-pdf-page="2"] canvas')).toBeVisible();
       await page.screenshot({ path: info.outputPath(`${mode}-${dark ? 'dark-narrow-font20' : 'light-wide'}-pdf.png`) });
       await browser.getByRole('button', { name: '刷新', exact: true }).click();
-      await expect(active.getByText('1 / 2', { exact: true })).toBeVisible();
-      await expect(active.locator('canvas')).toBeVisible();
+      await expect(active.getByRole('textbox', { name: '页码', exact: true })).toHaveValue('1');
+      await expect(active.locator('.file-pdf-page[data-pdf-page="1"] canvas')).toBeVisible();
       await page.getByRole('button', { name: '切换会话', exact: true }).click();
       await expect(browser).toHaveCount(0);
     });

@@ -15,7 +15,7 @@ for (const mode of ['local', 'remote']) {
     const cmap = page.waitForResponse(response => /UniJIS-UCS2-H.*\.bcmap/.test(response.url()));
     await page.getByRole('treeitem', { name: 'cmap.pdf', exact: true }).click();
     expect((await cmap).ok()).toBe(true);
-    const canvas = page.locator('.pf-file-panel:visible canvas');
+    const canvas = page.locator('.pf-file-panel:visible .file-pdf-page[data-pdf-page="1"] canvas');
     await expect(canvas).toBeVisible();
     expect(await canvas.evaluate((element: HTMLCanvasElement) => {
       const pixels = element.getContext('2d')!.getImageData(0, 0, element.width, element.height).data;

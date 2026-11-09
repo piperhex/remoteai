@@ -30,7 +30,8 @@ async function pdfService(page: Page) {
 
 async function expectRenderedPdf(page: Page) {
   const panel = page.locator('.pf-file-panel:visible');
-  const canvas = panel.locator('.file-pdf-page canvas');
+  const number = await panel.locator('.file-pdf-pages').getAttribute('data-current-page');
+  const canvas = panel.locator(`.file-pdf-page[data-pdf-page="${number}"] canvas`);
   await expect(canvas).toBeVisible();
   await expect(panel.getByRole('alert')).toHaveCount(0);
   await expect(panel.locator('.pf-window-navigation')).toHaveCount(0);
@@ -67,6 +68,13 @@ for (const mode of ['local', 'remote', 'web']) {
       await page.setViewportSize({ width: 900, height: 800 });
       await expectRenderedPdf(page);
       await page.screenshot({ path: info.outputPath(`${mode}-large-pdf-narrow-second-page.png`) });
+      if (process.env.PDF_PREVIEW_TEST_FILE) {
+        const toggle = panel.getByRole('button', { name: 'PDF 导航', exact: true });
+        if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click();
+        await panel.getByRole('button', { name: '目录大纲', exact: true }).click();
+        await expect(panel.locator('.file-pdf-outline button').first()).toBeVisible();
+        await page.screenshot({ path: info.outputPath(`${mode}-large-pdf-outline.png`) });
+      }
     } finally { service.close(); }
   });
 }

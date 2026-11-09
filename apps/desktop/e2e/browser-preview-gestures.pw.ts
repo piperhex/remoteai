@@ -69,7 +69,7 @@ for (const mode of ['local', 'remote', 'web']) {
     await openBrowser(page, { mode });
     await page.getByRole('treeitem', { name: 'report.pdf', exact: true }).click();
     const pages = panel(page).locator('.file-pdf-pages');
-    const canvas = pages.locator('canvas');
+    const canvas = pages.locator('.file-pdf-page[data-pdf-page="1"] canvas');
     await expect(canvas).toBeVisible();
     const width = () => canvas.evaluate(element => element.getBoundingClientRect().width);
     const originalWidth = await width();
