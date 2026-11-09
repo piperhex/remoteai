@@ -17,10 +17,18 @@ const STALE_LIMIT = 250_000;
 
 function fixture() {
   let nextUsage = 15;
+  let failNext = false;
   let sequence = 0;
   const server = createServer(async (request, response) => {
     request.resume();
     await once(request, "end");
+    if (failNext) {
+      failNext = false;
+      response.writeHead(429, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ error: { type: "insufficient_quota", code: "insufficient_quota",
+        message: "Fixture account quota exhausted" } }));
+      return;
+    }
     const id = `fixture-${++sequence}`;
     const item = { type: "message", id, role: "assistant",
       content: [{ type: "output_text", text: "OK" }] };
@@ -34,28 +42,35 @@ function fixture() {
     emit({ type: "response.completed", response: { id, output: [item], usage } });
     response.end();
   });
-  return { server, reportUsage(value) { nextUsage = value; } };
+  return { server, reportUsage(value) { nextUsage = value; }, failNext() { failNext = true; } };
 }
 
-async function turn(client, threadId) {
+async function turn(client, threadId, expectedStatus = "completed") {
   const { turn } = await client.rpc("turn/start", {
     threadId, input: [{ type: "text", text: "Reply OK without using tools." }],
   });
   const event = await client.waitFor((event) => event.method === "turn/completed"
     && event.params.turn.id === turn.id);
-  assert.equal(event.params.turn.status, "completed", JSON.stringify(event));
+  assert.equal(event.params.turn.status, expectedStatus, JSON.stringify(event));
+  return event.params.turn;
 }
 
 async function rejoin(client, threadId, config) {
-  await client.rpc("thread/unsubscribe", { threadId });
+  const previousEvents = client.events.length;
+  assert.equal((await client.rpc("thread/unsubscribe", { threadId })).status, "unsubscribed");
+  if (configurations.unloadConfig) {
+    await client.waitFor((event) => event.method === "thread/closed" && event.params.threadId === threadId
+      && client.events.indexOf(event) >= previousEvents);
+  }
   await client.rpc("thread/resume", { threadId, sandbox: "read-only", config });
 }
 
 async function checkUsage({ client, threadId, provider, used = REPORTED_USAGE, capacity, compact }) {
   client.events.length = 0;
   provider.reportUsage(used);
-  await turn(client, threadId);
-  const usage = client.events.find((event) => event.method === "thread/tokenUsage/updated"
+  const completed = await turn(client, threadId);
+  const usage = client.events.findLast((event) => event.method === "thread/tokenUsage/updated"
+    && event.params.threadId === threadId && event.params.turnId === completed.id
     && event.params.tokenUsage.last.totalTokens === used)?.params.tokenUsage;
   assert.ok(usage, "Missing reported usage");
   assert.deepEqual(contextUsage(usage), { used, capacity, percent: Math.min(100, Math.round(used / capacity * 100)) });
@@ -82,6 +97,8 @@ base_url = "http://127.0.0.1:${port}/v1"
 wire_api = "responses"
 requires_openai_auth = false
 supports_websockets = false
+request_max_retries = 0
+stream_max_retries = 0
 `);
 }
 
@@ -128,6 +145,22 @@ async function checkIdleReload({ client, threadId, provider }) {
   await rejoin(client, threadId, configurations.large);
 }
 
+async function checkSystemErrorReload({ client, threadId, provider }) {
+  provider.failNext();
+  const failed = await turn(client, threadId, "failed");
+  const snapshot = await client.rpc("thread/resume", { threadId, excludeTurns: true });
+  assert.equal(snapshot.thread.status.type, "systemError");
+  // Rust supplies the same classification used by capacity reload and its interruption guard.
+  assert.equal(configurations.reapplyAfterSystemError, true,
+    "A stopped systemError thread must be reloadable");
+  await rejoin(client, threadId, configurations.small);
+  await checkUsage({ client, threadId, provider, capacity: 380_000, compact: false });
+  const history = await client.rpc("thread/read", { threadId, includeTurns: true });
+  assert.equal(history.thread.turns.find((entry) => entry.id === failed.id)?.status, "failed");
+  assert.equal(history.thread.turns.at(-1).status, "completed");
+  await rejoin(client, threadId, configurations.large);
+}
+
 async function exercise(source) {
   const root = await mkdtemp(join(tmpdir(), "gui-context-compaction-"));
   const home = join(root, "home");
@@ -136,19 +169,25 @@ async function exercise(source) {
   provider.server.listen(0, "127.0.0.1");
   await once(provider.server, "listening");
   await configure({ home, port: provider.server.address().port, source });
-  let client = connectAppServer({ executable, home, cwd: root });
+  const connect = () => connectAppServer({ executable, home, cwd: root,
+    overrides: configurations.unloadConfig ? [configurations.unloadConfig] : [] });
+  let client = connect();
   try {
     await client.initialize();
     const { thread } = await client.rpc("thread/start", { cwd: root, sandbox: "read-only",
       config: { model_context_window: 1_000_000 } });
     await checkChanges({ client, threadId: thread.id, provider });
+    if (configurations.reapplyAfterSystemError !== undefined) {
+      await checkSystemErrorReload({ client, threadId: thread.id, provider });
+    }
     await checkIdleReload({ client, threadId: thread.id, provider });
     await client.close();
-    client = connectAppServer({ executable, home, cwd: root });
+    client = connect();
     await client.initialize();
     await client.rpc("thread/resume", { threadId: thread.id, sandbox: "read-only", config: configurations.large });
     await checkUsage({ client, threadId: thread.id, provider, capacity: 950_000, compact: false });
-    console.log(`PASS ${source}: 1M/400K thresholds, idle reload 258.4K -> 380K, other threads, restart`);
+    const recovery = configurations.reapplyAfterSystemError === undefined ? "" : "429 systemError recovery, ";
+    console.log(`PASS ${source}: 1M/400K thresholds, ${recovery}idle reload, other threads, restart`);
   } finally {
     await client.close();
     provider.server.closeAllConnections();

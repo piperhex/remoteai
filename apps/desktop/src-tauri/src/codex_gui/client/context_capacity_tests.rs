@@ -30,11 +30,29 @@ fn reload_retains_model_permissions_and_workspace_without_copying_history() {
 }
 
 #[test]
+fn stopped_threads_can_reload_capacity_after_a_system_error() {
+    for status in ["idle", "notLoaded", "systemError"] {
+        let mut response = snapshot();
+        response["thread"]["status"]["type"] = status.into();
+        assert!(idle_snapshot("one", &response).unwrap(), "{status}");
+        assert_eq!(
+            resume_settings("one", &response).unwrap(),
+            resume_settings("one", &snapshot()).unwrap()
+        );
+    }
+}
+
+#[test]
 fn active_or_unrecognized_threads_are_never_detached() {
     let mut response = snapshot();
-    assert!(idle_snapshot("one", &response).unwrap());
-    response["thread"]["status"]["type"] = "active".into();
-    assert!(!idle_snapshot("one", &response).unwrap());
+    for flags in [
+        json!([]),
+        json!(["waitingOnApproval"]),
+        json!(["waitingOnUserInput"]),
+    ] {
+        response["thread"]["status"] = json!({"type": "active", "activeFlags": flags});
+        assert!(!idle_snapshot("one", &response).unwrap());
+    }
     response["thread"]["status"]["type"] = "unknown".into();
     assert!(idle_snapshot("one", &response).is_err());
     assert!(idle_snapshot("different", &snapshot()).is_err());
@@ -101,6 +119,58 @@ async fn unloading_requires_reapplying_unchanged_capacity_without_blocking_the_r
 }
 
 #[tokio::test]
+async fn unsubscribe_acknowledgement_waits_for_the_target_engine_to_close() {
+    let state = ContextCapacity::default();
+    let first = state.thread("one").await;
+    let _guard = first.applied.lock().await;
+    let generation = first.unloads.load(Ordering::Acquire);
+    state
+        .response(
+            "thread/unsubscribe",
+            &json!({"threadId": "one"}),
+            &json!({"status": "unsubscribed"}),
+        )
+        .await;
+    let mut waiting = Box::pin(first.wait_for_unload(generation));
+    assert!(futures_util::poll!(&mut waiting).is_pending());
+    state
+        .event("thread/closed", &json!({"threadId": "other"}))
+        .await;
+    assert!(futures_util::poll!(&mut waiting).is_pending());
+    state
+        .event("thread/closed", &json!({"threadId": "one"}))
+        .await;
+    tokio::time::timeout(std::time::Duration::from_secs(1), waiting)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn early_and_stale_close_notifications_do_not_race_the_next_reload() {
+    let state = ContextCapacity::default();
+    let first = state.thread("one").await;
+    let generation = first.unloads.load(Ordering::Acquire);
+    state
+        .event("thread/closed", &json!({"threadId": "one"}))
+        .await;
+    tokio::time::timeout(
+        std::time::Duration::from_secs(1),
+        first.wait_for_unload(generation),
+    )
+    .await
+    .unwrap();
+    let generation = first.unloads.load(Ordering::Acquire);
+    let mut waiting = Box::pin(first.wait_for_unload(generation));
+    assert!(futures_util::poll!(&mut waiting).is_pending());
+    state
+        .event("thread/closed", &json!({"threadId": "one"}))
+        .await;
+    tokio::time::timeout(std::time::Duration::from_secs(1), waiting)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
 async fn engine_closure_invalidates_capacity_but_normal_turn_completion_does_not() {
     let state = ContextCapacity::default();
     let thread = state.thread("one").await;
@@ -150,7 +220,7 @@ async fn engine_closure_invalidates_capacity_but_normal_turn_completion_does_not
 
 #[tokio::test]
 #[ignore = "Set CODEX_CONTEXT_TEST_CLI to an installed Codex binary; requires Node and local HTTP only"]
-async fn real_cli_context_capacity_survives_idle_unload_and_model_discovery() {
+async fn real_cli_context_capacity_survives_system_errors_and_idle_unload() {
     let executable =
         std::env::var_os("CODEX_CONTEXT_TEST_CLI").expect("CODEX_CONTEXT_TEST_CLI is required");
     let state = ContextCapacity::default();
@@ -170,8 +240,13 @@ async fn real_cli_context_capacity_survives_idle_unload_and_model_discovery() {
     state
         .response("thread/resume", &json!({"threadId": "one"}), &snapshot())
         .await;
-    let mut configurations =
-        json!({"reapplyAfterRelease": !thread.is_applied(&applied, &settings)});
+    let mut failed = snapshot();
+    failed["thread"]["status"]["type"] = "systemError".into();
+    let mut configurations = json!({
+        "reapplyAfterRelease": !thread.is_applied(&applied, &settings),
+        "reapplyAfterSystemError": idle_snapshot("one", &failed).unwrap(),
+        "unloadConfig": UNLOAD_CONFIG,
+    });
     for (name, capacity) in [
         ("large", Some(1_000_000)),
         ("small", Some(400_000)),

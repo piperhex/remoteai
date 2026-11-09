@@ -99,6 +99,8 @@ impl Client {
             .arg("-c")
             .arg("features.step_model_switching=true")
             .arg("-c")
+            .arg(context_capacity::UNLOAD_CONFIG)
+            .arg("-c")
             .arg(format!("sqlite_home={}", json!(home.to_string_lossy())))
             .arg("-c")
             .arg(format!(

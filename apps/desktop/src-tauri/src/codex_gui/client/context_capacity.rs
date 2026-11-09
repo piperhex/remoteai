@@ -1,4 +1,4 @@
-//! Rejoin only the idle conversation whose capacity changed; keep the app server and phone connected.
+//! Rejoin only the stopped conversation whose capacity changed; keep the app server and phone connected.
 use std::{
     collections::HashMap,
     sync::{
@@ -8,7 +8,10 @@ use std::{
 };
 
 use serde_json::{json, Value};
-use tokio::sync::Mutex;
+use tokio::{
+    sync::{Mutex, Notify},
+    time::{timeout, Duration},
+};
 
 use super::Client;
 use crate::codex_gui::{
@@ -16,12 +19,19 @@ use crate::codex_gui::{
     error::{GuiError, Result},
 };
 
+// A systemError session cannot accept resume overrides while it remains loaded in Codex.
+// The GUI owns subscription lifetimes; release only the unsubscribed target before rejoining it.
+pub(super) const UNLOAD_CONFIG: &str = "thread_unload_delay_secs=0";
+const UNLOAD_TIMEOUT: Duration = Duration::from_secs(10);
+
 #[derive(Default)]
 pub(super) struct ThreadCapacity {
     pub(super) applied: Mutex<ContextSettings>,
     invalidated: AtomicBool,
     pub(super) stops: AtomicU64,
     pub(super) last_start: Mutex<Option<Value>>,
+    unloads: AtomicU64,
+    unloaded: Notify,
 }
 
 impl ThreadCapacity {
@@ -35,6 +45,16 @@ impl ThreadCapacity {
 
     pub(super) fn confirm(&self) {
         self.invalidated.store(false, Ordering::Release);
+    }
+
+    async fn wait_for_unload(&self, generation: u64) {
+        loop {
+            let notified = self.unloaded.notified();
+            if self.unloads.load(Ordering::Acquire) != generation {
+                return;
+            }
+            notified.await;
+        }
     }
 }
 
@@ -55,7 +75,7 @@ impl ContextCapacity {
 
     pub(super) async fn response(&self, method: &str, params: &Value, result: &Value) {
         if method == "thread/unsubscribe" && super::idle_threads::released(result) {
-            self.invalidate(params).await;
+            self.invalidate(params, false).await;
         }
     }
 
@@ -65,17 +85,21 @@ impl ContextCapacity {
             "thread/closed" | "thread/archived" | "thread/deleted"
         ) || (method == "thread/status/changed" && params["status"]["type"] == "notLoaded")
         {
-            self.invalidate(params).await;
+            self.invalidate(params, method == "thread/closed").await;
         }
     }
 
-    async fn invalidate(&self, params: &Value) {
+    async fn invalidate(&self, params: &Value, unloaded: bool) {
         let Some(id) = params["threadId"].as_str() else {
             return;
         };
         if let Some(state) = self.0.lock().await.get(id) {
             // The RPC caller can hold applied while waiting for this event. Never wait on that guard here.
             state.invalidate();
+            if unloaded {
+                state.unloads.fetch_add(1, Ordering::Release);
+                state.unloaded.notify_one();
+            }
         }
     }
 }
@@ -134,8 +158,12 @@ impl Client {
         let mut fallback = params.clone();
         context_settings::apply_capacity(&mut fallback, previous);
         context_settings::apply_capacity(&mut params, settings);
-        self.request_raw("thread/unsubscribe", json!({"threadId": id}))
-            .await?;
+        if let Err(error) = self.unload_for_context(id).await {
+            if self.request_raw("thread/resume", fallback).await.is_err() {
+                eprintln!("Codex GUI could not restore the conversation after an unload failure");
+            }
+            return Err(error);
+        }
         // Rejoining with config explicitly present applies overrides on the supported CLI, including reset.
         // Do not restart the shared process: other conversations and pending approvals must survive.
         if self.request_raw("thread/resume", params).await.is_err() {
@@ -146,6 +174,24 @@ impl Client {
         }
         self.restore_legacy_sandbox(id, &snapshot).await?;
         Ok(true)
+    }
+
+    async fn unload_for_context(&self, id: &str) -> Result<()> {
+        let state = self.context_capacity.thread(id).await;
+        let generation = state.unloads.load(Ordering::Acquire);
+        let response = self
+            .request_raw("thread/unsubscribe", json!({"threadId": id}))
+            .await?;
+        if !super::idle_threads::released(&response) {
+            return Err(GuiError::Rpc);
+        }
+        if response["status"] == "notLoaded" {
+            return Ok(());
+        }
+        // Unsubscribe is only an acknowledgement; overrides require the actual thread/closed event.
+        timeout(UNLOAD_TIMEOUT, state.wait_for_unload(generation))
+            .await
+            .map_err(|_| GuiError::Timeout)
     }
 
     async fn restore_legacy_sandbox(&self, id: &str, snapshot: &Value) -> Result<()> {
@@ -174,7 +220,8 @@ pub(super) fn idle_snapshot(id: &str, snapshot: &Value) -> Result<bool> {
         .pointer("/thread/status/type")
         .and_then(Value::as_str)
     {
-        Some("idle" | "notLoaded") => Ok(true),
+        // Codex reports systemError only after excluding running turns and pending approvals/input.
+        Some("idle" | "notLoaded" | "systemError") => Ok(true),
         Some("active") => Ok(false),
         _ => Err(GuiError::ContextSettings),
     }

@@ -49,6 +49,7 @@ server.listen(0, "127.0.0.1");
 await once(server, "listening");
 await writeFile(join(home, "config.toml"), `model = "gpt-5.4"
 model_context_window = 200000
+thread_unload_delay_secs = 0
 model_catalog_json = ${JSON.stringify(catalog.replaceAll("\\", "/"))}
 model_provider = "fixture"
 approval_policy = "never"
@@ -122,7 +123,10 @@ try {
   const paused = await waitFor((event) => event.method === "turn/completed" && event.params.turn.id === turn.id);
   assert.equal(paused.params.turn.status, "interrupted");
   const rejoin = async (capacity) => {
+    const previousEvents = events.length;
     assert.equal((await rpc("thread/unsubscribe", { threadId: thread.id })).status, "unsubscribed");
+    await waitFor((event) => event.method === "thread/closed" && event.params.threadId === thread.id
+      && events.indexOf(event) >= previousEvents);
     const params = { threadId: thread.id, excludeTurns: true, model: snapshot.model,
       modelProvider: snapshot.modelProvider, cwd: snapshot.cwd, approvalPolicy: snapshot.approvalPolicy,
       approvalsReviewer: snapshot.approvalsReviewer, serviceTier: snapshot.serviceTier,
