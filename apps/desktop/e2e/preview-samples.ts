@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-export function samplePdf() {
+export function samplePdf(paddingBytes = 0) {
   const streams = ['PDF preview first page', 'PDF preview second page'].map(text =>
     `BT /F1 24 Tf 50 730 Td (${text}) Tj ET`);
   const objects = [
@@ -11,6 +11,9 @@ export function samplePdf() {
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
     ...streams.map(stream => `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`),
   ];
+  if (paddingBytes) {
+    objects.push(`<< /Length ${paddingBytes} >>\nstream\n${'\0'.repeat(paddingBytes)}\nendstream`);
+  }
   let text = '%PDF-1.4\n';
   const offsets = [0];
   objects.forEach((object, index) => {

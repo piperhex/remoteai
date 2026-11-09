@@ -45,6 +45,11 @@ struct Snapshot {
     read_only: bool,
 }
 
+enum Captured {
+    Text(Snapshot),
+    Binary(Document),
+}
+
 struct View {
     path: PathBuf,
     cancelled: AtomicBool,
@@ -174,12 +179,33 @@ fn cancel_target(target: &Target, token: &str) -> Result<GuiResponse> {
 }
 
 fn capture(path: &Path, cancelled: &AtomicBool) -> Result<Snapshot> {
+    match capture_file(path, cancelled)? {
+        Captured::Text(snapshot) => Ok(snapshot),
+        Captured::Binary(_) => Err(GuiError::TextPreview),
+    }
+}
+
+fn capture_file(path: &Path, cancelled: &AtomicBool) -> Result<Captured> {
     let mut source = File::open(path).map_err(|_| GuiError::FileRead)?;
     let before = source.metadata().map_err(|_| GuiError::FileRead)?;
     // Anonymous files are deleted by the OS when their last handle closes, including process exit.
     let mut file = tempfile::tempfile().map_err(|_| GuiError::ProjectFileWrite)?;
     let scan = stream::scan(&mut source, Some(&mut file), 0, Some(cancelled))?;
     stream::unchanged(path, &before)?;
+    // Binary files need metadata for the media preview, never an editable UTF-8 window.
+    if !scan.text {
+        return Ok(Captured::Binary(Document {
+            path: execution_path(path),
+            kind: "binary",
+            size: scan.size,
+            text: None,
+            image: None,
+            revision: scan.revision,
+            read_only: true,
+            chunked: false,
+            window: None,
+        }));
+    }
     // A second streamed digest detects changes even when another writer restores size/mtime.
     source
         .seek(SeekFrom::Start(0))
@@ -189,15 +215,12 @@ fn capture(path: &Path, cancelled: &AtomicBool) -> Result<Snapshot> {
         return Err(GuiError::ProjectFileConflict);
     }
     stream::unchanged(path, &before)?;
-    if !scan.text {
-        return Err(GuiError::TextPreview);
-    }
-    Ok(Snapshot {
+    Ok(Captured::Text(Snapshot {
         file,
         revision: scan.revision,
         size: scan.size,
         read_only: before.permissions().readonly(),
-    })
+    }))
 }
 
 pub(super) fn read(target: Target) -> Result<GuiResponse> {
@@ -229,10 +252,16 @@ fn read_view(target: &Target, view: &View, request: &Request) -> Result<Document
             return Err(GuiError::ProjectFileConflict);
         }
         let metadata = fs::metadata(&view.path).map_err(|_| GuiError::FileRead)?;
-        if metadata.len() <= INLINE_BYTES as u64 || image_mime(&view.path).is_some() {
+        if metadata.len() <= INLINE_BYTES as u64
+            || image_mime(&view.path).is_some()
+            || is_pdf(&view.path)
+        {
             return snapshot(&view.path);
         }
-        *slot = Some(capture(&view.path, &view.cancelled)?);
+        match capture_file(&view.path, &view.cancelled)? {
+            Captured::Text(snapshot) => *slot = Some(snapshot),
+            Captured::Binary(document) => return Ok(document),
+        }
     }
     page(
         &view.path,
@@ -306,3 +335,7 @@ pub(super) use saving::save;
 #[cfg(test)]
 #[path = "windows_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "binary_tests.rs"]
+mod binary_tests;

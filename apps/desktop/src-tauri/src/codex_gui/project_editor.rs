@@ -155,7 +155,7 @@ fn snapshot(path: &Path) -> Result<Document> {
             "data:{mime};base64,{}",
             STANDARD.encode(&scan.inline)
         ));
-    } else if scan.text {
+    } else if scan.text && !is_pdf(path) {
         document.kind = "text";
         document.chunked = scan.size > INLINE_BYTES as u64;
         if !document.chunked {
@@ -177,6 +177,12 @@ fn image_mime(path: &Path) -> Option<&'static str> {
         "ico" => Some("image/x-icon"),
         _ => None,
     }
+}
+
+fn is_pdf(path: &Path) -> bool {
+    path.extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("pdf"))
 }
 
 fn save(request: Save) -> Result<Document> {
