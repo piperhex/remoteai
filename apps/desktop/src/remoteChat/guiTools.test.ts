@@ -45,6 +45,22 @@ it('keeps repository discovery and the selected child cwd in remote Git requests
     operation: 'changes', cwd: '/project/child' } });
 });
 
+it('returns and submits more than two thousand remote Git changes without truncating the selection', async () => {
+  const operations = new ChatOperations();
+  const files = Array.from({ length: 12_000 }, (_, index) => ({
+    path: `generated/file-${index}.ts`, version: `version-${index}`,
+  }));
+  const changes = { root: '/project', head: 'head', branch: 'main', files };
+  vi.mocked(invoke).mockResolvedValueOnce(changes);
+  const response = await operations.execute(request('large-changes', { operation: 'guiGitChanges', cwd: '/project' }));
+  expect(response.data).toEqual(changes);
+  await operations.execute(request('large-commit', { operation: 'guiGitCommit', cwd: '/project',
+    head: 'head', message: 'all files', files }));
+  expect(invoke).toHaveBeenLastCalledWith('codex_gui_git_tool', { request: {
+    operation: 'commit', cwd: '/project', head: 'head', message: 'all files', files,
+  } });
+});
+
 it.each(['read', 'udpRead', 'udpWrite'])('keeps %s retries idempotent across long transfers and isolates reconnects',
   async type => {
   const operations = new ChatOperations();

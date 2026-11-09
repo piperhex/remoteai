@@ -109,3 +109,14 @@ fn a_restart_never_turns_an_unfinished_check_into_a_pass() {
     std::fs::write(storage.join("test.json"), receipt.to_string()).unwrap();
     assert!(store::read(&storage).unwrap()[0].status == store::Status::Interrupted);
 }
+#[test]
+fn revision_includes_more_than_two_thousand_untracked_files() {
+    let repo = super::super::tests::Repo::new(true);
+    for index in 0..2_100 {
+        repo.write(&format!("file-{index:04}.txt"), "untracked\n");
+    }
+    let before = super::revision::read(&repo.0).unwrap();
+    assert!(before.dirty);
+    repo.write("file-2099.txt", "changed\n");
+    assert_ne!(before.id, super::revision::read(&repo.0).unwrap().id);
+}

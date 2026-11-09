@@ -2,7 +2,12 @@
 use super::{changes, commit, validate_path, GitError, Result, SelectedFile};
 use commit::IndexTransaction;
 use serde::Deserialize;
-use std::{collections::BTreeSet, fs, io::ErrorKind, path::Path};
+use std::{
+    collections::{BTreeSet, HashMap, HashSet},
+    fs,
+    io::ErrorKind,
+    path::Path,
+};
 
 #[derive(Clone, Copy, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -19,12 +24,17 @@ fn selected_paths(
     if selected.is_empty() || selected.len() > current.files.len() {
         return Err(GitError::File);
     }
+    let by_path: HashMap<_, _> = current
+        .files
+        .iter()
+        .map(|file| (file.path.as_str(), file))
+        .collect();
+    let selected_paths: HashSet<_> = selected.iter().map(|file| file.path.as_str()).collect();
     let mut paths = BTreeSet::new();
     for selected in selected {
-        let file = current
-            .files
-            .iter()
-            .find(|file| file.path == selected.path && file.version == selected.version)
+        let file = by_path
+            .get(selected.path.as_str())
+            .filter(|file| file.version == selected.version)
             .ok_or(GitError::Changed)?;
         paths.insert(file.path.clone());
         if action == Action::Rollback && file.status.contains('R') {
@@ -32,9 +42,11 @@ fn selected_paths(
         }
     }
     // A recreated rename source may itself be another changed file. Require explicit selection of it.
-    if current.files.iter().any(|file| {
-        paths.contains(&file.path) && !selected.iter().any(|selected| selected.path == file.path)
-    }) {
+    if current
+        .files
+        .iter()
+        .any(|file| paths.contains(&file.path) && !selected_paths.contains(file.path.as_str()))
+    {
         return Err(GitError::Changed);
     }
     Ok(paths.into_iter().collect())
@@ -105,16 +117,24 @@ fn tracked_paths(root: &Path, head: Option<&str>, paths: &[String]) -> Result<BT
     };
     let output = super::super::command(root)
         .env("GIT_LITERAL_PATHSPECS", "1")
-        .args(["ls-tree", "-r", "-z", head, "--"])
-        .args(paths)
+        .args(["ls-tree", "-r", "-z", head])
         .output()
         .map_err(|_| GitError::Unavailable)?;
     if !output.status.success() {
         return Err(GitError::Operation);
     }
     let text = String::from_utf8(output.stdout).map_err(|_| GitError::File)?;
+    let selected: BTreeSet<_> = paths.iter().map(String::as_str).collect();
     text.split('\0')
         .filter(|entry| !entry.is_empty())
+        .filter(|entry| {
+            entry.split_once('\t').is_none_or(|(_, path)| {
+                selected.contains(path)
+                    || path
+                        .match_indices('/')
+                        .any(|(index, _)| selected.contains(&path[..index]))
+            })
+        })
         .map(|entry| {
             let (metadata, path) = entry.split_once('\t').ok_or(GitError::File)?;
             if metadata.starts_with("160000 ") {
@@ -131,8 +151,8 @@ fn remove_from_index(transaction: &IndexTransaction, root: &Path, paths: &[Strin
     }
     let status = transaction
         .command(root)
-        .args(["update-index", "--force-remove", "--"])
-        .args(paths)
+        .args(["update-index", "--force-remove", "-z", "--stdin"])
+        .stdin(fs::File::open(transaction.pathspec(paths)?).map_err(|_| GitError::Operation)?)
         .status()
         .map_err(|_| GitError::Unavailable)?;
     if !status.success() {
@@ -148,8 +168,9 @@ fn rollback(
     paths: &[String],
 ) -> Result<()> {
     let tracked = tracked_paths(root, head, paths)?;
+    let selected: HashSet<_> = paths.iter().collect();
     // Refuse directories/submodules even when their working-tree entry is currently absent.
-    if tracked.iter().any(|path| !paths.contains(path)) {
+    if tracked.iter().any(|path| !selected.contains(path)) {
         return Err(GitError::File);
     }
     let added: Vec<_> = paths
@@ -167,9 +188,10 @@ fn rollback(
                 head.ok_or(GitError::Changed)?,
                 "--staged",
                 "--worktree",
-                "--",
+                "--pathspec-file-nul",
+                "--pathspec-from-file",
             ])
-            .args(&tracked)
+            .arg(transaction.pathspec(&tracked.into_iter().collect::<Vec<_>>())?)
             .status()
             .map_err(|_| GitError::Unavailable)?;
         if !status.success() {

@@ -5,8 +5,6 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{fs, path::Path};
 
-const MAX_FILES: usize = 2_000;
-
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Changes {
@@ -133,9 +131,6 @@ pub(super) fn parse(bytes: &[u8]) -> Result<Vec<Change>> {
             submodule: false,
             reference_changed: None,
         });
-        if files.len() > MAX_FILES {
-            return Err(GitError::TooManyFiles);
-        }
     }
     Ok(files)
 }

@@ -5,7 +5,6 @@ use sha2::{Digest, Sha256};
 use std::{fs, io::Read, path::Path};
 
 const MAX_UNTRACKED_BYTES: u64 = 64 * 1024 * 1024;
-const MAX_UNTRACKED_FILES: usize = 2_000;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub(crate) struct Revision {
@@ -73,12 +72,8 @@ fn bytes(root: &Path, args: &[&str]) -> Result<Vec<u8>> {
 fn hash_untracked(root: &Path, hash: &mut Sha256) -> Result<()> {
     let list = bytes(root, &["ls-files", "--others", "--exclude-standard", "-z"])?;
     let text = std::str::from_utf8(&list).map_err(|_| GitError::File)?;
-    let paths: Vec<_> = text.split('\0').filter(|path| !path.is_empty()).collect();
-    if paths.len() > MAX_UNTRACKED_FILES {
-        return Err(GitError::TooManyFiles);
-    }
     let mut remaining = MAX_UNTRACKED_BYTES;
-    for path in paths {
+    for path in text.split('\0').filter(|path| !path.is_empty()) {
         super::super::validate_path(path)?;
         let file = root.join(path);
         let meta = fs::symlink_metadata(&file).map_err(|_| GitError::File)?;

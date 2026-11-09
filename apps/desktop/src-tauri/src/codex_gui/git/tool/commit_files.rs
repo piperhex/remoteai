@@ -1,9 +1,8 @@
 //! Lists complete commit changes against the first parent, including root commits and renames.
-use super::{history::bounded, validate_path, GitError, Result};
+use super::super::run;
+use super::{validate_path, GitError, Result};
 use serde::Serialize;
 use std::path::Path;
-
-const FILE_LIST_BYTES: u64 = 1024 * 1024;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -22,7 +21,7 @@ pub(super) fn validate_commit(hash: &str) -> Result<()> {
 
 pub(super) fn read(root: &Path, hash: &str) -> Result<Vec<CommitFile>> {
     validate_commit(hash)?;
-    let (bytes, truncated) = bounded(
+    let result = run(
         root,
         &[
             "show",
@@ -38,12 +37,11 @@ pub(super) fn read(root: &Path, hash: &str) -> Result<Vec<CommitFile>> {
             hash,
             "--",
         ],
-        FILE_LIST_BYTES,
     )?;
-    if truncated {
-        return Err(GitError::TooManyFiles);
+    if !result.status.success() {
+        return Err(GitError::Operation);
     }
-    parse(&bytes)
+    parse(&result.stdout)
 }
 
 pub(super) fn parse(bytes: &[u8]) -> Result<Vec<CommitFile>> {

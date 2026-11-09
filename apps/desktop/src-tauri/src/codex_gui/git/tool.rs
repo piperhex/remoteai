@@ -24,6 +24,8 @@ mod file_activity;
 mod file_activity_tests;
 mod history;
 mod integration;
+#[cfg(test)]
+mod large_changes_tests;
 mod message;
 mod message_context;
 #[cfg(test)]

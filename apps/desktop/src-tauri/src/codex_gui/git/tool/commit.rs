@@ -1,6 +1,7 @@
 use super::super::{command_options, output};
 use super::{changes, GitError, Result, SelectedFile};
 use std::{
+    collections::{HashMap, HashSet},
     fs::{self, OpenOptions},
     io::Write,
     path::{Path, PathBuf},
@@ -54,6 +55,18 @@ impl IndexTransaction {
         fs::copy(&self.temporary, &self.lock).map_err(|_| GitError::Operation)?;
         fs::rename(&self.lock, &self.index).map_err(|_| GitError::Operation)
     }
+
+    /// Pass literal NUL-separated paths through a file instead of the OS command-line limit.
+    pub(super) fn pathspec(&self, paths: &[String]) -> Result<PathBuf> {
+        let pathspec = self.temporary.with_extension("paths");
+        let mut file = fs::File::create(&pathspec).map_err(|_| GitError::Operation)?;
+        for path in paths {
+            file.write_all(path.as_bytes())
+                .and_then(|()| file.write_all(&[0]))
+                .map_err(|_| GitError::Operation)?;
+        }
+        Ok(pathspec)
+    }
 }
 
 impl Drop for IndexTransaction {
@@ -62,6 +75,7 @@ impl Drop for IndexTransaction {
             &self.lock,
             &self.temporary,
             &self.temporary.with_extension("lock"),
+            &self.temporary.with_extension("paths"),
         ] {
             if let Err(error) = fs::remove_file(path) {
                 if error.kind() != std::io::ErrorKind::NotFound {
@@ -79,12 +93,16 @@ pub(super) fn selected_paths(
     if selected.is_empty() || selected.len() > current.files.len() {
         return Err(GitError::Selection);
     }
+    let current: HashMap<_, _> = current
+        .files
+        .iter()
+        .map(|file| (file.path.as_str(), file))
+        .collect();
     let mut paths = Vec::new();
     for selected in selected {
         let file = current
-            .files
-            .iter()
-            .find(|file| file.path == selected.path && file.version == selected.version)
+            .get(selected.path.as_str())
+            .filter(|file| file.version == selected.version)
             .ok_or(GitError::Changed)?;
         if file.conflict {
             return Err(GitError::Conflict);
@@ -122,8 +140,7 @@ pub(super) fn stage(transaction: &IndexTransaction, root: &Path, paths: &[String
     // Already staged deletions and rename sources no longer exist in the index; git add rejects them.
     let listed = transaction
         .command(root)
-        .args(["ls-files", "-z", "--"])
-        .args(paths)
+        .args(["ls-files", "-z"])
         .stdout(Stdio::piped())
         .output()
         .map_err(|_| GitError::Unavailable)?;
@@ -131,20 +148,21 @@ pub(super) fn stage(transaction: &IndexTransaction, root: &Path, paths: &[String
         return Err(GitError::Commit);
     }
     let tracked = String::from_utf8(listed.stdout).map_err(|_| GitError::File)?;
+    let tracked: HashSet<_> = tracked.split_terminator('\0').collect();
     let stage: Vec<_> = paths
         .iter()
         .filter(|path| {
-            root.join(path).symlink_metadata().is_ok()
-                || tracked.split('\0').any(|entry| entry == path.as_str())
+            root.join(path).symlink_metadata().is_ok() || tracked.contains(path.as_str())
         })
+        .cloned()
         .collect();
     if stage.is_empty() {
         return Ok(());
     }
     let status = transaction
         .command(root)
-        .args(["add", "-A", "--"])
-        .args(stage)
+        .args(["add", "-A", "--pathspec-file-nul", "--pathspec-from-file"])
+        .arg(transaction.pathspec(&stage)?)
         .status()
         .map_err(|_| GitError::Unavailable)?;
     if !status.success() {
@@ -176,8 +194,14 @@ pub(super) fn create(
     stage(&transaction, root, &paths)?;
     let mut child = transaction
         .command(root)
-        .args(["commit", "--only", "--file=-", "--"])
-        .args(&paths)
+        .args([
+            "commit",
+            "--only",
+            "--file=-",
+            "--pathspec-file-nul",
+            "--pathspec-from-file",
+        ])
+        .arg(transaction.pathspec(&paths)?)
         .stdin(Stdio::piped())
         .spawn()
         .map_err(|_| GitError::Unavailable)?;
