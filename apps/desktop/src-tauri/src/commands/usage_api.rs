@@ -8,6 +8,7 @@ fn api_client() -> Result<Client, String> {
 struct RequestAuth {
     value: Value,
     persisted: Value,
+    on_change: Option<Box<dyn Fn() + Send>>,
 }
 
 impl RequestAuth {
@@ -15,12 +16,19 @@ impl RequestAuth {
         Self {
             persisted: value.clone(),
             value,
+            on_change: None,
         }
     }
 
     fn persist(&mut self, paths: &Paths, id: &str) -> Result<bool, String> {
         if write_managed_auth_if_unchanged(paths, id, &self.persisted, &self.value)? {
+            let changed = self.persisted != self.value;
             self.persisted = self.value.clone();
+            if changed {
+                if let Some(on_change) = &self.on_change {
+                    on_change();
+                }
+            }
             sync_active_auth(paths, id, &self.value)?;
             return Ok(true);
         }
@@ -40,7 +48,21 @@ impl RequestAuth {
     }
 
     fn refresh(&mut self, client: &Client, paths: &Paths, id: &str) -> Result<(), String> {
-        if self.reload_if_changed(paths, id)? {
+        self.refresh_after_reload(AccountAuthRequest { client, paths, id }, true)
+    }
+
+    fn refresh_after_reload(
+        &mut self,
+        context: AccountAuthRequest<'_>,
+        force: bool,
+    ) -> Result<(), String> {
+        let AccountAuthRequest { client, paths, id } = context;
+        // Rotating the same RT concurrently can invalidate the successful caller's credentials.
+        // All callers run on blocking workers; unrelated accounts retain independent locks.
+        let refresh_lock = account_auth_refresh_lock(&managed_auth_path(paths, id))?;
+        let _refresh_guard = refresh_lock.lock().map_err(|error| error.to_string())?;
+        let reloaded = self.reload_if_changed(paths, id)?;
+        if (force && reloaded) || (!force && !token_expiring(&self.value)) {
             return Ok(());
         }
         if let Err(error) = refresh_tokens(client, &mut self.value) {
@@ -65,7 +87,7 @@ fn refresh_auth_if_needed(
         return Ok(());
     }
     if token_expiring(&auth.value) {
-        auth.refresh(client, paths, id)?;
+        auth.refresh_after_reload(AccountAuthRequest { client, paths, id }, false)?;
     }
     Ok(())
 }
@@ -91,11 +113,16 @@ fn load_managed_auth_value(paths: &Paths, id: &str) -> Result<Value, String> {
 }
 
 fn load_auth_for_request<R: Runtime>(
-    _app: &tauri::AppHandle<R>,
+    app: &tauri::AppHandle<R>,
     paths: &Paths,
     id: &str,
 ) -> Result<RequestAuth, String> {
-    load_managed_auth_value(paths, id).map(RequestAuth::new)
+    let mut auth = RequestAuth::new(load_managed_auth_value(paths, id)?);
+    match crate::cloud::refreshed_account_uploader(app, id) {
+        Ok(uploader) => auth.on_change = Some(Box::new(uploader)),
+        Err(error) => eprintln!("Could not prepare refreshed account upload: {error}"),
+    }
+    Ok(auth)
 }
 
 #[tauri::command]

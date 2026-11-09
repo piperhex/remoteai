@@ -13,12 +13,17 @@ use tungstenite::{stream::MaybeTlsStream, Error as WebSocketError, Message, WebS
 use crate::cloud::RemoteControlConfig;
 use crate::codex_gui::account_selection::{self, GuiAccountSelection};
 
+mod account_auth_sync;
 mod account_usage;
 mod app_update;
 
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 enum ServerMessage {
+    AccountAuthUpdated {
+        #[serde(rename = "accountIds")]
+        account_ids: Vec<String>,
+    },
     ScreenPower {
         #[serde(rename = "commandId")]
         command_id: String,
@@ -140,6 +145,7 @@ fn run_connection<R: Runtime>(
         "gui-aggregate-switch",
         "app-update",
         "account-usage",
+        "account-auth-sync",
     ];
     if remote_commands_enabled {
         capabilities.push("remote-command");
@@ -197,6 +203,9 @@ fn run_connection<R: Runtime>(
                 let message = serde_json::from_str::<ServerMessage>(&text)
                     .map_err(|error| format!("Invalid remote control message: {error}"))?;
                 match message {
+                    ServerMessage::AccountAuthUpdated { account_ids } => {
+                        account_auth_sync::receive(app, &config, account_ids);
+                    }
                     ServerMessage::ScreenPower { command_id, action } => {
                         let result = crate::platform::screen_power::set(action)
                             .map_err(|_| "client.deviceScreen.failed".to_owned());

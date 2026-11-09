@@ -40,7 +40,8 @@ use crate::{
         read_app_settings, read_json, read_state, resolve_paths, save_account_field_modified_at,
         save_account_private_details, save_auto_switch_priority, save_auto_switch_threshold,
         save_expiration, save_note, save_usage, usage_path, write_app_settings, write_json_atomic,
-        write_json_if_changed, write_managed_auth_if_changed, write_state,
+        write_json_if_changed, write_managed_auth_if_absent, write_managed_auth_if_changed,
+        write_managed_auth_if_unchanged, write_state,
     },
 };
 
@@ -66,6 +67,7 @@ mod providers;
 mod public_settings;
 mod push_identity;
 mod refresh_flight;
+mod refreshed_accounts;
 mod request_error;
 mod skills;
 mod ssh_profiles;
@@ -99,6 +101,7 @@ pub(crate) use provider_market::*;
 use providers::*;
 pub(crate) use public_settings::*;
 pub(crate) use push_identity::*;
+pub(crate) use refreshed_accounts::{pull_refreshed_account, refreshed_account_uploader};
 use request_error::request_error;
 pub(super) use skills::*;
 pub(crate) use ssh_profiles::*;

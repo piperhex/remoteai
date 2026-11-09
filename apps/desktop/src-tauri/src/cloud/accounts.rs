@@ -113,6 +113,14 @@ pub(super) fn apply_remote_account<R: Runtime>(
     app: &tauri::AppHandle<R>,
     account: &CloudAccountPayload,
 ) -> Result<bool, String> {
+    apply_remote_account_with_activation(app, account, true)
+}
+
+pub(super) fn apply_remote_account_with_activation<R: Runtime>(
+    app: &tauri::AppHandle<R>,
+    account: &CloudAccountPayload,
+    allow_activation: bool,
+) -> Result<bool, String> {
     let mut remote_auth = account.auth.clone();
     canonicalize_chatgpt_auth(&mut remote_auth)?;
     validate_auth(&remote_auth)?;
@@ -142,7 +150,7 @@ pub(super) fn apply_remote_account<R: Runtime>(
         account.field_modified_at.clone(),
         &account.last_modified_at,
     );
-    let apply_auth = should_apply_remote_field(
+    let mut apply_auth = should_apply_remote_field(
         local_usable,
         &local_field_modified_at.auth,
         &remote_field_modified_at.auth,
@@ -185,9 +193,20 @@ pub(super) fn apply_remote_account<R: Runtime>(
     );
 
     let account_auth = if apply_auth {
-        write_json_if_changed(&auth_path, &remote_auth)?;
-        local_field_modified_at.auth = remote_field_modified_at.auth.clone();
-        remote_auth.clone()
+        let committed = match &local_auth {
+            Some(expected) => {
+                write_managed_auth_if_unchanged(&paths, &account.id, expected, &remote_auth)?
+            }
+            None => write_managed_auth_if_absent(&paths, &account.id, &remote_auth)?,
+        };
+        if committed {
+            local_field_modified_at.auth = remote_field_modified_at.auth.clone();
+            remote_auth.clone()
+        } else {
+            // A login or token refresh won the race while the cloud response was being applied.
+            apply_auth = false;
+            read_json(&auth_path)?
+        }
     } else {
         local_auth.unwrap_or(remote_auth)
     };
@@ -249,7 +268,7 @@ pub(super) fn apply_remote_account<R: Runtime>(
     let active_account_id = read_state(&paths).active_account_id;
     if apply_auth && active_account_id.as_deref() == Some(&account.id) {
         crate::commands::sync_current_auth_if_client_stopped(&paths, &account_auth)?;
-    } else if apply_active && account.active && active_account_id.is_none() {
+    } else if allow_activation && apply_active && account.active && active_account_id.is_none() {
         let proxy_running = crate::local_proxy::is_running();
         let can_activate = if proxy_running {
             !crate::auth::is_agent_identity_auth(&account_auth)

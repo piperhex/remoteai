@@ -1,6 +1,18 @@
 use super::ServerMessage;
 
 #[test]
+fn credential_updates_deserialize_as_notifications_without_switch_commands_or_credentials() {
+    let message = serde_json::from_str::<ServerMessage>(
+        r#"{"type":"account-auth-updated","accountIds":["account-1","account-2"]}"#,
+    )
+    .unwrap();
+    assert!(
+        matches!(message, ServerMessage::AccountAuthUpdated { account_ids }
+        if account_ids == ["account-1", "account-2"])
+    );
+}
+
+#[test]
 fn remote_commands_accept_configured_and_legacy_concurrency_limits() {
     for limit in [None, Some(1), Some(8), Some(32)] {
         let mut input = serde_json::json!({"type":"remote-command","commandId":"command-1",

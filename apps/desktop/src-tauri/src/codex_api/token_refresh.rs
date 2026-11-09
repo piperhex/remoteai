@@ -2,6 +2,31 @@ use super::{apply_refreshed_tokens, token_string, Client, Value, CLIENT_ID, ISSU
 use chrono::Utc;
 use serde_json::json;
 
+#[cfg(test)]
+thread_local! {
+    static TEST_ENDPOINT: std::cell::RefCell<Option<String>> = const { std::cell::RefCell::new(None) };
+}
+
+#[cfg(test)]
+pub(crate) fn with_refresh_endpoint<T>(endpoint: &str, run: impl FnOnce() -> T) -> T {
+    struct Reset(Option<String>);
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            TEST_ENDPOINT.with(|value| *value.borrow_mut() = self.0.take());
+        }
+    }
+    let _reset = Reset(TEST_ENDPOINT.with(|value| value.replace(Some(endpoint.to_owned()))));
+    run()
+}
+
+fn refresh_endpoint() -> String {
+    #[cfg(test)]
+    if let Some(endpoint) = TEST_ENDPOINT.with(|value| value.borrow().clone()) {
+        return endpoint;
+    }
+    format!("{ISSUER}/oauth/token")
+}
+
 /// Preserve an authentication rejection as structured data for account failover.
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum TokenRefreshError {
@@ -52,7 +77,7 @@ pub(crate) fn refresh_tokens_classified(
             message: "登录已过期，且 auth.json 中没有 refresh_token；请重新登录".to_string(),
         })?;
     let response = client
-        .post(format!("{ISSUER}/oauth/token"))
+        .post(refresh_endpoint())
         .header("Content-Type", "application/json")
         .header("originator", ORIGINATOR)
         .json(&json!({

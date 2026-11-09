@@ -218,6 +218,21 @@ pub(crate) fn write_managed_auth_if_changed(
     write_managed_auth_if_changed_unlocked(paths, id, auth)
 }
 
+/// Imports a newly synchronized account without replacing a login created during its download.
+pub(crate) fn write_managed_auth_if_absent(
+    paths: &Paths,
+    id: &str,
+    auth: &Value,
+) -> Result<bool, String> {
+    let _guard = MANAGED_AUTH_WRITE_LOCK
+        .lock()
+        .map_err(|_| "Account credential write lock is poisoned".to_string())?;
+    if managed_auth_path(paths, id).exists() {
+        return Ok(false);
+    }
+    write_managed_auth_if_changed_unlocked(paths, id, auth)
+}
+
 fn write_managed_auth_if_changed_unlocked(
     paths: &Paths,
     id: &str,

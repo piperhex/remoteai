@@ -4,6 +4,7 @@ use std::{sync::mpsc, thread};
 
 mod concurrency;
 mod lifecycle;
+mod refreshed_accounts;
 mod sync;
 
 pub(super) struct Fixture {

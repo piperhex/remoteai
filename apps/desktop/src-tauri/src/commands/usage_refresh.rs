@@ -66,12 +66,14 @@ pub(crate) fn try_refresh_usage_blocking<R: Runtime>(
             response
         }
     } else {
-        let mut response = usage_request(&client, &auth.value)?;
-        if response.status() == reqwest::StatusCode::UNAUTHORIZED {
-            auth.refresh(&client, &paths, id)?;
-            response = usage_request(&client, &auth.value)?;
-        }
-        response
+        auth.request_with_recovery(
+            AccountAuthRequest {
+                client: &client,
+                paths: &paths,
+                id,
+            },
+            |value| usage_request(&client, value),
+        )?
     };
 
     if !response.status().is_success() {

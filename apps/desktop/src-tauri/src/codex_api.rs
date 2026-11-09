@@ -3,11 +3,15 @@ use reqwest::blocking::{Client, Response};
 use serde_json::{json, Value};
 
 mod credits;
+mod token_expiry;
 mod token_refresh;
+pub(crate) use token_expiry::token_expiring;
+#[cfg(test)]
+pub(crate) use token_refresh::with_refresh_endpoint;
 pub(crate) use token_refresh::{refresh_tokens, refresh_tokens_classified, TokenRefreshError};
 
 use crate::{
-    auth::{account_fields, decode_jwt, token_string},
+    auth::{account_fields, token_string},
     models::{ResetCredit, ResetCreditsSummary, UsageSummary, UsageWindow},
     providers::DEFAULT_OFFICIAL_MODEL,
 };
@@ -21,19 +25,6 @@ const RESET_CREDIT_CONSUME_URL: &str =
     "https://chatgpt.com/backend-api/wham/rate-limit-reset-credits/consume";
 const RESPONSES_URL: &str = "https://chatgpt.com/backend-api/codex/responses";
 pub(crate) const QUOTA_CONSUMPTION_PROMPT: &str = "今天天气如何？";
-
-pub(crate) fn token_expiring(auth: &Value) -> bool {
-    let Some(token) = token_string(auth, "access_token") else {
-        return true;
-    };
-    let Ok(claims) = decode_jwt(token) else {
-        return false;
-    };
-    let Some(exp) = claims.get("exp").and_then(Value::as_i64) else {
-        return false;
-    };
-    exp <= Utc::now().timestamp() + 300
-}
 
 fn apply_refreshed_tokens(
     auth: &mut Value,
