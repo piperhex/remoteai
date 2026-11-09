@@ -35,6 +35,29 @@ it("uses opaque black in dark mode and white in light mode", () => {
   expect(terminalTheme(false).background).toBe("#ffffff");
 });
 
+it('removes a group atomically, preserves surviving selection and selects a survivor when needed', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  const root = createRoot(document.createElement('div'));
+  let panel!: ReturnType<typeof useTerminalPanel>;
+  function Fixture() { panel = useTerminalPanel('C:/project'); return null; }
+  try {
+    await act(async () => root.render(<Fixture />));
+    await act(async () => { for (let index = 0; index < 4; index++) panel.add(); });
+    const ids = panel.tabs.map(tab => tab.id);
+    await act(async () => panel.select(ids[0]));
+    await act(async () => panel.removeTabs(ids.slice(2)));
+    expect(panel.tabs.map(tab => tab.id)).toEqual(ids.slice(0, 2));
+    expect(panel.selected).toBe(ids[0]);
+    expect(panel.open).toBe(true);
+    await act(async () => panel.removeTabs([ids[0]]));
+    expect(panel.selected).toBe(ids[1]);
+    await act(async () => panel.removeTabs([ids[1]]));
+    expect(panel.tabs).toEqual([]);
+    expect(panel.selected).toBe('');
+    expect(panel.open).toBe(false);
+  } finally { await act(async () => root.unmount()); vi.unstubAllGlobals(); }
+});
+
 it('prevents duplicate script starts and allows restarting after exit without touching other scripts', async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   const root = createRoot(document.createElement('div'));

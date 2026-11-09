@@ -24,6 +24,7 @@ import 'antd/dist/reset.css';
 import { cloudFixtureCommand, fixtureProfiles } from './ssh-cloud-fixture';
 import { useLocalGitDownloads } from '../src/downloads/localGitDownloads';
 import { SshDownloadConnection, SshDownloadsPage } from './ssh-downloads-fixture';
+import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
 
 const mode = new URLSearchParams(location.search).get('mode') ?? 'local';
 Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true });
@@ -101,7 +102,10 @@ function App() {
     <textarea aria-label="聊天输入" style={{ margin: 16 }} />
     {mode === 'local' ? <Local /> : <Remote />}
   </div>;
-  return <ConfigProvider theme={{ algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm }}>
+  const algorithm = dark ? theme.darkAlgorithm : theme.defaultAlgorithm;
+  return <ApplicationTypography><ConfigProvider theme={{
+    algorithm: mode === 'web' ? algorithm : [algorithm, theme.compactAlgorithm],
+  }}>
     <SshDownloadConnection mode={mode} client={client} />
     <div style={{ height: '100vh' }}>
       <div style={{ height: 32 }}><button onClick={() => setInterfaceLanguage('en')}>English</button>
@@ -120,6 +124,6 @@ function App() {
       </ChatDetailsWorkspace> : <DetailsWorkspace selected="fixture" active>{content}</DetailsWorkspace>}
       </div>
     </div>
-  </ConfigProvider>;
+  </ConfigProvider></ApplicationTypography>;
 }
 createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);

@@ -106,6 +106,46 @@ it('keeps failed close actions visible and discovers shells created while the ph
   } finally { await act(async () => test.root.unmount()); }
 });
 
+it('closes every requested shell sequentially while preserving a surviving selection', async () => {
+  const test = fixture();
+  const sessions = [info, { ...info, id: 'second' }, { ...info, id: 'third' }];
+  test.client.list.mockResolvedValue(sessions);
+  let finish!: () => void;
+  test.client.close.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  try {
+    await test.render();
+    await act(async () => { test.panel().toggle(); test.panel().select(info.id); });
+    await act(async () => test.panel().removeTabs(['second', 'third']));
+    expect(test.client.close).toHaveBeenCalledExactlyOnceWith('second');
+    expect(test.panel().busy).toBe(true);
+    await act(async () => finish());
+    expect(test.client.close.mock.calls).toEqual([['second'], ['third']]);
+    expect(test.panel().tabs.map(tab => tab.id)).toEqual([info.id]);
+    expect(test.panel().selected).toBe(info.id);
+    expect(test.panel().open).toBe(true);
+    expect(test.panel().busy).toBe(false);
+  } finally { await act(async () => test.root.unmount()); }
+});
+
+it('preserves failed and unattempted shells after a partial group close', async () => {
+  const test = fixture();
+  const sessions = [info, { ...info, id: 'second' }, { ...info, id: 'third' }];
+  test.client.list.mockResolvedValue(sessions);
+  test.client.close.mockRejectedValueOnce(new Error('Offline'));
+  try {
+    await test.render();
+    await act(async () => test.panel().removeTabs(['second', 'third']));
+    expect(test.panel().tabs.map(tab => tab.id)).toEqual(sessions.map(session => session.id));
+    expect(test.panel().error).not.toBe('');
+    expect(test.client.close).toHaveBeenCalledExactlyOnceWith('second');
+    test.client.close.mockResolvedValueOnce().mockRejectedValueOnce(new Error('Offline'));
+    await act(async () => test.panel().removeTabs(['second', 'third']));
+    expect(test.panel().tabs.map(tab => tab.id)).toEqual([info.id, 'third']);
+    expect(test.panel().selected).toBe('third');
+    expect(test.panel().error).not.toBe('');
+  } finally { await act(async () => test.root.unmount()); }
+});
+
 it('does not let a stale initial list replace a newly opened terminal', async () => {
   const test = fixture();
   let finish!: (sessions: TerminalInfo[]) => void;
@@ -209,7 +249,7 @@ it('keeps pending close results out of the next project and clears the old view 
   test.client.close.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
   try {
     await test.render();
-    await act(async () => test.panel().remove(info.id));
+    await act(async () => test.panel().removeTabs([info.id, 'unattempted']));
     await test.render(false, '/offline');
     expect(test.panel().tabs).toEqual([]);
     expect(test.panel().busy).toBe(false);
