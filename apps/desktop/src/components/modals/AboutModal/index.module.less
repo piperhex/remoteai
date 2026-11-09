@@ -10,12 +10,13 @@
 
 .styleScope :global {
   .modal.about-modal {
-    // Keep the reference proportions within the space below the titlebar, including at the minimum window size.
-    width: min(1312px, calc(100vw - 64px), calc((var(--about-viewport-height) - 64px) * 1.317));
+    // Window resizing only constrains the dialog; it must not scale its content.
+    width: 960px;
+    height: 730px;
+    max-width: calc(100vw - 48px);
     max-height: calc(var(--about-viewport-height) - 48px);
     padding: 0;
     overflow: auto;
-    container-type: inline-size;
     border: 1px solid #cce3df;
     border-radius: 24px;
     color: #172b39;
@@ -24,77 +25,77 @@
   }
 
   .about-modal > .modal-close {
-    top: 1.05cqw;
-    right: 1.7cqw;
+    top: 10px;
+    right: 16px;
     z-index: 2;
-    width: 3.4cqw;
-    height: 3.4cqw;
+    width: 33px;
+    height: 33px;
     color: #e4fff4c9;
 
-    svg { width: 2.2cqw; height: 2.2cqw; }
+    svg { width: 21px; height: 21px; }
     &:hover { color: #fff; background: #ffffff1c; }
   }
 
-  .about-body { padding: 2cqw 3.58cqw 2.15cqw; background: linear-gradient(120deg, #f8faf9, #f6f9f9); }
-  .about-principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4cqw; }
+  .about-body { padding: 19px 34px 21px; background: linear-gradient(120deg, #f8faf9, #f6f9f9); }
+  .about-principles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
   .about-principle {
     position: relative;
     min-width: 0;
-    min-height: 14.2cqw;
-    padding: 1.6cqw 1.75cqw;
+    min-height: 136px;
+    padding: 15px 17px;
     display: grid;
-    grid-template-columns: 6.25cqw minmax(0, 1fr);
+    grid-template-columns: 60px minmax(0, 1fr);
     align-items: start;
-    gap: 1.4cqw;
+    gap: 13px;
     overflow: hidden;
     border: 1px solid #dce5e8;
-    border-radius: 1.25cqw;
+    border-radius: 12px;
     background: linear-gradient(135deg, #fff, #fbfcfd);
     box-shadow: 0 4px 12px #233f4610;
 
     &::before, &::after {
       position: absolute;
-      width: 13cqw;
-      height: 13cqw;
+      width: 125px;
+      height: 125px;
       border-radius: 50%;
       background: currentColor;
       opacity: .035;
       content: "";
       pointer-events: none;
     }
-    &::before { top: -4.5cqw; right: -5.8cqw; }
-    &::after { top: 1.5cqw; right: -8cqw; }
+    &::before { top: -43px; right: -56px; }
+    &::after { top: 14px; right: -77px; }
   }
   .about-principle-local { color: #00785e; }
   .about-principle-workflow { color: #087bda; }
   .about-principle-ecosystem { color: #6649c8; }
   .about-principle-icon {
-    width: 6.25cqw;
-    height: 6.25cqw;
+    width: 60px;
+    height: 60px;
     display: grid;
     place-items: center;
-    border-radius: 1.45cqw;
+    border-radius: 14px;
     background: #ddf8ef;
 
-    svg { width: 3.5cqw; height: 3.5cqw; }
+    svg { width: 34px; height: 34px; }
   }
   .about-principle-workflow .about-principle-icon { background: #e1f0ff; }
   .about-principle-ecosystem .about-principle-icon { background: #eee9ff; }
-  .about-principle-copy { position: relative; padding-top: 3.25cqw; }
-  .about-principle h3 { margin: 0; color: #182b39; font-size: 1.53cqw; line-height: 1.4; }
-  .about-principle p { margin: 1.2cqw 0 .35cqw; color: #5c6674; font-size: 1.28cqw; line-height: 1.55; }
+  .about-principle-copy { position: relative; padding-top: 31px; }
+  .about-principle h3 { margin: 0; color: #182b39; font-size: 14px; line-height: 1.4; }
+  .about-principle p { margin: 12px 0 3px; color: #5c6674; font-size: 12px; line-height: 1.55; }
 
   .about-version-panel {
     position: relative;
-    min-height: 11.25cqw;
-    margin-top: 1.75cqw;
-    padding: 1.7cqw 2.3cqw;
+    min-height: 108px;
+    margin-top: 17px;
+    padding: 16px 22px;
     display: flex;
     align-items: center;
-    gap: 2cqw;
+    gap: 19px;
     overflow: hidden;
     border: 1px solid #d2e5e2;
-    border-radius: 1.2cqw;
+    border-radius: 12px;
     background: linear-gradient(110deg, #edf7f3, #ffffffd9);
   }
   .about-version-copy {
@@ -102,71 +103,71 @@
     z-index: 1;
     flex: 1;
     min-width: 0;
-    font-size: 1.2cqw;
+    font-size: 12px;
     line-height: 1.3;
 
     > span { display: block; color: #71828a; }
-    > strong { display: block; margin: .3cqw 0; color: #075e50; font-size: 3cqw; line-height: 1.15; }
-    > p { margin: .5cqw 0 0; color: #667a80; font-size: 1.28cqw; line-height: 1.4; }
+    > strong { display: block; margin: 3px 0; color: #075e50; font-size: 29px; line-height: 1.15; }
+    > p { margin: 5px 0 0; color: #667a80; font-size: 12px; line-height: 1.4; }
   }
   .about-version-status {
     position: relative;
     z-index: 1;
-    max-width: min(31cqw, 400px);
-    margin-right: 31.7cqw;
-    padding: .65cqw 1.45cqw;
+    max-width: 298px;
+    margin-right: 304px;
+    padding: 6px 14px;
     display: inline-flex;
     align-items: center;
-    gap: .7cqw;
+    gap: 7px;
     border-radius: 100px;
     color: #047354;
     background: #cef7e3;
-    box-shadow: 0 0 0 .55cqw #e4f9ee;
-    font-size: 1.3cqw;
+    box-shadow: 0 0 0 5px #e4f9ee;
+    font-size: 12px;
     font-weight: 700;
     line-height: 1.45;
 
-    svg { flex-shrink: 0; width: 1.65cqw; height: 1.65cqw; stroke-width: 3; }
-    &.checking { color: #456d83; background: #e2f0f6; box-shadow: 0 0 0 .55cqw #edf5f9; }
+    svg { flex-shrink: 0; width: 16px; height: 16px; stroke-width: 3; }
+    &.checking { color: #456d83; background: #e2f0f6; box-shadow: 0 0 0 5px #edf5f9; }
     &.checking svg { animation: about-spin 1s linear infinite; }
-    &.error { color: #a36820; background: #fff0d5; box-shadow: 0 0 0 .55cqw #fff7e8; }
+    &.error { color: #a36820; background: #fff0d5; box-shadow: 0 0 0 5px #fff7e8; }
   }
   .about-version-art {
     position: absolute;
     inset: 0 0 0 auto;
-    width: 31cqw;
+    width: 298px;
     pointer-events: none;
 
-    > svg { position: absolute; right: 0; bottom: 0; width: 100%; height: 10cqw; }
-    > p { position: absolute; top: 1.7cqw; right: 2.6cqw; color: #828b9b;
-      font-size: 1.05cqw; line-height: 1.45; letter-spacing: .06em; }
-    > p span { display: block; width: 1.8cqw; margin-top: .9cqw; border-top: 1px solid #bacccc; }
+    > svg { position: absolute; right: 0; bottom: 0; width: 100%; height: 96px; }
+    > p { position: absolute; top: 16px; right: 25px; color: #828b9b;
+      font-size: 10px; line-height: 1.45; letter-spacing: .06em; }
+    > p span { display: block; width: 17px; margin-top: 9px; border-top: 1px solid #bacccc; }
   }
   .about-actions {
-    margin-top: 1.65cqw;
+    margin-top: 16px;
     display: flex;
-    gap: 1.3cqw;
+    gap: 12px;
     flex-wrap: wrap;
 
     button {
-      min-height: 4.75cqw;
-      padding: 1cqw 2.2cqw;
+      min-height: 46px;
+      padding: 10px 21px;
       border: 1px solid #d6e0e3;
-      border-radius: 1.15cqw;
+      border-radius: 11px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 1.15cqw;
+      gap: 11px;
       color: #213441;
       background: linear-gradient(120deg, #fff, #fcfdff);
       box-shadow: 0 5px 12px #203e4210;
-      font-size: 1.55cqw;
+      font-size: 14px;
       font-weight: 700;
       cursor: pointer;
       transition: background .16s, box-shadow .16s;
 
-      svg { width: 2.2cqw; height: 2.2cqw; }
-      svg:last-child:not(:first-child) { width: 1.7cqw; height: 1.7cqw; }
+      svg { width: 21px; height: 21px; }
+      svg:last-child:not(:first-child) { width: 16px; height: 16px; }
       &:hover { background: #ebf6f2; box-shadow: 0 6px 16px #124e4426; }
       &:focus-visible { outline: 3px solid #44bfa2; outline-offset: 3px; }
     }
@@ -180,42 +181,50 @@
     }
   }
   .about-legal {
-    margin-top: 2.2cqw;
-    padding-top: 2cqw;
+    margin-top: 21px;
+    padding-top: 19px;
     border-top: 1px solid #d8e3e3;
     display: flex;
     align-items: center;
-    gap: 2cqw;
+    gap: 19px;
     color: #77818e;
   }
-  .about-license-icon { flex-shrink: 0; width: 2.5cqw; height: 2.5cqw; color: #65717d; }
+  .about-license-icon { flex-shrink: 0; width: 24px; height: 24px; color: #65717d; }
   .about-legal-copy {
     flex: 1;
     min-width: 0;
-    font-size: 1.1cqw;
+    font-size: 11px;
     line-height: 1.6;
 
-    strong { color: #65707d; font-size: 1.2cqw; }
-    p { margin: .25cqw 0 0; }
+    strong { color: #65707d; font-size: 12px; }
+    p { margin: 2px 0 0; }
   }
   .about-signoff {
-    padding: .4cqw 0 .4cqw 3.1cqw;
+    padding: 4px 0 4px 30px;
     border-left: 1px solid #d4dfe3;
     display: flex;
     align-items: center;
-    gap: .75cqw;
-    font-size: 1.1cqw;
+    gap: 7px;
+    font-size: 11px;
     white-space: nowrap;
 
     span:first-child { color: #929dab; }
-    svg { width: 1.35cqw; height: 1.35cqw; color: #28a2a7; }
+    svg { width: 13px; height: 13px; color: #28a2a7; }
   }
 
   .modal.about-modal:lang(en) {
-    width: min(1312px, calc(100vw - 64px), calc((var(--about-viewport-height) - 64px) * 1.28));
+    .about-principle-copy { padding-top: 23px; }
+    .about-principle p { margin-top: 8px; font-size: 11px; line-height: 1.5; }
+  }
+}
 
-    .about-principle-copy { padding-top: 2.4cqw; }
-    .about-principle p { margin-top: .8cqw; font-size: 1.18cqw; line-height: 1.5; }
+@media (max-width: 1008px) {
+  .styleScope :global {
+    .about-principle { grid-template-columns: 44px minmax(0, 1fr); gap: 12px; }
+    .about-principle-icon { width: 44px; height: 44px; }
+    .about-principle-copy, .about-modal:lang(en) .about-principle-copy { padding-top: 0; }
+    .about-legal { flex-wrap: wrap; }
+    .about-signoff { margin-left: auto; }
   }
 }
 

@@ -1,9 +1,10 @@
 .styleScope :global {
   .about-hero {
     position: relative;
-    height: 30.2cqw;
+    min-height: 290px;
+    padding: 70px 34px 30px;
     overflow: hidden;
-    border-radius: 0 0 1.4cqw 1.4cqw / 0 0 .5cqw .5cqw;
+    border-radius: 0 0 13px 13px / 0 0 5px 5px;
     color: #f3fffb;
     background:
       radial-gradient(ellipse at 77% -16%, #72ffe2a6, transparent 44%),
@@ -18,119 +19,127 @@
       transform: rotate(-25deg);
       background:
         linear-gradient(100deg, transparent 32%, #74d6a626 39%, transparent 47%, #79dcc333 74%, transparent 82%);
-      filter: blur(1.7cqw);
+      filter: blur(16px);
       content: "";
       pointer-events: none;
     }
     &::after {
       position: absolute;
-      right: -6cqw;
-      bottom: -10.8cqw;
-      width: 56cqw;
-      height: 17cqw;
+      right: -58px;
+      bottom: -104px;
+      width: 538px;
+      height: 163px;
       border-radius: 50%;
       transform: rotate(-12deg);
       background: linear-gradient(#62d1b51a, transparent 50%);
-      box-shadow: 0 -1cqw 2.4cqw #78e4c512;
+      box-shadow: 0 -10px 23px #78e4c512;
       content: "";
       pointer-events: none;
     }
   }
-  .about-eyebrow { position: absolute; top: 1.65cqw; left: 3.35cqw; font-size: 1.35cqw; letter-spacing: .08em; }
-  .about-brand { position: absolute; top: 7.25cqw; left: 3.6cqw; display: flex; align-items: flex-start; gap: 3.1cqw; }
+  .about-eyebrow { position: absolute; top: 16px; left: 32px; font-size: 13px; letter-spacing: .08em; }
+  .about-brand { position: relative; width: calc(100% - 288px); display: flex;
+    align-items: flex-start; gap: 30px; }
   .about-brand-mark {
-    width: 12.6cqw;
-    height: 12.6cqw;
-    padding: 1.7cqw;
+    width: 121px;
+    height: 121px;
+    padding: 16px;
     flex-shrink: 0;
     display: grid;
     place-items: center;
     border: 1px solid #bbffed80;
-    border-radius: 3cqw;
+    border-radius: 29px;
     background:
       radial-gradient(ellipse at 0 100%, #8df699a3, transparent 50%), linear-gradient(130deg, #71d5ba70, #1254548c);
-    box-shadow: inset 0 1px 2px #e7fff761, inset 0 -2px 5px #a4fff126, 0 1.3cqw 2.5cqw #002c3699;
+    box-shadow: inset 0 1px 2px #e7fff761, inset 0 -2px 5px #a4fff126, 0 12px 24px #002c3699;
 
-    img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 .7cqw .6cqw #00331b4d); }
+    img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 7px 6px #00331b4d); }
   }
   .about-brand-copy {
-    width: 46cqw;
-    padding-top: .4cqw;
+    flex: 1;
+    min-width: 0;
+    padding-top: 4px;
 
-    h2 { margin: 0 0 .65cqw; color: #fff; font: 700 4.55cqw/1.15 "DM Sans", sans-serif;
+    h2 { margin: 0 0 6px; color: #fff; font: 700 40px/1.15 "DM Sans", sans-serif;
       letter-spacing: -.035em; text-shadow: 0 3px 3px #003b3640; }
-    p { margin: 0; color: #e6f5f0; font-size: 1.95cqw; line-height: 1.55; letter-spacing: -.045em; }
+    p { margin: 0; color: #e6f5f0; font-size: 16px; line-height: 1.55; letter-spacing: -.045em; }
   }
   .about-badges {
-    margin-top: 1.4cqw;
+    margin-top: 13px;
     display: flex;
-    gap: 1.1cqw;
+    gap: 11px;
     flex-wrap: wrap;
 
-    span { padding: .65cqw 1.55cqw; display: inline-flex; align-items: center; gap: 1cqw;
-      border: 1px solid #d7fff34d; border-radius: 1.5cqw; color: #f2fffc; background: #d8fffb21;
-      box-shadow: inset 0 1px 2px #ffffff12; font-size: 1.35cqw; font-weight: 700; line-height: 1.5; }
-    svg { width: 1.7cqw; height: 1.7cqw; }
+    span { padding: 6px 15px; display: inline-flex; align-items: center; gap: 10px;
+      border: 1px solid #d7fff34d; border-radius: 14px; color: #f2fffc; background: #d8fffb21;
+      box-shadow: inset 0 1px 2px #ffffff12; font-size: 13px; font-weight: 700; line-height: 1.5; }
+    svg { width: 16px; height: 16px; }
   }
   .about-handwritten {
-    position: absolute;
-    left: 10cqw;
-    bottom: 3.1cqw;
-    margin: 0;
+    position: relative;
+    width: fit-content;
+    margin: 30px 0 0 62px;
     transform: rotate(-6deg);
     color: #b7dc9d;
-    font: italic 2.1cqw/1.5 "KaiTi", "STKaiti", "Segoe Print", cursive;
+    font: italic 20px/1.5 "KaiTi", "STKaiti", "Segoe Print", cursive;
     letter-spacing: .2em;
 
-    &::after { position: absolute; left: 4cqw; bottom: -1.6cqw; width: 21cqw; height: 1.2cqw;
+    &::after { position: absolute; left: 38px; bottom: -15px; width: 202px; height: 12px;
       border-top: 1px solid #c4f3b6; border-radius: 50%; transform: rotate(-3deg); content: "";
       mask-image: linear-gradient(90deg, transparent, #000 25%, #000 70%, transparent); }
   }
-  .about-hero-art { position: absolute; top: 5cqw; right: 3.4cqw; width: 30cqw; height: 21cqw; }
+  .about-hero-art { position: absolute; top: 48px; right: 33px; width: 288px; height: 202px; }
   .about-glass {
     position: absolute;
     border: 1px solid #d5fff8d9;
-    border-radius: 2.2cqw;
+    border-radius: 21px;
     background: linear-gradient(145deg, #c4fff561, #9ce4d324 58%, #124f4533);
-    box-shadow: inset 0 2px 2px #e3fff94d, inset 0 -2px 5px #d6fff840, 0 1.1cqw 1.5cqw #00362b47;
-    transform: perspective(45cqw) rotateY(-20deg) rotateX(9deg) rotateZ(-9deg) skewX(-13deg);
+    box-shadow: inset 0 2px 2px #e3fff94d, inset 0 -2px 5px #d6fff840, 0 11px 14px #00362b47;
+    transform: perspective(432px) rotateY(-20deg) rotateX(9deg) rotateZ(-9deg) skewX(-13deg);
   }
-  .about-glass-back { top: 3.9cqw; left: 3.5cqw; width: 16cqw; height: 15.6cqw;
+  .about-glass-back { top: 37px; left: 34px; width: 154px; height: 150px;
     background: linear-gradient(140deg, #c8fff57d, #9ce4d336 58%, #185d4f38); }
-  .about-glass-front { top: 1.3cqw; left: 0; width: 15.7cqw; height: 18cqw; }
+  .about-glass-front { top: 12px; left: 0; width: 151px; height: 173px; }
   .about-glass-icon {
-    top: 7cqw;
-    left: 4.2cqw;
-    width: 9.6cqw;
-    height: 10.1cqw;
-    padding: 1.3cqw;
+    top: 67px;
+    left: 40px;
+    width: 92px;
+    height: 97px;
+    padding: 12px;
     border-color: #b6fff170;
-    border-radius: 2.15cqw;
+    border-radius: 21px;
     background: linear-gradient(135deg, #7bcdb585, #0a655fa6);
-    box-shadow: inset 0 1px 1px #e3fff966, 0 .8cqw 1.2cqw #003f367d;
+    box-shadow: inset 0 1px 1px #e3fff966, 0 8px 12px #003f367d;
 
-    img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 .5cqw .6cqw #03472d47); }
+    img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 5px 6px #03472d47); }
   }
   .about-art-words {
     position: absolute;
-    top: 3.5cqw;
-    right: .35cqw;
+    top: 34px;
+    right: 3px;
     transform: rotate(-14deg);
     color: #c2eae0;
-    font: italic 1.85cqw/1.25 "Segoe Print", "KaiTi", cursive;
+    font: italic 18px/1.25 "Segoe Print", "KaiTi", cursive;
     letter-spacing: .04em;
 
     span { display: block; }
-    span:nth-child(2) { margin-left: .5cqw; }
-    span:nth-child(3) { margin-left: 2cqw; }
-    &::after { position: absolute; left: -1.1cqw; bottom: -1.5cqw; width: 7cqw; height: 2cqw;
+    span:nth-child(2) { margin-left: 5px; }
+    span:nth-child(3) { margin-left: 19px; }
+    &::after { position: absolute; left: -11px; bottom: -14px; width: 67px; height: 19px;
       border-bottom: 1px solid #ace2a580; border-radius: 50%; transform: rotate(-7deg); content: ""; }
   }
-  .about-hero-caption { position: absolute; right: 6.6cqw; bottom: 1.8cqw; z-index: 1; margin: 0;
-    color: #b6e0d8; font-size: .88cqw; letter-spacing: .65em; }
+  .about-hero-caption { position: absolute; right: 63px; bottom: 17px; z-index: 1; margin: 0;
+    color: #b6e0d8; font-size: 8px; letter-spacing: .65em; }
 
   .about-modal:lang(en) {
-    .about-handwritten { bottom: 2.7cqw; font-size: 1.65cqw; letter-spacing: .1em; transform: rotate(-4deg); }
-    .about-hero-caption { width: 35cqw; font-size: .8cqw; letter-spacing: .25em; text-align: center; }
+    .about-handwritten { font-size: 16px; letter-spacing: .1em; transform: rotate(-4deg); }
+    .about-hero-caption { width: 336px; font-size: 8px; letter-spacing: .25em; text-align: center; }
+  }
+}
+
+@media (max-width: 1008px) {
+  .styleScope :global {
+    .about-brand { width: 100%; padding-right: 24px; }
+    .about-hero-art, .about-hero-caption { display: none; }
   }
 }
