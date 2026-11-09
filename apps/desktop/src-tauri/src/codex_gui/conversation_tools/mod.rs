@@ -8,6 +8,7 @@ mod operations;
 mod protocol;
 mod screenshot_artifact;
 mod selection;
+mod ssh_tools;
 mod summaries;
 #[cfg(test)]
 mod tests;
@@ -37,6 +38,8 @@ pub(super) enum Error {
     Gui(#[from] super::GuiError),
     #[error(transparent)]
     Browser(#[from] crate::provider_browser::automation::Error),
+    #[error(transparent)]
+    Ssh(#[from] csw_ssh_client::Error),
 }
 
 impl From<serde_json::Error> for Error {
@@ -83,6 +86,12 @@ pub(super) fn shutdown(app: &AppHandle) {
 }
 
 async fn execute(app: AppHandle, params: Value) -> Result<Value> {
+    if matches!(
+        params["name"].as_str(),
+        Some("gui_ssh_profiles" | "gui_ssh_execute")
+    ) {
+        return ssh_tools::execute(app, params).await;
+    }
     if matches!(
         params["name"].as_str(),
         Some("gui_browser_open" | "gui_browser_use" | "gui_browser_finish")

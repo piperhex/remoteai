@@ -8,6 +8,7 @@ import {
 import { flushSync } from "react-dom";
 import { Target, X } from "lucide-react";
 import { isDesktopApp } from "../../api/backend";
+import { desktopSshProfiles } from '../../api/sshProfiles';
 import { useGoalMode } from "../../../../../shared/remote-chat/client/useGoalMode";
 import { ComposerAddMenu } from "./ComposerAddMenu";
 import { ComposerFilesDialog } from "./ComposerFilesDialog";
@@ -145,6 +146,7 @@ export const Composer = forwardRef<ComposerHandle, {
         suggestion={suggestion.text} onUserInput={suggestion.dismiss} onInputEnd={suggestion.restore}
         conversations={state} onConversation={(reference) => addAttachments([reference])}
         onCoze={(reference) => addAttachments([reference])}
+        sshProfiles={desktopSshProfiles} onSsh={reference => addAttachments([reference])}
         onFile={(reference) => addAttachments([reference])}
         connected={state.connection === "ready"} disabled={disabled}
         compact={compactCommand(state, () => void controller.compact())}

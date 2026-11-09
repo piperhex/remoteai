@@ -23,7 +23,7 @@ struct Session {
 /// A registry owns connections; a bounded actor serializes each terminal's input and resize requests.
 pub struct Client {
     sessions: Mutex<HashMap<String, Arc<Session>>>,
-    slots: Arc<Semaphore>,
+    pub(crate) slots: Arc<Semaphore>,
 }
 impl Default for Client {
     fn default() -> Self {

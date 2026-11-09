@@ -1,9 +1,14 @@
 use super::*;
+mod agent;
 mod credentials;
+pub(crate) use agent::{agent_ssh_connect, agent_ssh_profiles};
 use credentials::{SshCredentialReply, SshCredentials};
 
+/// Stable saved-connection errors shared by the UI and the authenticated agent boundary.
 #[derive(Debug, thiserror::Error)]
-enum ProfileError {
+pub(crate) enum ProfileError {
+    #[error("client.ssh.trustHost")]
+    Untrusted,
     #[error("client.ssh.signIn")]
     Authentication,
     #[error("client.ssh.invalid")]
@@ -37,7 +42,7 @@ pub(crate) struct SshProfile {
     x11: Option<csw_ssh_client::X11>,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Copy, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 enum Authentication {
     Password,

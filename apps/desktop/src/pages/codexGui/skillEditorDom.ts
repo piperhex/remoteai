@@ -51,7 +51,7 @@ export function writeEditor(root: HTMLElement, value: ComposerText) {
   root.replaceChildren(...nodes);
 }
 
-export interface SkillTrigger { query: string; range: Range; kind?: "skill" | "conversation" | "coze" | "file" }
+export interface SkillTrigger { query: string; range: Range; kind?: "skill" | "conversation" | "coze" | "file" | "ssh" }
 
 export function skillTrigger(root: HTMLElement): SkillTrigger | null {
   const selection = window.getSelection();
@@ -62,13 +62,14 @@ export function skillTrigger(root: HTMLElement): SkillTrigger | null {
   before.selectNodeContents(root);
   before.setEnd(caret.startContainer, caret.startOffset);
   const text = readEditor(before.cloneContents()).text;
-  const match = text.match(/(?:^|\s)(%)([^\s%]*)$/u) ?? text.match(/(?:^|\s)([/@#])([^\s/@#]*)$/u);
+  const match = text.match(/(?:^|\s)(!)([^\s!]*)$/u)
+    ?? text.match(/(?:^|\s)(%)([^\s%]*)$/u) ?? text.match(/(?:^|\s)([/@#])([^\s/@#]*)$/u);
   if (!match) return null;
   const start = caret.startOffset - match[2].length - 1;
   if (start < 0 || caret.startContainer.parentElement?.closest("[data-skill]")) return null;
   const range = caret.cloneRange();
   range.setStart(caret.startContainer, start);
-  const kinds = { "@": "conversation", "#": "coze", "/": "skill", "%": "file" } as const;
+  const kinds = { "@": "conversation", "#": "coze", "/": "skill", "%": "file", "!": "ssh" } as const;
   return { query: match[2], range, kind: kinds[match[1] as keyof typeof kinds] };
 }
 

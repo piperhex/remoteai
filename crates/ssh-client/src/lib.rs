@@ -1,5 +1,6 @@
 //! Bounded SSH sessions and SFTP operations shared by local and authenticated remote terminals.
 mod connection;
+mod execute;
 mod file_mutations;
 mod files;
 mod sessions;
@@ -10,6 +11,7 @@ mod uploads;
 mod x11;
 
 pub use connection::probe;
+pub use execute::{Execution, ExecutionOptions};
 pub use sessions::Client;
 pub use types::*;
 pub use x11::ensure_x11;

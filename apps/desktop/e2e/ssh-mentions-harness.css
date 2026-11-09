@@ -1,0 +1,7 @@
+body { min-width: 0; }
+.ssh-composer-fixture { display: flex; flex-direction: column; height: 100dvh; color: var(--ink); }
+.ssh-composer-fixture > header { padding: 28px; color: var(--muted); }
+.ssh-composer-fixture > section { width: min(800px, calc(100% - 48px)); margin: auto auto 32px; }
+.ssh-local-composer { position: relative; border: 1px solid var(--gui-border); border-radius: 16px;
+  padding: 14px; background: var(--panel); }
+.ssh-composer-fixture .chat-composer-dock { width: 100%; padding: 0; }

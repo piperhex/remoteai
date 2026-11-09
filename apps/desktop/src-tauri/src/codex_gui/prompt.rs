@@ -28,6 +28,7 @@ pub(crate) struct PromptInput {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(super) enum AttachmentKind {
+    Ssh,
     Coze,
     Conversation,
     File,
@@ -54,6 +55,9 @@ impl AttachmentInput {
             return Err(GuiError::InvalidRequest);
         }
         let path = std::path::Path::new(&self.path);
+        if matches!(self.kind, AttachmentKind::Ssh) {
+            return super::ssh_reference::inputs(&self.path, &self.name);
+        }
         if matches!(self.kind, AttachmentKind::Coze) {
             return super::coze_reference::inputs(&self.path, &self.name);
         }
@@ -64,7 +68,7 @@ impl AttachmentInput {
             ]);
         }
         let valid = match self.kind {
-            AttachmentKind::Conversation | AttachmentKind::Coze => false,
+            AttachmentKind::Conversation | AttachmentKind::Coze | AttachmentKind::Ssh => false,
             AttachmentKind::File => path.is_absolute() && path.is_file(),
             AttachmentKind::Folder => path.is_absolute() && path.is_dir(),
             AttachmentKind::Plugin => self.path.strip_prefix("plugin://").is_some_and(|id| {

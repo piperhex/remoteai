@@ -17,6 +17,12 @@ pub(crate) struct SshCredentials {
 }
 
 impl SshCredentials {
+    pub(super) fn apply(mut self, request: &mut csw_ssh_client::Connect) {
+        request.password = self.password.take();
+        request.private_key = self.private_key.take();
+        request.passphrase = self.passphrase.take();
+    }
+
     pub(super) fn valid(&self) -> bool {
         valid_secret(&self.password, MAX_PASSWORD_BYTES)
             && valid_secret(&self.private_key, MAX_PRIVATE_KEY_BYTES)

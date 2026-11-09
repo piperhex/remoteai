@@ -8,6 +8,8 @@ import { guiApi } from '../../../../shared/conversation/api';
 import { testModels } from '../../../../shared/conversation/testing/models';
 import type { ListResponse, Thread } from '../../../../shared/remote-chat/client/types';
 import type { ProjectFilesResponse } from '../../../../shared/remote-chat/projectFiles';
+import { composerSshProfiles } from '../../../../shared/testing/sshProfiles';
+import { sshReference } from '../../../../shared/conversation/sshReferences';
 
 vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
 const threads: Thread[] = [
@@ -80,6 +82,27 @@ it('excludes the current conversation, selects without sending and sends the rem
   expect(props.send).toHaveBeenCalledWith({ text: '', images: [], ...props.selection,
     attachments: [{ kind: 'conversation', name: '远程设计讨论', path: 'codex-thread://design' }] });
   expect(host.querySelector('.chat-capsule')).toBeNull();
+});
+
+it.each([false, true])('selects saved SSH profiles without sending or reading credentials (desktop=%s)', async desktop => {
+  vi.mocked(matchMedia).mockReturnValue({ matches: desktop, addEventListener: vi.fn(),
+    removeEventListener: vi.fn() } as unknown as MediaQueryList);
+  const profiles = { list: vi.fn().mockResolvedValue(composerSshProfiles), credentials: vi.fn() };
+  await render({ sshProfiles: profiles });
+  await type('!');
+  expect(options()).toHaveLength(2);
+  expect(props.catalog.refresh).not.toHaveBeenCalled();
+  expect(props.loadConversations).not.toHaveBeenCalled();
+  await type('!开发');
+  expect(options()).toHaveLength(1);
+  expect(profiles.list).toHaveBeenCalledOnce();
+  await key('Enter');
+  expect(props.send).not.toHaveBeenCalled();
+  expect(input().value).toBe('');
+  expect(host.querySelector('.chat-capsule')?.textContent).toBe('!开发服务器');
+  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="发送消息"]')!.click());
+  expect(props.send).toHaveBeenCalledWith(expect.objectContaining({ attachments: [sshReference(composerSshProfiles[0])] }));
+  expect(profiles.credentials).not.toHaveBeenCalled();
 });
 
 it('searches names, selects with Tab and keeps plugin selection available through the add menu', async () => {

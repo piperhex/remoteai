@@ -1,12 +1,14 @@
 import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useRef } from "react";
-import { File, Folder, GitBranch, MessageSquare, Target } from "lucide-react";
+import { File, Folder, GitBranch, MessageSquare, Target, Terminal } from "lucide-react";
 import { ComposerSkillIcon } from "./ComposerSkillIcon";
 import type { ComposerOption } from "./composerOptions";
 import styles from "./SkillInput.module.less";
 import { useChatSurfaceTheme } from "../../../../../shared/remote-chat/views/useChatSurfaceTheme";
 
-function menuLabels(kind: "coze" | "conversation" | "skill" | "command" | "file") {
+function menuLabels(kind: "coze" | "conversation" | "skill" | "command" | "file" | "ssh") {
+  if (kind === 'ssh') return { heading: uiText('client.ssh.savedConnections'), label: uiText('client.ssh.savedConnections'),
+    loading: uiText('client.mobile.loading'), empty: uiText('client.ssh.noMatchingConnections') };
   if (kind === "file") return { heading: uiText("client.fileReferences.referenceAFileOrFolder"), label: uiText("client.projectBrowser.projectFiles"),
     loading: uiText("client.fileReferences.searchingFiles"), empty: uiText("client.fileReferences.noMatchingFilesOrFolders") };
   if (kind === "coze") return { heading: uiText("client.desktopComposerExtras.chooseCozeContent"), label: "Coze",
@@ -23,6 +25,7 @@ function OptionIcon({ option }: { option: ComposerOption }) {
   if (option.kind === "file") return option.directory ? <Folder size={18} /> : <File size={18} />;
   if (option.kind === "skill") return <ComposerSkillIcon skill={option.skill} />;
   if (option.kind === "coze") return <GitBranch size={18} aria-hidden="true" />;
+  if (option.kind === 'ssh') return <Terminal size={18} aria-hidden="true" />;
   if (option.kind === "conversation") return <MessageSquare size={18} aria-hidden="true" />;
   if (option.kind === "goal") return <Target size={18} aria-hidden="true" />;
   return <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -33,10 +36,11 @@ function OptionIcon({ option }: { option: ComposerOption }) {
 }
 
 export function SkillMenu({ id, options, selected, loading, error, onChoose, below,
-  skillsOnly, conversations, coze, files, truncated }: {
+  skillsOnly, conversations, coze, files, ssh, truncated }: {
   id: string; options: ComposerOption[]; selected: number; loading: boolean; error: string;
   onChoose: (option: ComposerOption) => void;
-  below?: boolean; skillsOnly?: boolean; conversations?: boolean; coze?: boolean; files?: boolean; truncated?: boolean;
+  below?: boolean; skillsOnly?: boolean; conversations?: boolean; coze?: boolean; files?: boolean;
+  ssh?: boolean; truncated?: boolean;
 }) {
   const list = useRef<HTMLDivElement>(null);
   const surfaceTheme = useChatSurfaceTheme();
@@ -47,6 +51,7 @@ export function SkillMenu({ id, options, selected, loading, error, onChoose, bel
   if (conversations) kind = "conversation";
   if (coze) kind = "coze";
   if (files) kind = "file";
+  if (ssh) kind = 'ssh';
   const labels = menuLabels(kind);
   return <div className={`${styles.menu} ${below ? styles.menuBelow : ""}`} style={surfaceTheme}
     onMouseDown={(event) => event.preventDefault()}>

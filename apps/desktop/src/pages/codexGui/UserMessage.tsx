@@ -21,6 +21,7 @@ import styles from "../../../../../shared/conversation/styles.module.less";
 
 const MILLISECONDS_PER_SECOND = 1000;
 function referenceLabel(path?: string) {
+  if (path?.startsWith('ssh-profile://')) return uiText('client.ssh.connection');
   if (path?.startsWith("coze://")) return "Coze";
   if (path?.startsWith(CONVERSATION_PREFIX)) return uiText("client.workspaceActions.referenceAConversation");
   if (path?.startsWith("plugin://")) return uiText("client.chat.plugins");

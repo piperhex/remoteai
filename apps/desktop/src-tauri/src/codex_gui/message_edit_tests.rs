@@ -3,6 +3,23 @@ use super::*;
 const PASTED_IMAGE: &str = "data:image/png;base64,iVBORw0KGgo=";
 
 #[test]
+fn editing_an_ssh_message_preserves_its_saved_connection_binding() {
+    let mut source = history();
+    source["turns"][1]["items"][0]["content"] = json!([
+        {"type":"text", "text":"original"},
+        super::super::ssh_reference::inputs("ssh-profile://development", "开发服务器").unwrap()[0]
+    ]);
+    super::super::conversation_context::display(&mut source);
+    let input = edited_input(&source, &edit()).unwrap();
+    assert_eq!(input[0]["text"], "修改后的问题");
+    assert!(input[1]["text"]
+        .as_str()
+        .unwrap()
+        .contains("gui_ssh_execute"));
+    assert!(input[1]["text"].as_str().unwrap().contains("development"));
+}
+
+#[test]
 fn editing_a_coze_message_preserves_its_selected_tool_binding() {
     let id = "f321c884-a198-4244-ad4f-53762b3d2aba";
     let mut source = history();

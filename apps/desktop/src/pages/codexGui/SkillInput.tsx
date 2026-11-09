@@ -1,4 +1,4 @@
-import { uiText } from "../../../../../shared/localization/uiText";
+import { displayError, uiText } from "../../../../../shared/localization/uiText";
 import { useGuiLanguage } from "../../../../../shared/localization/useGuiLanguage";
 import { forwardRef, useId, useImperativeHandle, useLayoutEffect, useRef, useState,
   type ClipboardEvent, type KeyboardEvent } from "react";
@@ -12,6 +12,9 @@ import type { SkillTrigger } from "./skillEditorDom";
 import { useComposerSkills } from "./useComposerSkills";
 import { useComposerCoze } from "./useComposerCoze";
 import { useComposerFileOptions } from './useComposerFileOptions';
+import { useSshCandidates, type ComposerSshProfiles } from '../../../../../shared/chat/useSshCandidates';
+import { sshCandidates, sshReference } from '../../../../../shared/conversation/sshReferences';
+import { sshLabel } from '../../../../../shared/terminal/sshProfiles';
 import { SkillMenu } from "./SkillMenu";
 import { useSuggestionInput } from './useSuggestionInput';
 import styles from "./SkillInput.module.less";
@@ -41,11 +44,14 @@ export const SkillInput = forwardRef<SkillInputHandle, {
   onConversation?: (reference: AttachmentReference) => void;
   onCoze?: (reference: AttachmentReference) => void;
   onFile?: (reference: AttachmentReference) => void;
+  sshProfiles?: ComposerSshProfiles;
+  onSsh?: (reference: AttachmentReference) => void;
   editing?: { onCancel: () => void; className: string };
   onPaste: (event: ClipboardEvent<HTMLElement>) => void; onSend: () => void;
   onPasteKeyDown?: (event: KeyboardEvent<HTMLElement>) => void;
 }>(function SkillInput({ value, draftKey, cwd, active, connected, disabled, placeholder,
-  compact, goal, conversations, onConversation, onCoze, onFile, editing, onChange, onPaste, onPasteKeyDown, onSend,
+  compact, goal, conversations, onConversation, onCoze, onFile, sshProfiles, onSsh,
+  editing, onChange, onPaste, onPasteKeyDown, onSend,
   suggestion, onUserInput, onInputEnd }, ref) {
   useGuiLanguage();
   const editor = useRef<HTMLDivElement>(null);
@@ -57,12 +63,14 @@ export const SkillInput = forwardRef<SkillInputHandle, {
   const isConversation = trigger?.kind === "conversation";
   const isCoze = trigger?.kind === "coze";
   const isFile = trigger?.kind === 'file';
+  const isSsh = trigger?.kind === 'ssh';
   const open = Boolean(trigger) && active && !disabled && (!isConversation || Boolean(onConversation))
-    && (!isCoze || Boolean(onCoze)) && (!isFile || Boolean(onFile));
+    && (!isCoze || Boolean(onCoze)) && (!isFile || Boolean(onFile)) && (!isSsh || Boolean(onSsh));
   const ghost = useSuggestionInput({ editor, value, text: suggestion,
     enabled: active && connected && !disabled && !open && !editing, onChange, onUserInput, onInputEnd });
-  const catalog = useComposerSkills({ cwd, active: open && !isConversation && !isCoze && !isFile, connected });
+  const catalog = useComposerSkills({ cwd, active: open && !isConversation && !isCoze && !isFile && !isSsh, connected });
   const coze = useComposerCoze(open && isCoze && connected);
+  const ssh = useSshCandidates({ active: open && isSsh, connected, profiles: sshProfiles });
   const query = trigger?.query.toLocaleLowerCase() ?? "";
   const files = useComposerFileOptions({ cwd, active: open && isFile, connected, query, choose: onFile });
   const candidates = useConversationCandidates({ active: open && isConversation, connected, query });
@@ -83,10 +91,14 @@ export const SkillInput = forwardRef<SkillInputHandle, {
     }));
   if (isCoze) options = cozeOptions;
   if (isFile) options = files.options;
+  if (isSsh) options = sshCandidates(ssh.items, query).map(profile => ({ kind: 'ssh', key: profile.id,
+    label: sshReference(profile).name, description: sshLabel(profile), enabled: connected,
+    command: { enabled: connected, run: () => onSsh?.(sshReference(profile)) } }));
   let menuState: { loading: boolean; error: string } = catalog;
   if (isConversation) menuState = candidates;
   if (isCoze) menuState = coze;
   if (isFile) menuState = files;
+  if (isSsh) menuState = { ...ssh, error: ssh.error ? displayError(ssh.error) : '' };
   const selectedIndex = Math.min(selected, Math.max(0, options.length - 1));
 
   useLayoutEffect(() => {
@@ -171,7 +183,7 @@ export const SkillInput = forwardRef<SkillInputHandle, {
   return <div className={styles.inputWrap} data-suggesting={Boolean(ghost.text)}>
     {open && <SkillMenu id={listId} options={options} selected={selectedIndex}
       loading={menuState.loading} error={menuState.error}
-      conversations={isConversation} coze={isCoze} files={isFile} truncated={isFile && files.truncated}
+      conversations={isConversation} coze={isCoze} files={isFile} ssh={isSsh} truncated={isFile && files.truncated}
       onChoose={choose} below={Boolean(editing)}
       skillsOnly={!compact && !goal} />}
     {ghost.text && <div className={styles.suggestion} data-testid="next-prompt-suggestion">

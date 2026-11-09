@@ -22,6 +22,12 @@ fn closing_tag(text: &str) -> Option<usize> {
 
 fn reference(payload: &str) -> Option<Value> {
     let (id, name, prefix) = match serde_json::from_str(payload.trim()).ok()? {
+        Context::Ssh { id, name, .. }
+            if super::super::ssh_reference::reference_id(&format!("ssh-profile://{id}"))
+                .is_ok() =>
+        {
+            (id, name, super::super::ssh_reference::PREFIX)
+        }
         Context::Reference { id, name, .. } => (id, name, REFERENCE_PREFIX),
         Context::Coze { id, name, .. } if uuid::Uuid::parse_str(&id).is_ok() && id.len() == 36 => {
             (id, name, "coze://")

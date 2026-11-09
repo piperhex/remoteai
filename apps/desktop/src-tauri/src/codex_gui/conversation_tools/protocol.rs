@@ -20,6 +20,14 @@ pub(super) fn tools() -> Result<Value> {
             .iter()
             .cloned(),
     );
+    let ssh: Value = serde_json::from_str(include_str!("ssh_tools.json"))?;
+    tools["tools"].as_array_mut().ok_or(Error::Invalid)?.extend(
+        ssh["tools"]
+            .as_array()
+            .ok_or(Error::Invalid)?
+            .iter()
+            .cloned(),
+    );
     Ok(tools)
 }
 

@@ -49,6 +49,7 @@ mod message_edit;
 mod model_catalog_cache;
 mod model_discovery;
 mod process_details;
+mod ssh_reference;
 mod tool_details;
 pub(crate) use model_catalog_cache::cached_catalog;
 pub(crate) mod model_context;

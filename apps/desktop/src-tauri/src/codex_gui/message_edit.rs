@@ -260,6 +260,11 @@ fn edited_attachments(content: &[Value], edit: &EditRequest) -> Result<Vec<Value
                 path,
                 part["name"].as_str().unwrap_or_default(),
             )?);
+        } else if part["type"] == "mention" && path.starts_with(super::ssh_reference::PREFIX) {
+            inputs.extend(super::ssh_reference::inputs(
+                path,
+                part["name"].as_str().unwrap_or_default(),
+            )?);
         } else {
             inputs.push(part);
         }
