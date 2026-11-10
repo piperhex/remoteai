@@ -16,6 +16,57 @@ fn prepared(source: &Fixture) -> PathBuf {
     root
 }
 
+#[test]
+fn remote_archive_preserves_all_segments_and_the_extended_current_path() {
+    let source = source();
+    let current = super::super::transfer_tests::segments(&source);
+    let root = prepared(&source);
+    archive::pack(&root).unwrap();
+    let incoming = source.root.join("incoming-current");
+    fs::create_dir_all(&incoming).unwrap();
+    let package = root.join("bundle.zip");
+    fs::copy(&package, incoming.join("bundle.zip")).unwrap();
+    let size = fs::metadata(&package).unwrap().len();
+    let entry = Transfer {
+        root: incoming,
+        size,
+        sha256: sha256(&package).unwrap(),
+        written: size,
+        source: None,
+        plan: None,
+        touched: Instant::now(),
+        retain: false,
+        original_size: 0,
+        resume_token: String::new(),
+    };
+    archive::unpack(&entry).unwrap();
+    let snapshots = archive::snapshots(&entry.root).unwrap();
+    assert_eq!(snapshots[0].rollouts.len(), 3);
+    let target = self::source();
+    target.discard();
+    synchronize_batch(
+        None,
+        MigrationDestination {
+            path: &target.home,
+            model_provider: None,
+        },
+        &entry.root,
+        snapshots,
+    )
+    .unwrap();
+    let relative = current.strip_prefix(&source.home).unwrap();
+    assert_eq!(
+        PathBuf::from(target.visibility().rollout_path),
+        target.home.join(relative)
+    );
+    for path in source.snapshot().physical_paths {
+        assert_eq!(
+            fs::read(&path).unwrap(),
+            fs::read(target.home.join(path.strip_prefix(&source.home).unwrap())).unwrap()
+        );
+    }
+}
+
 fn synchronize(source: &Fixture, target: &Fixture, moving: bool) -> Result<(), String> {
     let root = prepared(source);
     synchronize_batch(
