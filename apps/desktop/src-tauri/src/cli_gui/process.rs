@@ -78,6 +78,13 @@ impl Client {
         .map_err(|_| Error::Startup)?
         .map_err(|_| Error::Startup)?;
         let mut command = Command::new(executable);
+        let proxy_app = app.clone();
+        let proxy_url = tauri::async_runtime::spawn_blocking(move || {
+            crate::local_proxy::gui_runtime::ensure_started(&proxy_app)
+        })
+        .await
+        .map_err(|_| Error::Connection)?
+        .map_err(|_| Error::Connection)?;
         command
             .arg(script)
             .arg(root)
@@ -86,6 +93,11 @@ impl Client {
             .stderr(Stdio::from(log))
             .env_remove("NODE_OPTIONS")
             .env_remove("NODE_PATH")
+            .env("REMOTEAI_GUI_PROXY_URL", proxy_url)
+            .env(
+                "REMOTEAI_GUI_PROXY_TOKEN",
+                crate::codex_config::LOCAL_PROXY_TOKEN,
+            )
             .kill_on_drop(true);
         #[cfg(windows)]
         command.creation_flags(0x0800_0000);

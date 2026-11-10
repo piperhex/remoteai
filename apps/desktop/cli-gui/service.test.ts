@@ -13,7 +13,8 @@ function fixture(provider = 'gemini', owned = true) {
     respondToPermission: vi.fn(), reload: vi.fn() };
   const client = { agents: { ref: () => agent as unknown as PaseoAgentHandle } } as unknown as PaseoClient;
   const service = new CliService({ connect: async () => client,
-    status: async () => ({ status: 'ready', version: '0.15.4' }), install() {}, close: async () => {} }, () => {});
+    status: async () => ({ status: 'ready', version: '0.15.4' }), install() {}, close: async () => {},
+    accountBridge: async () => { throw new Error('Unexpected account operation'); } }, () => {});
   return { service, agent, pending };
 }
 
@@ -47,4 +48,19 @@ it('maps provider questions and forwards answers with the original tool input', 
     permissionId: pending.id, actionId: 'choice:once', answers: { 'Which branch?': 'main' } });
   expect(agent.respondToPermission.mock.calls[0][0].response.updatedInput)
     .toEqual({ ...request.input, answers: { 'Which branch?': 'main' } });
+});
+
+it('never updates the runtime while another request is entering a CLI operation', async () => {
+  const { service, agent } = fixture();
+  let release!: () => void;
+  vi.spyOn(service.runtime, 'status').mockImplementation(async () => {
+    await new Promise<void>(resolve => { release = resolve; });
+    return { status: 'ready', version: '0.15.4' };
+  });
+  const install = vi.spyOn(service.runtime, 'install');
+  const stopping = service.request({ engine: 'gemini', action: 'stop', id: 'agent-1' });
+  await expect(service.request({ engine: 'claude', action: 'install' })).rejects.toThrow('busy');
+  expect(install).not.toHaveBeenCalled();
+  release(); await stopping;
+  expect(agent.reload).toHaveBeenCalledOnce();
 });

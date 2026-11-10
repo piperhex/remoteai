@@ -67,7 +67,18 @@ pub(super) fn handle<R: Runtime>(
 
 fn handle_selected<R: Runtime>(request: GuiProxyRequest<'_, R>) -> Result<UpstreamPayload, String> {
     if is_anthropic_messages_endpoint(request_path(request.url)) {
-        return Err("Codex GUI only supports Codex requests".to_string());
+        return super::gui_cli::messages(request);
+    }
+    if is_anthropic_count_tokens_endpoint(request_path(request.url)) {
+        return Ok(super::gui_cli::count_tokens(&request.body));
+    }
+    if *request.method == Method::Get && request_path(request.url) == "/v1/cli-models" {
+        let state = request.app.state::<crate::codex_gui::GuiState>();
+        let _permit = state.model_discovery.begin();
+        return handle_selected(GuiProxyRequest {
+            url: "/v1/models",
+            ..request
+        });
     }
     if *request.method == Method::Get
         && matches!(request_path(request.url), "/models" | "/v1/models")

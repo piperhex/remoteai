@@ -10,6 +10,8 @@ import { saveGlobalFontSize } from '../../../shared/appearance/fontSize';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
 import { translate, type Translate } from '../src/i18n';
 import { createCliGuiFixture } from './cli-gui-fixture';
+import { RemoteAccountPicker } from '../../../shared/conversation/remote/RemoteAccountPicker';
+import { saveProject } from '../../../shared/conversation/projectCatalog';
 import { applyThemeMode } from '../src/utils/themeMode';
 import { setThemeMode } from '../../web/src/theme/preference';
 import styles from '../../../shared/conversation/styles.module.less';
@@ -24,6 +26,7 @@ await (mode === 'web' ? import('../../web/src/styles.css') : import('../src/styl
 setInterfaceLanguage('zh');
 saveGlobalFontSize(params.has('large') ? 20 : 14);
 const fixture = createCliGuiFixture(!params.has('missing'));
+saveProject({ path: 'F:/projects/remoteai', name: 'Remote AI' });
 const controller = new ChatController(events => ({ start() { events.mode('direct'); events.ready(); }, stop() {},
   request: async <T>(method: string, value?: unknown): Promise<T> => {
     const body = value as { operation?: string } | undefined;
@@ -36,24 +39,30 @@ const controller = new ChatController(events => ({ start() { events.mode('direct
 }));
 controller.cliGui.request = fixture.transport.request;
 controller.cliGui.subscribe = fixture.transport.subscribe;
+controller.cliGui.subscribeAccountChange = fixture.transport.subscribeAccountChange;
+controller.guiTools.projects.list = async () => [{ cwd: 'F:/projects/remoteai', label: 'Remote AI' }];
 const device = { deviceId: 'pc', name: 'Office PC', platform: 'Windows', online: true };
 const t: Translate = (key, values) => translate('zh', key, values);
 
 function Harness() {
   const state = useSyncExternalStore(controller.subscribe, controller.snapshot);
   const algorithm = dark ? theme.darkAlgorithm : theme.defaultAlgorithm;
+  const accounts = <RemoteAccountPicker client={fixture.accounts} ready active privacyMode={false}
+    computers={{ current: mode === 'local' ? null : device, devices: [device], allowLocal: true,
+      authenticated: true, loading: false, error: '', refresh() {}, login() {}, choose() {} }} />;
   return <ApplicationTypography><ConfigProvider theme={{ algorithm: mode === 'web' ? algorithm
     : [algorithm, theme.compactAlgorithm], token: { colorPrimary: '#28837f',
       fontFamily: mode === 'web' ? "Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif"
         : '"DM Sans", "Microsoft YaHei UI", sans-serif' } }}><App>
     <main className={mode === 'remote' ? `${styles.page} chat-page gui-remote-workspace`
       : mode === 'web' ? 'chat-page' : ''} style={{ height: '100dvh' }}>
-      {mode === 'local' ? <CodexGuiPage active accountPicker={null} providers={[]} aggregateApis={[]}
+      {mode === 'local' ? <CodexGuiPage active accountPicker={accounts} providers={[]} aggregateApis={[]}
         plugins={{ authenticated: false, onLogin() {}, notify() {}, t }} />
         : <ConnectedChat chat={{ state, controller, foreground: true }} device={device} devices={[device]}
           active scope={`cli-test-${mode}`} email="test@example.test" chooseDevice={() => {}} cliVersion="0.150.0"
+          accountPicker={accounts}
           renderSidebar={mode === 'remote' ? actions => <RemoteGuiSidebar state={state} controller={controller}
-            actions={actions} accountPicker={null} focusMode={{ focused: false, onToggleFocus() {} }} /> : undefined} />}
+            actions={actions} accountPicker={accounts} focusMode={{ focused: false, onToggleFocus() {} }} /> : undefined} />}
     </main>
   </App></ConfigProvider></ApplicationTypography>;
 }

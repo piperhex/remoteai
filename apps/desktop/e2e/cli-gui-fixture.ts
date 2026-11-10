@@ -1,9 +1,22 @@
 import type { CliHistory, CliRequest, CliSession, CliTransport } from '../../../shared/cli-gui/types';
+import type { GuiAccountsClient, SelectableGuiAccount } from '../../../shared/remote-chat/guiAccounts';
 
 export function createCliGuiFixture(ready = true) {
+  const installed = new Set(ready ? ['claude', 'gemini'] : []);
+  const installing = new Set<string>();
+  let account: SelectableGuiAccount = { kind: 'account', id: 'internal' };
+  const accountListeners = new Set<() => void>();
+  const accounts: GuiAccountsClient = {
+    read: async () => ({ selection: account, running: true, choices: [
+      { kind: 'account', id: 'internal', name: 'Remote AI', detail: 'Pro', available: true },
+      { kind: 'provider', id: 'provider', name: 'Team API', detail: 'Third-party models', available: true },
+    ] }),
+    select: async value => { account = value; accountListeners.forEach(listener => listener()); return value; },
+    subscribe: listener => { accountListeners.add(listener); return () => { accountListeners.delete(listener); }; },
+  };
   const sessions: CliSession[] = (['claude', 'gemini'] as const).map(engine => ({
     id: `${engine}-history`, engine, title: engine === 'claude' ? '检查项目结构' : '整理测试计划',
-    cwd: 'F:/projects/remoteai', model: engine === 'claude' ? 'claude-sonnet' : 'gemini-pro',
+    cwd: 'F:/projects/remoteai', model: 'gpt-6', effort: 'high',
     updatedAt: '2026-11-10T08:00:00Z', status: 'idle', archived: false, permissions: [],
   }));
   const entries = new Map<string, CliHistory['entries']>();
@@ -16,11 +29,18 @@ export function createCliGuiFixture(ready = true) {
   const notify = () => listeners.forEach(listener => listener());
   const request = async (input: CliRequest): Promise<unknown> => {
     calls.push(input);
-    if (input.action === 'status') return { status: ready ? 'ready' : 'missing', version: '0.15.4',
-      cliVersion: input.engine === 'claude' ? '2.1.42' : '0.32.1' };
+    if (input.action === 'status') return { status: installing.has(input.engine) ? 'installing'
+      : installed.has(input.engine) ? 'ready' : 'missing', version: '0.15.4',
+      cliVersion: installed.has(input.engine) ? input.engine === 'claude' ? '2.1.42' : '0.32.1' : undefined };
+    if (input.action === 'install') {
+      installing.add(input.engine);
+      setTimeout(() => { installing.delete(input.engine); installed.add(input.engine); notify(); }, 1500);
+      return {};
+    }
     if (input.action === 'catalog') return { status: 'ready',
-      models: [{ id: input.engine === 'claude' ? 'claude-sonnet' : 'gemini-pro',
-        label: input.engine === 'claude' ? 'Claude Sonnet' : 'Gemini Pro', isDefault: true }],
+      models: [{ id: account.kind === 'account' ? 'gpt-6' : 'team-model',
+        label: account.kind === 'account' ? 'GPT-6' : 'Team Model', isDefault: true, defaultEffort: 'high',
+        efforts: [{ id: 'medium', label: 'Medium' }, { id: 'high', label: 'High' }] }],
       modes: [{ id: 'default', label: 'Default' }], defaultMode: 'default' };
     if (input.action === 'list') return sessions.filter(item => item.engine === input.engine
       && item.archived === input.archived);
@@ -47,6 +67,7 @@ export function createCliGuiFixture(ready = true) {
     notify(); return {};
   };
   const transport: CliTransport = { request: async <T>(input: CliRequest) => await request(input) as T,
+    subscribeAccountChange: accounts.subscribe,
     subscribe: listener => { listeners.add(listener); return () => { listeners.delete(listener); }; } };
-  return { transport, calls };
+  return { transport, calls, accounts };
 }

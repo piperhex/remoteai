@@ -4,7 +4,11 @@ import { createInterface } from 'node:readline';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { resolve, delimiter } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { pathToFileURL } from 'node:url';
+import { existsSync } from 'node:fs';
+import { build } from 'esbuild';
 import { setTimeout as delay } from 'node:timers/promises';
+import { createServer } from 'node:http';
 
 const desktop = fileURLToPath(new URL('../', import.meta.url));
 const root = resolve(desktop, '../../.codex-tmp/cli-gui-smoke');
@@ -12,14 +16,32 @@ const bin = resolve(root, 'fixture-bin');
 const executable = process.platform === 'win32'
   ? resolve(desktop, 'src-tauri/resources/desktop-service/node.exe') : process.execPath;
 const script = fileURLToPath(new URL('./fixtures/cli-gui-acp.mjs', import.meta.url));
+const proxy = createServer((request, response) => {
+  assert.equal(request.headers.authorization, 'Bearer acp-test-account');
+  response.setHeader('content-type', 'application/json');
+  response.end(JSON.stringify({ models: [{ slug: 'fixture', display_name: 'Account fixture', visibility: 'list' }] }));
+});
+await new Promise(resolveListen => proxy.listen(0, '127.0.0.1', resolveListen));
 await mkdir(bin, { recursive: true });
+const marker = resolve(root, 'runtime/remoteai-ready.json');
+if (!existsSync(marker)) {
+  await mkdir(resolve(root, 'runtime'), { recursive: true });
+  const helper = resolve(root, 'install-helper.mjs');
+  await build({ entryPoints: [resolve(desktop, 'cli-gui/npm.ts')], outfile: helper,
+    bundle: true, platform: 'node', format: 'esm' });
+  const { installPackages } = await import(pathToFileURL(helper).href);
+  await installPackages(root, ['@getpaseo/server@0.15.4']);
+  await writeFile(marker, JSON.stringify({ version: '0.15.4' }));
+}
 await writeFile(resolve(bin, process.platform === 'win32' ? 'gemini.cmd' : 'gemini'), process.platform === 'win32'
   ? `@"${executable}" "${script}" %*\r\n` : `#!/bin/sh\nexec '${executable}' '${script}' "$@"\n`, { mode: 0o755 });
 
 function worker(home = root) {
   const child = spawn(executable, [resolve(desktop, 'src-tauri/resources/cli-gui/host.mjs'), home],
     { windowsHide: true, stdio: ['pipe', 'pipe', 'inherit'], env: { ...process.env,
-      PATH: `${bin}${delimiter}${process.env.PATH}`, CLI_FIXTURE_HOME: resolve(root, 'fixture-history') } });
+      PATH: `${bin}${delimiter}${process.env.PATH}`, CLI_FIXTURE_HOME: resolve(root, 'fixture-history'),
+      REMOTEAI_GUI_PROXY_URL: `http://127.0.0.1:${proxy.address().port}/v1`,
+      REMOTEAI_GUI_PROXY_TOKEN: 'acp-test-account' } });
   const pending = new Map();
   let id = 0;
   createInterface({ input: child.stdout }).on('line', line => {
@@ -84,4 +106,4 @@ try {
   assert.ok(archived.some(item => item.id === session.id));
   assert.ok((await read()).entries.length > 0);
   console.log('Real Paseo + ACP: version, model discovery, messages, approval, restart history, stop and archive passed.');
-} finally { await host.close(); }
+} finally { await host.close(); await new Promise(resolveClose => proxy.close(resolveClose)); }

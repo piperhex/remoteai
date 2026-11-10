@@ -35,6 +35,7 @@ enum Action {
         cwd: String,
         model: String,
         mode: Option<String>,
+        effort: Option<String>,
     },
     Read {
         id: String,
@@ -44,6 +45,8 @@ enum Action {
         id: String,
         text: String,
         message_id: String,
+        model: Option<String>,
+        effort: Option<String>,
     },
     Stop {
         id: String,
@@ -83,9 +86,17 @@ fn directory(value: &str) -> Result<()> {
 impl Request {
     pub(super) fn validate(self) -> Result<Self> {
         match &self.action {
-            Action::Create { cwd, model, mode } => {
+            Action::Create {
+                cwd,
+                model,
+                mode,
+                effort,
+            } => {
                 directory(cwd)?;
                 bounded(model, 300)?;
+                if let Some(effort) = effort {
+                    bounded(effort, 50)?;
+                }
                 if let Some(mode) = mode {
                     bounded(mode, 300)?;
                 }
@@ -95,10 +106,18 @@ impl Request {
                 id,
                 text,
                 message_id,
+                model,
+                effort,
             } => {
                 bounded(id, 200)?;
                 bounded(text, 1_000_000)?;
                 bounded(message_id, 200)?;
+                if let Some(model) = model {
+                    bounded(model, 300)?;
+                }
+                if let Some(effort) = effort {
+                    bounded(effort, 50)?;
+                }
             }
             Action::Read { id, cursor } => {
                 bounded(id, 200)?;

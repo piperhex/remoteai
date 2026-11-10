@@ -1,4 +1,4 @@
-import type { PaseoAgentHandle, PaseoClient } from '@getpaseo/client';
+import type { PaseoAgent, PaseoAgentHandle, PaseoClient } from '@getpaseo/client';
 import type { CliCatalog, CliHistory, CliRequest, ExternalEngine } from '../../../shared/cli-gui/types';
 import { CliRuntime } from './runtime';
 import { permission, session, timelineEntry } from './mapping';
@@ -9,13 +9,24 @@ const HISTORY_PAGE_SIZE = 100;
 export class CliService {
   private watches = new Map<string, () => void>();
   private mutations = new Map<string, Promise<unknown>>();
-  constructor(readonly runtime: Pick<CliRuntime, 'status' | 'install' | 'connect' | 'close'>,
+  private operations = 0;
+  private maintaining = false;
+  constructor(readonly runtime: Pick<CliRuntime, 'status' | 'install' | 'connect' | 'close' | 'accountBridge'>,
     private changed: () => void) {}
 
   async request(request: CliRequest): Promise<unknown> {
     if (!['claude', 'gemini'].includes(request.engine)) throw new Error('client.cliGui.invalidRequest');
     if (request.action === 'status') return this.runtime.status(request.engine);
-    if (request.action === 'install') { this.runtime.install(); return this.runtime.status(request.engine); }
+    if (request.action === 'install') return this.install(request.engine);
+    if (this.maintaining) throw new Error('client.cliGui.busy');
+    this.operations++;
+    try {
+      if ((await this.runtime.status(request.engine)).status === 'installing') throw new Error('client.cliGui.busy');
+      return await this.execute(request);
+    } finally { this.operations--; }
+  }
+
+  private async execute(request: CliRequest) {
     const client = await this.runtime.connect();
     if (request.action === 'catalog') {
       await client.providers.refresh({ cwd: request.cwd, providers: [request.engine] });
@@ -33,6 +44,7 @@ export class CliService {
           throw new Error('client.cliGui.busy');
         }
         await this.watch(agent);
+        await this.configureMessage(agent, request);
         await agent.send(request.text, { messageId: request.messageId });
       } else if (request.action === 'stop') {
         // The public SDK reload operation interrupts the turn and preserves the native session/history.
@@ -45,6 +57,51 @@ export class CliService {
       this.changed();
       return { ok: true };
     });
+  }
+
+  private async install(engine: ExternalEngine) {
+    if (this.maintaining || this.operations) throw new Error('client.cliGui.busy');
+    this.maintaining = true;
+    try {
+      if (this.watches.size) {
+        const client = await this.runtime.connect();
+        await this.ensureIdle(client);
+        for (const unsubscribe of this.watches.values()) unsubscribe();
+        this.watches.clear();
+      }
+      this.runtime.install(engine); return await this.runtime.status(engine);
+    } finally { this.maintaining = false; }
+  }
+
+  private async ensureIdle(client: PaseoClient) {
+    let cursor: string | undefined;
+    do {
+      const page = await client.agents.list({ filter: { labels: OWNERSHIP }, page: { limit: 200, cursor } });
+      if (page.entries.some(entry => entry.agent.status === 'running' || entry.agent.pendingPermissions.length)) {
+        throw new Error('client.cliGui.busy');
+      }
+      cursor = page.pageInfo.nextCursor ?? undefined;
+    } while (cursor);
+  }
+
+  private async configureMessage(agent: PaseoAgentHandle, request: Extract<CliRequest, { action: 'send' }>) {
+    const bridge = await this.runtime.accountBridge();
+    const routeId = agent.current()?.labels.remoteaiRoute;
+    if (!routeId) throw new Error('client.cliGui.accountUnavailable');
+    const previous = bridge.selection(routeId);
+    const model = request.model ?? previous?.model;
+    const models = await bridge.models();
+    const chosen = models.find(entry => entry.id === model);
+    if (!chosen) throw new Error('client.cliGui.accountUnavailable');
+    const effort = request.effort ?? previous?.effort;
+    if (effort && !chosen.efforts?.some(entry => entry.id === effort)) throw new Error('client.cliGui.invalidRequest');
+    await bridge.update(routeId, chosen.id, effort);
+  }
+
+  private async session(agent: PaseoAgent, engine: ExternalEngine) {
+    const bridge = await this.runtime.accountBridge();
+    const route = bridge.selection(agent.labels.remoteaiRoute);
+    return { ...session(agent, engine), ...(route ?? {}) };
   }
 
   private async serialized(id: string, work: () => Promise<unknown>) {
@@ -68,9 +125,9 @@ export class CliService {
   private async catalog(client: PaseoClient, engine: ExternalEngine, cwd?: string): Promise<CliCatalog> {
     const snapshot = await client.providers.waitForReady({ cwd, timeoutMs: 30_000 });
     const provider = snapshot.entries.find(entry => entry.provider === engine);
-    return { status: provider?.status ?? 'unavailable', models: provider?.models?.map(model => ({
-      id: model.id, label: model.label, isDefault: model.isDefault,
-    })) ?? [], modes: provider?.modes?.map(mode => ({ id: mode.id, label: mode.label })) ?? [],
+    const models = await (await this.runtime.accountBridge()).models();
+    return { status: provider?.status ?? 'unavailable', models,
+      modes: provider?.modes?.map(mode => ({ id: mode.id, label: mode.label })) ?? [],
     defaultMode: provider?.defaultModeId ?? undefined };
   }
 
@@ -80,8 +137,8 @@ export class CliService {
     do {
       const page = await client.agents.list({ filter: { labels: OWNERSHIP, includeArchived: request.archived },
         page: { limit: 200, cursor }, sort: [{ key: 'updated_at', direction: 'desc' }] });
-      sessions.push(...page.entries.filter(entry => entry.agent.provider === request.engine
-        && Boolean(entry.agent.archivedAt) === request.archived).map(entry => session(entry.agent, request.engine)));
+      sessions.push(...await Promise.all(page.entries.filter(entry => entry.agent.provider === request.engine
+        && Boolean(entry.agent.archivedAt) === request.archived).map(entry => this.session(entry.agent, request.engine))));
       cursor = page.pageInfo.nextCursor ?? undefined;
     } while (cursor);
     return sessions;
@@ -93,13 +150,21 @@ export class CliService {
       || request.mode && !catalog.modes.some(mode => mode.id === request.mode)) {
       throw new Error('client.cliGui.unavailable');
     }
-    const agent = await client.agents.create({ cwd: request.cwd, labels: OWNERSHIP,
-      config: { provider: `${request.engine}/${request.model}`, modeId: request.mode } });
+    const bridge = await this.runtime.accountBridge();
+    const routeId = await bridge.route(request.model, request.effort);
+    const providers = await client.providers.waitForReady({ cwd: request.cwd, timeoutMs: 30_000 });
+    const nativeModels = providers.entries.find(entry => entry.provider === request.engine)?.models ?? [];
+    const nativeModel = nativeModels.find(model => model.isDefault)?.id ?? nativeModels[0]?.id;
+    if (!nativeModel) throw new Error('client.cliGui.unavailable');
+    // CLI model aliases stay native; the private bridge selects the actual account model.
+    const agent = await client.agents.create({ cwd: request.cwd,
+      labels: { ...OWNERSHIP, remoteaiRoute: routeId }, env: bridge.environment(request.engine, routeId),
+      config: { provider: `${request.engine}/${nativeModel}`, modeId: request.mode } });
     const snapshot = await agent.refresh();
     if (!snapshot) throw new Error('client.cliGui.connectionFailed');
     await this.watch(agent);
     this.changed();
-    return session(snapshot.agent, request.engine);
+    return this.session(snapshot.agent, request.engine);
   }
 
   private async watch(agent: PaseoAgentHandle) {
@@ -116,7 +181,7 @@ export class CliService {
     const page = await agent.timeline.refetch({ direction: request.cursor ? 'before' : undefined,
       cursor: request.cursor, limit: HISTORY_PAGE_SIZE, projection: 'projected' });
     if (page.error || !page.agent) throw new Error('client.cliGui.historyFailed');
-    return { session: session(page.agent, request.engine),
+    return { session: await this.session(page.agent, request.engine),
       entries: page.entries.map(entry => timelineEntry(entry.item, entry.seqStart, entry.seqEnd)),
       cursor: page.startCursor ?? undefined, hasOlder: page.hasOlder };
   }

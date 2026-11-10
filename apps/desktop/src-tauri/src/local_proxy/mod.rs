@@ -29,6 +29,7 @@ mod failover_transport;
 mod first_token;
 mod gemini_upstream;
 mod gui_auto_switch;
+mod gui_cli;
 pub(crate) mod gui_context;
 mod gui_forwarding;
 mod gui_routing;
@@ -183,6 +184,7 @@ mod tests {
     include!("tests/http_streaming.rs");
     include!("tests/lan_http.rs");
     include!("tests/gui_routing.rs");
+    include!("tests/gui_cli_http.rs");
     include!("tests/gui_aggregate.rs");
     include!("tests/gui_runtime_isolation.rs");
     include!("tests/gui_runtime.rs");

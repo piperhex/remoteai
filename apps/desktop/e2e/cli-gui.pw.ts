@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createCliGuiFixture } from './cli-gui-fixture';
 
-const evidence = resolve('../../.codex-tmp/cli-gui-evidence');
+const evidence = resolve('../../.codex-tmp/cli-gui-account-evidence');
 async function localBackend(page: Page, ready = true) {
   const fixture = createCliGuiFixture(ready);
   await page.route('https://fonts.googleapis.com/**', route => route.abort());
@@ -53,26 +53,27 @@ for (const mode of ['local', 'remote', 'web']) {
         await page.screenshot({ path: resolve(evidence, `${label}-selector.png`), animations: 'disabled' });
         await page.getByRole('menuitem', { name: 'Claude GUI' }).click();
         await expect(selector).toContainText('Claude GUI · 2.1.42');
-        await expect(page.getByRole('link', { name: '安装 Claude Code（官方）' }))
+        await expect(page.getByRole('link', { name: 'Claude Code 官方安装说明' }))
           .toHaveAttribute('href', 'https://code.claude.com/docs/en/setup#install-claude-code');
-        const path = page.getByRole('textbox', { name: '项目目录', exact: true });
-        await path.fill('F:/projects/remoteai'); await path.blur();
+        await page.locator('.cli-gui-pane [data-project-bar] button[aria-haspopup="menu"]').click();
+        await page.getByRole('menuitemradio', { name: 'Remote AI', exact: true }).click();
+        await expect(page.locator('.cli-gui-pane button').filter({ hasText: 'GPT-6' })).toBeVisible();
         await page.getByRole('textbox', { name: '消息', exact: true }).fill('请检查共享组件并补充项目说明。');
         await page.getByRole('button', { name: '发送消息', exact: true }).click();
         await expect(page.getByText('README.md · 补充本地开发步骤')).toBeVisible();
         await expect(page.getByRole('button', { name: '允许这一次', exact: true })).toBeEnabled();
         await page.screenshot({ path: resolve(evidence, `${label}-claude-approval.png`), animations: 'disabled' });
         await page.getByRole('button', { name: '允许这一次', exact: true }).click();
-        await expect(page.locator('.cli-gui-permission')).toHaveCount(0);
+        await expect(page.getByRole('region', { name: '需要审批', exact: true })).toHaveCount(0);
         await page.getByRole('button', { name: '加载更早的消息', exact: true }).click();
         await expect(page.getByText('更早的项目讨论已恢复。')).toBeVisible();
         await selector.click();
         await expect(page.getByRole('menuitem', { name: 'Gemini GUI' })).toHaveAttribute('aria-disabled', 'true');
-        await page.locator('.cli-gui-messages').click({ position: { x: 20, y: 20 } });
+        await page.locator('.cli-gui-pane .chat-messages').click({ position: { x: 20, y: 20 } });
         await expect(page.getByRole('menu')).not.toBeVisible();
         await page.locator('.cli-gui-thread-list button').filter({ hasText: '整理测试计划' }).click();
         await expect(selector).toContainText('Gemini GUI · 0.32.1');
-        await expect(page.getByRole('link', { name: '安装 Gemini CLI（官方）' }))
+        await expect(page.getByRole('link', { name: 'Gemini CLI 官方安装说明' }))
           .toHaveAttribute('href', 'https://geminicli.com/docs/get-started/installation/');
         await expect(page.getByText('已读取项目说明。接下来会检查共享组件和现有测试。')).toBeVisible();
         await page.screenshot({ path: resolve(evidence, `${label}-gemini-history.png`), animations: 'disabled' });
@@ -81,28 +82,35 @@ for (const mode of ['local', 'remote', 'web']) {
         const calls = mode === 'local' ? fixture.calls : await page.evaluate(() =>
           (window as unknown as { cliFixture: ReturnType<typeof createCliGuiFixture> }).cliFixture.calls);
         expect(calls).toContainEqual(expect.objectContaining({ engine: 'claude', action: 'approve', actionId: 'once:exact' }));
-        const typography = await page.locator('.cli-gui-messages').evaluate(node => ({
+        const typography = await page.locator('.cli-gui-pane .chat-message-region').evaluate(node => ({
           size: getComputedStyle(node).fontSize, family: getComputedStyle(node).fontFamily,
         }));
         expect(typography.size).toBe(enlarged ? '20px' : '14px');
         expect(typography.family).toContain('sans-serif');
       });
   }
-  test(`${mode}: official installation links and live language switching`, async ({ page }) => {
+  test(`${mode}: one-click installation, official sources and live language switching`, async ({ page }) => {
     await localBackend(page, false);
     await page.goto(`/e2e/cli-gui-harness.html?mode=${mode}&missing`);
     for (const [name, url] of [['Claude GUI', 'https://code.claude.com/docs/en/setup#install-claude-code'],
       ['Gemini GUI', 'https://geminicli.com/docs/get-started/installation/']]) {
       await page.locator('.cli-gui-engine:visible').click();
       await page.getByRole('menuitem', { name, exact: true }).click();
-      await expect(page.getByRole('button', { name: '准备聊天组件', exact: true })).toBeVisible();
-      const link = page.locator('.cli-gui-install-link');
+      await expect(page.locator('.cli-gui-setup').getByRole('button', { name: '一键安装', exact: true })).toBeVisible();
+      const link = page.locator('.cli-gui-install-link a');
       await expect(link).toHaveAttribute('href', url);
       await page.context().route(url.split('#')[0], route => route.fulfill({ body: 'Official installation fixture' }));
       const popup = page.waitForEvent('popup');
       await link.click();
       const official = await popup;
       await official.waitForLoadState(); expect(official.url()).toBe(url); await official.close();
+      const engine = name.startsWith('Claude') ? 'claude' : 'gemini';
+      await page.screenshot({ path: resolve(evidence, `${mode}-${engine}-install.png`), animations: 'disabled' });
+      await page.locator('.cli-gui-setup').getByRole('button', { name: '一键安装', exact: true }).click();
+      await expect(page.locator('.cli-gui-setup').getByRole('status')).toBeVisible();
+      await page.screenshot({ path: resolve(evidence, `${mode}-${engine}-installing.png`), animations: 'disabled' });
+      await expect(page.locator('.cli-gui-setup')).not.toBeVisible({ timeout: 10_000 });
+      await expect(page.locator('.cli-gui-engine:visible')).not.toContainText('版本未知');
     }
     await page.screenshot({ path: resolve(evidence, `${mode}-missing-official-install.png`), animations: 'disabled' });
     for (const language of ['en', 'ru', 'ja', 'zh']) {
@@ -111,5 +119,25 @@ for (const mode of ['local', 'remote', 'web']) {
       await expect(page.locator('.cli-gui-engine:visible')).toContainText('Gemini GUI');
       await expect(page.locator('.cli-gui-install-link')).not.toContainText('client.cliGui.');
     }
+  });
+  test(`${mode}: existing account picker supplies third-party models to either CLI`, async ({ page }) => {
+    const fixture = await localBackend(page);
+    await page.goto(`/e2e/cli-gui-harness.html?mode=${mode}`);
+    const expand = page.getByRole('button', { name: '展开对话列表', exact: true });
+    if (await expand.isVisible()) await expand.click();
+    await page.locator('.cli-gui-engine:visible').click();
+    await page.getByRole('menuitem', { name: 'Gemini GUI', exact: true }).click();
+    await expect(page.locator('.cli-gui-pane button').filter({ hasText: 'GPT-6' })).toBeVisible();
+    await page.getByRole('button', { name: '切换 GUI 账户：Remote AI', exact: true }).click();
+    await page.getByRole('button').filter({ hasText: 'Team API' }).click();
+    if (mode === 'local') {
+      await fixture.accounts.select({ kind: 'provider', id: 'provider' });
+      await page.getByRole('button', { name: '刷新 CLI 和模型', exact: true }).click();
+    }
+    await expect(page.locator('.cli-gui-pane button').filter({ hasText: 'Team Model' })).toBeVisible();
+    await page.screenshot({ path: resolve(evidence, `${mode}-third-party-model.png`), animations: 'disabled' });
+    await page.locator('.cli-gui-engine:visible').click();
+    await page.getByRole('menuitem', { name: 'Claude GUI', exact: true }).click();
+    await expect(page.locator('.cli-gui-pane button').filter({ hasText: 'Team Model' })).toBeVisible();
   });
 }

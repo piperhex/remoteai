@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@ant-design/cssinjs": "^1.24.0",
-    "@remoteai/i18n": "0.1.12",
+    "@remoteai/i18n": "0.1.13",
     "antd": "^5.29.3",
     "lucide-react": "^0.468.0",
     "react": "^18.3.1",

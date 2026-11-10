@@ -2,6 +2,8 @@ import { displayText } from '../../../../shared/localization/uiText';
 import { CliGuiProvider, useCliGui } from '../../../../shared/cli-gui/context';
 import { localCliTransport } from '../../../../shared/cli-gui/localTransport';
 import { CliConversationPane } from '../../../../shared/cli-gui/CliConversationPane';
+import { ProjectPicker } from './codexGui/ProjectPicker';
+import { dictationClient } from './codexGui/dictation/client';
 import { EngineSelector, engineNames } from '../../../../shared/cli-gui/EngineSelector';
 import { ImageAiContext } from '../../../../shared/chat/ImageAiContext';
 import { DesktopUsageContext } from '../../../../shared/chat/DesktopUsageContext';
@@ -173,7 +175,11 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
         </div>
         {focused && windowControls && <div className={styles.focusWindowControls}>{windowControls}</div>}
       </header>
-      {external && <CliConversationPane cwd={project} />}
+      {external && cli && <CliConversationPane cwd={project} dictation={dictationClient}
+        projectPicker={<ProjectPicker value={cli.state.selected?.cwd ?? cli.state.cwd} projects={state.projects}
+          active={active} disabled={Boolean(cli.state.selected) || cli.state.busy}
+          onChange={cwd => { cli.controller.patch({ cwd }); void cli.controller.loadCatalog(); }}
+          onError={cli.controller.report} />} />}
       <div className="cli-gui-codex-content" hidden={external}>
       {state.error && <Alert className={styles.error} message={formatRemoteError(language, state.error)}
         type="error" closable onClose={controller.clearError} />}
