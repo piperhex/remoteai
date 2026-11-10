@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, theme } from 'antd';
 import { DownloadsPage } from '../src/pages/DownloadsPage';
 import { authenticatedDownloadOwner, useDesktopDownloads } from '../src/downloads/useDesktopDownloads';
 import { FileMenu } from '../../../shared/conversation/FileMenu';
@@ -107,7 +107,9 @@ function Harness() {
   const [page, setPage] = useState<DashboardPage>('codexGui');
   const [device, setDevice] = useState('office');
   const [owner, setOwner] = useState('owner');
-  return <ConfigProvider><div className={collapsed ? 'sidebar-collapsed' : undefined}
+  return <ConfigProvider theme={{ algorithm: [document.documentElement.dataset.theme === 'dark'
+    ? theme.darkAlgorithm : theme.defaultAlgorithm, theme.compactAlgorithm] }}>
+    <div className={collapsed ? 'sidebar-collapsed' : undefined}
     style={{ display: 'flex', minHeight: '100vh' }}>
     <aside style={{ width: collapsed ? 64 : 220, padding: collapsed ? 0 : 16,
       borderRight: '1px solid var(--line)' }}>
