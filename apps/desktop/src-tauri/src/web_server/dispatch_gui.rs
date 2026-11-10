@@ -103,6 +103,9 @@ fn dispatch_gui_command(app: AppHandle, command: &str, args: Value) -> Result<Va
         "codex_gui_request" => serialize(block_on(codex_gui::codex_gui_request(
             app.state::<GuiState>(), argument(&args, "request")?,
         ))),
+        "cli_gui_request" => serialize(block_on(crate::cli_gui::cli_gui_request(
+            app.clone(), app.state::<crate::cli_gui::CliGuiState>(), argument(&args, "request")?,
+        ))),
         "codex_gui_respond" => serialize(block_on(codex_gui::codex_gui_respond(
             app.state::<GuiState>(), argument(&args, "reply")?,
         ))),

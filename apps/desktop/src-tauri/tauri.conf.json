@@ -68,6 +68,7 @@
       "resources/pet-dock/NOTICE.md",
       "resources/remote-desktop/**/*",
       "resources/desktop-service/**/*",
+      "resources/cli-gui/**/*",
       "resources/chat-connectivity/*",
       "resources/x-server/**/*"
     ],

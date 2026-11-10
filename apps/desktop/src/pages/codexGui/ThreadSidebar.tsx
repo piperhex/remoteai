@@ -1,4 +1,6 @@
 import { uiText } from "../../../../../shared/localization/uiText";
+import { useCliGui } from '../../../../../shared/cli-gui/context';
+import { CliConversationList } from '../../../../../shared/cli-gui/CliConversationList';
 import { useGuiLanguage } from '../../../../../shared/localization/useGuiLanguage';
 import { useMemo, useState, type ReactNode } from "react";
 import { App, Button, Input, Modal, Segmented, Spin } from "antd";
@@ -50,6 +52,7 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
   view?: GuiView; onNavigate?: (view: GuiView) => void; scheduledTasksAvailable?: boolean;
 } & GuiFocusMode) {
   const language = useGuiLanguage();
+  const cli = useCliGui();
   const grouping = useGrouping();
   const [searchOpen, setSearchOpen] = useState(false);
   const pagination = useThreadPagination({ state, controller, enabled: !searchOpen });
@@ -96,7 +99,7 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
       <div className={[styles.thread,
         view === "conversation" && state.selected === thread.id ? styles.selected : ""].join(" ")}>
         <button className={styles.threadSelect} disabled={state.sending}
-          onClick={() => { onNavigate("conversation"); void controller.select(thread.id); }}>
+          onClick={() => { cli?.controller.showCodex(); onNavigate("conversation"); void controller.select(thread.id); }}>
           <span className={styles.threadTitle}>{threadTitle(thread)}</span>
           <ThreadStatus running={running} needsInput={needsInput}
             unread={Boolean(state.threadReadState[thread.id]?.unread)} />
@@ -114,16 +117,21 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
         <Button type="text" size="small" icon={<RefreshCw size={15} />} aria-label={uiText("client.workspaceActions.refreshConversations")}
           loading={state.loading} disabled={state.connection !== "ready"} onClick={() => void controller.refresh()} />
         <Button type="text" size="small" icon={<Search size={15} />} aria-label={uiText("client.workspaceActions.searchConversations")}
-          disabled={state.connection !== "ready"} onClick={() => { onNavigate("conversation"); setSearchOpen(true); }} />
+          disabled={state.connection !== "ready"} onClick={() => {
+            cli?.controller.showCodex(); onNavigate("conversation"); setSearchOpen(true);
+          }} />
       </div>
     </div>
-    <GuiNavigation view={view} sending={state.sending} onNavigate={onNavigate}
+    <GuiNavigation view={view} sending={state.sending || Boolean(cli?.state.busy)} onNavigate={next => {
+      cli?.controller.showCodex(); onNavigate(next);
+    }}
       scheduledTasksAvailable={scheduledTasksAvailable}
-      onNewConversation={() => { onNavigate("conversation"); controller.newConversation(); }} />
+      onNewConversation={() => { cli?.controller.newConversation(); onNavigate("conversation"); controller.newConversation(); }} />
     <Segmented className={styles.threadFilter} block size="small" value={state.archived ? "archived" : "recent"}
       options={[{ label: uiText("client.chat.recent"), value: "recent" }, { label: uiText("client.mobile.archived"), value: "archived" }]}
-      onChange={(value) => controller.filter("", value === "archived")} disabled={state.connection !== "ready"} />
+      onChange={(value) => controller.filter("", value === "archived")} />
     <div className={styles.threadList} aria-busy={state.loading} {...pagination}>
+      <CliConversationList archived={state.archived} query={state.search} onSelect={() => onNavigate('conversation')} />
       {groups.map((group) => {
         const key = `${state.archived ? "archived" : "recent"}:${group.id}`;
         const custom = group.kind === 'group';
@@ -140,13 +148,14 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
           projectMenu={group.cwd ? (heading) => <ProjectGroupMenu path={group.cwd} label={group.label}
             state={state} controller={controller}>{heading}</ProjectGroupMenu> : undefined}
           creatingDisabled={state.sending} onNewConversation={group.cwd ? () => {
+            cli?.controller.newConversation(); cli?.controller.patch({ cwd: group.cwd });
             onNavigate("conversation");
             controller.newConversation();
             controller.setProject(group.cwd);
           } : undefined}
           renderThread={renderThread} /></div>;
       })}
-      {!state.threads.length && <p className={styles.listEmpty}>{state.loading ? <Spin size="small" />
+      {!state.threads.length && !cli?.state.sessions.length && <p className={styles.listEmpty}>{state.loading ? <Spin size="small" />
         : uiText(state.search ? "client.workspaceActions.noMatchingConversations" : "client.workspaceActions.noConversationsYet")}</p>}
       {state.cursor && <ThreadPagination loading={state.loading} />}
     </div>

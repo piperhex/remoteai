@@ -1,4 +1,8 @@
 import { displayText } from '../../../../shared/localization/uiText';
+import { CliGuiProvider, useCliGui } from '../../../../shared/cli-gui/context';
+import { localCliTransport } from '../../../../shared/cli-gui/localTransport';
+import { CliConversationPane } from '../../../../shared/cli-gui/CliConversationPane';
+import { EngineSelector, engineNames } from '../../../../shared/cli-gui/EngineSelector';
 import { ImageAiContext } from '../../../../shared/chat/ImageAiContext';
 import { DesktopUsageContext } from '../../../../shared/chat/DesktopUsageContext';
 import { ToolDetailsContext, localToolDetails } from '../../../../shared/chat/DeferredToolDetails';
@@ -72,29 +76,34 @@ export function CodexGuiPage(props: CodexGuiPageProps) {
   useEffect(() => { if (active) setVisited(true); }, [active]);
   if (!visited) return null;
   if (!hasLocalBackend) return <div className={styles.install}><h2>Codex GUI</h2><p>{uiText("client.composer.openTheWebAddressProvidedByRemoteAiToStart")}</p></div>;
-  return <Workspace {...props} {...(props.focusMode ?? focusMode)} />;
+  return <CliGuiProvider transport={localCliTransport} enabled={active}>
+    <Workspace {...props} {...(props.focusMode ?? focusMode)} />
+  </CliGuiProvider>;
 }
 
 function Workspace({ active, accountPicker, windowControls, plugins, hostPicker, notificationTarget, syncComputers,
   focused, onToggleFocus }: CodexGuiPageProps & GuiFocusMode) {
   const language = useGuiLanguage();
+  const cli = useCliGui();
+  const external = cli?.state.engine !== 'codex';
   const diffText = useCallback((source: string, values?: Record<string, string | number>) =>
     displayText(source, values, language), [language]);
   const skinStyle = useDreamSkin(active);
   const [controller] = useState(getGuiController);
   const [view, setView] = useState<GuiView>("conversation");
   const { state, visible } = useVisibleGuiState(controller, active);
-  const conversationActive = visible && view === "conversation";
+  const conversationActive = visible && view === "conversation" && !external;
   const { usage } = useUsageStatus(visible);
   useConversationReadState(conversationActive, controller);
   const openTaskConversation = (threadId: string) => {
+    cli?.controller.showCodex();
     setView("conversation");
     controller.filter("", false);
     void controller.select(threadId);
   };
   const composer = useRef<ComposerHandle>(null);
   useOpenNotifiedThread({ target: notificationTarget, ready: active && state.connection === "ready", controller,
-    showConversation: () => setView("conversation") });
+    showConversation: () => { cli?.controller.showCodex(); setView("conversation"); } });
   const [collapsed, setCollapsed] = useState(() => window.innerWidth < 900);
   const installer = useCliInstaller(active, controller, true);
   useEffect(retainGuiSession, [controller]);
@@ -130,7 +139,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
     <ChatFileReferencesProvider><ImageAnnotationsProvider>
     <div className={`${styles.page} ${collapsed ? styles.collapsed : ""}`}
       data-dream-skin={skinStyle ? "true" : undefined} style={skinStyle}>
-    {!collapsed && <ThreadSidebar state={state} controller={controller} accountPicker={accountPicker}
+    {!collapsed && <ThreadSidebar state={external ? { ...state, selected: null } : state}
+      controller={controller} accountPicker={accountPicker}
       focused={focused} onToggleFocus={onToggleFocus} view={view} onNavigate={setView}
       scheduledTasksAvailable={canManageCodexConnection} />}
     <div className={styles.workspace}>
@@ -140,10 +150,11 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
         {collapsed && <FocusModeButton focused={focused} onToggleFocus={onToggleFocus} />}
         <div className={styles.heading} data-tauri-drag-region={isDesktopApp || undefined}>
           <strong data-tauri-drag-region={isDesktopApp || undefined}>
-            {view === "conversation" && thread ? threadTitle(thread) : GUI_VIEW_TITLES[view]}
+            {external && cli ? cli.state.selected?.title || uiText(engineNames[cli.state.engine])
+              : view === "conversation" && thread ? threadTitle(thread) : GUI_VIEW_TITLES[view]}
           </strong>
         </div>
-        <div className={styles.headerActions} data-tauri-drag-region={isDesktopApp || undefined}>
+        <div className={styles.headerActions} hidden={external} data-tauri-drag-region={isDesktopApp || undefined}>
           {isDesktopApp && <AssistanceButton />}
           {isDesktopApp && <MobileConnectionStatus />}
           {installer.version && <Button type="text" icon={<RefreshCw size={16} />} aria-label={uiText("client.composer.reconnectCodex")}
@@ -162,6 +173,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
         </div>
         {focused && windowControls && <div className={styles.focusWindowControls}>{windowControls}</div>}
       </header>
+      {external && <CliConversationPane cwd={project} />}
+      <div className="cli-gui-codex-content" hidden={external}>
       {state.error && <Alert className={styles.error} message={formatRemoteError(language, state.error)}
         type="error" closable onClose={controller.clearError} />}
       <GuiSetupAlerts computerUseSetup={state.computerUseSetup} unattendedSetup={state.unattendedSetup} />
@@ -178,7 +191,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
         </Suspense>
       </div>}
       <div className={paneStyles.conversation} hidden={view !== "conversation"}>
-      {!installer.version ? <Installer installer={installer} /> :
+      {!installer.version ? <><Installer installer={installer} />
+        <footer className="cli-gui-footer"><EngineSelector active={false} /></footer></> :
         <ConversationRetryProvider controller={controller} state={state}>
         <Messages value={current} selected={state.selected} active={conversationActive}
           onLoadOlder={controller.loadOlderHistory}
@@ -199,6 +213,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
       {isDesktopApp && terminal.tabs.length > 0 && <Suspense fallback={null}>
         <TerminalPanel panel={terminal} active={conversationActive} api={terminalApi} notice={terminal.error} />
       </Suspense>}
+      </div>
       </div>
     </div>
     </div>

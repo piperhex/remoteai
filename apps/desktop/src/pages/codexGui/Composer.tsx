@@ -1,5 +1,5 @@
 import { displayText } from '../../../../../shared/localization/uiText';
-import { CodexVersionStatus } from '../../../../../shared/codex-status/CodexVersionStatus';
+import { EngineSelector } from '../../../../../shared/cli-gui/EngineSelector';
 import { readCodexServiceStatus } from '../../api/codexServiceStatus';
 import { uiText } from "../../../../../shared/localization/uiText";
 import {
@@ -194,7 +194,7 @@ export const Composer = forwardRef<ComposerHandle, {
       </div>
     </div>
     <div className={`${styles.composerHint} cs-usage-footer-container`}>
-      <CodexVersionStatus version={cliVersion} read={readCodexServiceStatus} active={active} t={uiText} />
+      <EngineSelector version={cliVersion} locked={Boolean(state.selected)} read={readCodexServiceStatus} active={active} />
       <ConversationTokenStatus threadId={state.selected} metrics={metrics}
         turns={current?.turns} active={active && state.connection === 'ready'} usage={usageSnapshot.usage} /></div>
     {dialog === "files" && <ComposerFilesDialog onAdd={addAttachments} onImages={() => fileInput.current?.click()}
