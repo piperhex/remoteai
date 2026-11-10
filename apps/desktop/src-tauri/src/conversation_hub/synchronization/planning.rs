@@ -202,7 +202,7 @@ fn selected_snapshots(
 
 fn validate_history(target: &Path, snapshots: &[BinSnapshot]) -> Result<(), String> {
     // A skipped base must still have usable history at the destination.
-    let available = live_bin_thread_ids(target)?
+    let mut available = live_bin_thread_ids(target)?
         .into_iter()
         .chain(
             snapshots
@@ -210,6 +210,19 @@ fn validate_history(target: &Path, snapshots: &[BinSnapshot]) -> Result<(), Stri
                 .map(|item| item.manifest.session_id.clone()),
         )
         .collect::<HashSet<_>>();
+    // A logical conversation can contain multiple physical rollout sessions.
+    // Newer Codex history_base references the physical suffix in the filename;
+    // that suffix may differ from both metadata id and session_id.
+    let target_snapshots = gather_snapshots(target)?;
+    for path in target_snapshots
+        .iter()
+        .flat_map(|item| item.physical_paths.iter())
+        .chain(snapshots.iter().flat_map(|item| item.rollouts.iter()))
+    {
+        if let Some(id) = physical_history_id(path) {
+            available.insert(id);
+        }
+    }
     for item in snapshots {
         for path in &item.rollouts {
             if first_rollout_value(path)?
@@ -223,6 +236,21 @@ fn validate_history(target: &Path, snapshots: &[BinSnapshot]) -> Result<(), Stri
     }
     Ok(())
 }
+
+fn physical_history_id(path: &Path) -> Option<String> {
+    let logical = logical_rollout_path(path)?;
+    let stem = logical.file_stem()?.to_str()?;
+    if !stem.starts_with("rollout-") {
+        return None;
+    }
+    let start = stem.len().checked_sub(36)?;
+    Uuid::parse_str(stem.get(start..)?)
+        .ok()
+        .map(|id| id.to_string())
+}
+
+#[cfg(test)]
+mod history_identity_tests;
 
 fn validate_destination(target: &Path, snapshots: &[BinSnapshot]) -> Result<(), String> {
     let root = fs::canonicalize(target).map_err(|error| error.to_string())?;
