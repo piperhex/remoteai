@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test:chat:e2e": "playwright test --config scripts/playwright.chat.config.ts",
+    "test:cli-gui:e2e": "playwright test --config scripts/playwright.cli-gui.config.ts",
     "test:chat:android": "node e2e/android-chat-regression.mjs",
     "test:chat:android:background": "node e2e/android-background-chat.mjs",
     "test:chat:android:history": "node e2e/android-history-regression.mjs",

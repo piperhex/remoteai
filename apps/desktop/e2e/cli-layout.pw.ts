@@ -36,7 +36,7 @@ for (const mode of ['local', 'remote', 'web']) {
       if (mode === 'local') expect(fixture.modelRequests.every(request => request.cacheOnly)).toBe(true);
       else expect(await page.evaluate(() => (window as unknown as { cliModelRequests: { operation: string }[] })
         .cliModelRequests.filter(request => request.operation === 'modelsRefresh'))).toHaveLength(0);
-      await page.locator('.cli-gui-pane').getByRole('button', { name: '刷新 CLI 和模型', exact: true }).click();
+      await toolbar.getByRole('button', { name: '刷新 CLI 和模型', exact: true }).click();
       if (mode === 'local') await expect.poll(() => fixture.modelRequests.filter(request => !request.cacheOnly).length).toBe(1);
       else await expect.poll(() => page.evaluate(() => (window as unknown as {
         cliModelRequests: { operation: string }[] }).cliModelRequests
@@ -117,7 +117,7 @@ for (const mode of ['local', 'remote']) {
     await expect(page.getByRole('textbox', { name: '消息', exact: true })).toBeVisible();
     expect(await skin.evaluate(node => getComputedStyle(node).backgroundImage)).toBe(style);
     expect(await page.locator('.cli-gui-pane textarea').evaluate(node =>
-      getComputedStyle(node.closest('[class*="composer_"]')!).backgroundColor)).toBe(baseline);
+      getComputedStyle(node.closest('[class*="composer_"], .chat-composer')!).backgroundColor)).toBe(baseline);
     await page.screenshot({ path: resolve(evidence, `${mode}-wallpaper-claude.png`), animations: 'disabled' });
   });
 }

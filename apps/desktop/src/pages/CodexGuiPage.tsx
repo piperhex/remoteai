@@ -4,6 +4,7 @@ import { localCliTransport } from '../../../../shared/cli-gui/localTransport';
 import { CliConversationPane } from '../../../../shared/cli-gui/CliConversationPane';
 import { CliRuntimeTools } from '../../../../shared/cli-gui/CliRuntimeTools';
 import { CliLocalMessages } from './codexGui/CliLocalMessages';
+import { CliLocalComposer } from './codexGui/CliLocalComposer';
 import { GuiToolbox } from '../../../../shared/conversation/GuiToolbox';
 import { LocalProjectBrowser } from './codexGui/LocalProjectBrowser';
 import { localGitClient } from './codexGui/localGitClient';
@@ -167,7 +168,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
         <div className={styles.headerActions} data-tauri-drag-region={isDesktopApp || undefined}>
           {isDesktopApp && <AssistanceButton />}
           {isDesktopApp && <MobileConnectionStatus />}
-          {external ? <CliRuntimeTools /> : <>{installer.version && <Button type="text" icon={<RefreshCw size={16} />} aria-label={uiText("client.composer.reconnectCodex")}
+          {external ? <CliRuntimeTools refreshModels={controller.refreshModels} /> : <>{installer.version && <Button type="text" icon={<RefreshCw size={16} />} aria-label={uiText("client.composer.reconnectCodex")}
             disabled={Boolean(running)} loading={state.connection === "connecting"}
             onClick={() => void controller.connect()} />}
           <Popover trigger="click" placement="bottomRight"
@@ -185,6 +186,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
       </header>
       {external && cli && <CliConversationPane cwd={project} dictation={dictationClient}
         active={workspaceActive} renderMessages={props => <CliLocalMessages {...props} />}
+        renderComposer={props => <CliLocalComposer {...props} />}
         modelSource={{ models: state.models, loading: state.modelCatalogLoading,
           error: state.modelCatalogError, refresh: controller.refreshModels }}
         projectPicker={<ProjectPicker value={workspaceProject} projects={state.projects} hostPicker={hostPicker}
