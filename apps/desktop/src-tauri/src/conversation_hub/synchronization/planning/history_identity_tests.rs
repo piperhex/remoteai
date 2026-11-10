@@ -116,6 +116,8 @@ fn planned_transfer(source: &Fixture, target: &Fixture, moving: bool) -> Transfe
         plan: None,
         touched: Instant::now(),
         retain: false,
+        original_size: 0,
+        resume_token: String::new(),
     };
     let preview = preview_at_target(&target.home, &mut entry).unwrap();
     assert_eq!(preview["duplicateIds"], json!([THREAD]));
