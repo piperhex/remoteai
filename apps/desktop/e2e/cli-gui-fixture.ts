@@ -1,6 +1,10 @@
 import type { CliHistory, CliRequest, CliSession, CliTransport } from '../../../shared/cli-gui/types';
 import type { GuiAccountsClient, SelectableGuiAccount } from '../../../shared/remote-chat/guiAccounts';
-import type { Thread } from '../../../shared/conversation/types';
+import type { Thread, Model } from '../../../shared/conversation/types';
+import type { GitStatus } from '../../../shared/remote-chat/gitWorkspace';
+
+export const cliGitStatus = (cwd: string): GitStatus => ({ cwd, branch: 'main',
+  branches: [{ name: 'main', occupied: false }], changedFiles: 0, isWorktree: false });
 
 export const sidebarCodexThread: Thread = { id: 'codex-history', name: '评审界面改动', preview: '评审界面改动',
   cwd: 'F:/projects/remoteai', updatedAt: Date.parse('2026-11-10T08:00:30Z') / 1000,
@@ -74,5 +78,11 @@ export function createCliGuiFixture(ready = true) {
   const transport: CliTransport = { request: async <T>(input: CliRequest) => await request(input) as T,
     subscribeAccountChange: accounts.subscribe,
     subscribe: listener => { listeners.add(listener); return () => { listeners.delete(listener); }; } };
-  return { transport, calls, accounts };
+  const models = (): Model[] => [{ id: account.kind === 'account' ? 'gpt-6' : 'team-model',
+    model: account.kind === 'account' ? 'gpt-6' : 'team-model',
+    displayName: account.kind === 'account' ? 'GPT-6' : 'Team Model', isDefault: true,
+    defaultReasoningEffort: 'high', supportedReasoningEfforts: [
+      { reasoningEffort: 'medium', description: 'Medium' }, { reasoningEffort: 'high', description: 'High' },
+    ] }];
+  return { transport, calls, accounts, models };
 }

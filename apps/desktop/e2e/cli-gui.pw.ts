@@ -1,37 +1,11 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { createCliGuiFixture, sidebarCodexThread } from './cli-gui-fixture';
 
-const evidence = resolve('../../.codex-tmp/cli-sidebar-evidence');
-async function localBackend(page: Page, ready = true) {
-  const fixture = createCliGuiFixture(ready);
-  await page.route('https://fonts.googleapis.com/**', route => route.abort());
-  await page.route('**/__codex_switch__/api/invoke', async route => {
-    const { command, args = {} } = route.request().postDataJSON();
-    let result: unknown = {};
-    if (command === 'cli_gui_request') result = await fixture.transport.request(args.request);
-    if (command === 'codex_gui_cli_status') result = { version: ready ? '0.150.0' : null };
-    if (command === 'codex_gui_connect') result = [];
-    if (command === 'codex_gui_queue_read') result = { revision: 0, threads: {} };
-    if (command === 'codex_gui_queue_save') result = args.snapshot;
-    if (command === 'codex_gui_events') result = { cursor: { streamId: 'test', sequence: 1 }, reset: false, events: [] };
-    if (command === 'codex_gui_model_settings') result = { threadId: null, selection: null, revision: 0 };
-    if (command === 'codex_gui_request') {
-      let data: unknown = { data: [], nextCursor: null };
-      if (args.request.operation === 'list') data = { data: [sidebarCodexThread], nextCursor: null };
-      if (args.request.operation === 'read') data = { thread: sidebarCodexThread };
-      if (args.request.operation === 'models') data = { data: [{ id: 'test-model', model: 'test-model',
-        displayName: 'GPT-6', isDefault: true, defaultReasoningEffort: 'high', supportedReasoningEfforts: [] }] };
-      if (args.request.operation === 'plugins') data = { marketplaces: [], marketplaceLoadErrors: [] };
-      result = { data };
-    }
-    if (command === 'codex_gui_usage_summary') result = { totalTokens: 0, estimatedCostUsd: 0,
-      primaryRemainingPercent: null, primaryRemainingAggregated: false, providerEstimatedCost: null };
-    await route.fulfill({ json: { ok: true, result } });
-  });
-  return fixture;
-}
+import { localBackend } from './cli-gui-support';
+
+const evidence = resolve('../../.codex-tmp/cli-layout-evidence');
 
 for (const mode of ['local', 'remote', 'web']) {
   for (const enlarged of [false, true]) {
@@ -72,7 +46,7 @@ for (const mode of ['local', 'remote', 'web']) {
         await expect(selector).toContainText('Claude GUI · 2.1.42');
         await expect(page.getByRole('link', { name: 'Claude Code 官方安装说明' }))
           .toHaveAttribute('href', 'https://code.claude.com/docs/en/setup#install-claude-code');
-        await page.locator('.cli-gui-pane [data-project-bar] button[aria-haspopup="menu"]').click();
+        await page.locator('.cli-gui-pane [data-project-bar] button[aria-haspopup="menu"]').first().click();
         await page.getByRole('menuitemradio', { name: 'Remote AI', exact: true }).click();
         await expect(page.locator('.cli-gui-pane button').filter({ hasText: 'GPT-6' })).toBeVisible();
         await page.getByRole('textbox', { name: '消息', exact: true }).fill('请检查共享组件并补充项目说明。');
@@ -86,7 +60,7 @@ for (const mode of ['local', 'remote', 'web']) {
         await expect(page.getByText('更早的项目讨论已恢复。')).toBeVisible();
         await selector.click();
         await expect(page.getByRole('menuitem', { name: 'Gemini GUI' })).toHaveAttribute('aria-disabled', 'true');
-        await page.locator('.cli-gui-pane .chat-messages').click({ position: { x: 20, y: 20 } });
+        await page.locator('.cli-gui-pane').click({ position: { x: 20, y: 20 } });
         await expect(page.getByRole('menu')).not.toBeVisible();
         await page.locator('[data-cli-thread] button').filter({ hasText: '整理测试计划' }).click();
         await expect(selector).toContainText('Gemini GUI · 0.32.1');
@@ -99,7 +73,7 @@ for (const mode of ['local', 'remote', 'web']) {
         const calls = mode === 'local' ? fixture.calls : await page.evaluate(() =>
           (window as unknown as { cliFixture: ReturnType<typeof createCliGuiFixture> }).cliFixture.calls);
         expect(calls).toContainEqual(expect.objectContaining({ engine: 'claude', action: 'approve', actionId: 'once:exact' }));
-        const typography = await page.locator('.cli-gui-pane .chat-message-region').evaluate(node => ({
+        const typography = await page.locator('.cli-gui-pane').evaluate(node => ({
           size: getComputedStyle(node).fontSize, family: getComputedStyle(node).fontFamily,
         }));
         expect(typography.size).toBe(enlarged ? '20px' : '14px');
@@ -151,7 +125,7 @@ for (const mode of ['local', 'remote', 'web']) {
     await page.getByRole('button').filter({ hasText: 'Team API' }).click();
     if (mode === 'local') {
       await fixture.accounts.select({ kind: 'provider', id: 'provider' });
-      await page.getByRole('button', { name: '刷新 CLI 和模型', exact: true }).click();
+      await page.locator('.cli-gui-pane').getByRole('button', { name: '刷新 CLI 和模型', exact: true }).click();
     }
     await expect(page.locator('.cli-gui-pane button').filter({ hasText: 'Team Model' })).toBeVisible();
     await page.screenshot({ path: resolve(evidence, `${mode}-third-party-model.png`), animations: 'disabled' });
