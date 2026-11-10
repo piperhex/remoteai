@@ -7,7 +7,7 @@ import { createGuiFilesClient, type FilePreviewData } from '../../../../shared/r
 import { PREVIEW_CHUNK_CHARACTERS } from '../../../../shared/remote-chat/filePreviewText';
 import { chunks } from '../../../../shared/remote-chat/framing';
 
-vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../api/backend', () => ({ isDesktopApp: true, invoke: vi.fn() }));
 vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 beforeEach(() => vi.resetAllMocks());
 const target = { path: 'F:/remote/models.json', threadId: 'thread' };

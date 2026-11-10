@@ -6,7 +6,7 @@ import { ChatOperations } from './operations';
 import { ChatRpc } from '../../../../shared/remote-chat/rpc';
 import { createRemoteDictationClient } from '../../../../shared/remote-chat/dictation';
 
-vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false }));
+vi.mock('../api/backend', () => ({ isDesktopApp: false, invoke: vi.fn(), hasLocalBackend: false }));
 vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
 beforeEach(() => {

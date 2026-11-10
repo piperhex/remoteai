@@ -54,7 +54,8 @@ it('checks preview size before allocating or opening a transfer', async () => {
   const download = vi.fn();
   await expect(previewAttachment({ file: { ...attachment, size: 65 * 1024 * 1024 },
     attachments: { download } as unknown as LoungeAttachmentManager,
-    signal: new AbortController().signal, progress: () => {} })).rejects.toThrow('client.filePreview.tooLarge');
+    signal: new AbortController().signal, progress: () => {} }))
+    .rejects.toMatchObject({ code: 'PREVIEW_UNAVAILABLE' });
   expect(download).not.toHaveBeenCalled();
 });
 

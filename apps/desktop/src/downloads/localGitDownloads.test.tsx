@@ -10,7 +10,7 @@ import { enqueueGitPatch } from '../../../../shared/downloads/gitPatch';
 import { createAsyncGitFixture } from '../../../../shared/remote-chat/testing/gitFixture';
 
 vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn(async () => ({})) } }));
-vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../api/backend', () => ({ isDesktopApp: true, invoke: vi.fn() }));
 vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 vi.mock('../../../../shared/localization/uiText', async () => ({ ...await vi.importActual<typeof import('../../../../shared/localization/uiText')>('../../../../shared/localization/uiText'),  }));
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });

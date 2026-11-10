@@ -10,7 +10,7 @@ import { subscribeGuiEvent } from '../../../../shared/conversation/webEvents';
 
 const state = vi.hoisted(() => ({ sending: false, workspaceBusy: false, approvals: [],
   conversations: {} as Record<string, { activeTurn: string | null }> }));
-vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
+vi.mock('../api/backend', () => ({ isDesktopApp: true, invoke: vi.fn() }));
 vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn() } }));
 vi.mock('../../../../shared/conversation/webEvents', () => ({ subscribeGuiEvent: vi.fn(async () => vi.fn()) }));

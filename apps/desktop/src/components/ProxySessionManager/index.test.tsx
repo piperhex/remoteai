@@ -10,6 +10,7 @@ import { LogDiagnosticsPage, type LogDiagnosticsTab } from "../../pages/LogDiagn
 import { DashboardNavigation, type DashboardPage } from "../dashboard/DashboardNavigation";
 
 vi.mock("../../api/backend", () => ({
+  isDesktopApp: true,
   loadProxySessions: vi.fn(),
   loadProxySessionUnlimitedConversation: vi.fn().mockResolvedValue(false),
   loadProxySessionRequests: vi.fn().mockResolvedValue([]),
