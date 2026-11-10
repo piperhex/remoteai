@@ -201,20 +201,24 @@ fn selected_snapshots(
 }
 
 fn validate_history(target: &Path, snapshots: &[BinSnapshot]) -> Result<(), String> {
-    // A skipped base must still have usable history at the destination.
-    let mut available = live_bin_thread_ids(target)?
+    let incoming_ids = snapshots
+        .iter()
+        .map(|item| item.manifest.session_id.clone())
+        .collect::<HashSet<_>>();
+    // Overwrite removes every old rollout for an incoming logical session.
+    // Only untouched destination sessions can supply history missing from the bundle.
+    let retained = gather_snapshots(target)?
         .into_iter()
-        .chain(
-            snapshots
-                .iter()
-                .map(|item| item.manifest.session_id.clone()),
-        )
+        .filter(|item| !incoming_ids.contains(&item.session_id))
+        .collect::<Vec<_>>();
+    let mut available = incoming_ids
+        .into_iter()
+        .chain(retained.iter().map(|item| item.session_id.clone()))
         .collect::<HashSet<_>>();
     // A logical conversation can contain multiple physical rollout sessions.
     // Newer Codex history_base references the physical suffix in the filename;
     // that suffix may differ from both metadata id and session_id.
-    let target_snapshots = gather_snapshots(target)?;
-    for path in target_snapshots
+    for path in retained
         .iter()
         .flat_map(|item| item.physical_paths.iter())
         .chain(snapshots.iter().flat_map(|item| item.rollouts.iter()))

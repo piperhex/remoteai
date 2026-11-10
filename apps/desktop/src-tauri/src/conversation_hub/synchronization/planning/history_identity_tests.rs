@@ -1,4 +1,5 @@
-use super::super::super::bin_test_support::{Fixture, THREAD};
+use super::super::super::bin_test_support::{Fixture, OTHER, THREAD};
+use super::super::super::home_migration_provider::MigrationModelProvider;
 use super::*;
 
 const PHYSICAL: &str = "00000000-0000-4000-8000-000000000001";
@@ -60,8 +61,8 @@ fn physical_history_already_at_destination_is_accepted() {
         let (_source, snapshots) = source_with_history(false, false);
         let target = Fixture::new();
         target.rollout(
-            &format!("sessions/rollout-2026-11-09T00-00-00-{THREAD}_{PHYSICAL}.{extension}"),
-            THREAD,
+            &format!("sessions/rollout-2026-11-09T00-00-00-{OTHER}_{PHYSICAL}.{extension}"),
+            OTHER,
         );
         validate_history(&target.home, &snapshots).unwrap();
     }
@@ -102,5 +103,132 @@ fn physical_history_ids_are_parsed_from_plain_and_compressed_rollouts() {
             physical_history_id(Path::new(&legacy)).as_deref(),
             Some(PHYSICAL)
         );
+    }
+}
+
+fn planned_transfer(source: &Fixture, target: &Fixture, moving: bool) -> Transfer {
+    let mut entry = Transfer {
+        root: source.root.join("physical-history-sync"),
+        size: 0,
+        sha256: String::new(),
+        written: 0,
+        source: moving.then(|| source.home.clone()),
+        plan: None,
+        touched: Instant::now(),
+        retain: false,
+    };
+    let preview = preview_at_target(&target.home, &mut entry).unwrap();
+    assert_eq!(preview["duplicateIds"], json!([THREAD]));
+    entry
+}
+
+fn commit_overwrite(target: &Fixture, entry: &mut Transfer) -> Result<Value, String> {
+    commit_at_target(
+        &target.home,
+        entry,
+        vec![THREAD.into()],
+        MigrationModelProvider::Gui,
+    )
+}
+
+#[test]
+fn overwrite_rejects_destination_only_history_before_changing_either_home() {
+    for extension in ["jsonl", "jsonl.zst"] {
+        for moving in [false, true] {
+            let (source, _) = source_with_history(false, false);
+            let target = Fixture::new();
+            let base = target.rollout(
+                &format!("sessions/rollout-2026-11-09T00-00-00-{THREAD}_{PHYSICAL}.{extension}"),
+                THREAD,
+            );
+            let base_before = fs::read(&base).unwrap();
+            let source_path = source.snapshot().path;
+            let source_bytes = fs::read(&source_path).unwrap();
+            let source_before = source.dump(THREAD);
+            let target_before = target.dump(THREAD);
+            let current = target.home.join(format!("sessions/rollout-{THREAD}.jsonl"));
+            let current_before = fs::read(&current).unwrap();
+            let mut entry = planned_transfer(&source, &target, moving);
+            let transfer_root = entry.root.clone();
+            assert_eq!(commit_overwrite(&target, &mut entry).unwrap_err(), INVALID);
+            drop(entry);
+            assert!(!transfer_root.exists());
+            assert_eq!(fs::read(base).unwrap(), base_before);
+            assert_eq!(fs::read(current).unwrap(), current_before);
+            assert_eq!(source.dump(THREAD), source_before);
+            assert_eq!(target.dump(THREAD), target_before);
+            assert_eq!(fs::read(source_path).unwrap(), source_bytes);
+        }
+    }
+}
+
+#[test]
+fn bundled_physical_history_survives_committed_overwrite_and_transfer_cleanup() {
+    for compressed in [false, true] {
+        for moving in [false, true] {
+            let (source, _) = source_with_history(true, compressed);
+            let target = Fixture::new();
+            let extension = if compressed { "jsonl.zst" } else { "jsonl" };
+            let old_base = target.rollout(
+                &format!("sessions/rollout-2026-11-09T00-00-00-{THREAD}_{PHYSICAL}.{extension}"),
+                THREAD,
+            );
+            let mut entry = planned_transfer(&source, &target, moving);
+            let result = commit_overwrite(&target, &mut entry).unwrap();
+            assert_eq!(result, json!({"completedCount": 1, "skippedCount": 0}));
+            let base = gather_snapshots(&target.home)
+                .unwrap()
+                .into_iter()
+                .flat_map(|item| item.physical_paths)
+                .find(|path| physical_history_id(path).as_deref() == Some(PHYSICAL))
+                .unwrap();
+            let snapshots = archive::snapshots(&entry.root).unwrap();
+            validate_history(&target.home, &snapshots).unwrap();
+            let transfer_root = entry.root.clone();
+            drop(entry);
+            assert!(!transfer_root.exists());
+            assert!(!old_base.exists());
+            assert!(base.exists());
+            assert_eq!(
+                source
+                    .home
+                    .join(format!("sessions/rollout-{THREAD}.jsonl"))
+                    .exists(),
+                !moving
+            );
+        }
+    }
+}
+
+#[test]
+fn untouched_destination_history_survives_committed_sync_and_transfer_cleanup() {
+    for extension in ["jsonl", "jsonl.zst"] {
+        for moving in [false, true] {
+            let (source, _) = source_with_history(false, false);
+            let target = Fixture::new();
+            let base = target.rollout(
+                &format!("sessions/rollout-2026-11-09T00-00-00-{OTHER}_{PHYSICAL}.{extension}"),
+                OTHER,
+            );
+            let base_before = fs::read(&base).unwrap();
+            let untouched_before = target.dump(OTHER);
+            let mut entry = planned_transfer(&source, &target, moving);
+            let result = commit_overwrite(&target, &mut entry).unwrap();
+            assert_eq!(result, json!({"completedCount": 1, "skippedCount": 0}));
+            let snapshots = archive::snapshots(&entry.root).unwrap();
+            validate_history(&target.home, &snapshots).unwrap();
+            let transfer_root = entry.root.clone();
+            drop(entry);
+            assert!(!transfer_root.exists());
+            assert_eq!(fs::read(base).unwrap(), base_before);
+            assert_eq!(target.dump(OTHER), untouched_before);
+            assert_eq!(
+                source
+                    .home
+                    .join(format!("sessions/rollout-{THREAD}.jsonl"))
+                    .exists(),
+                !moving
+            );
+        }
     }
 }
