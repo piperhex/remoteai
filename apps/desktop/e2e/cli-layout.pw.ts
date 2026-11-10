@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { localBackend, nativeShell } from './cli-gui-support';
 
-const evidence = resolve('../../.codex-tmp/cli-layout-evidence');
+const evidence = resolve('../../.codex-tmp/cli-install-composer-evidence');
 for (const mode of ['local', 'remote', 'web']) {
   for (const large of [false, true]) {
     test(`${mode}: existing welcome, toolbar and model source ${large ? 'large dark' : 'default'}`, async ({ page }) => {
@@ -56,22 +56,45 @@ for (const mode of ['local', 'remote', 'web']) {
       await mkdir(evidence, { recursive: true });
       await page.setViewportSize(large ? { width: 960, height: 900 } : { width: 1440, height: 980 });
       if (mode === 'local') await nativeShell(page);
-      await localBackend(page, false);
-      await page.goto(`/e2e/cli-gui-harness.html?mode=${mode}&missing&native${large ? '&large&dark' : ''}`);
+      await localBackend(page, false, { codexReady: true });
+      const appearance = large ? '&large&dark' : mode === 'web' ? '' : '&skin';
+      await page.goto(`/e2e/cli-gui-harness.html?mode=${mode}&missing&native${appearance}`);
+      const selector = page.locator('.cli-gui-engine:visible');
+      await expect(selector).toContainText('Codex GUI');
+      await expect(selector).toContainText('0.150.0');
+      const typography = (node: HTMLElement) => ({ font: getComputedStyle(node).fontSize,
+        family: getComputedStyle(node).fontFamily, weight: getComputedStyle(node).fontWeight });
+      const originalTypography = await selector.evaluate(typography);
       for (const engine of ['Claude GUI', 'Gemini GUI']) {
-        await page.locator('.cli-gui-engine:visible').click();
+        await selector.click();
         await page.getByRole('menuitem', { name: engine, exact: true }).click();
         const pane = page.locator('.cli-gui-pane');
         const setup = pane.locator('.cli-gui-setup');
         await expect(setup.getByRole('button', { name: '一键安装', exact: true })).toBeVisible();
-        await expect(pane.getByRole('textbox')).toHaveCount(0);
-        const bounds = await pane.boundingBox();
+        const input = pane.getByRole('textbox', { name: '消息', exact: true });
+        await expect(input).toBeVisible();
+        await expect(input).toBeEditable();
+        await input.fill(`${engine} 安装期间保留的草稿`);
+        await expect(pane.getByRole('button', { name: '发送消息', exact: true })).toBeDisabled();
+        expect(await selector.evaluate(typography)).toEqual(originalTypography);
+        const bounds = await pane.locator('.cli-gui-install-region').boundingBox();
         const heading = await setup.getByRole('heading', { name: engine, exact: true }).boundingBox();
         expect(Math.abs(heading!.x + heading!.width / 2 - bounds!.x - bounds!.width / 2)).toBeLessThan(2);
         expect(Math.abs(heading!.y + heading!.height / 2 - bounds!.y - bounds!.height / 2)).toBeLessThan(65);
         await expect(page.locator('header.workspace-toolbar').getByRole('button').last()).toBeVisible();
         await page.screenshot({ path: resolve(evidence,
           `${mode}-${large ? 'dark-narrow' : 'light'}-${engine.split(' ')[0]}-center-install.png`), animations: 'disabled' });
+        await setup.getByRole('button', { name: '一键安装', exact: true }).click();
+        await expect(setup.getByRole('status')).toBeVisible();
+        await expect(input).toBeVisible();
+        await expect(input).toHaveValue(`${engine} 安装期间保留的草稿`);
+        expect(await selector.evaluate(typography)).toEqual(originalTypography);
+        await page.screenshot({ path: resolve(evidence,
+          `${mode}-${large ? 'dark-narrow' : 'light'}-${engine.split(' ')[0]}-installing-composer.png`),
+          animations: 'disabled' });
+        await expect(setup).not.toBeVisible({ timeout: 10_000 });
+        await expect(input).toHaveValue(`${engine} 安装期间保留的草稿`);
+        expect(await selector.evaluate(typography)).toEqual(originalTypography);
       }
     });
   }

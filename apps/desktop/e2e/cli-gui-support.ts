@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { createCliGuiFixture, sidebarCodexThread, cliGitStatus } from './cli-gui-fixture';
 
-export async function localBackend(page: Page, ready = true) {
+export async function localBackend(page: Page, ready = true, options: { codexReady?: boolean } = {}) {
   const fixture = createCliGuiFixture(ready);
   const modelRequests: { cacheOnly?: boolean }[] = [];
   await page.route('https://fonts.googleapis.com/**', route => route.abort());
@@ -12,7 +12,7 @@ export async function localBackend(page: Page, ready = true) {
       result = '/src-tauri/resources/dream-skin/presets/preset-doraemon-ocean-submarine/background.jpg';
     }
     if (command === 'cli_gui_request') result = await fixture.transport.request(args.request);
-    if (command === 'codex_gui_cli_status') result = { version: ready ? '0.150.0' : null };
+    if (command === 'codex_gui_cli_status') result = { version: (options.codexReady ?? ready) ? '0.150.0' : null };
     if (command === 'codex_gui_connect') result = [];
     if (command === 'codex_gui_git') result = cliGitStatus(args.request.cwd);
     if (command === 'codex_gui_queue_read') result = { revision: 0, threads: {} };

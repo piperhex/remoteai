@@ -5,7 +5,7 @@ import { createCliGuiFixture, sidebarCodexThread } from './cli-gui-fixture';
 
 import { localBackend } from './cli-gui-support';
 
-const evidence = resolve('../../.codex-tmp/cli-layout-evidence');
+const evidence = resolve('../../.codex-tmp/cli-install-composer-evidence');
 
 for (const mode of ['local', 'remote', 'web']) {
   for (const enlarged of [false, true]) {
@@ -90,7 +90,7 @@ for (const mode of ['local', 'remote', 'web']) {
       await page.locator('.cli-gui-engine:visible').click();
       await page.getByRole('menuitem', { name, exact: true }).click();
       await expect(page.locator('.cli-gui-setup').getByRole('button', { name: '一键安装', exact: true })).toBeVisible();
-      const link = page.locator('.cli-gui-install-link a');
+      const link = page.locator('.cli-gui-setup .cli-gui-install-link a');
       await expect(link).toHaveAttribute('href', url);
       await page.context().route(url.split('#')[0], route => route.fulfill({ body: 'Official installation fixture' }));
       const popup = page.waitForEvent('popup');
