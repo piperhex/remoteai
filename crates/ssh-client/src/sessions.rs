@@ -35,15 +35,47 @@ impl Default for Client {
 }
 impl Client {
     pub async fn open(self: &Arc<Self>, request: Connect, sink: Sink) -> Result<Info> {
+        self.open_session(request, sink, Start::Integrated).await
+    }
+
+    /// Open a plain PTY shell or a PTY command that remains available for subsequent input.
+    /// Opening is never retried: the remote shell or command may already have started on failure.
+    pub async fn open_pty(
+        self: &Arc<Self>,
+        request: Connect,
+        command: Option<String>,
+        sink: Sink,
+    ) -> Result<Info> {
+        if request.x11.is_some() {
+            return Err(Error::Invalid);
+        }
+        if let Some(command) = &command {
+            crate::ExecutionOptions {
+                command: command.clone(),
+                timeout_seconds: 30,
+            }
+            .validate()?;
+        }
+        self.open_session(request, sink, Start::Plain(command))
+            .await
+    }
+
+    async fn open_session(
+        self: &Arc<Self>,
+        request: Connect,
+        sink: Sink,
+        start: Start,
+    ) -> Result<Info> {
         request.validate()?;
         let permit = self
             .slots
             .clone()
             .try_acquire_owned()
             .map_err(|_| Error::Limit)?;
-        let (ssh, channel, x11) = tokio::time::timeout(TIMEOUT, open_shell(&request, sink.clone()))
-            .await
-            .map_err(|_| Error::Connection)??;
+        let (ssh, channel, x11) =
+            tokio::time::timeout(TIMEOUT, open_shell(&request, sink.clone(), start))
+                .await
+                .map_err(|_| Error::Connection)??;
         let (input, receive) = mpsc::channel(16);
         let session = Arc::new(Session {
             input,
@@ -175,16 +207,22 @@ impl Client {
     }
 }
 
+enum Start {
+    Integrated,
+    Plain(Option<String>),
+}
+
 async fn open_shell(
     request: &Connect,
     sink: Sink,
+    start: Start,
 ) -> Result<(
     client::Handle<HostKey>,
     Channel<client::Msg>,
     Option<crate::x11::Lease>,
 )> {
     let x11 = match &request.x11 {
-        Some(options) => Some(crate::x11::State::prepare(options, sink).await?),
+        Some(options) => Some(crate::x11::State::prepare(options, sink.clone()).await?),
         None => None,
     };
     let forwarder = x11
@@ -210,8 +248,38 @@ async fn open_shell(
         )
         .await
         .map_err(|_| Error::Connection)?;
-    crate::shell_integration::start(&session, &channel).await?;
+    match start {
+        Start::Integrated => crate::shell_integration::start(&session, &channel).await?,
+        Start::Plain(command) => {
+            wait_success(&mut channel, &sink).await?;
+            match command {
+                Some(command) => channel.exec(true, command).await,
+                None => channel.request_shell(true).await,
+            }
+            .map_err(|_| Error::Connection)?;
+            wait_success(&mut channel, &sink).await?;
+        }
+    }
     Ok((session, channel, x11))
+}
+
+async fn wait_success(channel: &mut Channel<client::Msg>, sink: &Sink) -> Result<()> {
+    loop {
+        match channel.wait().await {
+            Some(ChannelMsg::Success) => return Ok(()),
+            Some(ChannelMsg::Data { data } | ChannelMsg::ExtendedData { data, .. }) => {
+                if !sink(Event::Output {
+                    data: data.to_vec(),
+                }) {
+                    return Err(Error::Closed);
+                }
+            }
+            Some(ChannelMsg::Failure | ChannelMsg::Close | ChannelMsg::Eof) | None => {
+                return Err(Error::Connection)
+            }
+            _ => {}
+        }
+    }
 }
 
 async fn run_shell(
@@ -266,7 +334,10 @@ async fn run_shell(
 async fn send_input(channel: &Channel<client::Msg>, command: Command) -> Result<()> {
     match command {
         Command::Write { data, .. } => channel.data(data.as_bytes()).await,
-        Command::WriteBinary { data, .. } => channel.data(data.as_slice()).await,
+        Command::WriteBinary { data, .. } => {
+            let data = zeroize::Zeroizing::new(data);
+            channel.data(data.as_slice()).await
+        }
         Command::OutputFlow { .. } | Command::OutputAck { .. } => return Ok(()),
         Command::Resize { size, .. } => {
             channel

@@ -17,4 +17,6 @@ pub use types::*;
 pub use x11::ensure_x11;
 
 #[cfg(test)]
+mod pty_tests;
+#[cfg(test)]
 mod tests;

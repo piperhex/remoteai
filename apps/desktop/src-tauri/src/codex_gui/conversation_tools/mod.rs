@@ -75,6 +75,7 @@ pub(super) async fn configure(
 }
 
 pub(super) fn shutdown(app: &AppHandle) {
+    crate::cloud::close_agent_ssh_terminals(app);
     match app.state::<GuiState>().conversation_tools.listener.lock() {
         Ok(mut listener) => {
             if let Some(listener) = listener.take() {
@@ -88,7 +89,7 @@ pub(super) fn shutdown(app: &AppHandle) {
 async fn execute(app: AppHandle, params: Value) -> Result<Value> {
     if matches!(
         params["name"].as_str(),
-        Some("gui_ssh_profiles" | "gui_ssh_execute")
+        Some("gui_ssh_profiles" | "gui_ssh_execute" | "gui_ssh_terminal")
     ) {
         return ssh_tools::execute(app, params).await;
     }

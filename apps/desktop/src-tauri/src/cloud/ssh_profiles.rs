@@ -3,9 +3,11 @@ mod agent;
 pub(super) mod cache;
 mod credentials;
 mod execution;
+mod terminal;
 pub(crate) use agent::agent_ssh_profiles;
 use credentials::{SshCredentialReply, SshCredentials};
 pub(crate) use execution::agent_ssh_execute;
+pub(crate) use terminal::{agent_ssh_terminal, close_agent_ssh_terminals, TerminalRequest};
 
 /// Stable saved-connection errors shared by the UI and the authenticated agent boundary.
 #[derive(Debug, thiserror::Error)]
