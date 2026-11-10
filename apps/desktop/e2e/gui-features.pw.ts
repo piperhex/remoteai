@@ -33,7 +33,9 @@ async function mockCommands(page: Page, migrationError?: string, grouped = false
       const request = args.request as { action: string; query?: string };
       if (request.action === 'homes') result = { name: 'Local PC', homes: migrationHomes };
       if (request.action === 'list') result = migrated || request.query === '没有这个对话' ? [] : sourceThreads;
-      if (request.action === 'prepare') result = { id: 'prepared-local', size: 0, sha256: '' };
+      if (request.action === 'prepare' || request.action === 'resume') {
+        result = { id: 'prepared-local', size: 0, sha256: '', written: 0, resumeToken: 'local-resume-token' };
+      }
       if (request.action === 'plan') result = { count: 1, duplicateIds: [] };
       if (request.action === 'commit') {
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -291,7 +293,7 @@ for (const width of [860, 1440]) {
     const expand = pane.getByRole('button', { name: '展开项目: D:/projects/example', exact: true });
     await expect(expand).toBeVisible();
     await expand.click();
-    const body = pane.locator('.ant-table-body');
+    const body = pane.locator('.ant-table-tbody-virtual-holder');
     const header = pane.locator('.ant-table-header');
     const headerTop = (await header.boundingBox())!.y;
     const height = await body.evaluate(element => element.clientHeight);
@@ -323,7 +325,7 @@ for (const width of [800, 1280]) {
     const dialog = page.getByRole("dialog", { name: "确认同步对话？", exact: true });
     await dialog.getByRole("button", { name: "开始同步", exact: true }).click();
     await expect(dialog.getByRole("alert")).toContainText("对话内容已发生变化");
-    await expect(dialog.getByRole("button", { name: "开始同步", exact: true })).toBeEnabled();
+    await expect(dialog.getByRole("button", { name: "继续下载", exact: true })).toBeEnabled();
     await expect(pane.getByRole("checkbox").last()).toBeChecked();
     expect((await dialog.getByRole("alert").boundingBox())!.width).toBeLessThanOrEqual(400);
     await page.screenshot({ path: `../../.codex-tmp/conversation-sync-local-error-${width}.png`, animations: "disabled" });
