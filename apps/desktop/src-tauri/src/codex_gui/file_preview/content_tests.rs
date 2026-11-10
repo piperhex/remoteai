@@ -2,6 +2,19 @@ use super::*;
 use std::io::Write;
 
 #[test]
+fn pdf_metadata_reports_exact_size_without_the_text_or_memory_preview_cap() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("paper.PDF");
+    let file = File::create(&path).unwrap();
+    let size = 80 * 1024 * 1024;
+    file.set_len(size).unwrap();
+    let data = load(&path).unwrap().unwrap();
+    assert_eq!(data.size, Some(size));
+    assert_eq!(data.kind, PreviewKind::Pdf);
+    assert!(data.text.is_none());
+}
+
+#[test]
 fn json_preview_reads_ten_megabytes_and_reports_the_original_byte_size() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("models.JSON");

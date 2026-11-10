@@ -37,7 +37,7 @@
         "object-src": "http://127.0.0.1:*",
         "media-src": "'self' blob: http://127.0.0.1:*",
         "worker-src": "'self' blob:",
-        "connect-src": "'self' ipc: http://ipc.localhost https://api.github.com ws: wss:"
+        "connect-src": "'self' blob: ipc: http://ipc.localhost http://127.0.0.1:* https://api.github.com ws: wss:"
       }
     }
   },

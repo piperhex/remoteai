@@ -45,7 +45,7 @@ it('reads SSH previews in bounded packets and stops after cancellation', async (
 it('rejects oversized SSH previews before reading or allocating their contents', async () => {
   const { api, files } = sshFixture(PREVIEW_BYTE_LIMIT + 1);
   await expect(sshPreviewLoader(api, 'ssh')('/report.PDF', { signal: new AbortController().signal, progress: vi.fn() }))
-    .rejects.toThrow('client.filePreview.tooLarge');
+    .rejects.toMatchObject({ code: 'PREVIEW_UNAVAILABLE' });
   expect(files).toHaveBeenCalledTimes(1);
 });
 

@@ -25,8 +25,12 @@ import { cloudFixtureCommand, fixtureProfiles } from './ssh-cloud-fixture';
 import { useLocalGitDownloads } from '../src/downloads/localGitDownloads';
 import { SshDownloadConnection, SshDownloadsPage } from './ssh-downloads-fixture';
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
+import { DEFAULT_CHAT_POLICY, setChatPolicy, setChatConnectionMode } from '../../../shared/remote-chat/policy';
 
 const mode = new URLSearchParams(location.search).get('mode') ?? 'local';
+setChatPolicy({ ...DEFAULT_CHAT_POLICY,
+  filePreviewMaxMb: Number(new URLSearchParams(location.search).get('pdfLimit') ?? 100) });
+setChatConnectionMode(mode === 'local' ? 'direct' : 'relay');
 Object.defineProperty(window, 'showSaveFilePicker', { value: undefined, configurable: true });
 // The shared fixture imports desktop CSS, whose 820px minimum would enlarge the mobile layout viewport.
 if (mode === 'web') document.body.style.minWidth = '320px';

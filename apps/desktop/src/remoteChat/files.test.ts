@@ -1,10 +1,26 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { RemoteFiles } from './files';
 import { invoke } from '../api/backend';
+import { DEFAULT_CHAT_POLICY, MIB, setChatPolicy } from '../../../../shared/remote-chat/policy';
 
 vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
 vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 beforeEach(() => vi.resetAllMocks());
+afterEach(() => setChatPolicy(DEFAULT_CHAT_POLICY));
+
+it('checks the Admin PDF limit on streaming previews and releases a rejected session', async () => {
+  setChatPolicy({ ...DEFAULT_CHAT_POLICY, filePreviewMaxMb: 1, fileDownloadMaxMb: 100 });
+  const files = new RemoteFiles();
+  const result = { sessionId: 'pdf-session', path: 'paper.pdf', name: 'paper.pdf', kind: 'pdf', size: 3 * MIB };
+  vi.mocked(invoke).mockResolvedValueOnce(result);
+  await expect(files.request({ operation: 'guiFilePreviewOpen', target: { path: 'paper.pdf' } }, 'viewer', 'relay'))
+    .rejects.toMatchObject({ code: 'PREVIEW_UNAVAILABLE' });
+  expect(invoke).toHaveBeenLastCalledWith('codex_gui_close_file_preview', { sessionId: 'pdf-session' });
+  vi.mocked(invoke).mockResolvedValueOnce(result);
+  await expect(files.request({ operation: 'guiFilePreviewOpen', target: { path: 'paper.pdf' } }, 'viewer', 'direct'))
+    .resolves.toMatchObject(result);
+  files.release();
+});
 
 it('binds previews and streams to the transport owner and overrides forged scopes', async () => {
   const files = new RemoteFiles();

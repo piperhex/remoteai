@@ -3,7 +3,7 @@ import { pdfFixture } from './preview-samples';
 export const PDF_FIXTURE_PAGES = 24;
 const pageId = (page: number) => 4 + (page - 1) * 2;
 
-export function continuousPdf() {
+export function continuousPdf(outlineTitle = 'Methods') {
   const outline = pageId(PDF_FIXTURE_PAGES) + 2;
   const objects = [
     `<< /Type /Catalog /Pages 2 0 R /Outlines ${outline} 0 R /Names << /Dests << /Names `
@@ -22,7 +22,7 @@ export function continuousPdf() {
   objects.push(
     `<< /Type /Outlines /First ${outline + 1} 0 R /Last ${outline + 4} 0 R /Count 3 >>`,
     `<< /Title (Introduction) /Parent ${outline} 0 R /Next ${outline + 2} 0 R /Dest [${pageId(1)} 0 R /Fit] >>`,
-    `<< /Title (Methods) /Parent ${outline} 0 R /Prev ${outline + 1} 0 R /Next ${outline + 4} 0 R `
+    `<< /Title (${outlineTitle}) /Parent ${outline} 0 R /Prev ${outline + 1} 0 R /Next ${outline + 4} 0 R `
       + `/Dest (methods) /First ${outline + 3} 0 R /Last ${outline + 3} 0 R /Count -1 >>`,
     `<< /Title (Nested results) /Parent ${outline + 2} 0 R /Dest [${pageId(15)} 0 R /Fit] >>`,
     `<< /Title (External link) /Parent ${outline} 0 R /Prev ${outline + 2} 0 R `

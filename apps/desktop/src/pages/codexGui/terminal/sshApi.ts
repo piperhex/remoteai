@@ -4,6 +4,7 @@ import type { SshApi, SshConnect, SshEndpoint, SshFileAction, SshFileReply,
 import type { TerminalEvent, TerminalInfo } from '../../../../../../shared/terminal/types';
 import { TerminalOutput } from '../../../remoteChat/terminalOutput';
 import { desktopSshProfiles } from '../../../api/sshProfiles';
+import { isDesktopApp } from '../../../api/backend';
 
 interface Attachment { output: TerminalOutput; listener?: (event: TerminalEvent) => void }
 const attachments = new Map<string, Attachment>();
@@ -19,6 +20,7 @@ export const sshFiles = (id: string, request: SshFileAction) =>
   invoke<SshFileReply>('codex_gui_ssh_files', { id, request });
 
 export const sshApi: SshApi = {
+  previewMode: isDesktopApp ? 'direct' : undefined,
   profiles: desktopSshProfiles,
   probe: probeSsh, files: sshFiles, ensureX11: ensureSshX11,
   async open(request, projectCwd) {

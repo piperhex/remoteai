@@ -54,7 +54,7 @@ pub(super) fn load(path: &Path) -> Result<Option<PreviewData>> {
         };
         (Some(text), Some(size))
     } else {
-        (None, None)
+        (None, Some(std::fs::metadata(path)?.len()))
     };
     Ok(Some(PreviewData {
         session_id: String::new(),

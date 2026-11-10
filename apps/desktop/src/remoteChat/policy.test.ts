@@ -79,6 +79,23 @@ it('allows downloads above the old cap and enforces the configured size', () => 
   expect(() => checkDownloadSize(100 * MIB + 1)).toThrow('100 MB');
 });
 
+it('routes PDF preview transfer limits separately from ordinary downloads at the host boundary', async () => {
+  setChatPolicy({ ...DEFAULT_CHAT_POLICY, filePreviewMaxMb: 100, fileDownloadMaxMb: 1 });
+  const id = '12345678-1234-1234-1234-123456789012';
+  vi.mocked(guiApi.request).mockResolvedValue({ id, name: 'paper.pdf', size: 3 * MIB, mimeType: 'application/pdf' });
+  const operations = new ChatOperations();
+  const body = { operation: 'fileOpen', threadId: 'chat', path: 'paper.pdf', preview: 'pdf', maxBytes: 1 };
+  const request = { kind: 'request' as const, method: 'request' as const };
+  expect((await operations.execute({ ...request, id: 'pdf', body }, 'relay', 'viewer')).error).toBeUndefined();
+  expect(guiApi.request).toHaveBeenLastCalledWith({ ...body, maxBytes: 100 * MIB });
+  await operations.execute({ ...request, id: 'read', body: { operation: 'fileRead', threadId: 'chat', id,
+    offset: 0, length: 1, maxBytes: 1 } }, 'relay', 'viewer');
+  expect(guiApi.request).toHaveBeenLastCalledWith(expect.objectContaining({ maxBytes: 100 * MIB }));
+  await operations.execute({ ...request, id: 'download', body: { operation: 'fileOpen', threadId: 'chat',
+    path: 'paper.pdf', maxBytes: 100 * MIB } }, 'relay', 'viewer');
+  expect(guiApi.request).toHaveBeenLastCalledWith(expect.objectContaining({ maxBytes: MIB }));
+});
+
 it('counts base64 padding accurately and applies new download limits at the time of saving', () => {
   expect(base64Bytes('data:image/png;base64,YQ==')).toBe(1);
   expect(base64Bytes('YWI=')).toBe(2);

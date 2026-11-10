@@ -91,7 +91,7 @@ it('keeps a legacy remote PDF in the connected computer browser without calling 
     .find(button => button.textContent === 'Legacy remote')!.click());
   expect(document.querySelector('.pm-browser [role="tab"][aria-selected="true"]')?.textContent).toContain('report.PDF');
   expect(document.querySelector('[data-pdf-preview]')).not.toBeNull();
-  expect(context.client.open).toHaveBeenCalledWith(target.threadId, target.path);
+  expect(context.client.open).toHaveBeenCalledWith(target.threadId, target.path, { preview: 'pdf' });
   expect(context.load).not.toHaveBeenCalled();
   expect(filePreviewApi.open).not.toHaveBeenCalled();
 });
@@ -102,7 +102,7 @@ it.each(['content', 'sheet'])('never reads a PDF as text in the legacy %s compon
     : <ChatFilePreview path={target.path} context={context} onClose={vi.fn()} />));
   expect(document.querySelector('[data-pdf-preview]')).not.toBeNull();
   expect(document.querySelector('.pm-browser [role="tab"][aria-selected="true"]')?.textContent).toContain('report.PDF');
-  expect(context.client.open).toHaveBeenCalledWith(target.threadId, target.path);
+  expect(context.client.open).toHaveBeenCalledWith(target.threadId, target.path, { preview: 'pdf' });
   expect(context.client.close).toHaveBeenCalled();
   expect(context.load).not.toHaveBeenCalled();
   await act(async () => root.render(null));

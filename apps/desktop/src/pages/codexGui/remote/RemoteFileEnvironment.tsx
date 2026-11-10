@@ -21,7 +21,10 @@ export function RemoteFileEnvironment({ controller, ready, threadId, children }:
     const current = () => { requireReady(); return access ??= new RemoteFileAccess(controller.guiTools.files); };
     const environment: FileEnvironment = {
       remote: true,
-      previews: { open: target => current().open(target), close: id => access?.close(id) ?? Promise.resolve() },
+      previews: { open: async target => {
+        const data = await current().open(target);
+        return data && { ...data, remote: true };
+      }, close: id => access?.close(id) ?? Promise.resolve() },
       resolveWebsite: url => current().resolveWebsite(url),
       image: props => <ChatImage source={props.src} description={props.alt} compact={props.compact} />,
       actions: {

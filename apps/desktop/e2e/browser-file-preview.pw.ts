@@ -8,18 +8,18 @@ const panel = (page: Page) => page.locator('.pf-file-panel:visible');
 
 async function checkPreviews(page: Page) {
   await row(page, 'report.PDF').click();
-  await expect(panel(page).locator('canvas')).toBeVisible();
-  await expect(panel(page).getByText('1 / 2', { exact: true })).toBeVisible();
+  await expect(panel(page).locator('.file-pdf-page[data-pdf-page="1"] canvas')).toBeVisible();
+  await expect(panel(page).locator('.file-pdf-pages')).toHaveAttribute('data-current-page', '1');
   await panel(page).getByRole('button', { name: '下一页', exact: true }).click();
-  await expect(panel(page).getByText('2 / 2', { exact: true })).toBeVisible();
-  await expect(panel(page).locator('canvas')).toBeVisible();
+  await expect(panel(page).locator('.file-pdf-pages')).toHaveAttribute('data-current-page', '2');
+  await expect(panel(page).locator('.file-pdf-page[data-pdf-page="2"] canvas')).toBeVisible();
   await page.screenshot({ path: test.info().outputPath('pdf-preview.png') });
   await row(page, 'guide.md').click();
   await expect(panel(page).getByRole('heading', { name: 'Preview heading' })).toBeVisible();
   await expect.poll(() => panel(page).getByRole('img', { name: 'Document image' })
     .evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(200);
   await panel(page).getByRole('button', { name: 'Open PDF', exact: true }).click();
-  await expect(panel(page).locator('canvas')).toBeVisible();
+  await expect(panel(page).locator('.file-pdf-page[data-pdf-page="1"] canvas')).toBeVisible();
   await row(page, 'guide.md').click();
   await panel(page).getByRole('button', { name: '源码', exact: true }).click();
   const editor = panel(page).getByRole('textbox', { name: '文件内容', exact: true });
@@ -81,8 +81,8 @@ test('SSH previews a 12 MB PDF in bounded chunks', async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Editor server', exact: true }).click();
   await page.getByRole('button', { name: '远程文件浏览', exact: true }).click();
   await row(page, 'large.pdf').click();
-  await expect(panel(page).locator('canvas')).toBeVisible({ timeout: 20_000 });
-  await expect(panel(page).getByText('1 / 2', { exact: true })).toBeVisible();
+  await expect(panel(page).locator('.file-pdf-page[data-pdf-page="1"] canvas')).toBeVisible({ timeout: 20_000 });
+  await expect(panel(page).locator('.file-pdf-pages')).toHaveAttribute('data-current-page', '1');
 });
 
 for (const mode of ['local', 'remote', 'web']) {

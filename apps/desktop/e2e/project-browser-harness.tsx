@@ -21,10 +21,13 @@ import '../src/styles.css';
 import 'antd/dist/reset.css';
 import { previewBrowserRequest, setPreviewFiles, previewReads } from './browser-preview-fixture';
 import { cmapPdf } from './cmap-pdf-fixture';
+import { DEFAULT_CHAT_POLICY, setChatPolicy, setChatConnectionMode } from '../../../shared/remote-chat/policy';
 
 const params = new URLSearchParams(location.search);
 const dark = params.has('dark');
 const mode = params.get('mode') ?? 'local';
+setChatPolicy({ ...DEFAULT_CHAT_POLICY, filePreviewMaxMb: Number(params.get('pdfLimit') ?? 100) });
+setChatConnectionMode(mode === 'local' ? 'direct' : 'relay');
 if (params.has('cmapPdf')) setPreviewFiles({ 'cmap.pdf': btoa(String.fromCharCode(...cmapPdf())) });
 if (params.has('largeDirectory')) seedLargeDirectory(10_001);
 if (params.has('largeText')) seedLargeText(params.has('atThreshold'));

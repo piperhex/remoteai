@@ -4,6 +4,8 @@ import type { FilePreviewData } from '../../../../shared/remote-chat/files';
 import { PREVIEW_CHUNK_CHARACTERS } from '../../../../shared/remote-chat/filePreviewText';
 import { RemoteMappingStreams } from '../../../../shared/port-mapping/remoteStreams';
 import { STREAM_OPERATION, type MappingStreamLink } from '../../../../shared/port-mapping/streamMux';
+import { checkFilePreviewSize } from '../../../../shared/remote-chat/policy';
+import type { ConnectionMode } from '../../../../shared/remote-chat/protocol';
 
 interface Resource { kind: 'preview' | 'resource'; id?: string; text?: string }
 const MAX_RESOURCES = 16;
@@ -17,7 +19,7 @@ export class RemoteFiles {
     this.streams.get(owner)?.close(); this.streams.set(owner, new RemoteMappingStreams(link));
   }
 
-  async request(body: Record<string, unknown>, owner: string): Promise<unknown> {
+  async request(body: Record<string, unknown>, owner: string, mode: ConnectionMode = 'relay'): Promise<unknown> {
     if (body.operation === 'guiFileApplications') return invoke('codex_gui_file_applications');
     if (body.operation === 'guiFileAction') {
       // Saving on the viewer uses its download manager, not an unattended dialog on the host.
@@ -26,7 +28,7 @@ export class RemoteFiles {
       }
       return invoke('codex_gui_file_action', { request: { target: body.target, action: body.action } });
     }
-    if (body.operation === 'guiFilePreviewOpen' || body.operation === 'guiResourceOpen') return this.open(body, owner);
+    if (body.operation === 'guiFilePreviewOpen' || body.operation === 'guiResourceOpen') return this.open(body, owner, mode);
     const resourceId = body.operation === STREAM_OPERATION ? body.resource : body.id;
     const resource = [...(this.owners.get(owner) ?? [])].find(value => value.id === resourceId);
     const closing = body.operation === 'guiFilePreviewClose' || body.operation === 'guiResourceClose';
@@ -54,7 +56,7 @@ export class RemoteFiles {
     return invoke('codex_gui_resource_link', { request: { ...request, scope: resource.id } });
   }
 
-  private async open(body: Record<string, unknown>, owner: string) {
+  private async open(body: Record<string, unknown>, owner: string, mode: ConnectionMode) {
     const resources = this.owners.get(owner) ?? new Set<Resource>();
     if (resources.size >= MAX_RESOURCES) throw new Error('预览较多，请先关闭一个再试。');
     this.owners.set(owner, resources);
@@ -65,7 +67,8 @@ export class RemoteFiles {
         ? await invoke<FilePreviewData | null>('codex_gui_open_file_preview', { target: body.target })
         : await invoke<string>('codex_gui_resource_open', { url: body.url });
       resource.id = typeof result === 'string' ? result : result?.sessionId;
-      if (!resources.has(resource)) { await close(resource); throw unavailable(); }
+      if (!resources.has(resource)) throw unavailable();
+      if (result && typeof result !== 'string' && result.kind === 'pdf') checkFilePreviewSize(result.size!, mode);
       if (!result) resources.delete(resource);
       if (body.chunkedText === true && result && typeof result !== 'string'
         && result.text && result.text.length > PREVIEW_CHUNK_CHARACTERS) {
@@ -73,7 +76,11 @@ export class RemoteFiles {
         return { ...result, text: null, textLength: result.text.length };
       }
       return result;
-    } catch (error) { resources.delete(resource); throw error; }
+    } catch (error) {
+      resources.delete(resource);
+      await close(resource).catch(() => console.warn('Preview cleanup failed'));
+      throw error;
+    }
   }
 
   release(owner?: string) {

@@ -21,16 +21,21 @@ import { filePreviewKind } from '../../../shared/file-preview/kinds';
 import type { FileClient } from '../../../shared/remote-chat/fileDownload';
 import { setGuiLanguage } from '../../../shared/localization/uiText';
 import { useThemeMode } from '../src/hooks/useThemeMode';
+import { DEFAULT_CHAT_POLICY, setChatPolicy, setChatConnectionMode } from '../../../shared/remote-chat/policy';
 import '../src/styles.css';
 import 'antd/dist/reset.css';
 import '../../../shared/remote-chat/views/messages.css';
 
 const params = new URLSearchParams(location.search);
+if (params.has('mobile')) document.body.style.minWidth = '0';
 const mode = params.get('mode') ?? 'local';
+setChatPolicy({ ...DEFAULT_CHAT_POLICY, filePreviewMaxMb: Number(params.get('pdfLimit') ?? 100) });
+setChatConnectionMode(mode === 'local' ? 'direct' : 'relay');
 Object.defineProperty(globalThis, 'isTauri', { value: mode === 'local', configurable: true });
 localStorage.setItem('codex-switch:theme-mode', params.has('dark') ? 'dark' : 'light');
 setGuiLanguage('zh');
-Object.assign(window, { setPreviewLanguage: setGuiLanguage });
+Object.assign(window, { setPreviewLanguage: setGuiLanguage,
+  setPdfPolicy: (limit: number) => setChatPolicy({ ...DEFAULT_CHAT_POLICY, filePreviewMaxMb: limit }) });
 const names = ['page.html', 'image.svg', 'video.mp4', 'sound.wav', 'report.PDF', 'guide.md',
   'settings.json', 'archive.zip', 'setup.exe', '项目资源与动画素材归档-用于检查较长文件名称在窄窗口中的换行显示.zip'];
 const address = (path: string) => new URL(`/resource/${path.split(/[\\/]/).at(-1)}`, location.href).href;
@@ -40,7 +45,9 @@ filePreviewApi.open = async target => {
   const response = await fetch(address(target.path));
   const kind = filePreviewKind(target.path) ?? 'text';
   return { ...target, kind, name: target.path.split('/').at(-1)!, sessionId: crypto.randomUUID(),
-    url: response.url, text: ['html', 'markdown', 'text'].includes(kind) ? await response.text() : null };
+    url: params.get('previewUrl') ?? response.url,
+    remote: mode !== 'local',
+    text: ['html', 'markdown', 'text'].includes(kind) ? await response.text() : null };
 };
 filePreviewApi.close = async id => { document.body.dataset.closed = id; };
 fileApi.applications = async () => [];

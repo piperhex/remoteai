@@ -5,6 +5,7 @@ import type { BrowserHostMessage } from '../../../shared/project-browser/nativeB
 import type { DocumentsSnapshot } from '../../../shared/project-browser/documents';
 import type { ProjectFile } from '../../../shared/remote-chat/projectFiles';
 import type { FileSelection } from '../../../shared/project-browser/fileSelection';
+import type { ProjectBrowserClient } from '../../../shared/project-browser/protocol';
 import { browserRequest, browserRoot, savedFiles } from './project-browser-fixture';
 import { longPress } from './project-browser-touch';
 const require = createRequire(import.meta.url);
@@ -12,6 +13,8 @@ const { handleBrowserRequest } = require('../../../shared/project-browser/native
   typeof import('../../../shared/project-browser/nativeBridge');
 const { createProjectBrowserClient } = require('../../../shared/project-browser/protocol') as
   typeof import('../../../shared/project-browser/protocol');
+const { DEFAULT_CHAT_POLICY, setChatPolicy, setChatConnectionMode } = require('../../../shared/remote-chat/policy') as
+  typeof import('../../../shared/remote-chat/policy');
 
 declare global {
   interface Window {
@@ -153,4 +156,79 @@ test('bundled native editor: offline assets, mobile search/fold/save and close g
     end: { line: 1, column: 20 }, text: 'shared native draft' }]);
   expect(snapshot?.tabs.find(tab => tab.path.endsWith('/main.ts'))?.text).toBe('shared native draft');
   expect(errors).toEqual([]);
+});
+
+test('bundled native PDF: original paper opens with its outline and live Admin limits', async ({ page }, info) => {
+  test.skip(!process.env.PDF_PREVIEW_FIXTURE, 'Set PDF_PREVIEW_FIXTURE to verify a local PDF.');
+  const bytes = readFileSync(process.env.PDF_PREVIEW_FIXTURE!);
+  const name = 'attachment-2610.39813v2.pdf';
+  const path = `${browserRoot}/${name}`;
+  const id = '11111111-1111-4111-8111-111111111111';
+  let handles = 0;
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const client: ProjectBrowserClient = {
+    list: async () => ({ directory: browserRoot, parent: null, entries: [{ name, path, directory: false }], truncated: false }),
+    read: async () => ({ path, kind: 'binary', size: bytes.length, revision: 'fixture', readOnly: true }),
+    save: async () => { throw Error('Read-only fixture'); }, mutate: async () => { throw Error('Read-only fixture'); },
+    transfer: {
+      open: async () => { handles++; return { id, name, size: bytes.length, mimeType: 'application/pdf' }; },
+      read: async ({ offset, length }) => ({ offset, data: bytes.subarray(offset, offset + length).toString('base64') }),
+      close: async () => { handles--; }, browse: async () => { throw Error('Unused'); },
+    },
+  };
+  const settings = (limit: number): BrowserHostMessage => ({ type: 'settings', cwd: browserRoot, connected: true,
+    labels: {}, theme: {}, language: 'zh', pdfPreview: { mode: 'relay', policy: {
+      ...DEFAULT_CHAT_POLICY, filePreviewMaxMb: limit, fileDownloadMaxMb: 1,
+    } } });
+  const emit = (message: BrowserHostMessage) => page.evaluate(value => window.projectBrowserMessage(value), message);
+  const limit = async (value: number) => {
+    setChatPolicy({ ...DEFAULT_CHAT_POLICY, filePreviewMaxMb: value, fileDownloadMaxMb: 1 });
+    await emit(settings(value));
+  };
+  setChatConnectionMode('relay');
+  setChatPolicy({ ...DEFAULT_CHAT_POLICY, filePreviewMaxMb: 1 });
+  await page.exposeFunction('nativeBrowserRequest', async (raw: string) => {
+    if (JSON.parse(raw).type === 'ready') { await emit(settings(1)); return; }
+    const reply = await handleBrowserRequest(raw, { client, cwd: browserRoot, connected: true });
+    if (reply) await emit(reply);
+  });
+  await page.addInitScript(() => {
+    window.ReactNativeWebView = { postMessage: message => { void window.nativeBrowserRequest(message); } };
+  });
+  const html = readFileSync(new URL('../../native/assets/project-browser.html', import.meta.url), 'utf8');
+  await page.route('**/native-pdf.html', route => route.fulfill({ contentType: 'text/html', body: html }));
+  await page.setViewportSize({ width: 390, height: 780 });
+  try {
+    await page.goto('/native-pdf.html');
+    await page.getByRole('treeitem', { name, exact: true }).click();
+    await expect(page.locator('.pf-file-panel:not([hidden])')).toContainText('暂时无法预览');
+    expect(handles).toBe(0);
+    await limit(100);
+    const pdf = page.locator('.file-pdf-preview');
+    await expect(pdf.locator('.file-pdf-page')).toHaveCount(28);
+    await expect(pdf.locator('.file-pdf-page[data-pdf-page="1"] canvas')).toBeVisible();
+    await page.screenshot({ path: info.outputPath('native-browser-original-first-page.png') });
+    await pdf.getByRole('button', { name: '下一页', exact: true }).click();
+    await expect(pdf.locator('.file-pdf-pages')).toHaveAttribute('data-current-page', '2');
+    await pdf.getByRole('button', { name: 'PDF 导航', exact: true }).click();
+    await expect(pdf.locator('.file-pdf-thumbnail')).toHaveCount(28);
+    await expect(pdf.locator('.file-pdf-thumbnail[data-thumbnail-page="2"] canvas')).toBeVisible();
+    await pdf.getByRole('button', { name: '目录大纲', exact: true }).click();
+    await expect(pdf.getByRole('button', { name: 'Additional Experiments', exact: true })).toBeVisible();
+    await page.screenshot({ path: info.outputPath('native-browser-original-outline.png') });
+    await pdf.getByRole('button', { name: 'Additional Experiments', exact: true }).click();
+    await expect.poll(() => pdf.locator('.file-pdf-pages').evaluate(element => {
+      const target = element.querySelector('.file-pdf-page[data-pdf-page="15"]')!.getBoundingClientRect();
+      const top = element.getBoundingClientRect().top;
+      return target.top <= top + 16 && target.bottom > top + 16;
+    })).toBe(true);
+    await limit(1);
+    await expect(pdf).toHaveCount(0);
+    await expect(page.locator('.pf-file-panel:not([hidden])')).toContainText('暂时无法预览');
+    expect(handles).toBe(0);
+    expect(errors).toEqual([]);
+  } finally {
+    setChatConnectionMode('offline'); setChatPolicy(DEFAULT_CHAT_POLICY);
+  }
 });

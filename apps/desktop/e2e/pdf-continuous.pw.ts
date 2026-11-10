@@ -54,8 +54,54 @@ async function checkScrollAndZoom(page: Page, pdf: Locator) {
   expect(page.context().pages()).toHaveLength(1);
 }
 
+async function endAnchor(pages: Locator) {
+  return pages.evaluate(element => {
+    const bounds = element.getBoundingClientRect();
+    const entries = [...element.querySelectorAll<HTMLElement>('[data-pdf-page]')].map(page => ({
+      top: page.getBoundingClientRect().top - bounds.top + element.scrollTop,
+      height: page.getBoundingClientRect().height,
+    }));
+    const index = entries.reduce((current, page, index) => page.top <= element.scrollTop ? index : current, 0);
+    return { index, position: (element.scrollTop - entries[index].top) / entries[index].height };
+  });
+}
+
+async function expectAnchor(pages: Locator, anchor: Awaited<ReturnType<typeof endAnchor>>) {
+  await expect.poll(() => pages.evaluate((element, anchor) => {
+    const target = element.querySelectorAll<HTMLElement>('[data-pdf-page]')[anchor.index];
+    const bounds = target.getBoundingClientRect();
+    const top = bounds.top - element.getBoundingClientRect().top + element.scrollTop;
+    const expected = Math.min(element.scrollHeight - element.clientHeight, top + bounds.height * anchor.position);
+    return Math.abs(element.scrollTop - expected);
+  }, anchor)).toBeLessThan(2);
+}
+
 for (const mode of ['local', 'remote', 'web']) {
   for (const dark of [false, true]) {
+    test(`${mode}: ${dark ? 'dark narrow font20' : 'light wide'} keeps the reading anchor when shrinking at the end`,
+      async ({ page }, info) => {
+        const pdf = await openPdf(page, mode, dark);
+        const pages = pdf.locator('.file-pdf-pages');
+        for (const action of ['zoom-out', 'fit', 'wheel', 'resize']) {
+          for (let step = 0; step < 4; step += 1) {
+            await pdf.getByRole('button', { name: '放大', exact: true }).click();
+          }
+          await pages.evaluate(element => { element.scrollTop = element.scrollHeight; });
+          await expectPage(pdf, PDF_FIXTURE_PAGES);
+          const anchor = await endAnchor(pages);
+          const last = pages.locator(`[data-pdf-page="${PDF_FIXTURE_PAGES}"]`);
+          const height = (await last.boundingBox())!.height;
+          if (action === 'zoom-out') await pdf.getByRole('button', { name: '缩小', exact: true }).click();
+          if (action === 'fit') await pdf.getByRole('button', { name: '适应窗口', exact: true }).click();
+          if (action === 'wheel') await pages.dispatchEvent('wheel', { ctrlKey: true, deltaY: 400 });
+          if (action === 'resize') await page.setViewportSize({ width: 520, height: 800 });
+          await expect.poll(async () => (await last.boundingBox())!.height).toBeLessThan(height);
+          await expectAnchor(pages, anchor);
+          await expect(last).toBeVisible();
+          await expect(last.locator('canvas')).toBeVisible();
+          await page.screenshot({ path: info.outputPath(`${mode}-${dark ? 'dark' : 'light'}-end-${action}.png`) });
+        }
+      });
     test(`${mode}: ${dark ? 'dark narrow font20' : 'light wide'} continuous pages, thumbnails and outline`,
       async ({ page }, info) => {
         const pdf = await openPdf(page, mode, dark);

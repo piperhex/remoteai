@@ -7,8 +7,9 @@ import { fileApi } from '../../../../../shared/conversation/fileApi';
 import { browserHost } from '../../../../../shared/project-browser/views/browserHost';
 import { projectDownloads } from '../../../../../shared/project-browser/downloads';
 
+const previewMode = isDesktopApp ? 'direct' : undefined;
 const client = createProjectBrowserClient(request => guiApi.request(request),
-  projectDownloads(request => guiApi.request(request)));
+  projectDownloads(request => guiApi.request(request), previewMode), previewMode);
 const host = browserHost(client);
 if (isDesktopApp) host.open = async entry => {
   await fileApi.perform({ path: entry.path, threadId: null },
