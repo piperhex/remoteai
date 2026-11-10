@@ -74,12 +74,13 @@ it('keeps ordinary downloads separate from preview transfers and closes both aft
 
 it('keeps project PDF range reads on the preview limit instead of the download limit', async () => {
   setChatPolicy({ ...DEFAULT_CHAT_POLICY, filePreviewMaxMb: 100, fileDownloadMaxMb: 1 });
-  const request = vi.fn(async <T,>(_body: unknown) => undefined as T);
+  const request = vi.fn(async (_body: unknown) => undefined);
+  const send = async <T,>(body: unknown): Promise<T> => await request(body) as T;
   const read = { threadId: 'transfer', id: 'id', offset: 0, length: 1 };
-  await projectDownloads(request).read({ ...read, preview: 'pdf' });
+  await projectDownloads(send).read({ ...read, preview: 'pdf' });
   expect(request).toHaveBeenLastCalledWith({ operation: 'fileRead', ...read, preview: 'pdf', maxBytes: 100 * MIB });
-  await projectDownloads(request).read(read);
+  await projectDownloads(send).read(read);
   expect(request).toHaveBeenLastCalledWith({ operation: 'fileRead', ...read, maxBytes: MIB });
-  await projectDownloads(request, 'direct').read({ ...read, preview: 'pdf' });
+  await projectDownloads(send, 'direct').read({ ...read, preview: 'pdf' });
   expect(request).toHaveBeenLastCalledWith(expect.objectContaining({ maxBytes: Number.MAX_SAFE_INTEGER }));
 });
