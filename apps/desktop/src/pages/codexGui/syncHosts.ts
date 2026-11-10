@@ -9,6 +9,8 @@ import { createDesktopPeer } from '../../remoteChat/peer';
 import { createDesktopNativePath } from '../../remoteChat/nativePath';
 import { createDesktopPacketCompression } from '../../remoteChat/packetCompression';
 import { NativeGuiSocket } from './remote/nativeSocket';
+import { syncHosts, notifySyncHosts } from '../../../../../shared/conversation/sync/downloads';
+import { desktopDownloadOwner } from '../../downloads/useDesktopDownloads';
 
 export interface SyncComputerDirectory { identity: GuiCloudIdentity | null; devices: GuiComputer[] }
 
@@ -19,9 +21,11 @@ export function useDesktopSyncHosts(directory?: SyncComputerDirectory) {
   const hosts = useMemo<SyncHost[]>(() => {
     const local: SyncHost = { id: 'local', name: '',
       request: request => invoke('codex_conversation_sync', { request }) };
-    if (!identity) return [local];
+    const owner = identity ? desktopDownloadOwner(identity) : 'desktop-local';
+    if (!identity) return syncHosts(owner, [{ id: local.id, create: () => local }]);
     const online = JSON.parse(devices) as Pick<GuiComputer, 'deviceId' | 'name'>[];
-    return [local, ...online.map(device => remoteSyncHost({ id: device.deviceId, name: device.name,
+    return syncHosts(owner, [{ id: local.id, create: () => local }, ...online.map(device => ({ id: device.deviceId,
+      create: () => remoteSyncHost({ id: device.deviceId, name: device.name,
       connect: events => new ChatConnection({ ...events, deviceId: device.deviceId, managePolicyMode: false,
         tcpPunch: true, randomBytes: length => crypto.getRandomValues(new Uint8Array(length)),
         authorize: async () => ({ baseUrl: identity.baseUrl, accessToken: '' }),
@@ -29,8 +33,8 @@ export function useDesktopSyncHosts(directory?: SyncComputerDirectory) {
         createNativePath: createDesktopNativePath, createPacketCompression: createDesktopPacketCompression,
         verifyHostKey: trustedHost(browserTrustStore, trustScope(identity.baseUrl, device.deviceId)),
       }),
-    }))];
+    }) }))]);
   }, [identity?.baseUrl, identity?.userId, devices]);
-  useEffect(() => () => { hosts.forEach(host => host.close?.()); }, [hosts]);
+  useEffect(() => { notifySyncHosts(); }, [hosts]);
   return hosts;
 }

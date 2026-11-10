@@ -28,7 +28,7 @@ for (const path of ['relay', 'direct']) {
       host: string; request: { action: string; overwriteIds?: string[] } }[]);
     expect(calls.find(call => call.request.action === 'commit')?.request.overwriteIds).toEqual(['thread-sync']);
     expect(calls.filter(call => call.host === 'source').every(call =>
-      ['homes', 'list', 'export', 'read', 'close'].includes(call.request.action))).toBe(true);
+      ['homes', 'list', 'export', 'resume', 'read', 'close'].includes(call.request.action))).toBe(true);
   });
 }
 
@@ -75,22 +75,20 @@ test('English copy switches without exposing fallback keys or Relay limits', asy
   await expect(page.getByText(/200|不限速/)).toHaveCount(0);
 });
 
-test('remote transfer can be cancelled without changing the destination', async ({ page }) => {
+test('remote transfer continues after dismissing the sync dialog', async ({ page }) => {
   await page.goto('/e2e/conversation-sync-harness.html?mode=remote&hold=1');
   await page.getByRole('button', { name: '展开项目: F:/projects/remoteai', exact: true }).click();
-  await expect(page.getByText('排查项目中的登录问题')).toBeVisible();
   await page.getByRole('checkbox').last().check();
   await page.getByRole('button', { name: '对话同步', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: '开始同步', exact: true }).click();
   await expect(dialog.getByRole('progressbar')).toBeVisible();
-  await dialog.getByRole('button', { name: /^取\s*消$/ }).click();
+  await dialog.getByRole('button', { name: '后台继续' }).click();
   await expect(dialog).toBeHidden();
   await page.evaluate(() => { (Reflect.get(window, 'releaseSyncTransfer') as () => void)(); });
-  await expect(page.getByRole('button', { name: '对话同步', exact: true })).toBeEnabled();
   await expect.poll(async () => page.evaluate(() =>
     (Reflect.get(window, 'syncCalls') as { request: { action: string } }[])
       .filter(call => call.request.action === 'close').length)).toBe(2);
   const calls = await page.evaluate(() => Reflect.get(window, 'syncCalls') as { request: { action: string } }[]);
-  expect(calls.some(call => call.request.action === 'commit')).toBe(false);
+  expect(calls.some(call => call.request.action === 'commit')).toBe(true);
 });

@@ -1,7 +1,7 @@
 import { invoke } from '../api/backend';
 import { getChatPolicy } from '../../../../shared/remote-chat/policy';
 import { SyncRelayRate } from '../../../../shared/conversation/sync/rate';
-import { SYNC_CHUNK_BYTES, type SyncBundle, type SyncRequest }
+import { SYNC_CHUNK_BYTES, SYNC_LEGACY_CHUNK_BYTES, type SyncBundle, type SyncRequest }
   from '../../../../shared/conversation/sync/types';
 import type { ConnectionMode } from '../../../../shared/remote-chat/protocol';
 
@@ -16,11 +16,15 @@ export class RemoteConversationSync {
     }
     const ids = this.owners.get(options.owner) ?? new Set<string>();
     this.owners.set(options.owner, ids);
-    if ('id' in request && !ids.has(request.id)) throw new Error('CONVERSATION_SYNC_INVALID');
+    if ('id' in request && request.action !== 'resume' && !ids.has(request.id)) {
+      throw new Error('CONVERSATION_SYNC_INVALID');
+    }
     if (request.action === 'read' || request.action === 'write') {
       const rate = this.rates.get(options.owner) ?? new SyncRelayRate();
       this.rates.set(options.owner, rate);
-      await rate.wait(SYNC_CHUNK_BYTES, { direct: () => options.mode === 'direct',
+      const bytes = request.action === 'read' ? Math.min(SYNC_CHUNK_BYTES, request.length ?? SYNC_LEGACY_CHUNK_BYTES)
+        : Math.min(SYNC_CHUNK_BYTES, Math.ceil(request.data.length * 3 / 4));
+      await rate.wait(bytes, { direct: () => options.mode === 'direct',
         kibPerSecond: () => getChatPolicy().conversationSyncRelayKbps });
     }
     const result = await invoke<unknown>('codex_conversation_sync', { request });
@@ -30,7 +34,8 @@ export class RemoteConversationSync {
       }
       throw new Error('CONVERSATION_SYNC_CLOSED');
     }
-    if (request.action === 'prepare' || request.action === 'export' || request.action === 'begin') {
+    if (request.action === 'prepare' || request.action === 'export' || request.action === 'begin'
+      || request.action === 'resume') {
       ids.add((result as SyncBundle).id);
     }
     if (request.action === 'close') ids.delete(request.id);
@@ -38,12 +43,10 @@ export class RemoteConversationSync {
   }
 
   release(owner?: string) {
-    for (const [id, transfers] of this.owners) {
+    for (const id of this.owners.keys()) {
       if (owner !== undefined && id !== owner) continue;
-      for (const transfer of transfers) {
-        void invoke('codex_conversation_sync', { request: { action: 'close', id: transfer } })
-          .catch(() => { /* Expiration also removes abandoned bundles. */ });
-      }
+      // Disconnecting revokes this session's handles; durable bundles can only be
+      // reclaimed with their separate resume capability, or expire after seven days.
       this.owners.delete(id); this.rates.delete(id);
     }
   }

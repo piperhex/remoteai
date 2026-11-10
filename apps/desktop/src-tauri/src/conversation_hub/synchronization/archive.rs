@@ -3,6 +3,18 @@ use super::*;
 
 const MANIFEST_LIMIT: u64 = 64 * 1024 * 1024;
 
+pub(super) fn original_size(root: &Path) -> Result<u64, String> {
+    let mut total = fs::metadata(root.join("manifest.json"))
+        .map_err(|error| error.to_string())?
+        .len();
+    for item in snapshots(root)? {
+        for path in item.rollouts {
+            total += fs::metadata(path).map_err(|error| error.to_string())?.len();
+        }
+    }
+    Ok(total)
+}
+
 pub(super) fn snapshot_source(source: &Path, root: &Path, ids: Vec<String>) -> Result<(), String> {
     let requested = normalized_ids(ids);
     if requested.is_empty() {
@@ -41,7 +53,9 @@ pub(super) fn snapshot_source(source: &Path, root: &Path, ids: Vec<String>) -> R
 pub(super) fn pack(root: &Path) -> Result<(), String> {
     let file = File::create(root.join("bundle.zip")).map_err(|e| e.to_string())?;
     let mut zip = ZipWriter::new(file);
-    let options = SimpleFileOptions::default().compression_method(CompressionMethod::Deflated);
+    let options = SimpleFileOptions::default()
+        .compression_method(CompressionMethod::Deflated)
+        .compression_level(Some(1));
     zip.start_file("manifest.json", options)
         .map_err(|e| e.to_string())?;
     zip.write_all(&fs::read(root.join("manifest.json")).map_err(|e| e.to_string())?)
@@ -65,6 +79,11 @@ pub(super) fn unpack(entry: &Transfer) -> Result<(), String> {
     let path = entry.root.join("bundle.zip");
     if entry.written != entry.size || sha256(&path)? != entry.sha256 {
         return Err(INVALID.into());
+    }
+    let sessions = entry.root.join("sessions");
+    // An interrupted extraction has no completed manifest and is safe to repeat.
+    if !entry.root.join("manifest.json").exists() && sessions.exists() {
+        fs::remove_dir_all(sessions).map_err(|error| error.to_string())?;
     }
     let mut zip =
         ZipArchive::new(File::open(path).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;

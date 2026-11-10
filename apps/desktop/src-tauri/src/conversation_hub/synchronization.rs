@@ -5,13 +5,15 @@ use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
 mod archive;
+mod persistence;
 mod planning;
 #[cfg(test)]
 mod tests;
 
-const CHUNK_BYTES: usize = 12 * 1024;
-const MAX_TRANSFERS: usize = 8;
-const TRANSFER_TTL: Duration = Duration::from_secs(30 * 60);
+const CHUNK_BYTES: usize = 256 * 1024;
+const LEGACY_CHUNK_BYTES: usize = 12 * 1024;
+const MAX_TRANSFERS: usize = 64;
+const TRANSFER_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 const INVALID: &str = "CONVERSATION_SYNC_INVALID";
 const FAILED: &str = "CONVERSATION_SYNC_FAILED";
 const CHANGED: &str = "CONVERSATION_SYNC_CHANGED";
@@ -39,6 +41,7 @@ impl From<String> for SyncError {
 static TRANSFERS: LazyLock<Mutex<HashMap<String, Transfer>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
+#[derive(Serialize, Deserialize)]
 struct Transfer {
     root: PathBuf,
     size: u64,
@@ -46,13 +49,18 @@ struct Transfer {
     written: u64,
     source: Option<PathBuf>,
     plan: Option<planning::Plan>,
+    #[serde(skip, default = "Instant::now")]
     touched: Instant,
     retain: bool,
+    #[serde(default)]
+    original_size: u64,
+    #[serde(default)]
+    resume_token: String,
 }
 
 impl Drop for Transfer {
     fn drop(&mut self) {
-        if self.retain {
+        if self.retain || !self.resume_token.is_empty() {
             return;
         }
         if let Err(error) = fs::remove_dir_all(&self.root) {
@@ -88,6 +96,7 @@ pub(crate) enum SyncRequest {
     Read {
         id: String,
         offset: u64,
+        length: Option<usize>,
     },
     Begin {
         size: u64,
@@ -109,6 +118,10 @@ pub(crate) enum SyncRequest {
     },
     Close {
         id: String,
+    },
+    Resume {
+        id: String,
+        resume_token: String,
     },
 }
 
@@ -140,12 +153,13 @@ fn run<R: Runtime>(app: tauri::AppHandle<R>, request: SyncRequest) -> Result<Val
 }
 
 fn transfer_root<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<PathBuf, String> {
-    let root = app
+    let cache = app
         .path()
         .app_cache_dir()
         .map_err(|error| error.to_string())?
-        .join("conversation-sync")
-        .join(Uuid::new_v4().to_string());
+        .join("conversation-sync");
+    persistence::prune(&cache)?;
+    let root = cache.join(Uuid::new_v4().to_string());
     fs::create_dir_all(&root).map_err(|error| error.to_string())?;
     Ok(root)
 }
@@ -170,6 +184,7 @@ fn execute<R: Runtime>(app: tauri::AppHandle<R>, request: SyncRequest) -> Result
             session_ids,
         } => prepare(&app, &home_id, session_ids, true),
         SyncRequest::Begin { size, sha256 } => begin(&app, size, sha256),
+        SyncRequest::Resume { id, resume_token } => persistence::resume(&app, &id, &resume_token),
         other => with_transfer(&app, other),
     }
 }
@@ -182,22 +197,31 @@ fn homes<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<Value, String> {
     )
 }
 
-fn register(transfer: Transfer) -> Result<Value, String> {
+fn register(mut transfer: Transfer) -> Result<Value, String> {
     let mut transfers = TRANSFERS.lock().map_err(|_| FAILED.to_owned())?;
-    transfers.retain(|_, entry| entry.touched.elapsed() < TRANSFER_TTL);
+    transfers.retain(|_, entry| {
+        if entry.touched.elapsed() < TRANSFER_TTL {
+            return true;
+        }
+        entry.resume_token.clear();
+        false
+    });
     if transfers.len() >= MAX_TRANSFERS {
         return Err(INVALID.into());
     }
-    let id = Uuid::new_v4().to_string();
-    let session_ids = if transfer.root.join("manifest.json").exists() {
-        archive::snapshots(&transfer.root)?
-            .into_iter()
-            .map(|item| item.manifest.session_id)
-            .collect::<Vec<_>>()
-    } else {
-        Vec::new()
-    };
-    let result = json!({ "id": id, "size": transfer.size, "sha256": transfer.sha256, "sessionIds": session_ids });
+    let id = transfer
+        .root
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or(INVALID)?
+        .to_owned();
+    let mut result = persistence::description(&id, &transfer)?;
+    transfer.resume_token = Uuid::new_v4().to_string();
+    if let Err(error) = persistence::save(&transfer) {
+        transfer.resume_token.clear();
+        return Err(error);
+    }
+    result["resumeToken"] = json!(transfer.resume_token);
     transfers.insert(id, transfer);
     Ok(result)
 }
@@ -219,15 +243,17 @@ fn prepare<R: Runtime>(
         plan: None,
         touched: Instant::now(),
         retain: false,
+        original_size: 0,
+        resume_token: String::new(),
     };
     let _guard = bin_operation_guard()?;
     archive::snapshot_source(&source, &transfer.root, ids)?;
-    if export {
-        archive::pack(&transfer.root)?;
-        let path = transfer.root.join("bundle.zip");
-        transfer.size = fs::metadata(&path).map_err(|e| e.to_string())?.len();
-        transfer.sha256 = sha256(&path)?;
-    }
+    transfer.original_size = archive::original_size(&transfer.root)?;
+    archive::pack(&transfer.root)?;
+    let path = transfer.root.join("bundle.zip");
+    transfer.size = fs::metadata(&path).map_err(|e| e.to_string())?.len();
+    transfer.sha256 = sha256(&path)?;
+    transfer.written = transfer.size;
     register(transfer)
 }
 
@@ -244,6 +270,8 @@ fn begin<R: Runtime>(app: &tauri::AppHandle<R>, size: u64, hash: String) -> Resu
         plan: None,
         touched: Instant::now(),
         retain: false,
+        original_size: 0,
+        resume_token: String::new(),
     };
     File::create(transfer.root.join("bundle.zip")).map_err(|e| e.to_string())?;
     register(transfer)
@@ -263,7 +291,16 @@ fn with_transfer<R: Runtime>(
     };
     let mut transfers = TRANSFERS.lock().map_err(|_| FAILED.to_owned())?;
     if matches!(request, SyncRequest::Close { .. }) {
-        transfers.remove(id);
+        if let Some(entry) = transfers.get(id).filter(|entry| !entry.retain) {
+            match fs::remove_dir_all(&entry.root) {
+                Ok(()) => {}
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(error) => return Err(error.to_string()),
+            }
+        }
+        if let Some(mut entry) = transfers.remove(id) {
+            entry.resume_token.clear();
+        }
         return Ok(json!({}));
     }
     let entry = transfers
@@ -271,8 +308,8 @@ fn with_transfer<R: Runtime>(
         .filter(|entry| entry.touched.elapsed() < TRANSFER_TTL)
         .ok_or_else(|| INVALID.to_owned())?;
     entry.touched = Instant::now();
-    match request {
-        SyncRequest::Read { offset, .. } => read(entry, offset),
+    let result = match request {
+        SyncRequest::Read { offset, length, .. } => return read(entry, offset, length),
         SyncRequest::Write { offset, data, .. } => write(entry, offset, &data),
         SyncRequest::Plan { session_ids, .. } => planning::preview(app, entry, session_ids),
         SyncRequest::Commit {
@@ -281,17 +318,23 @@ fn with_transfer<R: Runtime>(
             ..
         } => planning::commit(app, entry, overwrite_ids, model_provider),
         _ => Err(INVALID.into()),
+    };
+    // Persist acknowledgements only after the file operation and plan update succeed.
+    if result.is_ok() {
+        persistence::save(entry)?;
     }
+    result
 }
 
-fn read(entry: &Transfer, offset: u64) -> Result<Value, String> {
-    if offset >= entry.size {
+fn read(entry: &Transfer, offset: u64, length: Option<usize>) -> Result<Value, String> {
+    let length = length.unwrap_or(LEGACY_CHUNK_BYTES);
+    if offset >= entry.size || length == 0 || length > CHUNK_BYTES {
         return Err(INVALID.into());
     }
     let mut file = File::open(entry.root.join("bundle.zip")).map_err(|e| e.to_string())?;
     file.seek(SeekFrom::Start(offset))
         .map_err(|e| e.to_string())?;
-    let mut bytes = vec![0; CHUNK_BYTES.min((entry.size - offset) as usize)];
+    let mut bytes = vec![0; length.min((entry.size - offset) as usize)];
     file.read_exact(&mut bytes).map_err(|e| e.to_string())?;
     Ok(json!({ "data": STANDARD.encode(bytes) }))
 }

@@ -107,6 +107,8 @@ fn packaged_remote_history_round_trips_and_rejects_tampering() {
         plan: None,
         touched: Instant::now(),
         retain: false,
+        original_size: 0,
+        resume_token: String::new(),
     };
     archive::unpack(&entry).unwrap();
     let snapshots = archive::snapshots(&entry.root).unwrap();
@@ -140,6 +142,8 @@ fn chunks_allow_identical_retries_but_reject_changed_or_out_of_order_data() {
         plan: None,
         touched: Instant::now(),
         retain: false,
+        original_size: 0,
+        resume_token: String::new(),
     };
     assert!(write(&mut entry, 3, &STANDARD.encode(b"def")).is_err());
     write(&mut entry, 0, &STANDARD.encode(b"abc")).unwrap();
@@ -159,6 +163,8 @@ fn planned_transfer(source: &Fixture, moving: bool) -> Transfer {
         plan: None,
         touched: Instant::now(),
         retain: false,
+        original_size: 0,
+        resume_token: String::new(),
     }
 }
 
@@ -250,6 +256,8 @@ fn remote_duplicates_can_be_skipped_before_any_payload_is_received() {
         plan: None,
         touched: Instant::now(),
         retain: false,
+        original_size: 0,
+        resume_token: String::new(),
     };
     let before = target.dump(THREAD);
     let ids = HashSet::from([THREAD.to_owned()]);
@@ -285,4 +293,75 @@ fn archive_identity_must_match_the_conversations_confirmed_before_transfer() {
     assert_eq!(error, INVALID);
     assert_eq!(target.dump(OTHER), before);
     assert!(source.snapshot().path.exists());
+}
+
+#[test]
+fn persisted_transfer_recovers_only_the_acknowledged_prefix_with_its_capability() {
+    let source = source();
+    let mut entry = planned_transfer(&source, false);
+    archive::pack(&entry.root).unwrap();
+    entry.size = fs::metadata(entry.root.join("bundle.zip")).unwrap().len();
+    entry.sha256 = sha256(&entry.root.join("bundle.zip")).unwrap();
+    entry.written = entry.size / 2;
+    entry.resume_token = Uuid::new_v4().to_string();
+    persistence::save(&entry).unwrap();
+    assert!(persistence::load(&entry.root, &Uuid::new_v4().to_string()).is_err());
+    let restored = persistence::load(&entry.root, &entry.resume_token).unwrap();
+    assert_eq!(restored.written, entry.written);
+    assert_eq!(restored.sha256, entry.sha256);
+    assert_eq!(
+        fs::metadata(restored.root.join("bundle.zip"))
+            .unwrap()
+            .len(),
+        entry.written
+    );
+    assert_eq!(restored.resume_token, entry.resume_token);
+}
+
+#[test]
+fn explicit_close_removes_the_zip_checkpoint_and_extracted_files() {
+    let source = source();
+    let mut entry = planned_transfer(&source, false);
+    archive::pack(&entry.root).unwrap();
+    entry.resume_token = Uuid::new_v4().to_string();
+    persistence::save(&entry).unwrap();
+    let root = entry.root.clone();
+    entry.resume_token.clear();
+    drop(entry);
+    assert!(!root.exists());
+    assert!(source.snapshot().path.exists());
+}
+
+#[test]
+fn persisted_plan_preserves_confirmation_and_idempotent_import_result() {
+    let source = source();
+    let target = self::source();
+    let mut entry = planned_transfer(&source, false);
+    archive::pack(&entry.root).unwrap();
+    entry.size = fs::metadata(entry.root.join("bundle.zip")).unwrap().len();
+    entry.written = entry.size;
+    entry.sha256 = sha256(&entry.root.join("bundle.zip")).unwrap();
+    entry.resume_token = Uuid::new_v4().to_string();
+    planning::preview_at_target(&target.home, &mut entry).unwrap();
+    let result = planning::commit_at_target(
+        &target.home,
+        &mut entry,
+        vec![THREAD.into()],
+        MigrationModelProvider::Gui,
+    )
+    .unwrap();
+    persistence::save(&entry).unwrap();
+    let mut restored = persistence::load(&entry.root, &entry.resume_token).unwrap();
+    let before = target.dump(THREAD);
+    assert_eq!(
+        planning::commit_at_target(
+            &target.home,
+            &mut restored,
+            vec![THREAD.into()],
+            MigrationModelProvider::Gui
+        )
+        .unwrap(),
+        result
+    );
+    assert_eq!(target.dump(THREAD), before);
 }

@@ -19,10 +19,44 @@ overwrite them. A changed destination invalidates that preview and requires a ne
 files, database state and index entries are backed up before replacement. A failed batch restores the destination
 and any removed local source records; incomplete recovery retains the temporary backups and writes diagnostics.
 
-Remote packages use authenticated, encrypted chat connections with bounded, retry-safe 12 KiB chunks and
-SHA-256 package verification. Transfer identifiers are bound to the remote session. Connections and temporary
-packages are released when the panel or session closes. Interrupted requests never authorize source deletion.
-The UI displays the active Relay/P2P path and measured package transfer speed only for transfers between PCs.
+The source snapshots conversations into a ZIP before transmission. Confirmation shows the original
+conversation size and compressed size. Confirmed synchronizations enter the shared download queue and continue
+after the dialog or conversation page closes. Progress counts bytes acknowledged by the destination; import
+has a separate status. Completion means that SHA-256 verification and transactional import both succeeded.
+The download record shows the import result rather than offering file-open or save actions for a temporary ZIP.
+The UI displays the actual Relay/P2P path and measured speed for transfers between PCs.
+
+## Resumption and cleanup
+
+The source ZIP, destination ZIP prefix, import confirmation and import result have disk checkpoints.
+The download record stores independent, random resume capabilities for both hosts. A new authenticated
+remote session must present the matching capability before it can reuse a handle; a session disconnect
+revokes its handles without deleting the resumable files. Source and destination runtimes must support
+these capabilities before a managed synchronization can start.
+
+On resume, the destination's acknowledged offset is authoritative, including when a write succeeded but
+its response was lost. Size and SHA-256 must match the saved record. Destination changes still invalidate
+the original overwrite confirmation. Import retries return the saved result rather than importing twice.
+
+After import succeeds, both hosts automatically remove their temporary ZIPs, extracted files and
+checkpoints. Interrupted cleanup stays recorded and is retried when the device directory refreshes.
+Deleting an unfinished task also requests cleanup. Pauses and transfer failures preserve the checkpoints.
+Abandoned checkpoints expire after seven days and are pruned when another synchronization is prepared.
+Recovery files required by an incomplete transactional rollback remain protected.
+
+## Transfer performance
+
+The previous sender waited for a source read and destination write for every 12 KiB. This made throughput
+depend on two request round trips per small chunk, even on a direct path. The new sender negotiates up to
+256 KiB and prefetches at most four source ranges, while writing them in order. ZIP uses fast Deflate.
+The bounded window also limits memory use and preserves a contiguous, resumable destination prefix.
+
+P2P bypasses synchronization Relay pacing. Relay retains the authenticated server policy, whose default
+is 200 KiB/s. The UI reports the actual path, so a Relay measurement must not be interpreted as P2P speed.
+
+Run `node apps/desktop/scripts/benchmark-conversation-sync.mjs` to isolate request overhead with a fixed
+synthetic latency. This is not a LAN or VM benchmark; actual throughput still depends on the selected
+path, disk, compression ratio and host runtimes.
 
 ## Server configuration
 
@@ -41,5 +75,5 @@ value or transport implementation details in its instructions.
 
 Rust synchronization tests cover local moves, remote copies, overwrites, rollback, archive integrity and
 idempotent chunk retries. Desktop transport tests cover policy compatibility, remote session ownership, copy
-or move selection, interrupted transfer cleanup and P2P bypass. Desktop and Web Playwright suites cover
+or move selection, pause/restart resumption, lost acknowledgements, successful-import cleanup and P2P bypass. Desktop and Web Playwright suites cover
 source labels, duplication choices, live path/speed, dark mode and enlarged typography at narrow desktop widths.

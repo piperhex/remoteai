@@ -56,6 +56,7 @@ import { LoungePage } from "../../../../../shared/lounge/LoungePage";
 import { useDesktopLounge } from "../../lounge/useDesktopLounge";
 import { CloudAccountIdentity } from './CloudAccountIdentity';
 import { authenticatedDownloadOwner } from "../../downloads/useDesktopDownloads";
+import { useSyncDownloadAccount } from "../../../../../shared/conversation/sync/useSyncDownloadAccount";
 import logDiagnosticsStyles from "../../pages/LogDiagnosticsPage/index.module.less";
 import { CloudLoginModal } from "../modals/CloudLoginModal";
 import { CloudAccountModal } from "../modals/CloudAccountModal";
@@ -1210,6 +1211,7 @@ export function DashboardApp() {
   );
   const sidebarNavigationEnabled = navigationStyle.style === "sidebar";
   const downloadOwner = authenticatedDownloadOwner(cloud.state);
+  useSyncDownloadAccount(downloadOwner);
   const proxySpeedControl = <ExternalProxySpeedButton proxy={providerManager.localProxy}
     busy={providerManager.proxyBusy} onChange={providerManager.setProxyServiceTier} t={t} />;
   const proxyTopbarActions = (

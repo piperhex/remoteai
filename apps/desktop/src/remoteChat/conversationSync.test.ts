@@ -57,6 +57,13 @@ it('remote sync transfers fixed chunks without ever requesting source removal', 
   const source = host('remote', { export: { id: 'export', size: 20_000, sha256: 'hash',
     sessionIds: ['selected', 'duplicate'] }, read: { data: 'chunk' } });
   const destination = host('local', { begin: { id: 'import' }, plan: { count: 2, duplicateIds: ['duplicate'] } });
+  vi.mocked(source.request).mockImplementation(async request => {
+    if (request.action === 'export') return { id: 'export', size: 20_000, sha256: 'hash',
+      sessionIds: ['selected', 'duplicate'] } as never;
+    if (request.action === 'read') return {
+      data: btoa('a'.repeat(Math.min(12_288, 20_000 - request.offset))) } as never;
+    return {} as never;
+  });
   const progress = vi.fn();
   const result = await prepareSync({ source: { key: 'remote', host: source,
     home: { id: 'work', path: '/work/.codex', enabled: false }, label: 'Remote · /work/.codex' },
@@ -70,7 +77,8 @@ it('remote sync transfers fixed chunks without ever requesting source removal', 
   await closePreparedSync(destination, result);
   expect(source.request).toHaveBeenCalledWith({ action: 'close', id: 'export' });
   expect(source.request).not.toHaveBeenCalledWith(expect.objectContaining({ action: 'prepare' }));
-  expect(destination.request).toHaveBeenCalledWith({ action: 'write', id: 'import', offset: 12_288, data: 'chunk' });
+  expect(destination.request).toHaveBeenCalledWith({ action: 'write', id: 'import', offset: 12_288,
+    data: btoa('a'.repeat(7712)) });
   expect(progress).toHaveBeenLastCalledWith(1, 7712);
 });
 
@@ -102,5 +110,10 @@ it('remote peers may only use transfers created in their own session', async () 
   await sync.request({ request: { action: 'read', id: 'owned', offset: 0 } }, { owner: 'session-a', mode: 'direct' });
   expect(invoke).toHaveBeenLastCalledWith('codex_conversation_sync', { request: { action: 'read', id: 'owned', offset: 0 } });
   sync.release('session-a');
-  expect(invoke).toHaveBeenLastCalledWith('codex_conversation_sync', { request: { action: 'close', id: 'owned' } });
+  await expect(sync.request({ request: { action: 'read', id: 'owned', offset: 0 } },
+    { owner: 'session-a', mode: 'direct' })).rejects.toThrow('CONVERSATION_SYNC_INVALID');
+  expect(invoke).not.toHaveBeenCalledWith('codex_conversation_sync', { request: { action: 'close', id: 'owned' } });
+  await sync.request({ request: { action: 'resume', id: 'owned', resumeToken: 'capability' } },
+    { owner: 'session-b', mode: 'direct' });
+  await sync.request({ request: { action: 'read', id: 'owned', offset: 0 } }, { owner: 'session-b', mode: 'direct' });
 });

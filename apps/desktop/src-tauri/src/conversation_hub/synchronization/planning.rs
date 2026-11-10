@@ -1,6 +1,7 @@
 use super::super::home_migration_provider::{MigrationDestination, MigrationModelProvider};
 use super::*;
 
+#[derive(Serialize, Deserialize)]
 pub(super) struct Plan {
     ids: HashSet<String>,
     duplicates: HashSet<String>,

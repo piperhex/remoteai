@@ -6,6 +6,7 @@ import { conversationSyncFixture } from '../../../shared/testing/conversationSyn
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
 import { saveGlobalFontSize } from '../../../shared/appearance/fontSize';
 import { setGuiLanguage } from '../../../shared/localization/uiText';
+import { SyncDownloadHarness } from '../../../shared/testing/SyncDownloadHarness';
 import 'antd/dist/reset.css';
 import '../src/styles.css';
 
@@ -21,7 +22,7 @@ createRoot(document.getElementById('root')!).render(
   <ApplicationTypography><ConfigProvider theme={{ algorithm: [dark ? theme.darkAlgorithm : theme.defaultAlgorithm,
     theme.compactAlgorithm], token: { colorPrimary: '#28837f' } }}>
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {parameters.has('dialog')
+      {parameters.has('managed') ? <SyncDownloadHarness {...fixture} /> : parameters.has('dialog')
         ? <ConversationSyncDialog><ConversationSyncPanel {...fixture} onSynced={() => {}} /></ConversationSyncDialog>
         : <ConversationSyncPanel {...fixture} onSynced={() => {}} />}
     </div>
