@@ -1,5 +1,4 @@
-import { ConversationSyncDialog, SyncDialogPanel }
-  from '../../../../../../shared/conversation/sync/ConversationSyncDialog';
+import { ConversationSyncPanel } from '../../../../../../shared/conversation/sync/ConversationSyncPanel';
 import { useDesktopSyncHosts } from '../syncHosts';
 import type { GuiCloudIdentity, GuiComputer } from '../../../../../../shared/conversation/remote/types';
 
@@ -8,12 +7,12 @@ interface Props {
 }
 
 export function RemoteConversationSync(props: Props) {
-  return <ConversationSyncDialog active={props.active}><RemoteSyncContent {...props} /></ConversationSyncDialog>;
+  return props.active ? <RemoteSyncContent {...props} /> : null;
 }
 
 function RemoteSyncContent({ identity, devices, device, onSynced }: Props) {
   const hosts = useDesktopSyncHosts({ identity, devices });
   const destination = hosts.find(host => host.id === device.deviceId);
   if (!destination) return null;
-  return <SyncDialogPanel hosts={hosts} destination={destination} onSynced={onSynced} />;
+  return <ConversationSyncPanel hosts={hosts} destination={destination} onSynced={onSynced} />;
 }

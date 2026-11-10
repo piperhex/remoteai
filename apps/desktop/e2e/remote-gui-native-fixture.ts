@@ -2,9 +2,23 @@ import type { Channel } from '@tauri-apps/api/core';
 import previewImage from '../src-tauri/icons/32x32.png?inline';
 import { saveGuiFontSize } from '../../../shared/conversation/guiAppearance';
 import { applyThemeMode } from '../src/utils/themeMode';
+import { saveGlobalFontSize } from '../../../shared/appearance/fontSize';
+import { demoGuiSettings } from './gui-settings-fixture';
+import { conversationSyncFixture } from '../../../shared/testing/conversationSyncFixture';
+import type { SyncRequest } from '../../../shared/conversation/sync/types';
 import '../src/styles.css';
 
 const endpoint = new URLSearchParams(location.search).get('socket')!;
+const parameters = new URLSearchParams(location.search);
+if (parameters.has('font')) saveGlobalFontSize(Number(parameters.get('font')));
+if (parameters.has('dark')) applyThemeMode('dark');
+const syncFixture = conversationSyncFixture(new URLSearchParams());
+const localSettingsOperations: Record<string, string> = {
+  codex_gui_auto_switch_settings: 'guiAutoSwitchRead', codex_gui_set_auto_switch_settings: 'guiAutoSwitchWrite',
+  codex_gui_model_context_settings: 'guiModelContextRead', codex_gui_set_model_context: 'guiModelContextWrite',
+  codex_gui_system_prompt_settings: 'guiSystemPromptsRead',
+  codex_gui_set_system_prompt_settings: 'guiSystemPromptsWrite',
+};
 const sockets = new Map<string, WebSocket>();
 const commands: string[] = [];
 const devices = [
@@ -29,6 +43,11 @@ type NativeArgs = { request: { clientId: string; deviceId: string; publicKey: st
 
 async function invoke(command: string, args: NativeArgs) {
   commands.push(command);
+  if (localSettingsOperations[command]) return demoGuiSettings({ ...args,
+    operation: localSettingsOperations[command] })?.value;
+  if (command === 'codex_conversation_sync') {
+    return syncFixture.destination.request(args.request as unknown as SyncRequest);
+  }
   if (command.startsWith('plugin:event|')) {
     const event = args as unknown as { event: string; handler: number; eventId: number };
     if (command === 'plugin:event|unlisten') { listeners.delete(event.eventId); return; }

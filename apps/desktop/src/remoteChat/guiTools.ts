@@ -8,6 +8,8 @@ import type { CliProgress, CliRelease, RemoteCliStatus } from '../../../../share
 import { workspaceRequest } from './gitWorkspace';
 import { readRemoteProjects, selectRemoteProject } from './projects';
 import { PROJECT_LIST_OPERATION, PROJECT_SELECT_OPERATION } from '../../../../shared/remote-chat/projects';
+import { GUI_SETTINGS_OPERATIONS } from '../../../../shared/remote-chat/guiSettings';
+import { guiSettingsRequest } from './guiSettings';
 
 // A download continues when its requesting computer disconnects and is visible after reconnecting.
 let installing = false;
@@ -39,6 +41,7 @@ async function install(version: string) {
 }
 
 export async function guiToolRequest(body: Record<string, unknown>) {
+  if (GUI_SETTINGS_OPERATIONS.has(String(body.operation))) return guiSettingsRequest(body);
   switch (body.operation) {
     case CODEX_STATUS_OPERATION: return readCodexServiceStatus();
     case 'guiBrowser': return invoke('codex_gui_browser', { request: body.request });

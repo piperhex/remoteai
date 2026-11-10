@@ -1,16 +1,16 @@
 import { uiText } from "../../../../../shared/localization/uiText";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "../../api/backend";
-import type { SystemPromptRule } from "../../types";
+import type { GuiSystemPromptSettings, SettingsStore } from '../../../../../shared/remote-chat/guiSettings';
 
-export interface GuiSystemPromptSettings {
-  filterEnabled: boolean;
-  filterRules: SystemPromptRule[];
-  injectionEnabled: boolean;
-  injectionPrompts: SystemPromptRule[];
-}
+export type { GuiSystemPromptSettings } from '../../../../../shared/remote-chat/guiSettings';
 
-export function useGuiSystemPrompts() {
+const localSettings: SettingsStore<GuiSystemPromptSettings> = {
+  read: () => invoke('codex_gui_system_prompt_settings'),
+  write: (settings) => invoke('codex_gui_set_system_prompt_settings', { settings }),
+};
+
+export function useGuiSystemPrompts(api = localSettings) {
   const [settings, setSettings] = useState<GuiSystemPromptSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -22,14 +22,14 @@ export function useGuiSystemPrompts() {
     setLoading(true);
     setError("");
     try {
-      const saved = await invoke<GuiSystemPromptSettings>("codex_gui_system_prompt_settings");
+      const saved = await api.read();
       if (request === revision.current) setSettings(saved);
     } catch {
       if (request === revision.current) setError(uiText("client.workspaceActions.couldNotLoadTheSystemPromptPleaseTryAgain"));
     } finally {
       if (request === revision.current) setLoading(false);
     }
-  }, []);
+  }, [api]);
   useEffect(() => {
     void load();
     return () => { revision.current += 1; };
@@ -41,9 +41,7 @@ export function useGuiSystemPrompts() {
     setSaving(true);
     setError("");
     try {
-      const saved = await invoke<GuiSystemPromptSettings>("codex_gui_set_system_prompt_settings", {
-        settings: { ...settings, ...patch },
-      });
+      const saved = await api.write({ ...settings, ...patch });
       if (request !== revision.current) return false;
       setSettings(saved);
       return true;

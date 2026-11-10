@@ -2,8 +2,11 @@ import { uiText } from "../../../../../shared/localization/uiText";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { loadGuiAutoSwitchSettings, saveGuiAutoSwitchSettings, updateGuiAccountRule } from "../../../../../shared/conversation/autoSwitchSettings";
 import type { GuiAutoSwitchAccountRule, GuiAutoSwitchSettings } from "../../../../../shared/conversation/autoSwitchSettings";
+import type { SettingsStore } from '../../../../../shared/remote-chat/guiSettings';
 
-export function useGuiAutoSwitchSettings() {
+const localSettings = { read: loadGuiAutoSwitchSettings, write: saveGuiAutoSwitchSettings };
+
+export function useGuiAutoSwitchSettings(api: SettingsStore<GuiAutoSwitchSettings> = localSettings) {
   const [settings, setSettings] = useState<GuiAutoSwitchSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -16,14 +19,14 @@ export function useGuiAutoSwitchSettings() {
     setLoading(true);
     setError("");
     try {
-      const saved = await loadGuiAutoSwitchSettings();
+      const saved = await api.read();
       if (request === revision.current) { setSettings(saved); setDirty(false); }
     } catch {
       if (request === revision.current) setError(uiText("client.workspaceActions.couldNotLoadSettingsPleaseTryAgain"));
     } finally {
       if (request === revision.current) setLoading(false);
     }
-  }, []);
+  }, [api]);
   useEffect(() => {
     void load();
     return () => { revision.current += 1; };
@@ -36,7 +39,7 @@ export function useGuiAutoSwitchSettings() {
     setError("");
     try {
       const available = new Set(availableAccountIds);
-      const saved = await saveGuiAutoSwitchSettings({ ...settings,
+      const saved = await api.write({ ...settings,
         accounts: settings.accounts.filter((rule) => available.has(rule.accountId)) });
       if (request !== revision.current) return false;
       setSettings(saved);

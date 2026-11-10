@@ -1,7 +1,7 @@
 import { displayText, uiText } from "../../../../../../shared/localization/uiText";
 import type { ReactNode } from 'react';
 import { Button, Segmented } from 'antd';
-import { ChevronRight, Folder, Layers, Pin, RefreshCw, Search, SquarePen } from 'lucide-react';
+import { ChevronRight, Folder, FolderSync, Layers, Pin, RefreshCw, Search, SquarePen } from 'lucide-react';
 import { RemoteProjectMenu } from '../../../../../../shared/remote-chat/client/RemoteProjectMenu';
 import type { ChatSidebarActions } from '../../../../../../shared/remote-chat/views/ConnectedChat';
 import type { ChatController, ChatState } from '../../../../../../shared/remote-chat/views/types';
@@ -28,9 +28,10 @@ export function RemoteGuiSidebar(props: Parameters<typeof RemoteGuiSidebarConten
     translate={uiText} ready={props.state.ready}><RemoteGuiSidebarContent {...props} /></BrowserGroups>;
 }
 
-function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, focusMode }: {
+function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, focusMode, syncing, onOpenSync }: {
   state: ChatState; controller: ChatController; actions: ChatSidebarActions;
   accountPicker: ReactNode; focusMode: GuiFocusMode;
+  syncing?: boolean; onOpenSync?: () => void;
 }) {
   const { groups: projectGroups, toggle, toggleCollapse } = useThreadGroups(state);
   const groups = projectGroups.map(group => ({
@@ -73,6 +74,10 @@ function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, fo
       <button type="button" disabled={state.sending} onClick={() => actions.newChat()}>
         <SquarePen size={18} strokeWidth={1.6} /><span>{uiText("client.workspaceSettings.newConversation")}</span>
       </button>
+      {onOpenSync && <button type="button" aria-current={syncing ? 'page' : undefined} onClick={onOpenSync}>
+        <FolderSync size={18} strokeWidth={1.6} aria-hidden="true" />
+        <span>{uiText('client.workspaceSettings.conversationSync')}</span>
+      </button>}
     </nav>
     <Segmented className={styles.threadFilter} block size="small" value={state.archived ? 'archived' : 'recent'}
       options={[{ label: uiText("client.chat.recent"), value: 'recent' }, { label: uiText("client.mobile.archived"), value: 'archived' }]}

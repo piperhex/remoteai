@@ -114,7 +114,9 @@ test('remote GUI can disable and restore message queuing while a turn is running
   await input.fill('slow queue settings');
   await page.getByRole('button', { name: '发送消息', exact: true }).click();
   await expect(input).toHaveValue('');
+  await page.getByRole('button', { name: /^切换 GUI 账户：/ }).click();
   await page.getByRole('button', { name: 'Codex GUI 设置', exact: true }).click();
+  await page.getByRole('tab', { name: '消息发送', exact: true }).click();
   const toggle = page.getByRole('switch', { name: '待发送', exact: true });
   await expect(toggle).toBeChecked();
   await toggle.uncheck();
@@ -128,7 +130,9 @@ test('remote GUI can disable and restore message queuing while a turn is running
     .filter(operation => operation.operation === 'steer').map(operation => operation.text)))
     .toEqual(['立即追加远程消息']);
   await expect(page.getByRole('region', { name: '待发送消息', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: /^切换 GUI 账户：/ }).click();
   await page.getByRole('button', { name: 'Codex GUI 设置', exact: true }).click();
+  await page.getByRole('tab', { name: '消息发送', exact: true }).click();
   await expect(toggle).not.toBeChecked();
   await toggle.check();
   await page.getByRole('button', { name: 'Close', exact: true }).click();

@@ -4,6 +4,10 @@
   --chat-background: var(--panel); --chat-pale: var(--green-selection);
   display: flex; height: 100%; font-size: var(--gui-font-size, 14px); line-height: 1.8;
   .chat-conversation { background: transparent; }
+  .chat-conversation:has(> .gui-remote-feature) {
+    > :not(.chat-header):not(.gui-remote-feature) { display: none; }
+  }
+  .gui-remote-feature { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow: auto; }
   .gui-remote-tools { display: flex; align-items: center; gap: var(--workspace-toolbar-gap, 6px); flex-shrink: 0; }
   .chat-message-region { color: var(--ink); font: inherit; }
   .chat-sidebar { flex-basis: auto; background: transparent; border: 0; }

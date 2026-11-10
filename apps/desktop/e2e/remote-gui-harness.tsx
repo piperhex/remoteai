@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, theme } from 'antd';
+import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
 import { ProxyAccountPicker } from '../src/pages/codexGui/ProxyAccountPicker';
 import { useGuiComputers } from '../src/pages/codexGui/remote/useGuiComputers';
 import { RemoteGuiWorkspaces } from '../src/pages/codexGui/remote/RemoteGuiWorkspaces';
@@ -33,7 +34,12 @@ function Harness() {
   const computers = useGuiComputers({ active: true, identity: { baseUrl: 'https://fixture.test', userId: 'owner' },
     login: () => {} });
   const device = computers.current;
-  return <ConfigProvider><header hidden={focused} style={{ height: 48 }}>Codex GUI</header>
+  return <ApplicationTypography><ConfigProvider theme={new URLSearchParams(location.search).has('settings')
+    ? { algorithm: [new URLSearchParams(location.search).has('dark') ? theme.darkAlgorithm : theme.defaultAlgorithm,
+      theme.compactAlgorithm], token: {
+        colorPrimary: getComputedStyle(document.documentElement).getPropertyValue('--green').trim(),
+      } } : undefined}>
+    <header hidden={focused} style={{ height: 48 }}>Codex GUI</header>
     <main style={{ ...guiFontStyle(fontSize), height: focused ? '100vh' : 'calc(100vh - 48px)' }}>
     <DesktopUsageContext.Provider value={{ usage: localUsage, visible: !device }}>
     <div hidden={Boolean(device)} style={{ height: '100%' }}>
@@ -58,7 +64,7 @@ function Harness() {
       focusMode={{ focused, onToggleFocus: () => setFocused(value => !value) }}
       windowControls={<WindowControls t={(key, values) => translate('zh', key, values)}
         onError={error => { throw new Error(error); }} />} />}
-  </main></ConfigProvider>;
+  </main></ConfigProvider></ApplicationTypography>;
 }
 
 const style = document.createElement('style');

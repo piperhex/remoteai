@@ -4,12 +4,15 @@ import { terminalBelongsToProject } from '../../../shared/remote-chat/terminalPr
 import { demoGitTools } from './demo-git-tools';
 import { demoTaskReview } from './demo-task-review';
 import type { SshConnect } from '../../../shared/terminal/ssh';
+import { demoGuiSettings } from './gui-settings-fixture';
 
 let version = '0.155.0';
 let completedAt = 0;
 const terminals = new Map<string, { info: TerminalInfo; output: TerminalOutput }>();
 
 export function demoGuiTools(input: Record<string, unknown>) {
+  const settings = demoGuiSettings(input);
+  if (settings) return settings.value;
   if (String(input.operation).startsWith('guiTask')) return demoTaskReview(input);
   if (String(input.operation).startsWith('guiGit')) return demoGitTools(input);
   if (input.operation === 'guiCliRelease') return { version: '0.156.0', size: 50_000_000 };

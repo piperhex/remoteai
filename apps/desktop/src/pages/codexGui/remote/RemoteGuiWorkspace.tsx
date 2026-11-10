@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useMemo, useRef, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ConfigProvider } from 'antd';
 import { ConnectedChat } from '../../../../../../shared/remote-chat/views/ConnectedChat';
 import { FocusModeButton, type GuiFocusMode } from '../FocusModeButton';
@@ -25,6 +25,8 @@ import { RemoteFileEnvironment } from './RemoteFileEnvironment';
 import { PortForwarding } from '../portForwarding/PortForwarding';
 import { RemoteUserMessage } from './RemoteUserMessage';
 import { RemoteConversationSync } from './RemoteConversationSync';
+import { RemoteGuiSettingsDialog } from './RemoteGuiSettingsDialog';
+import { uiText } from '../../../../../../shared/localization/uiText';
 
 const TerminalPanel = lazy(() => import('../../../../../../shared/terminal/views/TerminalPanel'));
 const nativeFileDrop = { subscribe: subscribeFileDrop, readFiles: readDroppedFiles };
@@ -34,6 +36,7 @@ export default function RemoteGuiWorkspace(props: {
   privacyMode: boolean; focusMode: GuiFocusMode; windowControls?: ReactNode;
 }) {
   const { active, identity, device, computers } = props;
+  const [syncing, setSyncing] = useState(false);
   const chat = useRemoteGui(identity, device.deviceId, active);
   const installer = useRemoteCliInstaller(chat.controller.guiTools,
     active && (chat.state.mode === 'direct' || chat.state.mode === 'relay'));
@@ -48,13 +51,19 @@ export default function RemoteGuiWorkspace(props: {
   const workspace = useRef<HTMLElement>(null);
   const popupContainer = useCallback(() => workspace.current ?? document.body, []);
   const accountPicker = <RemoteAccountPicker active={active} ready={chat.state.ready}
-    client={chat.controller.guiAccounts} computers={computers} privacyMode={props.privacyMode} />;
+    client={chat.controller.guiAccounts} computers={computers} privacyMode={props.privacyMode}
+    renderSettings={onClose => <RemoteGuiSettingsDialog client={chat.controller.guiTools.settings}
+      privacyMode={props.privacyMode} onClose={onClose} />} />;
   return <section ref={workspace} className={`${styles.page} chat-page gui-remote-workspace`}
     data-dream-skin={skinStyle ? 'true' : undefined} style={skinStyle} aria-label={`Codex GUI：${device.name}`}>
     <ConfigProvider getPopupContainer={popupContainer}>
     <TerminalWorkspaceProvider panel={terminal}>
     <RemoteFileEnvironment controller={chat.controller} ready={chat.state.ready} threadId={chat.state.selected?.id ?? null}>
     <ConnectedChat chat={chat} active={active} device={device} devices={computers.devices} email="" desktopDiffs
+      workspacePage={syncing ? { title: uiText('client.workspaceSettings.conversationSync'),
+        onClose: () => setSyncing(false),
+        content: <RemoteConversationSync identity={identity} devices={computers.devices} device={device} active={active}
+          onSynced={() => { void chat.controller.list(); }} /> } : undefined}
       cliVersion={installer.version}
       renderUserMessage={props => <RemoteUserMessage {...props} state={chat.state}
         controller={chat.controller} active={active} />}
@@ -68,22 +77,24 @@ export default function RemoteGuiWorkspace(props: {
           active={active} connected={chat.state.ready} />}
         <GuiRemoteDesktop client={chat.controller.guiTools.desktop} active={active}
           connected={chat.state.mode === 'direct' || chat.state.mode === 'relay'} /></>}
-      headerActions={<><RemoteConversationSync identity={identity} devices={computers.devices} device={device} active={active}
-        onSynced={() => { void chat.controller.list(); }} />
+      headerActions={<>
         <RemoteGuiTools controller={chat.controller} state={chat.state} active={active}
-        installer={installer} terminal={terminal} />
+        installer={installer} terminal={terminal} settings={null} />
         <span className="gui-remote-focus"><FocusModeButton {...props.focusMode} /></span></>}
       headerEnd={props.focusMode.focused && props.windowControls
         && <div className={styles.focusWindowControls}>{props.windowControls}</div>}
       conversationFooter={(terminal.open || terminal.tabs.length > 0) && <Suspense fallback={null}>
-        <TerminalPanel panel={terminal} active={active} api={terminalApi} notice={terminal.error} />
+        <TerminalPanel panel={terminal} active={active && !syncing} api={terminalApi} notice={terminal.error} />
       </Suspense>}
       readClipboardImages={readClipboardImages}
       nativeFileDrop={isDesktopApp ? nativeFileDrop : undefined}
       composerHeader={<RemoteGuiProject state={chat.state} controller={chat.controller} computers={computers}
         active={active} />}
       renderSidebar={actions => <RemoteGuiSidebar state={chat.state} controller={chat.controller}
-        actions={actions} accountPicker={accountPicker} focusMode={props.focusMode} />} />
+        actions={{ ...actions, newChat: project => { setSyncing(false); actions.newChat(project); },
+          onClose: () => { setSyncing(false); actions.onClose(); } }}
+        syncing={syncing} onOpenSync={() => setSyncing(true)}
+        accountPicker={accountPicker} focusMode={props.focusMode} />} />
     </RemoteFileEnvironment>
     </TerminalWorkspaceProvider>
     </ConfigProvider>

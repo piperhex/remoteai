@@ -1,7 +1,7 @@
 import { InputNumber, Switch } from "antd";
 import { UsersRound } from "lucide-react";
 import { uiText } from "../../../../../shared/localization/uiText";
-import type { Account } from "../../types";
+import type { GuiSettingsAccount } from '../../../../../shared/remote-chat/guiSettings';
 import { accountExpirationDate } from "../../utils/expiration";
 import { maskAccountEmail } from "../../../../../shared/accounts/privacy";
 import { guiAccountRule, MAX_AUTO_SWITCH_PRIORITY, MAX_REMAINING_PERCENT,
@@ -14,7 +14,7 @@ import styles from "./GuiAccountSettings.module.less";
 type SettingsEditor = ReturnType<typeof useGuiAutoSwitchSettings>;
 
 function AccountRule({ account, rule, disabled, onChange }: {
-  account: Pick<Account, "email" | "expiresAt" | "localProxyCompatible" | "usage">; rule: GuiAutoSwitchAccountRule;
+  account: Omit<GuiSettingsAccount, 'id'>; rule: GuiAutoSwitchAccountRule;
   disabled: boolean; onChange: (rule: GuiAutoSwitchAccountRule) => void;
 }) {
   const unavailable = disabled || !account.localProxyCompatible;
@@ -44,7 +44,7 @@ function AccountRule({ account, rule, disabled, onChange }: {
 }
 
 export function GuiAccountSettings({ settings, editor, accounts, privacyMode }: {
-  settings: GuiAutoSwitchSettings; editor: SettingsEditor; accounts: Account[]; privacyMode: boolean;
+  settings: GuiAutoSwitchSettings; editor: SettingsEditor; accounts: GuiSettingsAccount[]; privacyMode: boolean;
 }) {
   return <section className={styles.accounts} aria-label={uiText("client.workspaceSettings.accountsIncludedInAutomaticSwitching")}>
     <div className={styles.heading}>

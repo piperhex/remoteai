@@ -3,12 +3,13 @@ import { AutoComplete, Button, Input, Spin } from "antd";
 import { uiText } from "../../../../../shared/localization/uiText";
 import { CONTEXT_CAPACITY_PRESETS_K, TOKENS_PER_K } from "../../../../../shared/remote-chat/contextSettings";
 import { useModelContextSettings } from "./useModelContextSettings";
+import type { ModelContextSettingsApi } from '../../../../../shared/remote-chat/guiSettings';
 import styles from "./GuiModelContextSettings.module.less";
 
 const options = CONTEXT_CAPACITY_PRESETS_K.map((value) => ({ value: String(value), label: `${value}K` }));
 
-export function GuiModelContextSettings() {
-  const editor = useModelContextSettings();
+export function GuiModelContextSettings({ api }: { api?: ModelContextSettingsApi }) {
+  const editor = useModelContextSettings(api);
   const [model, setModel] = useState("");
   const [capacity, setCapacity] = useState("");
   const disabled = editor.loading || editor.saving;

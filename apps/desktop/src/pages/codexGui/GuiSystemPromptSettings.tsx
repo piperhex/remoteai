@@ -3,10 +3,11 @@ import { Button, Spin } from "antd";
 import { useLanguage } from "../../hooks/useLanguage";
 import { SystemPromptPage } from "../SystemPromptPage";
 import { useGuiSystemPrompts } from "./useGuiSystemPrompts";
+import type { GuiSettingsClient } from '../../../../../shared/remote-chat/guiSettings';
 import styles from "./GuiAutoSwitchSettingsDialog.module.less";
 
-export function GuiSystemPromptSettings() {
-  const editor = useGuiSystemPrompts();
+export function GuiSystemPromptSettings({ api }: { api?: GuiSettingsClient['systemPrompts'] }) {
+  const editor = useGuiSystemPrompts(api);
   const { t } = useLanguage();
   return <section className={styles.promptPanel} aria-label={uiText("client.workspaceSettings.codexGuiSystemPrompt")}>
     {editor.loading && <div className={styles.loading} role="status"><Spin size="small" />{uiText("client.composer.loadingSettings")}</div>}

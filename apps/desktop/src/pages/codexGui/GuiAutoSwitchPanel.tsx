@@ -1,7 +1,8 @@
 import { Button, InputNumber, Select, Spin, Switch } from "antd";
 import { ArrowLeftRight } from "lucide-react";
 import { uiText } from "../../../../../shared/localization/uiText";
-import type { Account, Provider } from "../../types";
+import type { Provider } from "../../types";
+import type { GuiSettingsAccount } from '../../../../../shared/remote-chat/guiSettings';
 import { MAX_REMAINING_PERCENT } from "../../../../../shared/conversation/autoSwitchSettings";
 import type { GuiAutoSwitchSettings } from "../../../../../shared/conversation/autoSwitchSettings";
 import type { useGuiAutoSwitchSettings } from "./useGuiAutoSwitchSettings";
@@ -56,7 +57,7 @@ function SwitchRules({ settings, editor, providers }: FieldsProps) {
 }
 
 export function GuiAutoSwitchPanel({ editor, accounts, providers, privacyMode }: {
-  editor: Editor; accounts: Account[]; providers: ProviderChoice[]; privacyMode: boolean;
+  editor: Editor; accounts: GuiSettingsAccount[]; providers: ProviderChoice[]; privacyMode: boolean;
 }) {
   const { settings } = editor;
   return <div className={styles.panel}>

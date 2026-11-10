@@ -2,18 +2,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "../../api/backend";
 import { uiText } from "../../../../../shared/localization/uiText";
 import { parseContextCapacity, TOKENS_PER_K } from "../../../../../shared/remote-chat/contextSettings";
+import type { ModelContextSettingsApi, ModelContextSnapshot } from '../../../../../shared/remote-chat/guiSettings';
 
-export interface ModelContextSettings {
-  defaults: Record<string, number>;
-  overrides: Record<string, number>;
-}
-interface Snapshot extends ModelContextSettings { usingCachedDefaults: boolean }
+export type { ModelContextSettings } from '../../../../../shared/remote-chat/guiSettings';
+const localSettings: ModelContextSettingsApi = {
+  read: () => invoke('codex_gui_model_context_settings'),
+  write: (model, capacity) => invoke('codex_gui_set_model_context', { model, capacity }),
+};
 const valuesK = (values: Record<string, number>) => Object.fromEntries(
   Object.entries(values).map(([model, value]) => [model, String(value / TOKENS_PER_K)]),
 );
 
-export function useModelContextSettings() {
-  const [settings, setSettings] = useState<Snapshot | null>(null);
+export function useModelContextSettings(api = localSettings) {
+  const [settings, setSettings] = useState<ModelContextSnapshot | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -26,7 +27,7 @@ export function useModelContextSettings() {
     const request = ++revision.current;
     setLoading(true); setError("");
     try {
-      const snapshot = await invoke<Snapshot>("codex_gui_model_context_settings");
+      const snapshot = await api.read();
       if (active.current && request === revision.current) {
         setSettings(snapshot); setDraft(valuesK(snapshot.overrides));
       }
@@ -35,7 +36,7 @@ export function useModelContextSettings() {
     } finally {
       if (active.current && request === revision.current) setLoading(false);
     }
-  }, []);
+  }, [api]);
   useEffect(() => {
     active.current = true; void load();
     return () => { active.current = false; revision.current += 1; };
@@ -53,7 +54,7 @@ export function useModelContextSettings() {
     }
     pending.current = true; setSaving(true); setError("");
     try {
-      const saved = await invoke<ModelContextSettings>("codex_gui_set_model_context", { model, capacity });
+      const saved = await api.write(model, capacity);
       if (!active.current) return false;
       setSettings((current) => ({ ...saved, usingCachedDefaults: current?.usingCachedDefaults ?? false }));
       setDraft(valuesK(saved.overrides));

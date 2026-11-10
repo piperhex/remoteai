@@ -27,6 +27,7 @@ import { demoChatParityOperation, seedChatParity, seedAsyncQuestion } from './de
 import { configureDownloadFixture, demoDownloads, seedDownloads } from './demo-downloads';
 import { chatHandshake } from '../../../shared/remote-chat/handshake';
 import { updateThread } from '../../../shared/remote-chat/client/events';
+import { demoConversationSync } from './demo-conversation-sync';
 
 type DemoLink = Pick<ChatLink, 'send'>;
 
@@ -85,6 +86,9 @@ export function demoResponse(request: RpcRequest, link: DemoLink): unknown {
   }
   const input = (request.body ?? {}) as Record<string, unknown>;
   operations.push({ ...input, method: request.method });
+  if (input.operation === 'conversationSync') {
+    return demoConversationSync(input.request);
+  }
   const download = demoDownloads(input);
   if (download) return download.value;
   if (input.operation === 'guiProjects') {
