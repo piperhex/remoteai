@@ -44,7 +44,7 @@ pub(super) fn sync_work_buddy(
     provider: Option<&ProviderProfile>,
 ) -> Result<(), String> {
     let path = home.join(".workbuddy").join("models.json");
-    let mut config = read_json_compatible(&path)?;
+    let mut config = read_work_buddy_config(&path)?;
     update_work_buddy_config(&mut config, provider)?;
     write_json_atomic(&path, &config)
 }
@@ -74,6 +74,18 @@ fn preferred_json_path(directory: &Path, stem: &str) -> PathBuf {
 }
 
 fn read_json_compatible(path: &Path) -> Result<Value, String> {
+    read_json_value(path).and_then(require_object)
+}
+
+fn read_work_buddy_config(path: &Path) -> Result<Value, String> {
+    match read_json_value(path)? {
+        // WorkBuddy accepts both a model array and an object containing models.
+        Value::Array(models) => Ok(json!({ "models": models })),
+        value => require_object(value),
+    }
+}
+
+fn read_json_value(path: &Path) -> Result<Value, String> {
     if !path.exists() {
         return Ok(json!({}));
     }
@@ -81,7 +93,6 @@ fn read_json_compatible(path: &Path) -> Result<Value, String> {
         .map_err(|error| format!("无法读取 {}：{error}", path.display()))?;
     json5::from_str::<Value>(&source)
         .map_err(|error| format!("{} 的配置格式无效：{error}", path.display()))
-        .and_then(require_object)
 }
 
 fn require_object(value: Value) -> Result<Value, String> {
@@ -412,95 +423,5 @@ fn model_descriptor(provider: &ProviderProfile, model: &str) -> Value {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::third_party_apps::tests::provider;
-
-    #[test]
-    fn open_code_update_preserves_other_providers_and_selects_managed_model() {
-        let mut config = json!({ "provider": { "keep": { "npm": "existing" } } });
-        let mut provider = provider();
-        provider.models.push("second-model".to_string());
-        update_open_code_config(&mut config, Some(&provider)).unwrap();
-        assert_eq!(config["provider"]["keep"]["npm"], "existing");
-        assert_eq!(config["model"], "codex-switch/test-model");
-        assert_eq!(
-            config["provider"]["codex-switch"]["options"]["apiKey"],
-            "secret"
-        );
-        assert_eq!(
-            config["provider"]["codex-switch"]["models"]["test-model"]["name"],
-            "test-model"
-        );
-        assert_eq!(
-            config["provider"]["codex-switch"]["models"]["second-model"]["name"],
-            "second-model"
-        );
-    }
-
-    #[test]
-    fn open_code_responses_provider_uses_the_native_openai_sdk() {
-        let mut config = json!({});
-        let mut provider = provider();
-        provider.api_format = crate::models::ProviderApiFormat::OpenaiResponses;
-        update_open_code_config(&mut config, Some(&provider)).unwrap();
-        assert_eq!(config["provider"]["codex-switch"]["npm"], "@ai-sdk/openai");
-    }
-
-    #[test]
-    fn open_code_model_descriptor_preserves_image_input_capability() {
-        let mut config = json!({});
-        let mut provider = provider();
-        provider.image_input_models = vec![provider.model.clone()];
-        update_open_code_config(&mut config, Some(&provider)).unwrap();
-        assert_eq!(
-            config["provider"]["codex-switch"]["models"]["test-model"]["modalities"]["input"],
-            json!(["text", "image"])
-        );
-    }
-
-    #[test]
-    fn open_claw_update_preserves_unrelated_sections() {
-        let mut config = json!({ "gateway": { "token": "keep" } });
-        let provider = provider();
-        update_open_claw_config(&mut config, Some(&provider)).unwrap();
-        assert_eq!(config["gateway"]["token"], "keep");
-        assert_eq!(
-            config["agents"]["defaults"]["model"]["primary"],
-            "codex-switch/test-model"
-        );
-    }
-
-    #[test]
-    fn z_code_responses_provider_uses_the_native_openai_kind() {
-        let mut config = json!({});
-        let mut provider = provider();
-        provider.api_format = crate::models::ProviderApiFormat::OpenaiResponses;
-        update_z_code_config(&mut config, Some(&provider)).unwrap();
-        assert_eq!(config["provider"]["codex-switch"]["kind"], "openai");
-    }
-
-    #[test]
-    fn open_viking_updates_vlm_without_replacing_existing_embedding_model() {
-        let mut config = json!({ "embedding": { "dense": { "model": "embedding-model" } } });
-        let provider = provider();
-        update_open_viking_config(&mut config, &provider).unwrap();
-        assert_eq!(config["vlm"]["model"], "test-model");
-        assert_eq!(config["embedding"]["dense"]["model"], "embedding-model");
-    }
-
-    #[test]
-    fn work_buddy_clear_removes_only_codex_switch_models() {
-        let mut config = json!({
-            "models": [
-                { "id": "keep-model", "vendor": "Custom" },
-                { "id": "managed-model", "codexSwitchManaged": true }
-            ],
-            "availableModels": ["keep-model", "managed-model"]
-        });
-        update_work_buddy_config(&mut config, None).unwrap();
-        assert_eq!(config["models"].as_array().map(Vec::len), Some(1));
-        assert_eq!(config["models"][0]["id"], "keep-model");
-        assert_eq!(config["availableModels"], json!(["keep-model"]));
-    }
-}
+#[path = "json_targets/tests.rs"]
+mod tests;
