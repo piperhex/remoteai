@@ -108,8 +108,7 @@ const repository = cwd => {
 };
 const metadata = JSON.parse(fs.readFileSync(path.join(destination, 'package.json'), 'utf8'));
 const i18n = metadata.dependencies['@remoteai/i18n'];
-// A contribution branch may use an immutable prerelease from its own i18n fork.
-const releaseArchive = new RegExp('^https://github\\.com/[\\w-]+/remoteai-i18n/releases/download/'
+const releaseArchive = new RegExp('^https://github\\.com/piperhex/remoteai-i18n/releases/download/'
   + 'i18n-v([\\w.+-]+)/remoteai-i18n-\\1\\.tgz$');
 if (!releaseArchive.test(i18n)) {
   throw new Error('Web must pin a published @remoteai/i18n release before exporting dependencies.');
