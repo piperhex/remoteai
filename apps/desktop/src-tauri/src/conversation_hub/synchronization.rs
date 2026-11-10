@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 mod archive;
 mod persistence;
 mod planning;
+mod projects;
 #[cfg(test)]
 mod tests;
 
@@ -168,12 +169,7 @@ fn execute<R: Runtime>(app: tauri::AppHandle<R>, request: SyncRequest) -> Result
     match request {
         SyncRequest::Homes => homes(&app),
         SyncRequest::List { home_id, query } => {
-            serde_json::to_value(browse_codex_threads_blocking(
-                ThreadContext::new(app, Some(home_id))?,
-                query.clone(),
-                query,
-            )?)
-            .map_err(|e| e.to_string())
+            projects::list(ThreadContext::new(app, Some(home_id))?, query)
         }
         SyncRequest::Prepare {
             home_id,

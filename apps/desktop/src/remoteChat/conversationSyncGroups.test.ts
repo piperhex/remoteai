@@ -55,4 +55,39 @@ describe('conversation synchronization groups', () => {
     expect(groups[1].children.map(item => item.sessionId)).toEqual(['project-new', 'project-old']);
     expect(new Set(groups.map(group => group.key)).size).toBe(groups.length);
   });
+
+  it('recognizes ordinary Codex scratch directories and merges equivalent Windows project paths', () => {
+    const groups = groupSyncThreads([
+      thread('official', String.raw`\\?\C:\Users\ZH\Documents\Codex\2026-10-10\ce`, 8),
+      thread('official-unix', '/Users/demo/Documents/Codex/2026-09-03/new-chat', 7),
+      thread('extended', String.raw`\\?\D:\github\codex-switch`, 6),
+      thread('normal', 'd:/github/CODEX-SWITCH/', 5),
+      thread('similar', 'D:/projects/Codex/2026-10-10/ce', 4),
+      thread('root', '/', 3),
+    ]);
+    expect(groups).toHaveLength(4);
+    expect(groups[0].key).toBe(SYNC_RECENT_KEY);
+    expect(groups[0].children.map(item => item.sessionId)).toEqual(['official', 'official-unix']);
+    expect(groups[1].cwd).toBe(String.raw`D:\github\codex-switch`);
+    expect(groups[1].title).toBe('codex-switch');
+    expect(groups[1].children.map(item => item.sessionId)).toEqual(['extended', 'normal']);
+    expect(groups[3].cwd).toBe('/');
+    expect(groups[3].key).not.toBe(SYNC_RECENT_KEY);
+  });
+
+  it('uses source project names and explicit projectless membership ahead of path guesses', () => {
+    const scratch = 'C:/Users/demo/Documents/Codex/2026-10-10/ce';
+    const groups = groupSyncThreads([
+      { ...thread('recent', 'D:/previous-project', 4), projectPath: '', projectName: 'Stale name' },
+      { ...thread('nested', 'D:/clients/portal/src', 3), projectPath: 'D:/clients/portal', projectName: '客户门户' },
+      { ...thread('same-project', 'D:/clients/portal', 2), projectPath: 'd:/clients/PORTAL/' },
+      { ...thread('real-project', scratch, 1), projectPath: scratch, projectName: 'Saved project' },
+    ]);
+    expect(groups).toHaveLength(3);
+    expect(groups[0].key).toBe(SYNC_RECENT_KEY);
+    expect(groups[0].title).toBe('');
+    expect(groups[1].title).toBe('客户门户');
+    expect(groups[1].children.map(item => item.sessionId)).toEqual(['nested', 'same-project']);
+    expect(groups[2].title).toBe('Saved project');
+  });
 });

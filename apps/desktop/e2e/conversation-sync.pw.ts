@@ -5,7 +5,7 @@ for (const path of ['relay', 'direct']) {
     await page.goto(`/e2e/conversation-sync-harness.html?mode=remote&path=${path}&duplicates=1&hold=1`);
     await page.getByRole('button', { name: '展开项目: F:/projects/remoteai', exact: true }).click();
     await expect(page.getByText('排查项目中的登录问题')).toBeVisible();
-    await expect(page.locator('.ant-select-selection-item').first()).toHaveText('Office PC · D:/work/.codex');
+    await expect(page.locator('.ant-select-selection-item').first()).toHaveText('Office PC · CodexGUI');
     await page.getByRole('checkbox').last().check();
     await page.getByRole('button', { name: '对话同步', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: '确认同步对话？' });
