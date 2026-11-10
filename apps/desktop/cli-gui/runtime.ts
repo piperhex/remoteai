@@ -8,6 +8,7 @@ import { cliVersion, managedCommand, CLI_PACKAGES } from './version';
 import { installPackages } from './npm';
 import { AccountBridge } from './bridge';
 import type { CliRuntimeStatus, ExternalEngine } from '../../../shared/cli-gui/types';
+import type { InstallationProgress } from '../../../shared/cli/installProgressTypes';
 
 export const RUNTIME_VERSION = '0.15.4';
 interface Daemon {
@@ -23,6 +24,7 @@ interface ServerModule {
 
 export class CliRuntime {
   private installing?: Promise<void>;
+  private progress?: InstallationProgress;
   private failures = new Map<ExternalEngine, string>();
   private connecting?: Promise<PaseoClient>;
   private daemon?: Daemon;
@@ -43,12 +45,14 @@ export class CliRuntime {
 
   async status(engine: ExternalEngine): Promise<CliRuntimeStatus> {
     const installed = await this.installed();
-    if (Date.now() - (this.versions.get(engine)?.checkedAt ?? 0) > 30_000) {
+    if (!this.installing && Date.now() - (this.versions.get(engine)?.checkedAt ?? 0) > 30_000) {
       this.versions.set(engine, { checkedAt: Date.now(), value: await cliVersion(engine, this.root) });
     }
     return { status: this.installing ? 'installing' : this.failures.has(engine) ? 'error'
       : installed && this.versions.get(engine)?.value ? 'ready' : 'missing',
-      version: RUNTIME_VERSION, error: this.failures.get(engine), cliVersion: this.versions.get(engine)?.value || undefined };
+      version: RUNTIME_VERSION, error: this.failures.get(engine),
+      progress: this.installing ? this.progress : undefined,
+      cliVersion: this.versions.get(engine)?.value || undefined };
   }
 
   async installed() {
@@ -60,17 +64,23 @@ export class CliRuntime {
   install(engine: ExternalEngine) {
     if (this.installing) return;
     this.failures.delete(engine);
+    this.progress = { phase: 'preparing', downloaded: 0 };
     this.installing = this.prepare(engine).catch(error => {
       console.error('CLI runtime installation failed', error);
       this.failures.set(engine, 'client.cliGui.installFailed');
-    }).finally(() => { this.installing = undefined;
+    }).finally(() => { this.installing = undefined; this.progress = undefined;
       this.versions.delete(engine); this.changed(); });
+    this.changed();
   }
 
   private async prepare(engine: ExternalEngine) {
     await mkdir(this.installation, { recursive: true });
     await this.close();
-    await installPackages(this.root, [`@getpaseo/server@${RUNTIME_VERSION}`, `${CLI_PACKAGES[engine]}@latest`]);
+    await installPackages(this.root, [`@getpaseo/server@${RUNTIME_VERSION}`, `${CLI_PACKAGES[engine]}@latest`], progress => {
+      this.progress = progress; this.changed();
+    });
+    this.progress = { ...this.progress, phase: 'verifying', downloaded: this.progress?.downloaded ?? 0 };
+    this.changed();
     if (!await cliVersion(engine, this.root)) throw new Error('CLI installation did not pass its version check');
     await this.server();
     await writeFile(this.marker, JSON.stringify({ version: RUNTIME_VERSION }));

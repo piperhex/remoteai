@@ -2,6 +2,7 @@ import type { CliHistory, CliRequest, CliSession, CliTransport } from '../../../
 import type { GuiAccountsClient, SelectableGuiAccount } from '../../../shared/remote-chat/guiAccounts';
 import type { Thread, Model } from '../../../shared/conversation/types';
 import type { GitStatus } from '../../../shared/remote-chat/gitWorkspace';
+import type { InstallationProgress } from '../../../shared/cli/installProgressTypes';
 
 export const cliGitStatus = (cwd: string): GitStatus => ({ cwd, branch: 'main',
   branches: [{ name: 'main', occupied: false }], changedFiles: 0, isWorktree: false });
@@ -10,9 +11,10 @@ export const sidebarCodexThread: Thread = { id: 'codex-history', name: '评审�
   cwd: 'F:/projects/remoteai', updatedAt: Date.parse('2026-11-10T08:00:30Z') / 1000,
   status: { type: 'idle' }, turns: [] };
 
-export function createCliGuiFixture(ready = true) {
+export function createCliGuiFixture(ready = true, options: { manualInstall?: boolean } = {}) {
   const installed = new Set(ready ? ['claude', 'gemini'] : []);
   const installing = new Set<string>();
+  const progress = new Map<string, InstallationProgress>();
   let account: SelectableGuiAccount = { kind: 'account', id: 'internal' };
   const accountListeners = new Set<() => void>();
   const accounts: GuiAccountsClient = {
@@ -36,14 +38,20 @@ export function createCliGuiFixture(ready = true) {
   const calls: CliRequest[] = [];
   const listeners = new Set<() => void>();
   const notify = () => listeners.forEach(listener => listener());
+  const setInstallProgress = (engine: string, value: InstallationProgress) => {
+    installing.add(engine); progress.set(engine, value); notify();
+  };
+  const finishInstall = (engine: string) => {
+    installing.delete(engine); progress.delete(engine); installed.add(engine); notify();
+  };
   const request = async (input: CliRequest): Promise<unknown> => {
     calls.push(input);
     if (input.action === 'status') return { status: installing.has(input.engine) ? 'installing'
-      : installed.has(input.engine) ? 'ready' : 'missing', version: '0.15.4',
+      : installed.has(input.engine) ? 'ready' : 'missing', version: '0.15.4', progress: progress.get(input.engine),
       cliVersion: installed.has(input.engine) ? input.engine === 'claude' ? '2.1.42' : '0.32.1' : undefined };
     if (input.action === 'install') {
-      installing.add(input.engine);
-      setTimeout(() => { installing.delete(input.engine); installed.add(input.engine); notify(); }, 1500);
+      setInstallProgress(input.engine, { phase: 'preparing', downloaded: 0 });
+      if (!options.manualInstall) setTimeout(() => finishInstall(input.engine), 1500);
       return {};
     }
     if (input.action === 'catalog') return { status: 'ready',
@@ -84,5 +92,5 @@ export function createCliGuiFixture(ready = true) {
     defaultReasoningEffort: 'high', supportedReasoningEfforts: [
       { reasoningEffort: 'medium', description: 'Medium' }, { reasoningEffort: 'high', description: 'High' },
     ] }];
-  return { transport, calls, accounts, models };
+  return { transport, calls, accounts, models, setInstallProgress, finishInstall };
 }

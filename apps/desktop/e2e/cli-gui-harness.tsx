@@ -32,7 +32,7 @@ await (mode === 'web' ? import('../../web/src/styles.css') : import('../src/styl
 (mode === 'web' ? setThemeMode : applyThemeMode)(dark ? 'dark' : 'light');
 setInterfaceLanguage('zh');
 saveGlobalFontSize(params.has('large') ? 20 : 14);
-const fixture = createCliGuiFixture(!params.has('missing'));
+const fixture = createCliGuiFixture(!params.has('missing'), { manualInstall: params.has('progress') });
 const modelRequests: unknown[] = [];
 saveProject({ path: 'F:/projects/remoteai', name: 'Remote AI' });
 const controller = new ChatController(events => ({ start() { events.mode('direct'); events.ready(); }, stop() {},
@@ -53,7 +53,10 @@ controller.cliGui.request = fixture.transport.request;
 controller.cliGui.subscribe = fixture.transport.subscribe;
 controller.cliGui.subscribeAccountChange = fixture.transport.subscribeAccountChange;
 controller.guiTools.projects.list = async () => [{ cwd: 'F:/projects/remoteai', label: 'Remote AI' }];
-controller.guiTools.status = async () => ({ version: '0.150.0', installing: false, progress: null, error: '' });
+controller.guiTools.status = async () => ({ version: '0.150.0', installing: params.has('codex-progress'),
+  release: params.has('codex-progress') ? { version: '0.151.0', size: 32 * 1024 * 1024 } : undefined,
+  progress: params.has('codex-progress')
+    ? { downloaded: 8 * 1024 * 1024, total: 32 * 1024 * 1024, phase: 'downloading' } : null, error: '' });
 controller.guiTools.workspace = async request => cliGitStatus(request.cwd);
 fixture.accounts.subscribe(() => { void controller.refreshModels(); });
 const device = { deviceId: 'pc', name: 'Office PC', platform: 'Windows', online: true };

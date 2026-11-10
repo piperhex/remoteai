@@ -3,6 +3,12 @@ import { fileURLToPath } from 'node:url';
 import { readFile, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+await build({
+  entryPoints: [fileURLToPath(new URL('../cli-gui/npmProgress.ts', import.meta.url))],
+  outfile: fileURLToPath(new URL('../src-tauri/resources/cli-gui/npm-progress.cjs', import.meta.url)),
+  bundle: true, platform: 'node', target: 'node22', format: 'cjs',
+});
+
 const result = await build({
   entryPoints: [fileURLToPath(new URL('../cli-gui/host.ts', import.meta.url))],
   outfile: fileURLToPath(new URL('../src-tauri/resources/cli-gui/host.mjs', import.meta.url)),
