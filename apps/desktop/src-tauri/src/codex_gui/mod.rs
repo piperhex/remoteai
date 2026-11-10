@@ -71,6 +71,7 @@ pub(crate) mod push_notifications;
 mod push_outbox;
 mod push_writer;
 pub(crate) mod queue_store;
+mod recovery;
 pub(crate) mod releases;
 pub(crate) mod scheduled_tasks;
 #[cfg(test)]
@@ -219,6 +220,8 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
     };
     let client = connected(state).await?;
     match request {
+        GuiRequest::RecoveryList => return client.recovery_list().await,
+        GuiRequest::RecoveryDecide(decision) => return client.recovery_decide(decision).await,
         GuiRequest::ToolDetails(target) => return tool_details::read(client, target).await,
         GuiRequest::ProcessDetails(target) => return process_details::read(client, target).await,
         GuiRequest::GroupThreadSummaries(query) => {

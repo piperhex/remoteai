@@ -130,6 +130,32 @@ impl Client {
         if method == "thread/resume" {
             context_settings::apply_capacity(&mut params, &applied);
         }
+        // Check under the same per-thread guard used by all resume/send requests.
+        if let Some(expected) = params
+            .as_object_mut()
+            .and_then(|params| params.remove(crate::codex_gui::recovery::EXPECTED_TURN))
+        {
+            let entry = crate::codex_gui::recovery::Entry {
+                thread_id: params["threadId"]
+                    .as_str()
+                    .ok_or(GuiError::InvalidRequest)?
+                    .to_owned(),
+                turn_id: expected
+                    .as_str()
+                    .ok_or(GuiError::InvalidRequest)?
+                    .to_owned(),
+                observed_at: 0,
+            };
+            let snapshot = self
+                .request_raw(
+                    "thread/read",
+                    json!({"threadId": entry.thread_id, "includeTurns": true}),
+                )
+                .await?;
+            if !crate::codex_gui::recovery::same_interrupted_turn(&snapshot["thread"], &entry) {
+                return Err(GuiError::RecoveryChanged);
+            }
+        }
         let continuation = super::context_change::continuation_overrides(&params);
         let result = self.request_raw(method, params).await?;
         if method == "turn/start" {

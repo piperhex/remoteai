@@ -1,4 +1,6 @@
 import { displayText } from '../../../../shared/localization/uiText';
+import { TaskRecoveryPrompt } from '../../../../shared/conversation/recovery/TaskRecoveryPrompt';
+import { localRecovery } from '../../../../shared/conversation/recovery/local';
 import { ImageAiContext } from '../../../../shared/chat/ImageAiContext';
 import { DesktopUsageContext } from '../../../../shared/chat/DesktopUsageContext';
 import { ToolDetailsContext, localToolDetails } from '../../../../shared/chat/DeferredToolDetails';
@@ -134,6 +136,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
       focused={focused} onToggleFocus={onToggleFocus} view={view} onNavigate={setView}
       scheduledTasksAvailable={canManageCodexConnection} />}
     <div className={styles.workspace}>
+      <TaskRecoveryPrompt client={localRecovery} enabled={active && state.connection === 'ready'}
+        openThread={openTaskConversation} />
       <header className={`${styles.header} workspace-toolbar`} data-tauri-drag-region={isDesktopApp || undefined}>
         <Button type="text" icon={collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
           aria-label={collapsed ? uiText("client.composer.expandConversationList") : uiText("client.composer.collapseConversationList")} onClick={() => setCollapsed(!collapsed)} />

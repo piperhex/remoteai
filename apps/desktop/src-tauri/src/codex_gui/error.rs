@@ -1,5 +1,9 @@
 #[derive(Debug, thiserror::Error)]
 pub(super) enum GuiError {
+    #[error(transparent)]
+    Recovery(super::recovery::Error),
+    #[error("client.taskRecovery.changed")]
+    RecoveryChanged,
     #[error("client.groups.loadFailed")]
     GroupMembers,
     #[error("这条补充消息暂不支持单独删除，以免删除之前的消息。")]
