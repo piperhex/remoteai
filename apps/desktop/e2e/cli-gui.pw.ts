@@ -1,9 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { createCliGuiFixture } from './cli-gui-fixture';
+import { createCliGuiFixture, sidebarCodexThread } from './cli-gui-fixture';
 
-const evidence = resolve('../../.codex-tmp/cli-gui-account-evidence');
+const evidence = resolve('../../.codex-tmp/cli-sidebar-evidence');
 async function localBackend(page: Page, ready = true) {
   const fixture = createCliGuiFixture(ready);
   await page.route('https://fonts.googleapis.com/**', route => route.abort());
@@ -19,6 +19,8 @@ async function localBackend(page: Page, ready = true) {
     if (command === 'codex_gui_model_settings') result = { threadId: null, selection: null, revision: 0 };
     if (command === 'codex_gui_request') {
       let data: unknown = { data: [], nextCursor: null };
+      if (args.request.operation === 'list') data = { data: [sidebarCodexThread], nextCursor: null };
+      if (args.request.operation === 'read') data = { thread: sidebarCodexThread };
       if (args.request.operation === 'models') data = { data: [{ id: 'test-model', model: 'test-model',
         displayName: 'GPT-6', isDefault: true, defaultReasoningEffort: 'high', supportedReasoningEfforts: [] }] };
       if (args.request.operation === 'plugins') data = { marketplaces: [], marketplaceLoadErrors: [] };
@@ -47,6 +49,21 @@ for (const mode of ['local', 'remote', 'web']) {
         const selector = page.locator('.cli-gui-engine:visible');
         await expect(selector).toContainText('Codex GUI');
         await expect(selector).toContainText('0.150.0');
+        const nativeRow = page.getByRole('button', { name: sidebarCodexThread.name!, exact: true });
+        const cliRow = page.locator('[data-cli-thread="claude-history"] button');
+        await expect(cliRow).toBeVisible();
+        await expect(nativeRow).toBeVisible();
+        await expect(page.locator('[data-cli-thread]')).toHaveCount(2);
+        await expect(cliRow).toHaveText('检查项目结构');
+        await expect(page.locator('[data-cli-thread] small')).toHaveCount(0);
+        const group = nativeRow.locator('xpath=ancestor::section[1]');
+        await expect(group.locator('[data-cli-thread]')).toHaveCount(2);
+        expect(await group.getByRole('button').filter({ hasText: /评审界面改动|检查项目结构|整理测试计划/ })
+          .allTextContents()).toEqual(['评审界面改动', '检查项目结构', '整理测试计划']);
+        const rowStyle = (node: HTMLElement) => ({ height: node.getBoundingClientRect().height,
+          padding: getComputedStyle(node).padding,
+          fontSize: getComputedStyle(node.firstElementChild!).fontSize });
+        expect(await cliRow.evaluate(rowStyle)).toEqual(await nativeRow.evaluate(rowStyle));
         await selector.click();
         await expect(page.getByRole('menuitem', { name: 'Claude GUI' })).toBeVisible();
         await expect(page.locator('.ant-dropdown:visible')).toHaveCSS('opacity', '1');
@@ -71,7 +88,7 @@ for (const mode of ['local', 'remote', 'web']) {
         await expect(page.getByRole('menuitem', { name: 'Gemini GUI' })).toHaveAttribute('aria-disabled', 'true');
         await page.locator('.cli-gui-pane .chat-messages').click({ position: { x: 20, y: 20 } });
         await expect(page.getByRole('menu')).not.toBeVisible();
-        await page.locator('.cli-gui-thread-list button').filter({ hasText: '整理测试计划' }).click();
+        await page.locator('[data-cli-thread] button').filter({ hasText: '整理测试计划' }).click();
         await expect(selector).toContainText('Gemini GUI · 0.32.1');
         await expect(page.getByRole('link', { name: 'Gemini CLI 官方安装说明' }))
           .toHaveAttribute('href', 'https://geminicli.com/docs/get-started/installation/');
@@ -87,6 +104,8 @@ for (const mode of ['local', 'remote', 'web']) {
         }));
         expect(typography.size).toBe(enlarged ? '20px' : '14px');
         expect(typography.family).toContain('sans-serif');
+        await nativeRow.click();
+        await expect(selector).toContainText('Codex GUI');
       });
   }
   test(`${mode}: one-click installation, official sources and live language switching`, async ({ page }) => {

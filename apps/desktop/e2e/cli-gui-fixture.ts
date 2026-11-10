@@ -1,5 +1,10 @@
 import type { CliHistory, CliRequest, CliSession, CliTransport } from '../../../shared/cli-gui/types';
 import type { GuiAccountsClient, SelectableGuiAccount } from '../../../shared/remote-chat/guiAccounts';
+import type { Thread } from '../../../shared/conversation/types';
+
+export const sidebarCodexThread: Thread = { id: 'codex-history', name: '评审界面改动', preview: '评审界面改动',
+  cwd: 'F:/projects/remoteai', updatedAt: Date.parse('2026-11-10T08:00:30Z') / 1000,
+  status: { type: 'idle' }, turns: [] };
 
 export function createCliGuiFixture(ready = true) {
   const installed = new Set(ready ? ['claude', 'gemini'] : []);

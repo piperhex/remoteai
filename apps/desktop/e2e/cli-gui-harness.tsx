@@ -9,7 +9,7 @@ import { ApplicationTypography } from '../../../shared/appearance/ApplicationTyp
 import { saveGlobalFontSize } from '../../../shared/appearance/fontSize';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
 import { translate, type Translate } from '../src/i18n';
-import { createCliGuiFixture } from './cli-gui-fixture';
+import { createCliGuiFixture, sidebarCodexThread } from './cli-gui-fixture';
 import { RemoteAccountPicker } from '../../../shared/conversation/remote/RemoteAccountPicker';
 import { saveProject } from '../../../shared/conversation/projectCatalog';
 import { applyThemeMode } from '../src/utils/themeMode';
@@ -32,6 +32,8 @@ const controller = new ChatController(events => ({ start() { events.mode('direct
     const body = value as { operation?: string } | undefined;
     if (method === 'connect') return [] as T;
     if (body?.operation === 'queueRead') return { revision: 0, threads: {} } as T;
+    if (body?.operation === 'list') return { data: [sidebarCodexThread], nextCursor: null } as T;
+    if (body?.operation === 'read') return { thread: sidebarCodexThread } as T;
     if (body?.operation === 'models') return { data: [{ id: 'codex-test', model: 'codex-test', displayName: 'GPT-6',
       isDefault: true, defaultReasoningEffort: 'high', supportedReasoningEfforts: [] }] } as T;
     return { data: [], nextCursor: null } as T;

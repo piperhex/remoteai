@@ -1,6 +1,7 @@
 import { uiText } from "../../../../../shared/localization/uiText";
 import { useCliGui } from '../../../../../shared/cli-gui/context';
-import { CliConversationList } from '../../../../../shared/cli-gui/CliConversationList';
+import { CliThreadRow } from '../../../../../shared/cli-gui/CliThreadRow';
+import { useCliSidebar } from '../../../../../shared/cli-gui/useCliSidebar';
 import { useGuiLanguage } from '../../../../../shared/localization/useGuiLanguage';
 import { useMemo, useState, type ReactNode } from "react";
 import { App, Button, Input, Modal, Segmented, Spin } from "antd";
@@ -53,6 +54,7 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
 } & GuiFocusMode) {
   const language = useGuiLanguage();
   const cli = useCliGui();
+  const sidebar = useCliSidebar({ threads: state.threads, archived: state.archived, query: state.search });
   const grouping = useGrouping();
   const [searchOpen, setSearchOpen] = useState(false);
   const pagination = useThreadPagination({ state, controller, enabled: !searchOpen });
@@ -66,8 +68,9 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
     setSearchOpen(false);
     if (state.search) controller.filter("", state.archived);
   };
-  const sections = useMemo(() => groupingTree(threadGroups(state).map(group => ({ ...group, data: group.threads })),
-    state.grouping), [state.threads, state.pins, state.projects, state.pinnedProjects, state.conversations,
+  const sections = useMemo(() => groupingTree(threadGroups({ ...state, threads: sidebar.threads })
+    .map(group => ({ ...group, data: group.threads })),
+    state.grouping), [sidebar.threads, state.pins, state.projects, state.pinnedProjects, state.conversations,
     state.pendingRequest, state.grouping, language]);
   const scope = state.archived ? 'archived' : 'recent';
   const collapsed = new Set(views.collapsed.filter(key => key.startsWith(`${scope}:`))
@@ -75,6 +78,8 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
   const groups = flattenGroupingTree(sections, state.search.trim() ? new Set() : collapsed)
     .map(group => ({ ...group, data: orderGuiThreads(group.data, state) }));
   const renderThread = (thread: Thread) => {
+    const session = sidebar.session(thread);
+    if (session) return <CliThreadRow key={thread.id} session={session} onSelect={() => onNavigate('conversation')} />;
     const running = isThreadRunning(state, thread);
     const busy = state.sending || Boolean(state.deleting);
     const needsInput = state.approvals.some((event) => event.params.threadId === thread.id);
@@ -131,7 +136,6 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
       options={[{ label: uiText("client.chat.recent"), value: "recent" }, { label: uiText("client.mobile.archived"), value: "archived" }]}
       onChange={(value) => controller.filter("", value === "archived")} />
     <div className={styles.threadList} aria-busy={state.loading} {...pagination}>
-      <CliConversationList archived={state.archived} query={state.search} onSelect={() => onNavigate('conversation')} />
       {groups.map((group) => {
         const key = `${state.archived ? "archived" : "recent"}:${group.id}`;
         const custom = group.kind === 'group';
@@ -141,7 +145,7 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
             toggle={() => toggle('collapsed', key)} />}
           <ThreadGroup label={group.label || uiText('client.groups.ungrouped')} pinned={Boolean(group.pinned)}
           hideHeading={custom} threads={group.data}
-          selected={view === "conversation" ? state.selected : null}
+          selected={view === "conversation" ? sidebar.selected?.id ?? state.selected : null}
           collapsed={views.collapsed.includes(key)} expanded={views.expanded.includes(key)}
           filtering={Boolean(state.search.trim())} onToggle={(field) => toggle(field, key)}
           projectPinned={state.pinnedProjects.includes(group.cwd)}
@@ -155,7 +159,7 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
           } : undefined}
           renderThread={renderThread} /></div>;
       })}
-      {!state.threads.length && !cli?.state.sessions.length && <p className={styles.listEmpty}>{state.loading ? <Spin size="small" />
+      {!sidebar.threads.length && <p className={styles.listEmpty}>{state.loading ? <Spin size="small" />
         : uiText(state.search ? "client.workspaceActions.noMatchingConversations" : "client.workspaceActions.noConversationsYet")}</p>}
       {state.cursor && <ThreadPagination loading={state.loading} />}
     </div>

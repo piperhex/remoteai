@@ -22,7 +22,8 @@ import { GroupHeading } from '../../../../../../shared/chat/groups/GroupHeading'
 import { useGrouping } from '../../../../../../shared/chat/groups/context';
 import { remoteSidebarDrag } from '../../../../../../shared/remote-chat/client/sidebarDrag';
 import { useCliGui } from '../../../../../../shared/cli-gui/context';
-import { CliConversationList } from '../../../../../../shared/cli-gui/CliConversationList';
+import { CliThreadRow } from '../../../../../../shared/cli-gui/CliThreadRow';
+import { useCliSidebar } from '../../../../../../shared/cli-gui/useCliSidebar';
 
 export function RemoteGuiSidebar(props: Parameters<typeof RemoteGuiSidebarContent>[0]) {
   return <BrowserGroups grouping={props.state.sidebar.grouping} client={props.controller.groups}
@@ -35,7 +36,9 @@ function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, fo
   accountPicker: ReactNode; focusMode: GuiFocusMode;
   syncing?: boolean; onOpenSync?: () => void;
 }) {
-  const { groups: projectGroups, toggle, toggleCollapse } = useThreadGroups(state);
+  const sidebar = useCliSidebar({ threads: state.threads, archived: state.archived, query: state.search });
+  const { groups: projectGroups, toggle, toggleCollapse } = useThreadGroups({ ...state,
+    threads: sidebar.threads, selected: sidebar.selected ?? state.selected });
   const groups = projectGroups.map(group => ({
     ...group, label: group.kind === 'group' || group.cwd ? group.label
       : uiText(group.id === 'ungrouped' ? 'client.groups.ungrouped' : 'client.chat.recent'),
@@ -87,7 +90,6 @@ function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, fo
       disabled={!state.ready || state.loading}
       onChange={value => { void controller.list({ archived: value === 'archived' }); }} />
     <div className={styles.threadList} aria-busy={state.loading} {...pagination}>
-      <CliConversationList archived={state.archived} onSelect={actions.onClose} />
       {groups.map(group => <section className={groupsStyle.group} aria-label={group.label} key={group.id}
         style={{ paddingInlineStart: Math.min(group.depth, 8) * 14,
           ...(group.kind === 'group' ? { margin: '0 0 4px' } : {}) }}>
@@ -103,6 +105,8 @@ function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, fo
         </div>}
         <div className={groupsStyle.content} hidden={group.collapsed}>
           {group.data.map(thread => {
+            const session = sidebar.session(thread);
+            if (session) return <CliThreadRow key={thread.id} session={session} onSelect={actions.onClose} />;
             const view = threadPresentation(thread, state.sidebar, displayText);
             const selected = (!cli || cli.state.engine === 'codex') && state.selected?.id === thread.id;
             return <RemoteThreadMenu key={thread.id} thread={thread} state={state} controller={controller}
@@ -123,7 +127,7 @@ function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, fo
             {group.expanded ? uiText("client.chat.collapse") : uiText("client.chat.showMore.83ad87")}</button>}
         </div>
       </section>)}
-      {!state.threads.length && !cli?.state.sessions.length && <p className={styles.listEmpty}>{state.ready ? uiText("client.workspaceActions.noConversationsYet") : uiText("client.workspaceActions.connectToAComputerToViewConversations")}</p>}
+      {!sidebar.threads.length && <p className={styles.listEmpty}>{state.ready ? uiText("client.workspaceActions.noConversationsYet") : uiText("client.workspaceActions.connectToAComputerToViewConversations")}</p>}
       {state.cursor && <ThreadPagination loading={state.loading} />}
     </div>
     {accountPicker}
