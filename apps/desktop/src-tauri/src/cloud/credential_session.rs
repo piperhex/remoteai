@@ -6,6 +6,7 @@ use std::sync::{atomic::AtomicU64, Arc};
 #[derive(Debug, Default)]
 pub(super) struct SessionEpoch {
     pub(super) refresh: super::refresh_flight::RefreshFlight,
+    pub(super) ssh_cache: super::ssh_profiles::cache::SessionCache,
 }
 
 #[derive(Default)]

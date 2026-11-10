@@ -1,71 +1,183 @@
 //! Account-scoped SSH access for the authenticated GUI engine. Secrets never enter model output.
 use super::*;
 use csw_ssh_client::{Connect, Endpoint, Size};
+use std::sync::Arc;
 
-fn identity(app: &tauri::AppHandle) -> Result<GuiCloudIdentity, ProfileError> {
+pub(super) struct AgentSession {
+    identity: GuiCloudIdentity,
+    credentials: CloudCredentials,
+}
+
+#[derive(Clone)]
+pub(super) struct Target {
+    pub(super) id: String,
+    pub(super) revision: u64,
+}
+
+pub(super) fn session<R: Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> Result<Arc<AgentSession>, ProfileError> {
     let (settings, credentials) = cloud_snapshot(app).map_err(|_| ProfileError::Unavailable)?;
     if !cloud_state(&settings, &credentials).authenticated {
         return Err(ProfileError::Authentication);
     }
-    Ok(GuiCloudIdentity {
+    let identity = GuiCloudIdentity {
         base_url: base_url(&settings)
             .map_err(|_| ProfileError::Authentication)?
             .to_owned(),
         user_id: settings.cloud_user_id.ok_or(ProfileError::Authentication)?,
-    })
-}
-
-fn profiles(
-    app: &tauri::AppHandle,
-    identity: GuiCloudIdentity,
-) -> Result<Vec<SshProfile>, ProfileError> {
-    match exchange(app, identity, SshProfileRequest::List)? {
-        SshProfileReply::Profiles(profiles) => Ok(profiles),
-        _ => Err(ProfileError::Unavailable),
-    }
-}
-
-pub(crate) fn agent_ssh_profiles(app: &tauri::AppHandle) -> Result<Vec<SshProfile>, ProfileError> {
-    identity(app).and_then(|identity| profiles(app, identity))
-}
-
-pub(crate) fn agent_ssh_connect(
-    app: &tauri::AppHandle,
-    id: &str,
-    revision: u64,
-) -> Result<Connect, ProfileError> {
-    prepare(app, id, revision)
-}
-
-fn prepare(app: &tauri::AppHandle, id: &str, revision: u64) -> Result<Connect, ProfileError> {
-    if !valid_id(id) || revision == 0 {
-        return Err(ProfileError::Invalid);
-    }
-    let identity = identity(app)?;
-    let current = GuiCloudIdentity {
-        base_url: identity.base_url.clone(),
-        user_id: identity.user_id.clone(),
     };
-    let profile = select_profile(profiles(app, current)?, id, revision)?;
-    let auth = profile.auth;
-    let mut request = connection(profile)?;
-    let reply = exchange(
-        app,
+    Ok(Arc::new(AgentSession {
         identity,
-        SshProfileRequest::Credentials {
-            id: id.into(),
-            revision,
-        },
-    )?;
-    let SshProfileReply::Credentials(reply) = reply else {
-        return Err(ProfileError::Unavailable);
-    };
-    let secret = reply
-        .credentials
-        .ok_or(ProfileError::CredentialsUnavailable)?;
-    if !secret.matches_auth(&auth) {
+        credentials,
+    }))
+}
+
+impl AgentSession {
+    pub(super) fn check<R: Runtime>(&self, app: &tauri::AppHandle<R>) -> Result<(), ProfileError> {
+        ensure_cloud_session(app, &self.credentials).map_err(|_| ProfileError::Authentication)
+    }
+
+    fn exchange<R: Runtime>(
+        &self,
+        app: &tauri::AppHandle<R>,
+        request: SshProfileRequest,
+    ) -> Result<SshProfileReply, ProfileError> {
+        self.check(app)?;
+        let identity = GuiCloudIdentity {
+            base_url: self.identity.base_url.clone(),
+            user_id: self.identity.user_id.clone(),
+        };
+        let reply = exchange(app, identity, request)?;
+        self.check(app)?;
+        Ok(reply)
+    }
+
+    fn profiles<R: Runtime>(
+        &self,
+        app: &tauri::AppHandle<R>,
+    ) -> Result<Vec<SshProfile>, ProfileError> {
+        match self.exchange(app, SshProfileRequest::List)? {
+            SshProfileReply::Profiles(profiles) => Ok(profiles),
+            _ => Err(ProfileError::Unavailable),
+        }
+    }
+
+    pub(super) fn prepare<R: Runtime>(
+        &self,
+        app: &tauri::AppHandle<R>,
+        target: &Target,
+    ) -> Result<(Connect, bool), ProfileError> {
+        self.check(app)?;
+        if !valid_id(&target.id) || target.revision == 0 || target.revision > 9_007_199_254_740_990
+        {
+            return Err(ProfileError::Invalid);
+        }
+        let cached = cache::read(app, &self.identity, &self.credentials, |cache| {
+            let profile = select_profile(cache.profiles()?, &target.id, target.revision).ok()?;
+            let secret = cache.credentials(&profile)?;
+            Some((profile, secret))
+        })
+        .flatten();
+        if let Some((profile, secret)) = cached {
+            self.check(app)?;
+            return authenticated_connection(profile, secret).map(|request| (request, true));
+        }
+        self.refresh(app, target).map(|request| (request, false))
+    }
+
+    pub(super) fn refresh<R: Runtime>(
+        &self,
+        app: &tauri::AppHandle<R>,
+        target: &Target,
+    ) -> Result<Connect, ProfileError> {
+        let result = super::execution::retry_sync(|| self.sync_connection(app, target));
+        if matches!(result, Err(ProfileError::CredentialsUnavailable)) {
+            cache::update(app, &self.identity, &self.credentials, |cache| {
+                cache.forget_credentials(&target.id)
+            });
+        }
+        result
+    }
+
+    fn sync_connection<R: Runtime>(
+        &self,
+        app: &tauri::AppHandle<R>,
+        target: &Target,
+    ) -> Result<Connect, ProfileError> {
+        let profile = select_profile(self.profiles(app)?, &target.id, target.revision)?;
+        connection(profile.clone())?;
+        let reply = self.exchange(
+            app,
+            SshProfileRequest::Credentials {
+                id: target.id.clone(),
+                revision: target.revision,
+            },
+        )?;
+        let SshProfileReply::Credentials(reply) = reply else {
+            return Err(ProfileError::Unavailable);
+        };
+        let secret = reply
+            .credentials
+            .ok_or(ProfileError::CredentialsUnavailable)?;
+        let request = authenticated_connection(profile.clone(), secret.clone())?;
+        cache::update(app, &self.identity, &self.credentials, |cache| {
+            cache.save(&profile, secret)
+        });
+        self.check(app)?;
+        Ok(request)
+    }
+
+    pub(super) fn refresh_later<R: Runtime>(
+        self: &Arc<Self>,
+        app: &tauri::AppHandle<R>,
+        target: Option<Target>,
+    ) {
+        let key = target
+            .as_ref()
+            .map_or("list".to_owned(), |target| format!("profile:{}", target.id));
+        let Some(lease) = cache::start_refresh(&self.credentials, &key) else {
+            return;
+        };
+        let app = app.clone();
+        let session = self.clone();
+        tauri::async_runtime::spawn_blocking(move || {
+            let _lease = lease;
+            let result = match target {
+                Some(target) => session.refresh(&app, &target).map(|_| ()),
+                None => super::execution::retry_sync(|| session.profiles(&app)).map(|_| ()),
+            };
+            if let Err(error) = result {
+                eprintln!("SSH cache refresh failed: {error}");
+            }
+        });
+    }
+}
+
+pub(crate) fn agent_ssh_profiles<R: Runtime>(
+    app: &tauri::AppHandle<R>,
+) -> Result<Vec<SshProfile>, ProfileError> {
+    let session = session(app)?;
+    let cached = cache::read(app, &session.identity, &session.credentials, |cache| {
+        cache.profiles()
+    })
+    .flatten();
+    if let Some(profiles) = cached {
+        session.check(app)?;
+        session.refresh_later(app, None);
+        return Ok(profiles);
+    }
+    super::execution::retry_sync(|| session.profiles(app))
+}
+
+fn authenticated_connection(
+    profile: SshProfile,
+    secret: SshCredentials,
+) -> Result<Connect, ProfileError> {
+    if !secret.matches_auth(&profile.auth) {
         return Err(ProfileError::CredentialsUnavailable);
     }
+    let mut request = connection(profile)?;
     secret.apply(&mut request);
     request.validate().map_err(|_| ProfileError::Invalid)?;
     Ok(request)

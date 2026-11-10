@@ -7,9 +7,33 @@ use std::time::Duration;
 const MAX_OUTPUT_BYTES: usize = 256 * 1024;
 const MAX_TIMEOUT_SECONDS: u64 = 120;
 
+#[derive(Clone)]
 pub struct ExecutionOptions {
     pub command: String,
     pub timeout_seconds: u64,
+}
+
+/// Only failures before command dispatch can be retried without duplicating remote side effects.
+#[derive(Debug, thiserror::Error)]
+pub enum ExecutionError {
+    #[error(transparent)]
+    BeforeCommand(Error),
+    #[error(transparent)]
+    AfterCommand(Error),
+}
+
+impl ExecutionError {
+    pub fn retryable(&self) -> bool {
+        matches!(
+            self,
+            Self::BeforeCommand(Error::Connection | Error::Authentication)
+        )
+    }
+    fn into_error(self) -> Error {
+        match self {
+            Self::BeforeCommand(error) | Self::AfterCommand(error) => error,
+        }
+    }
 }
 
 impl ExecutionOptions {
@@ -88,17 +112,30 @@ mod integration_tests;
 impl Client {
     /// Returns partial output on timeout. The command may have run and must not be retried implicitly.
     pub async fn execute(&self, request: Connect, options: ExecutionOptions) -> Result<Execution> {
-        request.validate()?;
-        options.validate()?;
+        self.execute_attempt(request, options)
+            .await
+            .map_err(ExecutionError::into_error)
+    }
+
+    /// Preserves the dispatch boundary so callers can refresh credentials and retry connecting safely.
+    pub async fn execute_attempt(
+        &self,
+        request: Connect,
+        options: ExecutionOptions,
+    ) -> std::result::Result<Execution, ExecutionError> {
+        use ExecutionError::{AfterCommand, BeforeCommand};
+        request.validate().map_err(BeforeCommand)?;
+        options.validate().map_err(BeforeCommand)?;
         let _permit = self
             .slots
             .clone()
             .try_acquire_owned()
-            .map_err(|_| Error::Limit)?;
+            .map_err(|_| BeforeCommand(Error::Limit))?;
         let session =
             tokio::time::timeout(connection::TIMEOUT, connection::connect(&request, None))
                 .await
-                .map_err(|_| Error::Connection)??;
+                .map_err(|_| BeforeCommand(Error::Connection))?
+                .map_err(BeforeCommand)?;
         let result = execute_channel(&session, options).await;
         if session
             .disconnect(Disconnect::ByApplication, "", "")
@@ -107,7 +144,7 @@ impl Client {
         {
             // Commands such as shutdown may close the transport before local cleanup.
         }
-        result
+        result.map_err(AfterCommand)
     }
 }
 

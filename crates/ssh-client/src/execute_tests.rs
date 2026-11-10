@@ -49,6 +49,11 @@ impl server::Handler for Server {
         session: &mut server::Session,
     ) -> std::result::Result<(), Self::Error> {
         self.commands.lock().await.push(command.to_vec());
+        if command == b"reject" {
+            session.channel_failure(channel)?;
+            session.close(channel)?;
+            return Ok(());
+        }
         session.channel_success(channel)?;
         session.data(channel, b"hello \xe4\xb8\xad\xe6\x96\x87".to_vec())?;
         session.extended_data(channel, 1, b"warning".to_vec())?;
@@ -155,4 +160,47 @@ async fn changed_host_key_never_authenticates_or_runs_the_command() {
         .await;
     assert!(matches!(result, Err(Error::HostKey)));
     assert!(commands.lock().await.is_empty());
+}
+
+#[tokio::test]
+async fn authentication_failure_can_retry_before_any_command_is_sent() {
+    let (mut request, commands) = fixture().await;
+    request.password = Some("stale-password".into());
+    let result = Client::default()
+        .execute_attempt(
+            request,
+            ExecutionOptions {
+                command: "pwd".into(),
+                timeout_seconds: 5,
+            },
+        )
+        .await;
+    let error = result.err().unwrap();
+    assert!(matches!(
+        error,
+        ExecutionError::BeforeCommand(Error::Authentication)
+    ));
+    assert!(error.retryable());
+    assert!(commands.lock().await.is_empty());
+}
+
+#[tokio::test]
+async fn failure_after_dispatch_is_not_retryable_even_without_output() {
+    let (request, commands) = fixture().await;
+    let result = Client::default()
+        .execute_attempt(
+            request,
+            ExecutionOptions {
+                command: "reject".into(),
+                timeout_seconds: 5,
+            },
+        )
+        .await;
+    let error = result.err().unwrap();
+    assert!(matches!(
+        error,
+        ExecutionError::AfterCommand(Error::Connection)
+    ));
+    assert!(!error.retryable());
+    assert_eq!(commands.lock().await.len(), 1);
 }

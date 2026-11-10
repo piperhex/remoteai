@@ -1,9 +1,8 @@
 use super::{protocol, Error, Result};
-use csw_ssh_client::{Client, ExecutionOptions};
+use csw_ssh_client::ExecutionOptions;
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::sync::Arc;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -48,16 +47,8 @@ pub(super) async fn execute(app: AppHandle, params: Value) -> Result<Value> {
         timeout_seconds: args.timeout_seconds,
     };
     options.validate()?;
-    let host = app.clone();
-    let request = tauri::async_runtime::spawn_blocking(move || {
-        crate::cloud::agent_ssh_connect(&host, &args.profile_id, args.revision)
-    })
-    .await
-    .map_err(|_| Error::Unavailable)?;
-    let request = match request {
-        Ok(request) => request,
-        Err(error) => return Ok(json!({ "error": error.to_string() })),
-    };
-    let output = app.state::<Arc<Client>>().execute(request, options).await?;
-    Ok(serde_json::to_value(output)?)
+    match crate::cloud::agent_ssh_execute(app, args.profile_id, args.revision, options).await {
+        Ok(output) => Ok(serde_json::to_value(output)?),
+        Err(error) => Ok(json!({ "error": error.to_string() })),
+    }
 }

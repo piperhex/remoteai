@@ -11,7 +11,7 @@ mod uploads;
 mod x11;
 
 pub use connection::probe;
-pub use execute::{Execution, ExecutionOptions};
+pub use execute::{Execution, ExecutionError, ExecutionOptions};
 pub use sessions::Client;
 pub use types::*;
 pub use x11::ensure_x11;

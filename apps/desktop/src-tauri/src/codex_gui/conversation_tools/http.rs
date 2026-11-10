@@ -14,6 +14,8 @@ use crate::codex_gui::GuiState;
 
 const MAX_REQUEST_BYTES: u64 = 128_000;
 const MAX_IN_FLIGHT: usize = 16;
+// Allow bounded SSH cloud retries, connection setup, and the 120-second remote command timeout.
+const TOOL_TIMEOUT_SECONDS: &str = "480";
 
 pub(super) struct Listener {
     server: Arc<tiny_http::Server>,
@@ -37,7 +39,7 @@ impl Listener {
                 "http_headers",
                 format!("{{ Authorization = {} }}", json!(self.token)),
             ),
-            ("tool_timeout_sec", "180".into()),
+            ("tool_timeout_sec", TOOL_TIMEOUT_SECONDS.into()),
         ])
     }
 }
