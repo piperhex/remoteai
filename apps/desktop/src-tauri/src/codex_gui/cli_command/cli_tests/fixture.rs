@@ -8,6 +8,7 @@ use tiny_http::{Header, Response};
 pub(super) struct Server {
     pub url: String,
     pub requests: Arc<Mutex<Vec<String>>>,
+    pub bodies: Arc<Mutex<Vec<Value>>>,
     stop: Arc<AtomicBool>,
     worker: Option<std::thread::JoinHandle<()>>,
 }
@@ -30,15 +31,18 @@ impl Server {
             url
         };
         let requests = Arc::new(Mutex::new(Vec::new()));
+        let bodies = Arc::new(Mutex::new(Vec::new()));
         let stop = Arc::new(AtomicBool::new(false));
         let worker = {
             let requests = requests.clone();
             let stop = stop.clone();
-            std::thread::spawn(move || serve(server, catalog, requests, stop))
+            let bodies = bodies.clone();
+            std::thread::spawn(move || serve(server, catalog, requests, bodies, stop))
         };
         Self {
             url,
             requests,
+            bodies,
             stop,
             worker: Some(worker),
         }
@@ -65,6 +69,7 @@ fn serve(
     server: tiny_http::Server,
     catalog: Option<Value>,
     requests: Arc<Mutex<Vec<String>>>,
+    bodies: Arc<Mutex<Vec<Value>>>,
     stop: Arc<AtomicBool>,
 ) {
     while !stop.load(Ordering::Acquire) {
@@ -76,7 +81,14 @@ fn serve(
         };
         let path = request.url().to_owned();
         requests.lock().unwrap().push(path.clone());
-        std::io::copy(request.as_reader(), &mut std::io::sink()).unwrap();
+        let mut body = String::new();
+        request.as_reader().read_to_string(&mut body).unwrap();
+        if path.ends_with("/responses") {
+            bodies
+                .lock()
+                .unwrap()
+                .push(serde_json::from_str(&body).unwrap());
+        }
         let (status, mime, body) = match &catalog {
             Some(_) if path.ends_with("/responses") => {
                 (200, "text/event-stream", response_stream())

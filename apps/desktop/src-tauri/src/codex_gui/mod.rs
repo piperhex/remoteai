@@ -33,6 +33,7 @@ pub(crate) mod git;
 mod goals;
 mod group_members;
 pub(crate) mod help_assistant;
+mod history_access;
 mod history_page;
 mod home;
 mod icons;
@@ -48,6 +49,7 @@ mod mcp_approval;
 mod message_edit;
 mod model_catalog_cache;
 mod model_discovery;
+mod native_history;
 mod process_details;
 mod ssh_reference;
 mod tool_details;
@@ -359,7 +361,31 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
     } else {
         None
     };
-    let data = icons::resolve(method, client.request(method, params).await?).await?;
+    let native = if let Some(window) = history_window.as_ref().filter(|window| {
+        method == "thread/read" && !include_tool_details && window.defers_processes()
+    }) {
+        native_history::read(
+            params["threadId"]
+                .as_str()
+                .ok_or(GuiError::InvalidRequest)?,
+            window,
+            |method, params| client.request(method, params),
+        )
+        .await
+        .map(Some)?
+    } else {
+        None
+    };
+    let (data, native_more) = if let Some((data, more)) = native {
+        (data, more)
+    } else {
+        (client.request(method, params).await?, false)
+    };
+    let mut data = data;
+    if method == "thread/resume" {
+        history_access::resume(&mut data, |method, params| client.request(method, params)).await?;
+    }
+    let data = icons::resolve(method, data).await?;
     // Discard unrequested history before serializing IPC, away from the UI and async workers.
     tauri::async_runtime::spawn_blocking(move || {
         let mut data = data;
@@ -371,6 +397,9 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
         }
         if let Some(window) = history_window {
             history_page::apply(&mut data, &window)?;
+            if native_more {
+                data["page"]["hasMore"] = serde_json::json!(true);
+            }
         }
         // Sending or retrying a viewed conversation must not refill its folded history.
         if method == "thread/resume" && !summary_only {

@@ -38,14 +38,7 @@ impl Client {
         {
             return Ok(None);
         }
-        let response = self
-            .request_raw(
-                "thread/read",
-                json!({
-                    "threadId": request.thread_id, "includeTurns": true
-                }),
-            )
-            .await?;
+        let response = self.recent_context(&request.thread_id, 6).await?;
         let Some(body) = prediction::request_body(&response["thread"], request) else {
             return Ok(None);
         };

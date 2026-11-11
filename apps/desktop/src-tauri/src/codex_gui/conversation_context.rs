@@ -171,7 +171,7 @@ pub(super) fn reference(thread: &Value, count: usize) -> Result<Value> {
         .ok_or(GuiError::ConversationReference)?;
     let mut remaining = TOTAL_CONTEXT_CHARS / count.max(1);
     let mut messages = Vec::new();
-    let mut truncated = false;
+    let mut truncated = thread["historyTruncated"].as_bool().unwrap_or(false);
     for item in turns
         .iter()
         .rev()

@@ -40,6 +40,33 @@ pub(crate) struct HistoryWindow {
 }
 
 impl HistoryWindow {
+    pub(super) fn defers_processes(&self) -> bool {
+        self.defer_processes
+    }
+
+    pub(super) fn has_enough_history(&self, turns: &[Value]) -> bool {
+        let mut before = 0;
+        let size = self.page_size.unwrap_or(DEFAULT_PAGE_SIZE);
+        for turn in turns {
+            let starts = page_starts(turn, self);
+            let group = self
+                .start
+                .as_ref()
+                .filter(|cursor| turn["id"].as_str() == Some(cursor.turn_id.as_str()))
+                .and_then(|cursor| {
+                    items(turn)
+                        .iter()
+                        .position(|item| item["id"].as_str() == Some(cursor.item_id.as_str()))
+                })
+                .and_then(|index| starts.iter().rposition(|start| *start <= index));
+            if let Some(group) = group {
+                return !self.older || before + group >= size;
+            }
+            before += starts.len();
+        }
+        self.start.is_none() && before >= size
+    }
+
     pub(super) fn validate(&self) -> Result<()> {
         if self.page_size == Some(0) {
             return Err(GuiError::InvalidRequest);

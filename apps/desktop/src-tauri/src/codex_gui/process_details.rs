@@ -244,11 +244,10 @@ pub(super) async fn read(client: Connection, target: Target) -> Result<GuiRespon
     ] {
         protocol::id(id)?;
     }
-    let mut data = client
-        .request(
-            "thread/read",
-            json!({"threadId": target.thread_id, "includeTurns": true}),
-        )
+    let mut data =
+        super::history_access::turn(&target.thread_id, &target.turn_id, |method, params| {
+            client.request(method, params)
+        })
         .await?;
     tauri::async_runtime::spawn_blocking(move || {
         client.merge_live_history(&mut data);

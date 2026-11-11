@@ -26,3 +26,15 @@ export function pagedConversationSnapshot(thread: Thread, previous: Conversation
     ? { ...before.thread, turns: before.turns } : { ...thread, turns: [] }), details),
     historyPage: previous.historyPage };
 }
+
+/** Resume returns lifecycle only; omitted persisted turns and items are not deletions. */
+export function resumedConversationSnapshot(thread: Thread, previous?: Conversation): Conversation {
+  if (!previous) return conversation(thread);
+  const live = { ...previous.thread, turns: previous.turns };
+  const merged = mergeHistory(thread, live, live, { retainCached: true });
+  const byId = new Map(merged.turns?.map(turn => [turn.id, turn]));
+  // mergeHistory starts with the incoming tail. Restore the cached chronological prefix.
+  const order = new Set([...previous.turns.map(turn => turn.id), ...(thread.turns ?? []).map(turn => turn.id)]);
+  const turns = [...order].flatMap(id => { const turn = byId.get(id); return turn ? [turn] : []; });
+  return { ...conversation({ ...merged, turns }, previous), historyPage: previous.historyPage };
+}

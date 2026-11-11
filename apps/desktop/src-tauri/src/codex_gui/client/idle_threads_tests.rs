@@ -93,13 +93,20 @@ async fn reads_do_not_extend_lifetime_but_turn_completion_does() {
     let params = json!({"threadId": "one"});
     let thread = idle.thread("one").await;
     *thread.last_activity.lock().await = Some(old_activity());
-    for method in ["thread/read", "thread/goal/get", "thread/name/set"] {
+    for method in [
+        "thread/read",
+        "thread/turns/list",
+        "thread/items/list",
+        "thread/items/read",
+        "thread/goal/get",
+        "thread/name/set",
+    ] {
         let guard = idle.request_guard(method, &params).await;
         assert!(guard.is_some());
         assert!(idle.deletion_guard("one").await.is_err());
         drop(guard);
         idle.response(method, &params, &json!({})).await;
-        assert!(thread.expired().await);
+        assert!(thread.expired().await, "{method} renewed the idle lifetime");
     }
     idle.event("turn/completed", &params).await;
     assert!(!thread.expired().await);

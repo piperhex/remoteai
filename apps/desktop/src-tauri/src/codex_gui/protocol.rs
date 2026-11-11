@@ -329,6 +329,7 @@ impl GuiRequest {
                     params["cwd"] = json!(cwd);
                 }
                 access.apply_to_thread(&mut params);
+                params["excludeTurns"] = json!(true);
                 Ok(("thread/resume", params))
             }
             Self::Read { thread_id, .. } => {

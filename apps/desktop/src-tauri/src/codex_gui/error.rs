@@ -78,6 +78,8 @@ pub(super) enum GuiError {
     Disconnected,
     #[error("Codex 响应超时，请检查连接状态。")]
     Timeout,
+    #[error("client.errorsCodexGui.codexCouldNotCompleteTheActionCheckTheCurrentAccount")]
+    UnsupportedMethod,
     #[error("Codex 未能完成操作，请检查当前账户、模型和 Codex 配置。")]
     Rpc,
     #[error("对话正在准备，请稍后重试。")]
@@ -125,6 +127,18 @@ pub(super) enum GuiError {
 impl GuiError {
     pub(super) fn from_rpc(error: &serde_json::Value) -> Self {
         let message = error["message"].as_str().unwrap_or_default();
+        if error["code"].as_i64() == Some(-32601)
+            || (message.contains("unknown variant")
+                && [
+                    "thread/turns/list",
+                    "thread/items/list",
+                    "thread/items/read",
+                ]
+                .iter()
+                .any(|method| message.contains(method)))
+        {
+            return Self::UnsupportedMethod;
+        }
         // A first turn can be acknowledged before the CLI flushes its rollout metadata.
         if message.starts_with("failed to read thread:")
             && message.contains("rollout at ")

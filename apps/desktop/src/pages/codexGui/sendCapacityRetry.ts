@@ -1,6 +1,6 @@
 import { guiApi } from "../../../../../shared/conversation/api";
 import { CONTINUE_MESSAGE } from "../../../../../shared/conversation/continuation";
-import { conversation } from "../../../../../shared/conversation/events";
+import { resumedConversationSnapshot as conversation } from "./conversationSnapshot";
 import { modelSelectionError } from "../../../../../shared/conversation/modelSelection";
 import type { GuiState, Settings, Thread, Turn } from "../../../../../shared/conversation/types";
 

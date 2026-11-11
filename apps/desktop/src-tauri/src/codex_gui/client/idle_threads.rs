@@ -57,7 +57,12 @@ impl IdleThreads {
         // Reading history or polling goals must not keep unused tool processes alive.
         if matches!(
             method,
-            "thread/read" | "thread/goal/get" | "thread/name/set"
+            "thread/read"
+                | "thread/turns/list"
+                | "thread/items/list"
+                | "thread/items/read"
+                | "thread/goal/get"
+                | "thread/name/set"
         ) {
             return Some(self.thread(id).await.requests.clone().read_owned().await);
         }

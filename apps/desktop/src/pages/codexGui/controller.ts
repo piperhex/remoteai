@@ -18,7 +18,7 @@ import { GuiReadState } from "./threadReadState";
 import type { AttachmentReference } from "../../../../../shared/conversation/attachmentTypes";
 import { deleteGuiThread } from "./deleteThread";
 import { reduceEvent } from "../../../../../shared/conversation/events";
-import { conversationSnapshot as conversation } from './conversationSnapshot';
+import { resumedConversationSnapshot as conversation } from './conversationSnapshot';
 import { withSentMessage } from '../../../../../shared/conversation/sentMessages';
 import { acceptGuiTurn } from './acceptedTurn';
 import { MessageQueue } from "./messageQueue";

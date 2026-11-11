@@ -263,7 +263,11 @@ impl Client {
         )
         .await?;
         let (sender, receiver) = oneshot::channel();
-        self.pending.lock().await.insert(id, sender);
+        {
+            let mut pending = self.pending.lock().await;
+            pending.retain(|_, sender| !sender.is_closed());
+            pending.insert(id, sender);
+        }
         if let Err(error) = self
             .write(json!({"id": id, "method": method, "params": params}))
             .await
