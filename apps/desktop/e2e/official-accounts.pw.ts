@@ -1,7 +1,16 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
 async function capture(page: Page, info: TestInfo, state: string) {
-  if (state.endsWith('source-menu')) await expect(page.getByRole('menu')).toBeVisible();
+  if (state.endsWith('source-menu')) {
+    await expect(page.getByRole('menu')).toBeVisible();
+    await page.getByRole('menuitem', { name: 'Claude Code', exact: true }).hover();
+    await info.attach(`${state}-typography`, { contentType: 'application/json', body: JSON.stringify(
+      await page.locator('.account-source-copy').first().evaluate(copy => ({
+        title: getComputedStyle(copy.querySelector('strong')!).fontSize,
+        description: getComputedStyle(copy.querySelector('small')!).fontSize,
+      })),
+    ) });
+  }
   if (state.endsWith('methods') || state.includes('login-font20')) {
     await expect(page.getByRole('dialog', { name: '添加 / 更新 Claude Code 账户', exact: true })).toBeVisible();
   }
@@ -87,6 +96,7 @@ test('desktop local: sources, original Codex modal and both Claude login methods
   await page.reload();
   await page.getByRole('button', { name: '账户管理', exact: true }).click();
   await page.getByRole('button', { name: '添加/更新账户', exact: true }).click();
+  await capture(page, info, 'desktop-local-narrow-source-menu');
   await page.getByRole('menuitem', { name: 'Claude Code', exact: true }).click();
   await expect(page.getByRole('button', { name: '通过官方 CLI 登录' })).toBeVisible();
   await capture(page, info, 'desktop-local-narrow-font20');
@@ -139,6 +149,7 @@ test('web desktop: shared source menu and host-owned Claude accounts', async ({ 
   await page.goto('/e2e/official-accounts-web.html?font=20');
   await capture(page, info, 'web-narrow-font20');
   await page.locator('.official-account-add').click();
+  await capture(page, info, 'web-narrow-source-menu');
   await page.getByRole('menuitem', { name: 'Claude Code', exact: true }).click();
   await capture(page, info, 'web-narrow-login-font20');
   await page.getByRole('button', { name: '通过官方 CLI 登录' }).click();
@@ -160,6 +171,9 @@ test('desktop local: dark account cards show source and Claude actions', async (
   await page.goto('/');
   await page.getByRole('button', { name: '账户管理', exact: true }).click();
   await page.getByRole('button', { name: '切换到暗黑主题' }).click();
+  await page.getByRole('button', { name: '添加/更新账户', exact: true }).click();
+  await capture(page, info, 'desktop-local-dark-source-menu');
+  await page.keyboard.press('Escape');
   const card = page.locator('article[data-account-id^="claude_"]');
   await expect(card.getByText('Claude Code', { exact: true })).toBeVisible();
   await capture(page, info, 'desktop-local-dark-cards');
