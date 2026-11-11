@@ -59,6 +59,11 @@ fn compaction_is_scoped_to_a_valid_thread() {
 
 #[test]
 fn reads_include_history_and_lists_include_all_providers() {
+    let (_, resume) =
+        request(json!({"operation":"resume","threadId":"thread-1","access":"workspace-write"}))
+            .into_rpc()
+            .unwrap();
+    assert_eq!(resume["excludeTurns"], true);
     let (method, params) = request(json!({"operation": "read", "threadId": "thread-1"}))
         .into_rpc()
         .unwrap();

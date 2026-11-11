@@ -328,3 +328,40 @@ describe("Codex GUI controller", () => {
     controller.dispose();
   });
 });
+
+it("preserves a long paged history across lifecycle-only resumes, a failed send and consecutive sends", async () => {
+  const turns = Array.from({ length: 24 }, (_, i) => ({ id: `old-${i}`, status: "completed", items: [
+    { id: `answer-${i}`, type: "agentMessage", text: `answer ${i}` },
+  ] }));
+  const source = { ...thread, turns };
+  const original = vi.mocked(guiApi.request).getMockImplementation()!;
+  let sends = 0;
+  vi.mocked(guiApi.request).mockImplementation(async (request) => {
+    if (request.operation === "read") return { thread: source,
+      page: { hasMore: true, start: { turnId: "old-0", itemId: "answer-0" } } };
+    if (request.operation === "resume") return { thread: { ...source,
+      turns: [{ ...turns.at(-1)!, items: [] }] } };
+    if (request.operation === "send") {
+      sends++;
+      if (sends === 1) throw new Error("simulated timeout");
+      return { turn: { id: `new-${sends}`, status: "completed", items: [
+        { id: `new-answer-${sends}`, type: "agentMessage", text: "done" },
+      ] } };
+    }
+    return original(request);
+  });
+  const controller = new GuiController();
+  try {
+    await controller.connect();
+    await controller.select(thread.id);
+    expect(await controller.send("first attempt", [])).toBe(false);
+    expect(controller.getSnapshot().sending).toBe(false);
+    expect(await controller.send("retry", [])).toBe(true);
+    expect(await controller.send("next", [])).toBe(true);
+    const result = controller.getSnapshot().conversations.one;
+    for (const old of turns) expect(result.turns.find(turn => turn.id === old.id)?.items).toEqual(old.items);
+    expect(result.turns.some(turn => turn.id === "new-2")).toBe(true);
+    expect(result.turns.some(turn => turn.id === "new-3")).toBe(true);
+    expect(result.historyPage?.start).toEqual({ turnId: "old-0", itemId: "answer-0" });
+  } finally { controller.dispose(); }
+});

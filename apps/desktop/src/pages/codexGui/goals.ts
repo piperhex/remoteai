@@ -1,7 +1,7 @@
 import { uiText } from "../../../../../shared/localization/uiText";
 import { guiApi } from "../../../../../shared/conversation/api";
 import { modelSelectionError } from "../../../../../shared/conversation/modelSelection";
-import { conversation } from "../../../../../shared/conversation/events";
+import { resumedConversationSnapshot as conversation } from "./conversationSnapshot";
 import type { ThreadGoal } from "../../../../../shared/conversation/goalTypes";
 import type { GuiState, Thread } from "../../../../../shared/conversation/types";
 

@@ -1,6 +1,6 @@
 import { uiText } from "../../../../../shared/localization/uiText";
 import { guiApi } from "../../../../../shared/conversation/api";
-import { conversationSnapshot as conversation } from './conversationSnapshot';
+import { resumedConversationSnapshot as conversation } from './conversationSnapshot';
 import { withSentMessage } from "../../../../../shared/conversation/sentMessages";
 import { queueSendError } from "./queueSendError";
 import { modelSelectionError } from "../../../../../shared/conversation/modelSelection";

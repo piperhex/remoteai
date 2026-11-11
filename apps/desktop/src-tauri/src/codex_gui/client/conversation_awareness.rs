@@ -33,10 +33,7 @@ impl Client {
         let count = references.len();
         // Read each source without resuming it or changing its running turn.
         let snapshots = join_all(references.iter().map(|id| async move {
-            let thread = self
-                .context_thread(id, true)
-                .await
-                .map_err(|_| GuiError::ConversationReference)?;
+            let thread = self.reference_context(id).await?;
             context::reference(&thread, count)
         }))
         .await
@@ -68,7 +65,7 @@ impl Client {
             .flatten();
         let running = join_all(active.iter().map(|(id, turn)| async move {
             // A just-created running thread may not have persisted history yet; its ID remains useful.
-            let thread = self.context_thread(id, false).await.unwrap_or(Value::Null);
+            let thread = self.context_thread(id).await.unwrap_or(Value::Null);
             let mut summary = context::summary(id, &thread);
             summary["threadId"] = json!(id);
             summary["turnId"] = json!(turn);
@@ -81,12 +78,27 @@ impl Client {
         )
     }
 
-    async fn context_thread(&self, id: &str, include_turns: bool) -> Result<Value> {
+    pub(super) async fn recent_context(&self, id: &str, limit: usize) -> Result<Value> {
+        crate::codex_gui::history_access::recent(id, limit, |method, params| {
+            self.request_raw(method, params)
+        })
+        .await
+    }
+
+    async fn reference_context(&self, id: &str) -> Result<Value> {
+        let mut response = timeout(SNAPSHOT_TIMEOUT, self.recent_context(id, 12))
+            .await
+            .map_err(|_| GuiError::Timeout)??;
+        workspaces::hide_project_paths(&mut response, &self.projectless_root);
+        Ok(response["thread"].take())
+    }
+
+    async fn context_thread(&self, id: &str) -> Result<Value> {
         let mut response = timeout(
             SNAPSHOT_TIMEOUT,
             self.request_raw(
                 "thread/read",
-                json!({"threadId": id, "includeTurns": include_turns}),
+                json!({"threadId": id, "includeTurns": false}),
             ),
         )
         .await
