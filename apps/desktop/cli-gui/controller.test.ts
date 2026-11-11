@@ -33,7 +33,10 @@ function setup(intercept?: (request: CliRequest) => Promise<unknown> | undefined
 describe('per-conversation CLI state', () => {
   it.each(['claude', 'gemini'] as const)('sends %s projectless drafts with the original permission ID', async engine => {
     const { controller, calls } = setup();
+    await controller.refresh();
     controller.patch({ engine, model: 'test', cwd: '', mode: 'plan', draft: 'A general question' });
+    await controller.loadCatalog();
+    controller.patch({ mode: 'plan' });
     await controller.send();
     expect(calls).toContainEqual(expect.objectContaining({ engine, action: 'create', cwd: '', mode: 'plan' }));
     expect(calls).toContainEqual(expect.objectContaining({ engine, action: 'send', text: 'A general question' }));
@@ -69,6 +72,7 @@ describe('per-conversation CLI state', () => {
     const { controller, calls } = setup(input => input.action === 'create' ? created.promise : undefined);
     await controller.refresh();
     controller.chooseEngine('claude'); controller.patch({ cwd: '/project', model: 'test' }); controller.edit('hello');
+    await controller.loadCatalog();
     const sending = controller.send();
     controller.showCodex();
     created.resolve(conversation('created'));
@@ -82,6 +86,7 @@ describe('per-conversation CLI state', () => {
     const { controller, calls } = setup(input => input.action === 'send'
       ? Promise.reject(new Error('client.cliGui.connectionFailed')) : undefined);
     controller.open(conversation('existing', 'gemini')); controller.edit('retry me');
+    await vi.waitFor(() => expect(controller.getSnapshot().catalog?.status).toBe('ready'));
     await controller.send();
     expect(controller.getSnapshot().draft).toBe('retry me');
     await controller.act({ engine: 'gemini', action: 'approve', id: 'existing',

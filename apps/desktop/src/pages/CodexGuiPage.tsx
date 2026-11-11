@@ -192,8 +192,6 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
       {external && cli && <CliConversationPane cwd={project} dictation={dictationClient}
         active={workspaceActive} renderMessages={props => <CliLocalMessages {...props} />}
         renderComposer={props => <CliLocalComposer {...props} />}
-        modelSource={{ models: state.models, loading: state.modelCatalogLoading,
-          error: state.modelCatalogError, refresh: controller.refreshModels }}
         projectPicker={<ProjectPicker value={workspaceProject} projects={state.projects} hostPicker={hostPicker}
           gitEnabled={!cli.state.selected} onBusyChange={controller.setWorkspaceBusy}
           actions={<>

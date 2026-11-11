@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "../src/vite-env.d.ts",
+    "../cli-gui/controller.test.ts",
+    "../cli-gui/controller.models.test.ts",
+    "../cli-gui/modelSelection.test.ts",
+    "../cli-gui/service.models.test.ts",
+    "../e2e/cli-model-send.pw.ts"
+  ],
+  "exclude": []
+}

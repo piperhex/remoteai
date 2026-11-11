@@ -4,6 +4,7 @@ import { CliRuntime } from './runtime';
 import { permission, session, timelineEntry } from './mapping';
 import { CliWorkspaces } from './workspaces';
 import { claudeAccountEnvironment, selectedClaudeAccount } from './claudeAccounts';
+import { cliRequestEffort } from '../../../shared/cli-gui/modelSelection';
 
 const OWNERSHIP = { remoteai: 'cli-gui' };
 const HISTORY_PAGE_SIZE = 100;
@@ -98,7 +99,8 @@ export class CliService {
   private async configureMessage(agent: PaseoAgentHandle, request: Extract<CliRequest, { action: 'send' }>) {
     const native = agent.current();
     if (native?.labels.remoteaiClaudeAccount) {
-      if (request.model && request.model !== native.model) throw new Error('client.cliGui.invalidRequest');
+      if (!native.model || request.model && request.model !== native.model) throw new Error('client.cliGui.invalidRequest');
+      cliRequestEffort({ id: native.model, label: native.model }, request.effort);
       return;
     }
     const bridge = await this.runtime.accountBridge();
@@ -109,8 +111,8 @@ export class CliService {
     const models = await bridge.models();
     const chosen = models.find(entry => entry.id === model);
     if (!chosen) throw new Error('client.cliGui.accountUnavailable');
-    const effort = request.effort ?? previous?.effort;
-    if (effort && !chosen.efforts?.some(entry => entry.id === effort)) throw new Error('client.cliGui.invalidRequest');
+    const effort = cliRequestEffort(chosen,
+      request.effort ?? (previous?.model === chosen.id ? previous.effort : undefined));
     await bridge.update(routeId, chosen.id, effort);
   }
 
@@ -171,10 +173,12 @@ export class CliService {
   private async create(client: PaseoClient, request: Extract<CliRequest, { action: 'create' }>) {
     const discoveryCwd = await this.workspaces.directory(request.cwd);
     const catalog = await this.catalog(client, request.engine, discoveryCwd);
-    if (!catalog.models.some(model => model.id === request.model)
+    const chosen = catalog.models.find(model => model.id === request.model);
+    if (!chosen
       || request.mode && !catalog.modes.some(mode => mode.id === request.mode)) {
       throw new Error('client.cliGui.unavailable');
     }
+    const effort = cliRequestEffort(chosen, request.effort);
     const binding = request.engine === 'claude' ? await selectedClaudeAccount(this.runtime.root) : null;
     if (binding) {
       const agent = await client.agents.create({ cwd: await this.workspaces.directory(request.cwd, true),
@@ -186,7 +190,7 @@ export class CliService {
       return this.session(snapshot.agent, request.engine);
     }
     const bridge = await this.runtime.accountBridge();
-    const routeId = await bridge.route(request.model, request.effort);
+    const routeId = await bridge.route(request.model, effort);
     const providers = await client.providers.waitForReady({ cwd: discoveryCwd, timeoutMs: 30_000 });
     const nativeModels = providers.entries.find(entry => entry.provider === request.engine)?.models ?? [];
     const nativeModel = nativeModels.find(model => model.isDefault)?.id ?? nativeModels[0]?.id;
