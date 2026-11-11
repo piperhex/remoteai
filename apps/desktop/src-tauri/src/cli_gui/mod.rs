@@ -1,4 +1,5 @@
 //! Isolated multi-CLI worker. All process and filesystem work stays off the UI thread.
+mod node;
 mod process;
 mod protocol;
 #[cfg(windows)]
@@ -8,6 +9,7 @@ use std::sync::Arc;
 use tauri::{AppHandle, State};
 use tokio::sync::Mutex;
 
+pub(crate) use node::executable as node_executable;
 pub(crate) use protocol::Request;
 type Result<T> = std::result::Result<T, Error>;
 

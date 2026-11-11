@@ -3,7 +3,7 @@ use serde::Serialize;
 use std::{
     collections::HashMap,
     io::{Read, Write},
-    path::Path,
+    path::{Path, PathBuf},
     process::{ChildStdin, Stdio},
     sync::{Arc, Mutex, OnceLock},
     time::{Duration, Instant},
@@ -46,7 +46,7 @@ fn session(id: &str) -> Result<Arc<Mutex<Session>>> {
         .ok_or(Error::Expired)
 }
 
-pub(super) fn start(root: &Path, account_id: Option<String>) -> Result<LoginStatus> {
+pub(super) fn start(root: &Path, account_id: Option<String>, node: PathBuf) -> Result<LoginStatus> {
     let previous = account_id
         .as_deref()
         .map(|id| store::read(root, id))
@@ -70,7 +70,7 @@ pub(super) fn start(root: &Path, account_id: Option<String>) -> Result<LoginStat
     if logins.len() >= MAX_LOGINS {
         return Err(Error::Busy);
     }
-    let mut child = cli::command(root, Some(&directory))?
+    let mut child = cli::command(root, Some(&directory), &node)?
         .args(["auth", "login", "--claudeai"])
         // The CLI prints its own authorization URL; the requesting client opens it on the right computer.
         .env("BROWSER", "echo")
@@ -105,7 +105,7 @@ pub(super) fn start(root: &Path, account_id: Option<String>) -> Result<LoginStat
     std::thread::spawn(move || {
         let result = await_login(&mut child, &state);
         let result = result.and_then(|()| {
-            cli::identity(&root, &directory)?;
+            cli::identity(&root, &directory, &node)?;
             super::native::snapshot(&directory)
         });
         if let Ok(mut session) = state.lock() {

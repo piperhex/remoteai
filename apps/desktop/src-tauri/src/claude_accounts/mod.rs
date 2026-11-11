@@ -112,7 +112,9 @@ fn execute<R: Runtime>(app: &tauri::AppHandle<R>, request: Request) -> Result<Va
         Request::List => return serialized(store::list_root(&root)?),
         Request::Start { account_id, method } => {
             return serialized(match method {
-                LoginMethod::Cli => login::start(&root, account_id)?,
+                LoginMethod::Cli => {
+                    login::start(&root, account_id, crate::cli_gui::node_executable(app))?
+                }
                 LoginMethod::Pkce => pkce_login::start(account_id)?,
             })
         }

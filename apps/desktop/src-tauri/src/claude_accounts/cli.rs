@@ -27,7 +27,7 @@ pub(super) struct Identity {
 }
 
 /// Resolve only CLI binaries or the npm package's documented executable; never Claude Desktop.
-pub(super) fn command(root: &Path, directory: Option<&Path>) -> Result<Command> {
+pub(super) fn command(root: &Path, directory: Option<&Path>, node: &Path) -> Result<Command> {
     let package = root.join("cli-gui/runtime/node_modules/@anthropic-ai/claude-code");
     let native = package.join(if cfg!(windows) {
         "bin/claude.exe"
@@ -37,7 +37,7 @@ pub(super) fn command(root: &Path, directory: Option<&Path>) -> Result<Command> 
     let mut command = if native.is_file() {
         Command::new(native)
     } else if package.join("cli.js").is_file() {
-        let mut command = Command::new("node");
+        let mut command = Command::new(node);
         command.arg(package.join("cli.js"));
         command
     } else {
@@ -79,8 +79,8 @@ fn installed_binary() -> Option<PathBuf> {
         })
 }
 
-pub(super) fn identity(root: &Path, directory: &Path) -> Result<Identity> {
-    let mut child = command(root, Some(directory))?
+pub(super) fn identity(root: &Path, directory: &Path, node: &Path) -> Result<Identity> {
+    let mut child = command(root, Some(directory), node)?
         .args(["auth", "status", "--json"])
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -113,3 +113,7 @@ pub(super) fn identity(root: &Path, directory: &Path) -> Result<Identity> {
     }
     Ok(identity)
 }
+
+#[cfg(all(test, windows))]
+#[path = "cli_windows_tests.rs"]
+mod windows_tests;
