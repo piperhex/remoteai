@@ -85,3 +85,60 @@ it('loads history when joining a running conversation and keeps its live tail', 
   expect(state.conversations.chat.activeTurn).toBe('live');
   expect(state.conversations.chat.historyPage?.hasMore).toBe(true);
 });
+
+it('keeps a refreshed final reply and new turn when the older snapshot completes last', async () => {
+  await history.select('chat', () => true);
+  const stalePage = sliceHistory(source, { start: state.conversations.chat.historyPage?.start, older: true });
+  let finish!: (value: unknown) => void;
+  vi.mocked(guiApi.request).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  const reading = history.loadOlder('chat', () => true);
+  const refreshed: Thread = { ...source, turns: [
+    { ...source.turns![0], items: source.turns![0].items.map(item => item.id === 'item-34'
+      ? { ...item, text: 'Final reply after refresh' } : item) },
+    { id: 'new-turn', status: 'completed', items: [{ id: 'new-answer', type: 'agentMessage', text: 'New answer' }] },
+  ] };
+  vi.mocked(guiApi.request).mockResolvedValueOnce(sliceHistory(refreshed,
+    { start: state.conversations.chat.historyPage?.start }));
+  await history.loadRemote('chat');
+  finish(stalePage); await reading;
+  expect(ids()).toHaveLength(21);
+  expect(new Set(ids()).size).toBe(21);
+  expect(state.conversations.chat.turns[0].items.at(-1)?.text).toBe('Final reply after refresh');
+  expect(ids().at(-1)).toBe('new-answer');
+  expect(state.conversations.chat.historyPage).toEqual(stalePage.page);
+});
+
+it('starts a new pagination lifetime immediately after reselecting the same ID', async () => {
+  await history.select('chat', () => true);
+  const result = sliceHistory(source, { start: state.conversations.chat.historyPage?.start, older: true });
+  let finishOld!: (value: unknown) => void;
+  let finishNew!: (value: unknown) => void;
+  vi.mocked(guiApi.request).mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve; }));
+  let generation = 1;
+  const old = history.loadOlder('chat', () => generation === 1);
+  generation++;
+  await history.select('chat', () => true);
+  vi.mocked(guiApi.request).mockImplementationOnce(() => new Promise(resolve => { finishNew = resolve; }));
+  const next = history.loadOlder('chat', () => generation === 2);
+  expect(next).not.toBe(old);
+  finishOld(result); await old;
+  expect(ids()).toHaveLength(10);
+  expect(history.loadOlder('chat', () => generation === 2)).toBe(next);
+  finishNew(result); await next;
+  expect(ids()).toHaveLength(20);
+});
+
+it.each(['clear', 'cursor', 'identity'] as const)('ignores an older page after %s changes', async change => {
+  await history.select('chat', () => true);
+  const result = sliceHistory(source, { start: state.conversations.chat.historyPage?.start, older: true });
+  let finish!: (value: unknown) => void;
+  vi.mocked(guiApi.request).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  const reading = history.loadOlder('chat', () => true);
+  if (change === 'clear') state = { ...state, conversations: {} };
+  if (change === 'cursor') state.conversations.chat = { ...state.conversations.chat,
+    historyPage: { start: { turnId: 'replacement', itemId: 'first' }, hasMore: true } };
+  if (change === 'identity') result.thread = { ...result.thread, id: 'wrong' };
+  const before = state;
+  finish(result); await reading;
+  expect(state).toBe(before);
+});

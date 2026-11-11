@@ -549,6 +549,7 @@ export class GuiController {
 
   activate = () => { this.disposed = false; this.modelCatalog.activate(); };
   suspend = () => {
+    ++this.selectionGeneration;
     void watchConversation(this, null).catch(this.report);
     this.threadList.invalidate();
     this.modelCatalog.suspend();
@@ -557,6 +558,7 @@ export class GuiController {
     this.patch({ ...reduceEvent(this.state, { method: "connection/closed", params: {} }), error: "" });
   };
   dispose = () => {
+    ++this.selectionGeneration;
     void watchConversation(this, null).catch(error => console.error('Could not release conversation subscription', error));
     this.flushStream();
     this.threadList.invalidate();

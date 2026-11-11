@@ -29,7 +29,7 @@ pub(super) struct Client {
     alive: AtomicBool,
 }
 
-fn paths(app: &AppHandle) -> Result<(PathBuf, PathBuf)> {
+fn paths(app: &AppHandle) -> Result<(PathBuf, PathBuf, PathBuf)> {
     let root = app
         .path()
         .app_data_dir()
@@ -50,7 +50,7 @@ fn paths(app: &AppHandle) -> Result<(PathBuf, PathBuf)> {
     if !resource.is_file() {
         return Err(Error::Startup);
     }
-    Ok((root, resource))
+    Ok((root, resource, super::node_executable(app)))
 }
 
 impl Client {
@@ -60,16 +60,10 @@ impl Client {
 
     pub(super) async fn start(app: AppHandle) -> Result<Arc<Self>> {
         let path_app = app.clone();
-        let (root, script) = tauri::async_runtime::spawn_blocking(move || paths(&path_app))
-            .await
-            .map_err(|_| Error::Startup)??;
-        let bundled_node = script
-            .parent()
-            .and_then(|path| path.parent())
-            .map(|path| path.join("desktop-service/node.exe"));
-        let executable = bundled_node
-            .filter(|path| cfg!(windows) && path.is_file())
-            .unwrap_or_else(|| PathBuf::from("node"));
+        let (root, script, executable) =
+            tauri::async_runtime::spawn_blocking(move || paths(&path_app))
+                .await
+                .map_err(|_| Error::Startup)??;
         let log_root = root.clone();
         let log = tauri::async_runtime::spawn_blocking(move || {
             std::fs::File::create(log_root.join("worker.log"))

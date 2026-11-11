@@ -65,8 +65,12 @@ Run the desktop build, `cli-gui/*.test.ts` using the desktop Vitest config, and 
 in `.codex-tmp/cli-gui-accounts` against a controlled account-proxy fixture. It verifies model selection and
 real CLI replies without making paid model requests. Rust HTTP tests separately verify the shared GUI
 provider route and credential isolation. `test-cli-gui-acp.mjs` exercises the real daemon against a deterministic ACP executable, including
-permission round trips, restart history, interruption and archived history. Its executable and native
-transcript files stay inside the same disposable smoke-test directory.
+permission round trips, restart history, interruption and archived history. Run it directly with
+`node apps/desktop/scripts/test-cli-gui-acp.mjs`: it builds its own host and npm progress helper, installs
+the pinned runtime in a new temporary directory, then repeats the scenario using that installation's cache.
+No previous smoke run or readiness marker is required. Each pass has a deadline; the test cleans its own
+processes and temporary directory without touching other smoke caches. Process failure and timeout coverage
+runs with `node --test apps/desktop/scripts/cli-gui-acp-process.test.mjs`.
 
 `apps/desktop/e2e/cli-gui.pw.ts` exercises the production local/remote/Web UI with controlled transport fixtures.
 It covers per-conversation selection, distinct versions, exact approval choices, history, one-click installation,
