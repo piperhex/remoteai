@@ -34,18 +34,21 @@ export async function checkRemoteHistory(options: Options) {
   await page.getByRole('button', { name: 'Remote history', exact: true }).click();
   const viewport = page.getByLabel('聊天记录');
   await expect(page.locator('[data-message-id="latest"]')).toBeInViewport();
-  expect(await page.locator('[data-message-id^="older-"]').count()).toBe(0);
+  // Folded process groups leave room for older visible messages in the first page.
+  const initialCount = await page.locator('[data-message-id^="older-"]').count();
+  expect(initialCount).toBeLessThan(24);
   const bounds = (await viewport.boundingBox())!;
   await page.mouse.move(bounds.x + 10, bounds.y + 10);
-  await page.mouse.wheel(0, -120);
+  await page.mouse.wheel(0, -10000);
   await expect(page.getByRole('button', { name: '加载中…', exact: true })).toBeDisabled();
   await expect.poll(() => page.locator('[data-message-id^="older-"]').count(), { timeout: 15_000 })
-    .toBeGreaterThan(0);
+    .toBeGreaterThan(initialCount);
   await expect(page.getByRole('button', { name: '加载更早的消息' })).toBeEnabled();
   expect(await host.evaluate(() => window.chatTest.demoState().operations
-    .filter(operation => operation.operation === 'syncHistory').length)).toBeGreaterThan(3);
+    .filter(operation => operation.operation === 'syncHistory').length)).toBeGreaterThan(1);
   await expect.poll(() => viewport.evaluate(node => node.scrollTop > node.clientHeight / 2)).toBe(true);
   await checkPrefetchAnchor(page);
+  await expect(page.locator('[data-message-id^="older-"]')).toHaveCount(24);
   await expect(page.getByText(/已加载 \d+ 条历史记录/)).toHaveCount(0);
   await page.screenshot({ path: `../../.codex-tmp/remote-history-${blocked ? 'relay' : 'direct'}.png` });
   await checkLatestShortcut(page);

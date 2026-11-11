@@ -1,5 +1,6 @@
 //! Uses the installed CLI and local HTTP fixtures; no account or model credits are needed.
 mod fixture;
+mod paged_history;
 
 use serde_json::{json, Value};
 use std::{path::Path, process::Stdio, time::Duration};

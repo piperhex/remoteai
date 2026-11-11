@@ -33,14 +33,18 @@ test("defers closed history and renders complete tool output on expansion", asyn
   await page.locator('[data-message-id="long"] > details > summary').click();
   const log = page.locator('[data-message-id="long"]');
   const content = log.getByRole("region", { name: "工具内容" });
-  await expect.poll(() => content.evaluate((node, text) => node.textContent === text, output)).toBe(true);
+  await expect.poll(() => content.evaluate((node, text) => ({
+    length: node.textContent?.length, complete: node.textContent === text,
+  }), output)).toEqual({ length: output.length, complete: true });
   await expect(log.getByRole("button", { name: "下一段", exact: true })).toHaveCount(0);
   await content.hover();
   await page.mouse.wheel(0, 20_000);
   await expect.poll(() => content.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
   await page.mouse.wheel(0, -100_000);
   await expect.poll(() => content.evaluate((node) => node.scrollTop)).toBe(0);
-  await expect.poll(() => content.evaluate((node, text) => node.textContent === text, output)).toBe(true);
+  await expect.poll(() => content.evaluate((node, text) => ({
+    length: node.textContent?.length, complete: node.textContent === text,
+  }), output)).toEqual({ length: output.length, complete: true });
   await page.getByLabel("消息", { exact: true }).fill("展开日志后仍可输入");
   await expect(page.getByLabel("消息", { exact: true })).toHaveValue("展开日志后仍可输入");
   await page.screenshot({ path: "../../.codex-tmp/tool-output-scroll.png", animations: "disabled" });
