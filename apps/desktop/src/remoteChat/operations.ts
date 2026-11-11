@@ -62,6 +62,7 @@ import { SYNC_OPERATION } from '../../../../shared/conversation/sync/types';
 import { RemoteConversationSync } from './conversationSync';
 
 const OPERATIONS = new Set([
+  'recoveryList', 'recoveryDecide',
   'toolDetails',
   'processDetails',
   'projectFileRead', 'projectFileBlame', 'projectFileWrite', 'projectEntryAction',
@@ -95,6 +96,7 @@ function terminalLinkRequest(request: RpcRequest): Cached['terminalLink'] {
     action: udpActions[String(stream.type)] ?? stream.type };
 }
 const READ_OPERATIONS = new Set([
+  'recoveryList',
   'toolDetails',
   'processDetails',
   'viewThread',
@@ -398,7 +400,7 @@ export class ChatOperations {
       this.titles.refreshSettings();
       return body === undefined ? approvals
         : { ...chatHandshake, approvals, fileBulkV1: true, filePreviewsV1: true, portStreamsV1: true,
-          conversationViewsV1: true };
+          conversationViewsV1: true, taskRecoveryV1: true };
     } catch (error) { throw new Error(guiConnectionError(error)); }
   }
 
