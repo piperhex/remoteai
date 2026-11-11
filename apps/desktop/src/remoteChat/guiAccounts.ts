@@ -7,6 +7,7 @@ import { providerWebsiteOrigin } from '../../../../shared/provider-market/provid
 import { switchGuiAccount } from '../pages/codexGui/session';
 import { uiText } from "../../../../shared/localization/uiText";
 import { accountSource, accountSourceLabel } from '../../../../shared/accounts/source';
+import type { GuiEngine } from '../../../../shared/cli-gui/types';
 
 function remainingPercent(value: number | undefined) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
@@ -61,8 +62,11 @@ export async function readGuiAccounts(): Promise<GuiAccountsSnapshot> {
 export async function selectGuiAccount(value: unknown): Promise<GuiAccountSelection> {
   const selection = object(value);
   if (!['account', 'provider', 'aggregate'].includes(String(selection.kind))
-    || typeof selection.id !== 'string' || !selection.id.trim() || selection.id.length > 160) {
+    || typeof selection.id !== 'string' || !selection.id.trim() || selection.id.length > 160
+    || (selection.engine !== undefined && selection.engine !== 'codex'
+      && selection.engine !== 'claude' && selection.engine !== 'gemini')) {
     return Promise.reject(new Error('请选择可用账户。'));
   }
-  return switchGuiAccount({ kind: selection.kind as 'account' | 'provider' | 'aggregate', id: selection.id });
+  return switchGuiAccount({ kind: selection.kind as 'account' | 'provider' | 'aggregate', id: selection.id },
+    selection.engine as GuiEngine | undefined);
 }

@@ -4,6 +4,8 @@ import { Settings } from "lucide-react";
 import { message } from 'antd';
 import { accountSource, accountSourceLabel } from '../../../../../shared/accounts/source';
 import { useCliGui } from '../../../../../shared/cli-gui/context';
+import { guiAccountSelectionForEngine, isGuiAccountSelected } from '../../../../../shared/remote-chat/guiAccounts';
+import type { GuiAccountSelection } from '../../../../../shared/remote-chat/guiAccounts';
 import { claudeAccountError } from '../../../../../shared/accounts/claudeAccounts';
 import type { Account, AggregateApi, Provider } from "../../types";
 import { maskAccountEmail } from "../../../../../shared/accounts/privacy";
@@ -39,10 +41,12 @@ export function ProxyAccountPicker(props: ProxyAccountPickerProps) {
   const [error, setError] = useState("");
   const switching = useRef(false);
   const trigger = useRef<HTMLButtonElement>(null);
-  const source = cli?.state.engine === 'claude' ? 'claudeCode' : 'codex';
-  const provider = source === 'codex' ? props.providers.find((entry) => entry.active) : undefined;
-  const aggregate = source === 'codex' ? props.aggregateApis.find((entry) => entry.active) : undefined;
-  const account = props.accounts.find((entry) => entry.active && accountSource(entry) === source);
+  const selection = guiAccountSelectionForEngine(proxySelection(props), props.accounts, cli?.state.engine);
+  const selected = (kind: 'account' | 'provider' | 'aggregate', id: string) =>
+    isGuiAccountSelected({ kind, id }, selection);
+  const provider = props.providers.find(entry => selected('provider', entry.id));
+  const aggregate = props.aggregateApis.find(entry => selected('aggregate', entry.id));
+  const account = props.accounts.find(entry => selected('account', entry.id));
   const thirdParty = Boolean(provider || aggregate);
   const email = account?.email && (props.privacyMode ? maskAccountEmail(account.email) : account.email);
   const name = aggregate?.name || provider?.name || email || uiText("client.conversation.chooseGuiAccount");
@@ -54,18 +58,17 @@ export function ProxyAccountPicker(props: ProxyAccountPickerProps) {
     accountDetails: accountSource(entry) === 'claudeCode' ? undefined : { plan: entry.plan,
       primaryRemainingPercent: entry.usage?.primary?.remainingPercent,
       secondaryRemainingPercent: entry.usage?.secondary?.remainingPercent },
-    selected: entry.active && (accountSource(entry) === 'claudeCode'
-      || !props.providers.some(provider => provider.active) && !props.aggregateApis.some(aggregate => aggregate.active)),
+    selected: selected('account', entry.id),
     disabled: accountSource(entry) !== 'claudeCode' && !entry.localProxyCompatible,
   }));
   const providers = props.providers.map((entry) => ({
     kind: "provider" as const, id: entry.id, name: entry.name, detail: entry.group || entry.model,
     websiteUrl: providerWebsiteOrigin(entry),
-    selected: !props.aggregateApis.some(aggregate => aggregate.active) && entry.active,
+    selected: selected('provider', entry.id),
   }));
   const aggregates = props.aggregateApis.map((entry) => ({
     kind: "aggregate" as const, id: entry.id, name: entry.name, detail: entry.model,
-    selected: entry.active, disabled: !entry.enabled || !props.onSwitchAggregate,
+    selected: selected('aggregate', entry.id), disabled: !entry.enabled || !props.onSwitchAggregate,
   }));
   useEffect(() => {
     if (!props.active) { setOpen(false); setSettingsOpen(false); }
@@ -112,4 +115,13 @@ export function ProxyAccountPicker(props: ProxyAccountPickerProps) {
       accounts={props.accounts.filter(account => accountSource(account) === 'codex')} providers={props.providers}
       privacyMode={props.privacyMode} onClose={() => { setSettingsOpen(false); trigger.current?.focus(); }} />}
   </>;
+}
+
+function proxySelection(props: ProxyAccountPickerProps): GuiAccountSelection {
+  const aggregate = props.aggregateApis.find(entry => entry.active);
+  if (aggregate) return { kind: 'aggregate', id: aggregate.id };
+  const provider = props.providers.find(entry => entry.active);
+  if (provider) return { kind: 'provider', id: provider.id };
+  const account = props.accounts.find(entry => entry.active && accountSource(entry) === 'codex');
+  return account ? { kind: 'account', id: account.id } : { kind: 'none' };
 }

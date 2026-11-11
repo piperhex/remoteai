@@ -8,6 +8,10 @@ import { ProxyAccountPicker, type ProxyAccountPickerProps } from "./ProxyAccount
 import { useUsageStatus } from "./useUsageStatus";
 import detailsStyles from "../../../../../shared/conversation/ProxyAccountDetails.module.less";
 import type { GuiAutoSwitchSettings } from "../../../../../shared/conversation/autoSwitchSettings";
+import type { GuiEngine } from '../../../../../shared/cli-gui/types';
+
+let engine: GuiEngine;
+vi.mock('../../../../../shared/cli-gui/context', () => ({ useCliGui: () => ({ state: { engine } }) }));
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn(), queryProviderBalance: vi.fn(),
   subscribeToProviderBalance: vi.fn(), isHostedWebApp: false, canManageCodexConnection: true }));
@@ -55,6 +59,7 @@ it('lets Claude defaults switch from the account list without proxy compatibilit
 });
 
 beforeEach(() => {
+  engine = 'codex';
   vi.useFakeTimers();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addListener: vi.fn(), removeListener: vi.fn() })));
@@ -70,6 +75,30 @@ beforeEach(() => {
     aggregateApis: [],
     busy: false, loading: false, onSwitchAccount: vi.fn().mockResolvedValue(true),
     onSwitchProvider: vi.fn().mockResolvedValue(true) };
+});
+
+it('keeps both defaults in the list but selects only the current engine, including proxy fallback', async () => {
+  const claude = { ...account, id: `claude_${'b'.repeat(32)}`, accountSource: 'claudeCode',
+    email: 'claude@example.test', active: true };
+  props.accounts.push(claude);
+  props.providers = [{ ...provider, active: true }];
+  await render(); await click(trigger());
+  expect(option(claude.email).getAttribute('aria-pressed')).toBe('false');
+  expect(option(provider.name).getAttribute('aria-pressed')).toBe('true');
+  engine = 'claude'; await render();
+  expect(trigger().textContent).toContain(claude.email);
+  expect(option(claude.email).getAttribute('aria-pressed')).toBe('true');
+  expect(option(provider.name).getAttribute('aria-pressed')).toBe('false');
+  expect(option(account.email).getAttribute('aria-pressed')).toBe('false');
+  engine = 'gemini'; await render();
+  expect(trigger().textContent).toContain(provider.name);
+  expect(option(claude.email).getAttribute('aria-pressed')).toBe('false');
+  expect(option(provider.name).getAttribute('aria-pressed')).toBe('true');
+  engine = 'claude';
+  props.accounts = props.accounts.map(entry => ({ ...entry, active: false }));
+  await render();
+  expect(trigger().textContent).toContain(provider.name);
+  expect(option(provider.name).getAttribute('aria-pressed')).toBe('true');
 });
 afterEach(async () => {
   await act(async () => root.unmount());

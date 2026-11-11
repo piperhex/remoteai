@@ -5,6 +5,12 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { GuiAccountsClient, GuiAccountsSnapshot } from '../../../../../../shared/remote-chat/guiAccounts';
 import { RemoteAccountPicker } from '../../../../../../shared/conversation/remote/RemoteAccountPicker';
 import type { GuiComputerNavigation } from '../../../../../../shared/conversation/remote/types';
+import type { GuiEngine } from '../../../../../../shared/cli-gui/types';
+
+let engine: GuiEngine | undefined;
+vi.mock('../../../../../../shared/cli-gui/context', () => ({
+  useCliGui: () => engine ? { state: { engine } } : null,
+}));
 
 let root: Root;
 let container: HTMLDivElement;
@@ -54,11 +60,20 @@ it('switches Claude in the main list, refreshes its default and removes the sepa
   expect(client.select).toHaveBeenCalledWith({ kind: 'account', id: claude.id });
   await accounts();
   const selected = Array.from(accountList().querySelectorAll('button')).find(row => row.textContent?.includes(claude.name))!;
+  expect(selected.getAttribute('aria-pressed')).toBe('false');
+  expect(container.textContent).toContain('remote@example.com');
+  engine = 'claude'; await render();
   expect(selected.getAttribute('aria-pressed')).toBe('true');
+  expect(accountList().querySelectorAll('[aria-pressed="true"]')).toHaveLength(1);
+  expect(container.textContent).toContain(claude.name);
+  engine = 'gemini'; await render();
+  expect(selected.getAttribute('aria-pressed')).toBe('false');
+  expect(accountList().querySelectorAll('[aria-pressed="true"]')).toHaveLength(1);
   expect(container.textContent).toContain('remote@example.com');
 });
 
 beforeEach(() => {
+  engine = undefined;
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.stubGlobal('matchMedia', () => ({ matches: false, addListener() {}, removeListener() {} }));
   const original = window.getComputedStyle;
@@ -72,6 +87,25 @@ beforeEach(() => {
   const current = { deviceId: 'work-pc', name: 'Work PC', online: true, platform: 'windows' };
   computers = { current, devices: [current, { ...current, deviceId: 'offline', name: 'Offline PC', online: false }],
     authenticated: true, loading: false, error: '', choose: vi.fn(), refresh: vi.fn(), login: vi.fn() };
+});
+
+it('shows the proxy fallback in Claude mode and includes the engine when switching away from native', async () => {
+  engine = 'claude';
+  const native = { kind: 'account' as const, id: 'claude-native', name: 'claude@example.test', detail: 'Claude Code',
+    accountSource: 'claudeCode', active: true, available: true };
+  vi.mocked(client.read).mockResolvedValue({ ...accountSnapshot, choices: [...accountSnapshot.choices, native] });
+  await render(); await accounts();
+  const provider = Array.from(accountList().querySelectorAll('button')).find(row =>
+    row.textContent?.includes('Remote Provider'))!;
+  expect(provider.getAttribute('aria-pressed')).toBe('false');
+  vi.mocked(client.read).mockResolvedValue({ ...accountSnapshot, selection: { kind: 'provider', id: 'remote-provider' },
+    choices: [...accountSnapshot.choices, { ...native, active: false }] });
+  await click(provider);
+  expect(client.select).toHaveBeenCalledWith({ kind: 'provider', id: 'remote-provider', engine: 'claude' });
+  expect(container.textContent).toContain('Remote Provider');
+  await accounts();
+  expect(accountList().querySelectorAll('[aria-pressed="true"]')).toHaveLength(1);
+  expect(accountList().querySelector('[aria-pressed="true"]')?.textContent).toContain('Remote Provider');
 });
 afterEach(async () => {
   await act(async () => root.unmount()); container.remove();
