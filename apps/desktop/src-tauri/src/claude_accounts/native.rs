@@ -80,8 +80,7 @@ fn write_credentials(directory: &Path, value: &Value) -> Result<()> {
     {
         keychain(directory)?
             .set_password(&serde_json::to_string(value).map_err(|_| Error::Storage)?)
-            .map_err(|_| Error::Keychain)?;
-        return Ok(());
+            .map_err(|_| Error::Keychain)
     }
     #[cfg(any(not(target_os = "macos"), test))]
     write_json(&directory.join(".credentials.json"), value)
