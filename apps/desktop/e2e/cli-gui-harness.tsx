@@ -37,7 +37,7 @@ const fixture = createCliGuiFixture(!params.has('missing'), { manualInstall: par
 const modelRequests: unknown[] = [];
 saveProject({ path: 'F:/projects/remoteai', name: 'Remote AI' });
 const controller = new ChatController(events => ({ start() { events.mode('direct'); events.ready(); }, stop() {},
-  request: async <T>(method: string, value?: unknown): Promise<T> => {
+  request: async <T,>(method: string, value?: unknown): Promise<T> => {
     const body = value as { operation?: string } | undefined;
     if (method === 'connect') return [] as T;
     if (body?.operation === 'queueRead') return { revision: 0, threads: {} } as T;
