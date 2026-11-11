@@ -4,11 +4,17 @@ The composer footer selects the CLI for a new conversation. Existing conversatio
 engine. The footer displays that engine's installed CLI version on the selected computer; the Paseo runtime
 version is never displayed as the CLI version. Codex's service status remains available beside its selector.
 
-Desktop local, desktop remote and Web desktop reuse the existing conversation renderer, model picker,
+Desktop local, desktop remote and Web reuse the existing conversation renderer, model picker,
 project picker, approval styles and composer layout. Each engine
 supports text messages, streamed timelines, tool details, permission choices, questions, older history and
 archiving. Archived conversations remain readable. This integration lists conversations created by Remote AI;
 it does not import unrelated native CLI or Paseo sessions.
+
+Native Android/iOS also exposes the CLI picker below the composer. It runs the selected CLI on the connected
+computer through the same authenticated transport. Native uses its own sheets, model settings, project picker
+and message renderer, including approval questions, stop, older messages, search and long-press archive actions.
+The account picker scopes changes to the selected CLI. Drafts remain separate between engines and conversations.
+Mobile Web keeps the CLI picker visible and omits desktop usage metrics from the compact composer.
 
 ## Setup
 
@@ -77,3 +83,18 @@ It covers per-conversation selection, distinct versions, exact approval choices,
 official documentation links, language switching, light/dark themes, 14/20 px font preferences and wide/narrow
 desktop windows. Screenshots are written to `.codex-tmp/cli-gui-account-evidence`. Actual paid account/model
 responses are not established by the deterministic proxy fixtures.
+
+For Native, run `npm run check`, `npm test`, `npm run check:i18n`, `npm run export:android` and
+`npm run export:ios` inside `apps/native`. Build the isolated Android visual fixture from its `android/` directory:
+
+```powershell
+.\gradlew.bat assembleRelease -I ../scripts/fixtures/cli-gui.init.gradle -PreactNativeArchitectures=x86_64
+$env:ANDROID_SERIAL = 'emulator-5554'
+node ../scripts/test-cli-gui-android.mjs
+```
+
+The fixture uses the production native CLI components and a deterministic remote transport. It covers light
+and dark themes at system font scales 1.0 and 1.3; physical Android and iOS visual checks remain separate.
+Mobile Web coverage runs from the parent with `npx playwright test --config scripts/playwright.native-cli-web.config.mts
+--tsconfig scripts/tsconfig.native-cli-web.json`. Evidence goes to `apps/native/.codex-tmp/cli-gui-evidence`
+and `.codex-tmp/native-cli-evidence` respectively. These checks do not run paid models or publish an app release.
