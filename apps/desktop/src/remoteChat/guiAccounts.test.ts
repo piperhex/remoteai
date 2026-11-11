@@ -94,3 +94,28 @@ it('publishes aggregate availability without exposing member settings', async ()
     { kind: 'aggregate', id: 'pool', name: 'Pool', detail: 'shared', available: true },
   ]);
 });
+
+it('publishes selectable Claude defaults without exposing credentials or changing Codex routing', async () => {
+  const id = `claude_${'a'.repeat(32)}`;
+  vi.mocked(invoke).mockImplementation(async command => {
+    if (command === 'codex_gui_account_selection') return { kind: 'provider', id: 'codex-provider' };
+    if (command === 'list_accounts') return [{ id, accountSource: 'claudeCode', active: true,
+      email: 'claude@example.test', plan: 'Pro', localProxyCompatible: false,
+      privateDetails: { password: 'private' }, oauth: { accessToken: 'secret' } }];
+    return [];
+  });
+  const snapshot = await readGuiAccounts();
+  expect(snapshot.selection).toEqual({ kind: 'provider', id: 'codex-provider' });
+  expect(snapshot.choices[0]).toMatchObject({ id, accountSource: 'claudeCode', active: true,
+    available: true, detail: 'Claude Code · Pro' });
+  expect(JSON.stringify(snapshot)).not.toMatch(/privateDetails|password|oauth|secret/);
+  vi.mocked(invoke).mockClear();
+  await expect(selectGuiAccount({ kind: 'account', id })).resolves.toEqual({ kind: 'account', id });
+  expect(invoke).toHaveBeenCalledExactlyOnceWith('claude_account_request', { request: { action: 'activate', id } });
+});
+
+it('propagates Claude switch failures without changing the Codex account', async () => {
+  vi.mocked(invoke).mockRejectedValueOnce(new Error('client.officialAccounts.authOverride'));
+  await expect(selectGuiAccount({ kind: 'account', id: `claude_${'b'.repeat(32)}` })).rejects.toThrow('authOverride');
+  expect(vi.mocked(invoke).mock.calls.map(([command]) => command)).toEqual(['claude_account_request']);
+});

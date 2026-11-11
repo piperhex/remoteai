@@ -6,6 +6,7 @@ import { guiAccountBalances } from './guiAccountBalances';
 import { providerWebsiteOrigin } from '../../../../shared/provider-market/providerWebsite';
 import { switchGuiAccount } from '../pages/codexGui/session';
 import { uiText } from "../../../../shared/localization/uiText";
+import { accountSource, accountSourceLabel } from '../../../../shared/accounts/source';
 
 function remainingPercent(value: number | undefined) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
@@ -19,6 +20,7 @@ function accountPlan(account: Account) {
 
 function accountDetail(account: Account) {
   const plan = accountPlan(account);
+  if (accountSource(account) === 'claudeCode') return `${accountSourceLabel(account)} · ${plan}`;
   const primary = remainingPercent(account.usage?.primary?.remainingPercent);
   const secondary = remainingPercent(account.usage?.secondary?.remainingPercent);
   return uiText("client.remoteHostData.remainingPrimarySecondary", { plan, primary, secondary });
@@ -37,7 +39,9 @@ export async function readGuiAccounts(): Promise<GuiAccountsSnapshot> {
     choices: [
       ...accounts.map((account) => ({
         kind: 'account' as const, id: account.id, name: account.email,
-        detail: accountDetail(account), searchDetail: account.note, available: account.localProxyCompatible,
+        detail: accountDetail(account), searchDetail: account.note,
+        available: accountSource(account) === 'claudeCode' || account.localProxyCompatible,
+        ...(accountSource(account) === 'claudeCode' ? { accountSource: 'claudeCode', active: account.active } : {}),
         plan: accountPlan(account), primaryRemainingPercent: account.usage?.primary?.remainingPercent ?? null,
         secondaryRemainingPercent: account.usage?.secondary?.remainingPercent ?? null,
       })),

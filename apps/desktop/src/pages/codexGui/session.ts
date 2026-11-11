@@ -7,6 +7,7 @@ import { modelSettingsApi } from './modelSettingsApi';
 import { queueStorage } from './queueStorage';
 import { watchModelCatalog } from './modelCatalogRefresh';
 import { readGuiProviderModels } from './providerModelSource';
+import { isClaudeAccountId } from '../../../../../shared/accounts/claudeAccounts';
 
 let controller: GuiController | undefined;
 let owners = 0;
@@ -16,6 +17,10 @@ let detach: (() => void) | undefined;
 export function getGuiController() { return controller ??= new GuiController(hasLocalBackend ? queueStorage : undefined); }
 
 export function switchGuiAccount(selection: GuiAccountSelection) {
+  if (selection.kind === 'account' && isClaudeAccountId(selection.id)) {
+    return invoke('claude_account_request', { request: { action: 'activate', id: selection.id } })
+      .then(() => selection);
+  }
   return getGuiController().modelCatalog.switchSource(() =>
     invoke<GuiAccountSelection>('codex_gui_switch_account', { selection }));
 }

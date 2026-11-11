@@ -80,10 +80,8 @@ test('desktop local: sources, original Codex modal and both Claude login methods
   await capture(page, info, 'desktop-local-narrow-font20');
 });
 
-test('desktop remote: manage connected computer and preserve typography', async ({ page }, info) => {
+test('remote account panel: manage connected computer and preserve typography', async ({ page }, info) => {
   await page.goto('/e2e/official-accounts-remote.html');
-  await page.getByRole('button', { name: /切换.*账户/ }).first().click();
-  await page.getByRole('button', { name: '管理 Claude Code 账户' }).click();
   await expect(page.getByRole('columnheader', { name: '账户来源' })).toBeVisible();
   await capture(page, info, 'desktop-remote-list');
   await page.getByRole('button', { name: '添加 / 更新 Claude Code 账户' }).click();
@@ -105,8 +103,6 @@ test('desktop remote: manage connected computer and preserve typography', async 
   await expect(page.getByRole('dialog', { name: '添加 / 更新 Claude Code 账户', exact: true })).toBeHidden();
   await page.setViewportSize({ width: 900, height: 850 });
   await page.goto('/e2e/official-accounts-remote.html?dark&font=20');
-  await page.getByRole('button', { name: /切换.*账户/ }).first().click();
-  await page.getByRole('button', { name: '管理 Claude Code 账户' }).click();
   await capture(page, info, 'desktop-remote-dark-font20');
   await page.getByRole('button', { name: '添加 / 更新 Claude Code 账户' }).click();
   await capture(page, info, 'desktop-remote-dark-login-font20');

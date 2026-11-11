@@ -40,6 +40,20 @@ const option = (text: string) => Array.from(document.querySelectorAll<HTMLButton
   .find((button) => button.textContent?.includes(text))!;
 const click = (button: HTMLButtonElement) => act(async () => button.click());
 
+it('lets Claude defaults switch from the account list without proxy compatibility or empty Codex quotas', async () => {
+  props.accounts.push({ ...account, id: `claude_${'a'.repeat(32)}`, accountSource: 'claudeCode',
+    email: 'claude@example.test', active: false, localProxyCompatible: false });
+  await render(); await click(trigger());
+  const row = option('claude@example.test');
+  expect(row.disabled).toBe(false);
+  expect(row.textContent).toContain('Claude Code');
+  expect(row.textContent).not.toContain('不可用');
+  expect(row.querySelector('[aria-label^="主用量剩余"]')).toBeNull();
+  await click(row);
+  expect(props.onSwitchAccount).toHaveBeenCalledWith(props.accounts[1].id);
+  expect(document.body.textContent).toContain('新建会话将使用此账户');
+});
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
