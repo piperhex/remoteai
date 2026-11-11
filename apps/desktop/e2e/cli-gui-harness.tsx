@@ -1,4 +1,4 @@
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App, ConfigProvider, theme } from 'antd';
 import { CodexGuiPage } from '../src/pages/CodexGuiPage';
@@ -24,6 +24,8 @@ import { useDreamSkin } from '../src/pages/codexGui/useDreamSkin';
 import { DashboardNavigation } from '../src/components/dashboard/DashboardNavigation';
 import { useDesktopLayout } from '../../../shared/layout/useDesktopLayout';
 import { ChatTools as WebChatTools } from '../../web/src/chat/ChatTools';
+import { PrimaryPagePager } from '../../web/src/navigation/PrimaryPagePager';
+import type { PrimaryPage } from '../../../shared/navigation/pageSwipe';
 import 'antd/dist/reset.css';
 import '../src/pages/codexGui/remote/remoteGui.less';
 
@@ -66,7 +68,7 @@ fixture.accounts.subscribe(() => { void controller.refreshModels(); });
 const device = { deviceId: 'pc', name: 'Office PC', platform: 'Windows', online: true };
 const t: Translate = (key, values) => translate('zh', key, values);
 
-function Harness() {
+function Harness({ active = true }: { active?: boolean }) {
   const desktop = useDesktopLayout();
   const skinStyle = useDreamSkin(mode === 'remote');
   useEffect(() => {
@@ -89,7 +91,7 @@ function Harness() {
       {mode === 'local' ? <CodexGuiPage active accountPicker={accounts} providers={[]} aggregateApis={[]}
         plugins={{ authenticated: false, onLogin() {}, notify() {}, t }} />
         : <ConnectedChat chat={{ state, controller, foreground: true }} device={device} devices={[device]}
-          active scope={`cli-test-${mode}`} email="test@example.test" chooseDevice={() => {}} cliVersion="0.150.0"
+          active={active} scope={`cli-test-${mode}`} email="test@example.test" chooseDevice={() => {}} cliVersion="0.150.0"
           accountPicker={accounts}
           scrollableComposer={mode === 'remote'}
           headerActions={mode === 'web' && !desktop
@@ -105,6 +107,14 @@ function Harness() {
     </main>
   </App></ConfigProvider></ApplicationTypography>;
 }
+function MobilePages() {
+  const [page, setPage] = useState<PrimaryPage>('chat');
+  return <div className="main-content" style={{ height: '100dvh', display: 'flex' }}>
+    <PrimaryPagePager page={page} onChange={setPage} pages={{ chat: <Harness active={page === 'chat'} />,
+      accounts: <button onClick={() => setPage('chat')}>Return to chat</button>,
+      discover: <div>Discover</div>, settings: <div>Settings</div> }} />
+  </div>;
+}
 if (mode !== 'local') controller.start();
 Object.assign(window, { cliFixture: fixture, cliModelRequests: modelRequests, setCliLanguage: setInterfaceLanguage });
-createRoot(document.getElementById('root')!).render(<Harness />);
+createRoot(document.getElementById('root')!).render(params.has('swipe') ? <MobilePages /> : <Harness />);
