@@ -20,12 +20,13 @@ let active: boolean;
 const stop = vi.fn();
 const first = { ...DEMO_ACCOUNTS[0], id: "first", active: false };
 const second = { ...DEMO_ACCOUNTS[0], id: "second", active: true };
-const claude = { ...DEMO_ACCOUNTS[0], id: "claude", accountSource: "claudeCode", active: true };
+const claude = { ...DEMO_ACCOUNTS[0], id: `claude_${'a'.repeat(32)}`, accountSource: "claudeCode",
+  localProxyCompatible: false, active: false };
 
 function Fixture() {
   selection = useGuiAccountSelection({ active, accounts: [claude, first, second], providers: [] });
   useUsageStatus(active);
-  return <output>{selection.accounts.find((account) => account.active)?.id}</output>;
+  return <output>{selection.accounts.find((account) => account.active && account.accountSource !== 'claudeCode')?.id}</output>;
 }
 const render = () => act(async () => root.render(<Fixture />));
 
@@ -48,10 +49,30 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-it("excludes native Claude accounts from Codex GUI routing choices", async () => {
+it("includes Claude defaults alongside the independent Codex GUI selection", async () => {
   await render();
-  expect(selection.accounts.map(account => account.id)).toEqual(["first", "second"]);
+  expect(selection.accounts.map(account => account.id)).toEqual([claude.id, "first", "second"]);
   expect(container.textContent).toBe("first");
+});
+
+it('switches the Claude default without replacing the Codex GUI selection', async () => {
+  await render();
+  vi.mocked(invoke).mockClear();
+  await act(async () => { expect(await selection.switchAccount(claude.id)).toBe(true); });
+  expect(invoke).toHaveBeenCalledExactlyOnceWith('claude_account_request',
+    { request: { action: 'activate', id: claude.id } });
+  expect(selection.accounts.find(account => account.id === claude.id)?.active).toBe(true);
+  expect(container.textContent).toBe('first');
+  await act(async () => { await selection.switchProvider('provider'); });
+  expect(selection.accounts.find(account => account.id === claude.id)?.active).toBe(true);
+});
+
+it('preserves both selections when Claude activation fails', async () => {
+  await render();
+  vi.mocked(invoke).mockRejectedValueOnce(new Error('client.officialAccounts.authOverride'));
+  await act(async () => { await expect(selection.switchAccount(claude.id)).rejects.toThrow('authOverride'); });
+  expect(selection.accounts.find(account => account.id === claude.id)?.active).toBe(false);
+  expect(container.textContent).toBe('first');
 });
 
 it("ignores shared active flags and does not mutate the shared catalog", () => {

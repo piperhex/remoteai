@@ -52,7 +52,7 @@ export default function RemoteGuiWorkspace(props: {
   const workspace = useRef<HTMLElement>(null);
   const popupContainer = useCallback(() => workspace.current ?? document.body, []);
   const accountPicker = <RemoteAccountPicker active={active} ready={chat.state.ready}
-    client={chat.controller.guiAccounts} claudeAccounts={chat.controller.claudeAccounts}
+    client={chat.controller.guiAccounts}
     computers={computers} privacyMode={props.privacyMode}
     renderSettings={onClose => <RemoteGuiSettingsDialog client={chat.controller.guiTools.settings}
       privacyMode={props.privacyMode} onClose={onClose} />} />;

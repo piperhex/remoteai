@@ -1,5 +1,6 @@
 import { uiText } from "../../../../../shared/localization/uiText";
 import { isCodexAccount } from "../../../../../shared/accounts/source";
+import { isClaudeAccountId } from '../../../../../shared/accounts/claudeAccounts';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { hasLocalBackend, invoke, loadAggregateApis, subscribeToProviderEvents } from "../../api/backend";
 import type { Account, AggregateApi, Provider } from "../../types";
@@ -17,6 +18,9 @@ export function selectedGuiEntries<T extends { id: string; active: boolean }>(
 
 export function useGuiAccountSelection(options: { active: boolean; accounts: Account[]; providers: Provider[] }) {
   const [selection, setSelection] = useState<GuiAccountSelection>({ kind: "none" });
+  const savedClaudeId = options.accounts.find(account => account.accountSource === 'claudeCode' && account.active)?.id;
+  const [claudeAccountId, setClaudeAccountId] = useState(savedClaudeId);
+  useEffect(() => { setClaudeAccountId(savedClaudeId); }, [savedClaudeId]);
   const [aggregates, setAggregates] = useState<AggregateApi[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -75,12 +79,18 @@ export function useGuiAccountSelection(options: { active: boolean; accounts: Acc
     const request = ++generation.current;
     try {
       const saved = await switchGuiAccount(next);
-      if (request === generation.current) { setSelection(saved); setError(""); }
+      if (request === generation.current) {
+        if (saved.kind === 'account' && isClaudeAccountId(saved.id)) setClaudeAccountId(saved.id);
+        else setSelection(saved);
+        setError("");
+      }
       return true;
     } finally { switching.current = false; }
   };
-  const accounts = useMemo(() => selectedGuiEntries(options.accounts.filter(isCodexAccount), selection, "account"),
-    [options.accounts, selection]);
+  const accounts = useMemo(() => options.accounts.map(account => isCodexAccount(account)
+    ? { ...account, active: selection.kind === 'account' && selection.id === account.id }
+    : { ...account, active: account.id === claudeAccountId }),
+  [options.accounts, selection, claudeAccountId]);
   const providers = useMemo(() => selectedGuiEntries(options.providers, selection, "provider"),
     [options.providers, selection]);
   const aggregateApis = useMemo(() => selectedGuiEntries(aggregates, selection, "aggregate"), [aggregates, selection]);

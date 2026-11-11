@@ -37,6 +37,27 @@ async function accounts() {
   await click(container.querySelector('button')!);
 }
 
+it('switches Claude in the main list, refreshes its default and removes the separate management entry', async () => {
+  const claude = { kind: 'account' as const, id: `claude_${'a'.repeat(32)}`, accountSource: 'claudeCode',
+    name: 'claude@example.test', detail: 'Claude Code · Pro', active: false, available: true,
+    plan: 'Pro', primaryRemainingPercent: null, secondaryRemainingPercent: null };
+  vi.mocked(client.read).mockResolvedValue({ ...accountSnapshot, choices: [...accountSnapshot.choices, claude] });
+  await render(); await accounts();
+  const row = Array.from(accountList().querySelectorAll('button')).find(row => row.textContent?.includes(claude.name))!;
+  expect(row.disabled).toBe(false);
+  expect(row.textContent).toContain('Claude Code · Pro');
+  expect(row.querySelector('[data-plan]')).toBeNull();
+  expect(document.body.textContent).not.toContain('管理 Claude Code 账户');
+  vi.mocked(client.read).mockResolvedValue({ ...accountSnapshot,
+    choices: [...accountSnapshot.choices, { ...claude, active: true }] });
+  await click(row);
+  expect(client.select).toHaveBeenCalledWith({ kind: 'account', id: claude.id });
+  await accounts();
+  const selected = Array.from(accountList().querySelectorAll('button')).find(row => row.textContent?.includes(claude.name))!;
+  expect(selected.getAttribute('aria-pressed')).toBe('true');
+  expect(container.textContent).toContain('remote@example.com');
+});
+
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.stubGlobal('matchMedia', () => ({ matches: false, addListener() {}, removeListener() {} }));

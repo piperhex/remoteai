@@ -92,6 +92,14 @@ it.each<Phase>(['preparing', 'recording', 'transcribing'])(
     expect(state.phase).toBe('idle');
   });
 
+it('refreshes Claude defaults from another client without interrupting a Codex recording', async () => {
+  await reach('recording');
+  await act(async () => events.event({ method: 'claudeAccounts/changed', params: {} }));
+  expect(accountListChanged).toHaveBeenCalledOnce();
+  expect(state.phase).toBe('recording');
+  expect(recording.cancel).not.toHaveBeenCalled();
+});
+
 it.each<Phase>(['preparing', 'recording', 'transcribing'])(
   'cancels %s on a real account switch and ignores late results', async phase => {
     await reach(phase);

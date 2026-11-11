@@ -1,6 +1,10 @@
 import { uiText } from "../../../../../shared/localization/uiText";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Settings } from "lucide-react";
+import { message } from 'antd';
+import { accountSource, accountSourceLabel } from '../../../../../shared/accounts/source';
+import { useCliGui } from '../../../../../shared/cli-gui/context';
+import { claudeAccountError } from '../../../../../shared/accounts/claudeAccounts';
 import type { Account, AggregateApi, Provider } from "../../types";
 import { maskAccountEmail } from "../../../../../shared/accounts/privacy";
 import { GuiAccountList } from "../../../../../shared/conversation/GuiAccountList";
@@ -27,15 +31,18 @@ export interface ProxyAccountPickerProps {
 }
 
 export function ProxyAccountPicker(props: ProxyAccountPickerProps) {
+  const cli = useCliGui();
+  const [notice, noticeContext] = message.useMessage();
   const [open, setOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const switching = useRef(false);
   const trigger = useRef<HTMLButtonElement>(null);
-  const provider = props.providers.find((entry) => entry.active);
-  const aggregate = props.aggregateApis.find((entry) => entry.active);
-  const account = props.accounts.find((entry) => entry.active);
+  const source = cli?.state.engine === 'claude' ? 'claudeCode' : 'codex';
+  const provider = source === 'codex' ? props.providers.find((entry) => entry.active) : undefined;
+  const aggregate = source === 'codex' ? props.aggregateApis.find((entry) => entry.active) : undefined;
+  const account = props.accounts.find((entry) => entry.active && accountSource(entry) === source);
   const thirdParty = Boolean(provider || aggregate);
   const email = account?.email && (props.privacyMode ? maskAccountEmail(account.email) : account.email);
   const name = aggregate?.name || provider?.name || email || uiText("client.conversation.chooseGuiAccount");
@@ -43,15 +50,18 @@ export function ProxyAccountPicker(props: ProxyAccountPickerProps) {
   // `official` describes account-pool provenance, not whether the account can use the official API.
   const accounts = props.accounts.map((entry) => ({
     kind: "account" as const, id: entry.id, name: entry.email,
-    detail: entry.plan, accountDetails: { plan: entry.plan,
+    detail: accountSource(entry) === 'claudeCode' ? `${accountSourceLabel(entry)} · ${entry.plan}` : entry.plan,
+    accountDetails: accountSource(entry) === 'claudeCode' ? undefined : { plan: entry.plan,
       primaryRemainingPercent: entry.usage?.primary?.remainingPercent,
       secondaryRemainingPercent: entry.usage?.secondary?.remainingPercent },
-    selected: !thirdParty && entry.active, disabled: !entry.localProxyCompatible,
+    selected: entry.active && (accountSource(entry) === 'claudeCode'
+      || !props.providers.some(provider => provider.active) && !props.aggregateApis.some(aggregate => aggregate.active)),
+    disabled: accountSource(entry) !== 'claudeCode' && !entry.localProxyCompatible,
   }));
   const providers = props.providers.map((entry) => ({
     kind: "provider" as const, id: entry.id, name: entry.name, detail: entry.group || entry.model,
     websiteUrl: providerWebsiteOrigin(entry),
-    selected: !aggregate && entry.active,
+    selected: !props.aggregateApis.some(aggregate => aggregate.active) && entry.active,
   }));
   const aggregates = props.aggregateApis.map((entry) => ({
     kind: "aggregate" as const, id: entry.id, name: entry.name, detail: entry.model,
@@ -66,10 +76,19 @@ export function ProxyAccountPicker(props: ProxyAccountPickerProps) {
     switching.current = true;
     setSaving(true);
     setError("");
+    const claude = props.accounts.some(account => account.id === id && accountSource(account) === 'claudeCode');
     try {
-      if (await switchAccount(id)) { setOpen(false); trigger.current?.focus(); }
+      if (await switchAccount(id)) {
+        setOpen(false); trigger.current?.focus();
+        if (claude) {
+          void notice.success({ content: uiText('client.officialAccounts.switched'),
+            style: { maxWidth: 400, margin: '0 auto' } });
+        }
+      }
       else setError(uiText("client.errors.theSwitchDidNotCompletePleaseTryAgain"));
-    } catch { setError(uiText("client.errors.theSwitchDidNotCompletePleaseTryAgain")); }
+    } catch (error) {
+      setError(claude ? claudeAccountError(error) : uiText("client.errors.theSwitchDidNotCompletePleaseTryAgain"));
+    }
     finally { switching.current = false; setSaving(false); }
   };
   const panel = (devicePicker: ReactNode) => <GuiAccountList choices={[...accounts, ...providers, ...aggregates]}
@@ -88,7 +107,9 @@ export function ProxyAccountPicker(props: ProxyAccountPickerProps) {
     summary={<ProxyAccountSummary name={name} account={account} provider={aggregate ? undefined : provider}
       thirdParty={thirdParty} active={props.active} />}
     onOpenChange={(next) => { setOpen(next); if (next) setError(""); }} />
-    {settingsOpen && props.active && <GuiAutoSwitchSettingsDialog accounts={props.accounts} providers={props.providers}
+    {noticeContext}
+    {settingsOpen && props.active && <GuiAutoSwitchSettingsDialog
+      accounts={props.accounts.filter(account => accountSource(account) === 'codex')} providers={props.providers}
       privacyMode={props.privacyMode} onClose={() => { setSettingsOpen(false); trigger.current?.focus(); }} />}
   </>;
 }
