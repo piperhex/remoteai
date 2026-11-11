@@ -5,6 +5,7 @@ const account = (overrides: Partial<{
   id: string;
   localProxyCompatible: boolean;
   directSwitchCompatible: boolean;
+  accountSource: string;
 }>) => ({
   id: "account-1",
   localProxyCompatible: true,
@@ -22,5 +23,11 @@ describe("account selectors", () => {
 
     expect(getSwitchableAccounts(accounts, true).map(({ id }) => id)).toEqual(["proxy", "both"]);
     expect(getSwitchableAccounts(accounts, false).map(({ id }) => id)).toEqual(["direct", "both"]);
+  });
+
+  it("keeps native Claude switching available while Codex proxy routing is enabled", () => {
+    const claude = account({ id: "claude", accountSource: "claudeCode", localProxyCompatible: false });
+    expect(getSwitchableAccounts([claude], true)).toEqual([claude]);
+    expect(getSwitchableAccounts([claude], false)).toEqual([claude]);
   });
 });

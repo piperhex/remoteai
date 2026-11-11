@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { uiText } from '../../../../shared/localization/uiText';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { claudeAccountError, isClaudeAccountId, localClaudeAccounts } from "../../../../shared/accounts/claudeAccounts";
 import {
   activateAccount,
   beginLogin,
@@ -34,6 +36,11 @@ interface RefreshAllOptions {
   enabledOnly?: boolean;
 }
 
+function accountOperationError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.startsWith('client.officialAccounts.') ? claudeAccountError(error) : message;
+}
+
 interface AccountCloudSync {
   pushAll?: () => Promise<void> | void;
   pushAccount?: (id: string) => Promise<void> | void;
@@ -45,8 +52,16 @@ interface AccountCloudSync {
 export function useAccountManager(
   notify: (message: string) => void,
   t: Translate,
-  cloudSync?: AccountCloudSync,
+  requestedCloudSync?: AccountCloudSync,
 ) {
+  const cloudSync = useMemo<AccountCloudSync>(() => ({
+    pushAll: requestedCloudSync?.pushAll,
+    pushAccount: id => isClaudeAccountId(id) ? undefined : requestedCloudSync?.pushAccount?.(id),
+    restoreAndPushAccount: id => isClaudeAccountId(id) ? undefined
+      : (requestedCloudSync?.restoreAndPushAccount ?? requestedCloudSync?.pushAccount)?.(id),
+    deleteAccount: id => isClaudeAccountId(id) ? undefined : requestedCloudSync?.deleteAccount?.(id),
+    pullAccount: id => isClaudeAccountId(id) ? undefined : requestedCloudSync?.pullAccount?.(id),
+  }), [requestedCloudSync]);
   const { accounts, setAccounts, info, loading, read: readDashboard, reload: load } = useAccountDashboard(notify);
   const [busyAccountId, setBusyAccountId] = useState<string | null>(null);
   const [autoSwitchBusyAccountId, setAutoSwitchBusyAccountId] = useState<string | null>(null);
@@ -96,7 +111,7 @@ export function useAccountManager(
       await beginLogin(embedded, privateMode);
       notify(embedded ? t("toast.embeddedOpened") : t("toast.browserOpened"));
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
     }
   }, [notify, t]);
 
@@ -110,7 +125,7 @@ export function useAccountManager(
       await beginWebSessionLogin();
       notify(t("toast.webSessionOpened"));
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
     }
   }, [notify, t]);
 
@@ -126,7 +141,7 @@ export function useAccountManager(
         }));
       }
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
     }
   }, [notify, refreshAddedAccounts, t]);
 
@@ -144,7 +159,7 @@ export function useAccountManager(
         return true;
       }
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
     }
     return false;
   }, [notify, refreshAddedAccounts, t]);
@@ -158,7 +173,7 @@ export function useAccountManager(
         notify(t("toast.archiveExported"));
       }
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
     } finally {
       setArchiveOperation(null);
     }
@@ -180,7 +195,7 @@ export function useAccountManager(
         if (result.result.providerIds.length || result.result.aggregatesImported) await cloudSync?.pushAll?.();
       }
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
     } finally {
       setArchiveOperation(null);
     }
@@ -193,14 +208,16 @@ export function useAccountManager(
       await activateAccount(id);
       accountActivated = true;
       if (!hasLocalBackend) {
-        setAccounts((items) => items.map((item) => ({ ...item, active: item.id === id })));
+        setAccounts(items => items.map(item => isClaudeAccountId(item.id) === isClaudeAccountId(id)
+          ? { ...item, active: item.id === id } : item));
       }
-      notify(t(hotSwitch ? "toast.accountSwitchedHot" : "toast.switched"));
+      notify(isClaudeAccountId(id) ? uiText("client.officialAccounts.switched")
+        : t(hotSwitch ? "toast.accountSwitchedHot" : "toast.switched"));
       if (hasLocalBackend) await load();
       runSwitchFollowUp(() => cloudSync?.pushAccount?.(id));
       return true;
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
       return accountActivated;
     } finally {
       setBusyAccountId(null);
@@ -210,15 +227,17 @@ export function useAccountManager(
   const deactivateAccount = useCallback(async (id: string) => {
     setBusyAccountId(id);
     try {
-      await deactivateActiveAccount();
+      if (isClaudeAccountId(id)) await localClaudeAccounts.request({ action: 'deactivate' });
+      else await deactivateActiveAccount();
       if (!hasLocalBackend) {
-        setAccounts((items) => items.map((item) => ({ ...item, active: false })));
+        setAccounts(items => items.map(item => isClaudeAccountId(item.id) === isClaudeAccountId(id)
+          ? { ...item, active: false } : item));
       }
-      notify(t("toast.accountDeactivated"));
+      notify(isClaudeAccountId(id) ? uiText("client.officialAccounts.deactivated") : t("toast.accountDeactivated"));
       if (hasLocalBackend) await load();
       runSwitchFollowUp(() => cloudSync?.pushAccount?.(id));
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
     } finally {
       setBusyAccountId(null);
     }
@@ -238,7 +257,7 @@ export function useAccountManager(
       if (hasLocalBackend) await load();
       await cloudSync?.pushAccount?.(id);
     } catch (error) {
-      if (!quiet) notify(String(error));
+      if (!quiet) notify(accountOperationError(error));
     } finally {
       if (showSpinner) setBusyAccountId(null);
     }
@@ -253,7 +272,7 @@ export function useAccountManager(
       await copyAccountAuthJson(id);
       notify(t("toast.authJsonCopied"));
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
     }
   }, [notify, t]);
 
@@ -327,7 +346,7 @@ export function useAccountManager(
       if (hasLocalBackend) await load();
       await cloudSync?.deleteAccount?.(id);
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
     }
   }, [cloudSync, load, notify, t]);
 
@@ -364,7 +383,7 @@ export function useAccountManager(
         : item));
       if (hasLocalBackend) await load();
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
     } finally {
       setAutoSwitchBusyAccountId(null);
     }
@@ -379,7 +398,7 @@ export function useAccountManager(
       if (hasLocalBackend) await load();
       return true;
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
       return false;
     }
   }, [load, notify]);
@@ -393,7 +412,7 @@ export function useAccountManager(
   }, [changeAccountGroup]);
 
   const setAutoSwitchAccounts = useCallback(async (ids: string[], enabled: boolean) => {
-    const uniqueIds = [...new Set(ids)];
+    const uniqueIds = [...new Set(ids)].filter(id => !isClaudeAccountId(id));
     if (!uniqueIds.length) return [];
 
     const updatedIds: string[] = [];
@@ -440,7 +459,7 @@ export function useAccountManager(
       await cloudSync?.pushAccount?.(id);
       return true;
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
       return false;
     }
   }, [cloudSync, notify, t]);
@@ -449,7 +468,7 @@ export function useAccountManager(
     try {
       await cloudSync?.pullAccount?.(id);
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
     }
     const dashboard = await readDashboard();
     return dashboard?.accounts.find((account) => account.id === id) ?? null;
@@ -466,7 +485,7 @@ export function useAccountManager(
       if (hasLocalBackend) await load();
       return true;
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
       return false;
     } finally {
       setAutoSwitchPriorityBusyAccountId(null);
@@ -484,7 +503,7 @@ export function useAccountManager(
       if (hasLocalBackend) await load();
       return true;
     } catch (error) {
-      notify(String(error));
+      notify(accountOperationError(error));
       return false;
     } finally {
       setAutoSwitchThresholdBusyAccountId(null);

@@ -15,6 +15,7 @@ fn window(remaining: f64) -> UsageWindow {
 
 fn account(id: &str, remaining: f64) -> AccountSummary {
     AccountSummary {
+        account_source: "codex",
         id: id.into(),
         email: format!("{id}@example.test"),
         group: String::new(),

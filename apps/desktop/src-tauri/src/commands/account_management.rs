@@ -9,6 +9,9 @@ pub(crate) async fn delete_account<R: Runtime + 'static>(
 }
 
 fn delete_account_blocking<R: Runtime>(app: tauri::AppHandle<R>, id: String) -> Result<(), String> {
+    if crate::claude_accounts::is_claude_id(&id) {
+        return crate::claude_accounts::delete_blocking(&app, id);
+    }
     let paths = resolve_paths(&app)?;
     let current_state = read_state(&paths);
     if current_state.active_account_id.as_deref() == Some(&id) {

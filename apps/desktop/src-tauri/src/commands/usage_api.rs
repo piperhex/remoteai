@@ -248,7 +248,7 @@ fn update_account_details_blocking<R: Runtime>(
         private_details,
     } = input;
     let paths = resolve_paths(&app)?;
-    if !managed_auth_path(&paths, &id).exists() {
+    if !managed_auth_path(&paths, &id).exists() && !crate::claude_accounts::exists(&paths, &id) {
         return Err("Account does not exist".to_string());
     }
     let (official, metadata_editable) = load_official_account_access(&paths, &id);
@@ -289,6 +289,9 @@ pub(crate) fn refresh_usage_blocking<R: Runtime>(
     app: tauri::AppHandle<R>,
     id: String,
 ) -> Result<UsageSummary, String> {
+    if crate::claude_accounts::is_claude_id(&id) {
+        return crate::claude_accounts::refresh_blocking(&app, &id);
+    }
     match try_refresh_usage_blocking(&app, &id) {
         Ok(usage) => Ok(usage),
         Err(error) => {

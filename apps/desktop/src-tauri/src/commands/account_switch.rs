@@ -30,6 +30,9 @@ fn switch_account_blocking_with_reason<R: Runtime>(
     id: String,
     reason: AccountSwitchReason,
 ) -> Result<(), String> {
+    if crate::claude_accounts::is_claude_id(&id) {
+        return crate::claude_accounts::switch_blocking(&app, id);
+    }
     let _switch_guard = account_switch_lock()
         .lock()
         .map_err(|_| "Account switch lock is poisoned".to_string())?;
@@ -178,6 +181,9 @@ pub(crate) fn switch_account_and_restart_chatgpt_blocking<R: Runtime>(
     app: tauri::AppHandle<R>,
     id: String,
 ) -> Result<(), String> {
+    if crate::claude_accounts::is_claude_id(&id) {
+        return crate::claude_accounts::switch_blocking(&app, id);
+    }
     let _switch_guard = account_switch_lock()
         .lock()
         .map_err(|_| "Account switch lock is poisoned".to_string())?;

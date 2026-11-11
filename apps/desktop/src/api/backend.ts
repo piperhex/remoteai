@@ -1,4 +1,5 @@
 import { invoke, isDesktopApp, isHostedWebApp, hasLocalBackend } from '../../../../shared/platform/localBackend';
+import { isClaudeAccountId, localClaudeAccounts } from '../../../../shared/accounts/claudeAccounts';
 export { invoke, isDesktopApp, isHostedWebApp, hasLocalBackend, subscribeToHostedWebApiKeyRequests }
   from '../../../../shared/platform/localBackend';
 export type { HostedWebApiKeyRequest } from '../../../../shared/platform/localBackend';
@@ -2758,6 +2759,7 @@ export async function chooseAndExportDiagnosticLogs(): Promise<ExportDiagnosticL
 }
 
 export async function activateAccount(id: string): Promise<void> {
+  if (isClaudeAccountId(id) && hasLocalBackend) return localClaudeAccounts.request({ action: 'activate', id });
   if (!hasLocalBackend) {
     window.localStorage.removeItem(ACTIVE_GROUP_PREVIEW_KEY);
     writePreviewProviders(readPreviewProviders().map((provider) => ({ ...provider, active: false })));
@@ -2830,6 +2832,7 @@ export async function setAccountAutoSwitchThreshold(id: string, threshold: numbe
 }
 
 export async function refreshAccountUsage(id: string): Promise<void> {
+  if (isClaudeAccountId(id) && hasLocalBackend) return localClaudeAccounts.request({ action: 'refresh', id });
   if (hasLocalBackend) await invoke("refresh_usage", { id });
 }
 
@@ -2838,6 +2841,7 @@ export async function consumeAccountQuota(id: string): Promise<void> {
 }
 
 export async function removeAccount(id: string): Promise<void> {
+  if (isClaudeAccountId(id) && hasLocalBackend) return localClaudeAccounts.request({ action: 'delete', id });
   if (hasLocalBackend) await invoke("delete_account", { id });
 }
 

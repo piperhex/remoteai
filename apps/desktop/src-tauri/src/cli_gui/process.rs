@@ -205,7 +205,11 @@ impl Client {
 }
 
 fn safe_error(value: &str) -> &str {
-    if value.starts_with("client.cliGui.")
+    if (value.starts_with("client.cliGui.")
+        || matches!(
+            value,
+            "client.officialAccounts.storageFailed" | "client.officialAccounts.invalidRequest"
+        ))
         && value.len() < 100
         && value
             .bytes()

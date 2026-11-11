@@ -1,4 +1,5 @@
 import { uiText } from "../../../../../shared/localization/uiText";
+import { isCodexAccount } from "../../../../../shared/accounts/source";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { hasLocalBackend, invoke, loadAggregateApis, subscribeToProviderEvents } from "../../api/backend";
 import type { Account, AggregateApi, Provider } from "../../types";
@@ -78,7 +79,7 @@ export function useGuiAccountSelection(options: { active: boolean; accounts: Acc
       return true;
     } finally { switching.current = false; }
   };
-  const accounts = useMemo(() => selectedGuiEntries(options.accounts, selection, "account"),
+  const accounts = useMemo(() => selectedGuiEntries(options.accounts.filter(isCodexAccount), selection, "account"),
     [options.accounts, selection]);
   const providers = useMemo(() => selectedGuiEntries(options.providers, selection, "provider"),
     [options.providers, selection]);

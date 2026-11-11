@@ -1,3 +1,4 @@
+import { isClaudeAccountId } from '../../../../shared/accounts/claudeAccounts';
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchResetCredits } from "../api/backend";
 import type { Translate } from "../i18n";
@@ -92,7 +93,7 @@ export function useResetCredits(accounts: Account[], notify: (message: string) =
   }, [accounts]);
 
   const refreshAccount = useCallback(async (id: string, force = false) => {
-    if (requests.current.has(id)) return;
+    if (isClaudeAccountId(id) || requests.current.has(id)) return;
     if (!force && states[id] && sessionRequests.current.has(id)) return;
     requests.current.add(id);
     setStates((current) => ({

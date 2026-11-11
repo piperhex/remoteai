@@ -62,6 +62,10 @@ import { CloudLoginModal } from "../modals/CloudLoginModal";
 import { CloudAccountModal } from "../modals/CloudAccountModal";
 import { CloudRecycleBin } from "../CloudRecycleBin";
 import { LoginModal } from "../modals/LoginModal";
+import { AddOfficialAccountButton } from "../../../../../shared/accounts/AddOfficialAccountButton";
+import type { OfficialAccountSource } from "../../../../../shared/accounts/source";
+import { ClaudeAccountModal } from "../../../../../shared/accounts/ClaudeAccountModal";
+import { localClaudeAccounts } from "../../../../../shared/accounts/claudeAccounts";
 import { ProxySettingsModal } from "../modals/ProxySettingsModal";
 import { UpdateModal } from "../modals/UpdateModal";
 import { CcSwitchImportModal } from "../modals/CcSwitchImportModal";
@@ -275,6 +279,7 @@ export function DashboardApp() {
     setPage("logDiagnostics");
   };
   const [showLogin, setShowLogin] = useState(false);
+  const [loginSource, setLoginSource] = useState<OfficialAccountSource>("codex");
   const [showCloudLogin, setShowCloudLogin] = useState(false);
   const [cloudSessionExpired, setCloudSessionExpired] = useState(false);
   const [showCloudAccount, setShowCloudAccount] = useState(false);
@@ -472,7 +477,7 @@ export function DashboardApp() {
     ...providerManager.providers.filter(provider => provider.kind === "custom").map(provider => provider.group),
   ].filter(Boolean))], [sharedGroups, manager.accounts, providerManager.providers]);
   const resetCredits = useResetCredits(manager.accounts, notify, t);
-  const activeAccount = manager.accounts.find((account) => account.active) ?? null;
+  const activeAccount = manager.accounts.find(account => account.active && account.accountSource !== 'claudeCode') ?? null;
   const activeProvider = providerManager.activeProvider;
   const thirdPartySubagentModels = useMemo(() => {
     if (!activeProvider || activeProvider.kind !== "custom") return ["sol", "terra", "luna"];
@@ -579,7 +584,10 @@ export function DashboardApp() {
     currentAutoRefreshTargetId,
     () => refreshCurrentSelection(),
   );
-  const openLogin = useCallback(() => setShowLogin(true), []);
+  const openLogin = useCallback((source: OfficialAccountSource = "codex") => {
+    setLoginSource(source);
+    setShowLogin(true);
+  }, []);
   const openCloudLogin = useCallback(() => {
     setCloudSessionExpired(false);
     setShowCloudLogin(true);
@@ -1372,9 +1380,7 @@ export function DashboardApp() {
                 {accountToolbox}
               </>}>
               {page === "accounts" && <>
-                <button type="button" className="primary-button" onClick={openLogin}>
-                  <Plus size={18} />{t("actions.addAccount")}
-                </button>
+                <AddOfficialAccountButton label={t("actions.addAccount")} onSelect={openLogin} />
                 {refreshActionMenu}
                 {officialAccountActions}
               </>}
@@ -1701,7 +1707,12 @@ export function DashboardApp() {
 
         <HelpAssistant language={language} page={page} onOpenCodex={() => setPage("codexGui")} />
 
-        {showLogin && <LoginModal onClose={() => setShowLogin(false)} onWebSession={startWebSessionLogin}
+        {showLogin && loginSource === "claudeCode" && <ClaudeAccountModal transport={localClaudeAccounts}
+          onClose={() => setShowLogin(false)} onSaved={() => {
+            setShowLogin(false); void manager.reload(); notify(uiText("client.officialAccounts.saved"));
+          }} />}
+        {showLogin && loginSource === "codex" && <LoginModal
+          onClose={() => setShowLogin(false)} onWebSession={startWebSessionLogin}
           onStart={startLogin}
           onImport={importAccountJson} onImportClipboard={importAccountJsonFromClipboard}
           onImportText={manager.importAccountJsonFromClipboard} t={t} />}

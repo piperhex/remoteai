@@ -163,7 +163,7 @@ export function FloatingUsageBubble() {
   useEffect(() => subscribeToBubbleResetDisplayChanges(loadResetDisplay), [loadResetDisplay]);
   useEffect(() => subscribeToBubbleStyleChanges(setBubbleStyle), []);
 
-  const account = useMemo(() => accounts.find((item) => item.active), [accounts]);
+  const account = useMemo(() => accounts.find(item => item.active && item.accountSource !== 'claudeCode'), [accounts]);
   const averageMode = averagePreference && routingStateLoaded && Boolean(account) && !activeProvider
     && !localProxy?.activeProviderGroup && !localProxy?.concurrentAccountRoutingEnabled;
   const average = averageMode ? quotaDisplay.status?.average : null;

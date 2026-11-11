@@ -7,6 +7,7 @@ pub(crate) const DEFAULT_CLOUD_BASE_URL: &str = "https://codex.onepiper.cloud";
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct AccountSummary {
+    pub(crate) account_source: &'static str,
     pub(crate) id: String,
     pub(crate) email: String,
     pub(crate) group: String,

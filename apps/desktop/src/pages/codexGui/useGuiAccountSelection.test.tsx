@@ -20,9 +20,10 @@ let active: boolean;
 const stop = vi.fn();
 const first = { ...DEMO_ACCOUNTS[0], id: "first", active: false };
 const second = { ...DEMO_ACCOUNTS[0], id: "second", active: true };
+const claude = { ...DEMO_ACCOUNTS[0], id: "claude", accountSource: "claudeCode", active: true };
 
 function Fixture() {
-  selection = useGuiAccountSelection({ active, accounts: [first, second], providers: [] });
+  selection = useGuiAccountSelection({ active, accounts: [claude, first, second], providers: [] });
   useUsageStatus(active);
   return <output>{selection.accounts.find((account) => account.active)?.id}</output>;
 }
@@ -45,6 +46,12 @@ afterEach(async () => {
   await act(async () => root.unmount());
   vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+
+it("excludes native Claude accounts from Codex GUI routing choices", async () => {
+  await render();
+  expect(selection.accounts.map(account => account.id)).toEqual(["first", "second"]);
+  expect(container.textContent).toBe("first");
 });
 
 it("ignores shared active flags and does not mutate the shared catalog", () => {
