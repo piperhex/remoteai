@@ -5,7 +5,7 @@ import { invoke } from "../../api/backend";
 import type { AttachmentReference } from "../../../../../shared/conversation/attachmentTypes";
 import { ImagePreview } from "../../../../../shared/conversation/ImagePreview";
 import { isInlineImage } from "../../../../../shared/conversation/imageSources";
-import styles from "./ImageAttachments.module.less";
+import styles from "../../../../../shared/chat/ImageAttachments.module.less";
 import { EMPTY_IMAGE, useImageGallery } from '../../../../../shared/chat/ImageGallery';
 
 const RESOURCE_ERROR = "图片过大，暂时无法预览。请缩小尺寸后重试。";

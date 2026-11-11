@@ -49,6 +49,12 @@ enum Action {
         message_id: String,
         model: Option<String>,
         effort: Option<String>,
+        #[serde(default)]
+        images: Vec<String>,
+    },
+    Image {
+        id: String,
+        source: String,
     },
     Stop {
         id: String,
@@ -119,9 +125,16 @@ impl Request {
                 message_id,
                 model,
                 effort,
+                images,
             } => {
                 bounded(id, 200)?;
-                bounded(text, 1_000_000)?;
+                validate_images(images)?;
+                if text.len() > 1_000_000
+                    || text.contains('\0')
+                    || (text.trim().is_empty() && images.is_empty())
+                {
+                    return Err(Error::Invalid);
+                }
                 bounded(message_id, 200)?;
                 if let Some(model) = model {
                     bounded(model, 300)?;
@@ -137,6 +150,13 @@ impl Request {
                 }
             }
             Action::Stop { id } | Action::Archive { id } => bounded(id, 200)?,
+            Action::Image { id, source } => {
+                bounded(id, 200)?;
+                let digest = source.strip_prefix("chat-image://").ok_or(Error::Invalid)?;
+                if digest.len() != 64 || !digest.bytes().all(|b| b.is_ascii_hexdigit()) {
+                    return Err(Error::Invalid);
+                }
+            }
             Action::Approve {
                 id,
                 permission_id,
@@ -162,10 +182,70 @@ impl Request {
     }
 }
 
+fn validate_images(images: &[String]) -> Result<()> {
+    const MAX_IMAGES: usize = 8;
+    const MAX_IMAGE_CHARS: usize = 6 * 1024 * 1024;
+    if images.len() > MAX_IMAGES || images.iter().map(String::len).sum::<usize>() > MAX_IMAGE_CHARS
+    {
+        return Err(Error::Invalid);
+    }
+    for image in images {
+        let (header, data) = image.split_once(',').ok_or(Error::Invalid)?;
+        if !matches!(
+            header,
+            "data:image/png;base64"
+                | "data:image/jpeg;base64"
+                | "data:image/webp;base64"
+                | "data:image/gif;base64"
+        ) || data.is_empty()
+            || data.len() > MAX_IMAGE_CHARS
+            || !data
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'+' | b'/' | b'='))
+        {
+            return Err(Error::Invalid);
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn preserves_images_and_allows_image_only_messages() {
+        for engine in ["claude", "gemini"] {
+            let value = json!({"engine":engine,"action":"send","id":"agent",
+                "messageId":"message", "text":"", "images":["data:image/png;base64,aGVsbG8="]});
+            let request: Request = serde_json::from_value(value.clone()).unwrap();
+            assert_eq!(
+                serde_json::to_value(request.validate().unwrap()).unwrap()["images"],
+                value["images"]
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_invalid_image_messages_and_image_paths() {
+        for images in [
+            json!([]),
+            json!(["https://example.com/image.png"]),
+            json!(["data:image/svg+xml;base64,aGVsbG8="]),
+            json!(vec!["data:image/png;base64,aGVsbG8="; 9]),
+        ] {
+            let request: Request =
+                serde_json::from_value(json!({"engine":"claude","action":"send",
+                "id":"agent","messageId":"message","text":"","images":images}))
+                .unwrap();
+            assert!(request.validate().is_err());
+        }
+        let request: Request = serde_json::from_value(json!({"engine":"gemini","action":"image",
+            "id":"agent","source":"../../secret.png"}))
+        .unwrap();
+        assert!(request.validate().is_err());
+    }
 
     #[test]
     fn rejects_arbitrary_engines_actions_and_directories() {

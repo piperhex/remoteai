@@ -13,7 +13,8 @@ const service = new CliService(new CliRuntime(root, changed), changed);
 const input = createInterface({ input: process.stdin, crlfDelay: Infinity });
 
 async function execute(line: string) {
-  if (line.length > 2_000_000) return;
+  // Match the control-channel envelope: images are prepared before entering this worker.
+  if (line.length > 8 * 1024 * 1024) return;
   let id: unknown;
   try {
     const frame = JSON.parse(line) as { id: number; request: CliRequest };

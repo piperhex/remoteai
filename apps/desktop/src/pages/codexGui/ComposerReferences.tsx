@@ -3,7 +3,7 @@ import { Blocks, File, Folder, GitBranch, MessageSquare, Terminal, X } from "luc
 import { attachmentKey, type AttachmentReference } from "../../../../../shared/conversation/attachmentTypes";
 import { isDesktopApp } from "../../api/backend";
 import { ComposerFileImage } from "./ComposerFileImage";
-import imageStyles from "./ImageAttachments.module.less";
+import imageStyles from "../../../../../shared/chat/ImageAttachments.module.less";
 import styles from "./ComposerExtras.module.less";
 import { ComposerAttachment } from '../../../../../shared/chat/ComposerAttachment';
 import { AttachmentMetadataProvider } from './AttachmentMetadataProvider';

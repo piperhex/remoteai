@@ -9,6 +9,7 @@ import { ChatOperations } from './operations';
 import { guiApi } from '../../../../shared/conversation/api';
 import { pickChatImages } from '../../../../shared/remote-chat/views/pickChatImages';
 import { ReliableDelivery } from '../../../../shared/remote-chat/delivery';
+import { compressChatImage } from '../../../../shared/remote-chat/compressImage';
 
 vi.mock('../pages/codexGui/composerBridge', () => ({ guiComposer: {
   validateSend: async () => ({ model: 'model', effort: 'high', access: 'workspace-write' }),
@@ -96,4 +97,15 @@ it('corrects P2P web file metadata without changing the original PNG payload', a
   const bytes = Uint8Array.from('\x89PNG\r\n\x1a\noriginal-pixels', character => character.charCodeAt(0));
   const [image] = await pickChatImages([new File([bytes], 'photo.jpg', { type: 'image/jpeg' })], 8);
   expect(image.url).toBe(`data:image/png;base64,${Buffer.from(bytes).toString('base64')}`);
+});
+
+it('can prepare bounded CLI images without changing the active P2P policy', async () => {
+  setChatConnectionMode('direct');
+  setChatPolicy({ ...DEFAULT_CHAT_POLICY, imageSourceMaxMb: 1 });
+  const file = new File([new Uint8Array(2 * MIB)], 'photo.png', { type: 'image/png' });
+  await expect(pickChatImages([file], 8, 'relay')).rejects.toThrow('1 MB');
+  const encode = vi.fn(async (_edge: number, quality: number) => ({ value: quality,
+    bytes: quality > 0.5 ? 5 * MIB : 1024 }));
+  expect(await compressChatImage(encode, getChatPolicy('relay'), 2 * MIB, 'relay')).toBe(0.5);
+  expect(getChatPolicy().imageMaxEdge).toBe(Number.MAX_SAFE_INTEGER);
 });

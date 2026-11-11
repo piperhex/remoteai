@@ -1,16 +1,17 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { spawn } from 'node:child_process';
-import { createInterface } from 'node:readline';
 import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import { createWorker } from './cli-gui-acp-process.mjs';
 
 const desktop = fileURLToPath(new URL('../', import.meta.url));
 const root = resolve(desktop, '../../.codex-tmp/cli-gui-accounts');
 await mkdir(root, { recursive: true });
 const calls = [];
+const imageData = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+const imageUrl = `data:image/png;base64,${imageData}`;
 const proxy = createServer(async (request, response) => {
   if (request.headers.authorization !== 'Bearer test-gui-account') { response.writeHead(401).end(); return; }
   if (request.url === '/v1/cli-models') {
@@ -39,23 +40,12 @@ const proxy = createServer(async (request, response) => {
 await new Promise(resolveListen => proxy.listen(0, '127.0.0.1', resolveListen));
 const executable = process.platform === 'win32'
   ? resolve(desktop, 'src-tauri/resources/desktop-service/node.exe') : process.execPath;
-const child = spawn(executable, [resolve(desktop, 'src-tauri/resources/cli-gui/host.mjs'), root], {
-  windowsHide: true, stdio: ['pipe', 'pipe', 'inherit'], env: { ...process.env,
+const workerOptions = { executable, host: resolve(desktop, 'src-tauri/resources/cli-gui/host.mjs'), root,
+  requestTimeoutMs: 90_000, env: { ...process.env,
     REMOTEAI_GUI_PROXY_URL: `http://127.0.0.1:${proxy.address().port}/v1`, REMOTEAI_GUI_PROXY_TOKEN: 'test-gui-account' },
-});
-const pending = new Map(); let next = 0;
-createInterface({ input: child.stdout }).on('line', line => {
-  const frame = JSON.parse(line); if (frame.id) pending.get(frame.id)?.(frame);
-});
-function request(input) {
-  const id = ++next;
-  return new Promise((resolveRequest, reject) => {
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`Timed out: ${input.action}`)); }, 90_000);
-    pending.set(id, frame => { clearTimeout(timer); pending.delete(id);
-      if (frame.error) reject(new Error(frame.error)); else resolveRequest(frame.data); });
-    child.stdin.write(`${JSON.stringify({ id, request: input })}\n`);
-  });
-}
+};
+let worker = createWorker(workerOptions);
+const request = input => worker.request(input);
 try {
   for (const engine of ['claude', 'gemini']) {
     let status = await request({ engine, action: 'status' });
@@ -75,8 +65,9 @@ try {
     assert.equal(catalog.models[0].id, 'remoteai-test-model');
     const session = await request({ engine, action: 'create', cwd: root, model: 'remoteai-test-model', effort: 'high' });
     const before = calls.length;
-    await request({ engine, action: 'send', id: session.id, text: 'Reply with a short greeting. Do not use tools.',
-      messageId: crypto.randomUUID() });
+    const text = '';
+    await request({ engine, action: 'send', id: session.id, text,
+      messageId: crypto.randomUUID(), images: [imageUrl] });
     let history;
     for (let attempt = 0; attempt < 120; attempt++) {
       history = await request({ engine, action: 'read', id: session.id });
@@ -87,11 +78,21 @@ try {
     assert.ok(calls.length > before, `${engine} must use the GUI account route`);
     assert.ok(history.entries.some(entry => entry.text.includes('Remote AI account route verified.')), JSON.stringify(history));
     assert.equal(history.session.model, 'remoteai-test-model');
+    assert.ok(calls.slice(before).some(call => call.messages?.some(message => Array.isArray(message.content)
+      && message.content.some(block => block.type === 'image' && block.source?.media_type === 'image/png'
+        && block.source?.data === imageData))), `${engine} must deliver image bytes to the model route`);
+    const source = history.entries.find(entry => entry.role === 'user' && entry.images?.length)?.images[0];
+    assert.ok(source, `${engine} must retain image history`);
+    assert.equal(await request({ engine, action: 'image', id: session.id, source }), imageUrl);
     await request({ engine, action: 'archive', id: session.id });
-    console.log('Official CLI + internal account bridge passed:', engine);
+    await worker.close(); worker = createWorker(workerOptions);
+    const restored = await request({ engine, action: 'read', id: session.id });
+    const restoredMessage = restored.entries.find(entry => entry.role === 'user' && entry.images?.length);
+    assert.equal(restoredMessage?.text, text, `${engine} must preserve image-only and text/image history after restart`);
+    assert.equal(await request({ engine, action: 'image', id: session.id, source: restoredMessage.images[0] }), imageUrl);
+    console.log('Official CLI + internal account bridge + image bytes + restart history passed:', engine);
   }
 } finally {
-  child.stdin.end();
-  await new Promise(resolveExit => child.once('exit', resolveExit));
+  await worker.close();
   await new Promise(resolveClose => proxy.close(resolveClose));
 }

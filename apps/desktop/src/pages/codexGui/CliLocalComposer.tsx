@@ -10,11 +10,16 @@ import inputStyles from './SkillInput.module.less';
 import modeStyles from './AccessPicker.module.less';
 import addStyles from './ComposerAddMenu.module.less';
 import submitStyles from './ComposerSubmit.module.less';
+import { readClipboardImages } from './clipboardImages';
+import { readDroppedFiles, subscribeFileDrop } from './fileDrop';
+
+const nativeFileDrop = { subscribe: subscribeFileDrop, readFiles: readDroppedFiles };
 
 export function CliLocalComposer(props: CliComposerProps) {
   const cli = useCliGui()!;
   const usage = useContext(DesktopUsageContext);
-  return <CliComposer {...props} local={{ inputClassName: inputStyles.editor,
+  return <CliComposer {...props} readClipboardImages={isDesktopApp ? readClipboardImages : undefined}
+    nativeFileDrop={isDesktopApp ? nativeFileDrop : undefined} local={{ inputClassName: inputStyles.editor,
     submitClassName: submitStyles.button,
     modeClasses: { trigger: modeStyles.trigger, panel: modeStyles.panel, heading: modeStyles.heading,
       option: modeStyles.option, copy: modeStyles.copy, check: modeStyles.check },

@@ -1,13 +1,18 @@
 import type { PaseoAgent, PaseoAgentHandle, PaseoClient } from '@getpaseo/client';
 import type { CliCatalog, CliHistory, CliRequest, ExternalEngine } from '../../../shared/cli-gui/types';
 import { CliRuntime } from './runtime';
-import { permission, session, timelineEntry } from './mapping';
+import { permission, session } from './mapping';
 import { CliWorkspaces } from './workspaces';
 import { claudeAccountEnvironment, selectedClaudeAccount } from './claudeAccounts';
 import { cliRequestEffort } from '../../../shared/cli-gui/modelSelection';
+import { cliImages, CliImages } from './images';
+import { CliImageHistory } from './imageHistory';
 
 const OWNERSHIP = { remoteai: 'cli-gui' };
 const HISTORY_PAGE_SIZE = 100;
+// Claude's native replay omits image-only entries. This protocol marker retains the row;
+// our saved original text is restored before presentation, including the empty string.
+const IMAGE_ONLY_PROMPT = '[image]';
 
 export class CliService {
   private watches = new Map<string, () => void>();
@@ -15,8 +20,13 @@ export class CliService {
   private operations = 0;
   private maintaining = false;
   private workspaces: CliWorkspaces;
+  private images: CliImages;
+  private imageHistory: CliImageHistory;
   constructor(readonly runtime: Pick<CliRuntime, 'root' | 'status' | 'install' | 'connect' | 'close' | 'accountBridge'>,
-    private changed: () => void) { this.workspaces = new CliWorkspaces(runtime.root); }
+    private changed: () => void) {
+    this.workspaces = new CliWorkspaces(runtime.root); this.images = new CliImages(runtime.root);
+    this.imageHistory = new CliImageHistory(this.images);
+  }
 
   async request(request: CliRequest): Promise<unknown> {
     if (!['claude', 'gemini'].includes(request.engine)) throw new Error('client.cliGui.invalidRequest');
@@ -47,17 +57,15 @@ export class CliService {
     if (request.action === 'list') return this.list(client, request);
     if (request.action === 'create') return this.create(client, request);
     if (request.action === 'read') return this.read(client, request);
+    if (request.action === 'image') {
+      await this.owned(client, request.engine, request.id);
+      return this.images.load(request.id, request.source);
+    }
     if (!('id' in request)) throw new Error('client.cliGui.invalidRequest');
     return this.serialized(request.id, async () => {
       const agent = await this.owned(client, request.engine, request.id);
       if (request.action === 'send') {
-        if (!request.text.trim() || request.text.length > 1_000_000) throw new Error('client.cliGui.invalidRequest');
-        if (agent.archivedAt || agent.status === 'running' || agent.pendingPermissions?.length) {
-          throw new Error('client.cliGui.busy');
-        }
-        await this.watch(agent);
-        await this.configureMessage(agent, request);
-        await agent.send(request.text, { messageId: request.messageId });
+        await this.send(agent, request);
       } else if (request.action === 'stop') {
         // The public SDK reload operation interrupts the turn and preserves the native session/history.
         await agent.reload();
@@ -69,6 +77,24 @@ export class CliService {
       this.changed();
       return { ok: true };
     });
+  }
+
+  private async send(agent: PaseoAgentHandle, request: Extract<CliRequest, { action: 'send' }>) {
+    const images = cliImages(request.images);
+    if (typeof request.text !== 'string' || (!request.text.trim() && !images.length)
+      || request.text.length > 1_000_000 || typeof request.messageId !== 'string'
+      || !request.messageId.trim() || request.messageId.length > 200) throw new Error('client.cliGui.invalidRequest');
+    if (agent.archivedAt || agent.status === 'running' || agent.pendingPermissions?.length) {
+      throw new Error('client.cliGui.busy');
+    }
+    await this.watch(agent);
+    await this.configureMessage(agent, request);
+    if (images.length || await this.images.has(request.id)) {
+      const ordinal = await this.imageHistory.nextOrdinal(agent);
+      await this.images.save(request.id, request.messageId, { text: request.text, images: request.images ?? [] }, ordinal);
+    }
+    const text = request.engine === 'claude' && !request.text.trim() ? IMAGE_ONLY_PROMPT : request.text;
+    await agent.send(text, { messageId: request.messageId, ...(images.length ? { images } : {}) });
   }
 
   private async install(engine: ExternalEngine) {
@@ -222,7 +248,7 @@ export class CliService {
       cursor: request.cursor, limit: HISTORY_PAGE_SIZE, projection: 'projected' });
     if (page.error || !page.agent) throw new Error('client.cliGui.historyFailed');
     return { session: await this.session(page.agent, request.engine),
-      entries: page.entries.map(entry => timelineEntry(entry.item, entry.seqStart, entry.seqEnd)),
+      entries: await this.imageHistory.entries(agent, page),
       cursor: page.startCursor ?? undefined, hasOlder: page.hasOlder };
   }
 

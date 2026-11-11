@@ -36,6 +36,7 @@ export function createCliGuiFixture(ready = true, options: { manualInstall?: boo
     { id: '2', first: 2, last: 2, role: 'assistant', text: '已读取项目说明。接下来会检查共享组件和现有测试。' },
   ]);
   const calls: CliRequest[] = [];
+  const images = new Map<string, string>();
   let catalogOverride: ((input: Extract<CliRequest, { action: 'catalog' }>) => Promise<CliCatalog>) | undefined;
   const setCatalog = (catalog: NonNullable<typeof catalogOverride>, model: (session: CliSession) => string) => {
     catalogOverride = catalog;
@@ -81,11 +82,16 @@ export function createCliGuiFixture(ready = true, options: { manualInstall?: boo
     if (!('id' in input)) return {};
     const session = sessions.find(item => item.id === input.id && item.engine === input.engine);
     if (!session) throw new Error('client.cliGui.invalidRequest');
+    if (input.action === 'image') return images.get(`${session.id}:${input.source}`);
     if (input.action === 'read') return { session: structuredClone(session), entries: input.cursor
       ? [{ id: '0', first: 0, last: 0, role: 'assistant', text: '更早的项目讨论已恢复。' }]
       : entries.get(session.id), cursor: { epoch: 'test', seq: input.cursor ? 0 : 1 }, hasOlder: !input.cursor };
     if (input.action === 'send') {
-      entries.get(session.id)?.push({ id: '3', first: 3, last: 3, role: 'user', text: input.text },
+      const sources = input.images?.map((url, index) => {
+        const source = `chat-image://${(input.engine === 'claude' ? 'a' : 'b').repeat(63)}${index}`;
+        images.set(`${session.id}:${source}`, url); return source;
+      });
+      entries.get(session.id)?.push({ id: '3', first: 3, last: 3, role: 'user', text: input.text, images: sources },
         { id: '4', first: 4, last: 4, role: 'assistant', text: '已经检查现有代码。需要确认后才能更新项目文件。' });
       session.permissions = [{ id: 'permission-1', title: '更新项目说明', description: 'README.md · 补充本地开发步骤',
         actions: [{ id: 'once:exact', label: '', behavior: 'allow' }, { id: 'deny:exact', label: '', behavior: 'deny' }] }];
