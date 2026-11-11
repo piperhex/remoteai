@@ -14,13 +14,13 @@ pub(super) fn launch_id() -> &'static str {
 }
 
 #[derive(Clone)]
-pub(super) struct Journal {
+pub(in crate::codex_gui) struct Journal {
     path: PathBuf,
     launch: String,
 }
 
 impl Journal {
-    pub(super) fn new(home: &Path) -> Self {
+    pub(in crate::codex_gui) fn new(home: &Path) -> Self {
         Self {
             path: home.join("remoteai-task-recovery.db"),
             launch: launch_id().to_owned(),
@@ -44,7 +44,7 @@ impl Journal {
         Ok(connection)
     }
 
-    pub(super) fn started(&self, thread: &str, turn: &str) -> Result<()> {
+    pub(in crate::codex_gui) fn started(&self, thread: &str, turn: &str) -> Result<()> {
         self.connect()?
             .execute(
                 "INSERT OR REPLACE INTO active_turns VALUES (?1, ?2, ?3, ?4)",
@@ -59,7 +59,7 @@ impl Journal {
         Ok(())
     }
 
-    pub(super) fn finished(&self, thread: &str, turn: &str) -> Result<()> {
+    pub(in crate::codex_gui) fn finished(&self, thread: &str, turn: &str) -> Result<()> {
         self.connect()?
             .execute(
                 "DELETE FROM active_turns WHERE thread_id=?1 AND turn_id=?2",
@@ -76,7 +76,7 @@ impl Journal {
         Ok(())
     }
 
-    pub(super) fn pending(&self) -> Result<Vec<Entry>> {
+    pub(in crate::codex_gui) fn pending(&self) -> Result<Vec<Entry>> {
         let connection = self.connect()?;
         let mut query = connection
             .prepare(
@@ -120,7 +120,7 @@ impl Journal {
     }
 }
 
-pub(super) async fn access<T: Send + 'static>(
+pub(in crate::codex_gui) async fn access<T: Send + 'static>(
     journal: Journal,
     operation: impl FnOnce(Journal) -> Result<T> + Send + 'static,
 ) -> Result<T> {

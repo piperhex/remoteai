@@ -1,6 +1,38 @@
 import { expect, test } from '@playwright/test';
 
 for (const mode of ['local', 'remote', 'web']) {
+  test(`${mode}: stopped continuation stays absent after restart and reconnect`, async ({ page }, info) => {
+    const unrelatedTitle = 'Other unfinished task';
+    let stopped = false;
+    const resumed: unknown[] = [];
+    await page.route('**/recovery-fixture', route => {
+      const request = route.request().postDataJSON();
+      if (request.operation === 'recoveryDecide') {
+        resumed.push(...request.entries);
+        return route.fulfill({ json: { failed: [] } });
+      }
+      return route.fulfill({ json: {
+      batchId: 'after-stop-restart', candidates: [...(stopped ? [] : [{ title: 'Stopped continuation',
+        entry: { threadId: 'task', turnId: 'B', observedAt: 1 } }]), { title: unrelatedTitle,
+        entry: { threadId: 'unrelated', turnId: 'other-turn', observedAt: 1 } }],
+      } });
+    });
+    const origin = mode === 'web' ? 'http://127.0.0.1:1463/web/' : 'http://127.0.0.1:1462/';
+    await page.goto(`${origin}e2e/task-recovery-harness.html?mode=${mode}`);
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toContainText('恢复 2 个任务？');
+    stopped = true;
+    await page.reload();
+    await expect(dialog).toContainText('恢复 1 个任务？');
+    await page.reload();
+    await expect(dialog).toContainText('恢复 1 个任务？');
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: info.outputPath(`${mode}-light-restarted-stop.png`) });
+    await page.getByRole('button', { name: '全部恢复' }).click();
+    await expect(dialog).toBeHidden();
+    expect(resumed).toEqual([{ threadId: 'unrelated', turnId: 'other-turn', observedAt: 1 }]);
+  });
+
   for (const appearance of ['light', 'dark-large']) {
     test(`${mode} ${appearance}: recovery actions, typography and failed task links`, async ({ page }, info) => {
       const requests: { operation: string; action?: string; entries?: unknown[] }[] = [];

@@ -8,7 +8,7 @@ export default defineConfig({
   webServer: [
     { cwd: '..', command: 'npx vite --config scripts/vite.config.ts --port 1462 --strictPort',
       url: 'http://127.0.0.1:1462/e2e/task-recovery-harness.html', timeout: 90_000 },
-    { cwd: '../../web', command: 'npm run dev -- --port 1463 --strictPort',
+    { cwd: '../../..', command: 'npx vite --config scripts/vite.task-recovery-web.config.ts --port 1463 --strictPort',
       url: 'http://127.0.0.1:1463/web/e2e/task-recovery-harness.html', timeout: 90_000 },
   ],
 });
