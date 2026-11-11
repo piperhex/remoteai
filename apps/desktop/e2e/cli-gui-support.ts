@@ -6,6 +6,8 @@ export async function localBackend(page: Page, ready = true,
   const fixture = createCliGuiFixture(ready, options);
   const modelRequests: { cacheOnly?: boolean }[] = [];
   const commands: string[] = [];
+  const events: { name: string; payload: unknown }[] = [];
+  fixture.accounts.subscribe(() => events.push({ name: 'codex-gui-account-changed', payload: {} }));
   await page.route('https://fonts.googleapis.com/**', route => route.abort());
   await page.route('**/__codex_switch__/api/invoke', async route => {
     const { command, args = {} } = route.request().postDataJSON();
@@ -20,7 +22,8 @@ export async function localBackend(page: Page, ready = true,
     if (command === 'codex_gui_git') result = cliGitStatus(args.request.cwd);
     if (command === 'codex_gui_queue_read') result = { revision: 0, threads: {} };
     if (command === 'codex_gui_queue_save') result = args.snapshot;
-    if (command === 'codex_gui_events') result = { cursor: { streamId: 'test', sequence: 1 }, reset: false, events: [] };
+    if (command === 'codex_gui_events') result = { cursor: { streamId: 'test', sequence: events.length },
+      reset: false, events: events.slice(args.cursor?.sequence ?? 0) };
     if (command === 'codex_gui_model_settings') result = { threadId: null, selection: null, revision: 0 };
     if (command === 'codex_gui_request') {
       let data: unknown = { data: [], nextCursor: null };

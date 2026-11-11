@@ -1,7 +1,7 @@
 # Claude GUI and Gemini GUI
 
-The composer footer selects the CLI for a new conversation. Existing conversations retain their original
-engine. The footer displays that engine's installed CLI version on the selected computer; the Paseo runtime
+The desktop composer footer selects the CLI for a new conversation. Existing conversations retain their original
+engine. The selector displays that engine's installed CLI version on the selected computer; the Paseo runtime
 version is never displayed as the CLI version. Codex's service status remains available beside its selector.
 
 Desktop local, desktop remote and Web reuse the existing conversation renderer, model picker,
@@ -10,17 +10,17 @@ supports text messages, streamed timelines, tool details, permission choices, qu
 archiving. Archived conversations remain readable. This integration lists conversations created by Remote AI;
 it does not import unrelated native CLI or Paseo sessions.
 
-Native Android/iOS also exposes the CLI picker below the composer. It runs the selected CLI on the connected
-computer through the same authenticated transport. Native uses its own sheets, model settings, project picker
+Native Android/iOS exposes the CLI picker in chat settings, immediately below the account row. It runs the selected
+CLI on the connected computer through the same authenticated transport. Native uses its own sheets, model settings, project picker
 and message renderer, including approval questions, stop, older messages, search and long-press archive actions.
 The account picker scopes changes to the selected CLI. Drafts remain separate between engines and conversations.
-Mobile Web keeps the CLI picker visible and omits desktop usage metrics from the compact composer.
+Mobile Web uses the same settings placement and omits desktop usage metrics from the compact composer.
 
 ## Setup
 
-Choose the account or third-party provider in the existing GUI account picker, select a CLI in the composer
-footer, then click Install. The application installs the vendor's official npm package and verifies its
-executable version. It also prepares the private conversation runtime and npm automatically. Existing
+Choose the account or third-party provider in the existing GUI account picker, select a CLI in the desktop composer
+footer or mobile chat settings, then click Install. The application installs the vendor's official npm package
+and verifies its executable version. It also prepares the private conversation runtime and npm automatically. Existing
 system installations remain usable. The documentation links still point directly to:
 
 - Claude Code: https://code.claude.com/docs/en/setup#install-claude-code
