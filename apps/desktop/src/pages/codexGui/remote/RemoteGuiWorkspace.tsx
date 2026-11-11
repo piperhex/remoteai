@@ -56,7 +56,8 @@ export default function RemoteGuiWorkspace(props: {
     renderSettings={onClose => <RemoteGuiSettingsDialog client={chat.controller.guiTools.settings}
       privacyMode={props.privacyMode} onClose={onClose} />} />;
   return <section ref={workspace} className={`${styles.page} chat-page gui-remote-workspace`}
-    data-dream-skin={skinStyle ? 'true' : undefined} style={skinStyle} aria-label={`Codex GUI：${device.name}`}>
+    data-dream-skin={skinStyle ? 'true' : undefined} style={skinStyle}
+    aria-label={uiText("client.agentHub.workspace", { device: device.name })}>
     <ConfigProvider getPopupContainer={popupContainer}>
     <TerminalWorkspaceProvider panel={terminal}>
     <RemoteFileEnvironment controller={chat.controller} ready={chat.state.ready} threadId={chat.state.selected?.id ?? null}>

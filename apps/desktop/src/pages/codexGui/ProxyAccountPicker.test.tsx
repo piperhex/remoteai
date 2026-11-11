@@ -348,11 +348,11 @@ it("opens independent auto-switch settings from the list footer and closes them 
   await render();
   expect(invoke).not.toHaveBeenCalledWith("codex_gui_auto_switch_settings");
   await click(trigger());
-  const settingsButton = document.querySelector<HTMLButtonElement>('button[aria-label="Codex GUI 设置"]')!;
+  const settingsButton = document.querySelector<HTMLButtonElement>('button[aria-label="Agent Hub 设置"]')!;
   expect(settingsButton.getAttribute("aria-haspopup")).toBe("dialog");
   await click(settingsButton);
   expect(trigger().getAttribute("aria-expanded")).toBe("false");
-  expect(document.querySelector('[role="dialog"]')?.textContent).toContain("Codex GUI 设置");
+  expect(document.querySelector('[role="dialog"]')?.textContent).toContain("Agent Hub 设置");
   expect(invoke).toHaveBeenCalledWith("codex_gui_auto_switch_settings");
   expect(props.onSwitchAccount).not.toHaveBeenCalled();
   props.active = false;
@@ -364,7 +364,7 @@ it("waits for the account catalog before allowing automatic switching settings t
   props.loading = true;
   await render();
   await click(trigger());
-  const settingsButton = document.querySelector<HTMLButtonElement>('button[aria-label="Codex GUI 设置"]')!;
+  const settingsButton = document.querySelector<HTMLButtonElement>('button[aria-label="Agent Hub 设置"]')!;
   expect(settingsButton.disabled).toBe(true);
   await click(settingsButton);
   expect(invoke).not.toHaveBeenCalledWith("codex_gui_auto_switch_settings");

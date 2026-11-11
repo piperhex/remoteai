@@ -9,6 +9,7 @@ import { uiText } from "../../../../../../shared/localization/uiText";
 import { useGuiLanguage } from "../../../../../../shared/localization/useGuiLanguage";
 import { useComputerUse } from "./useComputerUse";
 import { Permissions } from "./Permissions";
+import { Administrator } from "./Administrator";
 import styles from "./index.module.less";
 
 interface Props { homeId: string; active: boolean; onBusyChange: (busy: boolean) => void }
@@ -31,7 +32,7 @@ function statusText(status: ComputerUseStatus | null) {
 
 export function ComputerUseCard({ homeId, active, onBusyChange }: Props) {
   const language = useGuiLanguage();
-  const { status, error, busy, refresh, run, requestPermission } = useComputerUse(homeId, active);
+  const { status, error, administratorError, busy, refresh, run, requestPermission } = useComputerUse(homeId, active);
   useEffect(() => { onBusyChange(busy); return () => onBusyChange(false); }, [busy, onBusyChange]);
   // The shared "启用" entry is the "Enabled" state label; the key-based copy holds the Enable/Uninstall actions.
   const uninstall = translate(language, "skills.official.uninstall");
@@ -42,7 +43,10 @@ export function ComputerUseCard({ homeId, active, onBusyChange }: Props) {
       {status?.version && <span className="skill-version">CUA v{status.version}</span>}
     </div>
     <div className="skill-card-body">
-      <div className="skill-card-title"><h3>{uiText("client.desktopBuiltinPlugins.computerUseAssistant")}</h3></div>
+      <div className="skill-card-title"><h3>{uiText("client.desktopBuiltinPlugins.computerUseAssistant")}</h3>
+        {status?.enabled && status.administrator
+          && <Administrator status={status.administrator} busy={busy} error={administratorError} onAction={run} />}
+      </div>
       <p>{uiText("client.desktopBuiltinPlugins.letsCodexSeeTheScreenClickTypeAndWorkWith")}</p>
       <div className={styles.status} role="status">{statusText(status)}</div>
       {status?.permissions && <Permissions permissions={status.permissions} busy={busy} onRequest={requestPermission} />}

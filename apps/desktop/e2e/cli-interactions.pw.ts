@@ -37,7 +37,7 @@ for (const mode of ['local', 'remote', 'web']) {
     await expect(input).toHaveValue('检查项目文件\n"F:/projects/remote ai/README.md"');
     const access = pane.getByRole('button', { name: /^访问权限：/ });
     await access.click();
-    const permission = page.getByRole('menuitemradio', { name: '默认', exact: true });
+    const permission = page.getByRole('menuitemradio', { name: '始终询问', exact: true });
     await expect(permission).toHaveAttribute('aria-checked', 'true');
     await permission.focus(); await permission.press('Escape');
     await expect(access).toBeFocused();

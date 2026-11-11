@@ -12,7 +12,7 @@ function fixture(provider = 'gemini', owned = true) {
     refresh: vi.fn(async () => ({ agent: { provider, labels: owned ? { remoteai: 'cli-gui' } : {} } })),
     respondToPermission: vi.fn(), reload: vi.fn() };
   const client = { agents: { ref: () => agent as unknown as PaseoAgentHandle } } as unknown as PaseoClient;
-  const service = new CliService({ connect: async () => client,
+  const service = new CliService({ root: '/unused-runtime', connect: async () => client,
     status: async () => ({ status: 'ready', version: '0.15.4' }), install() {}, close: async () => {},
     accountBridge: async () => { throw new Error('Unexpected account operation'); } }, () => {});
   return { service, agent, pending };

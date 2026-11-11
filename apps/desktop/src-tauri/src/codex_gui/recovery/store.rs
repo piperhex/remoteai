@@ -134,6 +134,22 @@ mod tests {
     use super::*;
 
     #[test]
+    fn removing_deleted_threads_preserves_other_recovery_records() {
+        let root = tempfile::tempdir().unwrap();
+        let mut journal = Journal::new(root.path());
+        for thread in ["deleted", "child", "valid"] {
+            journal.started(thread, "turn").unwrap();
+        }
+        journal.launch = "restarted".into();
+        journal.remove_thread("deleted").unwrap();
+        journal.remove_thread("child").unwrap();
+        journal.remove_thread("deleted").unwrap();
+        let pending = journal.pending().unwrap();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].thread_id, "valid");
+    }
+
+    #[test]
     fn restart_consumes_only_prior_launch_and_exact_turn_once() {
         let root = tempfile::tempdir().unwrap();
         let mut journal = Journal::new(root.path());

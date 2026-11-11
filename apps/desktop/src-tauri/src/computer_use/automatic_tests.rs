@@ -60,6 +60,7 @@ fn existing_enabled_and_disabled_installations_are_preserved() {
                 enabled,
                 generation: "existing".into(),
                 version: String::new(),
+                administrator: false,
             },
         )
         .unwrap();

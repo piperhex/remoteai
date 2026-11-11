@@ -54,15 +54,16 @@ async fn delete_thread(
             .map_err(|_| GuiError::Delete)?
             .map_err(deletion_error)?;
     for id in &ids {
-        super::web::publish(
-            &app,
-            "codex-gui-event",
-            GuiEvent {
-                method: "thread/deleted".into(),
-                params: json!({ "threadId": id }),
-                id: None,
-            },
-        );
+        let event = GuiEvent {
+            method: "thread/deleted".into(),
+            params: json!({ "threadId": id }),
+            id: None,
+        };
+        // Local deletion publishes directly, bypassing the app-server event recorder.
+        client
+            .record_recovery_event(&event.method, &event.params)
+            .await;
+        super::web::publish(&app, "codex-gui-event", event);
     }
     Ok(DeletionReport {
         report,

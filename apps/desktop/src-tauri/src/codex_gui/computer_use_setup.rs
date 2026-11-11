@@ -34,7 +34,13 @@ pub(super) async fn prepare(app: AppHandle, home: PathBuf) {
                 #[cfg(windows)]
                 super::unattended_setup::start(worker_app.clone());
             }
-        })
+        })?;
+        #[cfg(windows)]
+        if let Err(error) = crate::computer_use::administrator::prepare_gui(&home) {
+            // Cancellation leaves normal CUA available; do not turn a declined UAC prompt into a failed installation.
+            eprintln!("Computer Use administrator authorization unavailable: {error}");
+        }
+        Ok::<_, crate::computer_use::ComputerError>(())
     })
     .await;
     match result {

@@ -1,5 +1,5 @@
 //! An isolated, revocable connection to the GUI's managed computer-use installation.
-use super::{install, package, platform, session, state, ComputerError, Result, CHANGES};
+use super::{install, package, platform, state, ComputerError, Result, CHANGES};
 use serde_json::{json, Value};
 use std::{path::PathBuf, process::Stdio, time::Duration};
 use tokio::{
@@ -70,8 +70,12 @@ fn prepare(home: PathBuf) -> Result<(std::process::Command, Installation)> {
     if !install::configured(&home, true)? || !package::present(&root)? {
         return Err(ComputerError::Disabled);
     }
+    let mut command =
+        std::process::Command::new(std::env::current_exe().map_err(|_| ComputerError::Startup)?);
+    command.arg(format!("{}{id}", super::HELPER_ARGUMENT));
+    platform::configure_driver(&mut command);
     Ok((
-        session::driver_command(&root)?,
+        command,
         Installation {
             root,
             id,
@@ -281,7 +285,7 @@ mod tests {
             .unwrap();
         // The test executable differs from the registered GUI command; leave that registration untouched.
         // Production connect() additionally validates the GUI's exact managed configuration in prepare().
-        let command = session::driver_command(&root).unwrap();
+        let command = super::super::session::driver_command(&root).unwrap();
         let installation = Installation {
             root,
             id,

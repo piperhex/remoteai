@@ -162,11 +162,7 @@ fn anthropic_web_search_tool(tool: &Value) -> Value {
 
 /// OAuth Codex accepts fewer generation controls than the public Responses endpoint.
 fn prepare_anthropic_official_request(body: &mut Value) {
-    if let Some(object) = body.as_object_mut() {
-        for field in ["max_output_tokens", "temperature", "top_p"] {
-            object.remove(field);
-        }
-    }
+    remove_unsupported_official_generation_controls(body);
     remove_incompatible_official_reasoning_from_input(body);
 }
 

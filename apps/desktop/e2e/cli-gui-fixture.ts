@@ -58,7 +58,12 @@ export function createCliGuiFixture(ready = true, options: { manualInstall?: boo
       models: [{ id: account.kind === 'account' ? 'gpt-6' : 'team-model',
         label: account.kind === 'account' ? 'GPT-6' : 'Team Model', isDefault: true, defaultEffort: 'high',
         efforts: [{ id: 'medium', label: 'Medium' }, { id: 'high', label: 'High' }] }],
-      modes: [{ id: 'default', label: 'Default' }], defaultMode: 'default' };
+      modes: input.engine === 'claude' ? [
+        { id: 'plan', label: 'Plan Mode' }, { id: 'default', label: 'Always Ask' },
+        { id: 'acceptEdits', label: 'Accept File Edits' }, { id: 'auto', label: 'Auto mode' },
+        { id: 'bypassPermissions', label: 'Bypass' },
+      ] : [{ id: 'default', label: 'Default' }, { id: 'autoEdit', label: 'Auto Edit' },
+        { id: 'yolo', label: 'YOLO' }, { id: 'plan', label: 'Plan' }], defaultMode: 'default' };
     if (input.action === 'list') return sessions.filter(item => item.engine === input.engine
       && item.archived === input.archived);
     if (input.action === 'create') {

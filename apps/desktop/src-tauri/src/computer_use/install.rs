@@ -25,6 +25,12 @@ fn entry(home: &Path, enabled: bool) -> Result<Table> {
     table["enabled"] = value(enabled);
     table["startup_timeout_sec"] = value(30);
     table["tool_timeout_sec"] = value(TOOL_TIMEOUT_SECONDS as i64);
+    #[cfg(windows)]
+    if let Some(revision) = super::administrator::revision(home) {
+        let mut environment = Table::new();
+        environment["REMOTEAI_CUA_ACCESS"] = value(revision);
+        table["env"] = toml_edit::Item::Table(environment);
+    }
     Ok(table)
 }
 
@@ -99,6 +105,8 @@ fn install_with(root: &Path, home: &Path, prepare: impl FnOnce() -> Result<()>) 
         enabled: false,
         generation: uuid::Uuid::new_v4().to_string(),
         version: String::new(),
+        administrator: state::read(root, &state::home_id(home))?
+            .is_some_and(|record| record.administrator),
     };
     state::save(root, &record)?;
     prepare()?;

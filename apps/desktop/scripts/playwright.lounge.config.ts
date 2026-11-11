@@ -10,7 +10,7 @@ export default defineConfig({
     'lounge-mobile-redesign.pw.ts', 'lounge-mobile-scroll.pw.ts', 'lounge-history-timeline.pw.ts',
     'lounge-desktop-history.pw.ts', 'lounge-client-version.pw.ts', 'lounge-device-presence.pw.ts',
     'lounge-opening-limit.pw.ts', 'lounge-avatars.pw.ts', 'lounge-avatar-cache.pw.ts',
-    'settings-avatars.pw.ts', 'lounge-images.pw.ts',
+    'settings-avatars.pw.ts', 'lounge-images.pw.ts', 'lounge-preview-copy.pw.ts',
     'lounge-emoji.pw.ts', 'lounge-text.pw.ts', 'lounge-presence.pw.ts', 'lounge-profile.pw.ts',
     'lounge-navigation.pw.ts', 'lounge-new-chat.pw.ts', 'lounge-new-chat-mobile.pw.ts', 'lounge-ordering.pw.ts',
     'lounge-chat-actions.pw.ts', 'lounge-names.pw.ts', 'lounge-my-account.pw.ts',

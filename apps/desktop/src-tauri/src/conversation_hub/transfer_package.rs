@@ -53,7 +53,7 @@ fn write_session(
     included: &HashSet<String>,
 ) -> Result<PackageItem, String> {
     let row = snapshot_thread_row(latest_state_db(home).as_deref(), &snapshot.session_id)?;
-    let current = bin_rollout_relative(rollout_selection::primary(snapshot, row.as_ref()), home)?;
+    let current = bin_rollout_relative(rollout_selection::primary(snapshot, row.as_ref())?, home)?;
     let rollouts = snapshot
         .physical_paths
         .iter()
@@ -177,6 +177,20 @@ pub(super) fn validate(manifest: &PackageManifest) -> Result<(), String> {
 
 fn validate_session(item: &PackageItem, version: u32) -> Result<(), String> {
     let primary = relative(&item.relative_rollout_path)?;
+    if item
+        .state_row
+        .as_ref()
+        .is_some_and(|row| sqlite_row_text(row, "id") != Some(&item.session_id))
+        || !rollout_pointer::validate(
+            &item.relative_rollout_path,
+            item.state_row.as_ref(),
+            files(item)
+                .iter()
+                .map(|file| file.relative_rollout_path.as_str()),
+        )
+    {
+        return Err(rollout_selection::SelectionError::new(&item.session_id).into());
+    }
     if version == 1 && item.rollouts.is_empty() {
         return Ok(());
     }

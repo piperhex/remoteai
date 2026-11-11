@@ -14,6 +14,8 @@ pub(crate) struct ComputerUseStatus {
     supported: bool,
     version: &'static str,
     permissions: Option<permissions::Permissions>,
+    #[cfg(windows)]
+    administrator: super::administrator::Status,
 }
 
 #[derive(Deserialize)]
@@ -23,6 +25,9 @@ pub(crate) enum ComputerUseAction {
     Enable,
     Disable,
     Remove,
+    EnableAdministrator,
+    GrantAdministrator,
+    RevokeAdministrator,
 }
 
 #[tauri::command]
@@ -66,11 +71,31 @@ pub(crate) async fn computer_use_action(
     action: ComputerUseAction,
 ) -> std::result::Result<ComputerUseStatus, String> {
     tauri::async_runtime::spawn_blocking(move || {
-        let _guard = CHANGES.lock().map_err(|_| ComputerError::Storage)?;
         platform::asset()?;
         let home = crate::codex_home::resolve_selected(&app, Some(&home_id))
             .map_err(|_| ComputerError::Storage)?;
         let root = super::root()?;
+        if matches!(
+            action,
+            ComputerUseAction::EnableAdministrator
+                | ComputerUseAction::GrantAdministrator
+                | ComputerUseAction::RevokeAdministrator
+        ) {
+            #[cfg(windows)]
+            {
+                if matches!(action, ComputerUseAction::EnableAdministrator) {
+                    super::administrator::request_on_entry(&root, &home)?;
+                } else if matches!(action, ComputerUseAction::GrantAdministrator) {
+                    super::administrator::enable(&root, &home)?;
+                } else {
+                    super::administrator::revoke(&root, &home)?;
+                }
+                return status(&root, &home);
+            }
+            #[cfg(not(windows))]
+            return Err(ComputerError::Unsupported);
+        }
+        let _guard = CHANGES.lock().map_err(|_| ComputerError::Storage)?;
         automatic::remember(&root, &home)?;
         match action {
             ComputerUseAction::Install | ComputerUseAction::Enable => {
@@ -78,6 +103,11 @@ pub(crate) async fn computer_use_action(
             }
             ComputerUseAction::Disable => install::disable(&root, &home, false)?,
             ComputerUseAction::Remove => install::disable(&root, &home, true)?,
+            ComputerUseAction::EnableAdministrator
+            | ComputerUseAction::GrantAdministrator
+            | ComputerUseAction::RevokeAdministrator => {
+                return Err(ComputerError::Unsupported);
+            }
         }
         status(&root, &home)
     })
@@ -104,5 +134,7 @@ fn status(root: &Path, home: &Path) -> Result<ComputerUseStatus> {
         supported,
         version: VERSION,
         permissions: permissions::status(),
+        #[cfg(windows)]
+        administrator: super::administrator::status(root, home)?,
     })
 }

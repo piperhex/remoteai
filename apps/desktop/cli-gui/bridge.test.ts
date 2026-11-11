@@ -50,12 +50,14 @@ it('routes both CLI protocols through GUI credentials and preserves the chosen m
   const gemini = bridge.environment('gemini', route);
   const response = await fetch(`${gemini.GOOGLE_GEMINI_BASE_URL}/v1beta/models/gemini-native:streamGenerateContent`, {
     method: 'POST', headers: { 'x-goog-api-key': gemini.GEMINI_API_KEY },
-    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'hello' }] }] }),
+    body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'hello' }] }],
+      generationConfig: { temperature: 1, maxOutputTokens: 16384 } }),
   });
   const stream = await response.text();
   expect(stream).toContain('from internal account');
   expect(stream).toContain('finishReason');
-  expect(calls[1].body).toMatchObject({ model: 'third-party-model', metadata: { remoteai_effort: 'medium' } });
+  expect(calls[1].body).toMatchObject({ model: 'third-party-model', temperature: 1, max_tokens: 16384,
+    metadata: { remoteai_effort: 'medium' } });
   const persisted = await readFile(join(root, 'bridge.json'), 'utf8');
   expect(persisted).not.toContain(target.token);
 });

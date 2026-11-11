@@ -40,7 +40,8 @@ export function GuiThemeSettings() {
     </div>
     {error && <p className={styles.error} role="alert">{error}</p>}
     <div className={styles.preview} aria-label={uiText("client.workspaceSettings.themePreview")}>
-      <div className={styles.sidebar}><strong>Codex GUI</strong><span>{uiText("client.workspaceSettings.newConversation.b93fe9")}</span></div>
+      <div className={styles.sidebar}><strong>{uiText("client.agentHub.title")}</strong>
+        <span>{uiText("client.workspaceSettings.newConversation.b93fe9")}</span></div>
       <div className={styles.conversation}>
         <span className={styles.caption}><span className={styles.previewDot} />{uiText("client.chat.preview")}</span>
         <p>{uiText("client.workspaceSettings.helloWhatWouldYouLikeToWorkOnToday")}</p>

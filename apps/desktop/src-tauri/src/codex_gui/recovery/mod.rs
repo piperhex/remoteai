@@ -58,6 +58,27 @@ fn eligible(thread: &Value, entry: &Entry) -> bool {
             || thread["updatedAt"].as_i64().unwrap_or(0) * 1000 >= cutoff)
 }
 
+fn partition_candidates(
+    checked: Vec<(Entry, super::error::Result<Value>)>,
+) -> (Vec<Value>, Vec<Entry>) {
+    let mut candidates = Vec::new();
+    let mut obsolete = Vec::new();
+    for (entry, result) in checked {
+        let Ok(thread) = result else {
+            // A missing or unreadable conversation must not hide healthy tasks. Keep its
+            // record for retry because an RPC failure can also be transient.
+            eprintln!("Codex GUI skipped an unreadable task recovery record");
+            continue;
+        };
+        if eligible(&thread, &entry) {
+            candidates.push(json!({"entry": entry, "title": title(&thread)}));
+        } else {
+            obsolete.push(entry);
+        }
+    }
+    (candidates, obsolete)
+}
+
 impl Client {
     pub(super) async fn record_recovery_event(&self, method: &str, params: &Value) {
         if matches!(method, "thread/archived" | "thread/deleted") {
@@ -137,16 +158,7 @@ impl Client {
             .buffer_unordered(CONCURRENCY)
             .collect()
             .await;
-        let mut candidates = Vec::new();
-        let mut obsolete = Vec::new();
-        for (entry, result) in checked {
-            let thread = result?;
-            if eligible(&thread, &entry) {
-                candidates.push(json!({"entry": entry, "title": title(&thread)}));
-            } else {
-                obsolete.push(entry);
-            }
-        }
+        let (candidates, obsolete) = partition_candidates(checked);
         if !obsolete.is_empty() {
             store::access(store::Journal::new(&self.home), move |journal| {
                 journal.claim(&obsolete)
@@ -235,6 +247,31 @@ fn title(thread: &Value) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unreadable_records_do_not_hide_valid_tasks_or_get_discarded() {
+        let entry = |thread: &str| Entry {
+            thread_id: thread.into(),
+            turn_id: "turn".into(),
+            observed_at: chrono::Utc::now().timestamp_millis(),
+        };
+        let thread = |id: &str, status: &str| {
+            json!({
+                "id": id, "name": id, "status": {"type": "idle"},
+                "turns": [{"id": "turn", "status": status}]
+            })
+        };
+        let (candidates, obsolete) = partition_candidates(vec![
+            (entry("missing"), Err(GuiError::Rpc)),
+            (entry("valid"), Ok(thread("valid", "interrupted"))),
+            (entry("timeout"), Err(GuiError::Timeout)),
+            (entry("completed"), Ok(thread("completed", "completed"))),
+        ]);
+        assert_eq!(candidates.len(), 1);
+        assert_eq!(candidates[0]["entry"]["threadId"], "valid");
+        assert_eq!(obsolete.len(), 1);
+        assert_eq!(obsolete[0].thread_id, "completed");
+    }
 
     #[test]
     fn recovery_requires_the_same_interrupted_root_turn() {

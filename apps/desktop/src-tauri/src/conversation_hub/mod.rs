@@ -262,6 +262,7 @@ include!("bin_migration.rs");
 include!("discard.rs");
 include!("bin.rs");
 include!("transfer.rs");
+mod rollout_pointer;
 mod rollout_selection;
 mod transfer_import;
 mod transfer_package;
@@ -284,5 +285,7 @@ mod visibility_provider_tests;
 mod bin_test_support;
 #[cfg(test)]
 mod bin_tests;
+#[cfg(test)]
+mod rollout_selection_tests;
 #[cfg(test)]
 mod transfer_tests;

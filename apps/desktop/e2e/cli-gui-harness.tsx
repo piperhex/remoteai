@@ -21,6 +21,7 @@ import { useRemoteCliInstaller } from '../../../shared/conversation/remote/useRe
 import { getGuiController } from '../src/pages/codexGui/session';
 import { saveGuiSkin } from '../src/pages/codexGui/guiSkin';
 import { useDreamSkin } from '../src/pages/codexGui/useDreamSkin';
+import { DashboardNavigation } from '../src/components/dashboard/DashboardNavigation';
 import 'antd/dist/reset.css';
 import '../src/pages/codexGui/remote/remoteGui.less';
 
@@ -77,9 +78,10 @@ function Harness() {
     : [algorithm, theme.compactAlgorithm], token: { colorPrimary: '#28837f',
       fontFamily: mode === 'web' ? "Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif"
         : '"DM Sans", "Microsoft YaHei UI", sans-serif' } }}><App>
+    {params.has('hub') && mode !== 'web' && <DashboardNavigation page="codexGui" t={t} onPageChange={() => {}} />}
     <main className={mode === 'remote' ? `${styles.page} chat-page gui-remote-workspace`
       : mode === 'web' ? 'chat-page' : ''} data-dream-skin={skinStyle ? 'true' : undefined}
-      style={{ height: '100dvh', ...skinStyle }}>
+      style={{ height: params.has('hub') && mode !== 'web' ? 'calc(100dvh - 48px)' : '100dvh', ...skinStyle }}>
       {mode === 'local' ? <CodexGuiPage active accountPicker={accounts} providers={[]} aggregateApis={[]}
         plugins={{ authenticated: false, onLogin() {}, notify() {}, t }} />
         : <ConnectedChat chat={{ state, controller, foreground: true }} device={device} devices={[device]}

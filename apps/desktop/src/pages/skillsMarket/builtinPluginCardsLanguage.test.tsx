@@ -89,7 +89,7 @@ it("uses the Enable action label and shows remote command errors in the interfac
 });
 
 it("has English and Russian copy for every semantic key in the built-in plugin cards", () => {
-  const files = ["./ComputerUseCard/index.tsx", "./ComputerUseCard/Permissions.tsx", "./RemoteCommandCard/index.tsx",
+  const files = ["./ComputerUseCard/index.tsx", "./ComputerUseCard/Permissions.tsx", "./ComputerUseCard/Administrator.tsx", "./RemoteCommandCard/index.tsx",
     "./OfficialPluginsMarket/CliInstallButton.tsx", "./OfficialPluginsMarket/index.tsx"];
   const sources = files
     .flatMap(file => [...readFileSync(new URL(file, import.meta.url), "utf8").matchAll(/["'](client\.[^"'\n]+)["']/g)])
