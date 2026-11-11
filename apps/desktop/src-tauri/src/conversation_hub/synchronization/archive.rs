@@ -163,19 +163,7 @@ pub(super) fn snapshots(root: &Path) -> Result<Vec<BinSnapshot>, String> {
                 .into_iter()
                 .flat_map(|path| rollout_physical_paths(&path))
                 .collect::<Vec<_>>();
-            if rollouts.is_empty() {
-                return Err(INVALID.into());
-            }
-            for path in &rollouts {
-                if first_rollout_value(path)?
-                    .as_ref()
-                    .and_then(snapshot_id)
-                    .as_ref()
-                    != Some(&manifest.session_id)
-                {
-                    return Err(INVALID.into());
-                }
-            }
+            validate_rollouts(&manifest, &folder.join("files"), &rollouts)?;
             Ok(BinSnapshot {
                 folder,
                 manifest,
@@ -183,6 +171,44 @@ pub(super) fn snapshots(root: &Path) -> Result<Vec<BinSnapshot>, String> {
             })
         })
         .collect()
+}
+
+fn validate_rollouts(manifest: &BinManifest, root: &Path, files: &[PathBuf]) -> Result<(), String> {
+    let current = root.join(transfer_package::relative(&manifest.relative_rollout_path)?);
+    if !files
+        .iter()
+        .any(|path| logical_rollout_path(path) == logical_rollout_path(&current))
+    {
+        return Err(INVALID.into());
+    }
+    let relative = files
+        .iter()
+        .map(|path| {
+            bin_rollout_relative(path, root).map(|path| path.to_string_lossy().into_owned())
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let row = manifest
+        .state_backup
+        .as_ref()
+        .and_then(|backup| backup.thread.as_ref());
+    if !rollout_pointer::validate(
+        &manifest.relative_rollout_path,
+        row,
+        relative.iter().map(String::as_str),
+    ) {
+        return Err(INVALID.into());
+    }
+    for path in files {
+        if first_rollout_value(path)?
+            .as_ref()
+            .and_then(snapshot_id)
+            .as_ref()
+            != Some(&manifest.session_id)
+        {
+            return Err(INVALID.into());
+        }
+    }
+    Ok(())
 }
 
 pub(super) fn validate_id(id: &str) -> Result<(), String> {
@@ -213,6 +239,10 @@ fn validate_manifests(items: &[BinManifest]) -> Result<(), String> {
             .iter()
             .any(|folder| relative.starts_with(folder))
             || logical_rollout_path(&relative).is_none()
+            || !rollout_pointer::matches(
+                &item.relative_rollout_path,
+                &item.original_rollout_path.to_string_lossy(),
+            )
         {
             return Err(INVALID.into());
         }

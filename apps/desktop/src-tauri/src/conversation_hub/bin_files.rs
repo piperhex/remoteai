@@ -96,7 +96,7 @@ fn bin_manifest_for_snapshot(
     snapshot: RolloutSnapshot,
 ) -> Result<BinManifest, String> {
     let backup = snapshot_bin_state(codex_home, &snapshot.session_id)?;
-    let original = rollout_selection::primary(&snapshot, backup.thread.as_ref());
+    let original = rollout_selection::primary(&snapshot, backup.thread.as_ref())?;
     let original = original.clone();
     let relative = bin_rollout_relative(&original, codex_home)?;
     Ok(BinManifest {

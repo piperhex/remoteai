@@ -7,6 +7,8 @@ use std::time::{Duration, Instant};
 mod archive;
 mod persistence;
 mod planning;
+#[cfg(test)]
+mod pointer_tests;
 mod projects;
 #[cfg(test)]
 mod tests;

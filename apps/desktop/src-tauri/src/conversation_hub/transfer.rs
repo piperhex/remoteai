@@ -13,7 +13,7 @@ fn selected_snapshots(
     snapshots.sort_by(|a, b| a.session_id.cmp(&b.session_id));
     for snapshot in &mut snapshots {
         let row = snapshot_thread_row(state.as_deref(), &snapshot.session_id)?;
-        snapshot.path = rollout_selection::primary(snapshot, row.as_ref()).clone();
+        snapshot.path = rollout_selection::primary(snapshot, row.as_ref())?.clone();
         snapshot.relative_path = bin_rollout_relative(&snapshot.path, codex_home)?;
     }
     Ok(snapshots)
