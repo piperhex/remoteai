@@ -119,3 +119,26 @@ it('propagates Claude switch failures without changing the Codex account', async
   await expect(selectGuiAccount({ kind: 'account', id: `claude_${'b'.repeat(32)}` })).rejects.toThrow('authOverride');
   expect(vi.mocked(invoke).mock.calls.map(([command]) => command)).toEqual(['claude_account_request']);
 });
+
+it.each(['account', 'provider', 'aggregate'] as const)(
+  'switches Claude back to a %s proxy source before clearing its native default', async kind => {
+    const selection = { kind, id: 'proxy' };
+    vi.mocked(invoke).mockResolvedValue(selection);
+    await expect(selectGuiAccount({ ...selection, engine: 'claude' })).resolves.toEqual(selection);
+    expect(vi.mocked(invoke).mock.calls).toEqual([
+      ['codex_gui_switch_account', { selection }],
+      ['claude_account_request', { request: { action: 'deactivate' } }],
+    ]);
+  });
+
+it('keeps the native Claude default when the proxy switch is rejected', async () => {
+  vi.mocked(invoke).mockRejectedValueOnce(new Error('unavailable'));
+  await expect(selectGuiAccount({ kind: 'provider', id: 'missing', engine: 'claude' })).rejects.toThrow('unavailable');
+  expect(invoke).toHaveBeenCalledExactlyOnceWith('codex_gui_switch_account',
+    { selection: { kind: 'provider', id: 'missing' } });
+});
+
+it('rejects an invalid engine before switching accounts', async () => {
+  await expect(selectGuiAccount({ kind: 'account', id: 'proxy', engine: 'unknown' })).rejects.toThrow();
+  expect(invoke).not.toHaveBeenCalled();
+});

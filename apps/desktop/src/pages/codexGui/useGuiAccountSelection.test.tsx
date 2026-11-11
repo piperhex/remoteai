@@ -7,6 +7,10 @@ import { DEMO_ACCOUNTS } from "../../demo";
 import { subscribeGuiEvent } from "../../../../../shared/conversation/webEvents";
 import { selectedGuiEntries, useGuiAccountSelection, type GuiAccountSelection } from "./useGuiAccountSelection";
 import { useUsageStatus } from "./useUsageStatus";
+import type { GuiEngine } from '../../../../../shared/cli-gui/types';
+
+let engine: GuiEngine;
+vi.mock('../../../../../shared/cli-gui/context', () => ({ useCliGui: () => ({ state: { engine } }) }));
 
 vi.mock("../../api/backend", () => ({ invoke: vi.fn(), loadAggregateApis: vi.fn().mockResolvedValue([]),
   subscribeToProviderEvents: vi.fn(() => () => {}),
@@ -31,6 +35,7 @@ function Fixture() {
 const render = () => act(async () => root.render(<Fixture />));
 
 beforeEach(() => {
+  engine = 'codex';
   vi.useFakeTimers();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.mocked(invoke).mockReset().mockImplementation(async (command) =>
@@ -41,6 +46,22 @@ beforeEach(() => {
   active = true;
   container = document.createElement("div");
   root = createRoot(container);
+});
+
+it('clears the native default when Claude switches to a proxy, even if its route event arrives first', async () => {
+  engine = 'claude';
+  await render();
+  await act(async () => { await selection.switchAccount(claude.id); });
+  vi.mocked(invoke).mockImplementation(async (command) => {
+    if (command === 'codex_gui_switch_account') {
+      vi.mocked(subscribeGuiEvent).mock.calls[0][1]({ kind: 'provider', id: 'provider' });
+      return { kind: 'provider', id: 'provider' };
+    }
+    return null;
+  });
+  await act(async () => { await selection.switchProvider('provider'); });
+  expect(invoke).toHaveBeenCalledWith('claude_account_request', { request: { action: 'deactivate' } });
+  expect(selection.accounts.find(account => account.id === claude.id)?.active).toBe(false);
 });
 
 afterEach(async () => {

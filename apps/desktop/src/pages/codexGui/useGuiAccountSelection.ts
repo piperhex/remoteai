@@ -1,6 +1,7 @@
 import { uiText } from "../../../../../shared/localization/uiText";
 import { isCodexAccount } from "../../../../../shared/accounts/source";
 import { isClaudeAccountId } from '../../../../../shared/accounts/claudeAccounts';
+import { useCliGui } from '../../../../../shared/cli-gui/context';
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { hasLocalBackend, invoke, loadAggregateApis, subscribeToProviderEvents } from "../../api/backend";
 import type { Account, AggregateApi, Provider } from "../../types";
@@ -17,6 +18,7 @@ export function selectedGuiEntries<T extends { id: string; active: boolean }>(
 }
 
 export function useGuiAccountSelection(options: { active: boolean; accounts: Account[]; providers: Provider[] }) {
+  const cli = useCliGui();
   const [selection, setSelection] = useState<GuiAccountSelection>({ kind: "none" });
   const savedClaudeId = options.accounts.find(account => account.accountSource === 'claudeCode' && account.active)?.id;
   const [claudeAccountId, setClaudeAccountId] = useState(savedClaudeId);
@@ -78,10 +80,13 @@ export function useGuiAccountSelection(options: { active: boolean; accounts: Acc
     switching.current = true;
     const request = ++generation.current;
     try {
-      const saved = await switchGuiAccount(next);
+      const engine = cli?.state.engine;
+      const saved = await switchGuiAccount(next, engine);
+      // A proxy change event can advance generation before the native-default change is acknowledged.
+      if (saved.kind === 'account' && isClaudeAccountId(saved.id)) setClaudeAccountId(saved.id);
+      else if (engine === 'claude') setClaudeAccountId(undefined);
       if (request === generation.current) {
-        if (saved.kind === 'account' && isClaudeAccountId(saved.id)) setClaudeAccountId(saved.id);
-        else setSelection(saved);
+        if (!(saved.kind === 'account' && isClaudeAccountId(saved.id))) setSelection(saved);
         setError("");
       }
       return true;
