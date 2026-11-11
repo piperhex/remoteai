@@ -17,6 +17,9 @@ The account picker scopes changes to the selected CLI. Drafts remain separate be
 Mobile Web uses the same settings placement and omits desktop usage metrics from the compact composer.
 Both mobile hosts share the settings sheet's spacing and 88% maximum height. Mobile Web shows the device and
 connection status below the conversation title, with device selection and connection checks available there.
+Codex, Claude and Gemini reuse the compact settings fields, nested model picker and project selector on mobile.
+Permission labels retain each CLI's meaning and existing conversations keep their project and permission locks.
+CLI runtimes that do not expose usage metrics show unknown values instead of another engine's statistics.
 
 ## Setup
 
