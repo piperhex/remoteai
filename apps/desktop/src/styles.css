@@ -890,14 +890,6 @@ h1 { margin: 5px 0 0; font: 700 26px/1.1 Manrope, sans-serif; letter-spacing: -.
 .note-cancel-button { border: 1px solid #d8e0d9; border-radius: 9px; padding: 10px 16px; color: #536158; background: white; cursor: pointer; }
 .note-cancel-button:hover:not(:disabled) { border-color: #a8bbaa; color: var(--green-dark); }
 .account-note-footer button:disabled, .modal-close:disabled { opacity: .55; cursor: default; }
-.login-choice { width: 100%; display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 11px; text-align: left; padding: 12px; margin-top: 9px; border: 1px solid #dce3dc; border-radius: 11px; color: #243129; background: white; cursor: pointer; transition: .16s ease; }
-.login-choice:hover { border-color: #9fc0aa; transform: translateY(-1px); box-shadow: 0 7px 18px rgba(28,61,39,.07); }
-.login-choice.featured { border-color: #b7d1be; background: #f6faf5; }
-.choice-icon { width: 38px; height: 38px; display: grid; place-items: center; color: #367654; border-radius: 9px; background: #e7f1e8; }
-.login-choice > span:nth-child(2) { display: grid; gap: 3px; }
-.login-choice b { font-size: 12px; }
-.login-choice small { color: #7f8c83; font-size: 9px; }
-.login-choice > svg { color: #94a098; }
 .login-web-session-warning, .login-browser-mode-warning { display: block; max-width: 400px; color: #c34236; font-size: 12px; line-height: 1.6; }
 .cloud-login-modal { width: min(430px, 95vw); }
 .cloud-login-form { display: grid; gap: 8px; }
@@ -2019,7 +2011,6 @@ html.floating-usage-page #root {
 :root[data-theme="dark"] .menu-search-field,
 :root[data-theme="dark"] .menu-search-results > button,
 :root[data-theme="dark"] .menu-search-footer kbd,
-:root[data-theme="dark"] .login-choice,
 :root[data-theme="dark"] .cloud-login-input,
 :root[data-theme="dark"] .cloud-account-details > div,
 :root[data-theme="dark"] .skill-card-title button,

@@ -1,11 +1,12 @@
 import {
-  ChevronRight, ClipboardPaste, ExternalLink, FileInput, Globe2, KeyRound, LayoutGrid, X,
+  ClipboardPaste, ExternalLink, FileInput, Globe2, LayoutGrid, X,
 } from "lucide-react";
 import { Button, Modal } from "antd";
 import { useState } from "react";
 import { isHostedWebApp } from "../../api/backend";
 import { PasteAccountModal } from "./PasteAccountModal";
 import type { Translate } from "../../i18n";
+import { AccountLoginChoice, AccountLoginHeader } from '../../../../../shared/accounts/AccountLoginChoice';
 
 export function LoginModal({ onClose, onWebSession, onStart, onImport, onImportClipboard, onImportText, t }: {
   onClose: () => void;
@@ -41,34 +42,19 @@ export function LoginModal({ onClose, onWebSession, onStart, onImport, onImportC
     }}>
       <section className="modal" onClick={(event) => event.stopPropagation()}>
         <button type="button" className="modal-close" aria-label={t("login.close")} onClick={onClose}><X size={19} /></button>
-        <div className="modal-icon"><KeyRound size={25} /></div>
-        <h2>{t(isHostedWebApp ? "login.importTitle" : "login.title")}</h2>
+        <AccountLoginHeader title={t(isHostedWebApp ? "login.importTitle" : "login.title")} />
         {!isHostedWebApp && <>
-        <button type="button" className="login-choice" onClick={() => setBrowserModeConfirmOpen(true)}>
-          <span className="choice-icon"><ExternalLink size={20} /></span>
-          <span><b>{t("login.browser.title")}</b><small>{t("login.browser.description")}</small></span><ChevronRight size={19} />
-        </button>
-        <button type="button" className="login-choice featured" onClick={() => onStart(true)}>
-          <span className="choice-icon"><LayoutGrid size={20} /></span>
-          <span><b>{t("login.embedded.title")}</b><small>{t("login.embedded.description")}</small></span><ChevronRight size={19} />
-        </button>
+        <AccountLoginChoice title={t("login.browser.title")} description={t("login.browser.description")}
+          icon={<ExternalLink size={20} />} onClick={() => setBrowserModeConfirmOpen(true)} />
+        <AccountLoginChoice title={t("login.embedded.title")} description={t("login.embedded.description")}
+          icon={<LayoutGrid size={20} />} featured onClick={() => onStart(true)} />
         </>}
-        <button type="button" className="login-choice import-choice" onClick={onImport}>
-          <span className="choice-icon"><FileInput size={20} /></span>
-          <span><b>{t("login.importMultiple")}</b><small>{t("login.importCompatible")}</small></span>
-          <ChevronRight size={19} />
-        </button>
-        <button type="button" className="login-choice import-choice"
-          onClick={isHostedWebApp ? () => setPasteOpen(true) : onImportClipboard}>
-          <span className="choice-icon"><ClipboardPaste size={20} /></span>
-          <span><b>{t("login.importClipboard")}</b><small>{t("login.importClipboardDescription")}</small></span>
-          <ChevronRight size={19} />
-        </button>
-        {!isHostedWebApp && <button type="button" className="login-choice" onClick={confirmWebSession}>
-          <span className="choice-icon"><Globe2 size={20} /></span>
-          <span><b>{t("login.webSession.title")}</b><small>{t("login.webSession.description")}</small></span>
-          <ChevronRight size={19} />
-        </button>}
+        <AccountLoginChoice title={t("login.importMultiple")} description={t("login.importCompatible")}
+          icon={<FileInput size={20} />} onClick={onImport} />
+        <AccountLoginChoice title={t("login.importClipboard")} description={t("login.importClipboardDescription")}
+          icon={<ClipboardPaste size={20} />} onClick={isHostedWebApp ? () => setPasteOpen(true) : onImportClipboard} />
+        {!isHostedWebApp && <AccountLoginChoice title={t("login.webSession.title")}
+          description={t("login.webSession.description")} icon={<Globe2 size={20} />} onClick={confirmWebSession} />}
       </section>
       {pasteOpen && <PasteAccountModal onClose={() => setPasteOpen(false)}
         onImported={onClose} onImport={onImportText} t={t} />}

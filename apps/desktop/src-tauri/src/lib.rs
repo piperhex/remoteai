@@ -371,6 +371,7 @@ pub fn run() {
             codex_gui::codex_gui_connect,
             cli_gui::cli_gui_request,
             claude_accounts::claude_account_request,
+            claude_accounts::authorization_browser::open_claude_authorization,
             codex_gui::dictation::codex_gui_dictation_prepare,
             codex_gui::dictation::codex_gui_dictation_transcribe,
             codex_gui::dictation::codex_gui_dictation_cancel,

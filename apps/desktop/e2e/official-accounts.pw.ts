@@ -16,10 +16,22 @@ async function loginMethods(page: Page, info: TestInfo, mode: string) {
   await expect(dialog.getByRole('button', { name: '导入本机账户' })).toBeVisible();
   await capture(page, info, `${mode}-methods`);
   await dialog.getByRole('button', { name: '通过官方 CLI 登录' }).click();
-  await expect(dialog.getByRole('link', { name: '打开授权页面' })).toBeVisible();
+  const browserMode = page.getByRole('dialog', { name: '选择浏览器模式', exact: true });
+  await expect(browserMode).toBeVisible();
+  const normal = browserMode.getByRole('button', { name: '普通窗口', exact: true });
+  const privateWindow = browserMode.getByRole('button', { name: '无痕窗口', exact: true });
+  await capture(page, info, `${mode}-browser-modes`);
+  expect((await normal.boundingBox())!.x).toBeLessThan((await privateWindow.boundingBox())!.x);
+  await normal.click();
+  await expect(browserMode).toBeHidden();
+  await expect(dialog.getByRole('button', { name: '打开授权页面' })).toBeVisible();
   await capture(page, info, `${mode}-cli`);
   await dialog.getByRole('button', { name: '更换登录方式' }).click();
   await dialog.getByRole('button', { name: '浏览器授权码登录' }).click();
+  await expect(browserMode).toBeVisible();
+  await privateWindow.click();
+  await expect(dialog.getByRole('textbox', { name: '授权链接', exact: true })).toBeVisible();
+  await capture(page, info, `${mode}-private-manual`);
   await expect(dialog.getByText(/非官方集成，兼容性不保证/)).toBeVisible();
   await dialog.getByRole('textbox', { name: '授权码或回调链接' }).fill('wrong#state');
   await dialog.getByRole('button', { name: '验证并保存' }).click();
@@ -78,6 +90,9 @@ test('desktop local: sources, original Codex modal and both Claude login methods
   await page.getByRole('menuitem', { name: 'Claude Code', exact: true }).click();
   await expect(page.getByRole('button', { name: '通过官方 CLI 登录' })).toBeVisible();
   await capture(page, info, 'desktop-local-narrow-font20');
+  await page.getByRole('button', { name: '通过官方 CLI 登录' }).click();
+  await expect(page.getByRole('dialog', { name: '选择浏览器模式', exact: true })).toBeVisible();
+  await capture(page, info, 'desktop-local-narrow-browser-modes');
 });
 
 test('remote account panel: manage connected computer and preserve typography', async ({ page }, info) => {
@@ -106,6 +121,9 @@ test('remote account panel: manage connected computer and preserve typography', 
   await capture(page, info, 'desktop-remote-dark-font20');
   await page.getByRole('button', { name: '添加 / 更新 Claude Code 账户' }).click();
   await capture(page, info, 'desktop-remote-dark-login-font20');
+  await page.getByRole('button', { name: '通过官方 CLI 登录' }).click();
+  await expect(page.getByRole('dialog', { name: '选择浏览器模式', exact: true })).toBeVisible();
+  await capture(page, info, 'desktop-remote-dark-browser-modes');
 });
 
 test('web desktop: shared source menu and host-owned Claude accounts', async ({ page }, info) => {
@@ -123,6 +141,11 @@ test('web desktop: shared source menu and host-owned Claude accounts', async ({ 
   await page.locator('.official-account-add').click();
   await page.getByRole('menuitem', { name: 'Claude Code', exact: true }).click();
   await capture(page, info, 'web-narrow-login-font20');
+  await page.getByRole('button', { name: '通过官方 CLI 登录' }).click();
+  await expect(page.getByRole('dialog', { name: '选择浏览器模式', exact: true })).toBeVisible();
+  await capture(page, info, 'web-narrow-browser-modes');
+  await page.getByRole('button', { name: '普通窗口', exact: true }).click();
+  await page.getByRole('button', { name: '更换登录方式' }).click();
   await page.evaluate(async () => {
     const fixture = '/e2e/official-accounts-fixture.ts';
     const { setFixtureLanguage }: { setFixtureLanguage: (language: string) => void } = await import(fixture);

@@ -17,16 +17,27 @@ pub(crate) fn open_default_private<R: Runtime>(
     app: &AppHandle<R>,
     url: &str,
 ) -> Result<(), String> {
-    #[cfg(target_os = "windows")]
-    if let Some(browser) = windows_default_browser() {
-        if launch_windows_private_browser(browser, url).is_ok() {
-            return Ok(());
-        }
+    if try_open_default_private(url) {
+        return Ok(());
     }
 
     app.opener()
         .open_url(url.to_string(), None::<&str>)
         .map_err(|error| format!("无法打开默认浏览器：{error}"))
+}
+
+/// A private-window request must let callers offer manual opening when the browser is unsupported.
+pub(crate) fn try_open_default_private(url: &str) -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        windows_default_browser()
+            .is_some_and(|browser| launch_windows_private_browser(browser, url).is_ok())
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = url;
+        false
+    }
 }
 
 #[cfg(target_os = "windows")]

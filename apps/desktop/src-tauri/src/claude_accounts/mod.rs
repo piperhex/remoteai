@@ -1,4 +1,5 @@
 //! Source-specific authentication behind the existing official account management surface.
+pub(crate) mod authorization_browser;
 mod cli;
 mod credentials;
 mod login;
@@ -44,6 +45,8 @@ enum Error {
     Changed,
     #[error("client.officialAccounts.authOverride")]
     Override,
+    #[error("client.officialAccounts.openBrowserFailed")]
+    Browser,
 }
 
 #[derive(Deserialize)]
