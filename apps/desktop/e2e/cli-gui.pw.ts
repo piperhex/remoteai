@@ -11,6 +11,8 @@ for (const mode of ['local', 'remote', 'web']) {
   for (const enlarged of [false, true]) {
     test(`${mode}: per-conversation CLI, version, approval and history ${enlarged ? 'large dark narrow' : 'default'}`,
       async ({ page }) => {
+        page.setDefaultTimeout(10_000);
+        page.setDefaultNavigationTimeout(90_000);
         await mkdir(evidence, { recursive: true });
         await page.setViewportSize(enlarged ? { width: 960, height: 900 } : { width: 1440, height: 980 });
         const fixture = await localBackend(page);
@@ -86,6 +88,24 @@ for (const mode of ['local', 'remote', 'web']) {
         expect(typography.family).toContain('sans-serif');
         await nativeRow.click();
         await expect(selector).toContainText('Codex GUI');
+        const fixedHint = page.getByRole('tooltip').filter({ hasText: '当前对话使用的 CLI 已固定' });
+        await selector.hover();
+        await page.waitForTimeout(400);
+        await expect(fixedHint).not.toBeVisible();
+        await selector.click();
+        const disabledEngine = page.getByRole('menuitem', { name: 'Claude GUI', exact: true });
+        await expect(disabledEngine).toHaveAttribute('aria-disabled', 'true');
+        await disabledEngine.hover({ position: { x: 2, y: 2 } });
+        await expect(fixedHint).toBeVisible();
+        await expect(page.locator('.ant-tooltip').filter({ has: fixedHint })).toHaveCSS('opacity', '1');
+        await expect(fixedHint).toBeInViewport();
+        expect((await fixedHint.boundingBox())!.width).toBeLessThanOrEqual(400);
+        await page.screenshot({ path: resolve(evidence, `${label}-disabled-engine-hint.png`), animations: 'disabled' });
+        await disabledEngine.click({ force: true });
+        await expect(selector).toContainText('Codex GUI');
+        await page.getByRole('menuitem', { name: 'Codex GUI', exact: true }).hover();
+        await expect(fixedHint).not.toBeVisible();
+        await page.screenshot({ path: resolve(evidence, `${label}-selected-engine-no-hint.png`), animations: 'disabled' });
       });
   }
   test(`${mode}: one-click installation, official sources and live language switching`, async ({ page }) => {
