@@ -32,6 +32,10 @@ pub(super) fn run(root: &Path, id: &str) -> Result<()> {
     if !install::configured(&record.home, true)? || !package::present(root)? {
         return Err(ComputerError::Disabled);
     }
+    #[cfg(windows)]
+    if super::administrator::connect(root, id)? {
+        return Ok(());
+    }
     let mut command = driver_command(root)?;
     command
         .stdin(Stdio::inherit())
@@ -58,11 +62,18 @@ pub(super) fn run(root: &Path, id: &str) -> Result<()> {
 
 /// Shared launch policy for Codex GUI and the product help assistant.
 pub(super) fn driver_command(root: &Path) -> Result<Command> {
-    let mut command = Command::new(package::executable(root)?);
+    Ok(command_for_executable(&package::executable(root)?))
+}
+
+pub(super) fn command_for_executable(executable: &Path) -> Command {
+    let mut command = Command::new(executable);
+    if let Some(directory) = executable.parent() {
+        command.current_dir(directory);
+    }
     command
         .args(["mcp", "--direct"])
         .env("CUA_DRIVER_PERMISSION_MODE", "standard")
         .env("CUA_DRIVER_RS_TELEMETRY_ENABLED", "0");
     platform::configure_driver(&mut command);
-    Ok(command)
+    command
 }

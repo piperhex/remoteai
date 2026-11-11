@@ -80,11 +80,11 @@ tauri-plugin-updater = "2.10.1"
 tiny_http = "0.12"
 thiserror = "2"
 tar = "0.4"
-tokio = { version = "1", features = ["macros", "sync", "time", "process", "io-util", "net"] }
+tokio = { version = "1", features = ["macros", "sync", "time", "process", "io-util", "io-std", "net"] }
 toml_edit = "0.25"
 tungstenite = { version = "0.28", default-features = false, features = ["handshake", "rustls-tls-webpki-roots"] }
 url = "2"
-uuid = { version = "1", features = ["v4"] }
+uuid = { version = "1", features = ["v4", "serde"] }
 zip = { version = "2", default-features = false, features = ["deflate"] }
 zstd = "0.13"
 xcap = "=0.9.8"

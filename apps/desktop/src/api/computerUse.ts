@@ -8,6 +8,13 @@ export interface ComputerUsePermissions {
 
 export type ComputerUsePermission = 'accessibility' | 'screenRecording';
 
+export interface ComputerUseAdministrator {
+  requested: boolean;
+  active: boolean;
+  inherited: boolean;
+  attempted: boolean;
+}
+
 export interface ComputerUseStatus {
   installed: boolean;
   enabled: boolean;
@@ -15,9 +22,11 @@ export interface ComputerUseStatus {
   supported: boolean;
   version: string;
   permissions: ComputerUsePermissions | null;
+  administrator?: ComputerUseAdministrator | null;
 }
 
-export type ComputerUseAction = "install" | "enable" | "disable" | "remove";
+export type ComputerUseAction = "install" | "enable" | "disable" | "remove"
+  | "enableAdministrator" | "grantAdministrator" | "revokeAdministrator";
 
 export function computerUseStatus(homeId: string) {
   return invoke<ComputerUseStatus>("computer_use_status", { homeId });

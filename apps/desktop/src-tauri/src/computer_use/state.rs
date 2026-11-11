@@ -14,6 +14,9 @@ pub(super) struct Record {
     /// Missing on legacy installations, which must adopt the app's pinned driver.
     #[serde(default)]
     pub version: String,
+    /// Opt-in only. The live UAC authorization is separate and expires with the desktop process.
+    #[serde(default)]
+    pub administrator: bool,
 }
 
 pub(super) fn home_id(home: &Path) -> String {

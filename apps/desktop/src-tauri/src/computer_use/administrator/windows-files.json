@@ -1,0 +1,21 @@
+{
+    "version":  "0.37.0-remoteai.4",
+    "targets":  {
+                    "windows-x86_64":  {
+                                           "cua-driver.exe":  "3cbf05236cde961eeb1a5c26be9d1b85e8d74869bb457afcb1a6560a26d38ad8",
+                                           "cua-driver-uia.exe":  "e9dd9f16d55acc3b029d84aec3ae699d8244a1fc72414b206512d52f7ed77f5b",
+                                           "cua-cursor-theme.exe":  "27cab49c44aa9ed2013d969ef8b53955bbf4df87ae3522aa9167e1f9e4c33ca0",
+                                           "cua_driver_sdk.dll":  "d4098926d382f11ff6b1a9a835395444c3f080bea4c15f4423c9467b8ce753ca",
+                                           "cua_driver_node_runtime.node":  "ca2d817447cd0687d9439876fab936e6694c1cf14e5867d5a950da02e7cd3b3d",
+                                           "cua_driver_abi.h":  "c17169f41da321baa5e7e953323c3ad660b00790176ba381e93189fba3506587"
+                                       },
+                    "windows-arm64":  {
+                                          "cua-driver.exe":  "860257f81ed66a2bb3d0e6398b41d7dff3e629309378fb029879c699b1317630",
+                                          "cua-driver-uia.exe":  "618008123c15c9894e1d0955579bbc0246ce412a1dab0cbdeb0c896ea769082d",
+                                          "cua-cursor-theme.exe":  "3fb31dfd3ac457b843dce2ea70b7aa360d19978d3586f845f01678b9fa57100a",
+                                          "cua_driver_sdk.dll":  "9cd0a1a2af8e34f2fbcd7edd4aaed918b17b4b8dda01fbf3929aca67b218ec84",
+                                          "cua_driver_node_runtime.node":  "ff1b1c32413df8ed99b38fea54aefb13e672584d75d91c35a55961f9db7e7db3",
+                                          "cua_driver_abi.h":  "c17169f41da321baa5e7e953323c3ad660b00790176ba381e93189fba3506587"
+                                      }
+                }
+}

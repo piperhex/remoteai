@@ -164,10 +164,15 @@ async fn connect(
     if let Some(client) = current.as_ref() {
         // A phone reconnect or transport switch must preserve idle, already loaded threads.
         if client.alive.load(Ordering::Acquire) && (reuse_existing || client.is_running().await) {
+            let home = client.home.clone();
+            let approvals = client.pending_approvals().await;
+            // A UAC prompt on local GUI entry must not hold the client lock needed by running chats.
+            drop(current);
             if setup_desktop_plugins {
-                crate::remote_command::setup_gui(client.home.clone()).await;
+                crate::remote_command::setup_gui(home.clone()).await;
+                computer_use_setup::prepare(app.clone(), home).await;
             }
-            return Ok(client.pending_approvals().await);
+            return Ok(approvals);
         }
         client.stop().await;
     }

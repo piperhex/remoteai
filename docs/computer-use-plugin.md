@@ -31,6 +31,44 @@ An enabled card means the files and configuration are present, not that a partic
 completed an MCP handshake. Driver startup failures remain visible as tool/connection errors in Codex.
 Windows secure desktop, UAC prompts and elevated applications remain subject to Windows and CUA's limits.
 
+### Windows administrator windows
+
+The shield in the computer assistant card opens a compact permission dialog without increasing the card height.
+**Allow administrator windows** is off by default. Checking it only saves the preference for that Codex Home;
+it does not request elevation. After opting in, the first local Codex GUI entry in each Remote AI process requests
+Windows UAC confirmation. Returning to the page or reconnecting in that run never repeats the prompt, including
+after cancellation. The dialog offers an explicit retry when an attempt failed. Browser and remote connections,
+background startup, status polling and MCP tool calls never request elevation.
+
+Consent starts an independent administrator broker in the same Windows account and interactive session.
+Remote AI and its conversation service keep their original privileges. Every MCP connection gets its own
+`cua-driver mcp --direct` runtime; the help assistant follows the same launcher. Grants are tied to the Home's
+installation generation and the original desktop process identity. Unchecking the preference, disabling or
+uninstalling the assistant, replacing its installation, or exiting the desktop ends the broker and its connections.
+An unexpected broker exit updates the managed MCP configuration so the next message can reconnect normally.
+
+Named pipes reject network clients, restrict access to the same Windows user, and validate peer process identities.
+The elevated broker hashes every pinned Windows package file and holds read-only file/directory locks until it exits.
+It never accepts an arbitrary executable or command to launch. UAC secure-desktop prompts still require the user;
+`launch_app` continues to start ordinary applications with a standard-user token.
+
+When updating the pinned CUA release, download both verified Windows archives as `windows-x86_64.zip` and
+`windows-arm64.zip`, then run `apps/desktop/scripts/record-cua-windows-files.ps1 -ArchiveDirectory <directory>`.
+It checks the archives against `assets.rs` before recording individual hashes. Commit the generated inventory;
+the version and completeness regression tests prevent an upgrade from silently retaining an obsolete inventory.
+
+The interactive regression uses a temporary Home and a disposable administrator window:
+
+```powershell
+cargo build --manifest-path apps/desktop/src-tauri/Cargo.toml --bin csw
+$env:CSW_CUA_DRIVER_DIRECTORY = '<verified extracted Windows CUA directory>'
+$env:CSW_CUA_ADMIN_TEST = '1'
+node apps/desktop/scripts/test-computer-use-administrator.mjs
+```
+
+The debug-only fixture checks opt-in, repeat GUI entry, real elevated input, ordinary Home isolation, revocation
+and owner-exit cleanup. It asks for normal UAC consent; it does not alter UAC policy or production Homes.
+
 ### macOS permissions
 
 Open the computer assistant card on the community plugin page and use **去开启** beside each missing

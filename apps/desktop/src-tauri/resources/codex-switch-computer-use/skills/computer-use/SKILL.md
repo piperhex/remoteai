@@ -24,6 +24,14 @@ separately installed CuaDriver app access. The standalone source bundle instead 
 permissions of the app that launches it, such as a terminal or IDE.
 The managed macOS runtime has no cursor overlay; use screenshots to verify actions.
 
+On Windows, `check_permissions` reports the runtime's actual integrity level. If an administrator
+window is blocked by UIPI, direct the user to the shield on the computer assistant's community
+plugin card. They can opt into **Allow administrator windows**, then enter Codex GUI and confirm
+the Windows UAC prompt. The checkbox alone never elevates. Consent is requested once per Remote AI
+run; cancellation keeps ordinary control available and the dialog offers a manual retry. Never
+change UAC policy, register a global daemon, or attempt to control the UAC secure desktop. Newly
+launched applications still use standard permissions; this grant controls already elevated windows.
+
 1. Inspect the available applications with `list_apps` and identify the user's intended application.
 2. Read the intended window with `get_window_state`, using `query`, `max_elements`, or `max_depth`
    to keep large trees focused. Use `element_token` from this snapshot, in the form `<snapshot_id>:N`.
