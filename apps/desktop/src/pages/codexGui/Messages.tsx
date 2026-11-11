@@ -25,12 +25,14 @@ import { ConversationImageGallery } from '../../../../../shared/chat/ImageGaller
 const EMPTY_TURNS: Turn[] = [];
 
 export function Messages({ value, selected, active = true, footer, pendingRequest, onQuote,
-  onEdit, onDelete, editDisabled, editCwd, onFork, forkDisabled, retry, onCancelRetry, onLoadOlder }: {
+  onEdit, onDelete, editDisabled, editCwd, onFork, forkDisabled, retry, onCancelRetry, onLoadOlder,
+  canUndoChanges = true }: {
   value?: Conversation; selected: string | null; active?: boolean; footer?: ReactNode;
   pendingRequest?: PendingRequest;
   onQuote?: (quote: ReplyQuote) => boolean;
   onEdit?: EditMessage; editDisabled?: boolean; editCwd?: string;
   onDelete?: DeleteMessage;
+  canUndoChanges?: boolean;
   onLoadOlder?: () => Promise<Turn[] | undefined>;
   onFork?: (threadId: string, turnId: string) => Promise<boolean>; forkDisabled?: boolean;
 } & CapacityRetryControl) {
@@ -77,7 +79,7 @@ export function Messages({ value, selected, active = true, footer, pendingReques
           {entries.map(({ turn, items, followsInterruption, groups }) => <TurnMessage
             key={`${selected}:${turn.id}`} turn={turn} visibleItems={items}
             messageGroups={groups}
-            threadId={selected ?? undefined}
+            threadId={canUndoChanges ? selected ?? undefined : undefined}
             retry={retry?.threadId === selected && retry.turnId === turn.id ? retry : undefined}
             onCancelRetry={onCancelRetry}
             onFork={onFork && selected ? () => { void onFork(selected, turn.id); } : undefined}

@@ -1,6 +1,7 @@
 import type { PaseoAgent } from '@getpaseo/client';
 import type { AgentPermissionRequest, AgentTimelineItem, ToolCallDetail } from '@getpaseo/protocol/agent-types';
 import type { CliEntry, CliPermission, CliSession, ExternalEngine } from '../../../shared/cli-gui/types';
+import { fileChanges } from './fileChanges';
 
 export function session(agent: PaseoAgent, engine: ExternalEngine): CliSession {
   return { id: agent.id, engine, title: agent.title ?? '', cwd: agent.cwd, model: agent.model ?? '',
@@ -41,7 +42,11 @@ export function timelineEntry(item: AgentTimelineItem, first: number, last: numb
     case 'user_message': return { ...base, role: 'user', text: item.text };
     case 'assistant_message': return { ...base, role: 'assistant', text: item.text };
     case 'reasoning': return { ...base, role: 'reasoning', text: item.text };
-    case 'tool_call': return { ...base, role: 'tool', text: toolText(item.detail), title: item.name, status: item.status };
+    case 'tool_call': {
+      const changes = fileChanges(item.detail);
+      return { ...base, role: 'tool', text: changes ? '' : toolText(item.detail),
+        title: item.name, status: item.status, ...(changes ? { changes } : {}) };
+    }
     case 'error': return { ...base, role: 'error', text: item.message };
     case 'notification': return { ...base, role: 'notice', text: item.message };
     default: return { ...base, role: 'notice', text: '' };

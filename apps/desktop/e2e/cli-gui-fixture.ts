@@ -97,5 +97,9 @@ export function createCliGuiFixture(ready = true, options: { manualInstall?: boo
     defaultReasoningEffort: 'high', supportedReasoningEfforts: [
       { reasoningEffort: 'medium', description: 'Medium' }, { reasoningEffort: 'high', description: 'High' },
     ] }];
-  return { transport, calls, accounts, models, setInstallProgress, finishInstall };
+  const setHistory = (engine: 'claude' | 'gemini', items: CliHistory['entries'], status: string) => {
+    const session = sessions.find(value => value.id === `${engine}-history`)!;
+    session.status = status; entries.set(session.id, items); notify();
+  };
+  return { transport, calls, accounts, models, setInstallProgress, finishInstall, setHistory };
 }

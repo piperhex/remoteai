@@ -5,9 +5,11 @@ export async function localBackend(page: Page, ready = true,
   options: { codexReady?: boolean; manualInstall?: boolean } = {}) {
   const fixture = createCliGuiFixture(ready, options);
   const modelRequests: { cacheOnly?: boolean }[] = [];
+  const commands: string[] = [];
   await page.route('https://fonts.googleapis.com/**', route => route.abort());
   await page.route('**/__codex_switch__/api/invoke', async route => {
     const { command, args = {} } = route.request().postDataJSON();
+    commands.push(command);
     let result: unknown = {};
     if (command === 'get_dream_skin_theme_preview') {
       result = '/src-tauri/resources/dream-skin/presets/preset-doraemon-ocean-submarine/background.jpg';
@@ -29,13 +31,14 @@ export async function localBackend(page: Page, ready = true,
         data = { data: fixture.models(), nextCursor: null };
       }
       if (args.request.operation === 'plugins') data = { marketplaces: [], marketplaceLoadErrors: [] };
+      if (args.request.operation === 'recoveryList') data = { batchId: 'fixture-empty', candidates: [] };
       result = { data };
     }
     if (command === 'codex_gui_usage_summary') result = { totalTokens: 0, estimatedCostUsd: 0,
       primaryRemainingPercent: null, primaryRemainingAggregated: false, providerEstimatedCost: null };
     await route.fulfill({ json: { ok: true, result } });
   });
-  return { ...fixture, modelRequests };
+  return { ...fixture, modelRequests, commands };
 }
 
 export async function nativeShell(page: Page) {

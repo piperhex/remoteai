@@ -10,6 +10,8 @@ import assert from 'node:assert/strict';
 // Only executables are reused; all state and model responses belong to this isolated test.
 const installed = process.argv[2];
 const engine = process.argv[3] ?? 'claude';
+const editSmoke = process.argv.includes('--file-edits');
+assert(!editSmoke || engine === 'claude', 'The native edit smoke uses Claude Write and Edit tools');
 assert(['claude', 'gemini'].includes(engine), 'Choose claude or gemini');
 const cliPackage = engine === 'claude' ? '@anthropic-ai/claude-code' : '@google/gemini-cli';
 assert(installed && path.isAbsolute(installed), 'Pass the installed cli-gui directory');
@@ -24,7 +26,7 @@ const root = await fs.mkdtemp(path.join(os.tmpdir(), 'remoteai-projectless-smoke
 let replies = 0;
 
 async function manifest(name) {
-  const original = name === cliPackage && process.argv[4]
+  const original = name === cliPackage && process.argv[4] && !process.argv[4].startsWith('--')
     ? path.resolve(process.argv[4]) : path.join(installed, 'runtime/node_modules', name);
   const target = path.join(root, 'runtime/node_modules', name);
   const value = JSON.parse(await fs.readFile(path.join(original, 'package.json'), 'utf8'));
@@ -57,20 +59,34 @@ function schemaValue(schema) {
   return 'A simple greeting';
 }
 
+function nextEdit(body) {
+  if (!editSmoke || !JSON.stringify(body.messages).includes('Edit the isolated smoke file')) return undefined;
+  const results = body.messages.flatMap(message => Array.isArray(message.content) ? message.content : [])
+    .filter(block => block.type === 'tool_result').map(block => block.tool_use_id);
+  if (!results.includes('smoke-write')) return { id: 'smoke-write', name: 'Write',
+    input: { file_path: 'review-smoke.txt', content: 'before\n' } };
+  if (!results.includes('smoke-edit')) return { id: 'smoke-edit', name: 'Edit',
+    input: { file_path: 'review-smoke.txt', old_string: 'before', new_string: 'after\nextra' } };
+}
+
 function respond(body, res) {
   assert.equal(body.model, 'smoke-model');
   const schema = body.metadata?.remoteai_output_schema;
-  const text = schema ? JSON.stringify(schemaValue(schema)) : `PROJECTLESS_REPLY_${++replies}`;
+  const action = nextEdit(body);
+  const text = action ? '' : schema ? JSON.stringify(schemaValue(schema)) : `PROJECTLESS_REPLY_${++replies}`;
   const message = { id: 'msg-smoke', type: 'message', role: 'assistant', model: 'smoke-model', content: [],
     stop_reason: null, stop_sequence: null, usage: { input_tokens: 8, output_tokens: 0 } };
   if (!body.stream) return res.end(JSON.stringify({ ...message, content: [{ type: 'text', text }],
     stop_reason: 'end_turn', usage: { input_tokens: 8, output_tokens: 8 } }));
   res.setHeader('content-type', 'text/event-stream');
   for (const event of [{ type: 'message_start', message },
-    { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
-    { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } },
+    { type: 'content_block_start', index: 0, content_block: action
+      ? { type: 'tool_use', id: action.id, name: action.name, input: {} } : { type: 'text', text: '' } },
+    { type: 'content_block_delta', index: 0, delta: action
+      ? { type: 'input_json_delta', partial_json: JSON.stringify(action.input) } : { type: 'text_delta', text } },
     { type: 'content_block_stop', index: 0 },
-    { type: 'message_delta', delta: { stop_reason: 'end_turn', stop_sequence: null }, usage: { output_tokens: 8 } },
+    { type: 'message_delta', delta: { stop_reason: action ? 'tool_use' : 'end_turn', stop_sequence: null },
+      usage: { output_tokens: 8 } },
     { type: 'message_stop' }]) res.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
   res.end();
 }
@@ -89,10 +105,15 @@ const server = createServer(async (req, res) => {
 const service = new CliService(new CliRuntime(root, () => {}), () => {});
 async function turn(chat, index) {
   await service.request({ engine, action: 'send', id: chat.id,
-    text: `Say hello ${index}. Do not use tools.`, messageId: `smoke-${index}` });
+    text: editSmoke ? `Edit the isolated smoke file; turn ${index}.` : `Say hello ${index}. Do not use tools.`,
+    messageId: `smoke-${index}` });
   for (let attempt = 0; attempt < 45; attempt++) {
     const history = await service.request({ engine, action: 'read', id: chat.id });
     assert.equal(history.session.cwd, '');
+    for (const permission of history.session.permissions) {
+      await service.request({ engine, action: 'approve', id: chat.id, permissionId: permission.id,
+        actionId: permission.actions.find(action => action.behavior === 'allow').id });
+    }
     if (history.entries.some(entry => entry.role === 'assistant' && entry.text.includes(`PROJECTLESS_REPLY_${index}`))) {
       console.log(`Native ${engine} projectless turn ${index} passed`); return;
     }
@@ -120,6 +141,16 @@ try {
     model: 'smoke-model', mode });
   assert.equal(chat.cwd, '');
   await turn(chat, 1); await turn(chat, 2);
+  if (editSmoke) {
+    const history = await service.request({ engine, action: 'read', id: chat.id });
+    const edits = history.entries.filter(entry => entry.changes?.length && entry.status === 'completed');
+    assert.equal(edits.length, 2, 'Write and Edit must both survive history projection');
+    assert(edits.some(entry => entry.changes.some(change => change.diff.includes('-before')
+      && change.diff.includes('+after'))), 'Replacement diff must remain reviewable');
+    const workspace = (await fs.readdir(path.join(root, 'workspaces'))).find(name => name.startsWith('chat-'));
+    assert.equal(await fs.readFile(path.join(root, 'workspaces', workspace, 'review-smoke.txt'), 'utf8'), 'after\nextra\n');
+    console.log('PASS: real Write/Edit changed the file and retained reviewable history');
+  }
   assert.equal((await fs.readdir(path.join(root, 'workspaces'))).filter(name => name.startsWith('chat-')).length, 1);
   console.log('PASS: real CLI, isolated model endpoint, preserved projectless session');
 } finally {

@@ -5,6 +5,7 @@ import { CliGuiProvider, useCliGui } from '../../../../shared/cli-gui/context';
 import { localCliTransport } from '../../../../shared/cli-gui/localTransport';
 import { CliConversationPane } from '../../../../shared/cli-gui/CliConversationPane';
 import { CliRuntimeTools } from '../../../../shared/cli-gui/CliRuntimeTools';
+import { CliChangesButton } from '../../../../shared/cli-gui/CliChangesButton';
 import { CliLocalMessages } from './codexGui/CliLocalMessages';
 import { CliLocalComposer } from './codexGui/CliLocalComposer';
 import { GuiToolbox } from '../../../../shared/conversation/GuiToolbox';
@@ -184,7 +185,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
           {isDesktopApp && view === "conversation" && <PanelToggleButton icon={<PanelBottom size={16} />}
             label={terminal.open ? uiText("client.chat.hideTerminal") : uiText("client.composer.openTerminal")}
             expanded={terminal.open} active={terminal.tabs.length > 0} onClick={terminal.toggle} />}
-          {view === "conversation" && <ConversationChangesButton value={external ? undefined : current} />}
+          {view === "conversation" && (external ? <CliChangesButton /> : <ConversationChangesButton value={current} />)}
         </div>
         {focused && windowControls && <div className={styles.focusWindowControls}>{windowControls}</div>}
       </header>
