@@ -1,5 +1,6 @@
 //! Host-owned recovery decisions shared by desktop and authenticated remote clients.
 mod store;
+pub(super) use store::{access, Journal};
 
 use super::{client::Client, error::GuiError, protocol::GuiResponse};
 use futures_util::{stream, StreamExt};
@@ -90,7 +91,7 @@ impl Client {
             return;
         }
         let started = method == "turn/started";
-        // Unexpected interruptions survive; an explicit stop removes its exact record before dispatch.
+        // Unexpected interruptions survive; an acknowledged explicit stop removes its actual turn.
         if !started && (method != "turn/completed" || params["turn"]["status"] == "interrupted") {
             return;
         }
@@ -111,20 +112,6 @@ impl Client {
         if result.is_err() {
             eprintln!("Codex GUI could not persist task recovery state");
         }
-    }
-
-    pub(super) async fn forget_recovery_turn(&self, params: &Value) -> super::error::Result<()> {
-        let (Some(thread), Some(turn)) = (params["threadId"].as_str(), params["turnId"].as_str())
-        else {
-            return Ok(());
-        };
-        let (thread, turn) = (thread.to_owned(), turn.to_owned());
-        store::access(store::Journal::new(&self.home), move |journal| {
-            journal.finished(&thread, &turn)
-        })
-        .await
-        .map_err(GuiError::Recovery)?;
-        Ok(())
     }
 
     pub(super) async fn forget_recovery_thread(&self, thread: &str) -> super::error::Result<()> {

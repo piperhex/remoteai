@@ -111,27 +111,6 @@ impl Client {
         .map_err(|_| GuiError::Timeout)?;
         Ok(true)
     }
-
-    pub(super) async fn interrupt_with_context(&self, params: Value) -> Result<Value> {
-        let id = params["threadId"]
-            .as_str()
-            .ok_or(GuiError::InvalidRequest)?;
-        let state = self.context_capacity.thread(id).await;
-        state.stops.fetch_add(1, Ordering::AcqRel);
-        // A manual stop during a capacity change cancels its automatic continuation.
-        // If continuation has already started, stop its new turn rather than the previous turn id.
-        let was_busy = state.applied.try_lock().is_err();
-        let _guard = state.applied.lock().await;
-        let current = self.active_turns.lock().await.get(id).cloned();
-        match current {
-            Some(turn_id) => {
-                self.request_raw("turn/interrupt", json!({"threadId": id, "turnId": turn_id}))
-                    .await
-            }
-            None if was_busy => Ok(json!({})),
-            None => self.request_raw("turn/interrupt", params).await,
-        }
-    }
 }
 
 pub(super) fn continuation_overrides(params: &Value) -> Value {

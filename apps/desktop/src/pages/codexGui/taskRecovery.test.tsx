@@ -80,3 +80,14 @@ it('keeps tasks paused when dismissed and does not retain state after disconnect
   expect(state.failure).toBeUndefined();
   expect(unsubscribe).toHaveBeenCalledOnce();
 });
+
+it('does not restore a stopped task when the host journal is empty after restarting or reconnecting', async () => {
+  vi.mocked(client.read).mockResolvedValue({ batchId: 'new-launch', candidates: [] });
+  await act(async () => root.render(<Harness />));
+  expect(state.snapshot?.candidates).toEqual([]);
+  await act(async () => root.render(<Harness enabled={false} />));
+  await act(async () => root.render(<Harness />));
+  await act(async () => notify({ method: 'recovery/changed', params: {} }));
+  expect(state.snapshot?.candidates).toEqual([]);
+  expect(client.decide).not.toHaveBeenCalled();
+});

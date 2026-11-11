@@ -6,6 +6,7 @@ mod conversation_awareness;
 mod coze;
 mod deletion;
 mod idle_threads;
+mod interrupt;
 mod live_settings;
 mod model_context;
 mod plugin_refresh;
@@ -217,10 +218,6 @@ impl Client {
             }
         }
         if method == "turn/interrupt" {
-            if self.forget_recovery_turn(&params).await.is_err() {
-                // A failed journal write must never prevent the user's stop request.
-                eprintln!("Codex GUI could not clear a stopped task recovery record");
-            }
             return self.interrupt_with_context(params).await;
         }
         if matches!(method, "turn/start" | "turn/steer") {
