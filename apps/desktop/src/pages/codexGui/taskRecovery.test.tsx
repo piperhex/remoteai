@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi, type Mock } from 'vitest';
 import { useTaskRecovery } from '../../../../../shared/conversation/recovery/useTaskRecovery';
 import type { RecoveryClient, RecoverySnapshot } from '../../../../../shared/conversation/recovery/types';
 
@@ -12,7 +12,7 @@ let root: Root;
 let state: ReturnType<typeof useTaskRecovery>;
 let notify: Parameters<RecoveryClient['subscribe']>[0];
 let client: RecoveryClient;
-let unsubscribe: ReturnType<typeof vi.fn>;
+let unsubscribe: Mock<() => void>;
 function Harness({ enabled = true }: { enabled?: boolean }) {
   state = useTaskRecovery(client, enabled);
   return null;
@@ -22,7 +22,7 @@ beforeEach(() => {
   host = document.createElement('div');
   document.body.append(host);
   root = createRoot(host);
-  unsubscribe = vi.fn();
+  unsubscribe = vi.fn<() => void>();
   client = { read: vi.fn().mockResolvedValue(snapshot), decide: vi.fn().mockResolvedValue({ failed: [] }),
     subscribe: listener => { notify = listener; return unsubscribe; } };
 });

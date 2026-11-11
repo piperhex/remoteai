@@ -2,7 +2,6 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { GuiController } from './controller';
 import { guiApi } from '../../../../../shared/conversation/api';
-import { conversation } from '../../../../../shared/conversation/events';
 import { sliceHistory } from '../../../../../shared/remote-chat/historyPage';
 import type { Thread } from '../../../../../shared/conversation/types';
 
@@ -16,9 +15,8 @@ beforeEach(() => { vi.resetAllMocks(); localStorage.clear(); });
 it.each(['suspend', 'dispose'] as const)('invalidates pending pagination across %s and activation', async action => {
   const controller = new GuiController();
   const latest = sliceHistory(thread);
-  controller.patch({ selected: thread.id, conversations: { chat: {
-    ...conversation(latest.thread), historyPage: latest.page,
-  } } });
+  vi.mocked(guiApi.request).mockResolvedValue(latest);
+  await controller.select(thread.id);
   let finish!: (value: unknown) => void;
   vi.mocked(guiApi.request).mockImplementation(request => request.operation === 'read'
     ? new Promise(resolve => { finish = resolve; }) : Promise.resolve({}));
