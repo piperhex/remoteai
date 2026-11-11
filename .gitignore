@@ -26,4 +26,5 @@ apps/desktop/src-tauri/.updater/
 apps/desktop/src-tauri/resources/remote-desktop/runtime/
 apps/desktop/src-tauri/resources/desktop-service/*
 !apps/desktop/src-tauri/resources/desktop-service/README.md
+apps/desktop/src-tauri/resources/cli-gui/
 apps/desktop/src-tauri/resources/x-server/runtime/

@@ -15,7 +15,7 @@ const CHUNK_BYTES: usize = 256 * 1024;
 const LEGACY_CHUNK_BYTES: usize = 12 * 1024;
 const MAX_TRANSFERS: usize = 64;
 const TRANSFER_TTL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
-const INVALID: &str = "CONVERSATION_SYNC_INVALID";
+pub(super) const INVALID: &str = "CONVERSATION_SYNC_INVALID";
 const FAILED: &str = "CONVERSATION_SYNC_FAILED";
 const CHANGED: &str = "CONVERSATION_SYNC_CHANGED";
 

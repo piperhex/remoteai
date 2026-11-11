@@ -227,6 +227,7 @@ export class ChatOperations {
   private async dispatch(request: RpcRequest, options: { mode: ConnectionMode; owner: string; terminalOwner: string }) {
     if (request.method === 'request') {
       const body = object(request.body);
+      if (body.operation === 'cliGui') return invoke('cli_gui_request', { request: body.request });
       if (body.operation === SYNC_OPERATION) return this.conversationSync.request(body, options);
       if (body.operation === DICTATION_OPERATION) return this.dictation.request(body, options.owner);
       if (GUI_FILE_OPERATIONS.has(String(body.operation))) return this.files.request(body, options.owner, options.mode);

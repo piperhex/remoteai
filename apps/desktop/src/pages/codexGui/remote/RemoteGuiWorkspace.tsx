@@ -38,12 +38,13 @@ export default function RemoteGuiWorkspace(props: {
   const { active, identity, device, computers } = props;
   const [syncing, setSyncing] = useState(false);
   const chat = useRemoteGui(identity, device.deviceId, active);
+  const [workspaceCwd, setWorkspaceCwd] = useState('');
   const installer = useRemoteCliInstaller(chat.controller.guiTools,
     active && (chat.state.mode === 'direct' || chat.state.mode === 'relay'));
   const scope = JSON.stringify([identity.baseUrl, identity.userId, device.deviceId]);
   useDesktopDownloads({ identity, device, controller: chat.controller });
   const terminal = useRemoteTerminalPanel({ client: chat.controller.guiTools.terminal, connected: chat.state.ready,
-    cwd: chat.state.selected?.cwd ?? chat.state.draftProject?.cwd ?? '' });
+    cwd: workspaceCwd });
   const resolveLink = useTerminalLinkTunnels(chat.controller.guiTools.terminal);
   const terminalApi = useMemo(() => remoteTerminalApi(chat.controller.guiTools.terminal, resolveLink),
     [chat.controller, resolveLink]);
@@ -67,7 +68,7 @@ export default function RemoteGuiWorkspace(props: {
       cliVersion={installer.version}
       renderUserMessage={props => <RemoteUserMessage {...props} state={chat.state}
         controller={chat.controller} active={active} />}
-      scope={scope} draggableHeader={isDesktopApp} scrollableComposer
+      scope={scope} draggableHeader={isDesktopApp} scrollableComposer onWorkspaceChange={setWorkspaceCwd}
       chooseLocal={() => computers.choose(null)}
       deviceRefresh={computers}
       chooseDevice={(id) => { const device = computers.devices.find((entry) => entry.deviceId === id);

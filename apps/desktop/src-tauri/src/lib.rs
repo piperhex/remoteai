@@ -15,6 +15,7 @@ mod chrome_plugin;
 mod claude_code;
 mod claude_code_provider;
 mod claude_desktop;
+mod cli_gui;
 mod client_integration;
 mod client_lifecycle;
 mod cloud;
@@ -158,6 +159,7 @@ pub fn run() {
         .manage(AppState::default())
         .manage(coze::CozeState::default())
         .manage(codex_gui::GuiState::default())
+        .manage(cli_gui::CliGuiState::default())
         .manage(provider_browser::automation::State::default())
         .manage(codex_gui::dropped_files::DroppedFilesState::default())
         .manage(gui_terminal::ssh_drop::SshDropState::default())
@@ -366,6 +368,7 @@ pub fn run() {
             #[cfg(windows)]
             system_tray::quick_menu::quick_menu_activate,
             codex_gui::codex_gui_connect,
+            cli_gui::cli_gui_request,
             codex_gui::dictation::codex_gui_dictation_prepare,
             codex_gui::dictation::codex_gui_dictation_transcribe,
             codex_gui::dictation::codex_gui_dictation_cancel,

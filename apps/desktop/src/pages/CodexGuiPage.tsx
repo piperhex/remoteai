@@ -1,6 +1,18 @@
 import { displayText } from '../../../../shared/localization/uiText';
 import { TaskRecoveryPrompt } from '../../../../shared/conversation/recovery/TaskRecoveryPrompt';
 import { localRecovery } from '../../../../shared/conversation/recovery/local';
+import { CliGuiProvider, useCliGui } from '../../../../shared/cli-gui/context';
+import { localCliTransport } from '../../../../shared/cli-gui/localTransport';
+import { CliConversationPane } from '../../../../shared/cli-gui/CliConversationPane';
+import { CliRuntimeTools } from '../../../../shared/cli-gui/CliRuntimeTools';
+import { CliLocalMessages } from './codexGui/CliLocalMessages';
+import { CliLocalComposer } from './codexGui/CliLocalComposer';
+import { GuiToolbox } from '../../../../shared/conversation/GuiToolbox';
+import { LocalProjectBrowser } from './codexGui/LocalProjectBrowser';
+import { localGitClient } from './codexGui/localGitClient';
+import { ProjectPicker } from './codexGui/ProjectPicker';
+import { dictationClient } from './codexGui/dictation/client';
+import { EngineSelector, engineNames } from '../../../../shared/cli-gui/EngineSelector';
 import { ImageAiContext } from '../../../../shared/chat/ImageAiContext';
 import { DesktopUsageContext } from '../../../../shared/chat/DesktopUsageContext';
 import { ToolDetailsContext, localToolDetails } from '../../../../shared/chat/DeferredToolDetails';
@@ -74,29 +86,34 @@ export function CodexGuiPage(props: CodexGuiPageProps) {
   useEffect(() => { if (active) setVisited(true); }, [active]);
   if (!visited) return null;
   if (!hasLocalBackend) return <div className={styles.install}><h2>Codex GUI</h2><p>{uiText("client.composer.openTheWebAddressProvidedByRemoteAiToStart")}</p></div>;
-  return <Workspace {...props} {...(props.focusMode ?? focusMode)} />;
+  return <CliGuiProvider transport={localCliTransport} enabled={active}>
+    <Workspace {...props} {...(props.focusMode ?? focusMode)} />
+  </CliGuiProvider>;
 }
 
 function Workspace({ active, accountPicker, windowControls, plugins, hostPicker, notificationTarget, syncComputers,
   focused, onToggleFocus }: CodexGuiPageProps & GuiFocusMode) {
   const language = useGuiLanguage();
+  const cli = useCliGui();
   const diffText = useCallback((source: string, values?: Record<string, string | number>) =>
     displayText(source, values, language), [language]);
   const skinStyle = useDreamSkin(active);
   const [controller] = useState(getGuiController);
   const [view, setView] = useState<GuiView>("conversation");
+  const external = Boolean(cli && cli.state.engine !== 'codex' && view === 'conversation');
   const { state, visible } = useVisibleGuiState(controller, active);
-  const conversationActive = visible && view === "conversation";
+  const conversationActive = visible && view === "conversation" && !external;
   const { usage } = useUsageStatus(visible);
   useConversationReadState(conversationActive, controller);
   const openTaskConversation = (threadId: string) => {
+    cli?.controller.showCodex();
     setView("conversation");
     controller.filter("", false);
     void controller.select(threadId);
   };
   const composer = useRef<ComposerHandle>(null);
   useOpenNotifiedThread({ target: notificationTarget, ready: active && state.connection === "ready", controller,
-    showConversation: () => setView("conversation") });
+    showConversation: () => { cli?.controller.showCodex(); setView("conversation"); } });
   const [collapsed, setCollapsed] = useState(() => window.innerWidth < 900);
   const installer = useCliInstaller(active, controller, true);
   useEffect(retainGuiSession, [controller]);
@@ -110,7 +127,9 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
   const thread = current?.thread ?? state.threads.find((entry) => entry.id === state.selected);
   const project = state.selected
     ? state.projectOverrides[state.selected] ?? thread?.cwd ?? "" : state.settings.cwd;
-  const terminal = useTerminalPanel(thread?.cwd ?? state.settings.cwd);
+  const workspaceProject = external && cli ? cli.state.selected?.cwd ?? cli.state.cwd : project;
+  const workspaceActive = visible && view === 'conversation';
+  const terminal = useTerminalPanel(workspaceProject);
   const pending = state.approvals.filter((event) => event.params.threadId === state.selected);
   const navigationApproval = state.approvals.find((event) =>
     view !== "conversation" || event.params.threadId !== state.selected);
@@ -128,11 +147,13 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
     } }}><DiffTextContext.Provider value={diffText}><WorkspaceOperationContext.Provider value={{ busy: Boolean(state.workspaceBusy),
     setBusy: controller.setWorkspaceBusy }}>
     <TerminalWorkspaceProvider panel={isDesktopApp ? terminal : undefined}>
-    <DetailsWorkspace selected={state.selected} active={conversationActive}>
+    <DetailsWorkspace selected={external ? `cli:${cli?.state.engine}:${cli?.state.selected?.id ?? 'draft'}`
+      : state.selected} active={workspaceActive}>
     <ChatFileReferencesProvider><ImageAnnotationsProvider>
     <div className={`${styles.page} ${collapsed ? styles.collapsed : ""}`}
       data-dream-skin={skinStyle ? "true" : undefined} style={skinStyle}>
-    {!collapsed && <ThreadSidebar state={state} controller={controller} accountPicker={accountPicker}
+    {!collapsed && <ThreadSidebar state={external ? { ...state, selected: null } : state}
+      controller={controller} accountPicker={accountPicker}
       focused={focused} onToggleFocus={onToggleFocus} view={view} onNavigate={setView}
       scheduledTasksAvailable={canManageCodexConnection} />}
     <div className={styles.workspace}>
@@ -144,13 +165,14 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
         {collapsed && <FocusModeButton focused={focused} onToggleFocus={onToggleFocus} />}
         <div className={styles.heading} data-tauri-drag-region={isDesktopApp || undefined}>
           <strong data-tauri-drag-region={isDesktopApp || undefined}>
-            {view === "conversation" && thread ? threadTitle(thread) : GUI_VIEW_TITLES[view]}
+            {external && cli ? cli.state.selected?.title || uiText(engineNames[cli.state.engine])
+              : view === "conversation" && thread ? threadTitle(thread) : GUI_VIEW_TITLES[view]}
           </strong>
         </div>
         <div className={styles.headerActions} data-tauri-drag-region={isDesktopApp || undefined}>
           {isDesktopApp && <AssistanceButton />}
           {isDesktopApp && <MobileConnectionStatus />}
-          {installer.version && <Button type="text" icon={<RefreshCw size={16} />} aria-label={uiText("client.composer.reconnectCodex")}
+          {external ? <CliRuntimeTools refreshModels={controller.refreshModels} /> : <>{installer.version && <Button type="text" icon={<RefreshCw size={16} />} aria-label={uiText("client.composer.reconnectCodex")}
             disabled={Boolean(running)} loading={state.connection === "connecting"}
             onClick={() => void controller.connect()} />}
           <Popover trigger="click" placement="bottomRight"
@@ -158,14 +180,30 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
             styles={{ root: { maxWidth: 400 } }}>
             <Button type="text" icon={<CliUpdateIcon version={installer.version} release={installer.release} />}
               aria-label={uiText("client.composer.codexCliUpdates")} />
-          </Popover>
+          </Popover></>}
           {isDesktopApp && view === "conversation" && <PanelToggleButton icon={<PanelBottom size={16} />}
             label={terminal.open ? uiText("client.chat.hideTerminal") : uiText("client.composer.openTerminal")}
             expanded={terminal.open} active={terminal.tabs.length > 0} onClick={terminal.toggle} />}
-          {view === "conversation" && <ConversationChangesButton value={current} />}
+          {view === "conversation" && <ConversationChangesButton value={external ? undefined : current} />}
         </div>
         {focused && windowControls && <div className={styles.focusWindowControls}>{windowControls}</div>}
       </header>
+      {external && cli && <CliConversationPane cwd={project} dictation={dictationClient}
+        active={workspaceActive} renderMessages={props => <CliLocalMessages {...props} />}
+        renderComposer={props => <CliLocalComposer {...props} />}
+        modelSource={{ models: state.models, loading: state.modelCatalogLoading,
+          error: state.modelCatalogError, refresh: controller.refreshModels }}
+        projectPicker={<ProjectPicker value={workspaceProject} projects={state.projects} hostPicker={hostPicker}
+          gitEnabled={!cli.state.selected} onBusyChange={controller.setWorkspaceBusy}
+          actions={<>
+            {isDesktopApp && <GuiToolbox trigger="git" active={workspaceActive} connected={!state.workspaceBusy}
+              cwd={workspaceProject} git={localGitClient} />}
+            <LocalProjectBrowser cwd={workspaceProject} active={workspaceActive} connected={!state.workspaceBusy} />
+          </>}
+          active={active} disabled={Boolean(cli.state.selected) || cli.state.busy}
+          onChange={cwd => { cli.controller.patch({ cwd }); void cli.controller.loadCatalog(); }}
+          onError={cli.controller.report} />} />}
+      <div className="cli-gui-codex-content" hidden={external}>
       {state.error && <Alert className={styles.error} message={formatRemoteError(language, state.error)}
         type="error" closable onClose={controller.clearError} />}
       <GuiSetupAlerts computerUseSetup={state.computerUseSetup} unattendedSetup={state.unattendedSetup} />
@@ -182,7 +220,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
         </Suspense>
       </div>}
       <div className={paneStyles.conversation} hidden={view !== "conversation"}>
-      {!installer.version ? <Installer installer={installer} /> :
+      {!installer.version ? <><Installer installer={installer} />
+        <footer className="cli-gui-footer"><EngineSelector active={false} /></footer></> :
         <ConversationRetryProvider controller={controller} state={state}>
         <Messages value={current} selected={state.selected} active={conversationActive}
           onLoadOlder={controller.loadOlderHistory}
@@ -200,10 +239,11 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
           <Composer ref={composer} state={state} controller={controller} active={conversationActive}
             hostPicker={hostPicker} cliVersion={installer.version} />
         </>} /></ConversationRetryProvider>}
-      {isDesktopApp && terminal.tabs.length > 0 && <Suspense fallback={null}>
-        <TerminalPanel panel={terminal} active={conversationActive} api={terminalApi} notice={terminal.error} />
-      </Suspense>}
       </div>
+      </div>
+      {isDesktopApp && terminal.tabs.length > 0 && <Suspense fallback={null}>
+        <TerminalPanel panel={terminal} active={workspaceActive} api={terminalApi} notice={terminal.error} />
+      </Suspense>}
     </div>
     </div>
   </ImageAnnotationsProvider></ChatFileReferencesProvider></DetailsWorkspace>

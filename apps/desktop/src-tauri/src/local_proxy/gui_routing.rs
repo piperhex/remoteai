@@ -67,10 +67,16 @@ pub(super) fn handle<R: Runtime>(
 
 fn handle_selected<R: Runtime>(request: GuiProxyRequest<'_, R>) -> Result<UpstreamPayload, String> {
     if is_anthropic_messages_endpoint(request_path(request.url)) {
-        return Err("Codex GUI only supports Codex requests".to_string());
+        return super::gui_cli::messages(request);
+    }
+    if is_anthropic_count_tokens_endpoint(request_path(request.url)) {
+        return Ok(super::gui_cli::count_tokens(&request.body));
     }
     if *request.method == Method::Get
-        && matches!(request_path(request.url), "/models" | "/v1/models")
+        && matches!(
+            request_path(request.url),
+            "/models" | "/v1/models" | "/v1/cli-models"
+        )
     {
         let snapshot =
             account_selection::snapshot(request.app).map_err(|error| error.to_string())?;
@@ -114,10 +120,13 @@ fn models<R: Runtime>(
             );
         }
     }
-    if !request
-        .app
-        .try_state::<crate::codex_gui::GuiState>()
-        .is_some_and(|state| state.model_discovery.allowed())
+    // External CLIs read the GUI's saved catalog even while a GUI refresh is in flight.
+    // They must not open a second official discovery request during startup or sends.
+    if request_path(request.url) == "/v1/cli-models"
+        || !request
+            .app
+            .try_state::<crate::codex_gui::GuiState>()
+            .is_some_and(|state| state.model_discovery.allowed())
     {
         let home = crate::codex_home::gui_home(request.app)?;
         let catalog = crate::codex_gui::cached_catalog(&home).map_err(|error| error.to_string())?;
@@ -206,8 +215,22 @@ mod tests {
             serde_json::from_slice::<Value>(&bytes).unwrap()["models"][0]["slug"],
             "cached"
         );
-        std::fs::remove_file(path).unwrap();
-        assert!(models(&request, &target, None).is_err());
+        {
+            let state = app.state::<crate::codex_gui::GuiState>();
+            let _discovery = state.model_discovery.begin();
+            let external = GuiProxyRequest {
+                url: "/v1/cli-models",
+                ..request
+            };
+            let mut payload = models(&external, &target, None).unwrap();
+            let bytes = read_official_model_catalog_body(&mut payload.body).unwrap();
+            assert_eq!(
+                serde_json::from_slice::<Value>(&bytes).unwrap()["models"][0]["slug"],
+                "cached"
+            );
+            std::fs::remove_file(path).unwrap();
+            assert!(models(&external, &target, None).is_err());
+        }
     }
 
     #[test]

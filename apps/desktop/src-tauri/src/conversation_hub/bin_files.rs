@@ -96,25 +96,14 @@ fn bin_manifest_for_snapshot(
     snapshot: RolloutSnapshot,
 ) -> Result<BinManifest, String> {
     let backup = snapshot_bin_state(codex_home, &snapshot.session_id)?;
-    let indexed_path = backup
-        .thread
-        .as_ref()
-        .and_then(|row| sqlite_row_text(row, "rollout_path"))
-        .map(PathBuf::from);
-    let original = indexed_path
-        .as_ref()
-        .and_then(|path| {
-            snapshot.physical_paths.iter().find(|source| {
-                logical_rollout_path(source).as_ref() == logical_rollout_path(path).as_ref()
-            })
-        })
-        .unwrap_or(&snapshot.path);
-    let relative = bin_rollout_relative(original, codex_home)?;
+    let original = rollout_selection::primary(&snapshot, backup.thread.as_ref());
+    let original = original.clone();
+    let relative = bin_rollout_relative(&original, codex_home)?;
     Ok(BinManifest {
         session_id: snapshot.session_id,
         title: snapshot.title,
         cwd: snapshot.cwd,
-        original_rollout_path: original.clone(),
+        original_rollout_path: original,
         relative_rollout_path: relative.to_string_lossy().to_string(),
         session_index_entry: snapshot.index_value,
         deleted_at: Utc::now().to_rfc3339(),

@@ -152,7 +152,3 @@ fn table_exists(connection: &Connection, table: &str) -> Result<bool, String> {
         )
         .map_err(|error| error.to_string())
 }
-
-fn purge_thread_state(codex_home: &Path, session_id: &str) -> Result<(), String> {
-    remove_bin_state(codex_home, session_id)
-}

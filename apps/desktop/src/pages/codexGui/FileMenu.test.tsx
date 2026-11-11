@@ -187,7 +187,7 @@ it("previews Markdown resources directly and preserves the original menu on righ
   expect(item("打开文件")).toBeTruthy();
 });
 
-it("opens unsupported files in one browser download tab without preview reads", async () => {
+it("opens unsupported local files from one browser tab without downloading or preview reads", async () => {
   await act(async () => root.render(<DetailsWorkspace selected="thread-one" active>
     <FileMenu path="archive.zip" preview>归档</FileMenu></DetailsWorkspace>));
   await click(trigger()); await click(trigger());
@@ -195,6 +195,8 @@ it("opens unsupported files in one browser download tab without preview reads", 
   expect(host.querySelectorAll('.website-preview-browser [role="tab"]')).toHaveLength(1);
   expect(host.querySelector('.resource-download-card')?.textContent).toContain('archive.zip');
   await click(host.querySelector<HTMLButtonElement>('.resource-download-button')!);
-  expect(fileApi.perform).toHaveBeenCalledWith({ path: 'archive.zip', threadId: null }, { type: 'saveAs' });
+  expect(fileApi.perform).toHaveBeenCalledWith({ path: 'archive.zip', threadId: null },
+    { type: 'open', application: 'default' });
+  expect(host.querySelector('.resource-download-card')?.textContent).not.toContain('下载');
   expect(trigger().disabled).toBe(false);
 });

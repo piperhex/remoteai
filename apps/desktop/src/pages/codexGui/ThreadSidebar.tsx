@@ -1,4 +1,7 @@
 import { uiText } from "../../../../../shared/localization/uiText";
+import { useCliGui } from '../../../../../shared/cli-gui/context';
+import { CliThreadRow } from '../../../../../shared/cli-gui/CliThreadRow';
+import { useCliSidebar } from '../../../../../shared/cli-gui/useCliSidebar';
 import { useGuiLanguage } from '../../../../../shared/localization/useGuiLanguage';
 import { useMemo, useState, type ReactNode } from "react";
 import { App, Button, Input, Modal, Segmented, Spin } from "antd";
@@ -50,6 +53,8 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
   view?: GuiView; onNavigate?: (view: GuiView) => void; scheduledTasksAvailable?: boolean;
 } & GuiFocusMode) {
   const language = useGuiLanguage();
+  const cli = useCliGui();
+  const sidebar = useCliSidebar({ threads: state.threads, archived: state.archived, query: state.search });
   const grouping = useGrouping();
   const [searchOpen, setSearchOpen] = useState(false);
   const pagination = useThreadPagination({ state, controller, enabled: !searchOpen });
@@ -63,8 +68,9 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
     setSearchOpen(false);
     if (state.search) controller.filter("", state.archived);
   };
-  const sections = useMemo(() => groupingTree(threadGroups(state).map(group => ({ ...group, data: group.threads })),
-    state.grouping), [state.threads, state.pins, state.projects, state.pinnedProjects, state.conversations,
+  const sections = useMemo(() => groupingTree(threadGroups({ ...state, threads: sidebar.threads })
+    .map(group => ({ ...group, data: group.threads })),
+    state.grouping), [sidebar.threads, state.pins, state.projects, state.pinnedProjects, state.conversations,
     state.pendingRequest, state.grouping, language]);
   const scope = state.archived ? 'archived' : 'recent';
   const collapsed = new Set(views.collapsed.filter(key => key.startsWith(`${scope}:`))
@@ -72,6 +78,8 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
   const groups = flattenGroupingTree(sections, state.search.trim() ? new Set() : collapsed)
     .map(group => ({ ...group, data: orderGuiThreads(group.data, state) }));
   const renderThread = (thread: Thread) => {
+    const session = sidebar.session(thread);
+    if (session) return <CliThreadRow key={thread.id} session={session} onSelect={() => onNavigate('conversation')} />;
     const running = isThreadRunning(state, thread);
     const busy = state.sending || Boolean(state.deleting);
     const needsInput = state.approvals.some((event) => event.params.threadId === thread.id);
@@ -96,7 +104,7 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
       <div className={[styles.thread,
         view === "conversation" && state.selected === thread.id ? styles.selected : ""].join(" ")}>
         <button className={styles.threadSelect} disabled={state.sending}
-          onClick={() => { onNavigate("conversation"); void controller.select(thread.id); }}>
+          onClick={() => { cli?.controller.showCodex(); onNavigate("conversation"); void controller.select(thread.id); }}>
           <span className={styles.threadTitle}>{threadTitle(thread)}</span>
           <ThreadStatus running={running} needsInput={needsInput}
             unread={Boolean(state.threadReadState[thread.id]?.unread)} />
@@ -114,15 +122,19 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
         <Button type="text" size="small" icon={<RefreshCw size={15} />} aria-label={uiText("client.workspaceActions.refreshConversations")}
           loading={state.loading} disabled={state.connection !== "ready"} onClick={() => void controller.refresh()} />
         <Button type="text" size="small" icon={<Search size={15} />} aria-label={uiText("client.workspaceActions.searchConversations")}
-          disabled={state.connection !== "ready"} onClick={() => { onNavigate("conversation"); setSearchOpen(true); }} />
+          disabled={state.connection !== "ready"} onClick={() => {
+            cli?.controller.showCodex(); onNavigate("conversation"); setSearchOpen(true);
+          }} />
       </div>
     </div>
-    <GuiNavigation view={view} sending={state.sending} onNavigate={onNavigate}
+    <GuiNavigation view={view} sending={state.sending || Boolean(cli?.state.busy)} onNavigate={next => {
+      cli?.controller.showCodex(); onNavigate(next);
+    }}
       scheduledTasksAvailable={scheduledTasksAvailable}
-      onNewConversation={() => { onNavigate("conversation"); controller.newConversation(); }} />
+      onNewConversation={() => { cli?.controller.newConversation(); onNavigate("conversation"); controller.newConversation(); }} />
     <Segmented className={styles.threadFilter} block size="small" value={state.archived ? "archived" : "recent"}
       options={[{ label: uiText("client.chat.recent"), value: "recent" }, { label: uiText("client.mobile.archived"), value: "archived" }]}
-      onChange={(value) => controller.filter("", value === "archived")} disabled={state.connection !== "ready"} />
+      onChange={(value) => controller.filter("", value === "archived")} />
     <div className={styles.threadList} aria-busy={state.loading} {...pagination}>
       {groups.map((group) => {
         const key = `${state.archived ? "archived" : "recent"}:${group.id}`;
@@ -133,20 +145,21 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
             toggle={() => toggle('collapsed', key)} />}
           <ThreadGroup label={group.label || uiText('client.groups.ungrouped')} pinned={Boolean(group.pinned)}
           hideHeading={custom} threads={group.data}
-          selected={view === "conversation" ? state.selected : null}
+          selected={view === "conversation" ? sidebar.selected?.id ?? state.selected : null}
           collapsed={views.collapsed.includes(key)} expanded={views.expanded.includes(key)}
           filtering={Boolean(state.search.trim())} onToggle={(field) => toggle(field, key)}
           projectPinned={state.pinnedProjects.includes(group.cwd)}
           projectMenu={group.cwd ? (heading) => <ProjectGroupMenu path={group.cwd} label={group.label}
             state={state} controller={controller}>{heading}</ProjectGroupMenu> : undefined}
           creatingDisabled={state.sending} onNewConversation={group.cwd ? () => {
+            cli?.controller.newConversation(); cli?.controller.patch({ cwd: group.cwd });
             onNavigate("conversation");
             controller.newConversation();
             controller.setProject(group.cwd);
           } : undefined}
           renderThread={renderThread} /></div>;
       })}
-      {!state.threads.length && <p className={styles.listEmpty}>{state.loading ? <Spin size="small" />
+      {!sidebar.threads.length && <p className={styles.listEmpty}>{state.loading ? <Spin size="small" />
         : uiText(state.search ? "client.workspaceActions.noMatchingConversations" : "client.workspaceActions.noConversationsYet")}</p>}
       {state.cursor && <ThreadPagination loading={state.loading} />}
     </div>

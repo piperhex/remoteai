@@ -6,6 +6,7 @@ fn merge_bin_snapshots(snapshots: Vec<RolloutSnapshot>) -> Vec<RolloutSnapshot> 
                 entry.insert(snapshot);
             }
             std::collections::hash_map::Entry::Occupied(mut entry) => {
+                entry.get_mut().size_bytes += snapshot.size_bytes;
                 entry
                     .get_mut()
                     .physical_paths
