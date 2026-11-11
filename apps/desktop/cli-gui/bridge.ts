@@ -16,22 +16,41 @@ export class AccountBridge {
   private saved: SavedBridge = { port: 0, token: randomBytes(32).toString('hex'), routes: {} };
   private server = createServer((request, response) => { void this.handle(request, response); });
   private saving: Promise<void> = Promise.resolve();
+  private starting?: Promise<void>;
   constructor(private root: string, private upstream: { url: string; token: string }) {}
   get url() { return `http://127.0.0.1:${this.saved.port}`; }
   selection(id: string) { return Object.hasOwn(this.saved.routes, id) ? this.saved.routes[id] : undefined; }
 
-  async start() {
+  start() {
+    return this.starting ??= this.bind().catch(error => { this.starting = undefined; throw error; });
+  }
+  private async bind() {
     await mkdir(this.root, { recursive: true });
     try { this.saved = JSON.parse(await readFile(join(this.root, 'bridge.json'), 'utf8')) as SavedBridge; }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-    await new Promise<void>((resolve, reject) => {
-      this.server.once('error', reject);
-      this.server.listen(this.saved.port, '127.0.0.1', () => { this.server.off('error', reject); resolve(); });
+    try {
+      try { await this.listen(this.saved.port); }
+      catch (error) {
+        if (!this.saved.port || (error as NodeJS.ErrnoException).code !== 'EADDRINUSE') throw error;
+        // Bind directly: probing the old listener could disclose credentials to another process.
+        await this.listen(0);
+      }
+      const address = this.server.address();
+      if (!address || typeof address === 'string') throw new Error('client.cliGui.connectionFailed');
+      this.saved.port = address.port;
+      await this.save();
+    } catch (error) { await this.closeListener(); throw error; }
+  }
+  private listen(port: number) {
+    return new Promise<void>((resolve, reject) => {
+      const cleanup = () => { this.server.off('error', failed); this.server.off('listening', ready); };
+      const failed = (error: Error) => { cleanup(); reject(error); };
+      const ready = () => { cleanup(); resolve(); };
+      this.server.once('error', failed);
+      this.server.once('listening', ready);
+      try { this.server.listen(port, '127.0.0.1'); }
+      catch (error) { cleanup(); reject(error); }
     });
-    const address = this.server.address();
-    if (!address || typeof address === 'string') throw new Error('client.cliGui.connectionFailed');
-    this.saved.port = address.port;
-    await this.save();
   }
   private save() {
     const data = JSON.stringify(this.saved);
@@ -152,7 +171,16 @@ export class AccountBridge {
       content: { role: 'model', parts }, finishReason: 'STOP' }] }));
     response.end();
   }
-  async close() { this.server.closeAllConnections(); await new Promise<void>(resolve => this.server.close(() => resolve())); }
+  private async closeListener() {
+    this.server.closeAllConnections();
+    await new Promise<void>(resolve => this.server.close(() => resolve()));
+  }
+  async close() {
+    // A failed start has already released its listener; shutdown must also wait for an in-flight bind/save.
+    await this.starting?.catch(() => undefined);
+    await this.closeListener();
+    this.starting = undefined;
+  }
 }
 
 async function readBody(request: IncomingMessage): Promise<Record<string, unknown>> {

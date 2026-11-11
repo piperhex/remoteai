@@ -7,6 +7,7 @@ import { createPaseoClient, type PaseoClient } from '@getpaseo/client';
 import { cliVersion, managedCommand, CLI_PACKAGES } from './version';
 import { installPackages } from './npm';
 import { AccountBridge } from './bridge';
+import { refreshBridgeSessions } from './bridgeSessions';
 import type { CliRuntimeStatus, ExternalEngine } from '../../../shared/cli-gui/types';
 import type { InstallationProgress } from '../../../shared/cli/installProgressTypes';
 
@@ -93,7 +94,12 @@ export class CliRuntime {
   }
 
   connect(): Promise<PaseoClient> {
-    return this.connecting ??= this.start().catch(error => { this.connecting = undefined; throw error; });
+    return this.connecting ??= this.start().catch(async error => {
+      try { await this.release(); }
+      catch (cleanupError) { console.error('CLI runtime startup cleanup failed', cleanupError); }
+      finally { this.connecting = undefined; }
+      throw error;
+    });
   }
 
   accountBridge(): Promise<AccountBridge> {
@@ -102,7 +108,8 @@ export class CliRuntime {
       const token = process.env.REMOTEAI_GUI_PROXY_TOKEN;
       if (!url || !token) throw new Error('client.cliGui.accountUnavailable');
       const bridge = new AccountBridge(this.root, { url, token });
-      await bridge.start(); await bridge.prepareHomes(); return bridge;
+      try { await bridge.start(); await bridge.prepareHomes(); return bridge; }
+      catch (error) { await bridge.close(); throw error; }
     })().catch(error => { this.bridge = undefined; throw error; });
   }
 
@@ -130,6 +137,8 @@ export class CliRuntime {
       PASEO_DICTATION_ENABLED: 'false', PASEO_VOICE_MODE_ENABLED: 'false' };
     const config = server.loadConfig(home, { env, cli: { listen: '127.0.0.1:0', relayEnabled: false,
       mcpEnabled: false, mcpInjectIntoAgents: false, webUiEnabled: false } });
+    if (typeof config.agentStoragePath !== 'string') throw new Error('client.cliGui.connectionFailed');
+    await refreshBridgeSessions(config.agentStoragePath, bridge);
     const logger = server.createRootLogger({ log: { level: 'warn', file: { path: join(home, 'daemon.log') } } },
       { paseoHome: home });
     this.daemon = await server.createPaseoDaemon(config, logger);
@@ -142,9 +151,20 @@ export class CliRuntime {
   }
 
   async close() {
-    await this.client?.close();
-    await this.daemon?.stop();
-    if (this.bridge) await (await this.bridge).close();
-    this.bridge = undefined; this.connecting = undefined; this.client = undefined; this.daemon = undefined;
+    // A rejected initialization already ran release(); wait for successful initialization before shutdown.
+    await this.connecting?.catch(() => undefined);
+    try { await this.release(); }
+    finally { this.connecting = undefined; }
+  }
+
+  private async release() {
+    try { await this.client?.close(); }
+    finally {
+      try { await this.daemon?.stop(); }
+      finally {
+        try { if (this.bridge) await (await this.bridge).close(); }
+        finally { this.bridge = undefined; this.client = undefined; this.daemon = undefined; }
+      }
+    }
   }
 }
