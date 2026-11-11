@@ -22,6 +22,7 @@ export interface CreditsSnapshot {
 }
 
 export interface Account {
+  accountSource?: string;
   id: string;
   email: string;
   group: string;

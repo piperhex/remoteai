@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ArrowRight, LogIn, RefreshCw } from "lucide-react";
+import { LogIn, RefreshCw } from "lucide-react";
 import type { Language, Translate } from "../i18n";
 import type { AccountDisplayMode } from "../hooks/useAccountDisplayMode";
 import type {
@@ -7,6 +7,8 @@ import type {
   ResetCreditsLoadState,
 } from "../types";
 import { AccountTable } from "../components/accounts/AccountTable";
+import { AddOfficialAccountButton } from "../../../../shared/accounts/AddOfficialAccountButton";
+import type { OfficialAccountSource } from "../../../../shared/accounts/source";
 
 export function AccountsPage({
   active,
@@ -66,7 +68,7 @@ export function AccountsPage({
   proxyBusy: boolean;
   proxySpeedControl?: ReactNode;
   resetCredits: Record<string, ResetCreditsLoadState>;
-  onAdd: () => void;
+  onAdd: (source: OfficialAccountSource) => void;
   onSwitch: (id: string) => void;
   onDeactivate: (id: string) => void;
   onCopyAuthJson: (id: string) => void;
@@ -117,9 +119,7 @@ export function AccountsPage({
         <div className="empty-state">
           <div><LogIn size={28} /></div><h2>{t("accounts.empty.title")}</h2>
           <p>{t("accounts.empty.description")}</p>
-          <button className="primary-button" onClick={onAdd}>
-            {t("accounts.empty.addFirst")}<ArrowRight size={17} />
-          </button>
+          <AddOfficialAccountButton label={t("accounts.empty.addFirst")} onSelect={onAdd} />
         </div>
       </div>
     );

@@ -3,6 +3,7 @@ use super::*;
 #[test]
 fn source_disabled_expired_and_incompatible_accounts_are_skipped() {
     let mut account = AccountSummary {
+        account_source: "codex",
         id: "other".into(),
         email: String::new(),
         group: String::new(),

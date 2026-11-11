@@ -74,7 +74,7 @@ pub(crate) async fn set_account_group<R: Runtime + 'static>(
 ) -> Result<String, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let paths = resolve_paths(&app)?;
-        if !managed_auth_path(&paths, &id).exists() {
+        if !managed_auth_path(&paths, &id).exists() && !crate::claude_accounts::exists(&paths, &id) {
             return Err("Account does not exist".to_string());
         }
         let group = normalize_account_group(&group)?;

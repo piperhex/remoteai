@@ -42,7 +42,7 @@ export function LocalProxyCard({
   t,
 }: LocalProxyCardProps) {
   const proxyRunning = Boolean(localProxy?.running);
-  const activeAccount = accounts.find((account) => account.active);
+  const activeAccount = accounts.find(account => account.active && account.accountSource !== 'claudeCode');
   const showImageModelSelectors = proxyRunning && (
     Boolean(activeAccount?.agentIdentity)
     || Boolean(localProxy?.concurrentAccountRoutingEnabled)

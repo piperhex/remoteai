@@ -23,7 +23,8 @@ async function execute(line: string) {
     write({ id, data });
   } catch (error) {
     console.error('CLI request failed', error);
-    const code = error instanceof Error && /^client\.cliGui\.[a-zA-Z]+$/.test(error.message)
+    const code = error instanceof Error && (/^client\.cliGui\.[a-zA-Z]+$/.test(error.message)
+      || ['client.officialAccounts.storageFailed', 'client.officialAccounts.invalidRequest'].includes(error.message))
       ? error.message : 'client.cliGui.requestFailed';
     write({ id, error: code });
   }

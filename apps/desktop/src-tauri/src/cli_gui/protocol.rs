@@ -27,6 +27,7 @@ enum Action {
     Install,
     Catalog {
         cwd: Option<String>,
+        id: Option<String>,
     },
     List {
         archived: bool,
@@ -104,7 +105,14 @@ impl Request {
                     bounded(mode, 300)?;
                 }
             }
-            Action::Catalog { cwd: Some(cwd) } => directory(cwd)?,
+            Action::Catalog { cwd, id } => {
+                if let Some(cwd) = cwd {
+                    directory(cwd)?;
+                }
+                if let Some(id) = id {
+                    bounded(id, 200)?;
+                }
+            }
             Action::Send {
                 id,
                 text,
@@ -180,6 +188,18 @@ mod tests {
         let request: Request = serde_json::from_value(value).unwrap();
         let serialized = serde_json::to_value(request.validate().unwrap()).unwrap();
         assert_eq!(serialized["actionId"], "allow-once:exact");
+    }
+
+    #[test]
+    fn preserves_catalog_session_binding() {
+        let request: Request =
+            serde_json::from_value(json!({"engine":"claude", "action":"catalog",
+            "id":"existing-session"}))
+            .unwrap();
+        assert_eq!(
+            serde_json::to_value(request.validate().unwrap()).unwrap()["id"],
+            "existing-session"
+        );
     }
 
     #[test]

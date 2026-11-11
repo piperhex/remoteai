@@ -12,6 +12,7 @@ mod browser;
 mod ccs_import;
 mod chatgpt_launch;
 mod chrome_plugin;
+mod claude_accounts;
 mod claude_code;
 mod claude_code_provider;
 mod claude_desktop;
@@ -369,6 +370,7 @@ pub fn run() {
             system_tray::quick_menu::quick_menu_activate,
             codex_gui::codex_gui_connect,
             cli_gui::cli_gui_request,
+            claude_accounts::claude_account_request,
             codex_gui::dictation::codex_gui_dictation_prepare,
             codex_gui::dictation::codex_gui_dictation_transcribe,
             codex_gui::dictation::codex_gui_dictation_cancel,

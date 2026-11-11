@@ -128,6 +128,7 @@ pub(crate) fn list_accounts_blocking<R: Runtime>(
             .filter(|value| !value.trim().is_empty())
             .unwrap_or(auth_plan);
         accounts.push(AccountSummary {
+            account_source: "codex",
             active: active_id.as_deref() == Some(&id),
             usage,
             group: load_account_group(&account_group_path(&paths, &id)),
@@ -150,6 +151,7 @@ pub(crate) fn list_accounts_blocking<R: Runtime>(
             metadata_editable,
         });
     }
+    accounts.extend(crate::claude_accounts::list(&paths)?);
     accounts.sort_by(|left, right| left.email.cmp(&right.email));
     Ok(accounts)
 }

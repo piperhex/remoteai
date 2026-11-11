@@ -1,5 +1,8 @@
 fn dispatch_command(app: AppHandle, command: &str, args: Value) -> Result<Value, String> {
     match command {
+        "claude_account_request" => serialize(block_on(crate::claude_accounts::claude_account_request(
+            app, argument(&args, "request")?,
+        ))),
         "codex_gui_open_file_preview" => serialize(block_on(
             crate::codex_gui::file_preview::hosted::open(app, argument(&args, "target")?),
         )),

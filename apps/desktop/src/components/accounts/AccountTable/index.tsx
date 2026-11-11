@@ -1,3 +1,4 @@
+import { uiText } from '../../../../../../shared/localization/uiText';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTableScrollHeight } from '../../../hooks/useTableScrollHeight';
 import type { MouseEvent } from "react";
@@ -32,6 +33,9 @@ import type {
 } from "../../../types";
 import { accountExpirationDate } from "../../../utils/expiration";
 import { maskAccountEmail } from "../../../../../../shared/accounts/privacy";
+import { accountSource, accountSourceLabel } from "../../../../../../shared/accounts/source";
+import { ClaudeAccountActions } from "../ClaudeAccountActions";
+import { useThreadLongPress } from "../../../../../../shared/chat/useThreadLongPress";
 import { shouldShowUsageError } from "../../../utils/usageErrors";
 import { formatRemoteError } from "../../../../../../shared/localization/errors";
 import {
@@ -147,6 +151,7 @@ const GROUP_COLUMN_PREFERENCE_STORAGE_KEY = "codex-switch:account-table-group-co
 
 const ACCOUNT_TABLE_COLUMN_KEYS = [
   "account",
+  "source",
   "group",
   "fiveHours",
   "oneWeek",
@@ -161,6 +166,7 @@ const ACCOUNT_TABLE_COLUMN_KEYS = [
 type AccountTableColumnKey = typeof ACCOUNT_TABLE_COLUMN_KEYS[number];
 type ReorderableAccountTableColumnKey = Exclude<AccountTableColumnKey, "account" | "actions">;
 const REORDERABLE_ACCOUNT_TABLE_COLUMN_KEYS: ReorderableAccountTableColumnKey[] = [
+  "source",
   "group",
   "fiveHours",
   "oneWeek",
@@ -253,6 +259,7 @@ function compareUsageRemaining(
 }
 
 function isAccountDisabled(account: Account, hotSwitchEnabled: boolean) {
+  if (account.accountSource === "claudeCode") return false;
   return hotSwitchEnabled && !account.autoSwitchEnabled;
 }
 
@@ -262,7 +269,7 @@ function isAccountHighlighted(
   accountGroup: string | null,
   minimumPrimaryRemaining: number | null,
 ) {
-  return concurrentRoutingActive
+  return concurrentRoutingActive && account.accountSource !== "claudeCode"
     ? canReceiveConcurrentConversation(account, { accountGroup, minimumPrimaryRemaining })
     : account.active;
 }
@@ -337,6 +344,13 @@ export function AccountTable({
   t,
 }: AccountTableProps) {
   const concurrentRoutingActive = hotSwitchEnabled && concurrentAccountRoutingEnabled;
+  const accountGestures = useThreadLongPress(({ target, x, y }) => {
+    const accountId = target.getAttribute('data-row-key') || target.dataset.accountId;
+    if (!accountId) return;
+    setTableActionMenuAccountId(null);
+    setContextMenu({ accountId, ...contextMenuPosition({ clientX: x, clientY: y },
+      ACCOUNT_CONTEXT_MENU_HEIGHT.directSwitch) });
+  });
   const groups = useMemo(() => [...new Set([
     ...accountGroups,
     ...accounts.map((account) => account.group),
@@ -390,11 +404,19 @@ export function AccountTable({
   }, [active, displayMode]);
   useEffect(() => {
     const closeContextMenu = (event: PointerEvent) => {
-      if (event.target instanceof Element && event.target.closest(".ant-popconfirm")) return;
+      if (event.target instanceof Element
+        && event.target.closest(".ant-popconfirm, .ant-dropdown, .ant-modal-root")) return;
       if (!contextMenuRef.current?.contains(event.target as Node)) setContextMenu(null);
     };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setContextMenu(null);
+    };
     document.addEventListener("pointerdown", closeContextMenu);
-    return () => document.removeEventListener("pointerdown", closeContextMenu);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeContextMenu);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
   }, []);
   useEffect(() => {
     // Persisted usage remains available while proxy status is loading or the proxy is stopped.
@@ -511,18 +533,18 @@ export function AccountTable({
   const { orderedAccounts, columnSort, handleTableChange, saveOrder } = useAccountOrder(defaultOrderedAccounts);
   const selectedAccountIdSet = new Set(selectedAccountIds);
   const consumableSelectedAccountIds = accounts
-    .filter((account) => selectedAccountIdSet.has(account.id) && account.autoSwitchEnabled)
+    .filter((account) => selectedAccountIdSet.has(account.id) && account.accountSource !== "claudeCode" && account.autoSwitchEnabled)
     .map((account) => account.id);
   const deletableSelectedAccountIds = accounts
     .filter((account) => selectedAccountIdSet.has(account.id) && !account.active)
     .map((account) => account.id);
   const enableableSelectedAccountIds = accounts
-    .filter((account) => selectedAccountIdSet.has(account.id) && !account.autoSwitchEnabled)
+    .filter((account) => selectedAccountIdSet.has(account.id) && account.accountSource !== "claudeCode" && !account.autoSwitchEnabled)
     .map((account) => account.id);
   const disableableSelectedAccountIds = accounts
-    .filter((account) => selectedAccountIdSet.has(account.id) && account.autoSwitchEnabled)
+    .filter((account) => selectedAccountIdSet.has(account.id) && account.accountSource !== "claudeCode" && account.autoSwitchEnabled)
     .map((account) => account.id);
-  const activeAccount = accounts.find((account) => account.active) ?? null;
+  const activeAccount = accounts.find((account) => account.active && account.accountSource !== "claudeCode") ?? null;
   const requestOpenaiAuthAccountChange = (accountId: string | null) => {
     if (openaiAuthBusy || accountId === openaiAuthAccountId) return;
     confirmOfficialAuthAccountChange({
@@ -544,7 +566,7 @@ export function AccountTable({
     [accounts, hotSwitchEnabled],
   );
   const switchableAccountIds = new Set(switchableAccounts.map((account) => account.id));
-  const canSwitchFromAccountArea = (account: Account) => !concurrentRoutingActive
+  const canSwitchFromAccountArea = (account: Account) => (!concurrentRoutingActive || account.accountSource === "claudeCode")
     && !account.active && busyAccountId !== account.id && switchableAccountIds.has(account.id);
   const handleAccountAreaClick = (event: MouseEvent<HTMLElement>, account: Account) => {
     if (isAccountControlTarget(event.target)) return;
@@ -554,7 +576,7 @@ export function AccountTable({
   const accountSelectAccounts = activeAccount && !switchableAccountIds.has(activeAccount.id)
     ? [...switchableAccounts, activeAccount]
     : switchableAccounts;
-  const accountSelectOptions = accountSelectAccounts.map((account) => ({
+  const accountSelectOptions = accountSelectAccounts.filter(account => account.accountSource !== "claudeCode").map((account) => ({
     label: accountSummaryLabel(account),
     value: account.id,
     disabled: !switchableAccountIds.has(account.id),
@@ -637,6 +659,14 @@ export function AccountTable({
           </div>
         </div>
       ),
+    },
+    {
+      title: uiText("client.officialAccounts.source"), key: "source", width: 130,
+      filters: [...new Set(accounts.map(accountSource))].map((source) => ({
+        text: accountSourceLabel({ accountSource: source }), value: source,
+      })),
+      onFilter: (value, account) => accountSource(account) === value,
+      render: (_, account) => <Tag>{accountSourceLabel(account)}</Tag>,
     },
     {
       title: t("accounts.group.column"), key: "group", dataIndex: "group", width: 150,
@@ -722,7 +752,7 @@ export function AccountTable({
       align: "center" as const, fixed: "right" as const,
       render: (_: unknown, account: Account) => (
         <AutoSwitchPriorityInput account={account} t={t}
-          disabled={autoSwitchPriorityBusyAccountId !== null}
+          disabled={account.accountSource === "claudeCode" || autoSwitchPriorityBusyAccountId !== null}
           onSave={onAutoSwitchPriorityChange} />
       ),
     }] : []),
@@ -734,7 +764,7 @@ export function AccountTable({
       align: "center" as const, fixed: "right" as const,
       render: (_: unknown, account: Account) => (
         <AutoSwitchThresholdInput account={account}
-          disabled={autoSwitchThresholdBusyAccountId !== null}
+          disabled={account.accountSource === "claudeCode" || autoSwitchThresholdBusyAccountId !== null}
           onSave={onAutoSwitchThresholdChange} t={t} />
       ),
     }] : []),
@@ -742,6 +772,9 @@ export function AccountTable({
       title: t("table.actions"), key: "actions", width: 95, align: "center", fixed: "right",
       className: "account-actions-column",
       render: (_, account) => {
+        if (account.accountSource === "claudeCode") return <ClaudeAccountActions account={account}
+          busy={busyAccountId === account.id} onSwitch={onSwitch} onDeactivate={onDeactivate}
+          onRefresh={onRefresh} onDelete={onDelete} t={t} />;
         const waiting = busyAccountId === account.id;
         const resetWaiting = resetCreditBusyAccountId === account.id;
         const officialAuthActive = openaiAuthAccountId === account.id;
@@ -876,6 +909,7 @@ export function AccountTable({
   const hiddenColumnSet = new Set(hiddenColumns);
   const baseColumnSettings: { key: AccountTableColumnKey; label: string }[] = [
     { key: "account", label: t("table.account") },
+    { key: "source", label: uiText("client.officialAccounts.source") },
     { key: "group", label: t("accounts.group.column") },
     { key: "fiveHours", label: t("table.fiveHours") },
     { key: "oneWeek", label: t("table.oneWeek") },
@@ -965,6 +999,11 @@ export function AccountTable({
     : null;
   const tableContextMenu = tableContextAccount && contextMenu ? (() => {
     const account = tableContextAccount;
+    if (account.accountSource === "claudeCode") return <div ref={contextMenuRef}
+      className="context-menu account-row-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
+      <ClaudeAccountActions account={account} busy={busyAccountId === account.id}
+        onSwitch={onSwitch} onDeactivate={onDeactivate} onRefresh={onRefresh} onDelete={onDelete} t={t} />
+    </div>;
     const waiting = busyAccountId === account.id;
     const resetWaiting = resetCreditBusyAccountId === account.id;
     const switchBlocked = hotSwitchEnabled
@@ -1182,6 +1221,31 @@ export function AccountTable({
     )}
     <div className={`${styles.styleScope} account-card-grid`}>
       {orderedAccounts.map((account) => {
+        if (account.accountSource === "claudeCode") return <article key={account.id}
+          data-account-id={account.id} {...accountGestures}
+          onContextMenu={event => { event.preventDefault(); setContextMenu({ accountId: account.id,
+            ...contextMenuPosition(event, ACCOUNT_CONTEXT_MENU_HEIGHT.directSwitch) }); }}
+          className={`account-card claude-account-card${account.active ? " active" : ""}`}>
+          <header className="account-head">
+            <div className="account-card-avatar">
+              <AccountAvatar email={account.email} disabled={false} officialAuthActive={false}
+                busy={false} variant="card" onClearOfficialAuth={() => undefined} t={t} />
+            </div>
+            <div className="identity"><div className="identity-line">
+              <CopyableAccountEmail email={account.email}
+                displayEmail={privacyMode ? maskAccountEmail(account.email) : account.email} t={t} />
+              <Tag>{accountSourceLabel(account)}</Tag><Tag>{account.plan}</Tag>
+            </div><AccountNoteEditButton account={account} hideAccountNotes={hideAccountNotes}
+              onEdit={() => openAccountDetails(account)} t={t} /></div>
+          </header>
+          {account.usage.error && <div className="account-card-usage">
+            {formatRemoteError(language, account.usage.error)}</div>}
+          <footer className="account-card-actions">
+            <ClaudeAccountActions account={account} busy={busyAccountId === account.id}
+              onSwitch={onSwitch} onDeactivate={onDeactivate} onRefresh={onRefresh} onDelete={onDelete} t={t} />
+            <UsageRefreshAge fetchedAt={account.usage.fetchedAt} t={t} />
+          </footer>
+        </article>;
         const waiting = busyAccountId === account.id;
         const isDisabled = isAccountDisabled(account, hotSwitchEnabled);
         const cardTokenUsage = usageForAccount(account);
@@ -1192,7 +1256,7 @@ export function AccountTable({
           ? t("providers.proxy.agentIdentityUnsupported")
           : t("providers.proxy.agentIdentityProxyOnly");
         return (
-          <article key={account.id} className={[
+          <article key={account.id} data-account-id={account.id} {...accountGestures} className={[
             "account-card",
             isAccountHighlighted(
               account,
@@ -1225,6 +1289,7 @@ export function AccountTable({
               </div>
               <div className="identity">
                 <div className="identity-line">
+                  <Tag>{accountSourceLabel(account)}</Tag>
                   <CopyableAccountEmail email={account.email}
                     displayEmail={privacyMode ? maskAccountEmail(account.email) : account.email} t={t} />
                   <AccountResetCreditCount count={resetCreditsCount(resetCredits[account.id])}
@@ -1465,6 +1530,7 @@ export function AccountTable({
             ? "account-threshold-row" : "",
         ].filter(Boolean).join(" ")}
         onRow={(account) => ({
+          ...accountGestures,
           onClick: (event) => handleAccountAreaClick(event, account),
           onContextMenu: (event) => {
             event.preventDefault();
@@ -1478,6 +1544,7 @@ export function AccountTable({
           },
         })}
         expandable={{
+          rowExpandable: account => account.accountSource !== "claudeCode",
           columnWidth: 32,
           fixed: "left",
           expandedRowRender: (account) => <AccountExpandedPanel account={account}

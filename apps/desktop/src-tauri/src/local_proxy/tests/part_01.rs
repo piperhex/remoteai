@@ -587,6 +587,7 @@ fn stopping_proxy_deselects_the_active_third_party_provider() {
 
 fn account_with_usage(id: &str, primary: f64, secondary: f64) -> AccountSummary {
     AccountSummary {
+        account_source: "codex",
         id: id.to_string(),
         email: format!("{id}@example.com"),
         group: String::new(),

@@ -3,6 +3,7 @@ import type { CliCatalog, CliHistory, CliRequest, ExternalEngine } from '../../.
 import { CliRuntime } from './runtime';
 import { permission, session, timelineEntry } from './mapping';
 import { CliWorkspaces } from './workspaces';
+import { claudeAccountEnvironment, selectedClaudeAccount } from './claudeAccounts';
 
 const OWNERSHIP = { remoteai: 'cli-gui' };
 const HISTORY_PAGE_SIZE = 100;
@@ -31,6 +32,15 @@ export class CliService {
   private async execute(request: CliRequest) {
     const client = await this.runtime.connect();
     if (request.action === 'catalog') {
+      if (request.id) {
+        const agent = await this.owned(client, request.engine, request.id);
+        const bound = agent.current();
+        if (bound?.labels.remoteaiClaudeAccount) {
+          // The public SDK does not expose live model changes. Existing native sessions retain their model and account.
+          return { status: 'ready', models: [{ id: bound.model, label: bound.model, isDefault: true }], modes: [] };
+        }
+        return this.catalog(client, request.engine, request.cwd, false);
+      }
       return this.catalog(client, request.engine, request.cwd);
     }
     if (request.action === 'list') return this.list(client, request);
@@ -86,6 +96,11 @@ export class CliService {
   }
 
   private async configureMessage(agent: PaseoAgentHandle, request: Extract<CliRequest, { action: 'send' }>) {
+    const native = agent.current();
+    if (native?.labels.remoteaiClaudeAccount) {
+      if (request.model && request.model !== native.model) throw new Error('client.cliGui.invalidRequest');
+      return;
+    }
     const bridge = await this.runtime.accountBridge();
     const routeId = agent.current()?.labels.remoteaiRoute;
     if (!routeId) throw new Error('client.cliGui.accountUnavailable');
@@ -100,6 +115,9 @@ export class CliService {
   }
 
   private async session(agent: PaseoAgent, engine: ExternalEngine) {
+    if (agent.labels.remoteaiClaudeAccount) {
+      return { ...session(agent, engine), cwd: await this.workspaces.display(agent.cwd) };
+    }
     const bridge = await this.runtime.accountBridge();
     const route = bridge.selection(agent.labels.remoteaiRoute);
     return { ...session(agent, engine), ...(route ?? {}), cwd: await this.workspaces.display(agent.cwd) };
@@ -123,12 +141,15 @@ export class CliService {
     return agent;
   }
 
-  private async catalog(client: PaseoClient, engine: ExternalEngine, cwd?: string): Promise<CliCatalog> {
+  private async catalog(client: PaseoClient, engine: ExternalEngine, cwd?: string, useSelection = true): Promise<CliCatalog> {
     cwd = await this.workspaces.directory(cwd);
     await client.providers.refresh({ cwd, providers: [engine] });
     const snapshot = await client.providers.waitForReady({ cwd, timeoutMs: 30_000 });
     const provider = snapshot.entries.find(entry => entry.provider === engine);
-    const models = await (await this.runtime.accountBridge()).models();
+    const native = useSelection && engine === 'claude' && await selectedClaudeAccount(this.runtime.root);
+    const models = native ? (provider?.models ?? []).map(model => ({
+      id: model.id, label: model.label, isDefault: model.isDefault,
+    })) : await (await this.runtime.accountBridge()).models();
     return { status: provider?.status ?? 'unavailable', models,
       modes: provider?.modes?.map(mode => ({ id: mode.id, label: mode.label })) ?? [],
     defaultMode: provider?.defaultModeId ?? undefined };
@@ -153,6 +174,16 @@ export class CliService {
     if (!catalog.models.some(model => model.id === request.model)
       || request.mode && !catalog.modes.some(mode => mode.id === request.mode)) {
       throw new Error('client.cliGui.unavailable');
+    }
+    const binding = request.engine === 'claude' ? await selectedClaudeAccount(this.runtime.root) : null;
+    if (binding) {
+      const agent = await client.agents.create({ cwd: await this.workspaces.directory(request.cwd, true),
+        labels: { ...OWNERSHIP, remoteaiClaudeAccount: binding.id }, env: claudeAccountEnvironment(binding),
+        config: { provider: `claude/${request.model}`, modeId: request.mode } });
+      const snapshot = await agent.refresh();
+      if (!snapshot) throw new Error('client.cliGui.connectionFailed');
+      await this.watch(agent); this.changed();
+      return this.session(snapshot.agent, request.engine);
     }
     const bridge = await this.runtime.accountBridge();
     const routeId = await bridge.route(request.model, request.effort);
