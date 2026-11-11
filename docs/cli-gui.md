@@ -15,6 +15,8 @@ CLI on the connected computer through the same authenticated transport. Native u
 and message renderer, including approval questions, stop, older messages, search and long-press archive actions.
 The account picker scopes changes to the selected CLI. Drafts remain separate between engines and conversations.
 Mobile Web uses the same settings placement and omits desktop usage metrics from the compact composer.
+Both mobile hosts share the settings sheet's spacing and 88% maximum height. Mobile Web shows the device and
+connection status below the conversation title, with device selection and connection checks available there.
 
 ## Setup
 
@@ -93,7 +95,8 @@ $env:ANDROID_SERIAL = 'emulator-5554'
 node ../scripts/test-cli-gui-android.mjs
 ```
 
-The fixture uses the production native CLI components and a deterministic remote transport. It covers light
+The fixture uses the production native CLI components and a deterministic remote transport. Set
+`CLI_UI_SETTINGS_ONLY=1` for a focused visual check of the settings sheets. The full run covers light
 and dark themes at system font scales 1.0 and 1.3; physical Android and iOS visual checks remain separate.
 Mobile Web coverage runs from the parent with `npx playwright test --config scripts/playwright.native-cli-web.config.mts
 --tsconfig scripts/tsconfig.native-cli-web.json`. Evidence goes to `apps/native/.codex-tmp/cli-gui-evidence`

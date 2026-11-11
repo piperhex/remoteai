@@ -22,6 +22,8 @@ import { getGuiController } from '../src/pages/codexGui/session';
 import { saveGuiSkin } from '../src/pages/codexGui/guiSkin';
 import { useDreamSkin } from '../src/pages/codexGui/useDreamSkin';
 import { DashboardNavigation } from '../src/components/dashboard/DashboardNavigation';
+import { useDesktopLayout } from '../../../shared/layout/useDesktopLayout';
+import { ChatTools as WebChatTools } from '../../web/src/chat/ChatTools';
 import 'antd/dist/reset.css';
 import '../src/pages/codexGui/remote/remoteGui.less';
 
@@ -53,6 +55,7 @@ const controller = new ChatController(events => ({ start() { events.mode('direct
 controller.cliGui.request = fixture.transport.request;
 controller.cliGui.subscribe = fixture.transport.subscribe;
 controller.cliGui.subscribeAccountChange = fixture.transport.subscribeAccountChange;
+Object.assign(controller.guiAccounts, fixture.accounts);
 controller.guiTools.projects.list = async () => [{ cwd: 'F:/projects/remoteai', label: 'Remote AI' }];
 controller.guiTools.status = async () => ({ version: '0.150.0', installing: params.has('codex-progress'),
   release: params.has('codex-progress') ? { version: '0.151.0', size: 32 * 1024 * 1024 } : undefined,
@@ -64,6 +67,7 @@ const device = { deviceId: 'pc', name: 'Office PC', platform: 'Windows', online:
 const t: Translate = (key, values) => translate('zh', key, values);
 
 function Harness() {
+  const desktop = useDesktopLayout();
   const skinStyle = useDreamSkin(mode === 'remote');
   useEffect(() => {
     if (mode === 'local' && params.has('native')) void getGuiController().connect();
@@ -88,8 +92,11 @@ function Harness() {
           active scope={`cli-test-${mode}`} email="test@example.test" chooseDevice={() => {}} cliVersion="0.150.0"
           accountPicker={accounts}
           scrollableComposer={mode === 'remote'}
-          headerActions={<RemoteGuiTools controller={controller} state={state} installer={installer} active />}
-          composerHeader={<RemoteGuiProject state={state} controller={controller} active computers={{
+          headerActions={mode === 'web' && !desktop
+            ? <WebChatTools client={controller.guiTools} active connected={state.ready}
+              cwd={state.selected?.cwd ?? state.draftProject?.cwd ?? ''} deviceName={device.name} />
+            : <RemoteGuiTools controller={controller} state={state} installer={installer} active />}
+          composerHeader={(mode !== 'web' || desktop) && <RemoteGuiProject state={state} controller={controller} active computers={{
             current: device, devices: [device], allowLocal: false, authenticated: true,
             loading: false, error: '', refresh() {}, login() {}, choose() {},
           }} />}

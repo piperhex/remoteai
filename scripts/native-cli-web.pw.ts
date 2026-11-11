@@ -15,6 +15,15 @@ for (const enlarged of [false, true]) {
       page.on('pageerror', error => errors.push(error.message));
       await page.goto(`/e2e/cli-gui-harness.html?mode=web${enlarged ? '&large&dark' : ''}`);
       const label = `mobile-web-${enlarged ? 'dark-20px-360' : 'light-14px-390'}`;
+      const headerConnection = page.locator('.chat-header .chat-connection-info');
+      await expect(headerConnection).toContainText('Office PC');
+      await expect(headerConnection).toContainText('P2P');
+      await expect(page.locator('.chat-composer-hint .chat-connection-info')).toHaveCount(0);
+      await expect(page.getByRole('button', { name: '打开工具', exact: true })).toBeVisible();
+      await page.screenshot({ path: resolve(evidence, `${label}-header.png`), animations: 'disabled' });
+      await headerConnection.getByRole('button', { name: 'P2P · 连接体检', exact: true }).click();
+      await expect(page.getByRole('heading', { name: '连接体检', exact: true })).toBeVisible();
+      await page.getByRole('button', { name: '关闭', exact: true }).click();
       const selector = page.locator('.chat-settings-connection .chat-settings-cli:visible');
       const openSettings = async () => {
         await expect(page.locator('.cli-gui-engine:visible')).toHaveCount(0);
@@ -23,6 +32,9 @@ for (const enlarged of [false, true]) {
         const rows = page.locator('.chat-settings-connection > button');
         await expect(rows.nth(1)).toHaveAttribute('aria-label', '切换账户');
         await expect(rows.nth(2)).toHaveAttribute('aria-label', '选择 CLI');
+        const maxHeight = await page.locator('.chat-settings-sheet:visible').evaluate(element =>
+          parseFloat(getComputedStyle(element).maxHeight) / innerHeight);
+        expect(maxHeight).toBeCloseTo(0.88, 2);
       };
       await openSettings();
       await expect(selector).toContainText('Codex GUI');
