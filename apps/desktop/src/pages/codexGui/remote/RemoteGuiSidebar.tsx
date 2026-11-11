@@ -64,7 +64,7 @@ function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, fo
   });
   return <ResizableThreadSidebar className="gui-remote-sidebar" layoutSelector=".chat-diff-layout">
     <div className={styles.sidebarHeading} data-tauri-drag-region>
-      <h2 className={styles.sidebarTitle} data-tauri-drag-region>Codex GUI</h2>
+      <h2 className={styles.sidebarTitle} data-tauri-drag-region>{uiText("client.agentHub.title")}</h2>
       <div className={styles.sidebarActions}>
         <Button type="text" size="small" icon={<Layers size={15} />} aria-label={uiText('client.groups.manage')}
           onClick={grouping?.openManager} />

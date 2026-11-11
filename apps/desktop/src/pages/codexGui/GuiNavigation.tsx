@@ -5,7 +5,9 @@ import styles from "./GuiNavigation.module.less";
 export type GuiView = "conversation" | "scheduled-tasks" | "plugins" | "conversation-migration";
 
 export const GUI_VIEW_TITLES: Record<GuiView, string> = {
-  conversation: "Codex GUI", get "scheduled-tasks"() { return uiText("client.workspaceSettings.scheduledTasks"); }, get plugins() { return uiText("client.chat.plugins"); },
+  get conversation() { return uiText("client.agentHub.title"); },
+  get "scheduled-tasks"() { return uiText("client.workspaceSettings.scheduledTasks"); },
+  get plugins() { return uiText("client.chat.plugins"); },
   get "conversation-migration"() { return uiText("client.workspaceSettings.conversationSync"); },
 };
 

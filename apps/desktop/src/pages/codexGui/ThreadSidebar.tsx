@@ -114,7 +114,9 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
   };
   return <ResizableThreadSidebar>
     <div className={styles.sidebarHeading} data-tauri-drag-region={isDesktopApp || undefined}>
-      <h2 className={styles.sidebarTitle} data-tauri-drag-region={isDesktopApp || undefined}>Codex GUI</h2>
+      <h2 className={styles.sidebarTitle} data-tauri-drag-region={isDesktopApp || undefined}>
+        {uiText("client.agentHub.title")}
+      </h2>
       <div className={styles.sidebarActions} data-tauri-drag-region={isDesktopApp || undefined}>
         <Button type="text" size="small" icon={<Layers size={15} />} aria-label={uiText('client.groups.manage')}
           onClick={grouping?.openManager} />

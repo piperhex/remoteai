@@ -78,4 +78,49 @@ mod tests {
             source["metadata"]["remoteai_output_schema"]
         );
     }
+
+    #[test]
+    fn gemini_controls_are_filtered_only_at_the_official_account_boundary() {
+        let source = json!({"temperature": 1.0, "top_p": 0.9, "max_tokens": 16384,
+            "metadata": {"remoteai_effort": "low"},
+            "messages": [{"role": "user", "content": "hello"}]});
+        let body = responses_body(&source, "gpt-6.1-sol");
+        let encoded = serde_json::to_vec(&body).unwrap();
+        let official = official_body_for_upstream(
+            &Method::Post,
+            "/v1/responses",
+            encoded.clone(),
+            "gpt-6.1-sol",
+        );
+        let official: Value = serde_json::from_slice(&official).unwrap();
+        for field in ["temperature", "top_p", "max_output_tokens"] {
+            assert!(
+                official.get(field).is_none(),
+                "official request retained {field}"
+            );
+        }
+        assert_eq!(official["model"], "gpt-6.1-sol");
+        assert_eq!(official["reasoning"]["effort"], "low");
+        assert_eq!(official["input"], body["input"]);
+        let chat = responses_to_chat_completions(&body);
+        assert_eq!(chat["temperature"], 1.0);
+        assert_eq!(chat["top_p"], 0.9);
+        assert_eq!(chat["max_tokens"], 16384);
+    }
+
+    #[test]
+    fn official_sampling_controls_are_removed_without_an_output_limit() {
+        for field in ["temperature", "top_p"] {
+            let body = json!({"model": "gpt-6.1-sol", field: 0.5, "input": "hello"});
+            let forwarded = official_body_for_upstream(
+                &Method::Post,
+                "/v1/responses",
+                serde_json::to_vec(&body).unwrap(),
+                "sol",
+            );
+            let forwarded: Value = serde_json::from_slice(&forwarded).unwrap();
+            assert!(forwarded.get(field).is_none());
+            assert_eq!(forwarded["input"], "hello");
+        }
+    }
 }
