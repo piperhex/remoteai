@@ -1,4 +1,4 @@
-import type { CliHistory, CliRequest, CliSession, CliTransport } from '../../../shared/cli-gui/types';
+import type { CliCatalog, CliHistory, CliRequest, CliSession, CliTransport } from '../../../shared/cli-gui/types';
 import type { GuiAccountsClient, SelectableGuiAccount } from '../../../shared/remote-chat/guiAccounts';
 import type { Thread, Model } from '../../../shared/conversation/types';
 import type { GitStatus } from '../../../shared/remote-chat/gitWorkspace';
@@ -36,6 +36,11 @@ export function createCliGuiFixture(ready = true, options: { manualInstall?: boo
     { id: '2', first: 2, last: 2, role: 'assistant', text: '已读取项目说明。接下来会检查共享组件和现有测试。' },
   ]);
   const calls: CliRequest[] = [];
+  let catalogOverride: ((input: Extract<CliRequest, { action: 'catalog' }>) => Promise<CliCatalog>) | undefined;
+  const setCatalog = (catalog: NonNullable<typeof catalogOverride>, model: (session: CliSession) => string) => {
+    catalogOverride = catalog;
+    for (const session of sessions) { session.model = model(session); session.effort = undefined; }
+  };
   const listeners = new Set<() => void>();
   const notify = () => listeners.forEach(listener => listener());
   const setInstallProgress = (engine: string, value: InstallationProgress) => {
@@ -54,6 +59,7 @@ export function createCliGuiFixture(ready = true, options: { manualInstall?: boo
       if (!options.manualInstall) setTimeout(() => finishInstall(input.engine), 1500);
       return {};
     }
+    if (input.action === 'catalog' && catalogOverride) return catalogOverride(input);
     if (input.action === 'catalog') return { status: 'ready',
       models: [{ id: account.kind === 'account' ? 'gpt-6' : 'team-model',
         label: account.kind === 'account' ? 'GPT-6' : 'Team Model', isDefault: true, defaultEffort: 'high',
@@ -101,5 +107,5 @@ export function createCliGuiFixture(ready = true, options: { manualInstall?: boo
     const session = sessions.find(value => value.id === `${engine}-history`)!;
     session.status = status; entries.set(session.id, items); notify();
   };
-  return { transport, calls, accounts, models, setInstallProgress, finishInstall, setHistory };
+  return { transport, calls, accounts, models, setInstallProgress, finishInstall, setHistory, setCatalog };
 }
