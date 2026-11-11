@@ -2,6 +2,7 @@ import type { PaseoAgent, PaseoAgentHandle, PaseoClient } from '@getpaseo/client
 import type { CliCatalog, CliHistory, CliRequest, ExternalEngine } from '../../../shared/cli-gui/types';
 import { CliRuntime } from './runtime';
 import { permission, session, timelineEntry } from './mapping';
+import { CliWorkspaces } from './workspaces';
 
 const OWNERSHIP = { remoteai: 'cli-gui' };
 const HISTORY_PAGE_SIZE = 100;
@@ -11,8 +12,9 @@ export class CliService {
   private mutations = new Map<string, Promise<unknown>>();
   private operations = 0;
   private maintaining = false;
-  constructor(readonly runtime: Pick<CliRuntime, 'status' | 'install' | 'connect' | 'close' | 'accountBridge'>,
-    private changed: () => void) {}
+  private workspaces: CliWorkspaces;
+  constructor(readonly runtime: Pick<CliRuntime, 'root' | 'status' | 'install' | 'connect' | 'close' | 'accountBridge'>,
+    private changed: () => void) { this.workspaces = new CliWorkspaces(runtime.root); }
 
   async request(request: CliRequest): Promise<unknown> {
     if (!['claude', 'gemini'].includes(request.engine)) throw new Error('client.cliGui.invalidRequest');
@@ -29,7 +31,6 @@ export class CliService {
   private async execute(request: CliRequest) {
     const client = await this.runtime.connect();
     if (request.action === 'catalog') {
-      await client.providers.refresh({ cwd: request.cwd, providers: [request.engine] });
       return this.catalog(client, request.engine, request.cwd);
     }
     if (request.action === 'list') return this.list(client, request);
@@ -101,7 +102,7 @@ export class CliService {
   private async session(agent: PaseoAgent, engine: ExternalEngine) {
     const bridge = await this.runtime.accountBridge();
     const route = bridge.selection(agent.labels.remoteaiRoute);
-    return { ...session(agent, engine), ...(route ?? {}) };
+    return { ...session(agent, engine), ...(route ?? {}), cwd: await this.workspaces.display(agent.cwd) };
   }
 
   private async serialized(id: string, work: () => Promise<unknown>) {
@@ -123,6 +124,8 @@ export class CliService {
   }
 
   private async catalog(client: PaseoClient, engine: ExternalEngine, cwd?: string): Promise<CliCatalog> {
+    cwd = await this.workspaces.directory(cwd);
+    await client.providers.refresh({ cwd, providers: [engine] });
     const snapshot = await client.providers.waitForReady({ cwd, timeoutMs: 30_000 });
     const provider = snapshot.entries.find(entry => entry.provider === engine);
     const models = await (await this.runtime.accountBridge()).models();
@@ -145,19 +148,21 @@ export class CliService {
   }
 
   private async create(client: PaseoClient, request: Extract<CliRequest, { action: 'create' }>) {
-    const catalog = await this.catalog(client, request.engine, request.cwd);
+    const discoveryCwd = await this.workspaces.directory(request.cwd);
+    const catalog = await this.catalog(client, request.engine, discoveryCwd);
     if (!catalog.models.some(model => model.id === request.model)
       || request.mode && !catalog.modes.some(mode => mode.id === request.mode)) {
       throw new Error('client.cliGui.unavailable');
     }
     const bridge = await this.runtime.accountBridge();
     const routeId = await bridge.route(request.model, request.effort);
-    const providers = await client.providers.waitForReady({ cwd: request.cwd, timeoutMs: 30_000 });
+    const providers = await client.providers.waitForReady({ cwd: discoveryCwd, timeoutMs: 30_000 });
     const nativeModels = providers.entries.find(entry => entry.provider === request.engine)?.models ?? [];
     const nativeModel = nativeModels.find(model => model.isDefault)?.id ?? nativeModels[0]?.id;
     if (!nativeModel) throw new Error('client.cliGui.unavailable');
     // CLI model aliases stay native; the private bridge selects the actual account model.
-    const agent = await client.agents.create({ cwd: request.cwd,
+    const cwd = await this.workspaces.directory(request.cwd, true);
+    const agent = await client.agents.create({ cwd,
       labels: { ...OWNERSHIP, remoteaiRoute: routeId }, env: bridge.environment(request.engine, routeId),
       config: { provider: `${request.engine}/${nativeModel}`, modeId: request.mode } });
     const snapshot = await agent.refresh();

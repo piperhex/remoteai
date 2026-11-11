@@ -32,6 +32,7 @@ enum Action {
         archived: bool,
     },
     Create {
+        #[serde(default)]
         cwd: String,
         model: String,
         mode: Option<String>,
@@ -92,7 +93,9 @@ impl Request {
                 mode,
                 effort,
             } => {
-                directory(cwd)?;
+                if !cwd.trim().is_empty() {
+                    directory(cwd)?;
+                }
                 bounded(model, 300)?;
                 if let Some(effort) = effort {
                     bounded(effort, 50)?;
@@ -177,5 +180,25 @@ mod tests {
         let request: Request = serde_json::from_value(value).unwrap();
         let serialized = serde_json::to_value(request.validate().unwrap()).unwrap();
         assert_eq!(serialized["actionId"], "allow-once:exact");
+    }
+
+    #[test]
+    fn accepts_projectless_create_without_weakening_explicit_directory_checks() {
+        for engine in ["claude", "gemini"] {
+            for cwd in [None, Some(""), Some("   ")] {
+                let mut value =
+                    json!({"engine": engine, "action": "create", "model": "account-model"});
+                if let Some(cwd) = cwd {
+                    value["cwd"] = json!(cwd);
+                }
+                let request: Request = serde_json::from_value(value).unwrap();
+                assert!(request.validate().is_ok());
+            }
+            let value = json!({"engine": engine, "action": "create", "cwd": "relative", "model": "account-model"});
+            assert!(serde_json::from_value::<Request>(value)
+                .unwrap()
+                .validate()
+                .is_err());
+        }
     }
 }

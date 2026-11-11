@@ -31,6 +31,14 @@ function setup(intercept?: (request: CliRequest) => Promise<unknown> | undefined
 }
 
 describe('per-conversation CLI state', () => {
+  it.each(['claude', 'gemini'] as const)('sends %s projectless drafts with the original permission ID', async engine => {
+    const { controller, calls } = setup();
+    controller.patch({ engine, model: 'test', cwd: '', mode: 'plan', draft: 'A general question' });
+    await controller.send();
+    expect(calls).toContainEqual(expect.objectContaining({ engine, action: 'create', cwd: '', mode: 'plan' }));
+    expect(calls).toContainEqual(expect.objectContaining({ engine, action: 'send', text: 'A general question' }));
+  });
+
   it('keeps drafts and versions separate and locks existing conversations', async () => {
     const { controller } = setup();
     await controller.refresh();
