@@ -55,17 +55,13 @@ export function ProviderActions({ provider, options }: {
           </Button>
         </Tooltip>
       )}
-      <Tooltip title={t("providers.tooltip.edit")}>
-        <Button size="small" className="table-icon-button" icon={<Pencil size={14} />}
-          onClick={() => onEdit(provider)} />
-      </Tooltip>
+      <Button size="small" className="table-icon-button" icon={<Pencil size={14} />}
+        aria-label={t("providers.tooltip.edit")} onClick={() => onEdit(provider)} />
       <Popconfirm title={t("providers.delete.title")} description={t("providers.delete.description")}
         okText={t("providers.delete.ok")} cancelText={t("providers.delete.cancel")}
         okButtonProps={{ danger: true }} onConfirm={() => onDelete(provider.id)}>
-        <Tooltip title={t("providers.tooltip.delete")}>
-          <Button danger size="small" className="table-icon-button" loading={waiting}
-            icon={<Trash2 size={14} />} />
-        </Tooltip>
+        <Button danger size="small" className="table-icon-button" loading={waiting}
+          aria-label={t("providers.tooltip.delete")} icon={<Trash2 size={14} />} />
       </Popconfirm>
     </Space>
   );

@@ -406,15 +406,11 @@ function ProviderCard({ provider, options, tokenCostDisplay }: {
         <Popconfirm title={t("providers.delete.title")} description={t("providers.delete.description")}
           okText={t("providers.delete.ok")} cancelText={t("providers.delete.cancel")}
           okButtonProps={{ danger: true }} onConfirm={() => onDelete(provider.id)}>
-          <Tooltip title={t("providers.tooltip.delete")}>
-            <Button danger size="small" className="table-icon-button"
-              loading={waiting} icon={<Trash2 size={14} />} />
-          </Tooltip>
+          <Button danger size="small" className="table-icon-button"
+            aria-label={t("providers.tooltip.delete")} loading={waiting} icon={<Trash2 size={14} />} />
         </Popconfirm>
-        <Tooltip title={t("providers.tooltip.edit")}>
-          <Button size="small" className="table-icon-button"
-            icon={<Pencil size={14} />} onClick={() => onEdit(provider)} />
-        </Tooltip>
+        <Button size="small" className="table-icon-button" aria-label={t("providers.tooltip.edit")}
+          icon={<Pencil size={14} />} onClick={() => onEdit(provider)} />
       </div>
     </header>
     <div className="provider-card-details">
