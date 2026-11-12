@@ -10,9 +10,9 @@
 
 .styleScope :global {
   .modal.about-modal {
-    // Window resizing only constrains the dialog; it must not scale its content.
+    // Grow with content; scroll only when it exceeds the available window height.
     width: 960px;
-    height: 730px;
+    height: auto;
     max-width: calc(100vw - 48px);
     max-height: calc(var(--about-viewport-height) - 48px);
     padding: 0;
