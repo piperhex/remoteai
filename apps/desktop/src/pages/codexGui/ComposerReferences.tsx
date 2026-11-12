@@ -8,7 +8,7 @@ import styles from "./ComposerExtras.module.less";
 import { ComposerAttachment } from '../../../../../shared/chat/ComposerAttachment';
 import { AttachmentMetadataProvider } from './AttachmentMetadataProvider';
 
-const referencePrefix = { file: "", folder: "", plugin: "", conversation: "@", coze: "#", ssh: '!' } as const;
+const referencePrefix = { file: "", folder: "", plugin: "", conversation: "@", coze: "!", ssh: '#' } as const;
 
 function isImage(item: AttachmentReference) {
   return isDesktopApp && item.kind === "file" && /\.(png|jpe?g|webp|gif)$/i.test(item.path);

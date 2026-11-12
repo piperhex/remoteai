@@ -62,14 +62,14 @@ export function skillTrigger(root: HTMLElement): SkillTrigger | null {
   before.selectNodeContents(root);
   before.setEnd(caret.startContainer, caret.startOffset);
   const text = readEditor(before.cloneContents()).text;
-  const match = text.match(/(?:^|\s)(!)([^\s!]*)$/u)
-    ?? text.match(/(?:^|\s)(%)([^\s%]*)$/u) ?? text.match(/(?:^|\s)([/@#])([^\s/@#]*)$/u);
+  const match = text.match(/(?:^|\s)(#)([^\s#]*)$/u)
+    ?? text.match(/(?:^|\s)(%)([^\s%]*)$/u) ?? text.match(/(?:^|\s)([/@!])([^\s/@!]*)$/u);
   if (!match) return null;
   const start = caret.startOffset - match[2].length - 1;
   if (start < 0 || caret.startContainer.parentElement?.closest("[data-skill]")) return null;
   const range = caret.cloneRange();
   range.setStart(caret.startContainer, start);
-  const kinds = { "@": "conversation", "#": "coze", "/": "skill", "%": "file", "!": "ssh" } as const;
+  const kinds = { "@": "conversation", "!": "coze", "/": "skill", "%": "file", "#": "ssh" } as const;
   return { query: match[2], range, kind: kinds[match[1] as keyof typeof kinds] };
 }
 

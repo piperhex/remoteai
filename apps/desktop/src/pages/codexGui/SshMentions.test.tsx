@@ -48,16 +48,16 @@ beforeEach(async () => {
 });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); vi.unstubAllGlobals(); });
 
-it('opens ! candidates, filters without refetching and selects a reference without sending', async () => {
+it('opens # candidates, filters without refetching and selects a reference without sending', async () => {
   expect(profiles.list).not.toHaveBeenCalled();
-  await type('请使用 !');
+  await type('请使用 #');
   expect(host.querySelectorAll('[role="option"]')).toHaveLength(2);
-  await type('请使用 !开发');
+  await type('请使用 #开发');
   expect(host.querySelectorAll('[role="option"]')).toHaveLength(1);
   expect(profiles.list).toHaveBeenCalledOnce();
   await key('Tab');
   expect(readEditor(editor()).text).toBe('请使用 ');
-  expect(host.textContent).toContain('!开发服务器');
+  expect(host.textContent).toContain('#开发服务器');
   expect(send).not.toHaveBeenCalled();
   await key('Enter');
   expect(send).toHaveBeenCalledWith({ text: '请使用 ', mentions: [],
@@ -65,35 +65,36 @@ it('opens ! candidates, filters without refetching and selects a reference witho
 });
 
 it('supports arrow selection, mouse selection, removal and Escape', async () => {
-  await type('!'); await key('ArrowDown'); await key('Enter');
-  expect(host.textContent).toContain(`!${composerSshProfiles[1].name}`);
-  await type('!开发');
+  await type('#'); await key('ArrowDown'); await key('Enter');
+  expect(host.textContent).toContain(`#${composerSshProfiles[1].name}`);
+  await type('#开发');
   await act(async () => host.querySelector<HTMLButtonElement>('[role="option"]')!.click());
-  expect(host.textContent).toContain('!开发服务器');
+  expect(host.textContent).toContain('#开发服务器');
   await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="移除附件：开发服务器"]')!.click());
-  expect(host.textContent).not.toContain('!开发服务器');
-  await type('!'); await key('Escape');
+  expect(host.textContent).not.toContain('#开发服务器');
+  await type('#'); await key('Escape');
   expect(host.querySelector('[role="listbox"]')).toBeNull();
   expect(send).not.toHaveBeenCalled();
 });
 
 it('keeps empty or failed menus from submitting and drops late results on a scope change', async () => {
   profiles.list.mockRejectedValueOnce(new Error('secret server error'));
-  await type('!'); await key('Enter');
+  await type('#'); await key('Enter');
   expect(host.textContent).toContain('无法读取已保存的 SSH 连接');
   expect(host.textContent).not.toContain('secret server error');
   expect(send).not.toHaveBeenCalled();
   await key('Escape');
   let finish!: (value: typeof composerSshProfiles) => void;
   profiles.list.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
-  await type('!');
+  await type('#');
   await act(async () => root.render(<Fixture draftKey="other" />));
   await act(async () => finish(composerSshProfiles));
   expect(host.querySelector('[role="listbox"]')).toBeNull();
 });
 
-it('ignores inline exclamations and validates references without retaining secrets', async () => {
-  await type('hello!dev');
+it('ignores inline hashes and the old SSH prefix and validates references without retaining secrets', async () => {
+  await type('hello#dev');
+  await type('!dev');
   expect(profiles.list).not.toHaveBeenCalled();
   const reference = sshReference(composerSshProfiles[0]);
   expect(remoteAttachments([reference])).toEqual([reference]);
@@ -116,7 +117,7 @@ it('ignores inline exclamations and validates references without retaining secre
 
 it('shows a translated sign-in instruction when the account is unavailable', async () => {
   profiles.list.mockRejectedValueOnce(new Error('client.ssh.signIn'));
-  await type('!');
+  await type('#');
   expect(host.textContent).toContain('登录');
   expect(host.textContent).not.toContain('client.ssh.signIn');
   await key('Enter'); expect(send).not.toHaveBeenCalled();

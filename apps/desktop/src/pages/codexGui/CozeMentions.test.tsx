@@ -21,7 +21,7 @@ function Fixture({ draftKey = "new" }: { draftKey?: string }) {
   return <><ComposerReferences items={items} active disabled={false}
     onRemove={(path) => setItems(items.filter((item) => item.path !== path))} />
     <SkillInput value={value} draftKey={draftKey} cwd="D:/project" active connected disabled={false}
-      onCoze={(item) => setItems([...items, item])} placeholder="# 选择 Coze" onChange={onChange}
+      onCoze={(item) => setItems([...items, item])} placeholder="! 选择 Coze" onChange={onChange}
       onPaste={() => {}} onSend={() => send({ ...value, attachments: items })} /></>;
 }
 const editor = () => host.querySelector<HTMLDivElement>('[role="textbox"]')!;
@@ -48,23 +48,24 @@ beforeEach(async () => {
 });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); vi.unstubAllGlobals(); });
 
-it("selects # Coze by name, retains a reference chip and sends the exact published ID", async () => {
+it("selects ! Coze by name, retains a reference chip and sends the exact published ID", async () => {
   expect(guiApi.request).not.toHaveBeenCalled();
-  await type("请使用 #库存");
+  await type("请使用 !库存");
   expect(guiApi.request).toHaveBeenCalledExactlyOnceWith({ operation: "cozeCatalog" });
   expect(host.querySelectorAll('[role="option"]')).toHaveLength(1);
   await key("Enter");
   expect(send).not.toHaveBeenCalled();
   expect(readEditor(editor()).text).toBe("请使用 ");
-  expect(host.textContent).toContain("#查询库存");
+  expect(host.textContent).toContain("!查询库存");
   await key("Enter");
   const attachments = [{ kind: "coze", name: "查询库存", path: `coze://${id}` }];
   expect(send).toHaveBeenCalledWith({ text: "请使用 ", mentions: [], attachments });
   expect(remoteAttachments(attachments)).toEqual(attachments);
 });
 
-it("ignores URL fragments and rejects invalid or uploaded Coze references", async () => {
-  await type("https://example.com/#库存");
+it("ignores URL paths and the old Coze prefix and rejects invalid or uploaded references", async () => {
+  await type("https://example.com/!库存");
+  await type("#库存");
   expect(guiApi.request).not.toHaveBeenCalled();
   expect(() => remoteAttachments([{ kind: "coze", name: "test", path: "coze://../file" }])).toThrow();
   expect(() => remoteAttachments([{ kind: "coze", name: "test", path: `coze://${id}`, data: "YQ==" }])).toThrow();
@@ -72,7 +73,7 @@ it("ignores URL fragments and rejects invalid or uploaded Coze references", asyn
 
 it("explains unavailable Coze and never sends Enter from an empty menu", async () => {
   vi.mocked(guiApi.request).mockRejectedValue(new Error("not installed"));
-  await type("#");
+  await type("!");
   expect(host.textContent).toContain("请先从左侧打开 Coze");
   await key("Enter"); expect(send).not.toHaveBeenCalled();
   await key("Escape"); expect(host.querySelector('[role="listbox"]')).toBeNull();
@@ -81,7 +82,7 @@ it("explains unavailable Coze and never sends Enter from an empty menu", async (
 it("discards a pending catalog when switching conversations", async () => {
   let finish!: (value: unknown) => void;
   vi.mocked(guiApi.request).mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
-  await type("#");
+  await type("!");
   await act(async () => root.render(<Fixture draftKey="other" />));
   await act(async () => finish([{ id, name: "late", description: "", kind: "workflow" }]));
   expect(host.querySelector('[role="listbox"]')).toBeNull();
