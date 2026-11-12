@@ -54,6 +54,8 @@ import { LogDiagnosticsPage, type LogDiagnosticsTab } from "../../pages/LogDiagn
 import { DownloadsPage } from "../../pages/DownloadsPage";
 import { LoungePage } from "../../../../../shared/lounge/LoungePage";
 import { useDesktopLounge } from "../../lounge/useDesktopLounge";
+import { BookmarkProvider } from "../../../../../shared/browser/bookmarks/context";
+import { BrowserPage } from "../../../../../shared/browser/BrowserPage";
 import { CloudAccountIdentity } from './CloudAccountIdentity';
 import { authenticatedDownloadOwner } from "../../downloads/useDesktopDownloads";
 import { useSyncDownloadAccount } from "../../../../../shared/conversation/sync/useSyncDownloadAccount";
@@ -205,6 +207,7 @@ type SystemMenuAction =
   | "log-diagnostics"
   | "downloads"
   | "lounge"
+  | "browser"
   | "totp"
   | "system-prompts"
   | "settings"
@@ -1049,6 +1052,9 @@ export function DashboardApp() {
       case "lounge":
         setPage("lounge");
         break;
+      case "browser":
+        setPage("browser");
+        break;
       case "system-prompts":
         setPage("systemPrompts");
         break;
@@ -1294,6 +1300,9 @@ export function DashboardApp() {
     : "nav.collapseSidebar");
 
   return (
+    <BookmarkProvider scope={cloud.state.authenticated
+      ? JSON.stringify([cloud.state.baseUrl, cloud.state.userId]) : 'guest'}
+      channel={cloud.state.authenticated ? lounge.controller.bookmarks : undefined}>
     <ConfigProvider locale={{ zh: zhCN, en: enUS, ru: ruRU, ja: jaJP }[language]} theme={{
       algorithm: themeMode.appliedMode === "dark"
         ? [antdTheme.darkAlgorithm, antdTheme.compactAlgorithm]
@@ -1356,6 +1365,7 @@ export function DashboardApp() {
         </header>
 
         <main className={page === "accounts" ? "accounts-main"
+          : page === "browser" ? "browser-desktop-main"
           : page === "lounge" ? "lounge-desktop-main"
           : page === "codexGui" ? codexGuiStyles.main
           : page === "coze" ? cozeStyles.main
@@ -1366,7 +1376,7 @@ export function DashboardApp() {
             : page === "dreamSkin" ? "dream-skin-main"
               : page === "sessions" ? "sessions-main"
               : page === "codexConfig" ? codexConfigStyles.main : undefined}>
-          {!['tokens', 'dreamSkin', 'codexGui', 'coze', 'logDiagnostics', 'downloads', 'lounge'].includes(page) && (
+          {!['tokens', 'dreamSkin', 'codexGui', 'coze', 'logDiagnostics', 'downloads', 'lounge', 'browser'].includes(page) && (
           <>
           {isAccountManagementPage(page) ? (
             <AccountManagementToolbar section={page} onSectionChange={setPage} t={t}
@@ -1442,6 +1452,9 @@ export function DashboardApp() {
 
           {page === "totp" && <TotpPage accounts={manager.accounts} manager={totpManager} t={t} />}
           {page === "downloads" && <DownloadsPage auth={cloud.state} />}
+          <RetainedView active={page === "browser"}>
+            <BrowserPage language={language} active={page === "browser"} />
+          </RetainedView>
           {page === "lounge" && <LoungePage controller={lounge.controller} onLogin={openCloudLogin}
             onAssistance={isDesktopApp ? assistanceStore.request : undefined} />}
           {page === "logDiagnostics" && <LogDiagnosticsPage activeTab={diagnosticsTab}
@@ -1778,5 +1791,6 @@ export function DashboardApp() {
       </div>
       {isDesktopApp && <RemoteAssistance auth={cloud.state} onLogin={openCloudLogin} />}
     </ConfigProvider>
+    </BookmarkProvider>
   );
 }

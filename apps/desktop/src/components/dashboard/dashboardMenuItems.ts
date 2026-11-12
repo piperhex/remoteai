@@ -2,6 +2,8 @@ import type { MenuProps } from "antd";
 import type { Translate } from "../../i18n";
 import type { MenuSearchItem } from "../MenuSearchModal";
 import { displayText } from "../../../../../shared/localization/messages";
+import { marketText } from "../../../../../shared/provider-market/i18n";
+import { guiLanguage } from "../../../../../shared/localization/uiText";
 
 export interface DashboardMenuItems {
   cloud: MenuProps["items"];
@@ -42,6 +44,7 @@ function navigateItems(t: Translate, authenticated: boolean): MenuProps["items"]
     { key: "skills", label: t("nav.skills") },
     { key: "coze", label: "Coze" },
     { key: "sessions", label: t("nav.sessions") },
+    { key: "browser", label: marketText(guiLanguage())("market.browserNavigation") },
     ...(authenticated ? [{ key: "lounge", label: displayText("client.lounge.title") }] : []),
     { key: "downloads", label: t("downloads.title") },
     { key: "log-diagnostics", label: t("logDiagnostics.title") },
@@ -122,6 +125,7 @@ function searchItems(t: Translate, authenticated: boolean, desktopApp: boolean):
     item("token-usage", t("nav.tokenUsage"), t("windowMenu.navigate")),
     item("coze", "Coze", t("windowMenu.navigate")),
     item("sessions", t("nav.sessions"), t("windowMenu.navigate")),
+    item("browser", marketText(guiLanguage())("market.browserNavigation"), t("windowMenu.navigate")),
     ...(authenticated ? [item("lounge", displayText("client.lounge.title"), t("windowMenu.navigate"))] : []),
     item("downloads", t("downloads.title"), t("windowMenu.navigate")),
     item("log-diagnostics", t("logDiagnostics.title"), t("windowMenu.navigate")),

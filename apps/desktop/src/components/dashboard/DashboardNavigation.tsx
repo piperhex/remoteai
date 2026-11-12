@@ -10,12 +10,15 @@ import {
   ShieldCheck,
   UserRound,
   MessagesSquare,
+  Globe,
 } from "lucide-react";
 import type { Translate } from "../../i18n";
 import { LogDiagnosticsIcon } from "./LogDiagnosticsIcon";
 import { DownloadNavigationIcon } from "../../downloads/DownloadNavigationIcon";
 import { LoungeIcon } from "../../../../../shared/lounge/LoungeIcon";
 import { displayText } from "../../../../../shared/localization/messages";
+import { marketText } from "../../../../../shared/provider-market/i18n";
+import { guiLanguage } from "../../../../../shared/localization/uiText";
 
 export type DashboardPage =
   | "accounts"
@@ -32,6 +35,7 @@ export type DashboardPage =
   | "logDiagnostics"
   | "downloads"
   | "lounge"
+  | "browser"
   | "totp"
   | "claudeCode";
 
@@ -64,6 +68,8 @@ const LOG_DIAGNOSTICS_ITEM = {
 const DOWNLOADS_ITEM = { page: "downloads", icon: Download, labelKey: "downloads.title" } as const;
 const LOUNGE_ITEM = { page: "lounge", icon: MessagesSquare,
   get label() { return displayText('client.lounge.title'); } } as const;
+const BROWSER_ITEM = { page: "browser", icon: Globe,
+  get label() { return marketText(guiLanguage())('market.browserNavigation'); } } as const;
 
 const TOTP_ITEM = { page: "totp", icon: ShieldCheck, labelKey: "totp.action" } as const;
 
@@ -76,7 +82,7 @@ const TOOLBOX_NAVIGATION_ITEMS = [
 
 export function isToolboxPage(page: DashboardPage) {
   return page === "codexConfig" || page === "systemPrompts" || page === "logDiagnostics"
-    || page === "downloads" || page === "lounge" || page === "totp"
+    || page === "downloads" || page === "lounge" || page === "totp" || page === "browser"
     || TOOLBOX_NAVIGATION_ITEMS.some((item) => item.page === page);
 }
 
@@ -90,7 +96,8 @@ export function DashboardNavigation({
   t,
   variant = "top",
 }: DashboardNavigationProps) {
-  const navigationButton = (item: typeof NAVIGATION_ITEMS[number] | typeof TOOLBOX_NAVIGATION_ITEMS[number] | typeof LOUNGE_ITEM | {
+  const navigationButton = (item: typeof NAVIGATION_ITEMS[number] | typeof TOOLBOX_NAVIGATION_ITEMS[number]
+    | typeof LOUNGE_ITEM | typeof BROWSER_ITEM | {
     page: "settings" | "logDiagnostics" | "downloads" | "totp";
     icon: typeof Settings;
     labelKey: "nav.settings" | "logDiagnostics.title" | "downloads.title" | "totp.action";
@@ -119,12 +126,14 @@ export function DashboardNavigation({
       {variant !== "top" && TOOLBOX_NAVIGATION_ITEMS
         .filter((item) => variant === "toolbox" || (item.page !== "skills" && item.page !== "dreamSkin"))
         .map(navigationButton)}
+      {variant === "toolbox" && navigationButton(BROWSER_ITEM)}
       {variant === "toolbox" && loungeAvailable && navigationButton(LOUNGE_ITEM)}
       {variant === "toolbox" && navigationButton(DOWNLOADS_ITEM)}
       {variant === "toolbox" && navigationButton(LOG_DIAGNOSTICS_ITEM)}
       {variant === "toolbox" && navigationButton(TOTP_ITEM)}
       {variant === "sidebar" && (
         <div className="sidebar-nav-tools" data-tauri-drag-region>
+          {navigationButton(BROWSER_ITEM)}
           {loungeAvailable && navigationButton(LOUNGE_ITEM)}
           {navigationButton(DOWNLOADS_ITEM)}
           {navigationButton(LOG_DIAGNOSTICS_ITEM)}

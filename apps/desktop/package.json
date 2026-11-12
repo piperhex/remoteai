@@ -44,7 +44,7 @@
     "@noble/curves": "^1.9.7",
     "@noble/hashes": "^1.8.0",
     "@reduxjs/toolkit": "^2.8.2",
-    "@remoteai/i18n": "0.1.19",
+    "@remoteai/i18n": "0.1.20",
     "@tauri-apps/api": "^2.8.0",
     "@tauri-apps/plugin-dialog": "^2.4.0",
     "@tauri-apps/plugin-opener": "^2.5.0",
