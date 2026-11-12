@@ -22,7 +22,7 @@ it('keeps the pending capacity error on both clients until actual output resumes
   let local = reduceConversation(conversation(source), failure);
   let remote = updateThread(source, failure);
   for (const item of [{ id: 'reasoning', type: 'reasoning', summary: [] },
-    { id: 'answer', type: 'agentMessage', phase: 'commentary', text: '' }]) {
+    { id: 'answer', type: 'agentMessage', phase: 'commentary', text: '' }] satisfies Turn['items']) {
     local = reduceConversation(local, itemEvent(item));
     remote = updateThread(remote, itemEvent(item));
     for (const turn of [local.turns[0], remote.turns![0]]) {
