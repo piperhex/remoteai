@@ -226,7 +226,7 @@ fn diagnostics_export_protects_app_data_and_reports_broken_records() {
         &mut output,
         b"{\"event\":\"old\",\"result\":{\"error\":\"Bearer secret-token\"}}\ninvalid\n",
     );
-    assert!(!output.contains("secret-token"));
+    assert!(output.contains("Bearer secret-token"));
     assert!(output.contains("unreadable_diagnostic_record"));
     for line in output.lines() {
         serde_json::from_str::<Value>(line).unwrap();

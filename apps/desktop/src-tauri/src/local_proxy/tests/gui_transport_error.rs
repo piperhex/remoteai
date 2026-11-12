@@ -79,7 +79,7 @@ fn gui_tls_disconnect_keeps_diagnostics_and_returns_a_safe_specific_message() {
     assert!(diagnostics.contains("tls handshake eof"), "{diagnostics}");
     assert!(diagnostics.contains("gui_request_failed"));
     assert!(!diagnostics.contains("sk-upstream"));
-    assert!(!diagnostics.contains("https://127.0.0.1"));
+    assert!(diagnostics.contains("https://127.0.0.1"));
     // The mock application identifier owns this unique directory.
     assert!(root
         .file_name()

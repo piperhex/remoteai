@@ -25,8 +25,8 @@ function toastHarness({ failLog = false, failMirror = false } = {}) {
     "../../../../shared/localization/errors": {
       formatRemoteError: (_language, message) => message,
     },
-    "../i18n/uiText": { guiLanguage: () => "zh" },
-    "../i18n/useGuiLanguage": { useGuiLanguage: () => "zh" },
+    "../../../../shared/localization/uiText": { guiLanguage: () => "zh" },
+    "../../../../shared/localization/useGuiLanguage": { useGuiLanguage: () => "zh" },
     "../api/errorLogs": {
       recordToastLog: async message => {
         logged.push(message);
@@ -54,7 +54,8 @@ function toastHarness({ failLog = false, failMirror = false } = {}) {
 
 test("every toast is logged once, including success and repeated identical messages", () => {
   const harness = toastHarness();
-  const messages = ["保存成功", "请求失败", "请求失败"];
+  const messages = ["保存成功", "请求失败", "请求失败",
+    "Saved C:\\Users\\Example\\auth.json; https://example.com/api?token=example-token"];
   for (const message of messages) harness.notify(message);
 
   assert.deepEqual(harness.logged, messages);

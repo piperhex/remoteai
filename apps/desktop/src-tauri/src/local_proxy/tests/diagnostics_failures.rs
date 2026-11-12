@@ -89,7 +89,7 @@ fn diagnostics_keep_unterminated_upstream_errors_when_transport_also_fails() {
 }
 
 #[test]
-fn diagnostics_log_transport_cause_chains_without_credentials() {
+fn diagnostics_log_original_transport_cause_chains() {
     let error = io::Error::new(
         io::ErrorKind::ConnectionReset,
         io::Error::new(io::ErrorKind::TimedOut, "Bearer fake-credential"),
@@ -98,7 +98,20 @@ fn diagnostics_log_transport_cause_chains_without_credentials() {
     assert!(!causes.is_empty());
     assert!(causes
         .iter()
-        .all(|cause| !cause.contains("fake-credential")));
+        .all(|cause| cause.contains("fake-credential")));
+}
+
+#[test]
+fn diagnostic_export_preserves_nested_message_values() {
+    let detail = "HTTP 403 for https://example.com/releases?token=example-token; \
+        path=C:\\Users\\Example\\codex.exe; Authorization: Bearer example-key";
+    let entry = json!({
+        "event": "request_failed", "error": detail,
+        "details": { "message": detail, "causes": [{ "text": detail }] }
+    });
+    let mut output = String::new();
+    append_export_records(&mut output, entry.to_string().as_bytes());
+    assert_eq!(serde_json::from_str::<Value>(&output).unwrap(), entry);
 }
 
 #[test]

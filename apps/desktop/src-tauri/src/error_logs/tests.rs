@@ -36,7 +36,7 @@ fn query(limit: u32, before_id: Option<i64>, source: Option<ErrorLogSource>) -> 
 }
 
 #[test]
-fn codex_diagnostics_persist_original_details_and_redact_sensitive_values() {
+fn codex_diagnostics_persist_original_details_including_paths_and_values() {
     let fixture = Fixture::new();
     let service = LogService::start(fixture.database_path()).unwrap();
     service.record_codex(
@@ -51,7 +51,8 @@ fn codex_diagnostics_persist_original_details_and_redact_sensitive_values() {
     assert!(message.contains("extract archive entry"));
     assert!(message.contains("os error 32"));
     assert!(message.contains("access denied"));
-    assert!(!message.contains("private"));
+    assert!(message.contains("C:\\private\\codex.exe"));
+    assert!(message.contains("token=private-value"));
     service.shutdown_for_test().unwrap();
     let reopened = database::open(&fixture.database_path()).unwrap();
     assert_eq!(

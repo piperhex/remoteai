@@ -11,9 +11,8 @@ use chrono::Utc;
 use rusqlite::Connection;
 
 use super::{
-    database,
+    database, message,
     models::{ErrorLogPage, ErrorLogSource, ListQuery, LogError, NewEntry},
-    sanitize,
 };
 
 const QUEUE_CAPACITY: usize = 1_024;
@@ -105,7 +104,7 @@ fn new_entry(source: ErrorLogSource, message: &str, status: Option<u16>) -> Opti
     Some(NewEntry {
         created_at: Utc::now().to_rfc3339(),
         source,
-        message: sanitize::message(message)?,
+        message: message::normalize(message)?,
         status_code: status.filter(|code| (100..600).contains(code)),
     })
 }
@@ -127,7 +126,7 @@ fn run(path: &Path, receiver: mpsc::Receiver<Task>, dropped: &AtomicU64) {
 fn handle_task(connection: &mut Option<Connection>, path: &Path, task: Task) {
     match task {
         Task::Record(entry, reply) => {
-            // Keep the sanitized cause available even when a full disk prevents saving the log.
+            // Keep the cause available even when a full disk prevents saving the log.
             let fallback = entry.message.clone();
             let result = with_connection(connection, path, |db| database::insert(db, entry));
             if let Some(reply) = reply {

@@ -28,10 +28,11 @@ fn migration_failure_is_persisted_and_included_in_diagnostic_export() {
         "WriteDestinationHistory",
         "database is locked",
         "rollback sharing violation",
+        "C:\\private\\state.sqlite",
+        "api_key=private-value",
     ] {
         assert!(entry.message.contains(expected), "{}", entry.message);
     }
-    assert!(!entry.message.contains("private"));
     assert!(!message.contains("database"));
     let export =
         std::env::temp_dir().join(format!("migration-diagnostics-{}.jsonl", Uuid::new_v4()));
@@ -51,6 +52,6 @@ fn migration_failure_is_persisted_and_included_in_diagnostic_export() {
             && record["record"]["message"]
                 .as_str()
                 .is_some_and(|message| message.contains(reference))));
-    assert!(!content.contains("private-value"));
+    assert!(content.contains("api_key=private-value"));
     fs::remove_file(export).unwrap();
 }

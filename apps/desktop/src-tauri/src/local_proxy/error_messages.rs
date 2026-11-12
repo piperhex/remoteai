@@ -133,7 +133,7 @@ fn diagnostic_fallback(error: &str) -> String {
         if error.starts_with("proxy_request_error:") || error.starts_with("proxy_catalog_error:") {
             chinese::INVALID_DETAIL.to_string()
         } else {
-            crate::error_logs::sanitize_diagnostic_message(error)
+            crate::error_logs::sanitize_client_message(error)
         };
     chinese::diagnostic(&detail, &error_id(error))
 }

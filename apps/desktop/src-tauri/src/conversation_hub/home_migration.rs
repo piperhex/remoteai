@@ -68,7 +68,7 @@ fn migrate_request<R: Runtime>(
 }
 
 fn report_migration_error(context: &str, error: &HomeMigrationError) -> String {
-    // A short reference survives log redaction and lets support match a screenshot to the cause.
+    // A short reference lets support match a screenshot to the diagnostic cause.
     let reference = Uuid::new_v4().simple().to_string()[..12].to_owned();
     let detail = match error {
         HomeMigrationError::Failed(failure) => failure.diagnostic(),

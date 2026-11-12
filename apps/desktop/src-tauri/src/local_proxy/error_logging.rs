@@ -7,7 +7,7 @@ fn record_captured_proxy_errors(errors: Vec<error_capture::ProxyCapturedError>) 
 fn record_discarded_proxy_attempt(result: &Result<UpstreamPayload, String>) {
     match result {
         Ok(payload) => record_retried_proxy_response(payload),
-        Err(error) => crate::error_logs::record_proxy_error(&error_messages::gui(error), None),
+        Err(error) => crate::error_logs::record_proxy_error(error, None),
     }
 }
 

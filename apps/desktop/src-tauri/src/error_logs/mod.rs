@@ -1,6 +1,9 @@
-//! Persist bounded, sanitized proxy errors and user notifications off the UI thread.
+//! Persist bounded proxy errors and user notifications off the UI thread without redacting their text.
 
 mod database;
+mod message;
+#[cfg(test)]
+mod message_tests;
 mod models;
 #[cfg(test)]
 mod pagination_tests;
@@ -17,7 +20,7 @@ pub(crate) use models::{ErrorLogPage, ErrorLogPagination, ErrorLogSource};
 use models::{ListQuery, LogError};
 use worker::LogService;
 
-pub(crate) const DIAGNOSTIC_MESSAGE_MAX_CHARS: usize = sanitize::MAX_MESSAGE_CHARS;
+pub(crate) const DIAGNOSTIC_MESSAGE_MAX_CHARS: usize = message::MAX_MESSAGE_CHARS;
 
 const DATABASE_FILENAME: &str = "error-logs.sqlite";
 static SERVICE: OnceLock<LogService> = OnceLock::new();
@@ -38,14 +41,14 @@ pub(crate) fn setup<R: Runtime>(app: &AppHandle<R>) -> Result<(), String> {
         .map_err(|_| LogError::Unavailable.to_string())
 }
 
-/// Accepts display-safe summaries only; request bodies, authentication and headers must never be passed here.
+/// Records error text as supplied; callers select the relevant error rather than entire request bodies.
 pub(crate) fn record_proxy_error(message: &str, status_code: Option<u16>) {
     if let Some(service) = SERVICE.get() {
         service.record_proxy(message, status_code);
     }
 }
 
-/// Queue Codex operation diagnostics without blocking the UI; the worker redacts sensitive values.
+/// Queue Codex operation diagnostics without blocking the UI or hiding diagnostic values.
 pub(crate) fn record_codex_error(message: &str) {
     if let Some(service) = SERVICE.get() {
         service.record_codex(message);
@@ -58,8 +61,13 @@ fn service() -> Result<&'static LogService, LogError> {
     SERVICE.get().ok_or(LogError::Unavailable)
 }
 
-/// Reuses the error log redaction policy for diagnostic summaries and upstream failures.
+/// Bounds diagnostic text and removes non-text control characters without hiding values.
 pub(crate) fn sanitize_diagnostic_message(message: &str) -> String {
+    message::normalize(message).unwrap_or_default()
+}
+
+/// Client-facing error responses retain their separate disclosure policy; logs keep the original details.
+pub(crate) fn sanitize_client_message(message: &str) -> String {
     sanitize::message(message).unwrap_or_default()
 }
 

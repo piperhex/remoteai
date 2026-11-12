@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, theme } from 'antd';
 import { LogDiagnosticsPage, type LogDiagnosticsTab } from '../src/pages/LogDiagnosticsPage';
 import { translate } from '../src/i18n';
 import { Messages } from '../src/pages/codexGui/Messages';
@@ -32,7 +32,8 @@ function Harness() {
     setExports(count => count + 1);
     window.setTimeout(() => setExporting(false), 500);
   };
-  if (new URLSearchParams(location.search).has('logs')) return <ConfigProvider>
+  if (new URLSearchParams(location.search).has('logs')) return <ConfigProvider
+    theme={{ algorithm: theme.compactAlgorithm, token: { fontSize: 14 } }}>
     <main className={logStyles.main} style={{ height: '100vh', padding: 16 }}>
       <LogDiagnosticsPage activeTab={tab} onTabChange={setTab} language="zh"
         t={(key, values) => translate('zh', key, values)} onExportLogs={exportLogs} exportingLogs={exporting} />

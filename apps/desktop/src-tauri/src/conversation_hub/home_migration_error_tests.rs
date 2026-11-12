@@ -48,7 +48,8 @@ fn migration_failure_distinguishes_causes_without_exposing_raw_details() {
     assert!(!display.contains("private"));
     let diagnostic = crate::error_logs::sanitize_diagnostic_message(&failure.diagnostic());
     assert!(diagnostic.contains("unrecognized failure"));
-    assert!(!diagnostic.contains("private"));
+    assert!(diagnostic.contains("C:\\Users\\private\\.codex"));
+    assert!(diagnostic.contains("api_key=private-secret"));
 }
 
 #[test]

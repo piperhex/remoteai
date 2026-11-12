@@ -35,7 +35,7 @@ fn diagnostics_preserve_protection_error_fields_without_a_failing_http_status() 
 }
 
 #[test]
-fn diagnostics_keep_stream_position_and_redact_nested_failures() {
+fn diagnostics_keep_stream_position_and_original_failure_messages() {
     let body = concat!(
         "data: {\"type\":\"response.created\",\"sequence_number\":0,",
         "\"response\":{\"id\":\"private-response\"}}\r\n\r\n",
@@ -51,12 +51,11 @@ fn diagnostics_keep_stream_position_and_redact_nested_failures() {
     assert_eq!(summary["recentEvents"][2]["type"], "response.failed");
     assert_eq!(summary["failure"]["statusCode"], 503);
     assert_eq!(summary["failure"]["code"], "server_error");
-    for secret in [
-        "private-response",
-        "private text",
-        "private output",
-        "fake-credential",
-    ] {
+    assert_eq!(
+        summary["failure"]["message"],
+        "failed Bearer fake-credential"
+    );
+    for secret in ["private-response", "private text", "private output"] {
         assert!(!summary.to_string().contains(secret));
     }
 }

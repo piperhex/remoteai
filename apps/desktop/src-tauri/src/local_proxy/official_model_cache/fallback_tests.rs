@@ -79,7 +79,7 @@ fn official_http_502_reaches_admin_and_records_success() {
 }
 
 #[test]
-fn official_dns_failure_reaches_admin_without_exposing_private_details() {
+fn official_dns_failure_reaches_admin_and_keeps_diagnostic_details() {
     let (url, admin) = server(200, CATALOG.to_vec());
     let app = TestApp::new(url.origin().ascii_serialization());
     let directory = tempfile::tempdir().unwrap();
@@ -105,8 +105,7 @@ fn official_dns_failure_reaches_admin_without_exposing_private_details() {
         "model_catalog_admin_fallback_succeeded"
     );
     let recorded = std::fs::read_to_string(&log).unwrap();
-    assert!(!recorded.contains("private.example"));
-    assert!(!recorded.contains("private-token"));
+    assert!(recorded.contains("https://private.example/models?token=private-token"));
 }
 
 #[test]

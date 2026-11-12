@@ -22,7 +22,7 @@ const SENSITIVE_FIELDS: &[&str] = &[
     "set-cookie",
 ];
 
-/// Logs store only bounded display text, with credential values and local locations removed.
+/// Client-facing responses omit credentials and locations; diagnostic logs use `message::normalize`.
 pub(super) fn message(value: &str) -> Option<String> {
     let bounded: String = value.chars().take(MAX_INPUT_CHARS).collect();
     let redacted = redact_paths(&redact_assignments(&bounded));
