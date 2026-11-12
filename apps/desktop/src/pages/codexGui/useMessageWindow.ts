@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type RefObject, type WheelEvent } from "react";
 import type { ScrollMovement } from "../../../../../shared/chat/useScrollMovement";
+import { canScrollWithin } from "../../../../../shared/chat/canScrollWithin";
 import { messageWindow, type MessageCursor } from "./messageWindow";
 import type { Turn } from "../../../../../shared/conversation/types";
 
@@ -15,16 +16,6 @@ interface Options {
   away: boolean;
   hasEarlier?: boolean;
   loadEarlier?: () => Promise<Turn[] | undefined>;
-}
-
-function hasNestedScroller(target: EventTarget, viewport: Element): boolean {
-  let node = target instanceof Element ? target : null;
-  while (node && node !== viewport) {
-    // Keep scrolling inside code, tool output, and the composer independent from history loading.
-    if (node.scrollHeight > node.clientHeight && /auto|scroll/.test(getComputedStyle(node).overflowY)) return true;
-    node = node.parentElement;
-  }
-  return false;
 }
 
 export function useMessageWindow({ turns = EMPTY_TURNS, selected, active, viewport, movement,
@@ -130,7 +121,7 @@ export function useMessageWindow({ turns = EMPTY_TURNS, selected, active, viewpo
       || Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
     const node = viewport.current;
     if (!node) return;
-    if (hasNestedScroller(event.target, node)) return;
+    if (canScrollWithin(event.target, node, event.deltaY)) return;
     if (pending.current) return;
     // Collapsed activity can leave the viewport too short to emit a scroll event.
     if (event.deltaY < 0 && node.scrollTop <= 0) loadOlder();

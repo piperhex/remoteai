@@ -135,10 +135,12 @@ it("ignores zoom, horizontal wheels, and scrolling inside nested output or away 
   output.append(nested);
   Object.defineProperties(output, { scrollHeight: { value: 800 }, clientHeight: { value: 200 } });
   output.style.overflowY = "auto";
+  output.scrollTop = 100;
   await wheel(nested);
   expect(frames.size).toBe(0);
   expect(count()).toBe(10);
-  await wheel(viewport);
+  output.scrollTop = 0;
+  await wheel(nested);
   await frame(); await frame();
   expect(count()).toBe(20);
 });

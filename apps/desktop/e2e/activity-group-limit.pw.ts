@@ -74,15 +74,18 @@ for (const mode of ['local', 'remote', 'web'] as const) {
       await list.evaluate(node => node.scrollIntoView({ block: 'center' }));
       await list.evaluate(node => { node.scrollTop = 0; });
       await expectFiveRows(list, rows);
-      await expect(list).toHaveCSS('overscroll-behavior-y', 'contain');
+      await expect(list).toHaveCSS('overscroll-behavior-y', 'auto');
       const label = `${mode}-${appearance.width}-${appearance.dark ? 'dark' : 'light'}-font-${appearance.font}`;
       await page.screenshot({ path: `${EVIDENCE}/${label}-expanded.png` });
       const history = page.locator(mode === 'local' ? '[aria-label="对话消息"]' : '.chat-messages');
       const outerTop = await history.evaluate(node => node.scrollTop);
-      await wheelList(page, list, 100_000);
+      const listRemaining = await list.evaluate(node => node.scrollHeight - node.clientHeight - node.scrollTop);
+      await wheelList(page, list, listRemaining);
       await expect(rows.last()).toBeInViewport();
+      expect(await history.evaluate(node => node.scrollTop)).toBe(outerTop);
       await wheelList(page, list, 100_000);
-      await expect.poll(() => history.evaluate(node => node.scrollTop)).toBe(outerTop);
+      await expect.poll(() => history.evaluate(node => node.scrollHeight - node.clientHeight - node.scrollTop))
+        .toBeLessThan(2);
       await expect(rows.first()).not.toBeInViewport();
       const height = (await list.boundingBox())!.height;
       await rows.last().click();
@@ -97,8 +100,10 @@ for (const mode of ['local', 'remote', 'web'] as const) {
       await page.keyboard.press('Home');
       await expect.poll(() => list.evaluate(node => node.scrollTop)).toBe(0);
       const beforeUpWheel = await history.evaluate(node => node.scrollTop);
-      await wheelList(page, list, -100_000);
-      await expect.poll(() => history.evaluate(node => node.scrollTop)).toBe(beforeUpWheel);
+      await wheelList(page, list, -80);
+      expect(beforeUpWheel).toBeGreaterThan(0);
+      await expect.poll(() => history.evaluate(node => node.scrollTop)).toBeLessThan(beforeUpWheel);
+      await list.scrollIntoViewIfNeeded();
       await expectFiveRows(list, rows);
       await page.getByLabel('消息', { exact: true }).fill('查看命令时继续输入');
       await summary.click();
