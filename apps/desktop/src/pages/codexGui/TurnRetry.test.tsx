@@ -4,9 +4,9 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { TurnRetryProvider } from '../../../../../shared/chat/TurnRetryContext';
 import { failedTurnTarget } from '../../../../../shared/chat/turnRetry';
-import { ChatTurnSummary } from '../../../../../shared/remote-chat/views/ChatTurnSummary';
+import { ChatRequestError } from '../../../../../shared/remote-chat/views/ChatRequestError';
 import { TurnMessage } from './TurnMessage';
-import { restoreRequestErrors } from '../../../../../shared/conversation/turnRequestErrors';
+import { restoreRequestErrors, visibleTurnRequestErrors } from '../../../../../shared/conversation/turnRequestErrors';
 import { MODEL_CAPACITY_MESSAGE } from '../../../../../shared/conversation/requestError';
 import { uiText } from '../../../../../shared/localization/uiText';
 import type { Turn } from '../../../../../shared/conversation/types';
@@ -27,7 +27,8 @@ for (const surface of ['desktop', 'web']) {
       <input defaultValue="未发送的草稿" />
       {turns.map(turn => surface === 'desktop'
         ? <TurnMessage key={turn.id} turn={restoreRequestErrors(turn)} running={false} active />
-        : <ChatTurnSummary key={turn.id} turn={turn} onOpen={() => {}} />)}
+        : visibleTurnRequestErrors(turn).map(record => <ChatRequestError key={record.id}
+          turn={turn} record={record} onOpen={() => {}} />))}
     </TurnRetryProvider>));
   const retryButton = () => [...container.querySelectorAll('button')].find(button => /^(重试|正在重试…)$/.test(
     button.textContent ?? ''));
@@ -114,7 +115,7 @@ it('unlocks only the acknowledged retry item after a definitive queue outcome', 
   const render = (releasedQueueItemIds: string[]) => act(async () => root.render(
     <TurnRetryProvider target={failedTurnTarget('thread', [failed])} disabled={false} onRetry={send}
       releasedQueueItemIds={releasedQueueItemIds}>
-      <ChatTurnSummary turn={failed} onOpen={() => {}} />
+      <ChatRequestError turn={failed} record={visibleTurnRequestErrors(failed)[0]} onOpen={() => {}} />
     </TurnRetryProvider>));
   const button = () => [...container.querySelectorAll('button')].find(entry => /^(重试|正在重试…)$/.test(
     entry.textContent ?? ''))!;
