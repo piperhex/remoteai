@@ -55,6 +55,15 @@ pub(crate) enum RemoteError {
 type Result<T> = std::result::Result<T, RemoteError>;
 
 fn root() -> Result<PathBuf> {
+    #[cfg(debug_assertions)]
+    if let Some(root) = std::env::var_os("CSW_REMOTE_COMMAND_TEST_ROOT") {
+        let root = PathBuf::from(root);
+        return if root.is_absolute() && root.parent().is_some() {
+            Ok(root)
+        } else {
+            Err(RemoteError::Storage)
+        };
+    }
     dirs::data_dir()
         .map(|path| path.join("dev.codex.switch").join("remote-command"))
         .ok_or(RemoteError::Storage)
@@ -66,6 +75,11 @@ pub(crate) fn start<R: tauri::Runtime>(app: tauri::AppHandle<R>) {
             eprintln!("remote command bridge: {error}");
         }
     });
+}
+
+#[cfg(windows)]
+pub(crate) fn helper_argument(home: &std::path::Path) -> String {
+    format!("{HELPER_ARGUMENT}{}", state::home_id(home))
 }
 
 /// The MCP process uses STDIO only and never starts a WebView.

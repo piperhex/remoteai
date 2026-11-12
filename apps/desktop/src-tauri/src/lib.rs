@@ -93,6 +93,8 @@ mod web_session_login;
 mod webview_windows;
 #[cfg(target_os = "windows")]
 mod windows_client_processes;
+#[cfg(target_os = "windows")]
+mod windows_plugin_host;
 #[cfg(all(test, windows))]
 mod windows_test_resources;
 
@@ -108,6 +110,18 @@ pub fn run() {
     #[cfg(windows)]
     if let Err(error) = installer_lifecycle::wait_before_startup() {
         eprintln!("failed to wait for the Windows installer: {error}");
+        return;
+    }
+    #[cfg(all(windows, debug_assertions))]
+    if windows_plugin_host::run_probe() {
+        return;
+    }
+    #[cfg(windows)]
+    if let Some(result) = windows_plugin_host::handoff() {
+        if let Err(error) = result {
+            eprintln!("{error}");
+            std::process::exit(1);
+        }
         return;
     }
     if chrome_plugin::run_helper() {

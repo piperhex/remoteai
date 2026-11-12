@@ -26,6 +26,8 @@ fn entry(home: &Path, enabled: bool) -> Result<Table> {
     table["startup_timeout_sec"] = value(30);
     table["tool_timeout_sec"] = value(TOOL_TIMEOUT_SECONDS as i64);
     #[cfg(windows)]
+    crate::windows_plugin_host::configure_entry(&mut table);
+    #[cfg(windows)]
     if let Some(revision) = super::administrator::revision(home) {
         let mut environment = Table::new();
         environment["REMOTEAI_CUA_ACCESS"] = value(revision);

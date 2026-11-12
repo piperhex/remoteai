@@ -13,6 +13,8 @@ fn mcp_entry(executable: &Path, id: &str, enabled: bool) -> Table {
     table["enabled"] = value(enabled);
     table["startup_timeout_sec"] = value(10);
     table["tool_timeout_sec"] = value(150);
+    #[cfg(windows)]
+    crate::windows_plugin_host::configure_entry(&mut table);
     table
 }
 

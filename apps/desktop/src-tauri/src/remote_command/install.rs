@@ -21,6 +21,8 @@ fn entry(home: &Path, enabled: bool) -> Result<Table> {
     table["enabled"] = value(enabled);
     table["startup_timeout_sec"] = value(10);
     table["tool_timeout_sec"] = value(100);
+    #[cfg(windows)]
+    crate::windows_plugin_host::configure_entry(&mut table);
     Ok(table)
 }
 

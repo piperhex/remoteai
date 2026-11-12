@@ -68,6 +68,11 @@ fn bridge_root() -> Result<PathBuf> {
         .ok_or(BrowserError::Storage)
 }
 
+#[cfg(windows)]
+pub(crate) fn helper_argument(home: &std::path::Path) -> String {
+    format!("--chrome-mcp={}", config::client_id(home))
+}
+
 /// Native Messaging and MCP are separate process modes and never initialize a WebView.
 pub(crate) fn run_helper() -> bool {
     let args = std::env::args().skip(1).collect::<Vec<_>>();

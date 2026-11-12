@@ -72,6 +72,11 @@ fn root() -> Result<PathBuf> {
         .ok_or(ComputerError::Storage)
 }
 
+#[cfg(windows)]
+pub(crate) fn helper_argument(home: &std::path::Path) -> String {
+    format!("{HELPER_ARGUMENT}{}", state::home_id(home))
+}
+
 /// Dispatch before Tauri starts so MCP stdout contains only protocol messages.
 pub(crate) fn run_helper() -> bool {
     #[cfg(windows)]

@@ -70,6 +70,8 @@ pub(super) struct Client {
     pub(super) alive: AtomicBool,
     events_enabled: AtomicBool,
     notification_session: String,
+    #[cfg(windows)]
+    plugin_host: crate::windows_plugin_host::Host,
     app: AppHandle,
 }
 
@@ -96,6 +98,11 @@ impl Client {
         // Keep every override in the app-server argument scope; subcommand overrides replace root ones.
         command.arg("app-server");
         super::conversation_tools::configure(app.clone(), &mut command).await?;
+        #[cfg(windows)]
+        let plugin_host =
+            crate::windows_plugin_host::Host::start(&home).map_err(|_| GuiError::Startup)?;
+        #[cfg(windows)]
+        plugin_host.configure(&mut command);
         command
             .arg("-c")
             .arg("features.step_model_switching=true")
@@ -146,6 +153,8 @@ impl Client {
             alive: AtomicBool::new(true),
             events_enabled: AtomicBool::new(false),
             notification_session: uuid::Uuid::new_v4().to_string(),
+            #[cfg(windows)]
+            plugin_host,
             app,
         });
         tokio::spawn(client.clone().read(stdout));
@@ -460,6 +469,8 @@ impl Client {
         if !self.alive.swap(false, Ordering::AcqRel) {
             return;
         }
+        #[cfg(windows)]
+        self.plugin_host.stop();
         for (_, sender) in self.pending.lock().await.drain() {
             // Callers may already have timed out.
             let _ = sender.send(Err(GuiError::Disconnected));
