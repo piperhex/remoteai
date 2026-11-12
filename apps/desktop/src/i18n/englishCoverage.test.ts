@@ -39,7 +39,7 @@ it('translates desktop interface copy in English without changing placeholders',
 });
 
 it('translates onboarding while leaving quoted user content unchanged', () => {
-  expect(translateMessage('en', "client.conversation.getStartedWithCodexGui")).toBe('Get started with Codex GUI');
+  expect(translateMessage('en', "client.conversation.getStartedWithCodexGui")).toBe('Get started with Agent Hub');
   expect(translateMessage('en', "client.conversation.downloadCodexToStartConversationsWorkOnCodeAndManage"))
     .toBe('Download Codex to start conversations, work on code, and manage tasks here.');
   expect(translateMessage('en', "client.conversation.manageProject", { value1: '我的项目 {value1}' }))
