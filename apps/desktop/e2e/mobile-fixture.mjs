@@ -221,7 +221,9 @@ wss.on('connection', (socket, request) => {
 await new Promise((resolve) => httpServer.listen(apiPort, '127.0.0.1', resolve));
 const vite = await createServer({ configFile: 'scripts/vite.config.ts',
   optimizeDeps: { entries: ['e2e/chat-harness.html'] },
-  cacheDir: process.env.CHAT_TEST_CACHE, server: { port: uiPort, host: '127.0.0.1' } });
+  cacheDir: process.env.CHAT_TEST_CACHE, server: { port: uiPort, host: '127.0.0.1',
+    // Rust tests create transient filesystem links unrelated to this browser-only fixture.
+    watch: { ignored: ['**/src-tauri/**'] } } });
 await vite.listen();
 const browser = await chromium.launch(testBrowserLaunchOptions({
   channel: testBrowserChannel(process.env.CHAT_TEST_BROWSER), headless: true,
