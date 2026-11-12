@@ -78,7 +78,7 @@ export function useComputerUse(homeId: string, active: boolean) {
     const administrator = ["enableAdministrator", "grantAdministrator", "revokeAdministrator"].includes(action);
     const succeeded = await perform(() => computerUseAction(homeId, action), administrator);
     // A declined prompt updates the attempted state; refresh so the explicit retry stays available.
-    if (!succeeded && action === "grantAdministrator") await refresh();
+    if (!succeeded && (action === "enableAdministrator" || action === "grantAdministrator")) await refresh();
     return succeeded;
   };
   const requestPermission = (permission: ComputerUsePermission) => perform(async () => {

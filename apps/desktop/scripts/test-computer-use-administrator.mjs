@@ -96,11 +96,12 @@ try {
   const owner = start(`--computer-use-authorization-probe=${id}`), readOwner = responses(owner);
   const request = async command => { owner.stdin.write(`${command}\n`); return readOwner(); };
   assert.equal((await request('prepare')).status.attempted, false);
+  console.log('Awaiting immediate UAC consent after opting in for the isolated CUA broker.');
   const enabled = await request('enable');
+  assert.equal(enabled.ok, true, JSON.stringify(enabled));
   assert.equal(enabled.status.requested, true);
-  assert.equal(enabled.status.active, false);
-  assert.equal(enabled.status.attempted, false);
-  console.log('Awaiting UAC consent for the isolated CUA broker.');
+  assert.equal(enabled.status.active, true);
+  assert.equal(enabled.status.attempted, true);
   const granted = await request('prepare');
   assert.equal(granted.ok, true, JSON.stringify(granted));
   assert.equal(granted.status.active, true);
@@ -161,8 +162,7 @@ try {
   await assertGone(lease.broker);
   assert.equal(data(await ordinary.call('check_permissions')).elevated, false);
   console.log('Revocation and Home isolation passed. Awaiting UAC to verify owner-exit cleanup.');
-  await request('enable');
-  assert.equal((await request('grant')).status.active, true);
+  assert.equal((await request('enable')).status.active, true);
   const lastLease = JSON.parse(await fs.readFile(leasePath, 'utf8'));
   const last = await mcp(id);
   assert.equal(data(await last.call('check_permissions')).elevated, true);

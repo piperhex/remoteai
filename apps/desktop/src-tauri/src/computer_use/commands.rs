@@ -84,7 +84,7 @@ pub(crate) async fn computer_use_action(
             #[cfg(windows)]
             {
                 if matches!(action, ComputerUseAction::EnableAdministrator) {
-                    super::administrator::request_on_entry(&root, &home)?;
+                    super::administrator::request(&root, &home)?;
                 } else if matches!(action, ComputerUseAction::GrantAdministrator) {
                     super::administrator::enable(&root, &home)?;
                 } else {

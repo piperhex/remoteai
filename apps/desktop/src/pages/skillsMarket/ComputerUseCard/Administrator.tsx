@@ -1,5 +1,5 @@
 import { ShieldCheck } from "lucide-react";
-import { Checkbox, Modal } from "antd";
+import { Checkbox, Modal, theme } from "antd";
 import { useState } from "react";
 import type { ComputerUseAction, ComputerUseAdministrator } from "../../../api/computerUse";
 import { displayError, uiText } from "../../../../../../shared/localization/uiText";
@@ -14,8 +14,10 @@ interface Props {
 
 export function Administrator({ status, busy, error, onAction }: Props) {
   const [open, setOpen] = useState(false);
+  const { token } = theme.useToken();
   return <>
-    <button type="button" onClick={() => setOpen(true)}
+    <button type="button" className={styles.administratorButton} onClick={() => setOpen(true)}
+      style={{ color: status.active ? "var(--green-dark)" : token.colorError }}
       aria-label={uiText("client.computerUseAdmin.title")} title={uiText("client.computerUseAdmin.title")}>
       <ShieldCheck size={16} />
     </button>

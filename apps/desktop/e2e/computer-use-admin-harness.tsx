@@ -3,6 +3,7 @@ import { mockIPC } from '@tauri-apps/api/mocks';
 import { ConfigProvider, theme } from 'antd';
 import type { ComputerUseStatus } from '../src/api/computerUse';
 import '../src/styles.css';
+import guiStyles from '../src/pages/codexGui/GuiPluginsPage.module.less';
 
 const query = new URLSearchParams(location.search);
 const mode = query.get('state');
@@ -16,9 +17,12 @@ mockIPC(async (command, payload) => {
     const action = (payload as Record<string, unknown>).action;
     if (action === 'enableAdministrator') status.administrator!.requested = true;
     if (action === 'revokeAdministrator') Object.assign(status.administrator!, { requested: false, active: false });
-    if (action === 'grantAdministrator') {
+    if (action === 'enableAdministrator' || action === 'grantAdministrator') {
       document.body.dataset.authorizations = String(Number(document.body.dataset.authorizations) + 1);
-      if (mode === 'denied') throw JSON.stringify({ code: 'client.computerUseAdmin.authorizationFailed' });
+      status.administrator!.attempted = true;
+      if (mode === 'denied' || query.has('deny')) {
+        throw JSON.stringify({ code: 'client.computerUseAdmin.authorizationFailed' });
+      }
       status.administrator!.active = true;
     }
   }
@@ -35,7 +39,8 @@ document.documentElement.dataset.theme = dark ? 'dark' : 'light';
 document.body.style.cssText = 'min-width:0;overflow:auto;padding:32px';
 createRoot(document.getElementById('root')!).render(
   <ConfigProvider theme={{ algorithm: [dark ? theme.darkAlgorithm : theme.defaultAlgorithm, theme.compactAlgorithm] }}>
-    <ApplicationTypography><main style={{ width: '100%', maxWidth: 360 }}>
+    <ApplicationTypography><main className={query.has('gui') ? guiStyles.content : undefined}
+      style={{ width: '100%', maxWidth: 360 }}>
       <ComputerUseCard homeId="fixture" active onBusyChange={() => undefined} />
     </main></ApplicationTypography>
   </ConfigProvider>,

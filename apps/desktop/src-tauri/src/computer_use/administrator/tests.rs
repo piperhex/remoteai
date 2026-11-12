@@ -84,24 +84,63 @@ fn gui_entry_requires_opt_in_and_does_not_repeat_a_declined_prompt() {
     let prompts = std::cell::Cell::new(0);
     let authorize = || {
         prompts.set(prompts.get() + 1);
+        attempts
+            .lock()
+            .unwrap()
+            .insert(state::home_id(&record.home));
         Err(ComputerError::Administrator)
     };
     record.administrator = false;
     state::save(root.path(), &record).unwrap();
     prepare_with(root.path(), &record.home, &attempts, authorize).unwrap();
     assert_eq!(prompts.get(), 0);
-    request_on_entry(root.path(), &record.home).unwrap();
+    assert!(request_with(root.path(), &record.home, authorize).is_err());
     assert_eq!(
         prompts.get(),
-        0,
-        "checking the preference must not show UAC"
+        1,
+        "checking the preference must immediately show UAC"
     );
-    assert!(prepare_with(root.path(), &record.home, &attempts, authorize).is_err());
     prepare_with(root.path(), &record.home, &attempts, authorize).unwrap();
     assert_eq!(prompts.get(), 1);
     let next_launch = Mutex::new(HashSet::new());
     assert!(prepare_with(root.path(), &record.home, &next_launch, authorize).is_err());
     assert_eq!(prompts.get(), 2);
+}
+
+#[test]
+fn explicit_opt_in_is_saved_before_authorization_without_holding_the_installation_lock() {
+    let (root, mut record) = fixture();
+    record.administrator = false;
+    state::save(root.path(), &record).unwrap();
+    let prompts = std::cell::Cell::new(0);
+    request_with(root.path(), &record.home, || {
+        let _guard = CHANGES
+            .try_lock()
+            .expect("authorization must not hold CHANGES");
+        assert!(
+            state::read(root.path(), &state::home_id(&record.home))
+                .unwrap()
+                .unwrap()
+                .administrator
+        );
+        prompts.set(prompts.get() + 1);
+        Ok(())
+    })
+    .unwrap();
+    assert_eq!(prompts.get(), 1);
+}
+
+#[test]
+fn disabled_installations_cannot_request_authorization() {
+    let (root, mut record) = fixture();
+    record.enabled = false;
+    state::save(root.path(), &record).unwrap();
+    assert!(matches!(
+        request_with(root.path(), &record.home, || panic!(
+            "disabled installation prompted"
+        )),
+        Err(ComputerError::Disabled)
+    ));
 }
 
 #[test]

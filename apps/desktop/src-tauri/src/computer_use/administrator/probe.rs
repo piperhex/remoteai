@@ -23,7 +23,7 @@ fn run_probe(id: &str) -> Result<()> {
         let result = match command.as_str() {
             "prepare" => prepare_gui(&record.home),
             "grant" => enable(&root, &record.home),
-            "enable" => super::request_on_entry(&root, &record.home),
+            "enable" => super::request(&root, &record.home),
             "revoke" => revoke(&root, &record.home),
             "status" => Ok(()),
             "exit" => break,

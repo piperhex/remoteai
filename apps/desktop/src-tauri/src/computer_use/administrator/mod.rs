@@ -81,15 +81,23 @@ pub(super) fn revoke(root: &Path, home: &Path) -> Result<()> {
     install::refresh_installed(root, home)
 }
 
-/// Saving the checkbox never opens UAC. Only GUI entry or an explicit retry can request elevation.
-pub(super) fn request_on_entry(root: &Path, home: &Path) -> Result<()> {
-    let _guard = CHANGES.lock().map_err(|_| ComputerError::Storage)?;
-    let id = state::home_id(home);
-    let mut record = state::read(root, &id)?
-        .filter(|record| record.enabled)
-        .ok_or(ComputerError::Disabled)?;
-    record.administrator = true;
-    state::save(root, &record)
+/// An explicit opt-in saves the preference and immediately requests Windows authorization.
+pub(super) fn request(root: &Path, home: &Path) -> Result<()> {
+    request_with(root, home, || enable(root, home))
+}
+
+fn request_with(root: &Path, home: &Path, authorize: impl FnOnce() -> Result<()>) -> Result<()> {
+    {
+        let _guard = CHANGES.lock().map_err(|_| ComputerError::Storage)?;
+        let id = state::home_id(home);
+        let mut record = state::read(root, &id)?
+            .filter(|record| record.enabled)
+            .ok_or(ComputerError::Disabled)?;
+        record.administrator = true;
+        state::save(root, &record)?;
+    }
+    // The prompt can wait for consent; release the installation lock before requesting it.
+    authorize()
 }
 
 pub(super) fn enable(root: &Path, home: &Path) -> Result<()> {

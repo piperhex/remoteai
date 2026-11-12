@@ -118,14 +118,15 @@ it("does not publish a pending response or queue checks after deactivation", asy
   expect(api.computerUseStatus).toHaveBeenCalledTimes(1);
 });
 
-it("keeps declined administrator requests out of the card and refreshes the saved opt-in", async () => {
+it.each(["enableAdministrator", "grantAdministrator"] as const)(
+  "refreshes the saved opt-in after a declined %s and preserves the explicit retry", async action => {
   const waiting = { ...installed,
     administrator: { requested: true, active: false, inherited: false, attempted: true } };
   await act(async () => root.render(<Harness />));
   api.computerUseAction.mockRejectedValueOnce('UAC cancelled').mockResolvedValueOnce({ ...waiting,
     administrator: { ...waiting.administrator, active: true } });
   api.computerUseStatus.mockResolvedValue(waiting);
-  await act(async () => { await hook.run("grantAdministrator"); });
+  await act(async () => { await hook.run(action); });
   expect(hook.error).toBe("");
   expect(hook.administratorError).toBe('UAC cancelled');
   expect(hook.status?.administrator?.requested).toBe(true);
