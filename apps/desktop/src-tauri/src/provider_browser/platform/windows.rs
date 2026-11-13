@@ -43,6 +43,7 @@ pub(super) fn configure_headers(
         // is live for this callback, and WebView2 owns the registered handler until the view closes.
         let result = unsafe {
             view.controller().CoreWebView2().and_then(|core| {
+                super::super::data_windows::install_capture(&core, app.clone(), event.clone())?;
                 super::super::inspector::windows::install(
                     &core,
                     &view.controller(),

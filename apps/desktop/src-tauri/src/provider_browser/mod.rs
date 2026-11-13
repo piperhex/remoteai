@@ -1,10 +1,16 @@
 //! Unprivileged browser tabs hosted inside the Provider list window.
 pub(crate) mod automation;
+pub(crate) mod data;
+#[cfg(windows)]
+mod data_windows;
 pub(crate) mod inspector;
 mod lifecycle;
+pub(crate) mod passwords;
 mod platform;
 pub(crate) mod preview;
 pub(crate) use lifecycle::handle_page_load;
+#[cfg(all(test, windows))]
+mod data_smoke;
 #[cfg(all(test, windows))]
 mod smoke;
 
@@ -118,6 +124,15 @@ fn browser_builder(
         label,
         WebviewUrl::External(blank),
     )
+    .data_directory(
+        owner
+            .app_handle()
+            .path()
+            .app_data_dir()
+            .map_err(|_| BrowserError::Unavailable)?
+            .join("browser-profile"),
+    )
+    .initialization_script(passwords::initialization())
     .initialization_script(include_str!("links.js"))
     .on_navigation(move |url| {
         let allowed = allowed_url(url, dev_origin.as_ref());
@@ -133,6 +148,23 @@ fn browser_builder(
         allowed || url.as_str() == "about:blank"
     })
     .on_download(|_, _| false);
+    #[cfg(all(test, windows))]
+    let builder = if owner.config().identifier == "dev.codex.switch.browser-data-smoke" {
+        let args = owner
+            .config()
+            .app
+            .windows
+            .iter()
+            .find(|window| window.label == "main")
+            .and_then(|window| window.additional_browser_args.as_deref())
+            .unwrap_or_default();
+        builder.additional_browser_args(&args.replace(
+            "--remote-debugging-port=9355",
+            "--remote-debugging-port=9356",
+        ))
+    } else {
+        builder
+    };
     // Windows handles popup events directly on the owning COM apartment; the handler only
     // notifies the frontend, leaving creation of the new tab to the command worker.
     #[cfg(not(windows))]
