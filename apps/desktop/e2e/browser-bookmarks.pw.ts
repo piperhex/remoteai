@@ -8,7 +8,7 @@ test('folder bookmark context actions and manager drag sorting', async ({ page }
       { id: 'second', kind: 'link', title: '第二项', url: 'https://example.test/second', parentId: 'folder', position: 1 },
     ] },
   })));
-  await page.goto('/e2e/browser-bookmarks-harness.html?mode=local');
+  await page.goto('/e2e/browser-bookmarks-harness.html?mode=local', { waitUntil: 'domcontentloaded' });
   await page.locator('.browser-bookmark-item').filter({ hasText: '工作' }).click();
   await page.getByRole('menuitem', { name: '第一项', exact: true }).click({ button: 'right' });
   await page.getByRole('menuitem', { name: '编辑书签', exact: true }).click();
@@ -39,9 +39,10 @@ for (const mode of ['local', 'remote', 'web']) {
         { waitUntil: 'domcontentloaded' });
       const browser = page.locator('.pm-browser');
       const address = browser.getByRole('textbox', { name: '页面地址', exact: true });
-      const nav = page.locator('.sidebar-nav-tools');
-      await expect(nav.getByRole('button').first()).toHaveText('浏览器');
-      await expect(nav.getByRole('button').nth(1)).toHaveText('在线交流');
+      const nav = page.locator('.sidebar-tabs');
+      await expect(nav.locator(':scope > button').filter({ hasText: 'Coze' })
+        .locator('xpath=following-sibling::button[1]')).toHaveText('浏览器');
+      await expect(nav.locator('.sidebar-nav-tools button').first()).toHaveText('在线交流');
       await address.fill('https://example.test/guide'); await address.press('Enter');
       await browser.getByRole('button', { name: '添加书签', exact: true }).click();
       const editor = page.getByRole('dialog', { name: '编辑书签', exact: true });

@@ -78,6 +78,7 @@ const TOOLBOX_NAVIGATION_ITEMS = [
   { page: "dreamSkin", icon: Palette, labelKey: "nav.dreamSkin" },
   { page: "skills", icon: PackageOpen, labelKey: "nav.skills" },
   { page: "coze", icon: Bot, label: "Coze" },
+  BROWSER_ITEM,
 ] as const;
 
 export function isToolboxPage(page: DashboardPage) {
@@ -126,14 +127,12 @@ export function DashboardNavigation({
       {variant !== "top" && TOOLBOX_NAVIGATION_ITEMS
         .filter((item) => variant === "toolbox" || (item.page !== "skills" && item.page !== "dreamSkin"))
         .map(navigationButton)}
-      {variant === "toolbox" && navigationButton(BROWSER_ITEM)}
       {variant === "toolbox" && loungeAvailable && navigationButton(LOUNGE_ITEM)}
       {variant === "toolbox" && navigationButton(DOWNLOADS_ITEM)}
       {variant === "toolbox" && navigationButton(LOG_DIAGNOSTICS_ITEM)}
       {variant === "toolbox" && navigationButton(TOTP_ITEM)}
       {variant === "sidebar" && (
         <div className="sidebar-nav-tools" data-tauri-drag-region>
-          {navigationButton(BROWSER_ITEM)}
           {loungeAvailable && navigationButton(LOUNGE_ITEM)}
           {navigationButton(DOWNLOADS_ITEM)}
           {navigationButton(LOG_DIAGNOSTICS_ITEM)}

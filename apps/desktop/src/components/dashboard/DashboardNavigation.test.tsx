@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import { translate, type Translate } from "../../i18n";
 import { DashboardNavigation, isToolboxPage } from "./DashboardNavigation";
 import { buildDashboardMenuItems } from './dashboardMenuItems';
+import { marketText } from '../../../../../shared/provider-market/i18n';
+import { guiLanguage } from '../../../../../shared/localization/uiText';
 
 const t: Translate = (key, params) => translate("en", key, params);
 
@@ -29,6 +31,7 @@ it('hides lounge everywhere until login and puts its unread badge above download
 describe.each([
   { page: "totp", label: "2FA" },
   { page: "coze", label: "Coze" },
+  { page: "browser", label: marketText(guiLanguage())('market.browserNavigation') },
 ] as const)("$label navigation", ({ page, label }) => {
   it.each(["sidebar", "toolbox"] as const)("selects the independent page from the %s menu", async (variant) => {
     Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -47,6 +50,15 @@ describe.each([
         const previousLabel = t(variant === "toolbox" ? "nav.skills" : "nav.tokenUsage");
         const previousIndex = buttons.findIndex((item) => item.textContent === previousLabel);
         expect(buttons[previousIndex + 1]).toBe(button);
+      }
+      if (page === "browser") {
+        expect(buttons[buttons.findIndex(item => item.textContent === 'Coze') + 1]).toBe(button);
+        expect(container.querySelector('.sidebar-nav-tools')?.contains(button!)).not.toBe(true);
+        const menu = buildDashboardMenuItems(t, true, true);
+        const keys = menu.navigate?.map(item => item && 'key' in item ? item.key : undefined) ?? [];
+        expect(keys[keys.indexOf('coze') + 1]).toBe('browser');
+        const searchIds = menu.search.map(item => item.id);
+        expect(searchIds[searchIds.indexOf('coze') + 1]).toBe('browser');
       }
       await act(async () => button?.click());
       expect(onPageChange).toHaveBeenCalledWith(page);

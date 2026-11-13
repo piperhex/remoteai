@@ -1453,7 +1453,7 @@ export function DashboardApp() {
           {page === "totp" && <TotpPage accounts={manager.accounts} manager={totpManager} t={t} />}
           {page === "downloads" && <DownloadsPage auth={cloud.state} />}
           <RetainedView active={page === "browser"}>
-            <BrowserPage language={language} active={page === "browser"} />
+            <BrowserPage language={language} active={page === "browser"} onClose={() => setPage("codexGui")} />
           </RetainedView>
           {page === "lounge" && <LoungePage controller={lounge.controller} onLogin={openCloudLogin}
             onAssistance={isDesktopApp ? assistanceStore.request : undefined} />}

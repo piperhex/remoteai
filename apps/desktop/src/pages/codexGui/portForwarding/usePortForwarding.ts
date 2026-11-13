@@ -4,6 +4,7 @@ import { readPortMappings, savePortMappings } from './settings';
 import { invoke } from '@tauri-apps/api/core';
 import { mappingSyncScope, type MappingDocument } from '../../../../../../shared/port-mapping/sync';
 import { useMappingSync } from '../../../../../../shared/port-mapping/useMappingSync';
+import { browserMappings } from '../../../../../../shared/port-mapping/browserMappings';
 
 export function usePortForwarding(options: { client: ForwardingClient; scope: string; connected: boolean }) {
   const { client, scope, connected } = options;
@@ -19,6 +20,7 @@ export function usePortForwarding(options: { client: ForwardingClient; scope: st
   const syncStatus = useMappingSync(service, { scope, storage: localStorage, exchange, connected });
   useEffect(() => { service.setConnected(connected); }, [service, connected]);
   useEffect(() => { service.activate(); return service.dispose; }, [service]);
+  useEffect(() => browserMappings.register(scope, service), [scope, service]);
   useEffect(() => { savePortMappings(scope, entries); }, [scope, entries]);
   return { entries, service, syncStatus };
 }
