@@ -1,8 +1,9 @@
 import type { Page } from '@playwright/test';
 import { createCliGuiFixture, sidebarCodexThread, cliGitStatus } from './cli-gui-fixture';
+import type { Thread } from '../../../shared/conversation/types';
 
 export async function localBackend(page: Page, ready = true,
-  options: { codexReady?: boolean; manualInstall?: boolean } = {}) {
+  options: { codexReady?: boolean; manualInstall?: boolean; threads?: Thread[] } = {}) {
   const fixture = createCliGuiFixture(ready, options);
   const modelRequests: { cacheOnly?: boolean }[] = [];
   const commands: string[] = [];
@@ -27,8 +28,10 @@ export async function localBackend(page: Page, ready = true,
     if (command === 'codex_gui_model_settings') result = { threadId: null, selection: null, revision: 0 };
     if (command === 'codex_gui_request') {
       let data: unknown = { data: [], nextCursor: null };
-      if (args.request.operation === 'list') data = { data: [sidebarCodexThread], nextCursor: null };
-      if (args.request.operation === 'read') data = { thread: sidebarCodexThread };
+      if (args.request.operation === 'list') data = {
+        data: options.threads ? (args.request.archived ? [] : options.threads) : [sidebarCodexThread], nextCursor: null };
+      if (['read', 'resume'].includes(args.request.operation)) data = {
+        thread: options.threads?.find(thread => thread.id === args.request.threadId) ?? sidebarCodexThread };
       if (args.request.operation === 'models') {
         modelRequests.push(args.request);
         data = { data: fixture.models(), nextCursor: null };

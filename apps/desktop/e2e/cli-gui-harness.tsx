@@ -19,6 +19,10 @@ import { RemoteGuiTools } from '../../../shared/conversation/remote/RemoteGuiToo
 import { RemoteGuiProject } from '../../../shared/conversation/remote/RemoteGuiProject';
 import { useRemoteCliInstaller } from '../../../shared/conversation/remote/useRemoteCliInstaller';
 import { getGuiController } from '../src/pages/codexGui/session';
+import { runningFixtureThreads, runningFixtureSidebar } from './running-conversations-fixture';
+import type { GuiEvent } from '../../../shared/conversation/types';
+import { SIDEBAR_EVENT } from '../../../shared/remote-chat/sidebar';
+import { historyDelta, type HistoryVersion } from '../../../shared/remote-chat/historySync';
 import { saveGuiSkin } from '../src/pages/codexGui/guiSkin';
 import { useDreamSkin } from '../src/pages/codexGui/useDreamSkin';
 import { DashboardNavigation } from '../src/components/dashboard/DashboardNavigation';
@@ -39,14 +43,23 @@ setInterfaceLanguage('zh');
 saveGlobalFontSize(params.has('large') ? 20 : 14);
 const fixture = createCliGuiFixture(!params.has('missing'), { manualInstall: params.has('progress') });
 const modelRequests: unknown[] = [];
+const runningThreads = params.has('running') ? runningFixtureThreads() : null;
+let runningEvent: (event: GuiEvent) => void = () => {};
 saveProject({ path: 'F:/projects/remoteai', name: 'Remote AI' });
-const controller = new ChatController(events => ({ start() { events.mode('direct'); events.ready(); }, stop() {},
+const controller = new ChatController(events => ({ start() {
+  runningEvent = events.event; events.mode('direct'); events.ready();
+}, stop() {},
   request: async <T,>(method: string, value?: unknown): Promise<T> => {
-    const body = value as { operation?: string } | undefined;
+    const body = value as { operation?: string; threadId?: string; known?: HistoryVersion; archived?: boolean } | undefined;
     if (method === 'connect') return [] as T;
     if (body?.operation === 'queueRead') return { revision: 0, threads: {} } as T;
-    if (body?.operation === 'list') return { data: [sidebarCodexThread], nextCursor: null } as T;
-    if (body?.operation === 'read') return { thread: sidebarCodexThread } as T;
+    if (body?.operation === 'list') return {
+      data: runningThreads ? (body.archived ? [] : runningThreads.slice(0, 3)) : [sidebarCodexThread],
+      sidebar: runningThreads ? runningFixtureSidebar(runningThreads) : undefined, nextCursor: null } as T;
+    if (body?.operation === 'read' || body?.operation === 'resume') return {
+      thread: runningThreads?.find(thread => thread.id === body.threadId) ?? sidebarCodexThread } as T;
+    if (body?.operation === 'syncHistory') return historyDelta(
+      runningThreads?.find(thread => thread.id === body.threadId) ?? sidebarCodexThread, body.known) as T;
     if (body?.operation === 'models' || body?.operation === 'modelsRefresh') {
       modelRequests.push(body);
       return { data: fixture.models() } as T;
@@ -117,4 +130,17 @@ function MobilePages() {
 }
 if (mode !== 'local') controller.start();
 Object.assign(window, { cliFixture: fixture, cliModelRequests: modelRequests, setCliLanguage: setInterfaceLanguage });
+if (runningThreads) Object.assign(window, {
+  archiveRunningConversations: () => mode === 'local'
+    ? getGuiController().filter('', true) : controller.list({ archived: true }),
+  runningConversationArchived: () => mode === 'local'
+    ? getGuiController().getSnapshot().archived : controller.snapshot().selectedArchived,
+  finishRunningConversations: (count: number) => {
+  runningThreads.slice(0, count).forEach(thread => {
+    thread.status = { type: 'idle' };
+    thread.turns = thread.turns!.map(turn => ({ ...turn, status: 'completed' }));
+    runningEvent({ method: 'turn/completed', params: { threadId: thread.id, turn: thread.turns[0] } });
+  });
+  runningEvent({ method: SIDEBAR_EVENT, params: runningFixtureSidebar(runningThreads, 2) });
+} });
 createRoot(document.getElementById('root')!).render(params.has('swipe') ? <MobilePages /> : <Harness />);

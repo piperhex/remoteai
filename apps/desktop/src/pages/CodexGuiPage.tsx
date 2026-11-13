@@ -25,6 +25,7 @@ import { formatRemoteError } from "../../../../shared/localization/errors";
 import { DiffTextContext } from "../../../../shared/chat/diffText";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useVisibleGuiState } from './codexGui/useVisibleGuiState';
+import { LocalRunningConversations } from './codexGui/LocalRunningConversations';
 import { Alert, Button, Popover } from "antd";
 import { PanelToggleButton } from '../../../../shared/chat/PanelToggleButton';
 import { PanelBottom, PanelLeftClose, PanelLeftOpen, RefreshCw } from "lucide-react";
@@ -160,7 +161,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
     <div className={styles.workspace}>
       <TaskRecoveryPrompt client={localRecovery} enabled={active && state.connection === 'ready'}
         openThread={openTaskConversation} />
-      <header className={`${styles.header} workspace-toolbar`} data-tauri-drag-region={isDesktopApp || undefined}>
+      <header className={`${styles.header} workspace-toolbar`} data-running-conversations-host
+        data-tauri-drag-region={isDesktopApp || undefined}>
         <Button type="text" icon={collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
           aria-label={collapsed ? uiText("client.composer.expandConversationList") : uiText("client.composer.collapseConversationList")} onClick={() => setCollapsed(!collapsed)} />
         {collapsed && <FocusModeButton focused={focused} onToggleFocus={onToggleFocus} />}
@@ -188,6 +190,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
           {view === "conversation" && (external ? <CliChangesButton /> : <ConversationChangesButton value={current} />)}
         </div>
         {focused && windowControls && <div className={styles.focusWindowControls}>{windowControls}</div>}
+        <LocalRunningConversations state={state} onSelect={openTaskConversation}
+          onOpen={() => setView('conversation')} />
       </header>
       {external && cli && <CliConversationPane cwd={project} dictation={dictationClient}
         active={workspaceActive} renderMessages={props => <CliLocalMessages {...props} />}
