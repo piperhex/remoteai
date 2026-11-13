@@ -35,6 +35,7 @@ const dark = params.has('dark');
 const changes = { turns: [{ id: 'edit', status: 'completed', items: [],
   diff: 'diff --git a/example.ts b/example.ts\n--- a/example.ts\n+++ b/example.ts\n@@ -1 +1 @@\n-old\n+updated\n' }] };
 const client = createGuiToolsClient(<T,>(request: object) => browserRequest<T>(request as ProjectBrowserRequest));
+if (params.has('toolLifecycle')) client.desktop.open = () => new Promise(() => undefined);
 client.git = params.has('submodules') ? repositoryFixture(browserRoot) : createAsyncGitFixture();
 if (params.has('largeGit')) client.git = largeGitFixture();
 if (params.has('font')) localStorage.setItem('codex-switch:global-font-size', params.get('font')!);
@@ -96,9 +97,10 @@ function App() {
   const content = mode === 'local' ? <DetailsWorkspace selected={cwd} active contentClassName="chat-diff-layout">
     {tools}</DetailsWorkspace>
     : <ChatFileContext.Provider value={remoteFiles}>
-      <ChatDetailsWorkspace selected={cwd} active enabled>{tools}</ChatDetailsWorkspace>
+      <ChatDetailsWorkspace selected={cwd} active enabled={!params.has('toolLifecycle')}>{tools}</ChatDetailsWorkspace>
     </ChatFileContext.Provider>;
-  if (params.has('submodules') || params.has('largeGit')) return <ConfigProvider theme={{ algorithm: [
+  const useTypography = params.has('submodules') || params.has('largeGit') || params.has('toolLifecycle');
+  if (useTypography) return <ConfigProvider theme={{ algorithm: [
     dark ? theme.darkAlgorithm : theme.defaultAlgorithm, ...(mode === 'web' ? [] : [theme.compactAlgorithm]),
   ] }}><ApplicationTypography><div style={{ height: '100dvh' }}>{content}</div></ApplicationTypography></ConfigProvider>;
   return <ConfigProvider theme={{ algorithm: dark ? theme.darkAlgorithm : theme.defaultAlgorithm }}>
