@@ -43,12 +43,14 @@ fn opens_conversation_browser() {
     use tauri::WebviewUrl;
     let mut context = tauri::generate_context!();
     context.config_mut().identifier = "dev.codex.switch.conversation-browser-smoke".into();
+    let debug_port = std::env::var("BROWSER_TEST_DEBUG_PORT").unwrap_or_else(|_| "9333".into());
+    let debug_port: u16 = debug_port.parse().expect("valid test debugging port");
     for window in &mut context.config_mut().app.windows {
         window.create = false;
         window
             .additional_browser_args
             .get_or_insert_default()
-            .push_str(" --remote-debugging-port=9333");
+            .push_str(&format!(" --remote-debugging-port={debug_port}"));
     }
     context.config_mut().build.dev_url = Some("http://127.0.0.1:1552".parse().unwrap());
     tauri::Builder::default().any_thread()
@@ -60,6 +62,7 @@ fn opens_conversation_browser() {
             super::codex_gui_browser, super::codex_gui_browser_place,
             super::super::provider_browser_sync, super::super::provider_browser_action,
             super::super::provider_browser_close,
+            super::super::preview::provider_browser_preview,
         ])
         .setup(|app| {
             let url = "http://127.0.0.1:1552/e2e/website-tabs-harness.html?mode=local&native=1&origin=http://127.0.0.1:1553";

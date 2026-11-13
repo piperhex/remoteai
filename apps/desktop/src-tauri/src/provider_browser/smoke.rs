@@ -20,7 +20,8 @@ fn opens_provider_browser() {
     tauri::Builder::default().any_thread()
         .on_page_load(handle_page_load)
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![provider_browser_sync, provider_browser_action, provider_browser_close])
+        .invoke_handler(tauri::generate_handler![provider_browser_sync, provider_browser_action, provider_browser_close,
+            preview::provider_browser_preview])
         .setup(|app| {
             let url = "http://127.0.0.1:1499/e2e/provider-market-harness.html?mode=local&browser=1&language=zh";
             crate::webview_windows::builder(app.handle(), "main", WebviewUrl::External(url.parse()?))

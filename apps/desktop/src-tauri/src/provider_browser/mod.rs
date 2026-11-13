@@ -2,6 +2,7 @@
 pub(crate) mod automation;
 mod lifecycle;
 mod platform;
+pub(crate) mod preview;
 pub(crate) use lifecycle::handle_page_load;
 #[cfg(all(test, windows))]
 mod smoke;

@@ -12,6 +12,7 @@ mod tests;
 
 pub(crate) use protocol::{Action, Request};
 pub(crate) use registry::State;
+pub(super) use screenshot::{capture_image, BrowserImage};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Manager, Webview};
 

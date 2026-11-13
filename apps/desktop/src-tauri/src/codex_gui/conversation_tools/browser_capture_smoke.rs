@@ -39,6 +39,7 @@ fn opens_browser_capture_tool() {
             automation::codex_gui_browser,
             automation::codex_gui_browser_place,
             provider_browser::provider_browser_sync,
+            provider_browser::preview::provider_browser_preview,
             provider_browser::provider_browser_action,
             provider_browser::provider_browser_close
         ])

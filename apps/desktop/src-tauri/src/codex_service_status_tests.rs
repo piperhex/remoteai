@@ -81,6 +81,7 @@ fn opens_native_status_browser() {
             get_codex_service_status,
             crate::provider_browser::automation::codex_gui_browser,
             crate::provider_browser::provider_browser_sync,
+            crate::provider_browser::preview::provider_browser_preview,
             crate::provider_browser::provider_browser_action,
             crate::provider_browser::provider_browser_close
         ])

@@ -487,6 +487,7 @@ pub fn run() {
             codex_gui::file_preview::codex_gui_file_preview_host,
             codex_gui::file_preview::website::codex_gui_sync_website_preview,
             provider_browser::provider_browser_sync,
+            provider_browser::preview::provider_browser_preview,
             provider_browser::provider_browser_action,
             provider_browser::provider_browser_close,
             provider_browser::automation::codex_gui_browser,
