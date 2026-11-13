@@ -13,6 +13,13 @@ for (const mode of ['local', 'remote', 'web']) for (const enlarged of [false, tr
     await address.fill('默认搜索 测试'); await address.press('Enter');
     await expect(address).toHaveValue('https://www.google.com/search?q=%E9%BB%98%E8%AE%A4%E6%90%9C%E7%B4%A2+%E6%B5%8B%E8%AF%95');
     await expect(browser.locator('iframe').contentFrame().getByRole('heading')).toHaveText('Search result fixture');
+    await settings.click();
+    const quickAdd = page.locator('.browser-bookmark-settings-popup').getByRole('button', { name: '添加书签', exact: true });
+    await quickAdd.click(); await expect(quickAdd).toBeDisabled();
+    await expect(page.getByRole('dialog', { name: '添加书签' })).toHaveCount(0);
+    await page.screenshot({ path: info.outputPath(`${mode}-${enlarged ? 'dark-20px' : 'light-14px'}-quick-bookmark.png`),
+      animations: 'disabled' });
+    await settings.click();
     for (const [name, engine, host] of [['百度', 'baidu', 'www.baidu.com'], ['必应', 'bing', 'www.bing.com'],
       ['DuckDuckGo', 'duckduckgo', 'duckduckgo.com']]) {
       await settings.click();
