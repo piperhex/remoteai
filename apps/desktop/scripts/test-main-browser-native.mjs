@@ -54,6 +54,7 @@ try {
     await child.getByRole('textbox', { name: 'draft' }).fill('retained');
     await chrome.getByRole('button', { name: '浏览器设置', exact: true }).click();
     const menu = page.locator('.browser-bookmark-settings-popup');
+    await expect(menu.getByRole('button', { name: '关闭', exact: true })).toHaveCount(0);
     await expect(menu.getByRole('button', { name: '在浏览器中打开', exact: true })).toBeEnabled();
     await expect(menu.getByRole('checkbox', { name: '桌面版网站', exact: true })).toBeChecked();
     const prefix = `windows-${mode}-${enlarged ? 'dark-20px-narrow' : 'light-14px'}`;
@@ -64,13 +65,19 @@ try {
     await page.screenshot({ path: fileURLToPath(new URL(`${prefix}-mappings.png`, output)), animations: 'disabled' });
     await mappings.getByRole('button', { name: 'Close', exact: true }).click();
     await chrome.getByRole('button', { name: '浏览器设置', exact: true }).click();
-    await menu.getByRole('button', { name: '关闭', exact: true }).click();
+    await expect(menu.getByRole('button', { name: '关闭', exact: true })).toHaveCount(0);
+    await chrome.getByRole('button', { name: '浏览器设置', exact: true }).click();
+    await page.locator('nav').getByRole('button', { name: 'Coze', exact: true }).click();
     await expect(chrome).toBeHidden();
     await page.locator('nav').getByRole('button', { name: '浏览器', exact: true }).click();
     await expect(chrome).toBeVisible();
     await expect.poll(() => context.pages().includes(child)).toBe(true);
     await expect(child.getByRole('textbox', { name: 'draft' })).toHaveValue('retained');
   }
+  await page.setViewportSize({ width: 560, height: 900 });
+  await page.locator('.browser-main-page').getByRole('button', { name: '浏览器设置', exact: true }).click();
+  await expect(page.locator('.browser-bookmark-settings-popup').getByRole('button', { name: '关闭', exact: true }))
+    .toHaveCount(0);
   console.log('Native browser navigation, retained tabs, settings and mapping dialogs verified in both modes.');
 } catch (error) {
   if (page) {

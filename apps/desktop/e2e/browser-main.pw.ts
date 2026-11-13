@@ -16,6 +16,7 @@ for (const mode of ['local', 'remote']) for (const enlarged of [false, true]) {
       animations: 'disabled',
     });
     await settings.click();
+    await expect(menu.getByRole('button', { name: '关闭', exact: true })).toHaveCount(0);
     await expect(menu.getByRole('button', { name: '在浏览器中打开', exact: true })).toBeDisabled();
     await expect(menu.getByRole('checkbox', { name: '桌面版网站', exact: true })).toBeChecked();
     await expect(menu.getByRole('checkbox', { name: '桌面版网站', exact: true })).toBeDisabled();
@@ -38,7 +39,8 @@ for (const mode of ['local', 'remote']) for (const enlarged of [false, true]) {
     await menu.getByRole('button', { name: '在浏览器中打开', exact: true }).click();
     const popup = await popupPromise;
     await expect(popup).toHaveURL('http://127.0.0.1:18306/'); await popup.close();
-    await menu.getByRole('button', { name: '关闭', exact: true }).click();
+    await settings.click();
+    await page.locator('nav').getByRole('button', { name: 'Coze', exact: true }).click();
     await expect(browser).toBeHidden();
     await page.locator('nav').getByRole('button', { name: '浏览器', exact: true }).click();
     await expect(frame.getByRole('textbox', { name: 'draft' })).toHaveValue('retained');
