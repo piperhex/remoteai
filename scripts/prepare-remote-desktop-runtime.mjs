@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { cp, mkdir, readFile, readdir, rename, writeFile } from 'node:fs/promises';
-import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDesktopVideo } from './build-desktop-video.mjs';
 import { buildDesktopVideoMacos } from './build-desktop-video-macos.mjs';
+import { extractVerifiedWindowsZip } from './extract-verified-windows-zip.mjs';
 import { prepareDesktopPrivacy } from './prepare-desktop-privacy.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -39,13 +39,7 @@ export async function prepareDesktopVideoRuntime() {
   if (createHash('sha256').update(await readFile(archive)).digest('hex') !== hash) {
     throw new Error('Desktop video runtime checksum mismatch');
   }
-  const powershell = join(process.env.SystemRoot || 'C:\\Windows', 'System32/WindowsPowerShell/v1.0/powershell.exe');
-  const result = spawnSync(powershell, ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command',
-    'Expand-Archive -LiteralPath $env:CSW_RUNTIME_ARCHIVE -DestinationPath $env:CSW_RUNTIME_EXTRACT -Force'], {
-    env: { ...process.env, CSW_RUNTIME_ARCHIVE: archive, CSW_RUNTIME_EXTRACT: extracted }, windowsHide: true,
-    stdio: 'inherit',
-  });
-  if (result.error || result.status !== 0) throw new Error('Desktop video runtime extraction failed');
+  await extractVerifiedWindowsZip(archive, extracted);
   await mkdir(destination, { recursive: true });
   for (const name of await readdir(join(extracted, build, 'bin'))) {
     if (name === 'ffmpeg.exe' || name.endsWith('.dll')) {

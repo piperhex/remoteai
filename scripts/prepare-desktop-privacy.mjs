@@ -4,6 +4,7 @@ import { cp, mkdir, readFile, readdir, rename, writeFile } from 'node:fs/promise
 import { spawnSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { extractVerifiedWindowsZip } from './extract-verified-windows-zip.mjs';
 import { resolveCmakeTool } from './resolve-cmake-tool.mjs';
 import { resolveVisualStudioGenerator } from './resolve-visual-studio-generator.mjs';
 
@@ -41,10 +42,7 @@ async function driver() {
     throw new Error('Privacy display driver checksum mismatch');
   }
   const extracted = join(cache, 'driver');
-  run(join(process.env.SystemRoot || 'C:\\Windows', 'System32/WindowsPowerShell/v1.0/powershell.exe'),
-    ['-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command',
-    'Expand-Archive -LiteralPath $env:PRIVACY_ARCHIVE -DestinationPath $env:PRIVACY_EXTRACT -Force'],
-  { ...process.env, PRIVACY_ARCHIVE: archive, PRIVACY_EXTRACT: extracted });
+  await extractVerifiedWindowsZip(archive, extracted);
   const folder = await findInf(extracted);
   if (!folder) throw new Error('Privacy display driver package is incomplete');
   const target = join(destination, 'privacy-driver');
