@@ -20,6 +20,7 @@ import type { CommandMetrics } from '../../../shared/remote-chat/commandMetrics'
 interface Page { thread: Thread; page: HistoryPage; commandMetrics?: CommandMetrics }
 const params = new URLSearchParams(location.search);
 const mode = params.get('mode') ?? 'local';
+await (mode === 'web' ? import('../../web/src/styles.css') : import('../src/styles.css'));
 const dark = params.has('dark');
 document.documentElement.dataset.theme = dark ? 'dark' : 'light';
 if (dark) for (const [role, color] of Object.entries(darkColors)) {
@@ -68,7 +69,7 @@ function Harness() {
               value={value ? { ...conversation(value.thread), historyPage: value.page } : undefined}
               active={active} onLoadOlder={older} footer={footer} />
           </div> : <div className="chat-conversation">
-            <ChatMessages thread={value?.thread ?? null} hasMore={value?.page.hasMore}
+            <ChatMessages thread={value?.thread ?? null} hasMore={value?.page.hasMore} active={active}
               loadingMore={loading} loadOlder={async () => { await older(); }} footer={footer} />
           </div>}
         </main>
