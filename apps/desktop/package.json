@@ -80,6 +80,7 @@
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@tauri-apps/cli": "^2.8.0",
+    "@types/jsdom": "^21.1.7",
     "@types/katex": "^0.16.8",
     "@types/linkify-it": "^5.0.0",
     "@types/mdast": "^4.0.4",

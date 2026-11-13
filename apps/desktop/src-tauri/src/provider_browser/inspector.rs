@@ -22,8 +22,11 @@ pub(crate) enum Action {
     Status,
     Close,
     Place {
+        // Non-Windows hosts still deserialize the shared placement request.
+        #[cfg_attr(not(windows), allow(dead_code))]
         dock: Dock,
         bounds: Bounds,
+        #[cfg_attr(not(windows), allow(dead_code))]
         visible: bool,
     },
 }
