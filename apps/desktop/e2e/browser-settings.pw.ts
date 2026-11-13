@@ -45,3 +45,24 @@ for (const mode of ['local', 'remote', 'web']) for (const enlarged of [false, tr
     await expect(address).toHaveValue('http://127.0.0.1:18306/');
   });
 }
+
+for (const mode of ['local', 'remote', 'web']) {
+  test(`${mode} numeric searches never navigate to normalized IP addresses`, async ({ page }, info) => {
+    const navigations: string[] = [];
+    await page.route('https://www.google.com/search?*', route => {
+      navigations.push(route.request().url());
+      return route.fulfill({ contentType: 'text/html', body: '<h1>Numeric search result</h1>' });
+    });
+    await page.goto(`/e2e/browser-bookmarks-harness.html?mode=${mode}`, { waitUntil: 'domcontentloaded' });
+    const address = page.getByRole('textbox', { name: '页面地址', exact: true });
+    for (const query of ['666', '664656', '666']) {
+      await address.fill(query); await address.press('Enter');
+      await expect(address).toHaveValue(`https://www.google.com/search?q=${query}`);
+      await expect(page.locator('iframe').contentFrame().getByRole('heading')).toHaveText('Numeric search result');
+    }
+    // Observe beyond navigation completion to catch an unintended repeated load.
+    await page.waitForTimeout(1500);
+    expect(navigations).toEqual(['666', '664656', '666'].map(query => `https://www.google.com/search?q=${query}`));
+    await page.screenshot({ path: info.outputPath(`${mode}-numeric-search-666.png`) });
+  });
+}

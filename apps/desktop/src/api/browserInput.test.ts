@@ -26,6 +26,21 @@ it('keeps URLs, local ports and IPv6 separate from searches', () => {
   }
 });
 
+it('searches numeric input before URL normalization can turn it into an IPv4 address', () => {
+  for (const engine of ['google', 'baidu', 'bing', 'duckduckgo'] as const) {
+    for (const protocol of ['http:', 'https:'] as const) {
+      for (const input of ['666', ' 666 ', '664656', '00123', '0', '4294967295', '0x29a']) {
+        const url = browserInput(input, engine, protocol)!;
+        expect(url.searchParams.get(engine === 'baidu' ? 'wd' : 'q')).toBe(input.trim());
+        expect(url.protocol).toBe('https:');
+      }
+    }
+  }
+  expect(browserInput('http://666')?.href).toBe('http://0.0.2.154/');
+  expect(browserInput('0.0.2.154')?.href).toBe('https://0.0.2.154/');
+  expect(browserInput('666/path.with.dots')?.searchParams.get('q')).toBe('666/path.with.dots');
+});
+
 it('persists the engine, falls back to Google and reports failed storage without losing the current setting', () => {
   const values = new Map<string, string>();
   const storage = { getItem: (key: string) => values.get(key) ?? null,
