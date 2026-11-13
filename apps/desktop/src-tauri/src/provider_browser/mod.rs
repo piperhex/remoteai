@@ -1,5 +1,6 @@
 //! Unprivileged browser tabs hosted inside the Provider list window.
 pub(crate) mod automation;
+pub(crate) mod inspector;
 mod lifecycle;
 mod platform;
 pub(crate) mod preview;
