@@ -2,10 +2,10 @@ import { build } from 'esbuild';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDesktopUnlock } from './build-desktop-unlock.mjs';
+import { extractVerifiedWindowsZip } from './extract-verified-windows-zip.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const version = 'v24.21.0';
@@ -38,12 +38,7 @@ export async function prepareDesktopService() {
   verify(await readFile(archive));
   const source = resolve(extracted, `node-${version}-win-x64`);
   if (!existsSync(resolve(source, 'node.exe'))) {
-    const powershell = resolve(process.env.SystemRoot || 'C:\\Windows', 'System32/WindowsPowerShell/v1.0/powershell.exe');
-    const result = spawnSync(powershell, ['-NoProfile', '-NonInteractive', '-Command',
-      'Expand-Archive -LiteralPath $env:CSW_SERVICE_ARCHIVE -DestinationPath $env:CSW_SERVICE_EXTRACT -Force'],
-    { windowsHide: true, stdio: 'inherit', env: { ...process.env,
-      CSW_SERVICE_ARCHIVE: archive, CSW_SERVICE_EXTRACT: extracted } });
-    if (result.error || result.status !== 0) throw new Error('Node runtime extraction failed');
+    await extractVerifiedWindowsZip(archive, extracted);
   }
   await copyFile(resolve(source, 'node.exe'), resolve(output, 'node.exe'));
   await copyFile(resolve(source, 'LICENSE'), resolve(output, 'LICENSE.node'));
