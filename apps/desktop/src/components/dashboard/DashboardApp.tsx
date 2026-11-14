@@ -1345,7 +1345,7 @@ export function DashboardApp() {
           </aside>
         )}
         <header className="app-menu" hidden={sidebarNavigationEnabled &&
-          (page === "codexGui" || page === "coze" || page === "lounge")}>
+          (page === "codexGui" || page === "coze" || page === "lounge" || page === "browser")}>
           {!sidebarNavigationEnabled && (
             <button type="button" className="brand" onClick={openRepository}
               aria-label={t("help.github")} title={t("help.github")}>
@@ -1353,7 +1353,7 @@ export function DashboardApp() {
               <span className="brand-name">Remote AI</span>
             </button>
           )}
-          {page !== "codexGui" && page !== "coze" && <AnnouncementBanner link={announcementLink}
+          {page !== "codexGui" && page !== "coze" && page !== "browser" && <AnnouncementBanner link={announcementLink}
             onOpenLink={openAnnouncementLink}
             scrollDurationSeconds={announcement?.scrollDurationSeconds ?? 22}
             style={announcementStyle} text={announcementText}

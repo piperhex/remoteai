@@ -17,6 +17,17 @@ for (const width of [1440, 900]) test(`retains account tables and charts across 
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     const navigation = page.locator('.sidebar-tabs');
     await navigation.getByRole('button', { name: 'Accounts', exact: true }).click();
+    await expect(page.locator('.announcement-slot')).toBeVisible();
+    await navigation.getByRole('button', { name: 'Browser', exact: true }).click();
+    await expect(page.locator('.announcement-slot')).toHaveCount(0);
+    await expect(page.locator('.app-menu')).toBeHidden();
+    const browser = page.locator('.browser-main-page');
+    await expect(browser).toBeVisible();
+    const titlebarBounds = (await page.locator('.window-titlebar').boundingBox())!;
+    expect((await browser.boundingBox())!.y).toBeCloseTo(titlebarBounds.y + titlebarBounds.height, 0);
+    await page.screenshot({ path: info.outputPath(`desktop-browser-no-announcement-${width}.png`) });
+    await navigation.getByRole('button', { name: 'Accounts', exact: true }).click();
+    await expect(page.locator('.announcement-slot')).toBeVisible();
     const accountBody = page.locator('#account-panel-accounts .ant-table-body');
     await expect(accountBody).toBeVisible();
     const accountNode = await accountBody.elementHandle();

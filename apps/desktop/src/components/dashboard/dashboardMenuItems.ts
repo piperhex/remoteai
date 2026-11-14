@@ -33,6 +33,7 @@ function fileItems(t: Translate, desktopApp: boolean): MenuProps["items"] {
 function navigateItems(t: Translate, authenticated: boolean): MenuProps["items"] {
   return [
     { key: "codex-gui", label: t("nav.codexGui") },
+    { key: "browser", label: marketText(guiLanguage())("market.browserNavigation") },
     { key: "account-management", label: t("nav.accounts"), children: [
       { key: "accounts", label: t("accounts.officialTab") },
       { key: "providers", label: t("nav.providers") },
@@ -43,7 +44,6 @@ function navigateItems(t: Translate, authenticated: boolean): MenuProps["items"]
     { key: "dream-skin", label: t("nav.dreamSkin") },
     { key: "skills", label: t("nav.skills") },
     { key: "coze", label: "Coze" },
-    { key: "browser", label: marketText(guiLanguage())("market.browserNavigation") },
     { key: "sessions", label: t("nav.sessions") },
     ...(authenticated ? [{ key: "lounge", label: displayText("client.lounge.title") }] : []),
     { key: "downloads", label: t("downloads.title") },
@@ -119,12 +119,12 @@ function searchItems(t: Translate, authenticated: boolean, desktopApp: boolean):
     item("navigation-style-top", t("settings.navigationStyle.top"), t("windowMenu.view")),
     item("navigation-style-sidebar", t("settings.navigationStyle.sidebar"), t("windowMenu.view")),
     item("codex-gui", t("nav.codexGui"), t("windowMenu.navigate")),
+    item("browser", marketText(guiLanguage())("market.browserNavigation"), t("windowMenu.navigate")),
     item("accounts", t("nav.accounts"), t("windowMenu.navigate")),
     item("providers", t("nav.providers"), t("windowMenu.navigate")),
     item("claude-code", t("nav.claudeCode"), t("windowMenu.navigate")),
     item("token-usage", t("nav.tokenUsage"), t("windowMenu.navigate")),
     item("coze", "Coze", t("windowMenu.navigate")),
-    item("browser", marketText(guiLanguage())("market.browserNavigation"), t("windowMenu.navigate")),
     item("sessions", t("nav.sessions"), t("windowMenu.navigate")),
     ...(authenticated ? [item("lounge", displayText("client.lounge.title"), t("windowMenu.navigate"))] : []),
     item("downloads", t("downloads.title"), t("windowMenu.navigate")),

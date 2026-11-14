@@ -56,8 +56,12 @@ interface DashboardNavigationProps {
   variant?: "top" | "sidebar" | "toolbox";
 }
 
+const BROWSER_ITEM = { page: "browser", icon: Globe,
+  get label() { return marketText(guiLanguage())('market.browserNavigation'); } } as const;
+
 const NAVIGATION_ITEMS = [
   { page: "codexGui", icon: SquareTerminal, labelKey: "nav.codexGui" },
+  BROWSER_ITEM,
   { page: "accounts", icon: UserRound, labelKey: "nav.accounts" },
   { page: "sessions", icon: FolderOpen, labelKey: "nav.sessions" },
 ] as const;
@@ -68,8 +72,6 @@ const LOG_DIAGNOSTICS_ITEM = {
 const DOWNLOADS_ITEM = { page: "downloads", icon: Download, labelKey: "downloads.title" } as const;
 const LOUNGE_ITEM = { page: "lounge", icon: MessagesSquare,
   get label() { return displayText('client.lounge.title'); } } as const;
-const BROWSER_ITEM = { page: "browser", icon: Globe,
-  get label() { return marketText(guiLanguage())('market.browserNavigation'); } } as const;
 
 const TOTP_ITEM = { page: "totp", icon: ShieldCheck, labelKey: "totp.action" } as const;
 
@@ -78,12 +80,11 @@ const TOOLBOX_NAVIGATION_ITEMS = [
   { page: "dreamSkin", icon: Palette, labelKey: "nav.dreamSkin" },
   { page: "skills", icon: PackageOpen, labelKey: "nav.skills" },
   { page: "coze", icon: Bot, label: "Coze" },
-  BROWSER_ITEM,
 ] as const;
 
 export function isToolboxPage(page: DashboardPage) {
   return page === "codexConfig" || page === "systemPrompts" || page === "logDiagnostics"
-    || page === "downloads" || page === "lounge" || page === "totp" || page === "browser"
+    || page === "downloads" || page === "lounge" || page === "totp"
     || TOOLBOX_NAVIGATION_ITEMS.some((item) => item.page === page);
 }
 

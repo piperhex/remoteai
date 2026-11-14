@@ -42,7 +42,7 @@ for (const mode of ['local', 'remote', 'web']) {
       const browser = page.locator('.pm-browser');
       const address = browser.getByRole('textbox', { name: '页面地址', exact: true });
       const nav = page.locator('.sidebar-tabs');
-      await expect(nav.locator(':scope > button').filter({ hasText: 'Coze' })
+      await expect(nav.locator(':scope > button').filter({ hasText: 'Agent Hub' })
         .locator('xpath=following-sibling::button[1]')).toHaveText('浏览器');
       await expect(nav.locator('.sidebar-nav-tools button').first()).toHaveText('在线交流');
       await address.fill('https://example.test/guide'); await address.press('Enter');

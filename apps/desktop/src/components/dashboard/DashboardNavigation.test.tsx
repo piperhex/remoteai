@@ -33,7 +33,8 @@ describe.each([
   { page: "coze", label: "Coze" },
   { page: "browser", label: marketText(guiLanguage())('market.browserNavigation') },
 ] as const)("$label navigation", ({ page, label }) => {
-  it.each(["sidebar", "toolbox"] as const)("selects the independent page from the %s menu", async (variant) => {
+  it.each(page === 'browser' ? ["sidebar", "top"] as const : ["sidebar", "toolbox"] as const)(
+    "selects the independent page from the %s menu", async (variant) => {
     Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
     const container = document.createElement("div");
     const root = createRoot(container);
@@ -52,13 +53,13 @@ describe.each([
         expect(buttons[previousIndex + 1]).toBe(button);
       }
       if (page === "browser") {
-        expect(buttons[buttons.findIndex(item => item.textContent === 'Coze') + 1]).toBe(button);
+        expect(buttons[buttons.findIndex(item => item.textContent === t('nav.codexGui')) + 1]).toBe(button);
         expect(container.querySelector('.sidebar-nav-tools')?.contains(button!)).not.toBe(true);
         const menu = buildDashboardMenuItems(t, true, true);
         const keys = menu.navigate?.map(item => item && 'key' in item ? item.key : undefined) ?? [];
-        expect(keys[keys.indexOf('coze') + 1]).toBe('browser');
+        expect(keys[keys.indexOf('codex-gui') + 1]).toBe('browser');
         const searchIds = menu.search.map(item => item.id);
-        expect(searchIds[searchIds.indexOf('coze') + 1]).toBe('browser');
+        expect(searchIds[searchIds.indexOf('codex-gui') + 1]).toBe('browser');
       }
       await act(async () => button?.click());
       expect(onPageChange).toHaveBeenCalledWith(page);
@@ -67,7 +68,7 @@ describe.each([
         <DashboardNavigation page={page} onPageChange={onPageChange} t={t} variant={variant} collapsed />,
       ));
       expect(container.querySelector('[aria-current="page"]')?.getAttribute("aria-label")).toBe(label);
-      expect(isToolboxPage(page)).toBe(true);
+      expect(isToolboxPage(page)).toBe(page !== 'browser');
     } finally {
       await act(async () => root.unmount());
       open.mockRestore();
