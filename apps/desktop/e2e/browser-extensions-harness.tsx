@@ -1,3 +1,4 @@
+import { ExtensionMarketContext } from '../../../shared/browser/extensions/market';
 import { createRoot } from 'react-dom/client';
 import { ConfigProvider, theme } from 'antd';
 import { BrowserPage } from '../../../shared/browser/BrowserPage';
@@ -73,7 +74,11 @@ function Harness() {
     ...(mode === 'web' ? [] : [theme.compactAlgorithm])] }}>
     <BrowserClientContext.Provider value={client}>
       <div style={{ height: '100dvh', display: 'flex', background: dark ? '#151b25' : '#f4f7fa',
-        color: dark ? '#e5e9f0' : '#182230' }} aria-label={t('market.browserTitle')}><BrowserPage language={language} /></div>
+        color: dark ? '#e5e9f0' : '#182230' }} aria-label={t('market.browserTitle')}>
+        <ExtensionMarketContext.Provider value={params.get('market') ?? location.origin}>
+          <BrowserPage language={language} />
+        </ExtensionMarketContext.Provider>
+      </div>
     </BrowserClientContext.Provider>
   </ConfigProvider></ApplicationTypography>;
 }

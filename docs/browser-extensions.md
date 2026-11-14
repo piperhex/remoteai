@@ -78,3 +78,39 @@ this verifies transport behavior without claiming a second physical computer was
 and browser file/directory entries are delivered through their respective event paths, covering ZIP/CRX,
 folders and the local-export/remote-upload route against the real engine.
 Results and screenshots are in .codex-tmp/browser-extensions-native.
+
+## Administrator marketplace
+
+The admin console's Browser extensions page accepts ZIP and CRX packages through file selection or drag/drop.
+Uploads extract the manifest name, description, version, raster icon and requested permissions. New packages
+and replacements remain unpublished until an administrator publishes them. Unpublishing or deleting prevents
+new downloads immediately; it does not remove installations from users' computers.
+
+- `admin.browser-extensions.read` permits the management list; `admin.browser-extensions.manage` permits
+  uploading, replacement, publishing and deletion. Changes and their audit record commit in one transaction.
+- `GET /browser-extensions` exposes published metadata. Downloads use
+  `/browser-extensions/:id/archive?sha256=<digest>` and require the current published digest.
+  Packages are attachment downloads, never executable pages on the admin origin.
+- Archives are bounded to 64 MiB compressed, 256 MiB expanded and 20,000 entries. Validation rejects traversal,
+  Windows reserved paths, case-insensitive duplicates, links, invalid manifests, oversized entries and CRC failures.
+  CRX is treated as a ZIP container; its signature is not an approval or trust signal.
+- The desktop and Web marketplace use the configured account server. After permission confirmation, downloads
+  are SHA-256 checked and sent through the existing browser transfer to the selected computer. The host checks
+  the digest again and persists marketplace identity. Installing a replacement removes the prior market copy
+  while retaining its toolbar pin. Installing the same package again is disabled in the UI.
+- Existing deployments with schema synchronization disabled must apply
+  `apps/admin/sql/20261115-browser-extensions.sql`. The Kong example includes the public route; all management
+  routes remain under the authenticated `/admin/api` prefix. Deploying these changes is a separate operation.
+
+The Go package has archive, permission, lifecycle and transactional persistence tests. To include PostgreSQL
+tests, set `BROWSER_EXTENSIONS_TEST_DATABASE_URL` to an isolated database before running
+`go test ./internal/browserextensions` in `apps/admin`.
+
+The full UI/engine verification uses an isolated loopback database named `extensions_test`, with the Go fixture
+`go run ./scripts/browser-extension-fixture` on port 1592. Start the admin UI on 1593 and the desktop harness on
+1582, then set `BROWSER_EXTENSION_TEST_EXE` and run
+`node apps/desktop/scripts/verify-browser-extension-market.mjs` from the parent root. The fixture and runner
+are only for local verification. They cover upload, publication, real engine installation and content scripts,
+replacement, restart persistence, unpublishing, deletion, permissions, icons, and local/remote/Web screenshots.
+Remote and Web transport checks use the same real engine over loopback. Evidence is saved under
+`.codex-tmp/browser-extension-market-evidence`.

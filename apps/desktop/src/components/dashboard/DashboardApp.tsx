@@ -54,6 +54,7 @@ import { LogDiagnosticsPage, type LogDiagnosticsTab } from "../../pages/LogDiagn
 import { DownloadsPage } from "../../pages/DownloadsPage";
 import { LoungePage } from "../../../../../shared/lounge/LoungePage";
 import { useDesktopLounge } from "../../lounge/useDesktopLounge";
+import { ExtensionMarketContext } from "../../../../../shared/browser/extensions/market";
 import { BookmarkProvider } from "../../../../../shared/browser/bookmarks/context";
 import { desktopBrowserVaultKeyStorage } from "../../api/browserVaultKey";
 import { BrowserPage } from "../../../../../shared/browser/BrowserPage";
@@ -1302,6 +1303,7 @@ export function DashboardApp() {
     : "nav.collapseSidebar");
 
   return (
+    <ExtensionMarketContext.Provider value={cloud.state.baseUrl?.trim() || DEFAULT_CLOUD_BASE_URL}>
     <BookmarkProvider scope={cloud.state.authenticated
       ? JSON.stringify([cloud.state.baseUrl, cloud.state.userId]) : 'guest'}
       channel={cloud.state.authenticated ? lounge.controller.bookmarks : undefined}
@@ -1796,6 +1798,6 @@ export function DashboardApp() {
       </div>
       {isDesktopApp && <RemoteAssistance auth={cloud.state} onLogin={openCloudLogin} />}
     </ConfigProvider>
-    </BookmarkProvider>
+    </BookmarkProvider></ExtensionMarketContext.Provider>
   );
 }

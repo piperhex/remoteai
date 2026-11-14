@@ -1,6 +1,7 @@
 //! Extension installation is scoped to the unprivileged browser profile, never the application WebView.
 mod chrome;
 mod manifest;
+mod market;
 mod package;
 #[cfg(all(test, windows))]
 mod smoke;
@@ -50,6 +51,7 @@ pub(crate) enum Request {
     },
     FinishUpload {
         token: String,
+        market: Option<market::Source>,
     },
     Export {
         path: String,
@@ -86,6 +88,8 @@ struct Record {
     id: String,
     directory: String,
     pinned: bool,
+    #[serde(default)]
+    market: Option<market::Source>,
     #[serde(flatten)]
     manifest: manifest::Manifest,
 }
@@ -142,11 +146,30 @@ fn perform(app: &AppHandle, request: Request) -> Result<Value> {
     let view = manager(app)?;
     match request {
         Request::List => {}
-        Request::Install { path } => install(&view, &root, &mut catalog, &path)?,
-        Request::FinishUpload { token } => {
+        Request::Install { path } => install(
+            &view,
+            &root,
+            &mut catalog,
+            market::Installation {
+                path: &path,
+                market: None,
+            },
+        )?,
+        Request::FinishUpload { token, market } => {
             let source = transfer::finish(&token)?;
             let path = transfer::uploaded_source(source.path())?;
-            install(&view, &root, &mut catalog, &path.to_string_lossy())?;
+            if let Some(ref market) = market {
+                market.verify(&path)?;
+            }
+            install(
+                &view,
+                &root,
+                &mut catalog,
+                market::Installation {
+                    path: &path.to_string_lossy(),
+                    market,
+                },
+            )?;
         }
         Request::Enable { id, enabled } => {
             require_managed(&catalog, &id)?;
@@ -204,7 +227,8 @@ fn installed_entries(installed: Vec<windows::Installed>, catalog: &Catalog) -> V
         let record = catalog.entries.iter().find(|entry| entry.id == installed.id)?;
         Some(json!({ "id": installed.id, "name": installed.name, "enabled": installed.enabled,
             "pinned": record.pinned, "version": record.manifest.version, "icon": record.manifest.icon,
-            "popup": record.manifest.popup.is_some(), "permissions": record.manifest.permissions }))
+            "popup": record.manifest.popup.is_some(), "permissions": record.manifest.permissions,
+            "market": record.market }))
     }).collect()
 }
 
@@ -229,7 +253,13 @@ fn manager(app: &AppHandle) -> Result<tauri::Webview> {
 }
 
 #[cfg(windows)]
-fn install(view: &tauri::Webview, root: &Path, catalog: &mut Catalog, source: &str) -> Result<()> {
+fn install(
+    view: &tauri::Webview,
+    root: &Path,
+    catalog: &mut Catalog,
+    input: market::Installation<'_>,
+) -> Result<()> {
+    let source = input.path;
     if source.is_empty() || source.len() > 32_768 {
         return Err(Error::Invalid);
     }
@@ -240,16 +270,30 @@ fn install(view: &tauri::Webview, root: &Path, catalog: &mut Catalog, source: &s
     let manifest = manifest::read(&destination)?;
     let installed = windows::execute(view, windows::Operation::Add(destination))?;
     let installed = installed.first().ok_or(Error::Engine)?;
-    let pinned = catalog
+    let previous = catalog.entries.iter().find(|entry| {
+        entry.id == installed.id
+            || input.market.as_ref().is_some_and(|market| {
+                entry
+                    .market
+                    .as_ref()
+                    .is_some_and(|previous| previous.id == market.id)
+            })
+    });
+    let pinned = previous.is_some_and(|entry| entry.pinned);
+    let previous_id = previous.map(|entry| entry.id.clone());
+    if let Some(ref previous_id) = previous_id {
+        if previous_id != &installed.id {
+            windows::execute(view, windows::Operation::Remove(previous_id.clone()))?;
+        }
+    }
+    catalog
         .entries
-        .iter()
-        .find(|entry| entry.id == installed.id)
-        .is_some_and(|entry| entry.pinned);
-    catalog.entries.retain(|entry| entry.id != installed.id);
+        .retain(|entry| entry.id != installed.id && Some(&entry.id) != previous_id.as_ref());
     catalog.entries.push(Record {
         id: installed.id.clone(),
         directory,
         pinned,
+        market: input.market,
         manifest,
     });
     save(root, catalog)
@@ -310,6 +354,7 @@ mod tests {
                 id: "managed".into(),
                 directory: "private".into(),
                 pinned: true,
+                market: None,
                 manifest: manifest::Manifest::default(),
             }],
         };
