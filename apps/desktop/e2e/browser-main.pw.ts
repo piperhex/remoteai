@@ -23,11 +23,15 @@ for (const mode of ['local', 'remote']) for (const enlarged of [false, true]) {
     expect((await menu.boundingBox())!.width).toBeLessThanOrEqual(400);
     await screenshot('settings-blank');
     await menu.getByRole('button', { name: '端口映射', exact: true }).click();
-    await expect(menu).toBeHidden();
-    const mappings = page.getByRole('dialog', { name: '端口映射', exact: true });
+    await expect(menu).toBeVisible();
+    const mappings = page.getByRole('menu', { name: '端口映射', exact: true });
     await expect(mappings.locator('.browser-port-mappings button')).toHaveCount(1);
+    await expect(page.locator('.browser-settings-submenu-popup:visible')).not.toHaveClass(/-appear|-enter/);
     await screenshot('mappings');
-    await mappings.getByRole('button', { name: /18306/ }).click();
+    const bounds = await mappings.boundingBox(), parent = await menu.boundingBox();
+    expect(bounds!.x + bounds!.width).toBeLessThan(parent!.x);
+    await mappings.getByRole('menuitem', { name: /18306/ }).click();
+    await expect(menu).toBeHidden();
     await expect(address).toHaveValue('http://127.0.0.1:18306/');
     const frame = browser.locator('.pm-browser-page:visible iframe').contentFrame();
     await frame.getByRole('textbox', { name: 'draft' }).fill('retained');

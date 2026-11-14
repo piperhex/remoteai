@@ -60,10 +60,26 @@ try {
     const prefix = `windows-${mode}-${enlarged ? 'dark-20px-narrow' : 'light-14px'}`;
     await page.screenshot({ path: fileURLToPath(new URL(`${prefix}-settings.png`, output)), animations: 'disabled' });
     await menu.getByRole('button', { name: '端口映射', exact: true }).click();
-    const mappings = page.getByRole('dialog', { name: '端口映射', exact: true });
+    const mappings = page.getByRole('menu', { name: '端口映射', exact: true });
     await expect(mappings.locator('.browser-port-mappings button')).toHaveCount(1);
+    await expect(page.locator('.browser-settings-submenu-popup:visible')).not.toHaveClass(/-appear|-enter/);
+    const parentBounds = await menu.boundingBox(), mappingBounds = await mappings.boundingBox();
+    expect(mappingBounds.x + mappingBounds.width).toBeLessThan(parentBounds.x);
     await page.screenshot({ path: fileURLToPath(new URL(`${prefix}-mappings.png`, output)), animations: 'disabled' });
-    await mappings.getByRole('button', { name: 'Close', exact: true }).click();
+    const quickAdd = menu.getByRole('button', { name: '添加书签', exact: true });
+    if (await quickAdd.isEnabled()) await quickAdd.click();
+    await menu.getByRole('button', { name: '所有书签', exact: true }).hover();
+    const bookmarks = page.getByRole('menu', { name: '所有书签', exact: true });
+    await expect(bookmarks).toBeVisible(); await expect(mappings).toBeHidden();
+    await expect(page.locator('.browser-settings-submenu-popup:visible')).not.toHaveClass(/-appear|-enter/);
+    await expect(bookmarks.getByRole('menuitem').last()).toHaveText('管理书签');
+    const bookmarkBounds = await bookmarks.boundingBox();
+    expect(bookmarkBounds.x + bookmarkBounds.width).toBeLessThan(parentBounds.x);
+    await page.screenshot({ path: fileURLToPath(new URL(`${prefix}-bookmarks.png`, output)), animations: 'disabled' });
+    await bookmarks.getByRole('menuitem', { name: '管理书签', exact: true }).click();
+    const manager = page.getByRole('dialog', { name: '管理书签', exact: true });
+    await expect(manager).toBeVisible(); await expect(menu).toBeHidden();
+    await manager.getByRole('button', { name: 'Close', exact: true }).click();
     await chrome.getByRole('button', { name: '浏览器设置', exact: true }).click();
     await expect(menu.getByRole('button', { name: '关闭', exact: true })).toHaveCount(0);
     await chrome.getByRole('button', { name: '浏览器设置', exact: true }).click();
@@ -78,7 +94,13 @@ try {
   await page.locator('.browser-main-page').getByRole('button', { name: '浏览器设置', exact: true }).click();
   await expect(page.locator('.browser-bookmark-settings-popup').getByRole('button', { name: '关闭', exact: true }))
     .toHaveCount(0);
-  console.log('Native browser navigation, retained tabs, settings and mapping dialogs verified in both modes.');
+  await page.locator('.browser-bookmark-settings-popup').getByRole('button', { name: '所有书签', exact: true }).hover();
+  await expect(page.getByRole('menu', { name: '所有书签', exact: true })).toBeVisible();
+  await expect(page.locator('.browser-settings-submenu-popup:visible')).not.toHaveClass(/-appear|-enter/);
+  expect((await page.locator('.browser-settings-submenu-popup:visible').boundingBox()).x).toBeGreaterThanOrEqual(0);
+  await page.screenshot({ path: fileURLToPath(new URL('windows-remote-dark-20px-560px-bookmarks.png', output)),
+    animations: 'disabled' });
+  console.log('Native navigation, retained tabs and left settings submenus verified in both modes.');
 } catch (error) {
   if (page) {
     console.error('Native browser feedback:', await page.locator('.pm-browser-feedback').allTextContents());
