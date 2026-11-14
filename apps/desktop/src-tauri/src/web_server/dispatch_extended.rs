@@ -190,6 +190,8 @@ fn dispatch_extended_command(app: AppHandle, command: &str, args: Value) -> Resu
         "fetch_cloud_announcement" => {
             serialize(block_on(crate::cloud::fetch_cloud_announcement(app)))
         }
+        "browser_home_cached" => serialize(block_on(crate::browser_home::browser_home_cached(app))),
+        "browser_home_check" => serialize(block_on(crate::browser_home::browser_home_check(app))),
         "fetch_cloud_title_settings" => serialize(block_on(crate::cloud::fetch_cloud_title_settings(app))),
         "fetch_cloud_home_presets" => serialize(block_on(crate::cloud::fetch_cloud_home_presets(
             argument(&args, "baseUrl")?, argument(&args, "platform")?,

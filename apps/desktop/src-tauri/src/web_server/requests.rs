@@ -1,4 +1,8 @@
 fn handle_request(app: AppHandle, request: Request, security: WebRequestSecurity) {
+    if request.url().starts_with("/browser-home/site/") {
+        crate::browser_home::respond_hosted(&app, request);
+        return;
+    }
     if request.url().starts_with(crate::codex_gui::file_preview::hosted::PATH_PREFIX) {
         crate::codex_gui::file_preview::hosted::respond(&app, request);
         return;

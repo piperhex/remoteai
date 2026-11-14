@@ -56,6 +56,7 @@ import { LoungePage } from "../../../../../shared/lounge/LoungePage";
 import { useDesktopLounge } from "../../lounge/useDesktopLounge";
 import { BookmarkProvider } from "../../../../../shared/browser/bookmarks/context";
 import { BrowserPage } from "../../../../../shared/browser/BrowserPage";
+import { nativeBrowserHomeTransport } from '../../api/browserHome';
 import { CloudAccountIdentity } from './CloudAccountIdentity';
 import { authenticatedDownloadOwner } from "../../downloads/useDesktopDownloads";
 import { useSyncDownloadAccount } from "../../../../../shared/conversation/sync/useSyncDownloadAccount";
@@ -1453,7 +1454,9 @@ export function DashboardApp() {
           {page === "totp" && <TotpPage accounts={manager.accounts} manager={totpManager} t={t} />}
           {page === "downloads" && <DownloadsPage auth={cloud.state} />}
           <RetainedView active={page === "browser"}>
-            <BrowserPage language={language} active={page === "browser"} onClose={() => setPage("codexGui")} />
+            <BrowserPage language={language} active={page === "browser"} onClose={() => setPage("codexGui")}
+              homeBaseUrl={cloud.state.baseUrl?.trim() || DEFAULT_CLOUD_BASE_URL}
+              homeTransport={nativeBrowserHomeTransport} />
           </RetainedView>
           {page === "lounge" && <LoungePage controller={lounge.controller} onLogin={openCloudLogin}
             onAssistance={isDesktopApp ? assistanceStore.request : undefined} />}

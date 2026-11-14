@@ -9,6 +9,7 @@ mod antigravity_provider;
 mod auth;
 mod autostart;
 mod browser;
+mod browser_home;
 mod ccs_import;
 mod chatgpt_launch;
 mod chrome_plugin;
@@ -176,6 +177,7 @@ pub fn run() {
         .manage(codex_gui::GuiState::default())
         .manage(cli_gui::CliGuiState::default())
         .manage(provider_browser::automation::State::default())
+        .manage(browser_home::State::default())
         .manage(codex_gui::dropped_files::DroppedFilesState::default())
         .manage(gui_terminal::ssh_drop::SshDropState::default())
         .manage(codex_gui::file_preview::PreviewSessions::default())
@@ -487,6 +489,8 @@ pub fn run() {
             codex_gui::file_preview::codex_gui_file_preview_host,
             codex_gui::file_preview::website::codex_gui_sync_website_preview,
             provider_browser::provider_browser_sync,
+            browser_home::browser_home_cached,
+            browser_home::browser_home_check,
             provider_browser::preview::provider_browser_preview,
             provider_browser::inspector::browser_inspector,
             provider_browser::provider_browser_action,

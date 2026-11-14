@@ -1733,6 +1733,7 @@ dependencies = [
  "md-5",
  "mime_guess",
  "minisign-verify",
+ "percent-encoding",
  "portable-pty",
  "qrcode",
  "rand 0.9.4",

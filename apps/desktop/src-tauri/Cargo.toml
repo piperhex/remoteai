@@ -49,6 +49,7 @@ html5ever = "0.38"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif"] }
 json5 = "0.4"
 md-5 = "0.10"
+percent-encoding = "2.3"
 mime_guess = "2"
 minisign-verify = "0.2"
 keyring = "4.1.5"

@@ -11,6 +11,7 @@ import { DashboardNavigation } from '../src/components/dashboard/DashboardNaviga
 import { translate } from '../src/i18n';
 import { setGuiLanguage } from '../../../shared/localization/uiText';
 import { browserMappings } from '../../../shared/port-mapping/browserMappings';
+import type { BrowserHomeTransport, BrowserHomeView } from '../../../shared/browser/useNavigationBrowserHome';
 import workspaceStyles from '../../../shared/conversation/DetailsWorkspace.module.less';
 import '../src/styles.css';
 import 'antd/dist/reset.css';
@@ -18,6 +19,17 @@ import 'antd/dist/reset.css';
 const params = new URLSearchParams(location.search);
 const mode = params.get('mode') ?? 'local';
 const dark = params.has('dark');
+const nativeHomeTransport: BrowserHomeTransport = {
+  readCached: () => fetchNativeHome('cached'),
+  check: () => fetchNativeHome('check'),
+};
+async function fetchNativeHome(action: string): Promise<BrowserHomeView | null> {
+  const response = await fetch(`http://127.0.0.1:1593/${action}`);
+  if (!response.ok) throw new Error('Native home fixture unavailable');
+  const view = await response.json() as BrowserHomeView | null;
+  return view && mode === 'remote'
+    ? { ...view, url: new URL(new URL(view.url).pathname, 'http://127.0.0.1:1593').href } : view;
+}
 setGuiLanguage('zh');
 localStorage.setItem('codex-switch:global-font-size', params.get('font') ?? '14');
 document.documentElement.dataset.theme = dark ? 'dark' : 'light';
@@ -32,7 +44,7 @@ function SidebarBrowser() {
 }
 
 function Harness() {
-  const [active, setActive] = useState(true);
+  const [active, setActive] = useState(!params.has('startOutside'));
   useEffect(() => {
     if (!params.has('mapping')) return;
     return browserMappings.register('browser-verification', { subscribe: () => () => {}, snapshot: () => [
@@ -54,7 +66,9 @@ function Harness() {
         <main style={{ display: 'flex', flex: 1, minWidth: 0, height: '100%' }}>
           {params.has('sidebar') ? <><section style={{ flex: 1, padding: 24 }}>Remote AI</section>
             <aside className={workspaceStyles.host} style={{ width: '65%', display: 'flex' }}>
-              <SidebarBrowser /></aside></> : <BrowserPage language="zh" active={active} onClose={() => setActive(false)} />}
+              <SidebarBrowser /></aside></> : <BrowserPage language="zh" active={active} onClose={() => setActive(false)}
+                homeBaseUrl={params.get('homeBase') ?? undefined}
+                homeTransport={params.has('nativeHome') ? nativeHomeTransport : undefined} />}
         </main>
       </div>
     </BookmarkProvider>
