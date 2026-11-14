@@ -236,7 +236,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
           onQuote={canQuote ? (quote) => composer.current?.addQuote(quote) ?? false : undefined}
           pendingRequest={state.pendingRequest} footer={<>
           <Approvals events={pending} controller={controller} />
-          <AsyncQuestions value={current} onAnswer={controller.answerAsyncQuestion}
+          <AsyncQuestions value={current} onAnswer={controller.answerAsyncQuestion} active={conversationActive}
             disabled={state.connection !== "ready" || state.sending || state.archived || Boolean(state.workspaceBusy)
               || Boolean(state.deleting) || state.compacting === state.selected} />
           <Composer ref={composer} state={state} controller={controller} active={conversationActive}
