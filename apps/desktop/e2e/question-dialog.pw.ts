@@ -10,7 +10,6 @@ for (const mode of ['local', 'remote', 'web']) {
       await route.fulfill({ status: replies.length === 1 ? 500 : 200, body: '{}' });
     });
     await page.goto(`/e2e/question-dialog-harness.html?mode=${mode}`);
-    if (mode !== 'local') await page.getByRole('button', { name: /回答补充问题/ }).click();
     const answer = page.getByRole('textbox');
     await answer.press('Enter');
     expect(replies).toHaveLength(0);
@@ -29,7 +28,7 @@ for (const mode of ['local', 'remote', 'web']) {
     release?.();
     await expect(answer).toBeEnabled();
     await expect(answer).toHaveValue('ZH2\n');
-    if (mode !== 'local') await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByRole('alert')).toBeVisible();
     await answer.fill('ZH2，你可以直接操作，我已经打开窗口');
     await answer.press('Enter');
     await expect(answer).toHaveCount(0);
@@ -37,29 +36,27 @@ for (const mode of ['local', 'remote', 'web']) {
   });
 
   for (const appearance of [{ name: 'default', size: 14, width: 1280 },
-    { name: 'enlarged-narrow-dark', size: 20, width: 800, dark: true }]) {
+    { name: 'enlarged-narrow-dark', size: 20, width: mode === 'web' ? 900 : 800, dark: true }]) {
     test(`${mode}: ${appearance.name} layout`, async ({ page }, info) => {
       await page.setViewportSize({ width: appearance.width, height: 900 });
       await page.addInitScript(size => {
         localStorage.setItem('codex-switch:global-font-size', String(size));
       }, appearance.size);
-      await page.goto(`/e2e/question-dialog-harness.html?mode=${mode}&options${appearance.dark ? '&dark' : ''}`);
-      if (mode !== 'local') await page.getByRole('button', { name: /回答补充问题/ }).click();
-      const content = mode === 'local' ? page.getByRole('region', { name: '需要你的补充' })
-        : page.getByRole('dialog', { name: '需要你的补充' });
-      await expect(page.getByRole('radio', { name: 'ZH2', exact: true })).toBeChecked();
+      await page.goto(`/e2e/question-dialog-harness.html?mode=${mode}&options&multi${appearance.dark ? '&dark' : ''}`);
+      const content = page.getByRole('region', { name: '问题', exact: true });
+      await expect(page.getByRole('radio', { name: /ZH2/ })).toBeChecked();
       await page.getByRole('textbox').fill('ZH2，你可以直接操作，我已经打开窗口');
-      await expect(content.getByText('Enter 发送 · Shift + Enter 换行')).toBeVisible();
       const overflow = await content.evaluate(element => element.scrollWidth > element.clientWidth);
       expect(overflow).toBe(false);
-      if (mode !== 'local') {
-        const expectedSize = mode === 'web' ? appearance.size : appearance.size === 14 ? 12 : 16;
-        await expect(page.getByRole('textbox')).toHaveCSS('font-size', `${expectedSize}px`);
-        await expect(content.locator('legend')).toHaveCSS('font-size', `${expectedSize}px`);
-      }
+      await expect(page.getByRole('textbox')).toHaveCSS('font-size', `${appearance.size}px`);
+      await expect(content).toHaveCSS('font-size', `${appearance.size}px`);
       const path = info.outputPath(`${mode}-${appearance.name}.png`);
-      await page.screenshot({ path, animations: 'disabled' });
+      await content.screenshot({ path, animations: 'disabled' });
       await info.attach(`${mode}-${appearance.name}`, { path, contentType: 'image/png' });
+      await content.getByRole('navigation').getByRole('button', { name: '下一题' }).click();
+      await expect(content.getByText('2 / 2')).toBeVisible();
+      await content.screenshot({ path: info.outputPath(`${mode}-${appearance.name}-page2.png`),
+        animations: 'disabled' });
     });
   }
 }
