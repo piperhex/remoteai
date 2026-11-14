@@ -38,6 +38,10 @@ pub(super) async fn execute(app: AppHandle, params: Value) -> Result<Value> {
         _ => return Err(Error::Invalid),
     };
     validate_caller(&params, &request.thread_id)?;
+    // Extension installation is an explicit user-facing management operation, never a page tool.
+    if matches!(request.action, Action::Extensions { .. }) {
+        return Err(Error::Invalid);
+    }
     let screenshot = matches!(request.action, Action::Screenshot);
     let mut response = automation::execute(app.clone(), request)
         .await

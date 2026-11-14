@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Permissions for the main Remote AI window",
-  "windows": ["main", "usage-bubble", "token-usage", "chatgpt-web-login", "quick-menu"],
+  "windows": ["main", "usage-bubble", "token-usage", "chatgpt-web-login", "quick-menu", "browser-extension-*"],
   "permissions": [
     "core:default",
     "core:event:default",

@@ -3,6 +3,7 @@ pub(crate) mod automation;
 pub(crate) mod data;
 #[cfg(windows)]
 mod data_windows;
+pub(crate) mod extensions;
 pub(crate) mod inspector;
 mod lifecycle;
 mod password_focus;
@@ -134,6 +135,7 @@ fn browser_builder(
             .map_err(|_| BrowserError::Unavailable)?
             .join("browser-profile"),
     )
+    .browser_extensions_enabled(true)
     .initialization_script(passwords::initialization())
     .initialization_script(include_str!("links.js"))
     .on_navigation(move |url| {

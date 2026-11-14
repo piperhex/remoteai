@@ -9,21 +9,42 @@ use serde::{Deserialize, Serialize};
     deny_unknown_fields
 )]
 pub(crate) enum Action {
-    Open { url: String, request_id: String },
+    Extensions {
+        request: crate::provider_browser::extensions::Request,
+    },
+    Open {
+        url: String,
+        request_id: String,
+    },
     List,
     Snapshot,
     Screenshot,
-    Navigate { url: String },
+    Navigate {
+        url: String,
+    },
     Back,
     Forward,
     Reload,
     Stop,
     Close,
-    Click { reference: String },
-    Type { reference: String, text: String },
-    Select { reference: String, value: String },
-    Scroll { x: i32, y: i32 },
-    Key { key: String },
+    Click {
+        reference: String,
+    },
+    Type {
+        reference: String,
+        text: String,
+    },
+    Select {
+        reference: String,
+        value: String,
+    },
+    Scroll {
+        x: i32,
+        y: i32,
+    },
+    Key {
+        key: String,
+    },
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -48,11 +69,13 @@ impl Request {
         if !identifier(&self.thread_id) {
             return Err(Error::Invalid);
         }
-        if !matches!(self.action, Action::Open { .. } | Action::List)
-            && self
-                .tab_id
-                .as_ref()
-                .is_none_or(|id| uuid::Uuid::parse_str(id).is_err())
+        if !matches!(
+            self.action,
+            Action::Open { .. } | Action::List | Action::Extensions { .. }
+        ) && self
+            .tab_id
+            .as_ref()
+            .is_none_or(|id| uuid::Uuid::parse_str(id).is_err())
         {
             return Err(Error::Invalid);
         }

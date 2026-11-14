@@ -28,6 +28,8 @@ pub(crate) enum Error {
     Stale,
     #[error("market.browserLimit")]
     Limit,
+    #[error("{0}")]
+    Extensions(#[from] super::extensions::Error),
     #[cfg(not(windows))]
     #[error("market.browserCaptureUnsupported")]
     CaptureUnsupported,
@@ -73,6 +75,11 @@ fn view(app: &AppHandle, id: &str) -> Result<Webview> {
 /// All native work is scheduled off the UI thread; each tab has an independent operation lock.
 pub(crate) async fn execute(app: AppHandle, request: Request) -> Result<Value> {
     request.validate()?;
+    if let Action::Extensions { request } = request.action {
+        return super::extensions::execute(app, request)
+            .await
+            .map_err(Error::Extensions);
+    }
     let state = app.state::<State>();
     if matches!(request.action, Action::List) {
         return state.list(&request.thread_id);
