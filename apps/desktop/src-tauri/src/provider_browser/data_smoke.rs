@@ -22,6 +22,7 @@ fn opens_browser_data() {
             super::provider_browser_close,
             super::preview::provider_browser_preview,
             super::passwords::provider_browser_password,
+            super::vault_key::browser_vault_key,
             super::data::provider_browser_clear_data,
             super::inspector::browser_inspector
         ])

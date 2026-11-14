@@ -22,51 +22,113 @@ var RemoteAIBrowserPassword = (() => {
   __export(passwordPage_exports, {
     passwordPage: () => passwordPage
   });
-  function passwordPage(options) {
-    if (window.top !== window || location.protocol !== "https:") return null;
-    const page = window;
-    const inputs = (form2) => Array.from(form2.querySelectorAll("input")).filter((input) => !input.disabled && input.type !== "hidden" && input.getClientRects().length > 0);
-    const username = (fields2) => fields2.find((input) => input.autocomplete === "username") ?? fields2.find((input) => input.type === "email") ?? fields2.find((input) => ["text", "tel"].includes(input.type));
-    const safeForm = (form2) => new URL(form2.action || location.href, location.href).origin === location.origin;
-    if (options.action === "install") {
-      if (page.__remoteaiLogin?.installed) return true;
-      page.__remoteaiLogin = { installed: true, pending: null };
-      document.addEventListener("submit", (event) => {
-        const form2 = event.target;
-        if (!(form2 instanceof HTMLFormElement) || !event.isTrusted || !safeForm(form2)) return;
-        const fields2 = inputs(form2), password2 = fields2.find((input) => input.type === "password");
-        if (!password2?.value || password2.value.length > 4096) return;
-        const login2 = {
-          origin: location.origin,
-          username: username(fields2)?.value.slice(0, 512) ?? "",
-          password: password2.value
-        };
-        if (options.native) page.ReactNativeWebView?.postMessage(JSON.stringify({ type: "browser-login", login: login2 }));
-        else if (options.desktop && page.chrome?.webview) {
-          page.chrome.webview.postMessage(JSON.stringify({ type: "browser-login", login: login2 }));
-        } else if (page.__remoteaiLogin) page.__remoteaiLogin.pending = login2;
-      }, true);
+
+  // browser/data/passwordPageFields.ts
+  var loginPage = () => window;
+  var formInputs = (form) => Array.from(form.querySelectorAll("input")).filter((input) => !input.disabled && input.type !== "hidden" && input.getClientRects().length > 0);
+  var usernameInput = (fields) => fields.find((input) => input.autocomplete === "username") ?? fields.find((input) => input.type === "email") ?? fields.find((input) => ["text", "tel"].includes(input.type));
+  var passwordInput = (fields) => fields.find((input) => input.type === "password" && input.autocomplete !== "new-password");
+  function safeLoginForm(form) {
+    try {
+      return new URL(form.action || location.href, location.href).origin === location.origin;
+    } catch {
+      return false;
+    }
+  }
+  function postLoginMessage(options, message) {
+    const page = loginPage(), serialized = JSON.stringify(message);
+    if (options.native && page.ReactNativeWebView) {
+      page.ReactNativeWebView.postMessage(serialized);
       return true;
     }
+    if (options.desktop && page.chrome?.webview) {
+      page.chrome.webview.postMessage(serialized);
+      return true;
+    }
+    return false;
+  }
+
+  // browser/data/passwordPageCapture.ts
+  function captureLogin(event, options) {
+    const form = event.target, page = loginPage();
+    if (!(form instanceof HTMLFormElement) || !event.isTrusted || !safeLoginForm(form)) return;
+    const fields = formInputs(form), password = fields.find((input) => input.type === "password");
+    if (!password?.value || password.value.length > 4096) return;
+    const login = {
+      origin: location.origin,
+      username: usernameInput(fields)?.value.slice(0, 512) ?? "",
+      password: password.value
+    };
+    if (!postLoginMessage(options, { type: "browser-login", login }) && page.__remoteaiLogin) {
+      page.__remoteaiLogin.pending = login;
+    }
+  }
+  function captureFocus(event, options) {
+    const input = event.target, page = loginPage();
+    if (!event.isTrusted || !(input instanceof HTMLInputElement) || !input.form || !page.__remoteaiLogin) return;
+    const fields = formInputs(input.form), password = passwordInput(fields);
+    if (!safeLoginForm(input.form) || !password || !fields.includes(input) || input !== password && input !== usernameInput(fields)) return;
+    const id = Array.from(crypto.getRandomValues(new Uint32Array(4))).join("-");
+    page.__remoteaiLogin.focus = { id, input };
+    const { x, y, width, height } = input.getBoundingClientRect();
+    const focus = {
+      origin: location.origin,
+      id,
+      username: usernameInput(fields)?.value.slice(0, 512) ?? "",
+      bounds: { x, y, width, height },
+      viewport: { width: innerWidth, height: innerHeight }
+    };
+    if (!postLoginMessage(options, { type: "browser-login-focus", focus })) page.__remoteaiLogin.pendingFocus = focus;
+  }
+  function installPasswordCapture(options) {
+    const page = loginPage();
+    if (page.__remoteaiLogin?.installed) return true;
+    page.__remoteaiLogin = { installed: true, pending: null };
+    document.addEventListener("submit", (event) => captureLogin(event, options), true);
+    document.addEventListener("click", (event) => captureFocus(event, options), true);
+    let tabFocus = false;
+    document.addEventListener("keydown", (event) => {
+      tabFocus = event.isTrusted && event.key === "Tab";
+    }, true);
+    document.addEventListener("focusin", (event) => {
+      if (tabFocus) captureFocus(event, options);
+      tabFocus = false;
+    }, true);
+    return true;
+  }
+
+  // browser/data/passwordPage.ts
+  function passwordPage(options) {
+    if (window.top !== window || location.protocol !== "https:") return null;
+    const page = loginPage();
+    if (options.action === "install") return installPasswordCapture(options);
     if (options.action === "take") {
       const login2 = page.__remoteaiLogin?.pending;
       if (page.__remoteaiLogin) page.__remoteaiLogin.pending = null;
       return login2 ?? null;
     }
+    if (options.action === "takeFocus") {
+      const focus2 = page.__remoteaiLogin?.pendingFocus;
+      if (page.__remoteaiLogin) page.__remoteaiLogin.pendingFocus = null;
+      return focus2 ?? null;
+    }
     const login = options.login;
     if (!login || login.origin !== location.origin) return false;
-    const form = Array.from(document.forms).find((form2) => safeForm(form2) && inputs(form2).some((input) => input.type === "password" && input.autocomplete !== "new-password"));
-    if (!form) return false;
-    const fields = inputs(form), password = fields.find((input) => input.type === "password");
+    const focus = options.focusId ? page.__remoteaiLogin?.focus : void 0;
+    if (options.focusId && (focus?.id !== options.focusId || !focus.input.isConnected)) return false;
+    const form = focus ? focus.input.form : Array.from(document.forms).find((form2) => safeLoginForm(form2) && passwordInput(formInputs(form2)));
+    if (!form || !safeLoginForm(form)) return false;
+    const fields = formInputs(form), password = passwordInput(fields);
+    if (!password) return false;
     const set = (input, value) => {
       if (!input) return;
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.dispatchEvent(new Event("change", { bubbles: true }));
     };
-    set(username(fields), login.username);
+    set(usernameInput(fields), login.username);
     set(password, login.password);
-    return true;
+    return password.value === login.password;
   }
   return __toCommonJS(passwordPage_exports);
 })();

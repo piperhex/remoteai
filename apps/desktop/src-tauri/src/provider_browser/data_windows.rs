@@ -71,35 +71,58 @@ pub(super) unsafe fn install_capture(
                 let mut raw = PWSTR::null();
                 args.WebMessageAsJson(&mut raw)?;
                 let raw = take_pwstr(raw);
-                if raw.len() > 40000 {
-                    return Ok(());
-                }
-                let value = serde_json::from_str::<serde_json::Value>(&raw)
-                    .ok()
-                    .and_then(|value| {
-                        value
-                            .as_str()
-                            .and_then(|text| serde_json::from_str(text).ok())
-                            .or(Some(value))
-                    });
-                if let Some(value) = value {
-                    if value["type"] != "browser-login" {
-                        return Ok(());
-                    }
-                    if let Ok(login) = serde_json::from_value::<Login>(value["login"].clone()) {
-                        if login.valid_for(&source)
-                            && app
-                                .emit_to("main", &format!("browser-login-{id}"), login)
-                                .is_err()
-                        {
-                            eprintln!("Browser login notification unavailable");
-                        }
-                    }
-                }
+                forward_login_message(&app, &id, &source, &raw);
                 Ok(())
             })),
             &mut token,
         )?;
     }
     Ok(())
+}
+
+fn forward_login_message(app: &tauri::AppHandle, id: &str, source: &str, raw: &str) {
+    const MAX_MESSAGE_BYTES: usize = 40_000;
+    if raw.len() > MAX_MESSAGE_BYTES {
+        return;
+    }
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(raw) else {
+        return;
+    };
+    let value = if let Some(text) = value.as_str() {
+        let Ok(value) = serde_json::from_str(text) else {
+            return;
+        };
+        value
+    } else {
+        value
+    };
+    match value["type"].as_str() {
+        Some("browser-login-focus") => {
+            let Ok(focus) = serde_json::from_value::<super::password_focus::PasswordFocus>(
+                value["focus"].clone(),
+            ) else {
+                return;
+            };
+            if focus.valid_for(source)
+                && app
+                    .emit_to("main", &format!("browser-login-focus-{id}"), &focus)
+                    .is_err()
+            {
+                eprintln!("Browser login suggestions unavailable");
+            }
+        }
+        Some("browser-login") => {
+            let Ok(login) = serde_json::from_value::<Login>(value["login"].clone()) else {
+                return;
+            };
+            if login.valid_for(source)
+                && app
+                    .emit_to("main", &format!("browser-login-{id}"), login)
+                    .is_err()
+            {
+                eprintln!("Browser login notification unavailable");
+            }
+        }
+        _ => {}
+    }
 }

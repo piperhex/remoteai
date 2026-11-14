@@ -34,7 +34,12 @@ impl Login {
 #[serde(tag = "action", rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) enum PasswordRequest {
     Take,
-    Fill { login: Login },
+    TakeFocus,
+    Fill {
+        login: Login,
+        #[serde(rename = "focusId", default, skip_serializing_if = "Option::is_none")]
+        focus_id: Option<String>,
+    },
 }
 
 pub(super) fn initialization() -> String {
@@ -44,9 +49,13 @@ pub(super) fn initialization() -> String {
 }
 
 async fn evaluate(view: Webview, request: PasswordRequest) -> Result<Value> {
-    if let PasswordRequest::Fill { login } = &request {
+    if let PasswordRequest::Fill { login, focus_id } = &request {
         let current = current_url(&view).await?;
-        if !login.valid_for(current.as_str()) {
+        if !login.valid_for(current.as_str())
+            || focus_id
+                .as_ref()
+                .is_some_and(|id| id.is_empty() || id.len() > 80)
+        {
             return Err(BrowserError::Invalid);
         }
     }
@@ -77,6 +86,13 @@ async fn evaluate(view: Webview, request: PasswordRequest) -> Result<Value> {
         let login: Login =
             serde_json::from_value(value.clone()).map_err(|_| BrowserError::Invalid)?;
         if !login.valid_for(current_url(&view).await?.as_str()) {
+            return Err(BrowserError::Invalid);
+        }
+    }
+    if matches!(request, PasswordRequest::TakeFocus) && !value.is_null() {
+        let focus: super::password_focus::PasswordFocus =
+            serde_json::from_value(value.clone()).map_err(|_| BrowserError::Invalid)?;
+        if !focus.valid_for(current_url(&view).await?.as_str()) {
             return Err(BrowserError::Invalid);
         }
     }

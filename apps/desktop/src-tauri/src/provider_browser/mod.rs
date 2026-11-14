@@ -5,9 +5,11 @@ pub(crate) mod data;
 mod data_windows;
 pub(crate) mod inspector;
 mod lifecycle;
+mod password_focus;
 pub(crate) mod passwords;
 mod platform;
 pub(crate) mod preview;
+pub(crate) mod vault_key;
 pub(crate) use lifecycle::handle_page_load;
 #[cfg(all(test, windows))]
 mod data_smoke;

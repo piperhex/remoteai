@@ -5,6 +5,8 @@ import { PasswordVault } from '../../../../shared/browser/data/vault';
 import { browserRandom } from '../../../../shared/browser/data/crypto';
 import { rangeStart, readBrowserDocument, type BrowserDocument, type Visit } from '../../../../shared/browser/data/model';
 import { clearBrowserData } from '../../../../shared/browser/data/clear';
+import { matchingPasswords, type PasswordFocus } from '../../../../shared/browser/data/passwordFocus';
+import type { RememberedVaultKey } from '../../../../shared/browser/data/vaultKeyStorage';
 
 const stops: (() => void)[] = [];
 afterEach(() => { stops.splice(0).forEach(stop => stop()); vi.useRealTimers(); });
@@ -34,6 +36,35 @@ function server() {
 }
 
 describe('browser account data', () => {
+  it('refreshes suggestions from another computer after restoring a remembered vault', async () => {
+    const cloud = server();
+    const first = new BrowserDataStore('alice', memory(), cloud.connect());
+    const second = new BrowserDataStore('alice', memory(), cloud.connect());
+    let remembered: RememberedVaultKey | undefined;
+    const adapter = { read: async () => remembered, write: async (value: RememberedVaultKey) => { remembered = value; },
+      remove: async () => { remembered = undefined; } };
+    const source = new PasswordVault(first, browserRandom), initial = new PasswordVault(second, browserRandom, undefined, adapter);
+    stops.push(first.start(), second.start(), source.start());
+    const stop = initial.start();
+    await vi.waitFor(() => expect(first.snapshot().hydrated).toBe(true));
+    await source.unlock('shared fixture phrase');
+    await vi.waitFor(() => expect(initial.header()).toBeDefined());
+    await initial.unlock('shared fixture phrase'); stop();
+    const restored = new PasswordVault(second, browserRandom, undefined, adapter); stops.push(restored.start());
+    await vi.waitFor(() => expect(restored.snapshot().unlocked).toBe(true));
+    const login = { origin: 'https://example.test', username: 'synced-user', password: 'first-secret' };
+    const focus: PasswordFocus = { origin: login.origin, id: 'focus', username: '',
+      bounds: { x: 0, y: 0, width: 100, height: 30 }, viewport: { width: 400, height: 800 } };
+    const suggestions = () => matchingPasswords(restored.snapshot().entries, focus);
+    source.save(login);
+    await vi.waitFor(() => expect(suggestions()[0]?.password).toBe('first-secret'));
+    source.save({ ...login, password: 'updated-secret' });
+    await vi.waitFor(() => expect(suggestions()[0]?.password).toBe('updated-secret'));
+    source.remove([suggestions()[0].id]);
+    await vi.waitFor(() => expect(suggestions()).toEqual([]));
+    expect(restored.snapshot().unlocked).toBe(true);
+  }, 20000);
+
   it('synchronizes concurrent visits, offline edits, deletion and account isolation', async () => {
     const cloud = server(), storage = memory(), firstChannel = cloud.connect();
     const first = new BrowserDataStore('alice', storage, firstChannel);

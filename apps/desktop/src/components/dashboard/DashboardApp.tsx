@@ -55,6 +55,7 @@ import { DownloadsPage } from "../../pages/DownloadsPage";
 import { LoungePage } from "../../../../../shared/lounge/LoungePage";
 import { useDesktopLounge } from "../../lounge/useDesktopLounge";
 import { BookmarkProvider } from "../../../../../shared/browser/bookmarks/context";
+import { desktopBrowserVaultKeyStorage } from "../../api/browserVaultKey";
 import { BrowserPage } from "../../../../../shared/browser/BrowserPage";
 import { nativeBrowserHomeTransport } from '../../api/browserHome';
 import { CloudAccountIdentity } from './CloudAccountIdentity';
@@ -1303,7 +1304,8 @@ export function DashboardApp() {
   return (
     <BookmarkProvider scope={cloud.state.authenticated
       ? JSON.stringify([cloud.state.baseUrl, cloud.state.userId]) : 'guest'}
-      channel={cloud.state.authenticated ? lounge.controller.bookmarks : undefined}>
+      channel={cloud.state.authenticated ? lounge.controller.bookmarks : undefined}
+      keyStorage={desktopBrowserVaultKeyStorage}>
     <ConfigProvider locale={{ zh: zhCN, en: enUS, ru: ruRU, ja: jaJP }[language]} theme={{
       algorithm: themeMode.appliedMode === "dark"
         ? [antdTheme.darkAlgorithm, antdTheme.compactAlgorithm]

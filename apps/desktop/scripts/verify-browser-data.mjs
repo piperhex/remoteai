@@ -38,7 +38,8 @@ for (const [mode, width, height, font, dark] of runs) {
     if (native) {
       await page.evaluate(mode => localStorage.removeItem(`remoteai:browser-data:browser-data-${mode}`), mode);
     }
-    await page.goto(`http://127.0.0.1:1572/e2e/browser-data-harness.html?mode=${mode}&font=${font}${dark ? '&dark' : ''}`);
+    await page.goto(`http://127.0.0.1:1572/e2e/browser-data-harness.html?mode=${mode}&font=${font}${dark ? '&dark' : ''}`,
+      { waitUntil: 'domcontentloaded', timeout: 60000 });
     await expect(page.locator('body')).toHaveAttribute('data-ready', 'true');
     if (native) await page.setViewportSize({ width, height });
     await settings(); await shot('settings');
@@ -81,8 +82,14 @@ for (const [mode, width, height, font, dark] of runs) {
     await close(); await expect(page.locator('.browser-data-row')).toHaveCount(1); await shot('history-after-delete');
     await close(); await open('密码管理');
     await expect(page.locator('.browser-password-row')).toHaveCount(1);
+    await page.reload(); await expect(page.locator('body')).toHaveAttribute('data-ready', 'true');
+    await open('密码管理');
+    await expect(page.locator('.browser-password-row')).toHaveCount(1);
+    await expect(page.getByLabel('密码库口令', { exact: true })).toHaveCount(0);
+    await shot('remembered-unlock');
     assert.deepEqual(errors, []);
-    results.push({ prefix, historySearch: true, deleteRange: true, passwordEdit: true, noOverflow: true });
+    results.push({ prefix, historySearch: true, deleteRange: true, passwordEdit: true, noOverflow: true,
+      rememberedUnlock: true });
     // This profile belongs exclusively to the fixture; leave subsequent matrix runs with the same seed.
     await page.evaluate(mode => localStorage.removeItem(`remoteai:browser-data:browser-data-${mode}`), mode);
   } catch (error) {

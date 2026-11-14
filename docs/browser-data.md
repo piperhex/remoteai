@@ -17,9 +17,13 @@ platform views, random bytes, and background PBKDF2 through its BrowserData modu
   nonce and authenticates the vault salt and record ID. PBKDF2-HMAC-SHA256 uses 600,000 iterations,
   a random 128-bit salt and a separate user passphrase of at least 12 characters.
 - Native uses Java/CommonCrypto background workers; Web uses SubtleCrypto. The server never receives
-  the passphrase or derived key. Keys and decrypted entries remain in memory and lock after five
-  minutes of inactivity or application backgrounding. Native persistence contains ciphertext in SQLite;
-  it does not store the vault passphrase in SecureStore.
+  the passphrase or derived key. Each device remembers its verified derived key after the first unlock:
+  desktop uses the OS credential store, Native uses SecureStore, and Web uses an origin-scoped,
+  non-exportable Web Crypto key to wrap it in IndexedDB. The passphrase is never persisted.
+- There is no idle, background, or restart lock. Explicit locking removes the remembered device key;
+  account switching clears decrypted memory and selects separate account-scoped storage. A new device
+  unlocks once with the same vault passphrase; synced additions, edits and deletions refresh an unlocked
+  vault immediately. Invalid or outdated remembered keys fall back to the unlock form.
 - Simultaneously initialized vaults remain separate until the user unlocks and merges the conflict.
   A forgotten passphrase cannot be recovered by the server. Future changes to KDF parameters require
   a versioned migration; do not change the current constants for existing documents.
@@ -27,8 +31,10 @@ platform views, random bytes, and background PBKDF2 through its BrowserData modu
 ## Platform behavior
 
 - Native and Windows recognize top-level HTTPS login form submissions and ask before saving.
-  Filling is an explicit password-manager action, requires the exact origin (including port), and
-  does not submit the form. Cross-origin form actions and cleartext HTTP pages are excluded.
+  Clicking an account/password input or tabbing into it opens matching accounts in trusted app UI.
+  Only the selected login is passed to the page; focus messages carry no password. Filling requires
+  the exact HTTPS origin (including port), a current focus token and a same-origin form action, and
+  never submits the form. New-password fields are excluded. Manual password-manager filling remains.
 - Hosted Web cannot inspect or fill arbitrary cross-origin iframes. It provides synchronized history
   and password CRUD, with a visible explanation of the browser's restrictions. Cross-origin history
   records the address opened by the application; internal redirects cannot always be inspected.
@@ -50,17 +56,21 @@ unseen existing vault. Source changes alone do not deploy or enable synchronizat
 
 ## Verification
 
-- Desktop unit tests: `browserData.test.ts`, `browserPasswordPage.test.ts`, `browserBookmarks.test.ts`.
+- Desktop unit tests: `browserData.test.ts`, `browserPasswordPage.test.ts`, `browserVaultPersistence.test.ts`,
+  `browserBookmarks.test.ts` cover synchronization, remembered unlock, races and origin/form validation.
 - Backend: Go vet/full tests and `TestBrowserDataPostgresPersistence` against isolated PostgreSQL.
 - `apps/desktop/scripts/verify-browser-data.mjs` uses bundled Chromium for mobile/desktop Web; `--native`
   attaches to the isolated `provider_browser::data_smoke::opens_browser_data` WebView2 test on port 9355.
   Vite must serve the harness on port 1572. The engine test additionally uses port 9356 and local HTTPS
   port 18443; its self-signed certificate exception exists only in the isolated Rust test.
 - `apps/desktop/scripts/verify-browser-data-engine.mjs` checks trusted form capture, save/fill and real
-  selective Cookie/localStorage clearing. It never operates on the installed application's profile.
+  selective Cookie/localStorage clearing, input suggestions and remembered unlock in local/remote modes.
+  `verify-browser-password-site.mjs <https-login-url>` checks an existing login page with fictional
+  credentials and never submits it. Both scripts require the isolated fixture and never use the installed profile.
 - Native fixture: build with `scripts/browser-data-fixture.init.gradle`, install only
   `com.codexswitch.mobile.browserdatatest`, then run `scripts/verify-browser-data-android.mjs` with
-  `ANDROID_SERIAL`. `--login` exercises the real WebView bridge. The fixture's Node-generated vault
+  `ANDROID_SERIAL`. `--login` exercises input suggestions, backgrounding and process restart at font
+  scales 1.0/1.3 through the real WebView bridge. The fixture's Node-generated vault
   verifies cross-platform decryption; all usernames, passwords and origins are fictional.
 - Screenshots and run results are written to `.codex-tmp/browser-data`. Restore the device's original
   font scale when verification finishes. The scripts cover 1.0/1.3 physical Android font scales.

@@ -496,6 +496,7 @@ pub fn run() {
             provider_browser::provider_browser_action,
             provider_browser::passwords::provider_browser_password,
             provider_browser::data::provider_browser_clear_data,
+            provider_browser::vault_key::browser_vault_key,
             provider_browser::provider_browser_close,
             provider_browser::automation::codex_gui_browser,
             provider_browser::automation::codex_gui_browser_place,

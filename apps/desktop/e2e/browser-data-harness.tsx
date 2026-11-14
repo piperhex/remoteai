@@ -7,6 +7,7 @@ import { useBrowserData } from '../../../shared/browser/data/context';
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
 import { applyThemeColor, DEFAULT_THEME_COLOR } from '../../../shared/appearance/themeColor';
 import { setGuiLanguage } from '../../../shared/localization/uiText';
+import { desktopBrowserVaultKeyStorage } from '../src/api/browserVaultKey';
 import '../src/styles.css';
 import 'antd/dist/reset.css';
 
@@ -25,9 +26,9 @@ function Seed() {
       store.visit({ id: `fixture-${index}`, kind: 'visit', title,
         url: `https://example.com/${index}`, at: now - (index === 3 ? 86400000 : index * 60000) });
     }
-    void vault.unlock('browser-test-passphrase').then(() => {
+    void vault.unlock('browser-test-passphrase').then(async () => {
       vault.save({ origin: 'https://example.com', username: 'demo@example.com', password: 'fixture-only-secret' });
-      vault.lock(); document.body.dataset.ready = 'true';
+      await vault.lock(); document.body.dataset.ready = 'true';
     });
   }, [store, vault]);
   return null;
@@ -35,7 +36,7 @@ function Seed() {
 function Harness() {
   return <ApplicationTypography><ConfigProvider theme={{ algorithm: [dark ? theme.darkAlgorithm : theme.defaultAlgorithm,
     ...(mode === 'web' ? [] : [theme.compactAlgorithm])] }}>
-    <BookmarkProvider scope={`browser-data-${mode}`}><Seed />
+    <BookmarkProvider scope={`browser-data-${mode}`} keyStorage={desktopBrowserVaultKeyStorage}><Seed />
       <div style={{ height: '100dvh', display: 'flex', background: dark ? '#151b25' : '#f4f7fa',
         color: dark ? '#e5e9f0' : '#182230' }}><BrowserPage language="zh" /></div>
     </BookmarkProvider>
