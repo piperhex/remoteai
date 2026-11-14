@@ -30,8 +30,14 @@ pub(super) fn listen(app: &AppHandle, thread: &str, id: &str) -> tauri::EventId 
         } else {
             // Native navigation callbacks may run on the UI thread; registry locks stay on a worker.
             tauri::async_runtime::spawn_blocking(move || {
-                if let Err(error) = app.state::<State>().navigated(&id, address) {
+                let state = app.state::<State>();
+                if let Err(error) = state.navigated(&id, address.clone()) {
                     eprintln!("Browser navigation update failed: {error}");
+                }
+                if let Ok(icons) = serde_json::from_value::<Vec<String>>(payload["icons"].clone()) {
+                    if let Err(error) = state.icons(&id, &address, icons) {
+                        eprintln!("Browser icon update failed: {error}");
+                    }
                 }
             });
         }

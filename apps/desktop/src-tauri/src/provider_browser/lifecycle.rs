@@ -35,26 +35,29 @@ pub(crate) fn handle_page_load(webview: &Webview, payload: &PageLoadPayload<'_>)
 fn notify_visit(view: &Webview) {
     let app = view.app_handle().clone();
     let label = view.label().to_string();
+    let icons =
+        include_str!("../../../../../shared/browser/icons/pageIcons.js").replace("export ", "");
+    let script = format!(
+        "(()=>{{{icons};return JSON.stringify({{url:location.href,title:document.title,\
+        visited:true,icons:readPageIcons(document)}});}})()"
+    );
     if view
-        .eval_with_callback(
-            "JSON.stringify({url:location.href,title:document.title,visited:true})",
-            move |raw| {
-                let value = serde_json::from_str::<serde_json::Value>(&raw)
-                    .ok()
-                    .and_then(|value| {
-                        if let Some(text) = value.as_str() {
-                            serde_json::from_str(text).ok()
-                        } else {
-                            Some(value)
-                        }
-                    });
-                if let Some(value) = value {
-                    if app.emit_to("main", &label, value).is_err() {
-                        eprintln!("Browser visit notification unavailable");
+        .eval_with_callback(script, move |raw| {
+            let value = serde_json::from_str::<serde_json::Value>(&raw)
+                .ok()
+                .and_then(|value| {
+                    if let Some(text) = value.as_str() {
+                        serde_json::from_str(text).ok()
+                    } else {
+                        Some(value)
                     }
+                });
+            if let Some(value) = value {
+                if app.emit_to("main", &label, value).is_err() {
+                    eprintln!("Browser visit notification unavailable");
                 }
-            },
-        )
+            }
+        })
         .is_err()
     {
         eprintln!("Browser visit unavailable");

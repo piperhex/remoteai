@@ -108,7 +108,11 @@ pub(crate) async fn execute(app: AppHandle, request: Request) -> Result<Value> {
                 .map_err(|_| Error::Unavailable)?
                 .map_err(|_| Error::Unavailable)?;
             image["url"] = json!(address.as_str());
-            image["loading"] = json!(state.get(&tab.thread_id, &tab.id)?.loading);
+            let current = state.get(&tab.thread_id, &tab.id)?;
+            image["loading"] = json!(current.loading);
+            if current.url == address.as_str() {
+                image["icons"] = json!(current.icons);
+            }
             image
         }
         Action::Navigate { url: address } => {

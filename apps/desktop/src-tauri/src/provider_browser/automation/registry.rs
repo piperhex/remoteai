@@ -17,6 +17,7 @@ pub(super) struct Tab {
     pub url: String,
     pub title: String,
     pub loading: bool,
+    pub icons: Vec<String>,
     #[serde(skip)]
     pub request_id: String,
     #[serde(skip)]
@@ -83,9 +84,26 @@ impl State {
             .map_err(|_| Error::Unavailable)?
             .get_mut(id)
         {
+            if tab.url != address {
+                tab.icons.clear();
+            }
             tab.url = address;
             if let Ok(url) = url::Url::parse(&tab.url) {
                 tab.title = url.host_str().unwrap_or_default().into();
+            }
+        }
+        Ok(())
+    }
+
+    pub(super) fn icons(&self, id: &str, address: &str, icons: Vec<String>) -> Result<()> {
+        if let Some(tab) = self
+            .tabs
+            .lock()
+            .map_err(|_| Error::Unavailable)?
+            .get_mut(id)
+        {
+            if tab.url == address {
+                tab.icons = icons;
             }
         }
         Ok(())
@@ -116,6 +134,7 @@ pub(super) async fn open(
         url: address.into(),
         title: url.host_str().unwrap_or_default().into(),
         loading: true,
+        icons: Vec::new(),
         request_id: request.into(),
         initial_url: address.into(),
         created_at: Instant::now(),
