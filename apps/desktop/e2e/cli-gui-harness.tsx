@@ -25,7 +25,7 @@ import { SIDEBAR_EVENT } from '../../../shared/remote-chat/sidebar';
 import { historyDelta, type HistoryVersion } from '../../../shared/remote-chat/historySync';
 import { saveGuiSkin } from '../src/pages/codexGui/guiSkin';
 import { useDreamSkin } from '../src/pages/codexGui/useDreamSkin';
-import { DashboardNavigation } from '../src/components/dashboard/DashboardNavigation';
+import { DashboardNavigation, type DashboardPage } from '../src/components/dashboard/DashboardNavigation';
 import { useDesktopLayout } from '../../../shared/layout/useDesktopLayout';
 import { ChatTools as WebChatTools } from '../../web/src/chat/ChatTools';
 import { PrimaryPagePager } from '../../web/src/navigation/PrimaryPagePager';
@@ -81,7 +81,9 @@ fixture.accounts.subscribe(() => { void controller.refreshModels(); });
 const device = { deviceId: 'pc', name: 'Office PC', platform: 'Windows', online: true };
 const t: Translate = (key, values) => translate('zh', key, values);
 
-function Harness({ active = true }: { active?: boolean }) {
+function Harness({ active: foreground = true }: { active?: boolean }) {
+  const [page, setPage] = useState<DashboardPage>('codexGui');
+  const active = foreground && page === 'codexGui';
   const desktop = useDesktopLayout();
   const skinStyle = useDreamSkin(mode === 'remote');
   useEffect(() => {
@@ -97,11 +99,13 @@ function Harness({ active = true }: { active?: boolean }) {
     : [algorithm, theme.compactAlgorithm], token: { colorPrimary: '#28837f',
       fontFamily: mode === 'web' ? "Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif"
         : '"DM Sans", "Microsoft YaHei UI", sans-serif' } }}><App>
-    {params.has('hub') && mode !== 'web' && <DashboardNavigation page="codexGui" t={t} onPageChange={() => {}} />}
+    {params.has('hub') && mode !== 'web' && <DashboardNavigation page={page} t={t} onPageChange={setPage} />}
+    {page !== 'codexGui' && <input aria-label="Other page input" />}
     <main className={mode === 'remote' ? `${styles.page} chat-page gui-remote-workspace`
       : mode === 'web' ? 'chat-page' : ''} data-dream-skin={skinStyle ? 'true' : undefined}
-      style={{ height: params.has('hub') && mode !== 'web' ? 'calc(100dvh - 48px)' : '100dvh', ...skinStyle }}>
-      {mode === 'local' ? <CodexGuiPage active accountPicker={accounts} providers={[]} aggregateApis={[]}
+      style={{ height: params.has('hub') && mode !== 'web' ? 'calc(100dvh - 48px)' : '100dvh',
+        display: active ? undefined : 'none', ...skinStyle }}>
+      {mode === 'local' ? <CodexGuiPage active={active} accountPicker={accounts} providers={[]} aggregateApis={[]}
         plugins={{ authenticated: false, onLogin() {}, notify() {}, t }} />
         : <ConnectedChat chat={{ state, controller, foreground: true }} device={device} devices={[device]}
           active={active} scope={`cli-test-${mode}`} email="test@example.test" chooseDevice={() => {}} cliVersion="0.150.0"

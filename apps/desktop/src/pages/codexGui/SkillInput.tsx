@@ -20,6 +20,7 @@ import { useSuggestionInput } from './useSuggestionInput';
 import styles from "./SkillInput.module.less";
 import { readPastedContent } from "../../../../../shared/chat/clipboard";
 import { ComposerContextMenu } from '../../../../../shared/chat/ComposerContextMenu';
+import { useComposerAutoFocus } from '../../../../../shared/chat/useComposerAutoFocus';
 
 export interface SkillInputHandle { addSkill: (skill: Skill) => void; focus: () => void }
 
@@ -27,7 +28,7 @@ function focusEditor(node: HTMLDivElement, saved: Range | null): Range {
   const range = saved && node.contains(saved.startContainer) && node.contains(saved.endContainer)
     ? saved.cloneRange() : document.createRange();
   if (!node.contains(range.startContainer)) { range.selectNodeContents(node); range.collapse(false); }
-  node.focus();
+  node.focus({ preventScroll: true });
   const selection = window.getSelection();
   selection?.removeAllRanges();
   selection?.addRange(range);
@@ -56,6 +57,8 @@ export const SkillInput = forwardRef<SkillInputHandle, {
   useGuiLanguage();
   const editor = useRef<HTMLDivElement>(null);
   const savedCaret = useRef<Range | null>(null);
+  useComposerAutoFocus({ input: editor, active: active && !editing, disabled,
+    focus: () => { if (editor.current) focusEditor(editor.current, savedCaret.current); } });
   const composing = useRef(false);
   const [trigger, setTrigger] = useState<SkillTrigger | null>(null);
   const [selected, setSelected] = useState(0);
