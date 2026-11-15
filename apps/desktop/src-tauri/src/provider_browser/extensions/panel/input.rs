@@ -1,5 +1,7 @@
 use super::{Command, Error, Result};
-use serde_json::{json, Value};
+#[cfg(windows)]
+use serde_json::json;
+use serde_json::Value;
 
 #[cfg(not(windows))]
 pub(super) async fn execute(_: &tauri::Webview, _: Command) -> Result<Value> {
