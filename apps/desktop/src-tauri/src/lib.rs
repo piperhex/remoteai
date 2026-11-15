@@ -500,6 +500,7 @@ pub fn run() {
             provider_browser::provider_browser_close,
             provider_browser::automation::codex_gui_browser,
             provider_browser::automation::codex_gui_browser_place,
+            provider_browser::extensions::panel::browser_extension_panel_place,
             codex_gui::file_preview::website::codex_gui_close_website_preview,
             codex_gui::undo::codex_gui_undo,
             codex_gui::deletion::codex_gui_delete_thread,

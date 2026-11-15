@@ -6,7 +6,11 @@ use std::{
     time::Duration,
 };
 
-async fn call(view: &tauri::Webview, method: &'static str, parameters: Value) -> Result<Value> {
+pub(in crate::provider_browser) async fn call(
+    view: &tauri::Webview,
+    method: &'static str,
+    parameters: Value,
+) -> Result<Value> {
     use webview2_com::CallDevToolsProtocolMethodCompletedHandler;
     use windows::core::HSTRING;
     let (sender, receiver) = tokio::sync::oneshot::channel();
@@ -63,7 +67,7 @@ pub(super) async fn capture(view: &tauri::Webview) -> Result<Value> {
     .await
 }
 
-pub(super) async fn key(view: &tauri::Webview, key: &str) -> Result<Value> {
+pub(in crate::provider_browser) async fn key(view: &tauri::Webview, key: &str) -> Result<Value> {
     let code = match key {
         "Backspace" => 8,
         "Tab" => 9,

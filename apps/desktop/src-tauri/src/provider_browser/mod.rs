@@ -1,4 +1,5 @@
 //! Unprivileged browser tabs hosted inside the Provider list window.
+pub(crate) mod assistant;
 pub(crate) mod automation;
 pub(crate) mod data;
 #[cfg(windows)]

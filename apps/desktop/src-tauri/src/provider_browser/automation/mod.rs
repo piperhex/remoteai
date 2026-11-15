@@ -1,6 +1,6 @@
 //! Conversation-owned browser automation. Remote pages never receive Tauri capabilities.
 #[cfg(windows)]
-mod devtools;
+pub(in crate::provider_browser) mod devtools;
 mod events;
 pub(crate) mod finish;
 mod page;
@@ -84,8 +84,22 @@ pub(crate) async fn execute(app: AppHandle, request: Request) -> Result<Value> {
     if matches!(request.action, Action::List) {
         return state.list(&request.thread_id);
     }
-    if let Action::Open { url, request_id } = &request.action {
-        return registry::open(&app, &request.thread_id, url, request_id).await;
+    if let Action::Open {
+        url,
+        request_id,
+        destination,
+    } = &request.action
+    {
+        return registry::open_at(
+            &app,
+            &request.thread_id,
+            registry::OpenOptions {
+                address: url,
+                request: request_id,
+                destination: *destination,
+            },
+        )
+        .await;
     }
     let tab = state.get(
         &request.thread_id,

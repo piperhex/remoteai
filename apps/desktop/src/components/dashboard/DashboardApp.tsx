@@ -58,6 +58,7 @@ import { ExtensionMarketContext } from "../../../../../shared/browser/extensions
 import { BookmarkProvider } from "../../../../../shared/browser/bookmarks/context";
 import { desktopBrowserVaultKeyStorage } from "../../api/browserVaultKey";
 import { BrowserPage } from "../../../../../shared/browser/BrowserPage";
+import { BrowserNavigationProvider } from "../../../../../shared/browser/BrowserNavigationProvider";
 import { nativeBrowserHomeTransport } from '../../api/browserHome';
 import { CloudAccountIdentity } from './CloudAccountIdentity';
 import { authenticatedDownloadOwner } from "../../downloads/useDesktopDownloads";
@@ -1318,6 +1319,7 @@ export function DashboardApp() {
         fontFamily: "\"DM Sans\", \"Microsoft YaHei UI\", sans-serif",
       },
     }}>
+      <BrowserNavigationProvider onOpen={() => setPage("browser")}>
       <div className={`app-shell${NATIVE_WINDOW_CONTROLS_ENABLED ? " custom-titlebar-shell" : ""}${
         sidebarNavigationEnabled ? " sidebar-navigation-shell" : ""
       }${sidebarNavigationEnabled && navigationStyle.sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
@@ -1797,6 +1799,7 @@ export function DashboardApp() {
         {toast && <div className="toast"><Check size={17} />{toast}</div>}
       </div>
       {isDesktopApp && <RemoteAssistance auth={cloud.state} onLogin={openCloudLogin} />}
+      </BrowserNavigationProvider>
     </ConfigProvider>
     </BookmarkProvider></ExtensionMarketContext.Provider>
   );

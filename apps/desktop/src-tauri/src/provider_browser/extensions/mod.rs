@@ -4,6 +4,7 @@ mod chrome;
 mod manifest;
 mod market;
 mod package;
+pub(crate) mod panel;
 #[cfg(all(test, windows))]
 mod smoke;
 mod transfer;
@@ -34,11 +35,18 @@ pub(crate) enum Error {
     #[error("market.extensionsMissing")]
     Missing,
 }
-type Result<T> = std::result::Result<T, Error>;
+pub(super) type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(tag = "action", rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) enum Request {
+    Preferences {
+        preferences: Option<super::assistant::Preferences>,
+    },
+    Panel {
+        session: String,
+        command: panel::Command,
+    },
     List,
     Discover,
     Install {
@@ -123,6 +131,17 @@ fn save(root: &Path, catalog: &Catalog) -> Result<()> {
 }
 
 pub(crate) async fn execute(app: AppHandle, request: Request) -> Result<Value> {
+    if let Request::Panel { session, command } = request {
+        return panel::execute(app, session, command).await;
+    }
+    if let Request::Preferences { preferences } = request {
+        return tauri::async_runtime::spawn_blocking(move || match preferences {
+            Some(preferences) => super::assistant::save(preferences),
+            None => Ok(json!({"preferences": super::assistant::load()?.response()})),
+        })
+        .await
+        .map_err(|_| Error::Engine)?;
+    }
     // Serialize the complete installation/catalog transaction without blocking the UI thread.
     static SERIAL: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
     let _guard = SERIAL.lock().await;
@@ -185,12 +204,14 @@ fn perform(app: &AppHandle, request: Request) -> Result<Value> {
             windows::execute(&view, Operation::Enable(id.clone(), enabled))?;
             if !enabled {
                 close_popup(app, &id)?;
+                panel::close_extension(app, &id)?;
             }
         }
         Request::Remove { id } => {
             require_managed(&catalog, &id)?;
             windows::execute(&view, Operation::Remove(id.clone()))?;
             close_popup(app, &id)?;
+            panel::close_extension(app, &id)?;
             catalog.entries.retain(|entry| entry.id != id);
             save(&root, &catalog)?;
             // Keep immutable assets: a late engine callback may still refer to them.
@@ -237,6 +258,7 @@ fn installed_entries(installed: Vec<windows::Installed>, catalog: &Catalog) -> V
         Some(json!({ "id": installed.id, "name": installed.name, "enabled": installed.enabled,
             "pinned": record.pinned, "version": record.manifest.version, "icon": record.manifest.icon,
             "popup": record.manifest.popup.is_some(), "permissions": record.manifest.permissions,
+            "sidePanel": record.manifest.side_panel.is_some(),
             "market": record.market }))
     }).collect()
 }

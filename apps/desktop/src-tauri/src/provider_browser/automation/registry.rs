@@ -16,6 +16,7 @@ pub(super) struct Tab {
     pub thread_id: String,
     pub url: String,
     pub title: String,
+    pub destination: crate::provider_browser::assistant::Target,
     pub loading: bool,
     pub icons: Vec<String>,
     #[serde(skip)]
@@ -110,29 +111,51 @@ impl State {
     }
 }
 
-pub(super) async fn open(
+pub(super) struct OpenOptions<'a> {
+    pub address: &'a str,
+    pub request: &'a str,
+    pub destination: Option<crate::provider_browser::assistant::Target>,
+}
+
+pub(super) async fn open_at(
     app: &AppHandle,
     thread: &str,
-    address: &str,
-    request: &str,
+    options: OpenOptions<'_>,
 ) -> Result<Value> {
+    use crate::provider_browser::assistant::{self, Target};
+    let OpenOptions {
+        address,
+        request,
+        destination,
+    } = options;
+    if destination == Some(Target::Chrome) {
+        return Err(Error::Invalid);
+    }
     let url = super::url(app, address)?;
     let state = app.state::<State>();
     let _creation = state.creation.lock().await;
     if let Some(tab) = existing(&state, thread, request)? {
-        if tab.initial_url != address {
+        if tab.initial_url != address || destination.is_some_and(|value| value != tab.destination) {
             return Err(Error::Invalid);
         }
         super::opened(app, thread, &tab);
         return Ok(json!({"tab":tab,"reused":true}));
     }
     let id = uuid::Uuid::new_v4().to_string();
+    let destination = match destination {
+        Some(value) => value,
+        None => tauri::async_runtime::spawn_blocking(assistant::load)
+            .await
+            .map_err(|_| Error::Unavailable)??
+            .builtin(),
+    };
     let tab = Tab {
         listener: super::events::listen(app, thread, &id),
         id,
         thread_id: thread.into(),
         url: address.into(),
         title: url.host_str().unwrap_or_default().into(),
+        destination,
         loading: true,
         icons: Vec::new(),
         request_id: request.into(),

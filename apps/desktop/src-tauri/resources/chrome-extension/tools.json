@@ -2,7 +2,7 @@
   "tools": [
     {
       "name": "browser_list",
-      "description": "List connected Chrome profiles. For missing connections, follow the Chrome skill's startup flow.",
+      "description": "Read current browser priority order and list connected Chrome profiles before choosing a browser. Follow preferences.order unless the user explicitly chooses an entry point. Default: Chrome, AgentHub sidebar, standalone menu browser. Use gui_browser_open with destination agentHub or standalone when that entry comes first or Chrome is unavailable.",
       "inputSchema": {
         "type": "object",
         "properties": {},

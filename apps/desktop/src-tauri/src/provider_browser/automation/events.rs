@@ -21,8 +21,21 @@ pub(super) fn listen(app: &AppHandle, thread: &str, id: &str) -> tauri::EventId 
         let (app, thread, id) = (handle.clone(), thread.clone(), id.clone());
         if payload["popup"] == true {
             tauri::async_runtime::spawn(async move {
-                if let Err(error) =
-                    registry::open(&app, &thread, &address, &uuid::Uuid::new_v4().to_string()).await
+                let destination = app
+                    .state::<State>()
+                    .get(&thread, &id)
+                    .ok()
+                    .map(|tab| tab.destination);
+                if let Err(error) = registry::open_at(
+                    &app,
+                    &thread,
+                    registry::OpenOptions {
+                        address: &address,
+                        request: &uuid::Uuid::new_v4().to_string(),
+                        destination,
+                    },
+                )
+                .await
                 {
                     eprintln!("Browser popup failed: {error}");
                 }

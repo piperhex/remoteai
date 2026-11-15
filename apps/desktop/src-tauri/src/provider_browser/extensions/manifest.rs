@@ -19,6 +19,8 @@ pub(super) struct Manifest {
     pub version: String,
     pub icon: Option<String>,
     pub popup: Option<String>,
+    #[serde(default)]
+    pub side_panel: Option<String>,
     pub permissions: Vec<String>,
 }
 
@@ -79,6 +81,10 @@ pub(super) fn read(root: &Path) -> Result<Manifest> {
     let icon = action
         .and_then(|action| read_icon(root, &action["default_icon"]))
         .or_else(|| read_icon(root, &value["icons"]));
+    let side_panel = value["side_panel"]["default_path"]
+        .as_str()
+        .filter(|path| !path.is_empty() && child(root, path).is_ok())
+        .map(str::to_owned);
     let permissions = ["permissions", "host_permissions"]
         .iter()
         .filter_map(|key| value[key].as_array())
@@ -91,6 +97,7 @@ pub(super) fn read(root: &Path) -> Result<Manifest> {
         version,
         icon,
         popup,
+        side_panel,
         permissions,
     })
 }
@@ -188,6 +195,26 @@ fn reparse(_: &fs::Metadata) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn side_panels_require_a_real_page_inside_the_package() {
+        let root = tempfile::tempdir().unwrap();
+        fs::write(root.path().join("panel.html"), "<p>panel</p>").unwrap();
+        for (path, supported) in [
+            ("panel.html", true),
+            ("../outside.html", false),
+            ("missing.html", false),
+            ("https://example.com/", false),
+        ] {
+            fs::write(
+                root.path().join("manifest.json"),
+                serde_json::json!({"manifest_version":3,
+                "name":"panel", "version":"1", "side_panel":{"default_path":path}})
+                .to_string(),
+            )
+            .unwrap();
+            assert_eq!(read(root.path()).unwrap().side_panel.is_some(), supported);
+        }
+    }
     #[test]
     fn reads_action_icons_and_falls_back_across_missing_sizes() {
         let root = tempfile::tempdir().unwrap();

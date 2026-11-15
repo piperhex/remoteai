@@ -19,6 +19,9 @@ const MAX_TITLE_CHARS: usize = 160;
 #[derive(Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "camelCase")]
 enum Context {
+    BrowserPreferences {
+        preferences: Value,
+    },
     Ssh {
         id: String,
         name: String,
@@ -42,6 +45,10 @@ enum Context {
         truncated: bool,
         note: String,
     },
+}
+
+pub(super) fn browser_preferences(preferences: Value) -> Result<Value> {
+    input(Context::BrowserPreferences { preferences })
 }
 
 pub(super) fn coze(id: &str, name: &str) -> Result<Value> {

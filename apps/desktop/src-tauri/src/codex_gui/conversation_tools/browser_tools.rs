@@ -10,9 +10,18 @@ struct Open {
     thread_id: String,
     url: String,
     request_id: String,
+    destination: Option<crate::provider_browser::assistant::Target>,
 }
 
 pub(super) async fn execute(app: AppHandle, params: Value) -> Result<Value> {
+    if params["name"] == "gui_browser_preferences" {
+        let preferences =
+            tauri::async_runtime::spawn_blocking(crate::provider_browser::assistant::load)
+                .await
+                .map_err(|_| Error::Storage)?
+                .map_err(|_| Error::Storage)?;
+        return Ok(preferences.response());
+    }
     let arguments = params
         .get("arguments")
         .cloned()
@@ -31,6 +40,7 @@ pub(super) async fn execute(app: AppHandle, params: Value) -> Result<Value> {
                 action: Action::Open {
                     url: args.url,
                     request_id: args.request_id,
+                    destination: args.destination,
                 },
             }
         }

@@ -15,7 +15,7 @@ for (const mode of ['local', 'remote', 'web']) for (const large of [false, true]
     await expect(page.locator('.browser-extensions-toolbar > button[aria-label="Page marker"]')).toBeVisible();
     await page.getByRole('button', { name: '管理扩展程序', exact: true }).click();
     const dialog = page.getByRole('dialog');
-    await expect(dialog.getByText('AI 优先使用 Chrome', { exact: false })).toBeVisible();
+    await expect(dialog.getByText('无需安装，即可在网页旁聊天', { exact: false })).toBeVisible();
     await dialog.getByRole('switch', { name: '停用扩展: Page marker' }).click();
     await expect(dialog.getByRole('switch', { name: '启用扩展: Page marker' })).not.toBeChecked();
     await expect(page.locator('.browser-extensions-menu')).toBeHidden();
@@ -49,5 +49,5 @@ test('unsupported host and English offline copy', async ({ page }) => {
   await page.getByRole('button', { name: 'Manage extensions', exact: true }).click();
   await expect(page.getByText('This device does not support installing Chrome extensions yet.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Import from Chrome', exact: true })).toBeDisabled();
-  await expect(page.getByText('AI uses Chrome first', { exact: false })).toBeVisible();
+  await expect(page.getByText('Chat beside a page', { exact: false })).toBeVisible();
 });

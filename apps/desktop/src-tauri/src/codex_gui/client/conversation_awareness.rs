@@ -32,13 +32,19 @@ impl Client {
         let references = context::references(params)?;
         let count = references.len();
         // Read each source without resuming it or changing its running turn.
-        let snapshots = join_all(references.iter().map(|id| async move {
+        let mut snapshots = join_all(references.iter().map(|id| async move {
             let thread = self.reference_context(id).await?;
             context::reference(&thread, count)
         }))
         .await
         .into_iter()
         .collect::<Result<Vec<_>>>()?;
+        let preferences =
+            tauri::async_runtime::spawn_blocking(crate::provider_browser::assistant::load)
+                .await
+                .map_err(|_| GuiError::ContextSettings)?
+                .map_err(|_| GuiError::ContextSettings)?;
+        snapshots.push(context::browser_preferences(preferences.response())?);
         context::append(params, snapshots)
     }
 

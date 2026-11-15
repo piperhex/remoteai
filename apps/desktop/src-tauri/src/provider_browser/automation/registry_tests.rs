@@ -12,6 +12,7 @@ fn finish_lookup_distinguishes_closed_tabs_from_another_conversations_tabs() {
             thread_id: "owner".into(),
             url: "https://example.com".into(),
             title: "Example".into(),
+            destination: crate::provider_browser::assistant::Target::AgentHub,
             loading: false,
             icons: Vec::new(),
             request_id: "request".into(),

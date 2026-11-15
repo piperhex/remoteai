@@ -11,6 +11,10 @@ import { setGuiLanguage } from '../../../shared/localization/uiText';
 import { marketText } from '../../../shared/provider-market/i18n';
 import '../src/styles.css';
 import 'antd/dist/reset.css';
+import { BrowserContents } from '../../../shared/provider-market/ProviderBrowser';
+import { NavigationBrowserSurface } from '../../../shared/browser/NavigationBrowserSurface';
+import { useWebsiteTabs } from '../../../shared/file-preview/workspace/useWebsiteTabs';
+import { useEffect } from 'react';
 
 const params = new URLSearchParams(location.search), mode = params.get('mode') ?? 'web';
 const dark = params.has('dark'), native = params.has('native'), language = params.has('en') ? 'en' : 'zh';
@@ -69,6 +73,14 @@ const client: BrowserClient = native ? { ...localBrowserClient, native: mode ===
     return { supported: !params.has('unsupported'), entries };
   },
 };
+function SidebarBrowser() {
+  const browser = useWebsiteTabs();
+  useEffect(() => { browser.onNewTab(); }, []);
+  return <section className="pm-browser browser-main-page" aria-label="AgentHub browser">
+    <BrowserContents {...browser} open embedded language={language} Surface={NavigationBrowserSurface}
+      fullscreen={false} toggleFullscreen={() => {}} onClose={() => {}} />
+  </section>;
+}
 function Harness() {
   return <ApplicationTypography><ConfigProvider theme={{ algorithm: [dark ? theme.darkAlgorithm : theme.defaultAlgorithm,
     ...(mode === 'web' ? [] : [theme.compactAlgorithm])] }}>
@@ -76,7 +88,7 @@ function Harness() {
       <div style={{ height: '100dvh', display: 'flex', background: dark ? '#151b25' : '#f4f7fa',
         color: dark ? '#e5e9f0' : '#182230' }} aria-label={t('market.browserTitle')}>
         <ExtensionMarketContext.Provider value={params.get('market') ?? location.origin}>
-          <BrowserPage language={language} />
+          {params.get('entry') === 'agentHub' ? <SidebarBrowser /> : <BrowserPage language={language} />}
         </ExtensionMarketContext.Provider>
       </div>
     </BrowserClientContext.Provider>

@@ -95,7 +95,12 @@ async fn execute(app: AppHandle, params: Value) -> Result<Value> {
     }
     if matches!(
         params["name"].as_str(),
-        Some("gui_browser_open" | "gui_browser_use" | "gui_browser_finish")
+        Some(
+            "gui_browser_open"
+                | "gui_browser_use"
+                | "gui_browser_finish"
+                | "gui_browser_preferences"
+        )
     ) {
         return browser_tools::execute(app, params).await;
     }

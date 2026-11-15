@@ -57,7 +57,7 @@ fn dispatch(
         Some("initialize") => Ok(
             json!({"protocolVersion":"2024-11-05", "capabilities":{"tools":{}},
             "serverInfo":{"name":"codex-switch-chrome","version":super::PLUGIN_VERSION},
-            "instructions":"Prefer the Chrome browser assistant by default. Use browser_list to select the requested \
+            "instructions":"Read browser_list before browser work and follow its saved preferences.order, unless the user chooses an entry point. Default order: Chrome, AgentHub sidebar, standalone menu browser. Use browser_list to select the requested \
                 Chrome profile. If the assistant is missing or unavailable (including disconnected, paused, disabled \
                 or failing), or the user explicitly requests the built-in browser, use gui_browser_open and \
                 gui_browser_use from the built-in codex_gui tools. Do not require installation or repeated retries. \
@@ -149,7 +149,10 @@ fn browsers(root: &Path, client_id: &str, record: &config::ClientRecord) -> Resu
         browsers.push(json!({"browserId":endpoint.id,"name":endpoint.name,"status":status}));
     }
     Ok(BrowserReply {
-        result: Some(json!({"browsers":browsers})),
+        result: Some(
+            json!({"browsers":browsers, "preferences": crate::provider_browser::assistant::load()
+            .map_err(|_| BrowserError::Storage)?.response()}),
+        ),
         error: None,
     })
 }

@@ -15,6 +15,7 @@ pub(crate) enum Action {
     Open {
         url: String,
         request_id: String,
+        destination: Option<crate::provider_browser::assistant::Target>,
     },
     List,
     Snapshot,

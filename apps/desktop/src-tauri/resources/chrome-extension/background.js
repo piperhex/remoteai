@@ -157,7 +157,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === UPDATE_ALARM) void updater.check();
 });
 updater.start();
-void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
-  .catch(() => console.warn(t('sidePanelEnableFailed')));
+// Embedded hosts dock the manifest panel themselves and may not expose Chrome's sidePanel API.
+if (chrome.sidePanel?.setPanelBehavior) {
+  void chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+    .catch(() => console.warn(t('sidePanelEnableFailed')));
+}
 void renameWorkGroups().catch(() => console.warn(t('tabGroupRenameFailed')));
 void connect();

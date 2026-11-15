@@ -32,9 +32,16 @@ as bounded data URLs. SVG/HTML from an extension is never embedded in the privil
 Remote AI assistant uses the same packaged brand icon as the Chrome assistant.
 
 The Remote AI assistant is integrated through the existing native page/snapshot/input/screenshot tools and
-requires no extension installation. The Chrome skill and MCP descriptions continue to prefer Chrome, then
-the built-in browser when Chrome is unavailable or explicitly requested. Extension management is a user UI
+requires no extension installation. Its toolbar button opens a docked chat panel with reload, open-in-browser
+and settings controls. Switching between chat and settings retains the loaded page and draft. Extension management is a user UI
 operation and is rejected by the model's gui_browser_use entry point.
+
+The default browser order is Chrome assistant, AgentHub conversation sidebar, then the independent menu
+browser. These are three distinct destinations. Browser settings and the assistant panel's settings button
+both expose the same reorder controls. Changes apply to the host computer, including its connected desktop
+and Web clients. Each new conversation turn receives the current order, and tools can read it again during
+a turn. Explicit user choices override the order; availability, Chrome pause/site permissions and submission
+safety rules continue to apply. Existing tabs retain their destination and owning computer.
 
 ## Host behavior and compatibility
 
@@ -46,12 +53,17 @@ operation and is rejected by the model's gui_browser_use entry point.
 - Standalone browser-hosted iframe previews do not gain extensions. Without a connected host the UI reports
   the unavailable connection. macOS/Linux hosts report unsupported installation rather than pretending to load
   Chrome extensions into WebKit.
-- WebView2 does not implement all Chrome extension UI/API integrations. Manifest popup pages open in a separate
-  asynchronous native window. Extensions requiring Chrome-specific tab/action/side-panel behavior may not work
-  completely. Native action-click events and dynamic action badges/icons are not emulated.
+- Installed extensions declaring `side_panel.default_path` open their real extension-origin page in the docked
+  panel. Popup-only extensions retain their separate asynchronous window. Local Windows panels use a native
+  child WebView; connected desktop and Web panels display captures and forward bounded pointer, keyboard,
+  text and scroll input to that same host. The extension profile remains separate from application pages.
+- WebView2 does not implement all Chrome extension UI/API integrations. Dynamic `chrome.sidePanel` registration,
+  action-click events and dynamic action badges/icons are not emulated. Declaring a side-panel page does not
+  guarantee compatibility with other Chrome-only APIs used by that page.
 - Popup labels are registered with the local-only default capability. Their external chrome-extension origins
   are not granted application IPC capabilities. Navigation stays within the owning extension. Disabling or
-  removing an extension also closes its popup.
+  removing an extension also closes its popup and side panels. Side-panel navigation stays on the chat origin
+  or the owning extension origin, and does not receive application IPC capabilities.
 
 ## Verification
 
@@ -78,6 +90,13 @@ this verifies transport behavior without claiming a second physical computer was
 and browser file/directory entries are delivered through their respective event paths, covering ZIP/CRX,
 folders and the local-export/remote-upload route against the real engine.
 Results and screenshots are in .codex-tmp/browser-extensions-native.
+
+With the same Vite server and Rust executable, run
+`node apps/desktop/scripts/verify-browser-side-panel.mjs` from the parent root. It exercises actual side-panel
+input, draft retention, preference persistence, separate destinations, extension origins and teardown across
+local, remote and Web hosts, both browser entry points, light/default and dark/enlarged narrow layouts.
+Remote transport uses the loopback bridge rather than a second physical computer. Evidence is saved under
+`.codex-tmp/browser-side-panel`.
 
 ## Administrator marketplace
 

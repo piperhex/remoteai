@@ -13,15 +13,19 @@ Use the `codex_switch_chrome` MCP tools. This integration does not require ChatG
 For Chrome webpage tasks, use this integration before desktop screenshots or coordinate-based
 Computer Use. If tools are loaded on demand, discover the `codex_switch_chrome` tools through the
 available tool search before concluding they are missing. A skill file alone does not prove that
-its MCP tools are connected. Prefer this assistant by default. If the user explicitly requests the
+its MCP tools are connected. Read `browser_list` (or `gui_browser_preferences`) before choosing a browser.
+Follow its saved `preferences.order`/`order`: the default is Chrome, then the AgentHub conversation
+sidebar, then the independent menu browser. Explicit user choices take precedence. Use
+`gui_browser_open` with `destination: "agentHub"` or `"standalone"` for those distinct entries.
+If the user explicitly requests the
 built-in browser, or the assistant is missing or unavailable (including disconnected, paused,
 disabled, or failing), use the built-in `codex_gui` tools `gui_browser_open` and `gui_browser_use`.
 Do not require installation or repeated reconnection attempts before falling back. The built-in
 browser uses a separate session, so Chrome sign-in state is not transferred. Keep requested preview
 pages open for the user. Never replay an uncertain submission merely because the browser changed.
 
-1. Call `browser_list` and select the requested browser profile. If it is unavailable, use the
-   built-in browser. Keep a paused profile paused unless the user asks to resume it.
+1. Call `browser_list` and follow the saved order. When Chrome is selected, choose the requested
+   browser profile. If it is unavailable, use the next available entry. Keep a paused profile paused unless the user asks to resume it.
    Never substitute another profile or bypass connection, pause or website permission checks.
 2. Unless the user explicitly asks to use an already-open page, call `browser_open` to create a new
    background tab in the dedicated Remote AI group. Continue the task in the tabs you create. Only use
@@ -73,7 +77,8 @@ pages open for the user. Never replay an uncertain submission merely because the
 ## Built-in browser fallback
 
 Use `gui_browser_open` with the calling conversation's thread ID, a new request ID, and an HTTP(S)
-URL. Keep that request ID for retries. The returned tab opens in the preview sidebar.
+URL. Set `destination` to `agentHub` for the conversation sidebar or `standalone` for the menu browser;
+omitting it follows the saved built-in order. Keep the request ID and destination for retries.
 Use `gui_browser_use` to read snapshots, screenshots and fresh element references before clicking,
 typing or navigating. Its cursor feedback uses the Chrome assistant's indicator. The tools are
 limited to conversation-owned tabs, excluding Provider account pages and other conversations.
