@@ -1,6 +1,9 @@
+#[cfg(windows)]
 use super::{Error, Result};
 use serde::{Deserialize, Serialize};
+#[cfg(windows)]
 use sha2::{Digest, Sha256};
+#[cfg(windows)]
 use std::{fs, io::Read, path::Path};
 
 /// Catalog identity is retained with the installed extension, including on remote computers.
@@ -11,6 +14,7 @@ pub(crate) struct Source {
     pub sha256: String,
 }
 
+#[cfg(windows)]
 impl Source {
     pub(super) fn verify(&self, path: &Path) -> Result<()> {
         uuid::Uuid::parse_str(&self.id).map_err(|_| Error::Invalid)?;
@@ -42,6 +46,7 @@ impl Source {
     }
 }
 
+#[cfg(windows)]
 pub(super) struct Installation<'a> {
     pub path: &'a str,
     pub market: Option<Source>,

@@ -1,4 +1,5 @@
 //! Extension installation is scoped to the unprivileged browser profile, never the application WebView.
+#[cfg(any(windows, test))]
 mod chrome;
 mod manifest;
 mod market;
@@ -11,11 +12,14 @@ mod windows;
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+#[cfg(windows)]
 use std::{
     fs,
     path::{Path, PathBuf},
 };
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
+#[cfg(windows)]
+use tauri::Manager;
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum Error {
@@ -79,10 +83,12 @@ pub(crate) enum Request {
     },
 }
 
+#[cfg(windows)]
 #[derive(Default, Deserialize, Serialize)]
 struct Catalog {
     entries: Vec<Record>,
 }
+#[cfg(windows)]
 #[derive(Deserialize, Serialize)]
 struct Record {
     id: String,
@@ -94,12 +100,14 @@ struct Record {
     manifest: manifest::Manifest,
 }
 
+#[cfg(windows)]
 fn root(app: &AppHandle) -> Result<PathBuf> {
     app.path()
         .app_data_dir()
         .map(|path| path.join("browser-extensions"))
         .map_err(|_| Error::Storage)
 }
+#[cfg(windows)]
 fn read(root: &Path) -> Result<Catalog> {
     match fs::read(root.join("catalog.json")) {
         Ok(bytes) => serde_json::from_slice(&bytes).map_err(|_| Error::Storage),
@@ -107,6 +115,7 @@ fn read(root: &Path) -> Result<Catalog> {
         Err(_) => Err(Error::Storage),
     }
 }
+#[cfg(windows)]
 fn save(root: &Path, catalog: &Catalog) -> Result<()> {
     fs::create_dir_all(root).map_err(|_| Error::Storage)?;
     crate::storage::write_json_atomic(&root.join("catalog.json"), &json!(catalog))

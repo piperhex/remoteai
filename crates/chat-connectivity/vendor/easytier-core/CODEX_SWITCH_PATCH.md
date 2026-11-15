@@ -58,6 +58,8 @@ UDP strategies must not be interpreted as zero. Transport admission remains dist
   `tunnel/encrypt/mod.rs` allow the retained upstream tests and the minimal native feature set to compile cleanly.
 - Atomic flow counters and port allocators use `try_update`, available at the Rust 1.95 minimum version,
   to preserve their behavior without deprecated `fetch_update` warnings on newer toolchains.
+- Secure datagram key-cache pruning iterates over mutable slots directly, preserving epoch retention
+  while satisfying the Rust 1.100 Clippy `needless_range_loop` check.
 
 Run the hole-punch tests from the parent workspace with `--no-default-features` and
 `--features aes-gcm,proxy-smoltcp-stack,tcp-hole-punch`; the native connectivity CI does this on Windows, Linux and macOS.

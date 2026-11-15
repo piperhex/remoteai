@@ -130,6 +130,7 @@ fn write(token: &str, path: &str, offset: u64, data: &str) -> Result<Value> {
     Ok(json!({}))
 }
 
+#[cfg(any(windows, test))]
 pub(super) fn finish(token: &str) -> Result<tempfile::TempDir> {
     let mut transfers = TRANSFERS.lock().map_err(|_| Error::Storage)?;
     let transfer = transfers.get(token).ok_or(Error::Missing)?;
@@ -150,6 +151,7 @@ pub(super) fn finish(token: &str) -> Result<tempfile::TempDir> {
     Ok(transfers.remove(token).ok_or(Error::Missing)?.directory)
 }
 
+#[cfg(windows)]
 pub(super) fn uploaded_source(directory: &Path) -> Result<std::path::PathBuf> {
     let files = fs::read_dir(directory)
         .map_err(|_| Error::Storage)?

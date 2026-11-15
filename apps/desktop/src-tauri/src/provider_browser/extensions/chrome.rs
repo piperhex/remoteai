@@ -11,6 +11,7 @@ pub(super) struct Candidate {
     pub manifest: manifest::Manifest,
 }
 
+#[cfg(windows)]
 pub(super) fn discover() -> Result<Vec<Candidate>> {
     let local = std::env::var_os("LOCALAPPDATA").ok_or(Error::Unsupported)?;
     scan(&Path::new(&local).join("Google/Chrome/User Data"))

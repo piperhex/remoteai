@@ -520,17 +520,17 @@ impl SecureDatagramSession {
         let send_epoch = self.send_epoch.load(Ordering::Relaxed);
         let mut key_cache = self.key_cache.lock().unwrap();
         for d in 0..2 {
-            for s in 0..2 {
-                if !key_cache[d][s].valid {
+            for slot in &mut key_cache[d] {
+                if !slot.valid {
                     continue;
                 }
-                let e = key_cache[d][s].epoch;
+                let e = slot.epoch;
                 let allowed = e == send_epoch
                     || rx[d][0].valid && rx[d][0].epoch == e
                     || rx[d][1].valid && rx[d][1].epoch == e
                     || sync_rx_grace.is_some_and(|g| Self::epoch_in_slots(&g.slots[d], e));
                 if !allowed {
-                    key_cache[d][s].valid = false;
+                    slot.valid = false;
                 }
             }
         }
