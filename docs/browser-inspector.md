@@ -17,6 +17,8 @@ DevTools HWND from the inspected tab's browser process. A process check and per-
 marker prevent touching recycled handles or adopting another tab's inspector. Window discovery,
 reparenting and polling run outside the Tauri UI thread. No production debugging port is enabled.
 If discovery fails after a WebView2 update, the system inspector remains available separately.
+Placement requests are serialized and coalesced; unchanged geometry, docking, visibility and monitor scale
+are skipped after a successful placement. Failed or unavailable placements remain retryable.
 
 The native context menu keeps WebView2's original command IDs, including Inspect's selected node.
 The same ContextMenuRequested handler handles native mouse, keyboard and touch context requests.
@@ -29,8 +31,9 @@ A COM deferral lets the original callback return before the Windows menu enters 
 - Run Web's `scripts/playwright.browser-inspector.config.ts` using `scripts/run.mjs playwright`.
 - Start the desktop browser harness with `scripts/vite.browser-bookmarks.config.ts` on port 1562.
   Pass a compiled Rust test executable to `scripts/verify-browser-inspector-native.mjs start`.
-  Use its `open local`, `open remote --dark`, `right`, `bottom`, `window`, `resize`, `tabs` and `close`
+  Use its `open local`, `open remote --dark`, `right`, `bottom`, `window`, `resize`, `dedupe`, `tabs` and `close`
   actions. Choose the native Inspect menu item manually or through the desktop testing tools.
+  The `dedupe` action verifies that 60 unrelated DOM updates send no native placement requests.
 - For conversation-owned tabs, serve the harness on port 1552 and add `--managed` to `start` and
   `open local`. Both fixtures use an isolated application identifier and test-only debugging port.
 - Inspect running-window screenshots, selected DOM nodes, actual divider drags and retained input.

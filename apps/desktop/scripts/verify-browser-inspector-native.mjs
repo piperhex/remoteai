@@ -21,6 +21,32 @@ async function openContext(context, touch) {
   } finally { await session.detach(); }
 }
 
+async function verifyPlacementDeduplication(page) {
+  await expect(page.locator('.browser-inspector-panel')).toBeVisible();
+  await page.waitForTimeout(300);
+  const calls = await page.evaluate(async () => {
+    const bridge = window.__TAURI_INTERNALS__;
+    const original = bridge.invoke;
+    let placements = 0;
+    bridge.invoke = function (command, args, ...rest) {
+      if (command === 'browser_inspector' && args?.request?.command?.action === 'place') placements++;
+      return original.call(this, command, args, ...rest);
+    };
+    const node = document.createElement('span'); node.hidden = true;
+    document.body.append(node);
+    try {
+      for (let index = 0; index < 60; index++) {
+        node.textContent = String(index);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+      }
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return placements;
+    } finally { node.remove(); bridge.invoke = original; }
+  });
+  expect(calls).toBe(0);
+  console.log('60 unrelated DOM updates produced 0 native inspector placement calls.');
+}
+
 const action = process.argv[2];
 if (action === 'start') {
   const executable = process.argv[3];
@@ -112,10 +138,12 @@ if (action === 'start') {
       await page.mouse.up();
       await expect.poll(async () => Number(await splitter.getAttribute('aria-valuenow'))).toBeGreaterThan(previous + 2);
       console.log('Keyboard and pointer splitter resize passed.');
+    } else if (action === 'dedupe') {
+      await verifyPlacementDeduplication(page);
     } else if (action === 'close') {
       await page.locator('.browser-inspector-toolbar button').last().click();
       await expect(page.locator('.browser-inspector-panel')).toHaveCount(0);
       console.log('Inspector closed; browser surface restored.');
-    } else throw new Error('Use start, open, context, tabs, right, bottom, window, resize or close.');
+    } else throw new Error('Use start, open, context, tabs, right, bottom, window, resize, dedupe or close.');
   } finally { await browser.close(); }
 }
