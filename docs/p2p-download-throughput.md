@@ -45,6 +45,22 @@ Raw address-bearing measurements remain local in `.codex-tmp/p2p-vm-baseline.jso
 `.codex-tmp/p2p-vm-fixed.json`, plus `.codex-tmp/p2p-vm-lan-candidates.json` for the diagnostic run.
 Saved credentials and file content are never included in those reports.
 
+## Android emulator follow-up, 2026-11-16
+
+An Android 15 x86_64 emulator subsequently ran the production native connection and Kotlin download
+pipeline in an isolated, bundled Hermes test application, with development mode disabled. Three
+128 MiB downloads from the same ZH2 source averaged **3.97 MiB/s** (4.04, 3.87 and 4.00). Every exported
+Android file matched the independently calculated source SHA-256. A fresh Chromium comparison using
+that same file averaged **11.61 MiB/s** (11.55, 11.69 and 11.58).
+A later native run on a fresh connection, validating final runner cleanup, measured **2.86 MiB/s**
+and also passed both integrity checks. The first session's mean is not a stable throughput ceiling.
+
+This is an emulator measurement, not physical-phone Wi-Fi throughput. Native bulk reported `direct`;
+connection diagnostics showed public mapped UDP endpoints, so a LAN-address file path is not proven.
+The lower native rate remains unexplained by this measurement alone. Android has its own native
+writer and does not use the IndexedDB commit batching fixed above. See the Native repository's
+[benchmark details and reproduction instructions](../apps/native/docs/p2p-throughput.md).
+
 ## Repeating the comparison
 
 Create a disposable source file on an explicitly selected, signed-in test computer and independently
