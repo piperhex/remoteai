@@ -117,6 +117,11 @@ new downloads immediately; it does not remove installations from users' computer
   are SHA-256 checked and sent through the existing browser transfer to the selected computer. The host checks
   the digest again and persists marketplace identity. Installing a replacement removes the prior market copy
   while retaining its toolbar pin. Installing the same package again is disabled in the UI.
+- Desktop local and remote modes fetch public catalogs and archives through the viewing host's asynchronous
+  native command; hosted desktop pages use the same command through their authenticated local backend.
+  Standalone Web pages use browser fetch. Do not fetch directly from the desktop WebView: the packaged CSP
+  intentionally excludes arbitrary cloud servers. Both transports retain bounded reads and archive checksums;
+  the native command permits only the marketplace paths and never forwards credentials or follows redirects.
 - Existing deployments with schema synchronization disabled must apply
   `apps/admin/sql/20261115-browser-extensions.sql`. The Kong example includes the public route; all management
   routes remain under the authenticated `/admin/api` prefix. Deploying these changes is a separate operation.
@@ -133,3 +138,9 @@ are only for local verification. They cover upload, publication, real engine ins
 replacement, restart persistence, unpublishing, deletion, permissions, icons, and local/remote/Web screenshots.
 Remote and Web transport checks use the same real engine over loopback. Evidence is saved under
 `.codex-tmp/browser-extension-market-evidence`.
+
+For the packaged network-policy regression, use the same Vite harness and freshly compiled Rust executable
+with `node apps/desktop/scripts/verify-browser-extension-market-network.mjs`. It checks native catalog and
+archive requests while WebView fetch is blocked by the production `connect-src`, plus empty lists, failures,
+retry, and local/remote/Web browser entry points. It also reads the public production catalog without changes.
+Screenshots and results are saved under `.codex-tmp/browser-extension-market-network`.

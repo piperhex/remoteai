@@ -99,6 +99,7 @@ fn opens_extension_browser() {
             extension_popup_probe,
             extension_panel_probe,
             extension_test_resize,
+            crate::cloud::fetch_browser_extension_market,
             super::panel::browser_extension_panel_place,
             super::super::automation::codex_gui_browser_place,
             crate::codex_gui::codex_gui_request,
