@@ -59,7 +59,7 @@ async function verifyMenus(root, child, label) {
   await settings.click(); await restored();
   const all = root.getByRole('button', { name: '所有书签', exact: true });
   await all.click(); await preserved('all-bookmarks');
-  await address.click(); await restored();
+  await address.click(); await address.press('Escape'); await restored();
   const bookmark = root.locator('.browser-bookmark-item').filter({ hasText: '测试页面' });
   await bookmark.click({ button: 'right' }); await preserved('bookmark-context');
   await page.getByRole('menuitem', { name: '编辑书签', exact: true }).click();
@@ -72,7 +72,7 @@ async function verifyMenus(root, child, label) {
     clientX: bounds.x + 10, clientY: bounds.y + 10 });
   await expect(page.getByRole('menuitem', { name: '编辑书签', exact: true })).toBeVisible();
   await bookmark.dispatchEvent('pointerup', { pointerType: 'touch', pointerId: 21, isPrimary: true, button: 0 });
-  await preserved('bookmark-long-press'); await address.click(); await restored();
+  await preserved('bookmark-long-press'); await address.click(); await address.press('Escape'); await restored();
   await settings.click(); await settings.click(); await settings.click(); await settings.click();
   await restored();
   console.log(`PASS ${label}: menus retain page, context menu and long-press match, no reload or lost draft/scroll`);
