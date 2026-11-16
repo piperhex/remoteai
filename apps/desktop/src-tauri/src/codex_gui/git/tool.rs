@@ -44,6 +44,10 @@ mod revision_tests;
 mod settings;
 #[cfg(test)]
 mod tests;
+mod update;
+mod update_backup;
+#[cfg(test)]
+mod update_tests;
 
 #[derive(Deserialize)]
 #[serde(

@@ -13,6 +13,7 @@ pub(crate) struct Changes {
     pub head: Option<String>,
     pub files: Vec<Change>,
     pub integration: Option<super::integration::Integration>,
+    pub update_backup: Option<super::update_backup::Backup>,
 }
 
 #[derive(Serialize)]
@@ -89,6 +90,7 @@ pub(super) fn read(root: &Path) -> Result<Changes> {
         head,
         files,
         integration: super::integration::read(root)?,
+        update_backup: super::update_backup::read(root)?,
     })
 }
 

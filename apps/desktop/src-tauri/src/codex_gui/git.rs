@@ -93,8 +93,14 @@ pub(super) enum GitError {
     Commit,
     #[error("请选择文件并填写提交说明。")]
     Selection,
-    #[error("请先提交本地改动，再拉取或更新项目。")]
-    Dirty,
+    #[error("client.gitUpdate.saveFailed")]
+    UpdateSave,
+    #[error("client.gitUpdate.restoreFailed")]
+    UpdateRestore,
+    #[error("client.gitUpdate.pending")]
+    UpdatePending,
+    #[error("client.gitUpdate.submodule")]
+    UpdateSubmodule,
     #[error("当前分支没有可用的跟踪分支，请先在电脑上设置。")]
     Upstream,
     #[error("项目还没有远程仓库，请先在电脑上添加。")]

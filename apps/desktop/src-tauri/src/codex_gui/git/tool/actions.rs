@@ -1,6 +1,6 @@
-//! Remote actions use argument arrays, retain hooks, and never stash, force-push or discard files.
+//! Remote actions use argument arrays, retain hooks, and protect edits before integration.
 use super::super::{command_options, output, validate_branch};
-use super::{branches, changes, commit, GitError, Result};
+use super::{branches, changes, commit, update, GitError, Result};
 use serde::Deserialize;
 use std::{path::Path, process::Stdio};
 
@@ -24,12 +24,12 @@ pub(crate) enum Strategy {
 
 #[derive(Deserialize)]
 pub(crate) struct ActionRequest {
-    action: Action,
+    pub(super) action: Action,
     head: Option<String>,
     branch: Option<String>,
     target: Option<String>,
     #[serde(default)]
-    strategy: Strategy,
+    pub(super) strategy: Strategy,
 }
 
 impl ActionRequest {
@@ -38,7 +38,7 @@ impl ActionRequest {
     }
 }
 
-fn run(root: &Path, args: &[&str]) -> Result<bool> {
+pub(super) fn run(root: &Path, args: &[&str]) -> Result<bool> {
     command_options(root, false)
         .args([
             "-c",
@@ -47,6 +47,8 @@ fn run(root: &Path, args: &[&str]) -> Result<bool> {
             "merge.autoStash=false",
             "-c",
             "rebase.autoStash=false",
+            "-c",
+            "submodule.recurse=false",
             "-c",
             "core.editor=false",
         ])
@@ -106,9 +108,7 @@ fn fetch(root: &Path, remote: Option<&str>) -> Result<()> {
 }
 
 fn integrate(root: &Path, request: &ActionRequest) -> Result<()> {
-    if !changes::read(root)?.files.is_empty() {
-        return Err(GitError::Dirty);
-    }
+    update::preflight(root)?;
     let upstream = branches::upstream(root)?;
     fetch(
         root,
@@ -121,42 +121,34 @@ fn integrate(root: &Path, request: &ActionRequest) -> Result<()> {
     // Fetch may take time. Recheck local state before changing files after an external Git operation.
     check_current(root, request)?;
     commit::require_idle(root)?;
-    if !changes::read(root)?.files.is_empty() {
-        return Err(GitError::Dirty);
-    }
     let target = output(root, &["rev-parse", "--verify", &upstream.tracking])
         .map_err(|_| GitError::Upstream)?;
-    let success = match (&request.action, &request.strategy) {
-        (Action::Update, _) => update_merge(root, &upstream.tracking, &target)?,
-        (_, Strategy::Merge) => run(root, &["merge", "--no-edit", "--no-autostash", &target])?,
-        (_, Strategy::Rebase) => run(root, &["rebase", "--no-autostash", &target])?,
-    };
-    if success {
-        Ok(())
-    } else {
-        Err(GitError::Integrate)
-    }
+    update::execute(root, request, &upstream.tracking, &target)
 }
 
-fn update_merge(root: &Path, tracking: &str, target: &str) -> Result<bool> {
+pub(super) fn update_merge(root: &Path, tracking: &str, target: &str, stash: &str) -> Result<bool> {
     let branch = tracking
         .strip_prefix("refs/remotes/")
         .ok_or(GitError::Upstream)?;
     // Keep the fetched commit pinned, but use the branch message accepted by commit-message hooks.
     let message = format!("Merge remote-tracking branch '{branch}'");
+    let args = [
+        "merge",
+        "--ff",
+        "--commit",
+        "--no-squash",
+        "--no-edit",
+        stash,
+        "-m",
+        &message,
+        target,
+    ];
     run(
         root,
-        &[
-            "merge",
-            "--ff",
-            "--commit",
-            "--no-squash",
-            "--no-edit",
-            "--no-autostash",
-            "-m",
-            &message,
-            target,
-        ],
+        &args
+            .into_iter()
+            .filter(|arg| !arg.is_empty())
+            .collect::<Vec<_>>(),
     )
 }
 
@@ -170,6 +162,9 @@ fn check_current(root: &Path, request: &ActionRequest) -> Result<()> {
 
 pub(super) fn execute(root: &Path, request: &ActionRequest) -> Result<()> {
     check_current(root, request)?;
+    if request.changes_worktree() && super::update_backup::read(root)?.is_some() {
+        return Err(GitError::UpdatePending);
+    }
     if !matches!(request.action, Action::Fetch) {
         commit::require_idle(root)?;
     }

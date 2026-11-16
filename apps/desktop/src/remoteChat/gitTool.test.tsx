@@ -109,7 +109,7 @@ it('defaults to merge, switches branches and refreshes conflicts after a failed 
   } finally { await test.dispose(); }
 });
 
-it('always updates by merge without changing the strategy selected for pull', async () => {
+it('updates and pulls using the selected strategy', async () => {
   const test = fixture();
   try {
     await test.render();
@@ -117,8 +117,8 @@ it('always updates by merge without changing the strategy selected for pull', as
     await act(async () => test.panel().setStrategy('rebase'));
     await act(async () => test.panel().action('update'));
     expect(test.client.action).toHaveBeenLastCalledWith(expect.objectContaining({
-      action: 'update', strategy: 'merge' }));
-    expect(test.panel().notice).toBe('项目已更新');
+      action: 'update', strategy: 'rebase' }));
+    expect(test.panel().notice).toBe('client.gitUpdate.completed');
     expect(test.panel().strategy).toBe('rebase');
     await act(async () => test.panel().action('pull'));
     expect(test.client.action).toHaveBeenLastCalledWith(expect.objectContaining({

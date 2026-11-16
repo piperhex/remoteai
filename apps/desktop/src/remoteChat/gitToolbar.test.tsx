@@ -9,7 +9,7 @@ import { createAsyncGitFixture } from '../../../../shared/remote-chat/testing/gi
 let root: Root;
 let host: HTMLDivElement;
 let client: ReturnType<typeof createAsyncGitFixture>;
-const updateHint = '获取远程更新，无冲突时自动合并并提交。';
+const updateHint = '获取远程更新，并按所选方式整合到当前分支。';
 
 function Fixture() {
   const panel = useRemoteGit({ client, cwd: '/project', connected: true, active: true });
@@ -30,30 +30,30 @@ afterEach(async () => {
   await act(async () => root.unmount()); host.remove(); vi.unstubAllGlobals();
 });
 
-it('shows automatic merge for update even after choosing rebase for pull', async () => {
+it('shares the selected update strategy between pull and update', async () => {
   const changes = await client.changes('/project');
   client.changes = async () => ({ ...changes, files: [] });
   await act(async () => root.render(<Fixture />));
   await click('更新项目');
   expect(host.textContent).toContain(updateHint);
-  expect(host.querySelector('select')).toBeNull();
+  expect(host.querySelector('select')?.value).toBe('merge');
   await click('拉取 Pull');
   const strategy = host.querySelector('select')!;
   await act(async () => { strategy.value = 'rebase'; strategy.dispatchEvent(new Event('change', { bubbles: true })); });
   await click('更新项目');
-  expect(host.querySelector('select')).toBeNull();
+  expect(host.querySelector('select')?.value).toBe('rebase');
   await click('执行 更新项目');
-  expect(client.action).toHaveBeenLastCalledWith(expect.objectContaining({ action: 'update', strategy: 'merge' }));
+  expect(client.action).toHaveBeenLastCalledWith(expect.objectContaining({ action: 'update', strategy: 'rebase' }));
   await click('拉取 Pull');
   expect(host.querySelector('select')?.value).toBe('rebase');
 });
 
-it('keeps update disabled when there are local changes', async () => {
+it('allows updates with local changes and explains automatic saving', async () => {
   await act(async () => root.render(<Fixture />));
   await click('更新项目');
-  expect(host.textContent).toContain('请先提交本地改动，再拉取或更新项目。');
+  expect(host.textContent).toContain('本地修改（包括未跟踪文件）会自动保存，并在更新后恢复。');
   await click('执行 更新项目');
-  expect(client.action).not.toHaveBeenCalled();
+  expect(client.action).toHaveBeenCalledOnce();
 });
 
 it('exposes sync actions as labeled icons and disables rollback without a selection', async () => {

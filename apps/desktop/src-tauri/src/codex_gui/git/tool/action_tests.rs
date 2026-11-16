@@ -2,7 +2,12 @@ use super::super::output;
 use super::{actions, branches, changes, tests::Repo, GitError, Result};
 use serde_json::json;
 
-fn action(repo: &Repo, action: &str, target: Option<&str>, strategy: &str) -> Result<()> {
+pub(super) fn action(
+    repo: &Repo,
+    action: &str,
+    target: Option<&str>,
+    strategy: &str,
+) -> Result<()> {
     let state = changes::read(&repo.0)?;
     let request = serde_json::from_value(json!({ "action": action, "head": state.head,
         "branch": state.branch, "target": target, "strategy": strategy }))
@@ -10,7 +15,7 @@ fn action(repo: &Repo, action: &str, target: Option<&str>, strategy: &str) -> Re
     actions::execute(&repo.0, &request)
 }
 
-fn remote_pair() -> (Repo, Repo) {
+pub(super) fn remote_pair() -> (Repo, Repo) {
     let remote = Repo::new(true);
     // A local non-bare remote keeps these integration tests offline; pushing to an unselected branch is safe.
     remote.git(&["branch", "published"]);
@@ -26,7 +31,7 @@ fn remote_pair() -> (Repo, Repo) {
     (remote, local)
 }
 
-fn remote_commit(remote: &Repo, file: &str) {
+pub(super) fn remote_commit(remote: &Repo, file: &str) {
     remote.write(file, "remote change\n");
     remote.git(&["add", file]);
     remote.git(&["commit", "-m", "remote change"]);
@@ -61,7 +66,7 @@ fn branch_list_switch_and_remote_tracking_preserve_local_files() {
 }
 
 #[test]
-fn fetch_keeps_dirty_files_and_update_requires_clean_state() {
+fn fetch_keeps_dirty_files_and_pull_restores_the_index_and_worktree() {
     let (remote, local) = remote_pair();
     remote_commit(&remote, "remote.txt");
     let head = changes::head(&local.0);
@@ -72,10 +77,8 @@ fn fetch_keeps_dirty_files_and_update_requires_clean_state() {
     action(&local, "fetch", None, "merge").unwrap();
     assert_eq!(branches::read(&local.0).unwrap().behind, 1);
     assert_eq!(changes::head(&local.0), head);
-    assert!(matches!(
-        action(&local, "pull", None, "rebase"),
-        Err(GitError::Dirty)
-    ));
+    action(&local, "pull", None, "rebase").unwrap();
+    assert!(local.0.join("remote.txt").is_file());
     assert_eq!(output(&local.0, &["show", ":one.txt"]).unwrap(), "local");
     assert_eq!(
         std::fs::read_to_string(local.0.join("one.txt")).unwrap(),
@@ -196,7 +199,7 @@ fn commit_hook(repo: &Repo, script: &str) {
 }
 
 #[test]
-fn update_always_merges_with_the_tracking_branch_message_and_runs_hooks() {
+fn update_merge_uses_the_tracking_branch_message_and_runs_hooks() {
     let (remote, local) = remote_pair();
     remote_commit(&remote, "remote.txt");
     local.write("local.txt", "local\n");
@@ -209,7 +212,7 @@ fn update_always_merges_with_the_tracking_branch_message_and_runs_hooks() {
         "#!/bin/sh\nprintf 'checked' > .git/message-checked\n\
          test \"$(cat \"$1\")\" = \"Merge remote-tracking branch 'origin/published'\"\n",
     );
-    action(&local, "update", None, "rebase").unwrap();
+    action(&local, "update", None, "merge").unwrap();
     assert_eq!(
         output(&local.0, &["log", "-1", "--format=%s"]).unwrap(),
         "Merge remote-tracking branch 'origin/published'"

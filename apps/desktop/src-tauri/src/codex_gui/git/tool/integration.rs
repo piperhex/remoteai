@@ -12,6 +12,7 @@ pub(crate) enum Kind {
     Rebase,
     CherryPick,
     Revert,
+    Stash,
 }
 
 #[derive(Serialize)]
@@ -49,6 +50,7 @@ pub(super) fn fingerprint(root: &Path) -> Result<Sha256> {
         "rebase-apply/onto",
         "rebase-apply/next",
         "sequencer/todo",
+        "remoteai-update.json",
     ] {
         hash.update(name);
         match fs::read(directory.join(name)) {
@@ -61,6 +63,19 @@ pub(super) fn fingerprint(root: &Path) -> Result<Sha256> {
 }
 
 pub(super) fn read(root: &Path) -> Result<Option<Integration>> {
+    if let Some(state) = read_git(root)? {
+        return Ok(Some(state));
+    }
+    if super::update_backup::read(root)?.is_some() {
+        return Ok(Some(Integration {
+            kind: Kind::Stash,
+            version: format!("{:x}", fingerprint(root)?.finalize()),
+        }));
+    }
+    Ok(None)
+}
+
+pub(super) fn read_git(root: &Path) -> Result<Option<Integration>> {
     let directory = git_path(root, "MERGE_HEAD")?
         .parent()
         .ok_or(GitError::Directory)?
@@ -96,6 +111,7 @@ pub(super) fn resume(root: &Path, version: &str) -> Result<()> {
         Kind::Rebase => ["rebase", "--continue"],
         Kind::CherryPick => ["cherry-pick", "--continue"],
         Kind::Revert => ["revert", "--continue"],
+        Kind::Stash => return super::update::resume(root),
     };
     let status = command_options(root, false)
         .env("GIT_EDITOR", "true")
@@ -109,6 +125,9 @@ pub(super) fn resume(root: &Path, version: &str) -> Result<()> {
         .map_err(|_| GitError::Unavailable)?;
     if !status.success() {
         return Err(GitError::ContinueFailed);
+    }
+    if read_git(root)?.is_none() {
+        super::update::finish(root)?;
     }
     Ok(())
 }
