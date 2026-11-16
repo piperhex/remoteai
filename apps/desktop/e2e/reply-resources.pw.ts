@@ -54,7 +54,7 @@ for (const mode of ['local', 'remote', 'web']) {
       await open('settings.json');
       await expect(active).toContainText('Resource preview');
       samples['settings.json'] = Buffer.from('{"enabled":true,"name":"Updated resource"}');
-      await browser.getByRole('textbox', { name: '页面地址', exact: true }).press('Enter');
+      await browser.getByLabel('页面地址', { exact: true }).press('Enter');
       await expect(active).toContainText('Updated resource');
       await page.screenshot({ path: info.outputPath(`${mode}-${dark ? 'dark-narrow' : 'light-wide'}-json.png`) });
       await open('archive.zip');

@@ -43,7 +43,7 @@ async function verifyHover(page: Page, browser: Locator, info: TestInfo, label: 
 }
 
 async function verifyNavigation(browser: Locator) {
-  const address = browser.getByRole('textbox', { name: '页面地址', exact: true });
+  const address = browser.getByLabel('页面地址', { exact: true });
   await browser.getByRole('button', { name: '新标签页', exact: true }).click();
   await expect(browser.getByRole('tab').last().locator('img')).toHaveCount(0);
   await expect(browser.locator('.pm-browser-toolbar .lucide-globe')).toBeVisible();
@@ -62,7 +62,7 @@ async function verifyNavigation(browser: Locator) {
 }
 
 async function verifyFallbackAndOverflow(page: Page, browser: Locator, info: TestInfo, label: string) {
-  const address = browser.getByRole('textbox', { name: '页面地址', exact: true });
+  const address = browser.getByLabel('页面地址', { exact: true });
   await address.fill('missing.example.test/preview-site/page'); await address.press('Enter');
   await expect(browser.getByRole('tab').last().locator('img')).toHaveCount(0);
   await expect(browser.getByRole('tab').last().locator('.lucide-globe')).toBeVisible();

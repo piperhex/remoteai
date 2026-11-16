@@ -11,7 +11,7 @@ try {
   await page.goto(`http://127.0.0.1:1552/e2e/browser-bookmarks-harness.html?mode=${mode}${sidebar ? '&sidebar=1&dark=1&font=20' : ''}`,
     { waitUntil: 'domcontentloaded' });
   const chrome = page.locator('.pm-browser');
-  const address = chrome.getByRole('textbox', { name: '页面地址', exact: true });
+  const address = chrome.getByLabel('页面地址', { exact: true });
   await address.fill('http://127.0.0.1:1553/preview-site/guide'); await address.press('Enter');
   await expect.poll(() => context.pages().some(entry => entry.url().includes(':1553/preview-site/guide'))).toBe(true);
   await chrome.locator('.browser-bookmark-star').click();

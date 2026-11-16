@@ -10,7 +10,7 @@ for (const mode of ['local', 'remote']) for (const enlarged of [false, true]) {
     const browser = page.locator('.browser-main-page');
     const settings = browser.getByRole('button', { name: '浏览器设置', exact: true });
     const menu = page.locator('.browser-bookmark-settings-popup');
-    const address = browser.getByRole('textbox', { name: '页面地址', exact: true });
+    const address = browser.getByLabel('页面地址', { exact: true });
     const screenshot = (state: string) => page.screenshot({
       path: info.outputPath(`${mode}-${enlarged ? 'dark-20px-narrow' : 'light-14px'}-${state}.png`),
       animations: 'disabled',

@@ -39,7 +39,7 @@ for (const mode of ['local', 'remote']) for (const enlarged of [false, true]) {
     await menu.getByRole('menuitem', { name: '工作', exact: true }).click();
     await menu.getByRole('menuitem', { name: '使用指南', exact: true }).click();
     await expect(settings).toBeHidden();
-    await expect(toolbar.getByRole('textbox', { name: '页面地址', exact: true }))
+    await expect(toolbar.getByLabel('页面地址', { exact: true }))
       .toHaveValue('https://example.test/guide');
     await toolbar.getByRole('button', { name: '浏览器设置', exact: true }).click();
     await all.focus(); await page.keyboard.press('ArrowLeft');

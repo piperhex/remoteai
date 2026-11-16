@@ -56,7 +56,7 @@ try {
   const stop = chrome.getByRole('button', { name: '取消', exact: true });
   const reload = chrome.getByRole('button', { name: '刷新', exact: true });
   await page.getByRole('link', { name: '使用指南' }).click();
-  const address = chrome.getByRole('textbox', { name: '页面地址', exact: true });
+  const address = chrome.getByLabel('页面地址', { exact: true });
   await address.fill('http://127.0.0.1:1555/preview-site/guide'); await address.press('Enter');
   await expect.poll(() => resources.size).toBe(1);
   await expect(stop).toBeVisible();

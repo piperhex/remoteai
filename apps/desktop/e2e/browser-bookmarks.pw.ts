@@ -40,7 +40,7 @@ for (const mode of ['local', 'remote', 'web']) {
       await page.goto(`/e2e/browser-bookmarks-harness.html?mode=${mode}${enlarged ? '&dark=1&font=20' : ''}`,
         { waitUntil: 'domcontentloaded' });
       const browser = page.locator('.pm-browser');
-      const address = browser.getByRole('textbox', { name: '页面地址', exact: true });
+      const address = browser.getByLabel('页面地址', { exact: true });
       const nav = page.locator('.sidebar-tabs');
       await expect(nav.locator(':scope > button').filter({ hasText: 'Agent Hub' })
         .locator('xpath=following-sibling::button[1]')).toHaveText('浏览器');

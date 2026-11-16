@@ -55,7 +55,7 @@ try {
   await children?.close(); await browser?.close(); native.kill(); fixture.close();
 }
 
-function addressOf(page) { return page.getByRole('textbox', { name: '页面地址', exact: true }); }
+function addressOf(page) { return page.getByLabel('页面地址', { exact: true }); }
 function chromeOf(page) { return page.locator('.browser-main-page, .website-preview-browser'); }
 async function childAt(context, url) {
   await expect.poll(() => context.pages().map(entry => entry.url())).toContain(url);

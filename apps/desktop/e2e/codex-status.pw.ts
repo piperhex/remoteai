@@ -71,7 +71,7 @@ for (const mode of ['local', 'remote', 'web']) {
         const bounds = (await browser.boundingBox())!;
         expect(Math.abs(bounds.width - page.viewportSize()!.width * 0.85)).toBeLessThan(2);
         expect(Math.abs(bounds.height - page.viewportSize()!.height * 0.85)).toBeLessThan(2);
-        await expect(browser.getByRole('textbox', { name: '页面地址' })).toHaveValue('https://status.openai.com/');
+        await expect(browser.getByLabel('页面地址', { exact: true })).toHaveValue('https://status.openai.com/');
         await expect(browser.locator('.codex-status-preview-page img')).toBeVisible();
         if (state === 'api-disrupted') {
           await page.screenshot({ path: info.outputPath(`${mode}-${dark ? 'dark' : 'light'}-browser.png`) });

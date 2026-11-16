@@ -9,7 +9,7 @@ const page = browser.contexts()[0].pages().find(page => page.url().includes('bro
 if (!page) throw new Error('Isolated browser-data harness is required');
 let engine;
 try {
-  const address = page.getByRole('textbox', { name: '页面地址' });
+  const address = page.getByLabel('页面地址', { exact: true });
   await address.fill(target.href); await address.press('Enter');
   await expect.poll(async () => {
     try { engine = await chromium.connectOverCDP('http://127.0.0.1:9356'); return true; } catch { return false; }

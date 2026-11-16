@@ -45,7 +45,7 @@ for (const mode of ['local', 'remote', 'web']) {
       }, Object.entries(tauriConfig.app.security.csp).map(([key, value]) => `${key} ${value}`).join('; '));
       await page.locator('main').getByRole('button').filter({ hasText: 'page.html' }).click();
       const browser = page.locator('.website-preview-browser');
-      const address = browser.getByRole('textbox', { name: '页面地址', exact: true });
+      const address = browser.getByLabel('页面地址', { exact: true });
       const frame = browser.frameLocator('iframe');
       await expect(address).toHaveValue(documentUrl);
       await expect(frame.locator('body')).toHaveAttribute('data-isolated', 'yes');

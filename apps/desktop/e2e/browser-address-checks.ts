@@ -25,7 +25,7 @@ async function expectAddressStart(address: Locator, url: string) {
 export async function verifyAddressDisplay(options: { page: Page; info: TestInfo; label: string; mobile?: boolean }) {
   const { page, info, label, mobile } = options;
   const browser = page.locator('.browser-main-page, .website-preview-browser');
-  const address = browser.getByRole('textbox', { name: '页面地址', exact: true });
+  const address = browser.getByLabel('页面地址', { exact: true });
   const screenshot = (state: string) => page.screenshot({
     path: info.outputPath(`${label}-${state}.png`), animations: 'disabled',
   });

@@ -11,7 +11,7 @@ try {
   const preview = page.locator('.website-preview-browser');
   const expand = page.getByRole('button', { name: '展开详情抽屉', exact: true });
   if (await expand.count()) await expand.click();
-  const address = preview.getByRole('textbox', { name: '页面地址', exact: true });
+  const address = preview.getByLabel('页面地址', { exact: true });
   const original = await address.inputValue();
   expect(original).toContain('image-preview-annotation-evidence/index.html');
   const frame = preview.frameLocator('iframe');

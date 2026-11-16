@@ -43,7 +43,7 @@ async function verifyMenus(root, child, label) {
   const identity = await child.evaluate(() => window.pageIdentity);
   const image = root.locator('.native-browser-overlay-preview');
   const settings = root.getByRole('button', { name: '浏览器设置', exact: true });
-  const address = root.getByRole('textbox', { name: '页面地址', exact: true });
+  const address = root.getByLabel('页面地址', { exact: true });
   const preserved = async state => {
     await expect(image).toBeVisible();
     await expect.poll(() => image.evaluate(el => el.complete && el.naturalWidth > 0)).toBe(true);
@@ -98,8 +98,8 @@ try {
     await page.goto(`http://127.0.0.1:1552/e2e/browser-bookmarks-harness.html?mode=${mode}`
       + (narrow ? '&dark=1&font=20' : ''), { waitUntil: 'domcontentloaded' });
     const root = page.locator('.browser-main-page');
-    await root.getByRole('textbox', { name: '页面地址', exact: true }).fill(origin);
-    await root.getByRole('textbox', { name: '页面地址', exact: true }).press('Enter');
+    await root.getByLabel('页面地址', { exact: true }).fill(origin);
+    await root.getByLabel('页面地址', { exact: true }).press('Enter');
     await verifyMenus(root, await childPage(context), `windows-${mode}-${narrow ? 'dark-narrow' : 'light-wide'}`);
   }
   await page.setViewportSize({ width: 1440, height: 900 });

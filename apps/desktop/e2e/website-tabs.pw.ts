@@ -35,7 +35,7 @@ for (const mode of ['local', 'remote', 'web']) {
       await expect(frame.getByRole('heading', { name: 'dashboard' })).toBeVisible();
       await browser.getByRole('button', { name: '新标签页', exact: true }).click();
       await expect(browser.getByRole('tab')).toHaveCount(3);
-      const address = browser.getByRole('textbox', { name: '页面地址', exact: true });
+      const address = browser.getByLabel('页面地址', { exact: true });
       await address.fill('javascript:alert(1)'); await address.press('Enter');
       await expect(address).toHaveAttribute('aria-invalid', 'true');
       await address.fill('http://127.0.0.1:1552/preview-site/custom'); await address.press('Enter');
@@ -194,7 +194,7 @@ for (const mode of ['local', 'remote', 'web']) {
     const browser = page.locator('.website-preview-browser');
     for (let index = 0; index < 7; index++) {
       await browser.getByRole('button', { name: '新标签页', exact: true }).click();
-      const address = browser.getByRole('textbox', { name: '页面地址', exact: true });
+      const address = browser.getByLabel('页面地址', { exact: true });
       await address.fill(`http://127.0.0.1:1552/preview-site/long-page-title-${index}`); await address.press('Enter');
     }
     const strip = browser.locator('.pm-browser-tabs');

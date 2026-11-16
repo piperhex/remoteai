@@ -103,7 +103,7 @@ for (const mode of ['local', 'remote']) test(`${mode}: MD5 cache checks only on 
   await navigation(page).getByRole('button', { name: '浏览器', exact: true }).click();
   await expect(home(page).getByRole('heading', { name: '自定义首页 B' })).toBeVisible();
   await home(page).getByRole('link', { name: '打开工作空间' }).click();
-  await expect(page.getByRole('textbox', { name: '页面地址' })).toHaveValue('https://home.example.test/');
+  await expect(page.getByLabel('页面地址', { exact: true })).toHaveValue('https://home.example.test/');
 });
 
 test('first visit is blank until ready; sidebar and mobile do not check custom home', async ({ page, request }, info) => {

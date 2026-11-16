@@ -19,7 +19,7 @@ export async function checkWorkspaceStart(options: {
   await start.getByRole('button', { name: '浏览器', exact: true }).click();
   const drawer = page.locator('aside[data-details-panel]');
   await expect(drawer.getByRole('tab', { name: '浏览器', exact: true })).toHaveAttribute('aria-selected', 'true');
-  await expect(drawer.getByRole('textbox', { name: '页面地址', exact: true })).toBeVisible();
+  await expect(drawer.getByLabel('页面地址', { exact: true })).toBeVisible();
   const sidebar = page.getByRole('button', { name: '侧栏内容', exact: true });
   await expect(sidebar).toHaveAttribute('aria-expanded', 'true');
   for (const action of ['关闭详情抽屉', '最小化详情抽屉', '侧栏内容']) {

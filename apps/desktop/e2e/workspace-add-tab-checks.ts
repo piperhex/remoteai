@@ -61,7 +61,7 @@ async function checkDirectMenu(page: Page, info: TestInfo, label: string) {
   await expect(tab(page, 'Git')).toHaveAttribute('aria-selected', 'true');
   await openAdd(page); await addition(page, '浏览器').click();
   await expect(tab(page, '浏览器')).toHaveAttribute('aria-selected', 'true');
-  await expect(drawer(page).getByRole('textbox', { name: '页面地址', exact: true })).toBeVisible();
+  await expect(drawer(page).getByLabel('页面地址', { exact: true })).toBeVisible();
   await expect(add(page)).toHaveCount(0);
 }
 

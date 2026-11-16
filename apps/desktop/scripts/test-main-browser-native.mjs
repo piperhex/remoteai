@@ -45,7 +45,7 @@ try {
       };
     });
     const chrome = page.locator('.browser-main-page');
-    const address = chrome.getByRole('textbox', { name: '页面地址', exact: true });
+    const address = chrome.getByLabel('页面地址', { exact: true });
     await address.fill('http://127.0.0.1:18306/?native-child=1');
     await address.press('Enter');
     await expect.poll(() => context.pages().some(entry => entry.url().includes('native-child=1'))).toBe(true);

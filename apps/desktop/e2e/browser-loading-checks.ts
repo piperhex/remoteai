@@ -33,7 +33,7 @@ export async function verifyBrowserLoading(page: Page, info: TestInfo, label: st
     await expect(reload).toBeVisible();
     await page.screenshot({ path: info.outputPath(`${label}-loaded.png`) });
     slow = true;
-    const address = browser.getByRole('textbox', { name: '页面地址', exact: true });
+    const address = browser.getByLabel('页面地址', { exact: true });
     await address.fill('https://preview.example.test/preview-site/cross-origin'); await address.press('Enter');
     await expect(stop).toBeVisible();
     await expect(browser.locator('iframe').first().contentFrame().getByRole('heading')).toBeVisible();

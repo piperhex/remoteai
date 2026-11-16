@@ -38,7 +38,7 @@ async function verify(mode, font = 14, protocol = 'https') {
   await page.evaluate(scope => localStorage.removeItem(`remoteai:browser-data:${scope}`), scope);
   await page.goto(`http://127.0.0.1:1572/e2e/browser-data-harness.html?mode=${mode}&font=${font}`);
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true');
-  const address = page.getByRole('textbox', { name: '页面地址' });
+  const address = page.getByLabel('页面地址', { exact: true });
   await address.fill(addressUrl); await address.press('Enter');
   await expect.poll(async () => {
     try { engine = await chromium.connectOverCDP('http://127.0.0.1:9356'); return true; } catch { return false; }

@@ -8,7 +8,7 @@ for (const mode of ['local', 'remote', 'web']) for (const enlarged of [false, tr
     const entry = `/e2e/browser-bookmarks-harness.html?mode=${mode}${enlarged ? '&dark=1&font=20' : ''}`;
     await page.goto(entry, { waitUntil: 'domcontentloaded' });
     const browser = page.locator('.pm-browser');
-    const address = browser.getByRole('textbox', { name: '页面地址', exact: true });
+    const address = browser.getByLabel('页面地址', { exact: true });
     const settings = browser.getByRole('button', { name: '浏览器设置', exact: true });
     await address.fill('默认搜索 测试'); await address.press('Enter');
     await expect(address).toHaveValue('https://www.google.com/search?q=%E9%BB%98%E8%AE%A4%E6%90%9C%E7%B4%A2+%E6%B5%8B%E8%AF%95');
@@ -54,7 +54,7 @@ for (const mode of ['local', 'remote', 'web']) {
       return route.fulfill({ contentType: 'text/html', body: '<h1>Numeric search result</h1>' });
     });
     await page.goto(`/e2e/browser-bookmarks-harness.html?mode=${mode}`, { waitUntil: 'domcontentloaded' });
-    const address = page.getByRole('textbox', { name: '页面地址', exact: true });
+    const address = page.getByLabel('页面地址', { exact: true });
     for (const query of ['666', '664656', '666']) {
       await address.fill(query); await address.press('Enter');
       await expect(address).toHaveValue(`https://www.google.com/search?q=${query}`);
