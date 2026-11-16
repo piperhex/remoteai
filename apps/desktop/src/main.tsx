@@ -1,4 +1,5 @@
 import React from "react";
+import './nativeRtc/install';
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';

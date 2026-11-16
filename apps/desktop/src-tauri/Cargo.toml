@@ -36,6 +36,9 @@ csw-provider-balance-script = { path = "../../../crates/provider-balance-script"
 arboard = { version = "3.6.1", default-features = false, features = ["image-data"] }
 base64 = "0.22"
 bytes = "1"
+webrtc = "0.17.1"
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+webpki-roots = "1"
 aes-gcm = "0.10"
 chrono = { version = "0.4", features = ["serde"] }
 crypto_box = { version = "0.9.1", features = ["seal"] }
@@ -93,6 +96,7 @@ rusqlite = { version = "0.32.1", default-features = false, features = ["bundled"
 sysinfo = "0.37"
 
 [dev-dependencies]
+socket2 = "0.6"
 qrcode = "0.14.1"
 tauri = { version = "2", features = ["test"] }
 
@@ -174,7 +178,3 @@ windows = { version = "0.61", features = [
   "Win32_UI_Shell",
   "Win32_UI_Accessibility",
 ] }
-[target.'cfg(any(windows, target_os = "macos"))'.dependencies]
-webrtc = "0.17.1"
-tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
-webpki-roots = "1"

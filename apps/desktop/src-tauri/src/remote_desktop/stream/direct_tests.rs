@@ -70,7 +70,7 @@ async fn fixture(relay_standby: bool) -> Arc<Stream> {
 }
 
 async fn fixture_with_servers(relay_standby: bool, ice_servers: Vec<IceServer>) -> Arc<Stream> {
-    let peer = Arc::new(peer::create(vec![], false).await.unwrap());
+    let peer = Arc::new(peer::create_loopback().await.unwrap());
     let stream = Arc::new(Stream {
         id: "direct-upgrade-unit-test".into(),
         #[cfg(windows)]
@@ -124,7 +124,7 @@ async fn fixture_with_servers(relay_standby: bool, ice_servers: Vec<IceServer>) 
 }
 
 async fn pending(stream: &Arc<Stream>) -> Arc<Peer> {
-    let peer = Arc::new(peer::create(vec![], false).await.unwrap());
+    let peer = Arc::new(peer::create_loopback().await.unwrap());
     peer::bind(stream, &peer);
     let mut state = stream.upgrades.lock().await;
     state.generation = 1;
@@ -133,7 +133,7 @@ async fn pending(stream: &Arc<Stream>) -> Arc<Peer> {
 }
 
 async fn connect(host: &Arc<Peer>) -> (Peer, Arc<RTCDataChannel>) {
-    let client = peer::create(vec![], false).await.unwrap();
+    let client = peer::create_loopback().await.unwrap();
     let (sender, mut receiver) = mpsc::unbounded_channel();
     client.connection.on_data_channel(Box::new(move |channel| {
         let sender = sender.clone();
@@ -261,7 +261,7 @@ async fn backup_heartbeats_and_activation_preserve_capture_and_do_not_warm_dupli
     let stream = fixture(true).await;
     let original = Arc::clone(&stream.peer.borrow());
     let (direct_client, _) = connect(&original).await;
-    let backup = Arc::new(peer::create(vec![], false).await.unwrap());
+    let backup = Arc::new(peer::create_loopback().await.unwrap());
     peer::bind(&stream, &backup);
     let (relay_client, channel) = connect(&backup).await;
     super::super::relay::retain(&stream, Arc::clone(&backup)).await;
@@ -310,7 +310,7 @@ async fn closing_the_active_peer_switches_to_the_backup_instead_of_cancelling_ca
     let stream = fixture(true).await;
     let original = Arc::clone(&stream.peer.borrow());
     let (direct_client, _) = connect(&original).await;
-    let backup = Arc::new(peer::create(vec![], false).await.unwrap());
+    let backup = Arc::new(peer::create_loopback().await.unwrap());
     peer::bind(&stream, &backup);
     let (relay_client, _) = connect(&backup).await;
     super::super::relay::retain(&stream, Arc::clone(&backup)).await;

@@ -8,6 +8,7 @@ vi.mock('./tcpNetwork', () => ({ DesktopTcpNetwork: class {
   constructor(session: string, generation: number) { state.network(session, generation); }
 } }));
 const peers: Peer[] = [];
+vi.mock('../nativeRtc/connection', () => ({ createNativeRtcConnection: () => { throw new Error('RTC unavailable'); } }));
 beforeEach(() => {
   vi.useFakeTimers(); vi.clearAllMocks();
   state.listen.mockRejectedValue(new Error('Network unavailable'));

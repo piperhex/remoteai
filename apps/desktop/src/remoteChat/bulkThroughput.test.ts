@@ -11,6 +11,7 @@ import { BULK_LIMITS } from '../../../../shared/remote-chat/bulkLimits';
 import { manifestHasher } from '../../../../shared/remote-chat/downloadManifest';
 import { bulkScheduler } from '../../../../shared/remote-chat/bulkScheduler';
 import type { ChatLink } from '../../../../shared/remote-chat/link';
+import { nativeSenderFixture } from './bulkNativeTestFixture';
 
 type Batch = { sequence: number; events: HostTransportEvent[] };
 const mocks = vi.hoisted(() => ({ invoke: vi.fn(), request: vi.fn() }));
@@ -66,8 +67,9 @@ it('sends 32 MiB through bounded raw IPC batches with ordered ciphertext and roo
     expect(offset).toBe(bytes.length);
   };
   mocks.request.mockImplementation(async request => request.operation === 'fileManifest' ? info : undefined);
-  mocks.invoke.mockImplementation(async (command: string, data: Uint8Array | { request: { block: number } }) => {
-    if (command === 'codex_gui_file_bulk_read' && !(data instanceof Uint8Array)) return content(data.request.block).buffer;
+  const sender = nativeSenderFixture(content);
+  mocks.invoke.mockImplementation(async (command: string, data: unknown) => {
+    if (command.startsWith('codex_gui_file_bulk_sender_')) return sender(command, data);
     if (command !== 'remote_chat_bulk_send' || !(data instanceof Uint8Array)) return;
     ipcCalls++;
     // Model the native socket's idle read wait once per command, as on a quiet relay connection.

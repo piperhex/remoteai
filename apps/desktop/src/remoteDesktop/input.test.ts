@@ -1,7 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { DesktopPointer, MAX_BUFFERED_INPUT, sendDesktopInput } from '../../../../shared/remote-desktop/input';
-import { DesktopControls } from './controls';
-import type { DesktopCapture } from './capture';
 
 afterEach(() => vi.useRealTimers());
 it('coalesces pointer moves and flushes them before mouse presses', () => {
@@ -30,23 +28,6 @@ it('closes a failed channel without throwing during held input cleanup', () => {
   expect(channel.close).toHaveBeenCalled();
   pointer.dispose();
 });
-it('serializes native input, drops stale motion and preserves button ordering', async () => {
-  let complete!: () => void;
-  const input = vi.fn().mockImplementationOnce(() => new Promise<void>(resolve => { complete = resolve; }))
-    .mockResolvedValue(undefined);
-  const controls = new DesktopControls({ input } as unknown as DesktopCapture, vi.fn());
-  controls.receive('{"kind":"move","x":0,"y":0}');
-  controls.receive('{"kind":"move","x":0.1,"y":0.1}');
-  controls.receive('{"kind":"move","x":0.2,"y":0.2}');
-  controls.receive('{"kind":"button","button":"left","down":true}');
-  expect(input).toHaveBeenCalledTimes(1);
-  complete();
-  await vi.waitFor(() => expect(input).toHaveBeenCalledTimes(3));
-  expect(input.mock.calls[1][0]).toEqual({ kind: 'move', x: 0.2, y: 0.2 });
-  expect(input.mock.calls[2][0]).toEqual({ kind: 'button', button: 'left', down: true });
-  controls.close();
-});
-
 it('updates the local pointer immediately, before the transport flush, and unsubscribes cleanly', () => {
   vi.useFakeTimers();
   const send = vi.fn(); const pointer = new DesktopPointer(send); const changed = vi.fn();

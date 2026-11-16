@@ -4,14 +4,10 @@ import { HostSession } from './hostSession';
 import { DEFAULT_SETTINGS } from '../../../../shared/remote-desktop/protocol';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-const fallback = vi.hoisted(() => ({ open: vi.fn(), close: vi.fn() }));
-vi.mock('./session', () => ({ DesktopHostSession: class {
-  open = fallback.open;
-  close = fallback.close;
-} }));
+const browser = vi.fn(() => { throw new Error('Browser RTC must not run'); });
 const call = vi.mocked(invoke);
 beforeEach(() => {
-  vi.useFakeTimers(); vi.clearAllMocks();
+  vi.useFakeTimers(); vi.clearAllMocks(); vi.stubGlobal('RTCPeerConnection', browser);
   call.mockImplementation(async command => {
     if (command === 'remote_desktop_open') return { id: 'mac-lease', nativeOnly: true, platform: 'macos',
       displays: [{ id: 'macos:1', name: '显示器 1', width: 3024, height: 1964, primary: true }] };
@@ -19,7 +15,7 @@ beforeEach(() => {
     if (command === 'remote_desktop_stream_open') return { sdp: 'mac-offer' };
   });
 });
-afterEach(() => vi.useRealTimers());
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 it('publishes macOS display discovery and controls through the existing viewer protocol', async () => {
   const session = new HostSession(DEFAULT_SETTINGS, []);
@@ -28,7 +24,7 @@ it('publishes macOS display discovery and controls through the existing viewer p
     displays: [{ id: 'macos:1' }] });
   await session.close();
   expect(call).toHaveBeenCalledWith('remote_desktop_stream_close', { id: 'mac-lease' });
-  expect(fallback.open).not.toHaveBeenCalled();
+  expect(browser).not.toHaveBeenCalled();
 });
 
 it('uses Retina backing pixels for capture quality on all viewers', async () => {
@@ -53,13 +49,13 @@ it('preserves macOS encoder errors and releases the lease without attempting Win
   });
   await expect(new HostSession(DEFAULT_SETTINGS, []).open()).rejects.toThrow('屏幕录制不可用');
   expect(call).toHaveBeenCalledWith('remote_desktop_stream_close', { id: 'mac-lease' });
-  expect(fallback.open).not.toHaveBeenCalled();
+  expect(browser).not.toHaveBeenCalled();
 });
 
-it('retains Windows compatibility fallback without opening an extra lease', async () => {
-  call.mockImplementation(async command => command === 'remote_desktop_open' ? 'windows-lease' : false);
-  fallback.open.mockResolvedValue({ sdp: 'compatibility-offer' });
-  expect(await new HostSession(DEFAULT_SETTINGS, []).open()).toMatchObject({ sdp: 'compatibility-offer' });
+it('reports an unavailable native runtime without constructing browser RTC or opening an extra lease', async () => {
+  call.mockResolvedValue(false);
+  await expect(new HostSession(DEFAULT_SETTINGS, []).open()).rejects.toBeDefined();
+  expect(browser).not.toHaveBeenCalled();
   expect(call.mock.calls.some(([command]) => command === 'remote_desktop_open')).toBe(false);
 });
 
@@ -70,21 +66,18 @@ it.each(['屏幕录制', '辅助功能'])('does not retry %s refusals through ca
     return command === 'remote_desktop_stream_available';
   });
   await expect(new HostSession(DEFAULT_SETTINGS, []).open()).rejects.toBe(message);
-  expect(fallback.open).not.toHaveBeenCalled();
+  expect(browser).not.toHaveBeenCalled();
   expect(call.mock.calls.filter(([command]) => command === 'remote_desktop_open')).toHaveLength(1);
 });
 
-it('retains both the original startup failure and a different fallback failure', async () => {
-  call.mockImplementation(async () => false);
-  fallback.open.mockRejectedValue('请在 Mac 的远程设置中开启辅助功能权限，然后重新连接。');
+it('retains the native startup failure instead of hiding it with a browser fallback', async () => {
+  call.mockResolvedValue(false);
   const diagnostic = vi.fn();
   await expect(new HostSession(DEFAULT_SETTINGS, [], undefined, diagnostic).open()).rejects.toBeDefined();
   expect(diagnostic).toHaveBeenCalledWith('desktop-failed', expect.objectContaining({
     stage: 'runtime-check', desktopError: 'runtime-unavailable',
   }));
-  expect(diagnostic).toHaveBeenCalledWith('desktop-failed', expect.objectContaining({
-    stage: 'fallback-open', desktopError: 'accessibility-permission',
-  }));
+  expect(browser).not.toHaveBeenCalled();
 });
 
 it.each(['client.remoteDesktop.lockedRequiresUnattended', 'client.remoteDesktop.privacyRequiresUnattended',
@@ -99,6 +92,6 @@ it.each(['client.remoteDesktop.lockedRequiresUnattended', 'client.remoteDesktop.
     return command === 'remote_desktop_stream_available';
   });
   await expect(new HostSession(DEFAULT_SETTINGS, []).open()).rejects.toBe(message);
-  expect(fallback.open).not.toHaveBeenCalled();
+  expect(browser).not.toHaveBeenCalled();
   expect(call).toHaveBeenCalledWith('remote_desktop_stream_close', { id: 'windows-lease' });
 });

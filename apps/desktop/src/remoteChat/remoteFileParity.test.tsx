@@ -55,7 +55,8 @@ afterEach(async () => {
 it('uses the shared drawer and resolves nested files and images beside the remote document', async () => {
   await render('[Guide](F:/remote/docs/guide.md)'); await click('Guide');
   expect(host.querySelector('[data-details-panel]')?.textContent).toContain('Remote guide');
-  expect(host.querySelector('img')?.src).toBe('http://127.0.0.1:54321/token/images/a.png');
+  expect(host.querySelector<HTMLImageElement>('img[alt="Photo"]')?.src)
+    .toBe('http://127.0.0.1:54321/token/images/a.png');
   expect(button('源码')).toBeTruthy();
   await click('Next');
   expect(environment.previews.open).toHaveBeenLastCalledWith({ path: 'F:/remote/docs/next.md',

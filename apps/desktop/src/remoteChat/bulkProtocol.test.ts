@@ -23,6 +23,19 @@ function ciphers(epochId = epoch) {
 }
 
 describe('authenticated binary file records', () => {
+  it('hands the unused directional key to Rust once and disables the JS cipher', () => {
+    const { sender, receiver } = ciphers();
+    const material = sender.takeSenderMaterial();
+    expect(material.key).toEqual(receiver.receiverMaterial().key);
+    expect(material).toMatchObject({ transferId, epoch });
+    expect(() => sender.takeSenderMaterial()).toThrow();
+    expect(() => sender.encrypt({ requestId, block: 0, offset: 0 }, Uint8Array.of(1))).toThrow();
+    const used = ciphers().sender;
+    used.encrypt({ requestId, block: 0, offset: 0 }, Uint8Array.of(1));
+    expect(() => used.takeSenderMaterial()).toThrow();
+    material.key.fill(0); receiver.destroy(); used.destroy();
+  });
+
   it('round trips a complete 16 KiB record without RPC framing and rejects replay', () => {
     const { sender, receiver } = ciphers();
     const bytes = new Uint8Array(BULK_PAYLOAD_BYTES).fill(27);

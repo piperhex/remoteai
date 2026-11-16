@@ -1,4 +1,3 @@
-import { invoke } from '@tauri-apps/api/core';
 import { guiApi } from '../../../../shared/conversation/api';
 import { isDesktopApp } from '../api/backend';
 import type { ChatLink } from '../../../../shared/remote-chat/link';
@@ -12,9 +11,10 @@ import { blockLength, type DownloadManifest } from '../../../../shared/remote-ch
 import { fileDownloadByteLimit, getChatPolicy } from '../../../../shared/remote-chat/policy';
 import { object, type RpcRequest, type RpcResponse } from '../../../../shared/remote-chat/protocol';
 import { DownloadMetrics } from '../../../../shared/remote-chat/downloadMetrics';
+import { NativeBulkSender } from './bulkNativeSender';
 
 interface Transfer {
-  open: BulkOpen; manifest: DownloadManifest; cipher: ReturnType<ChatLink['createBulkCipher']>;
+  open: BulkOpen; manifest: DownloadManifest; cipher: NativeBulkSender;
   credit: BulkCredit; controller: AbortController;
   requests: Map<string, { block: number; number: number }>; active: Map<number, string>;
   reserved: number; requestNumber: number; payloadBytes: number; attempts: Uint8Array; metrics: DownloadMetrics;
@@ -100,8 +100,11 @@ export class BulkSource {
     try {
       const manifest = await metrics.measure('prepareMs', () => this.manifest(open));
       bulkAssert(!controller.signal.aborted && this.link.bulk?.path === open.path, 'PATH_UNAVAILABLE');
-      const cipher = this.link.createBulkCipher({ transferId: open.transferId, epoch: open.epoch,
-        manifestId: manifest.manifestId });
+      const cipher = await NativeBulkSender.open({ open, manifestId: manifest.manifestId,
+        recordBytes: capability.recordBytes, link: this.link });
+      if (controller.signal.aborted || this.link.bulk?.path !== open.path) {
+        cipher.destroy(); bulkAssert(false, 'PATH_UNAVAILABLE');
+      }
       const transfer: Transfer = { open, manifest, cipher, controller, credit: new BulkCredit(open.epoch),
         requests: new Map(), active: new Map(), reserved: 0, requestNumber: 0,
         payloadBytes: capability.recordBytes - BULK_HEADER_BYTES - BULK_TAG_BYTES,
@@ -154,38 +157,44 @@ export class BulkSource {
     const release = await bulkScheduler.reserve({ peer: this.peer, transfer: request.transferId,
       bytes: length, memory: length * 2, signal });
     try {
-      const bytes = new Uint8Array(await transfer.metrics.measure('verifyMs', () => invoke<ArrayBuffer>(
-        'codex_gui_file_bulk_read', { request: {
-        threadId: request.transferId, id: transfer.open.id, manifestId: request.manifestId, block: request.block,
-        maxBytes: fileDownloadByteLimit(this.link.connectionMode),
-      } })));
-      bulkAssert(bytes.length === length, 'SOURCE_CHANGED');
       const batchBytes = transfer.payloadBytes * BULK_LIMITS.sendBatchRecords;
-      for (let offset = 0; offset < bytes.length; offset += batchBytes) {
+      for (let offset = 0; offset < length; offset += batchBytes) {
         bulkAssert(!signal.aborted, 'CANCELLED');
-        const end = Math.min(offset + batchBytes, bytes.length);
-        const records = this.encryptBatch(transfer, request, { bytes, offset, end });
-        // A receiver may request a retry as soon as the last authenticated fragment arrives.
-        if (end === bytes.length) transfer.active.delete(request.block);
-        await transfer.metrics.measure('transportWaitMs', () =>
-          this.link.bulk!.sendBatch(records, transfer.open.path, signal));
-        transfer.metrics.add('usefulBytes', end - offset);
-        transfer.metrics.add('wireBytes', records.reduce((sum, record) => sum + record.length, 0));
-        // Yield once per bounded batch so RPC and the other file run without a timer per 16 KiB.
-        await new Promise<void>(resolve => setTimeout(resolve, 0));
+        const end = Math.min(offset + batchBytes, length);
+        await this.sendBatch(transfer, request, { offset, end, length });
+        // Native sends already yield through asynchronous IPC/backpressure. An extra WebView timer
+        // adds scheduling latency (and is throttled in background windows) without freeing more work.
+        if (!this.link.bulk?.nativeRtcHandle || transfer.open.path !== 'direct') {
+          await new Promise<void>(resolve => setTimeout(resolve, 0));
+        }
       }
     } finally { release(); }
   }
 
-  private encryptBatch(transfer: Transfer, request: BulkRequest,
-    range: { bytes: Uint8Array; offset: number; end: number }) {
-    const records: Uint8Array[] = [];
-    for (let offset = range.offset; offset < range.end; offset += transfer.payloadBytes) {
-      const fragment = range.bytes.subarray(offset, Math.min(offset + transfer.payloadBytes, range.end));
-      transfer.credit.consume(fragment.length); transfer.reserved -= fragment.length;
-      records.push(transfer.cipher.encrypt({ requestId: request.requestId, block: request.block, offset }, fragment));
+  private async sendBatch(transfer: Transfer, request: BulkRequest, range: { offset: number; end: number; length: number }) {
+    const { offset, end, length } = range;
+    const { signal } = transfer.controller;
+    const commit = () => {
+      bulkAssert(!signal.aborted, 'CANCELLED');
+      transfer.credit.consume(end - offset); transfer.reserved -= end - offset;
+      // A final record can trigger the next request before the native send command returns.
+      if (end === length) transfer.active.delete(request.block);
+    };
+    const batch = { block: request.block, offset, requestId: request.requestId };
+    const target = this.link.bulk?.nativeRtcHandle;
+    if (target && transfer.open.path === 'direct') {
+      const result = await transfer.cipher.sendDirect(batch, target, commit);
+      bulkAssert(result.usefulBytes === end - offset, 'INVALID_RECORD');
+      transfer.metrics.add('usefulBytes', result.usefulBytes); transfer.metrics.add('wireBytes', result.wireBytes);
+      return;
     }
-    return records;
+    await transfer.cipher.send(batch, async records => {
+      commit();
+      await transfer.metrics.measure('transportWaitMs', () =>
+        this.link.bulk!.sendBatch(records, transfer.open.path, signal));
+      transfer.metrics.add('usefulBytes', end - offset);
+      transfer.metrics.add('wireBytes', records.reduce((sum, record) => sum + record.length, 0));
+    });
   }
 
   private cancel(id: string, epoch: string) {

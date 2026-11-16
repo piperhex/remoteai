@@ -1,16 +1,27 @@
 //! Task-scoped file handles with bounded reads, expiry and no whole-file buffering.
 mod archives;
 pub(crate) mod bulk;
+mod bulk_cipher;
+pub(crate) mod bulk_encrypted;
+#[cfg(test)]
+mod bulk_encrypted_tests;
+pub(crate) mod bulk_send;
 #[cfg(test)]
 mod bulk_tests;
 #[cfg(test)]
 mod download_tests;
+#[cfg(test)]
+pub(crate) mod encrypted_benchmark_source;
 mod file;
 mod manifest;
 #[cfg(test)]
 mod preview_tests;
 #[cfg(test)]
+pub(crate) mod rtc_fixture;
+#[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod throughput_benchmark;
 
 use super::{
     client::Client,

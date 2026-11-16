@@ -1,0 +1,22 @@
+[package]
+name = "remoteai-native-rtc-benchmark"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+bytes = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+socket2 = "0.6"
+tauri = { version = "2", default-features = false }
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+uuid = { version = "1", features = ["v4"] }
+webrtc = "=0.17.2"
+webpki-roots = "1"
+
+[dev-dependencies]
+base64 = "0.22"

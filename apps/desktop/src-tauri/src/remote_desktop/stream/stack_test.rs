@@ -17,7 +17,12 @@ fn desktop_open_futures_fit_the_windows_ui_stack() {
         ),
         ("session", future_size(super::open_at)),
         ("stream", future_size(super::native::Stream::open)),
-        ("peer", future_size(super::peer::create)),
+        (
+            "peer",
+            future_size(|servers, clipboard| {
+                super::peer::create_codec(servers, clipboard, super::codec::VideoCodec::H264)
+            }),
+        ),
         (
             "signal",
             future_size(|request, ()| super::remote_desktop_stream_signal(request)),

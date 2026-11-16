@@ -8,6 +8,7 @@ import { bulkCapability } from '../../../../shared/remote-chat/bulkControl';
 import { manifestHasher } from '../../../../shared/remote-chat/downloadManifest';
 import type { ChatLink } from '../../../../shared/remote-chat/link';
 import { bulkScheduler } from '../../../../shared/remote-chat/bulkScheduler';
+import { nativeSenderFixture } from './bulkNativeTestFixture';
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn(), request: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke }));
@@ -29,7 +30,7 @@ function fixture() {
     manifestId: bytesToHex(manifestHasher(dimensions).update(hash).update(hash).digest()),
     fileHash: bytesToHex(hash), sourceVersion: 'source' };
   mocks.request.mockImplementation(async request => request.operation === 'fileManifest' ? manifest : undefined);
-  mocks.invoke.mockImplementation(async () => bytes.slice().buffer);
+  mocks.invoke.mockImplementation(nativeSenderFixture(() => bytes));
   const transferId = crypto.randomUUID(), epoch = crypto.randomUUID(), id = crypto.randomUUID();
   const context = { transferId, epoch, manifestId: manifest.manifestId,
     desktopKey: 'host', clientKey: 'viewer', sessionId: 'authenticated-session' };
@@ -58,7 +59,9 @@ it('reads verified binary IPC blocks, respects negotiated complete record size a
   expect((await test.control(request)).error).toBeUndefined();
   expect((await test.control(request)).error).toBeUndefined();
   await vi.waitFor(() => expect(test.records.reduce((sum, bytes) => sum + bytes.length, 0)).toBe(test.bytes.length));
-  expect(mocks.invoke).toHaveBeenCalledTimes(1);
+  expect(mocks.invoke.mock.calls.filter(([command]) => command === 'codex_gui_file_bulk_sender_open')).toHaveLength(1);
+  expect(mocks.invoke.mock.calls.filter(([command]) => command === 'codex_gui_file_bulk_sender_read')).toHaveLength(4);
+  expect(mocks.invoke.mock.calls.some(([command]) => command === 'codex_gui_file_bulk_read')).toBe(false);
   expect(test.records.every(bytes => bytes.length <= 1024 - 88)).toBe(true);
   const joined = new Uint8Array(test.bytes.length); let offset = 0;
   test.records.forEach(bytes => { joined.set(bytes, offset); offset += bytes.length; });
@@ -72,7 +75,7 @@ it('fences source reads and releases the global file slot when a path changes', 
   test.transport.setMode('relay');
   const response = await test.control({ action: 'request', transferId: test.transferId, epoch: test.epoch });
   expect(response.error).toBe('EPOCH_EXPIRED');
-  expect(mocks.invoke).not.toHaveBeenCalled();
+  expect(mocks.invoke.mock.calls.some(([command]) => command === 'codex_gui_file_bulk_sender_read')).toBe(false);
   expect(mocks.request).toHaveBeenCalledWith(expect.objectContaining({ operation: 'fileClose' }));
 });
 

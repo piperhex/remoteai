@@ -15,6 +15,7 @@ pub(super) struct StreamFile {
     info: StreamInfo,
     modified: SystemTime,
     manifest: Option<Manifest>,
+    pub(super) bulk_sender: Option<super::bulk_cipher::Sender>,
     pub(super) cancelled: Arc<AtomicBool>,
 }
 
@@ -92,6 +93,7 @@ impl StreamFile {
             modified: metadata.modified().map_err(|_| GuiError::FileRead)?,
             file,
             manifest: None,
+            bulk_sender: None,
             cancelled: Arc::new(AtomicBool::new(false)),
         })
     }
@@ -117,6 +119,7 @@ impl StreamFile {
             },
             modified,
             manifest: None,
+            bulk_sender: None,
             cancelled: Arc::new(AtomicBool::new(false)),
         })
     }
@@ -155,6 +158,7 @@ impl StreamFile {
             info,
             modified,
             manifest: None,
+            bulk_sender: None,
             cancelled: Arc::new(AtomicBool::new(false)),
         })
     }

@@ -57,6 +57,7 @@ mod launch_options;
 mod local_proxy;
 mod main_window;
 mod models;
+mod native_rtc;
 mod network_proxy;
 mod oauth;
 mod official_models;
@@ -173,6 +174,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_deep_link::init())
         .manage(AppState::default())
+        .manage(native_rtc::State::default())
         .manage(coze::CozeState::default())
         .manage(codex_gui::GuiState::default())
         .manage(cli_gui::CliGuiState::default())
@@ -479,6 +481,15 @@ pub fn run() {
             codex_gui::codex_gui_request,
             codex_gui::web::codex_gui_watch,
             codex_gui::file_stream::bulk::codex_gui_file_bulk_read,
+            codex_gui::file_stream::bulk_encrypted::codex_gui_file_bulk_sender_open,
+            codex_gui::file_stream::bulk_encrypted::codex_gui_file_bulk_sender_read,
+            codex_gui::file_stream::bulk_send::codex_gui_file_bulk_sender_send,
+            native_rtc::native_rtc_open,
+            native_rtc::native_rtc_operation,
+            native_rtc::native_rtc_poll,
+            native_rtc::native_rtc_receive,
+            native_rtc::native_rtc_send,
+            native_rtc::native_rtc_close,
             codex_gui::codex_gui_respond,
             codex_gui::git::codex_gui_git,
             codex_gui::git::tool::codex_gui_git_tool,

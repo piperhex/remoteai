@@ -3,7 +3,8 @@ use super::{codec::VideoCodec, model::IceServer, native::Stream};
 use std::sync::{Arc, Weak};
 use webrtc::{
     api::{
-        interceptor_registry::register_default_interceptors, media_engine::MediaEngine, APIBuilder,
+        interceptor_registry::register_default_interceptors, media_engine::MediaEngine,
+        setting_engine::SettingEngine, APIBuilder,
     },
     data_channel::{data_channel_message::DataChannelMessage, RTCDataChannel},
     ice_transport::ice_server::RTCIceServer,
@@ -31,8 +32,22 @@ pub(super) struct Peer {
 }
 
 #[cfg(test)]
-pub(super) async fn create(servers: Vec<IceServer>, separate_clipboard: bool) -> Result<Peer> {
-    create_codec(servers, separate_clipboard, VideoCodec::H264).await
+pub(super) async fn create_loopback() -> Result<Peer> {
+    // State-machine tests exercise real DTLS/SCTP without depending on LAN/VPN interface routing.
+    let mut settings = SettingEngine::default();
+    settings.set_include_loopback_candidate(true);
+    settings.set_ip_filter(Box::new(|ip| ip.is_loopback()));
+    settings.set_network_types(vec![webrtc::ice::network_type::NetworkType::Udp4]);
+    create_configured(
+        PeerOptions {
+            servers: vec![],
+            separate_clipboard: false,
+            relay_only: false,
+            codec: VideoCodec::H264,
+        },
+        settings,
+    )
+    .await
 }
 
 pub(super) async fn create_codec(
@@ -44,11 +59,37 @@ pub(super) async fn create_codec(
 }
 
 pub(super) async fn create_with_policy(
-    mut servers: Vec<IceServer>,
+    servers: Vec<IceServer>,
     separate_clipboard: bool,
     relay_only: bool,
     codec: VideoCodec,
 ) -> Result<Peer> {
+    create_configured(
+        PeerOptions {
+            servers,
+            separate_clipboard,
+            relay_only,
+            codec,
+        },
+        SettingEngine::default(),
+    )
+    .await
+}
+
+struct PeerOptions {
+    servers: Vec<IceServer>,
+    separate_clipboard: bool,
+    relay_only: bool,
+    codec: VideoCodec,
+}
+
+async fn create_configured(options: PeerOptions, settings: SettingEngine) -> Result<Peer> {
+    let PeerOptions {
+        mut servers,
+        separate_clipboard,
+        relay_only,
+        codec,
+    } = options;
     let native_media = servers
         .iter()
         .find(|server| server.native_media)
@@ -61,6 +102,7 @@ pub(super) async fn create_with_policy(
     let registry = register_default_interceptors(Registry::new(), &mut media)
         .map_err(|_| DesktopError::Platform)?;
     let api = APIBuilder::new()
+        .with_setting_engine(settings)
         .with_media_engine(media)
         .with_interceptor_registry(registry)
         .build();

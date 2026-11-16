@@ -5,8 +5,6 @@ import { DesktopReceiver } from '../../../../shared/remote-desktop/receiver';
 import { DEFAULT_SETTINGS } from '../../../../shared/remote-desktop/protocol';
 import { createErrorFormatter } from '@remoteai/i18n/errors';
 import { resources } from '@remoteai/i18n/client';
-import { DesktopControls } from './controls';
-import type { DesktopCapture } from './capture';
 import { changeDesktopDisplay } from '../../../../shared/remote-desktop/displayActions';
 import type { DesktopDisplaySession } from '../../../../shared/remote-desktop/displaySession';
 
@@ -54,15 +52,6 @@ it.each(['zh', 'en', 'ru', 'ja'] as const)('renders actionable reasons offline i
     expect(text).not.toContain('client.');
     expect(text).not.toBe('');
   }
-});
-
-it('keeps the lock reason when mouse input fails in the compatibility capture path', async () => {
-  const fail = vi.fn();
-  const capture = { input: vi.fn().mockRejectedValue(locked) } as unknown as DesktopCapture;
-  const controls = new DesktopControls(capture, fail);
-  controls.receive(JSON.stringify({ kind: 'move', x: 0.5, y: 0.5 }));
-  await vi.waitFor(() => expect(fail).toHaveBeenCalledWith(locked));
-  controls.close();
 });
 
 it('preserves a native privacy refusal and releases the display transaction for another attempt', async () => {

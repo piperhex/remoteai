@@ -1,47 +1,25 @@
 import type { IceServer } from '../../../../shared/remote-chat/protocol';
 import type { DesktopResolution, DesktopSettings, DesktopSignal } from '../../../../shared/remote-desktop/protocol';
-import { DesktopHostSession } from './session';
 import { NativeDesktopSession } from './nativeSession';
 import type { ConnectionDiagnostic } from '../../../../shared/remote-chat/diagnostics';
-import { desktopFailure, requiresDesktopSetup } from '../../../../shared/remote-desktop/diagnostics';
 import type { DesktopCaptureSettings } from './displays';
 import type { DesktopSecurityChange } from '../../../../shared/remote-desktop/security';
 
-/** Keep a working capture fallback for Windows installations without a supported native encoder. */
+/** Desktop capture, encoding and WebRTC remain in the native backend. */
 export class HostSession {
-  private session: DesktopHostSession | NativeDesktopSession;
+  private session: NativeDesktopSession;
   private stopped = false;
   constructor(private settings: DesktopCaptureSettings, private readonly iceServers: IceServer[], private expiresAt?: number,
     private readonly diagnostic?: ConnectionDiagnostic) {
     this.session = new NativeDesktopSession(settings, iceServers, expiresAt, diagnostic);
   }
-  async open() {
-    try {
-      return this.offer(await this.session.open());
-    }
-    catch (error) {
-      const fallback = !(this.session instanceof NativeDesktopSession) || this.session.allowsCaptureFallback;
-      await this.session.close();
-      if (this.stopped) throw new Error('桌面连接已结束。');
-      if (!fallback || desktopFailure(error).reason === 'permission' || requiresDesktopSetup(error)) throw error;
-      this.diagnostic?.('desktop-stage', { stage: 'fallback-open', state: 'connecting' });
-      try {
-        this.session = new DesktopHostSession(this.settings, this.iceServers, this.expiresAt, this.diagnostic);
-        const offer = this.offer(await this.session.open());
-        this.diagnostic?.('desktop-stage', { stage: 'ready' });
-        return offer;
-      } catch (fallbackError) {
-        this.diagnostic?.('desktop-failed', { ...desktopFailure(fallbackError), stage: 'fallback-open' });
-        throw fallbackError;
-      }
-    }
-  }
+  async open() { return this.offer(await this.session.open()); }
   private offer(offer: Awaited<ReturnType<NativeDesktopSession['open']>>) {
     const policy = offer.permissions;
     return { ...offer, capabilities: { platform: offer.platform, displaySessions: offer.displaySessions === true,
-      security: this.session instanceof NativeDesktopSession && !!offer.security && policy?.control === true,
-      privacyScreen: this.session instanceof NativeDesktopSession && policy?.control !== false,
-      resolution: this.session instanceof NativeDesktopSession && policy?.control !== false
+      security: !!offer.security && policy?.control === true,
+      privacyScreen: policy?.control !== false,
+      resolution: policy?.control !== false
         && !!offer.resolutions?.length,
       keyboard: policy?.control ?? true, control: policy?.control ?? true,
       inputFocus: policy?.control ?? true,
@@ -52,15 +30,12 @@ export class HostSession {
   signal(signal: DesktopSignal) { return this.session.signal(signal); }
   inputFocus() { return this.session.inputFocus(); }
   async security(change: DesktopSecurityChange) {
-    if (!(this.session instanceof NativeDesktopSession)) throw new Error('这台电脑暂不支持此安全选项。');
     return this.session.security(change);
   }
   async privacy(enabled: boolean) {
-    if (!(this.session instanceof NativeDesktopSession)) throw new Error('这台电脑暂不支持隐私屏。');
     return this.session.privacy(enabled);
   }
   async resolution(resolution: DesktopResolution) {
-    if (!(this.session instanceof NativeDesktopSession)) throw new Error('这台电脑暂不支持切换分辨率。');
     return this.session.resolution(resolution);
   }
   async renew(expiresAt: number) { this.expiresAt = expiresAt; await this.session.renew(expiresAt); }
