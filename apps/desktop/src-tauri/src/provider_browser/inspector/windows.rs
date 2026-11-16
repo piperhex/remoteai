@@ -1,5 +1,6 @@
 //! WebView2 supplies a separate inspector HWND, but no docking API. Keep that real inspector
 //! and reparent only the uniquely discovered window from this tab's explicit open operation.
+mod focus;
 mod menu;
 mod native;
 
@@ -20,6 +21,7 @@ pub(in crate::provider_browser) fn install(
     label: String,
 ) -> windows::core::Result<()> {
     app.manage(State::default());
+    focus::install(controller)?;
     menu::install(core, controller, app, label)
 }
 

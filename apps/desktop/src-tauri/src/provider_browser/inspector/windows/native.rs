@@ -15,7 +15,7 @@ use windows_sys::Win32::{Foundation::*, UI::WindowsAndMessaging::*};
 
 const WINDOW_CLASS: &str = "Chrome_WidgetWin_1";
 const OPEN_TIMEOUT: Duration = Duration::from_secs(8);
-const PROPERTY: windows_sys::core::PCWSTR = windows_sys::w!("RemoteAI.Inspector");
+pub(super) const PROPERTY: windows_sys::core::PCWSTR = windows_sys::w!("RemoteAI.Inspector");
 static NEXT_MARKER: AtomicUsize = AtomicUsize::new(1);
 
 pub(super) struct InspectorWindow {
@@ -264,7 +264,7 @@ impl InspectorWindow {
                 set_style(
                     hwnd,
                     GWL_EXSTYLE,
-                    self.extended & !(WS_EX_APPWINDOW as isize),
+                    self.extended & !((WS_EX_APPWINDOW | WS_EX_NOPARENTNOTIFY) as isize),
                 )?;
                 if let Err(error) = set_parent(hwnd, parent) {
                     set_style(hwnd, GWL_STYLE, self.style)?;
