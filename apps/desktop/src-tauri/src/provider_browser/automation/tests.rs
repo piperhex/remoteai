@@ -42,16 +42,28 @@ fn bounded_input_and_keys_are_validated_before_native_dispatch() {
 fn opens_conversation_browser() {
     use tauri::WebviewUrl;
     let mut context = tauri::generate_context!();
-    context.config_mut().identifier = "dev.codex.switch.conversation-browser-smoke".into();
+    context.config_mut().identifier = std::env::var("BROWSER_TEST_IDENTIFIER")
+        .unwrap_or_else(|_| "dev.codex.switch.conversation-browser-smoke".into());
     let debug_port = std::env::var("BROWSER_TEST_DEBUG_PORT").unwrap_or_else(|_| "9333".into());
     let debug_port: u16 = debug_port.parse().expect("valid test debugging port");
+    let child_port = std::env::var("BROWSER_TEST_CHILD_DEBUG_PORT")
+        .map(|port| port.parse::<u16>().expect("valid child debugging port"))
+        .unwrap_or(debug_port);
     for window in &mut context.config_mut().app.windows {
         window.create = false;
         window
             .additional_browser_args
             .get_or_insert_default()
-            .push_str(&format!(" --remote-debugging-port={debug_port}"));
+            .push_str(&format!(" --remote-debugging-port={child_port}"));
     }
+    let main_arguments = context.config().app.windows[0]
+        .additional_browser_args
+        .clone()
+        .unwrap_or_default()
+        .replace(
+            &format!("--remote-debugging-port={child_port}"),
+            &format!("--remote-debugging-port={debug_port}"),
+        );
     context.config_mut().build.dev_url = Some("http://127.0.0.1:1552".parse().unwrap());
     tauri::Builder::default().any_thread()
         .manage(super::State::default())
@@ -65,9 +77,10 @@ fn opens_conversation_browser() {
             super::super::preview::provider_browser_preview,
             super::super::inspector::browser_inspector,
         ])
-        .setup(|app| {
+        .setup(move |app| {
             let url = "http://127.0.0.1:1552/e2e/website-tabs-harness.html?mode=local&native=1&origin=http://127.0.0.1:1553";
             crate::webview_windows::builder(app.handle(), "main", WebviewUrl::External(url.parse()?))
+                .additional_browser_args(&main_arguments)
                 .title("Conversation browser verification").inner_size(1440.0, 900.0).focused(false).build()?;
             Ok(())
         }).run(context).unwrap();

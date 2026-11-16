@@ -3,7 +3,7 @@ use std::{collections::BTreeMap, sync::mpsc, time::Duration};
 use tauri::{Emitter, Manager};
 use webview2_com::{
     take_pwstr, Microsoft::Web::WebView2::Win32::*, NewWindowRequestedEventHandler,
-    WebResourceRequestedEventHandler,
+    SourceChangedEventHandler, WebResourceRequestedEventHandler,
 };
 use windows::core::{w, HSTRING, PWSTR};
 
@@ -50,6 +50,7 @@ pub(super) fn configure_headers(
                     app.clone(),
                     event.clone(),
                 )?;
+                install_source_changed(&core, app.clone(), event.clone())?;
                 install_popup(&core, app, event)?;
                 if !headers.is_empty() {
                     install(&core, origin, headers)?;
@@ -66,6 +67,44 @@ pub(super) fn configure_headers(
         .recv_timeout(Duration::from_secs(10))
         .map_err(|_| BrowserError::Unavailable)?
         .map_err(|_| BrowserError::Unavailable)
+}
+
+unsafe fn install_source_changed(
+    view: &ICoreWebView2,
+    app: tauri::AppHandle,
+    event: String,
+) -> windows::core::Result<()> {
+    let origin = app.config().build.dev_url.as_ref().map(|url| url.origin());
+    // SAFETY: Registration and callback run on the live WebView2's owning COM apartment.
+    // WebView2 retains the handler; take_pwstr consumes the source string allocated by COM.
+    unsafe {
+        let mut token = 0;
+        view.add_SourceChanged(
+            &SourceChangedEventHandler::create(Box::new(move |sender, _| {
+                let Some(sender) = sender else {
+                    return Ok(());
+                };
+                let mut source = PWSTR::null();
+                sender.Source(&mut source)?;
+                let source = take_pwstr(source);
+                let Ok(url) = url::Url::parse(&source) else {
+                    return Ok(());
+                };
+                if super::super::allowed_url(&url, origin.as_ref()) {
+                    // History API and fragment changes do not start a document load. Report only
+                    // the committed top-level URL so an existing load keeps its actual state.
+                    if let Err(error) =
+                        app.emit_to("main", &event, serde_json::json!({"url":source}))
+                    {
+                        eprintln!("Provider browser address notification failed: {error}");
+                    }
+                }
+                Ok(())
+            })),
+            &mut token,
+        )?;
+    }
+    Ok(())
 }
 
 unsafe fn install_popup(
