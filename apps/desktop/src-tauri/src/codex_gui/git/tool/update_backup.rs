@@ -1,4 +1,4 @@
-//! Durable per-worktree recovery records. A backup stays reachable until restoration succeeds.
+//! Durable per-worktree recovery records. Explicit stash backups remain reachable after restoration.
 use super::super::{output, run};
 use super::{actions, integration::git_path, GitError, Result};
 use serde::{Deserialize, Serialize};
@@ -45,13 +45,14 @@ impl Backup {
         Ok(())
     }
 
-    /// Failure records are acknowledged without deleting their backup, even after manual resolution.
+    /// Explicit stashes and failed recoveries retain their backups, even after the record is cleared.
     pub(super) fn finish(&self, root: &Path, restored: bool) -> Result<()> {
-        if restored {
+        // Stash ordinals are shared with other processes and linked worktrees. Looking up an OID
+        // before `stash drop stash@{n}` cannot make deletion safe: the ordinal can change in between.
+        // Keep both the explicit stash and its pin until identity-checked atomic removal is available.
+        if restored && self.native {
             if let Some(stash) = &self.stash {
-                if !self.native {
-                    drop_owned_stash(root, stash, &self.id)?;
-                }
+                // This private ref has a stable name; Git checks the expected OID under its ref lock.
                 if !actions::run(root, &["update-ref", "-d", &self.reference(), stash])? {
                     return Err(GitError::UpdateRestore);
                 }
@@ -81,20 +82,6 @@ fn find_stash(root: &Path, id: &str) -> Result<Option<String>> {
         let fields: Vec<_> = line.splitn(3, '\t').collect();
         (fields.len() == 3 && fields[2].ends_with(id)).then(|| fields[0].to_owned())
     }))
-}
-
-fn drop_owned_stash(root: &Path, oid: &str, id: &str) -> Result<()> {
-    for line in stash_entries(root)?.lines() {
-        let fields: Vec<_> = line.splitn(3, '\t').collect();
-        if fields.len() == 3 && fields[0] == oid && fields[2].ends_with(id) {
-            // Never pop: restoration uses the immutable object ID; only our entry may be removed.
-            if !actions::run(root, &["stash", "drop", fields[1]])? {
-                return Err(GitError::UpdateRestore);
-            }
-            break;
-        }
-    }
-    Ok(())
 }
 
 pub(super) fn read(root: &Path) -> Result<Option<Backup>> {

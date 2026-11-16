@@ -25,7 +25,19 @@ fn all_update_methods_restore_staged_unstaged_and_untracked_files() {
             );
             assert!(local.0.join("remote.txt").exists());
             assert!(update_backup::read(&local.0).unwrap().is_none());
-            assert!(output(&local.0, &["stash", "list"]).unwrap().is_empty());
+            let stash = output(&local.0, &["rev-parse", "refs/stash"]).unwrap();
+            assert_eq!(
+                output(
+                    &local.0,
+                    &[
+                        "for-each-ref",
+                        "--format=%(objectname)",
+                        "refs/remoteai/update"
+                    ]
+                )
+                .unwrap(),
+                stash
+            );
         }
     }
 }
@@ -163,10 +175,9 @@ fn preexisting_stashes_renames_and_deletions_survive() {
     assert!(local.0.join("renamed.txt").exists());
     assert!(!local.0.join("one.txt").exists());
     assert!(!local.0.join("two.txt").exists());
-    assert_eq!(
-        output(&local.0, &["rev-parse", "refs/stash"]).unwrap(),
-        before
-    );
+    let stashes = output(&local.0, &["stash", "list", "--format=%H"]).unwrap();
+    assert_eq!(stashes.lines().count(), 2);
+    assert!(stashes.lines().any(|oid| oid == before));
 }
 
 #[test]

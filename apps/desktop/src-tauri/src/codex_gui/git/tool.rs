@@ -47,6 +47,8 @@ mod tests;
 mod update;
 mod update_backup;
 #[cfg(test)]
+mod update_backup_tests;
+#[cfg(test)]
 mod update_tests;
 
 #[derive(Deserialize)]

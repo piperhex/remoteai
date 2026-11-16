@@ -12,7 +12,9 @@ fetched commit. Failures in the fetch phase leave local files and the index unto
   followed by `git stash apply --index <object-id>`. This preserves the index as well as file contents.
 - Capability detection reads command help before mutation. An unsupported native option selects explicit
   stashing; it never retries an integration that might already have run.
-- Successful restoration removes only the task's own stash and safety reference. Existing stashes remain.
+- Successful explicit restoration retains both the stash and its safety reference; only the pending
+  recovery record is cleared. Native autostash safety references are removed using their stable name
+  and expected object ID after successful restoration. Existing stashes remain.
 - All commands remain under the existing workspace mutation guard and execute on a blocking worker,
   outside the Windows UI thread. Polling continues to use the existing single-flight request hook.
 
@@ -25,8 +27,8 @@ failures that leave no unmerged index entries, including index-lock failures. Re
 for the updated version and saved local changes.
 
 The per-worktree recovery record is stored at `git rev-parse --git-path remoteai-update.json`.
-Backups are pinned under `refs/remoteai/update/<uuid>`; explicit stashes also remain in the stash list
-until restoration succeeds. Restoration failures and ambiguous interruptions never remove the backup.
+Backups are pinned under `refs/remoteai/update/<uuid>`; explicit stashes and their pins remain even
+after restoration succeeds. Restoration failures and ambiguous interruptions never remove the backup.
 The record is written before applying a stash, preventing automatic reapplication after a process stops
 mid-restore. Acknowledging a reviewed recovery clears the pending operation but retains its backup.
 
@@ -37,6 +39,13 @@ git for-each-ref --format='%(refname) %(objectname)' refs/remoteai/update/
 git stash list
 git stash show --include-untracked --patch <object-id>
 ```
+
+Explicit backups currently accumulate intentionally. Automatic stash deletion is disabled because
+`refs/stash` is shared across processes and linked worktrees: a `stash@{n}` found by object ID can point
+to somebody else's entry by the time `stash drop` runs. Rechecking the ID or holding an application-only
+mutex does not close that race. A future cleanup implementation must verify the entry's identity and
+remove it atomically under Git's shared ref/reflog locking protocol, with cross-process regression tests.
+Until then, review retained backups and pause other stash writers before manually removing any entry.
 
 If recovery must be repeated, inspect the current files first. Apply the full backup in a separate,
 clean worktree to avoid duplicating changes already restored in the original worktree:
@@ -54,7 +63,9 @@ nested worktrees. The UI explains that their references need to be committed or 
 
 Rust Git tests use temporary offline remote/local repositories and cover Merge/Rebase, both actions,
 staged/unstaged/untracked changes, renames/deletions, existing stashes, network failures, integration
-continuation, native restoration conflicts, untracked collisions and interrupted restoration.
+continuation, native restoration conflicts, untracked collisions and interrupted restoration. Backup
+tests also cover ordinal movement and separate Git processes pushing/dropping stashes in a linked
+worktree while restoration is finalized, asserting the remaining entries and safety pins by object ID.
 
 The shared UI and local/remote adapters have unit tests. Playwright fixtures run the actual Git components
 and host themes with a controlled transport, covering desktop local, desktop remote and standalone Web
