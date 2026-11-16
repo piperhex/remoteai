@@ -57,7 +57,9 @@ pub(super) unsafe fn install_capture(
     app: tauri::AppHandle,
     label: String,
 ) -> windows::core::Result<()> {
-    let id = label.trim_start_matches(super::LABEL_PREFIX).to_string();
+    let id = capture_tab_id(&label)
+        .ok_or_else(|| windows::core::Error::from(windows::Win32::Foundation::E_INVALIDARG))?
+        .to_string();
     // SAFETY: Registration and handler run on the owning COM apartment. WebMessageReceived is scoped
     // to the top-level document; its native source URL is checked before forwarding credentials.
     unsafe {
@@ -78,6 +80,12 @@ pub(super) unsafe fn install_capture(
         )?;
     }
     Ok(())
+}
+
+fn capture_tab_id(label: &str) -> Option<&str> {
+    label
+        .strip_prefix(super::LABEL_PREFIX)
+        .or_else(|| label.strip_prefix("conversation-browser-"))
 }
 
 fn forward_login_message(app: &tauri::AppHandle, id: &str, source: &str, raw: &str) {
@@ -124,5 +132,18 @@ fn forward_login_message(app: &tauri::AppHandle, id: &str, source: &str, raw: &s
             }
         }
         _ => {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn login_events_use_the_tab_id_for_both_browser_entry_points() {
+        assert_eq!(super::capture_tab_id("provider-browser-tab"), Some("tab"));
+        assert_eq!(
+            super::capture_tab_id("conversation-browser-tab"),
+            Some("tab")
+        );
+        assert_eq!(super::capture_tab_id("main"), None);
     }
 }

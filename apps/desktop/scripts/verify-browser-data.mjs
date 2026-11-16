@@ -63,10 +63,12 @@ for (const [mode, width, height, font, dark] of runs) {
     await expect(page.locator('.browser-password-row')).toHaveCount(1); await shot('passwords');
     await page.getByRole('button', { name: '编辑密码', exact: true }).click();
     await expect(page.getByLabel('密码', { exact: true })).toHaveAttribute('type', 'password');
+    await page.getByLabel('网站地址', { exact: true }).fill('http://example.com:8080');
     await page.getByLabel('用户名', { exact: true }).fill('updated@example.com');
     await shot('password-edit');
     await page.getByRole('button', { name: /保\s*存/ }).click();
     await expect(page.locator('.browser-password-row')).toContainText('updated@example.com');
+    await expect(page.locator('.browser-password-row')).toContainText('http://example.com:8080');
     await close();
     await open('历史记录');
     await page.getByRole('button', { name: '删除此条记录', exact: true }).first().click();
@@ -86,6 +88,7 @@ for (const [mode, width, height, font, dark] of runs) {
     await open('密码管理');
     await expect(page.locator('.browser-password-row')).toHaveCount(1);
     await expect(page.getByLabel('密码库口令', { exact: true })).toHaveCount(0);
+    await expect(page.locator('.browser-password-row')).toContainText('http://example.com:8080');
     await shot('remembered-unlock');
     assert.deepEqual(errors, []);
     results.push({ prefix, historySearch: true, deleteRange: true, passwordEdit: true, noOverflow: true,

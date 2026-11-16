@@ -19,7 +19,7 @@ impl Login {
         let Ok(url) = url::Url::parse(source) else {
             return false;
         };
-        url.scheme() == "https"
+        matches!(url.scheme(), "http" | "https")
             && url.username().is_empty()
             && url.password().is_none()
             && self.origin == url.origin().ascii_serialization()
@@ -129,20 +129,27 @@ mod tests {
     use super::*;
     use serde_json::json;
     #[test]
-    fn fill_requires_exact_https_origin() {
-        let login = Login {
-            origin: "https://example.test".into(),
-            username: "user".into(),
-            password: "secret".into(),
-        };
-        assert!(login.valid_for("https://example.test/login"));
-        for url in [
+    fn fill_requires_exact_http_or_https_origin() {
+        for origin in [
+            "https://example.test",
             "http://example.test",
-            "https://example.test:8443",
-            "https://evil.test",
-            "https://u:p@example.test",
+            "http://127.0.0.1:8016",
         ] {
-            assert!(!login.valid_for(url));
+            let login = Login {
+                origin: origin.into(),
+                username: "user".into(),
+                password: "secret".into(),
+            };
+            assert!(login.valid_for(&format!("{origin}/login")));
+            for url in [
+                "ftp://example.test",
+                "https://example.test:8443",
+                "http://evil.test",
+                "https://u:p@example.test",
+                "http://127.0.0.1:8017",
+            ] {
+                assert!(!login.valid_for(url));
+            }
         }
         assert!(
             serde_json::from_value::<PasswordRequest>(json!({"action":"eval","script":"x"}))

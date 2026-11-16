@@ -99,7 +99,7 @@ var RemoteAIBrowserPassword = (() => {
 
   // browser/data/passwordPage.ts
   function passwordPage(options) {
-    if (window.top !== window || location.protocol !== "https:") return null;
+    if (window.top !== window || !["http:", "https:"].includes(location.protocol)) return null;
     const page = loginPage();
     if (options.action === "install") return installPasswordCapture(options);
     if (options.action === "take") {

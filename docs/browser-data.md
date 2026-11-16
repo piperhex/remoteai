@@ -30,10 +30,10 @@ platform views, random bytes, and background PBKDF2 through its BrowserData modu
 
 ## Platform behavior
 
-- Native and Windows recognize top-level HTTPS login form submissions and ask before saving.
+- Windows recognizes top-level HTTP and HTTPS login form submissions and asks before saving.
   Clicking an account/password input or tabbing into it opens matching accounts in trusted app UI.
   Only the selected login is passed to the page; focus messages carry no password. Filling requires
-  the exact HTTPS origin (including port), a current focus token and a same-origin form action, and
+  the exact origin (including scheme and port), a current focus token and a same-origin form action, and
   never submits the form. New-password fields are excluded. Manual password-manager filling remains.
 - Hosted Web cannot inspect or fill arbitrary cross-origin iframes. It provides synchronized history
   and password CRUD, with a visible explanation of the browser's restrictions. Cross-origin history
@@ -65,7 +65,7 @@ unseen existing vault. Source changes alone do not deploy or enable synchronizat
   port 18443; its self-signed certificate exception exists only in the isolated Rust test.
 - `apps/desktop/scripts/verify-browser-data-engine.mjs` checks trusted form capture, save/fill and real
   selective Cookie/localStorage clearing, input suggestions and remembered unlock in local/remote modes.
-  `verify-browser-password-site.mjs <https-login-url>` checks an existing login page with fictional
+  `verify-browser-password-site.mjs <http-or-https-login-url>` checks an existing login page with fictional
   credentials and never submits it. Both scripts require the isolated fixture and never use the installed profile.
 - Native fixture: build with `scripts/browser-data-fixture.init.gradle`, install only
   `com.codexswitch.mobile.browserdatatest`, then run `scripts/verify-browser-data-android.mjs` with

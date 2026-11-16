@@ -9,16 +9,17 @@ function page(url = login.origin, action = '') {
   Object.defineProperty(dom.window.HTMLElement.prototype, 'getClientRects', { value: () => [{}] });
   return dom;
 }
-it('fills only an exact HTTPS origin, uses input events, and never submits the form', () => {
-  const dom = page(), input = dom.window.document.querySelector<HTMLInputElement>('input[type=password]')!;
+it.each(['https://example.test', 'http://example.test', 'http://127.0.0.1:8016', 'http://[::1]:8016'])(
+  'fills only the exact origin %s, uses input events, and never submits the form', origin => {
+  const dom = page(origin), input = dom.window.document.querySelector<HTMLInputElement>('input[type=password]')!;
   let events = 0, submitted = false;
   input.addEventListener('input', () => events++);
   dom.window.document.forms[0].addEventListener('submit', () => { submitted = true; });
-  expect(dom.window.eval(passwordScript({ action: 'fill', login }))).toBe(true);
+  expect(dom.window.eval(passwordScript({ action: 'fill', login: { ...login, origin } }))).toBe(true);
   expect(input.value).toBe('secret'); expect(events).toBe(1); expect(submitted).toBe(false);
   dom.window.close();
 });
-it('rejects cleartext sites, other origins, different ports and cross-origin form destinations', () => {
+it('rejects different schemes, hosts, ports and cross-origin form destinations', () => {
   for (const [url, action] of [['http://example.test', ''], ['https://evil.test', ''],
     ['https://example.test:8443', ''], [login.origin, 'https://evil.test/login']]) {
     const dom = page(url, action);

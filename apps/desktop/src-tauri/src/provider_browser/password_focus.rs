@@ -30,7 +30,7 @@ impl PasswordFocus {
             return false;
         };
         let bounds = &self.bounds;
-        url.scheme() == "https"
+        matches!(url.scheme(), "http" | "https")
             && url.username().is_empty()
             && url.password().is_none()
             && self.origin == url.origin().ascii_serialization()
