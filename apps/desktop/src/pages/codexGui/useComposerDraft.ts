@@ -148,7 +148,8 @@ export function useComposerDraft(key: string, controller: GuiController) {
         setDrafts((values) => values[key] === draft ? { ...values, [key]: EMPTY_DRAFT } : values);
         onAccepted?.();
       } else {
-        const selected = key === "new" ? controller.getSnapshot().selected ?? "new" : key;
+        const creating = key === "new" || key.startsWith("new:");
+        const selected = creating ? controller.getSnapshot().selected ?? key : key;
         setDrafts((values) => values[key] !== draft || selected === key || values[selected]
           ? values : { ...values, [key]: EMPTY_DRAFT, [selected]: draft });
       }

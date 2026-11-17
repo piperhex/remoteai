@@ -23,6 +23,40 @@ beforeEach(() => {
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
 
+it('restores separate empty-project, project and existing conversation drafts including references', async () => {
+  const scopes = ['', 'draft:project-a', 'draft:project-b', 'existing-a', 'existing-b'];
+  for (const scope of scopes) {
+    await render({ threadId: scope });
+    expect(draft.text).toBe('');
+    await act(async () => draft.restore({ text: `Draft ${scope} $review`, images, skills: [skill],
+      attachments: [{ kind: 'file', name: scope, path: `/project/${scope}` }] }));
+  }
+  for (const scope of [...scopes].reverse()) {
+    await render({ threadId: scope });
+    expect(draft.text).toBe(`Draft ${scope} $review`);
+    expect(draft.images.map(image => image.url)).toEqual(images);
+    expect(draft.references[0].name).toBe(scope);
+  }
+});
+
+it('clears only the submitted scope after switching away and keeps edits typed during the request', async () => {
+  let finish!: (sent: boolean) => void;
+  const send = vi.fn(() => new Promise<boolean>(resolve => { finish = resolve; }));
+  const accepted = vi.fn();
+  await render({ threadId: 'one', send });
+  await act(async () => draft.setText('submitted'));
+  let pending!: Promise<boolean>;
+  await act(async () => { pending = draft.submit({ onAccepted: accepted }); });
+  await render({ threadId: 'two' });
+  await act(async () => draft.setText('another draft'));
+  await act(async () => finish(true));
+  await pending;
+  expect(accepted).toHaveBeenCalledOnce();
+  expect(draft.text).toBe('another draft');
+  await render({ threadId: 'one' });
+  expect(draft.text).toBe('');
+});
+
 it('appends dictation to the latest draft without dropping photos, attachments or skill mentions', async () => {
   const attachments = [{ kind: 'file' as const, name: 'note.txt', path: '/project/note.txt' }];
   const send = vi.fn().mockResolvedValue(true);

@@ -31,6 +31,29 @@ function setup(intercept?: (request: CliRequest) => Promise<unknown> | undefined
 }
 
 describe('per-conversation CLI state', () => {
+  it('keeps empty-project, project and existing drafts separate for each engine', async () => {
+    const { controller } = setup();
+    await controller.refresh();
+    for (const engine of ['claude', 'gemini'] as const) {
+      controller.newConversation(); controller.chooseEngine(engine);
+      for (const cwd of ['', '/project-a', '/project-b']) {
+        controller.newConversation(cwd);
+        expect(controller.getSnapshot().draft).toBe('');
+        controller.edit(`${engine} ${cwd}`);
+      }
+      controller.open(conversation('existing', engine)); controller.edit(`${engine} existing`);
+      controller.newConversation('/project-a');
+      expect(controller.getSnapshot().draft).toBe(`${engine} /project-a`);
+      controller.patch({ cwd: '' });
+      expect(controller.getSnapshot().draft).toBe(`${engine} `);
+      controller.newConversation('/project-b');
+      expect(controller.getSnapshot().draft).toBe(`${engine} /project-b`);
+      controller.open(conversation('existing', engine));
+      expect(controller.getSnapshot().draft).toBe(`${engine} existing`);
+    }
+    await controller.refresh();
+  });
+
   it.each(['claude', 'gemini'] as const)('sends %s projectless drafts with the original permission ID', async engine => {
     const { controller, calls } = setup();
     await controller.refresh();

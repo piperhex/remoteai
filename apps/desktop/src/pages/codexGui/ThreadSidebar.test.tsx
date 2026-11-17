@@ -45,6 +45,14 @@ afterEach(async () => {
   container.remove(); controller.dispose(); vi.restoreAllMocks(); vi.unstubAllGlobals();
 });
 
+it('opens the general new-conversation draft without retaining the previous project', async () => {
+  controller.setProject('F:/previous-project');
+  await render();
+  await act(async () => button('新对话').click());
+  expect(controller.getSnapshot().selected).toBeNull();
+  expect(controller.getSnapshot().settings.cwd).toBe('');
+});
+
 it.each(["ready", "offline"] as const)("opens local search only from its connected header button: %s", async connection => {
   state = { ...state, connection };
   await render();

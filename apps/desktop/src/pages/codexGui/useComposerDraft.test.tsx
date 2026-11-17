@@ -15,6 +15,33 @@ let readers: FileReader[];
 const imageUrl = "data:image/png;base64,iVBORw0KGgo=";
 const file = () => new File(["image"], "截图.png", { type: "image/png" });
 
+it('keeps each project draft separate from the empty project and existing conversations', async () => {
+  const keys = ['new:', 'new:F:/project-a', 'new:F:/project-b', 'existing-a', 'existing-b'];
+  for (const key of keys) {
+    await render(key);
+    expect(editor.draft.text).toBe('');
+    act(() => editor.editText(`Draft ${key}`));
+  }
+  for (const key of [...keys].reverse()) {
+    await render(key);
+    expect(editor.draft.text).toBe(`Draft ${key}`);
+  }
+});
+
+it('moves a failed first project message to its created conversation', async () => {
+  await render('new:F:/project-a');
+  act(() => editor.editText('retry this message'));
+  vi.mocked(controller.send).mockImplementationOnce(async () => {
+    vi.spyOn(controller, 'getSnapshot').mockReturnValue({ ...controller.getSnapshot(), selected: 'created' });
+    return false;
+  });
+  await act(async () => editor.send());
+  await render('created');
+  expect(editor.draft.text).toBe('retry this message');
+  await render('new:F:/project-a');
+  expect(editor.draft.text).toBe('');
+});
+
 it('sends file selections with their path, range and original content alongside the existing draft', async () => {
   const quote = fileSelectionQuote({ path: 'F:/project/a.ts', start: { line: 2, column: 3 },
     end: { line: 3, column: 1 }, text: '  source\n' });

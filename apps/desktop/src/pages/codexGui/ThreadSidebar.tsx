@@ -133,7 +133,10 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
       cli?.controller.showCodex(); onNavigate(next);
     }}
       scheduledTasksAvailable={scheduledTasksAvailable}
-      onNewConversation={() => { cli?.controller.newConversation(); onNavigate("conversation"); controller.newConversation(); }} />
+      onNewConversation={() => {
+        cli?.controller.newConversation(); onNavigate("conversation"); controller.newConversation();
+        controller.setProject('');
+      }} />
     <Segmented className={styles.threadFilter} block size="small" value={state.archived ? "archived" : "recent"}
       options={[{ label: uiText("client.chat.recent"), value: "recent" }, { label: uiText("client.mobile.archived"), value: "archived" }]}
       onChange={(value) => controller.filter("", value === "archived")} />
@@ -154,7 +157,7 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
           projectMenu={group.cwd ? (heading) => <ProjectGroupMenu path={group.cwd} label={group.label}
             state={state} controller={controller}>{heading}</ProjectGroupMenu> : undefined}
           creatingDisabled={state.sending} onNewConversation={group.cwd ? () => {
-            cli?.controller.newConversation(); cli?.controller.patch({ cwd: group.cwd });
+            cli?.controller.newConversation(group.cwd);
             onNavigate("conversation");
             controller.newConversation();
             controller.setProject(group.cwd);
