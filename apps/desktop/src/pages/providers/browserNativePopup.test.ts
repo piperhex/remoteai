@@ -103,3 +103,21 @@ it('ignores offscreen preparation and includes positioned ancestors for password
   Object.defineProperty(menu, 'offsetParent', { value: host });
   expect(popupRegions(popup)).toEqual([{ x: 196, y: 106, width: 128, height: 78 }]);
 });
+
+it.each(['ant-dropdown-menu-submenu-popup', 'ant-menu-submenu-popup'])(
+  'includes a separately portaled %s and releases its region when it closes', className => {
+    const popup = portalWindow();
+    const parent = popup.document.createElement('div'), submenu = popup.document.createElement('div');
+    parent.className = 'ant-dropdown'; submenu.className = className;
+    popup.document.body.append(parent, submenu);
+    setLayout(parent, 100, 80); setLayout(submenu, 210, 100);
+    const parentRegion = { x: 86, y: 66, width: 128, height: 78 };
+    expect(popupRegions(popup)).toEqual([parentRegion, { x: 196, y: 86, width: 128, height: 78 }]);
+    submenu.style.display = 'none';
+    expect(popupRegions(popup)).toEqual([parentRegion]);
+    submenu.style.display = ''; submenu.style.visibility = 'hidden';
+    expect(popupRegions(popup)).toEqual([parentRegion]);
+    submenu.remove(); parent.remove();
+    expect(popupRegions(popup)).toEqual([]);
+  },
+);
