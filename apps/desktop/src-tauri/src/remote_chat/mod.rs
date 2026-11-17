@@ -1,5 +1,5 @@
 //! Native ownership of chat registration, credentials, heartbeats and reconnection.
-//! WebRTC and the encrypted application protocol still run in the main WebView.
+//! Rust owns WebRTC and packet cryptography; the main WebView coordinates application messages.
 
 mod auth_renewal;
 mod bridge;
@@ -9,6 +9,7 @@ mod client_bulk;
 pub(crate) mod client_bulk_send;
 mod client_runtime;
 mod config;
+pub(crate) mod crypto;
 pub(crate) mod host_health;
 pub(crate) mod identity;
 mod ipc_ack;

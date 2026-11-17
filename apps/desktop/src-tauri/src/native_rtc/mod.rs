@@ -3,6 +3,7 @@
 mod benchmark;
 pub(crate) mod bulk;
 mod channel;
+mod chat;
 #[cfg(test)]
 mod encrypted_benchmark;
 mod events;
@@ -17,6 +18,7 @@ mod media_fixture;
 mod model;
 mod peer;
 mod state;
+pub(crate) mod stream;
 #[cfg(test)]
 mod tests;
 pub(crate) mod turn_transport;

@@ -1,7 +1,7 @@
 import { guiApi } from '../../../../shared/conversation/api';
 import type { GuiEvent } from '../../../../shared/conversation/types';
 import { CHAT_POLICY_MESSAGE, setChatPolicy } from '../../../../shared/remote-chat/policy';
-import { keyPair } from '../../../../shared/remote-chat/cipher';
+import { createDesktopKeyPair, desktopSessionCrypto } from './sessionCipher';
 import { ChatLink } from '../../../../shared/remote-chat/link';
 import { createDesktopPeer } from './peer';
 import { createDesktopNativePath } from './nativePath';
@@ -34,6 +34,8 @@ export class ChatHost {
   private quota = new RelayQuota();
   private readonly transport: NativeChatTransport;
   private generation = 0;
+  private incoming = Promise.resolve();
+  private pendingIncoming = 0;
   private readonly leases = new Map<string, ReturnType<typeof setTimeout>>();
   private readonly links = new Map<string, ChatLink>();
   private readonly bulkSources = new Map<string, BulkSource>();
@@ -96,9 +98,13 @@ export class ChatHost {
       for (const link of this.links.values()) link.setRelayAvailable(false);
     }
     if (event.type === 'message') {
-      void this.receive(event.data).catch(() => {
+      if (this.pendingIncoming >= 256) { this.transport.reconnect(true); return; }
+      this.pendingIncoming++;
+      this.incoming = this.incoming.then(async () => {
+        if (!this.closed && this.generation === event.generation) await this.receive(event.data);
+      }).catch(() => {
         if (!this.closed && this.generation === event.generation) this.transport.reconnect(true);
-      });
+      }).finally(() => { this.pendingIncoming--; });
     }
   }
 
@@ -170,7 +176,7 @@ export class ChatHost {
     const sessionId = message.sessionId;
     if (typeof sessionId !== 'string') return;
     if (message.type === 'relay-traffic') { connectionDetails.traffic(sessionId, message); return; }
-    if (message.type === 'peer-open') { this.open(sessionId, message); return; }
+    if (message.type === 'peer-open') { await this.open(sessionId, message); return; }
     const link = this.links.get(sessionId);
     if (!link) return;
     if (message.type === 'resumed' || message.type === 'file-relay-reset') {
@@ -190,13 +196,15 @@ export class ChatHost {
     if (message.type === 'peer-close') this.drop(sessionId);
   }
 
-  private open(sessionId: string, message: Record<string, unknown>) {
+  private async open(sessionId: string, message: Record<string, unknown>) {
     // The authenticated coordinator applies the configured limit before sending peer-open.
     if (this.links.has(sessionId)) return;
     if (!this.assistance.admit(sessionId, message.assistanceId)) { this.endSession(sessionId); return; }
     this.operations.desktop.register(sessionId, (message.desktopIceServers ?? message.iceServers) as IceServer[],
       typeof message.expiresAt === 'number' ? message.expiresAt : undefined);
-    const keys = keyPair((size) => crypto.getRandomValues(new Uint8Array(size)));
+    const generation = this.generation;
+    const keys = await createDesktopKeyPair();
+    if (this.closed || generation !== this.generation) { keys.secret.fill(0); return; }
     const fileRelay = new FileRelay({ sessionId,
       createSocket: () => new NativeFileSocket(),
       record: bytes => this.links.get(sessionId)?.bulk?.receive(bytes, 'relay'),
@@ -206,6 +214,7 @@ export class ChatHost {
         sendBatch: records => this.transport.sendBulk(sessionId, records) },
     });
     const link = new ChatLink({
+      ...desktopSessionCrypto,
       binaryBulk: true,
       createPacketCompression: createDesktopPacketCompression,
       bulkRelay: fileRelay,

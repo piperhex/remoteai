@@ -1,4 +1,5 @@
 import type { ChannelBackend, ChannelSpec } from './types';
+import { ChannelBackpressureError } from '../../../../shared/remote-chat/channelBackpressure';
 
 const MAX_PENDING_BYTES = 512 * 1024;
 const MAX_MESSAGE_BYTES = 64 * 1024;
@@ -30,9 +31,10 @@ export class NativeRtcChannel extends EventTarget {
     const text = typeof data === 'string';
     const bytes = typeof data === 'string' ? encoder.encode(data) : data instanceof ArrayBuffer
       ? new Uint8Array(data).slice() : new Uint8Array(data.buffer, data.byteOffset, data.byteLength).slice();
-    if (bytes.length > MAX_MESSAGE_BYTES || this.bufferedAmount + bytes.length > MAX_PENDING_BYTES) {
+    if (bytes.length > MAX_MESSAGE_BYTES) {
       throw new DOMException('Data channel capacity exceeded', 'OperationError');
     }
+    if (this.bufferedAmount + bytes.length > MAX_PENDING_BYTES) throw new ChannelBackpressureError();
     this.bufferedAmount += bytes.length;
     this.outgoing = this.outgoing.then(async () => {
       if (this.readyState !== 'open') return;

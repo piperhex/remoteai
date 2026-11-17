@@ -32,7 +32,8 @@ it('owns signaling in Rust and never constructs the browser RTC implementation',
   await connection.createOffer();
   expect(browser).not.toHaveBeenCalled();
   const operations = mocks.invoke.mock.calls.filter(([command]) => command === 'native_rtc_operation');
-  expect(operations.map(([, body]) => body.request.operation.kind)).toEqual(['createChannel', 'offer']);
+  expect(operations.map(([, body]) => body.request.operation.kind)).toEqual(['createChannel', 'createChannel', 'offer']);
+  expect(operations[0][1].request.operation.channel).toMatchObject({ label: 'remote-ai-sync-v1', negotiated: 43 });
   deliver([{ kind: 'open', key: channel.spec.key }]);
   await vi.waitFor(() => expect(channel.nativeRtcHandle).toEqual({ peer: 'peer-handle', channel: channel.spec.key }));
 });

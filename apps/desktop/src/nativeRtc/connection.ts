@@ -22,6 +22,10 @@ export class NativeRtcConnection extends EventTarget {
   private notified = false;
   private media?: NativeRtcMedia;
   private readonly earlyOpen = new Set<string>();
+  private syncChannel?: NativeRtcChannel;
+  get nativeSyncHandle() {
+    return this.syncChannel?.readyState === 'open' ? this.syncChannel.nativeRtcHandle : undefined;
+  }
 
   constructor(configuration: RTCConfiguration, receiveMedia = false) {
     super();
@@ -41,6 +45,7 @@ export class NativeRtcConnection extends EventTarget {
       if (this.disposed) void invoke('native_rtc_close', { id }).catch(() => {});
       else void this.poll();
     }).catch(() => this.failed());
+    if (!receiveMedia) this.syncChannel = this.createDataChannel('remote-ai-sync-v1', { negotiated: true, id: 43 });
   }
 
   perform<T>(operation: NativeRtcOperation): Promise<T> {

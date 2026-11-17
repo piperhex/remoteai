@@ -88,10 +88,14 @@ impl ChannelSpec {
             self.label.as_str(),
             "codex-chat-v1"
                 | "remote-ai-file-v1"
+                | "remote-ai-sync-v1"
                 | "remote-desktop-controls"
                 | "remote-desktop-clipboard"
         ) || (self.negotiated.is_some()
-            && (self.negotiated != Some(42) || self.label != "remote-ai-file-v1"))
+            && !matches!(
+                (self.negotiated, self.label.as_str()),
+                (Some(42), "remote-ai-file-v1") | (Some(43), "remote-ai-sync-v1")
+            ))
         {
             return Err(Error::Invalid);
         }

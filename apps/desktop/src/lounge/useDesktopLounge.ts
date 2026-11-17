@@ -6,6 +6,7 @@ import { browserAvatarStore } from '../../../../shared/lounge/avatar';
 import { browserLoungeHistory } from '../../../../shared/lounge/browserHistory';
 import { useLounge } from '../../../../shared/lounge/useLounge';
 import { createDesktopPeer } from '../remoteChat/peer';
+import { desktopSessionCrypto } from '../remoteChat/sessionCipher';
 import { invoke } from '../api/backend';
 import type { CloudAuthState } from '../types';
 import { useBrowserLoungeDownloads } from '../../../../shared/lounge/useBrowserLoungeDownloads';
@@ -15,7 +16,8 @@ import { version } from '../../package.json';
 export function useDesktopLounge(auth: CloudAuthState) {
   const { authenticated, baseUrl, userId, userEmail } = auth;
   const controller = useMemo(() => new LoungeController(authenticated && baseUrl && userId ? {
-    sync: { createPeer: createDesktopPeer, randomBytes: size => crypto.getRandomValues(new Uint8Array(size)) },
+    sync: { ...desktopSessionCrypto, createPeer: createDesktopPeer,
+      randomBytes: size => crypto.getRandomValues(new Uint8Array(size)) },
     clientVersion: version,
     clientPlatform: 'desktop',
     attachmentImages: browserAttachmentImages(JSON.stringify([baseUrl, userId]), browserAttachmentSink),

@@ -20,7 +20,7 @@ export class NativeBulkSender {
 
   static async open(options: SourceOptions) {
     const { open, manifestId, recordBytes, link } = options;
-    const cipher = link.createBulkCipher({ transferId: open.transferId, epoch: open.epoch, manifestId });
+    const cipher = await link.createBulkCipher({ transferId: open.transferId, epoch: open.epoch, manifestId });
     const material = cipher.takeSenderMaterial();
     const key = Array.from(material.key); material.key.fill(0);
     try {

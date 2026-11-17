@@ -145,6 +145,7 @@ export class ChatOperations {
   private readonly pdfTransfers = new RemotePdfTransfers();
   attachMappingStreams(owner: string, link: import('../../../../shared/remote-chat/link').ChatLink) {
     this.files.attach(owner, link);
+    this.conversationSync.attach(owner, link);
   }
   readonly desktop = new RemoteDesktopHost();
   constructor(private readonly terminals: RemoteTerminals = remoteTerminals) {}

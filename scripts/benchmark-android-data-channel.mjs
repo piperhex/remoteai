@@ -15,6 +15,7 @@ if (![highWaterBytes, recordBytes].every(Number.isSafeInteger) || recordBytes < 
   throw new Error('Invalid benchmark buffer sizes');
 }
 const nativeApp = process.env.P2P_BENCH_NATIVE_APP === '1';
+const nativeChat = process.env.P2P_BENCH_CHAT === '1';
 const lowWaterBytes = process.env.P2P_BENCH_LOW_KIB ? Number(process.env.P2P_BENCH_LOW_KIB) * 1024
   : nativeApp ? 768 * 1024 : highWaterBytes / 4;
 if (nativeApp && (highWaterBytes !== 1024 * 1024 || lowWaterBytes !== 768 * 1024)) {
@@ -29,6 +30,8 @@ const config = { runs: 3, records: 134217728 / recordBytes, recordBytes,
   highWaterBytes, lowWaterBytes, pulseTimer: process.env.P2P_BENCH_PULSE_TIMER === '1',
   socketMode: process.env.P2P_BENCH_SOCKET_MODE ?? 'ephemeral', udpBufferKiB: Number(process.env.P2P_BENCH_UDP_KIB ?? '0'),
   workers: nativeApp ? undefined : Number(process.env.P2P_BENCH_WORKERS ?? '4') };
+if (nativeChat) Object.assign(config, { records: 2048, encrypted: false, chat: true,
+  chatCrypto: process.env.P2P_BENCH_CHAT_CRYPTO === 'js' ? 'js' : 'rust' });
 const port = 18786;
 const slots = new Map();
 for (const key of ['offer', 'answer', 'report']) {
@@ -81,7 +84,12 @@ try {
   const existing = await adb(['reverse', '--list']);
   if (existing.includes(`tcp:${port}`)) throw new Error('Benchmark control reverse port is already in use');
   await adb(['reverse', `tcp:${port}`, `tcp:${port}`]); reversed = true;
-  if (nativeApp) {
+  if (nativeChat) {
+    engine = await channelBrowser(webviewTestExecutable, { port: 9367, test: 'native_rtc::harness::opens_native_rtc' });
+    browser = engine.browser;
+    await engine.page.goto('http://127.0.0.1:18787/e2e/native-rtc-harness.html');
+    await engine.page.waitForFunction(() => Boolean(window.nativeRtcFixture));
+  } else if (nativeApp) {
     process.env.NATIVE_RTC_FIXTURES = resolve('.codex-tmp/native-rtc-fixtures');
     await mkdir(process.env.NATIVE_RTC_FIXTURES, { recursive: true });
     const filename = join(process.env.NATIVE_RTC_FIXTURES, 'encrypted-benchmark.bin');
@@ -112,8 +120,9 @@ try {
     timeout = setTimeout(() => reject(new Error('Transport benchmark timed out')), 240000);
   });
   const sender = await Promise.race([
-    rust?.result ?? engine.page.evaluate(({ options, nativeApp }) => nativeApp
-      ? window.nativeRtcFixture.phone(options) : window.benchmark(options), { options: config, nativeApp }),
+    rust?.result ?? engine.page.evaluate(({ options, nativeApp, nativeChat }) => nativeChat
+      ? window.nativeRtcFixture.chatPhone(options) : nativeApp
+        ? window.nativeRtcFixture.phone(options) : window.benchmark(options), { options: config, nativeApp, nativeChat }),
     failedInstrumentation, expired,
   ]);
   const receiver = await slots.get('/report').promise;

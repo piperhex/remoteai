@@ -137,6 +137,19 @@ it('uses TCP while UDP is unavailable, prefers working UDP, then escapes a UDP b
   expect(vi.getTimerCount()).toBe(0);
 });
 
+it('exposes native RTC submission only for the selected path and preserves wrapper depth', () => {
+  vi.useFakeTimers(); vi.setSystemTime(10_000);
+  const channel = new MultipathChannel({ disconnected: vi.fn() });
+  const tcp = path(), rtc = path(), target = { peer: 'peer', channel: 'channel', envelopes: 1 };
+  channel.add(tcp.channel, 1);
+  expect(channel.nativeChatTarget).toBeUndefined();
+  channel.add({ ...rtc.channel, nativeChatTarget: target }, 0);
+  expect(channel.nativeChatTarget).toEqual({ ...target, envelopes: 2 });
+  rtc.silence(); vi.advanceTimersByTime(3100);
+  expect(channel.nativeChatTarget).toBeUndefined();
+  channel.close();
+});
+
 it('isolates RTC negotiation errors and cleans every path when the aggregate closes', async () => {
   vi.useFakeTimers();
   const channel = vi.fn(), close = vi.fn(), stopNetwork = vi.fn();

@@ -74,7 +74,7 @@ pub(super) fn description(id: &str, entry: &Transfer) -> Result<Value, String> {
     Ok(
         json!({ "id": id, "size": entry.size, "sha256": entry.sha256,
         "originalSize": entry.original_size, "resumeToken": entry.resume_token,
-        "written": entry.written, "chunkBytes": CHUNK_BYTES, "sessionIds": session_ids }),
+        "written": entry.written, "chunkBytes": CHUNK_BYTES, "binaryVersion": 1, "sessionIds": session_ids }),
     )
 }
 

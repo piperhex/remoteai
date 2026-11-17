@@ -213,6 +213,7 @@ it('releases a delayed registration when the session closes before stream creati
   const release = vi.fn();
   const peer = fixture(() => new Promise(resolve => { registered = resolve; }));
   const opening = expect(peer.client.open('resource', 'http://127.0.0.1:80')).rejects.toThrow('changed');
+  await vi.waitFor(() => expect(registered).toBeTypeOf('function'));
   peer.client.close(); registered(receiver(release));
   await opening;
   expect(release).toHaveBeenCalledTimes(1);

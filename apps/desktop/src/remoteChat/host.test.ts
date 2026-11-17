@@ -9,7 +9,7 @@ import { assistanceStore } from '../remoteAssistance/store';
 import { GUI_ACCOUNTS_EVENT, GUI_ACCOUNT_SELECTION_EVENT } from '../../../../shared/remote-chat/guiAccounts';
 
 const invoke = vi.hoisted(() => vi.fn());
-vi.mock('@tauri-apps/api/core', () => ({ invoke }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke, isTauri: () => false }));
 const links = vi.hoisted(() => new Map<string, {
   mode: (mode: ConnectionMode) => void; close: () => void;
   message: (request: RpcRequest) => void; send: (value: unknown) => Promise<void>;
@@ -53,7 +53,10 @@ vi.mock('../../../../shared/remote-chat/link', () => ({ ChatLink: class {
 } }));
 
 let host: ChatHost;
-const message = (data: object) => native.receive!({ type: 'message', generation: 1, data: JSON.stringify(data) });
+const message = async (data: object) => {
+  native.receive!({ type: 'message', generation: 1, data: JSON.stringify(data) });
+  await new Promise(resolve => setTimeout(resolve, 0));
+};
 
 beforeEach(() => {
   native.release.mockClear(); native.execute.mockReset(); invoke.mockReset(); assistanceStore.reset(false);
@@ -67,17 +70,17 @@ afterEach(() => {
 
 it('accepts configuration from the coordinator before pairing and while a direct session is active', async () => {
   const policy = { ...DEFAULT_CHAT_POLICY, threadPageSize: 6 };
-  message({ type: 'chat-policy', policy });
+  await message({ type: 'chat-policy', policy });
   expect(getChatPolicy().threadPageSize).toBe(6);
   await receive('peer-open', 'phone');
   links.get('phone')!.mode('direct');
-  message({ type: 'chat-policy', policy: { ...policy, threadPageSize: 9 } });
+  await message({ type: 'chat-policy', policy: { ...policy, threadPageSize: 9 } });
   expect(getChatPolicy().threadPageSize).toBe(9);
   expect(mobileConnection.getSnapshot()).toBe(true);
 });
 
 async function receive(type: string, sessionId: string) {
-  message({ type, sessionId, publicKey: 'test', iceServers: [] });
+  await message({ type, sessionId, publicKey: 'test', iceServers: [] });
   await Promise.resolve();
 }
 
@@ -96,13 +99,13 @@ it('distinguishes balance refreshes from account switches while keeping account 
 });
 
 it('accepts more than four admitted sessions and keeps them when the policy limit decreases', async () => {
-  message({ type: 'chat-policy', policy: { ...DEFAULT_CHAT_POLICY, chatSessionLimit: 8 } });
+  await message({ type: 'chat-policy', policy: { ...DEFAULT_CHAT_POLICY, chatSessionLimit: 8 } });
   for (let index = 0; index < 8; index++) {
     await receive('peer-open', `phone-${index}`);
     links.get(`phone-${index}`)!.mode('direct');
   }
   expect(links.size).toBe(8);
-  message({ type: 'chat-policy', policy: { ...DEFAULT_CHAT_POLICY, chatSessionLimit: 1 } });
+  await message({ type: 'chat-policy', policy: { ...DEFAULT_CHAT_POLICY, chatSessionLimit: 1 } });
   expect(mobileConnection.getSnapshot()).toBe(true);
   for (let index = 0; index < 7; index++) await receive('peer-close', `phone-${index}`);
   expect(mobileConnection.getSnapshot()).toBe(true);
@@ -143,7 +146,7 @@ it('restricts assistance RPC and broadcasts and ignores late requests after loca
   invoke.mockResolvedValueOnce({ currentDeviceId: 'host', requests: [{ id: 'host-test-invitation',
     hostDeviceId: 'host', state: 'accepted', expiresAt: '2099-01-01T00:00:00Z' }] });
   await assistanceStore.refresh();
-  message({ type: 'peer-open', sessionId: 'helper', assistanceId: 'host-test-invitation', publicKey: 'test' });
+  await message({ type: 'peer-open', sessionId: 'helper', assistanceId: 'host-test-invitation', publicKey: 'test' });
   await receive('peer-open', 'owner');
   const helper = links.get('helper')!;
   const request: RpcRequest = { kind: 'request', id: 'rpc', method: 'request', body: { operation: 'list' } };

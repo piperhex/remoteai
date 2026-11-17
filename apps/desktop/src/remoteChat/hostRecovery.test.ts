@@ -29,19 +29,20 @@ vi.mock('../../../../shared/remote-chat/link', () => ({ ChatLink: class {
 
 const changed = vi.fn();
 let host: ChatHost;
-const message = (data: object, generation = 1) => state.receive!({
-  type: 'message', generation, data: JSON.stringify(data),
-});
+const message = async (data: object, generation = 1) => {
+  state.receive!({ type: 'message', generation, data: JSON.stringify(data) });
+  await vi.advanceTimersByTimeAsync(0);
+};
 
-it('refreshes desktop relay credentials for existing chats without closing their media', () => {
+it('refreshes desktop relay credentials for existing chats without closing their media', async () => {
   const ice = [{ urls: 'turn:example.test:3479', username: 'renewed', credential: 'test-only' }];
-  message({ type: 'desktop-ice', desktopIceServers: ice });
+  await message({ type: 'desktop-ice', desktopIceServers: ice });
   expect(state.registerDesktop).toHaveBeenLastCalledWith('session', ice);
   expect(state.close).not.toHaveBeenCalled();
 });
 
 it('forwards only the native identity as the persistent terminal owner', async () => {
-  message({ type: 'peer-open', sessionId: 'terminal-session', publicKey: 'ab'.repeat(32), iceServers: [],
+  await message({ type: 'peer-open', sessionId: 'terminal-session', publicKey: 'ab'.repeat(32), iceServers: [],
     terminalOwner: 'native-account-scope' });
   const request = { kind: 'request' as const, method: 'request' as const, id: 'request',
     body: { operation: 'guiTerminalList', terminalOwner: 'forged' } };
@@ -52,7 +53,7 @@ it('forwards only the native identity as the persistent terminal owner', async (
 beforeEach(async () => {
   vi.useFakeTimers(); vi.setSystemTime(100_000); vi.clearAllMocks();
   host = new ChatHost(changed);
-  message({ type: 'peer-open', sessionId: 'session', publicKey: 'ab'.repeat(32), iceServers: [],
+  await message({ type: 'peer-open', sessionId: 'session', publicKey: 'ab'.repeat(32), iceServers: [],
     transportVersion: 2, resumeToken: 'cd'.repeat(32), expiresAt: Date.now() + 120_000 });
   state.options!.mode('direct');
   await vi.advanceTimersByTimeAsync(0);
@@ -68,32 +69,32 @@ it('never lets an individual viewer timeout reset the shared native transport', 
   expect(state.reconnect).not.toHaveBeenCalled();
 });
 
-it('extends a renewed lease while leaving the healthy relay path and requests available', () => {
+it('extends a renewed lease while leaving the healthy relay path and requests available', async () => {
   state.options!.mode('relay');
-  message({ type: 'resumed', renewed: true, sessionId: 'session', expiresAt: Date.now() + 900_000 });
+  await message({ type: 'resumed', renewed: true, sessionId: 'session', expiresAt: Date.now() + 900_000 });
   expect(state.renew).toHaveBeenLastCalledWith(Date.now() + 900_000);
   expect(state.relay).not.toHaveBeenCalled();
   expect(state.close).not.toHaveBeenCalled();
   expect(state.reconnect).not.toHaveBeenCalled();
 });
 
-it('preserves direct sessions while Rust reconnects and restores the relay on a resume notification', () => {
+it('preserves direct sessions while Rust reconnects and restores the relay on a resume notification', async () => {
   state.receive!({ type: 'disconnected', generation: 2 });
   expect(state.relay).toHaveBeenLastCalledWith(false);
   expect(state.close).not.toHaveBeenCalled();
   expect(changed).toHaveBeenLastCalledWith(true);
   state.receive!({ type: 'ready', generation: 2 });
-  message({ type: 'resumed', sessionId: 'session', expiresAt: Date.now() + 120_000 }, 2);
+  await message({ type: 'resumed', sessionId: 'session', expiresAt: Date.now() + 120_000 }, 2);
   expect(state.relay).toHaveBeenLastCalledWith(true);
   expect(state.close).not.toHaveBeenCalled();
 });
 
-it('clears old sessions on logout or owner changes without stopping the native host', () => {
+it('clears old sessions on logout or owner changes without stopping the native host', async () => {
   state.receive!({ type: 'reset', generation: 2 });
   expect(state.close).toHaveBeenCalledOnce();
   expect(changed).toHaveBeenLastCalledWith(false);
   expect(state.stop).not.toHaveBeenCalled();
-  message({ type: 'peer-open', sessionId: 'new-session', publicKey: 'ab'.repeat(32), iceServers: [] }, 2);
+  await message({ type: 'peer-open', sessionId: 'new-session', publicKey: 'ab'.repeat(32), iceServers: [] }, 2);
   state.options!.mode('relay');
   expect(changed).toHaveBeenLastCalledWith(true);
 });

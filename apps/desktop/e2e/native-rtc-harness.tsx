@@ -8,6 +8,9 @@ import { createNativeRtcConnection } from '../src/nativeRtc/connection';
 import { nativeVideoCodecs } from '../src/nativeRtc/videoCodec';
 import { nativeDataFixture } from './native-rtc-data';
 import { nativePhoneFixture } from './native-rtc-phone';
+import { nativeChatSyncFixture } from './native-chat-sync';
+import { nativeChatPhoneFixture } from './native-chat-phone';
+import { nativeTcpCryptoFixture } from './native-tcp-crypto';
 import '../src/styles.css';
 
 const root = createRoot(document.getElementById('root')!);
@@ -34,6 +37,9 @@ const client: DesktopClient = {
 const fixture = {
   data: nativeDataFixture,
   phone: nativePhoneFixture,
+  chatSync: nativeChatSyncFixture,
+  chatPhone: nativeChatPhoneFixture,
+  tcpCrypto: nativeTcpCryptoFixture,
   supported: nativeVideoCodecs,
   calls: () => browserRtcCalls,
   start: (codec: 'h264' | 'h265') => {

@@ -16,7 +16,7 @@ const FILE_HIGH_WATER_BYTES: usize = 1024 * 1024;
 const FILE_LOW_WATER_BYTES: usize = 768 * 1024;
 
 fn watermarks(label: &str) -> (usize, usize) {
-    if label == "remote-ai-file-v1" {
+    if matches!(label, "remote-ai-file-v1" | "remote-ai-sync-v1") {
         (FILE_HIGH_WATER_BYTES, FILE_LOW_WATER_BYTES)
     } else {
         (HIGH_WATER_BYTES, LOW_WATER_BYTES)
@@ -89,6 +89,7 @@ impl Channel {
     fn bind_messages(peer: &Arc<Peer>, channel: &Arc<Self>) {
         let weak = Arc::downgrade(peer);
         let key = channel.spec.key.clone();
+        let native_stream = channel.spec.label == "remote-ai-sync-v1";
         channel.rtc.on_message(Box::new(move |message| {
             let (weak, key) = (weak.clone(), key.clone());
             Box::pin(async move {
@@ -97,6 +98,12 @@ impl Channel {
                 };
                 if message.data.len() > MAX_MESSAGE_BYTES {
                     peer.stop();
+                    return;
+                }
+                if native_stream {
+                    if !message.is_string {
+                        peer.streams.receive(message.data).await;
+                    }
                     return;
                 }
                 if message.is_string {

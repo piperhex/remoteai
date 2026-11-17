@@ -3,6 +3,7 @@ import { ChatController } from '../../../../../../shared/remote-chat/client/cont
 import { ChatConnection } from '../../../../../../shared/remote-chat/client/connection';
 import { useActiveChatPolicy } from '../../../../../../shared/remote-chat/useActiveChatPolicy';
 import { createDesktopPeer } from '../../../remoteChat/peer';
+import { desktopSessionCrypto } from '../../../remoteChat/sessionCipher';
 import { createDesktopNativePath } from '../../../remoteChat/nativePath';
 import { createDesktopPacketCompression } from '../../../remoteChat/packetCompression';
 import { NativeGuiSocket } from './nativeSocket';
@@ -16,7 +17,7 @@ const HISTORY_REFRESH_MS = 15_000;
 
 export function useRemoteGui(identity: GuiCloudIdentity, deviceId: string, active: boolean) {
   const controller = useMemo(() => new ChatController((events) => new ChatConnection({
-    ...events, deviceId, tcpPunch: true, managePolicyMode: false,
+    ...events, ...desktopSessionCrypto, deviceId, tcpPunch: true, managePolicyMode: false,
     verifyHostKey: trustedHost(browserTrustStore, trustScope(identity.baseUrl, deviceId)),
     randomBytes: (length) => crypto.getRandomValues(new Uint8Array(length)),
     authorize: async () => ({ baseUrl: identity.baseUrl, accessToken: '' }),

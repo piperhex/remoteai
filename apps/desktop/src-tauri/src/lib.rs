@@ -175,6 +175,8 @@ pub fn run() {
         .plugin(tauri_plugin_deep_link::init())
         .manage(AppState::default())
         .manage(native_rtc::State::default())
+        .manage(remote_chat::crypto::State::default())
+        .manage(conversation_hub::synchronization::native::State::default())
         .manage(coze::CozeState::default())
         .manage(codex_gui::GuiState::default())
         .manage(cli_gui::CliGuiState::default())
@@ -431,6 +433,14 @@ pub fn run() {
             remote_chat::remote_chat_attach,
             remote_chat::remote_chat_send,
             remote_chat::packet_codec::remote_chat_packet_codec,
+            remote_chat::crypto::remote_chat_crypto_keypair,
+            remote_chat::crypto::remote_chat_crypto_open,
+            remote_chat::crypto::remote_chat_crypto_batch,
+            remote_chat::crypto::remote_chat_crypto_bulk_keys,
+            remote_chat::crypto::remote_chat_crypto_close,
+            remote_chat::crypto::tcp_commands::remote_chat_tcp_crypto_open,
+            remote_chat::crypto::tcp_commands::remote_chat_tcp_crypto_batch,
+            remote_chat::crypto::tcp_commands::remote_chat_tcp_crypto_close,
             remote_chat::bulk::remote_chat_bulk_send,
             remote_chat::identity::remote_chat_identity,
             remote_chat::host_health::remote_chat_host_alive,
@@ -574,6 +584,10 @@ pub fn run() {
             commands::restore_non_proxy_conversations,
             conversation_hub::browse_codex_threads,
             conversation_hub::synchronization::codex_conversation_sync,
+            conversation_hub::synchronization::native::codex_conversation_sync_native_start,
+            conversation_hub::synchronization::native::bridge::codex_conversation_sync_native_bridge,
+            conversation_hub::synchronization::native::codex_conversation_sync_native_poll,
+            conversation_hub::synchronization::native::codex_conversation_sync_native_close,
             conversation_hub::measure_codex_thread_tokens,
             conversation_hub::discard_codex_threads,
             conversation_hub::browse_codex_thread_bin,

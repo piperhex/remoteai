@@ -1,5 +1,6 @@
 import { Channel as IpcChannel, invoke } from '@tauri-apps/api/core';
 import type { TcpAddress, TcpNetwork, TcpSocket } from '../../../../shared/remote-chat/tcp/types';
+import { desktopTcpCrypto } from './tcpChannel';
 
 type Event = { socketId: string } & (
   { type: 'open'; localAddress: string; localPort: number; incoming: boolean }
@@ -55,6 +56,7 @@ class Socket implements TcpSocket {
 
 /** Rust validates every destination against the authenticated session before opening a socket. */
 export class DesktopTcpNetwork implements TcpNetwork {
+  readonly crypto = desktopTcpCrypto;
   localAddresses() { return invoke<string[]>('remote_chat_local_addresses'); }
   private readonly events = new IpcChannel<Event>();
   private readonly group: Promise<string>;

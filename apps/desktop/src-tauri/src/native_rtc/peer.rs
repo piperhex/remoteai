@@ -33,10 +33,19 @@ pub(crate) struct Peer {
     pub(super) stopped: Notify,
     transports: super::turn_transport::Transports,
     pub(super) media: super::media::Media,
+    pub(crate) streams: super::stream::Streams,
 }
 
 impl Peer {
     pub(crate) async fn new(config: Configuration) -> Result<Arc<Self>> {
+        #[cfg(test)]
+        if std::env::var("NATIVE_RTC_TEST_LOOPBACK").as_deref() == Ok("1") {
+            let mut settings = SettingEngine::default();
+            settings.set_include_loopback_candidate(true);
+            settings.set_ip_filter(Box::new(|ip| ip.is_loopback()));
+            settings.set_network_types(vec![webrtc::ice::network_type::NetworkType::Udp4]);
+            return Self::configured(config, settings).await;
+        }
         Self::configured(config, SettingEngine::default()).await
     }
 
@@ -90,6 +99,7 @@ impl Peer {
             stopped: Notify::new(),
             transports,
             media: super::media::Media::default(),
+            streams: super::stream::Streams::default(),
         });
         super::events::bind(&peer);
         super::media::bind(&peer, config.receive_media);
@@ -119,6 +129,7 @@ impl Peer {
         self.transports.close();
         self.channels.lock().await.clear();
         self.binary.lock().await.clear();
+        self.streams.close().await;
     }
 
     pub(crate) async fn poll(&self) -> Result<Vec<Event>> {

@@ -18,6 +18,7 @@ export function hotLinkHarness(options: {
   wrapDirectChannel?: (channel: Channel) => Channel;
   onMessage?: (side: Side, message: RpcMessage) => void;
   compression?: Partial<Record<Side, PacketCompressionFactory>>;
+  nativeCipher?: Partial<Record<Side, import('../../../../shared/remote-chat/nativeSessionCipher').SessionCipherFactory>>;
 } = {}) {
   const keys = { phone: keyPair((size) => crypto.getRandomValues(new Uint8Array(size))),
     pc: keyPair((size) => crypto.getRandomValues(new Uint8Array(size))) };
@@ -61,6 +62,7 @@ export function hotLinkHarness(options: {
     links[side] = new HotLink({ sessionId: 'session', desktop: side === 'pc',
       startOnRelay: options.startOnRelay,
       createPacketCompression: options.compression?.[side],
+      createSessionCipher: options.nativeCipher?.[side],
       secret: keys[side].secret, publicKey: keys[other].publicKey, iceServers: [],
       createPeer: (options) => {
         peers[side] = options;

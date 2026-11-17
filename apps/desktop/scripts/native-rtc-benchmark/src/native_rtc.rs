@@ -25,8 +25,27 @@ mod model;
     reason = "The full application tests IPC dispatch and receive APIs; this target measures sending"
 )]
 mod peer;
+#[path = "../../../src-tauri/src/native_rtc/state.rs"]
+#[expect(
+    dead_code,
+    reason = "Raw diagnostics do not create window-owned IPC registries"
+)]
+mod state;
 #[path = "../../../src-tauri/src/native_rtc/turn_transport.rs"]
 mod turn_transport;
+pub(crate) use state::State;
+#[path = "../../../src-tauri/src/native_rtc/bulk.rs"]
+#[expect(
+    dead_code,
+    reason = "Raw diagnostics do not invoke native file transfer commands"
+)]
+mod bulk;
+#[path = "../../../src-tauri/src/native_rtc/stream.rs"]
+#[expect(
+    dead_code,
+    reason = "Raw diagnostics receive no conversation synchronization jobs"
+)]
+mod stream;
 
 // The fast transport target has no file services; full pipeline runs use the application's test executable.
 mod encrypted_benchmark {

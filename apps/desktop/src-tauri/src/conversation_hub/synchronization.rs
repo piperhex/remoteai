@@ -5,6 +5,8 @@ use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
 mod archive;
+mod binary;
+pub(crate) mod native;
 mod persistence;
 mod planning;
 #[cfg(test)]
@@ -338,17 +340,28 @@ fn read(entry: &Transfer, offset: u64, length: Option<usize>) -> Result<Value, S
 }
 
 fn write(entry: &mut Transfer, offset: u64, encoded: &str) -> Result<Value, String> {
+    if encoded.len() > CHUNK_BYTES * 2 {
+        return Err(INVALID.into());
+    }
+    let bytes = STANDARD.decode(encoded).map_err(|_| INVALID.to_owned())?;
+    write_bytes(entry, offset, &bytes, CHUNK_BYTES)
+}
+
+fn write_bytes(
+    entry: &mut Transfer,
+    offset: u64,
+    bytes: &[u8],
+    maximum: usize,
+) -> Result<Value, String> {
     if entry
         .plan
         .as_ref()
         .is_some_and(|plan| plan.result.is_some())
-        || encoded.len() > CHUNK_BYTES * 2
     {
         return Err(INVALID.into());
     }
-    let bytes = STANDARD.decode(encoded).map_err(|_| INVALID.to_owned())?;
     if bytes.is_empty()
-        || bytes.len() > CHUNK_BYTES
+        || bytes.len() > maximum
         || offset > entry.written
         || offset + bytes.len() as u64 > entry.size
     {
@@ -367,11 +380,11 @@ fn write(entry: &mut Transfer, offset: u64, encoded: &str) -> Result<Value, Stri
         }
         let mut previous = vec![0; bytes.len()];
         file.read_exact(&mut previous).map_err(|e| e.to_string())?;
-        if previous != bytes {
+        if previous.as_slice() != bytes {
             return Err(INVALID.into());
         }
     } else {
-        file.write_all(&bytes).map_err(|e| e.to_string())?;
+        file.write_all(bytes).map_err(|e| e.to_string())?;
         entry.written += bytes.len() as u64;
     }
     Ok(json!({ "written": entry.written }))
