@@ -10,6 +10,8 @@ import { chunks } from '../../../../shared/remote-chat/framing';
 import { guiComposer } from '../pages/codexGui/composerBridge';
 import { composerThreadId } from '../../../../shared/remote-chat/composer';
 import { guiSidebar } from '../pages/codexGui/sidebarBridge';
+import { chatDirectory } from './directory';
+import { DIRECTORY_OPERATION } from '../../../../shared/chat/directory/protocol';
 import { GROUPS_OPERATION } from '../../../../shared/chat/groups/model';
 import { remoteGroups } from './groups';
 import { historyDelta, parseHistoryVersion } from '../../../../shared/remote-chat/historySync';
@@ -96,6 +98,7 @@ function terminalLinkRequest(request: RpcRequest): Cached['terminalLink'] {
     action: udpActions[String(stream.type)] ?? stream.type };
 }
 const READ_OPERATIONS = new Set([
+  DIRECTORY_OPERATION,
   'recoveryList',
   'toolDetails',
   'processDetails',
@@ -138,6 +141,8 @@ function response(request: RpcRequest, data: unknown, mode: ConnectionMode): Rpc
 }
 
 export class ChatOperations {
+  readonly directorySessions = new Map<string, Set<string>>();
+  readonly cliDirectorySessions = new Map<string, Set<string>>();
   private readonly conversationSync = new RemoteConversationSync();
   readonly views = new ConversationViews();
   private readonly dictation = new RemoteDictation();
@@ -173,10 +178,17 @@ export class ChatOperations {
     this.pruneTerminalLink(request, owner);
     this.prune();
     if (this.cache.size >= 512) return Promise.reject(new Error('请求较多，请稍后重试。'));
-    const running = this.dispatch(request, { mode, owner, terminalOwner });
+    const running = this.dispatch(request, { mode, owner, terminalOwner }).then(data => {
+      if (!this.directorySessions.has(owner) || !data || typeof data !== 'object') return data;
+      if ('revision' in data && 'threads' in data && 'readState' in data) return { ok: true };
+      if ('sidebar' in data) { const { sidebar: _sidebar, ...rest } = data; return rest; }
+      return data;
+    });
     const result = running.then((data) => response(request, data, mode))
       .catch((error: unknown): RpcResponse => ({ kind: 'response', id: request.id, error: operationError(error) }));
     const readOnly = request.method === 'request' && (READ_OPERATIONS.has(operation ?? '')
+      || (operation === 'cliGui' && ['status', 'list', 'syncList', 'read', 'catalog', 'image']
+        .includes(String(object(object(request.body).request).action)))
       || (operation === 'guiGitSettings' && object(request.body).autoMessage === undefined)
       || (operation === 'guiGitWorkspace' && object(object(request.body).request).operation === 'status')
       || (operation === DESKTOP_OPERATION && object(request.body).action === 'signal'));
@@ -213,6 +225,8 @@ export class ChatOperations {
   }
 
   release(owner?: string) {
+    if (owner === undefined) this.directorySessions.clear(); else this.directorySessions.delete(owner);
+    if (owner === undefined) this.cliDirectorySessions.clear(); else this.cliDirectorySessions.delete(owner);
     this.conversationSync.release(owner);
     this.views.release(owner);
     this.dictation.release(owner);
@@ -229,7 +243,15 @@ export class ChatOperations {
     if (request.method === 'request') {
       const body = object(request.body);
       if (body.operation === 'claudeAccounts') return invoke('claude_account_request', { request: body.request });
-      if (body.operation === 'cliGui') return invoke('cli_gui_request', { request: body.request });
+      if (body.operation === 'cliGui') {
+        const result = await invoke<unknown>('cli_gui_request', { request: body.request });
+        if (result && typeof result === 'object' && 'checkpoint' in result) {
+          const streams = this.cliDirectorySessions.get(options.owner) ?? new Set<string>();
+          streams.add((result.checkpoint as { stream: string }).stream);
+          this.cliDirectorySessions.set(options.owner, streams);
+        }
+        return result;
+      }
       if (body.operation === SYNC_OPERATION) return this.conversationSync.request(body, options);
       if (body.operation === DICTATION_OPERATION) return this.dictation.request(body, options.owner);
       if (GUI_FILE_OPERATIONS.has(String(body.operation))) return this.files.request(body, options.owner, options.mode);
@@ -257,8 +279,18 @@ export class ChatOperations {
 
   private async run(request: RpcRequest,
     { mode, owner, terminalOwner }: { mode: ConnectionMode; owner: string; terminalOwner: string }): Promise<unknown> {
-    if (request.method === 'connect') return this.connect(request.body);
+    if (request.method === 'connect') {
+      const result = await this.connect(request.body);
+      if (request.body && object(request.body).directorySyncV1 === true) this.directorySessions.set(owner, new Set());
+      return result;
+    }
     const body = { ...object(request.body) };
+    if (request.method === 'request' && body.operation === DIRECTORY_OPERATION) {
+      if (!this.directorySessions.has(owner)) throw new Error('Invalid request');
+      const result = await chatDirectory.request(body);
+      if ('checkpoint' in result) this.directorySessions.get(owner)?.add(result.checkpoint.stream);
+      return result;
+    }
     if (request.method === 'request' && body.operation === 'viewThread') {
       await this.views.select(owner, body.threadId, true, body.deferToolDetails === true);
       return {};
@@ -371,7 +403,8 @@ export class ChatOperations {
       body.maxBytes = videoByteLimit(mode);
     }
     applyProjectOverride(body);
-    const result = body.operation === 'list' ? await readRemoteThreadList(body)
+    const result = body.operation === 'list' ? await readRemoteThreadList({ ...body,
+      directory: this.directorySessions.has(owner) })
       : body.operation === 'send' ? await sendRemoteMessage(body as Extract<Request, { operation: 'send' }>)
       : await guiApi.request(body as unknown as Request);
     completeRemoteThreadListWrite(body, result);
@@ -383,7 +416,7 @@ export class ChatOperations {
     if (body.operation === 'list') {
       const list = result as ListResponse<Thread>;
       return { ...list, data: list.data.map(({ turns: _turns, ...thread }) => effectiveProjectThread(thread)),
-        sidebar: guiSidebar.observe(list.data, sidebarVersion) };
+        sidebar: guiSidebar.observe(list.data, sidebarVersion, body.archived === true) };
     }
     if (body.operation === 'resume' || body.operation === 'send' || body.operation === 'steer') return {};
     if (body.operation === 'read') {
@@ -407,6 +440,7 @@ export class ChatOperations {
 
   prepareEvent(event: GuiEvent) {
     receiveRemoteThreadListEvent(event);
+    chatDirectory.receive(event);
     this.liveHistory.receive(event);
     this.commandMetrics.receive(event);
     if (event.params.thread) {

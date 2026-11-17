@@ -58,3 +58,26 @@ it('gives initialization timeouts a connection-specific recovery action', async 
   rpc.close();
   expect(vi.getTimerCount()).toBe(0);
 });
+
+it('negotiates directory mode per connection and omits accumulated sidebar data from pages and receipts', async () => {
+  const host = new ChatOperations();
+  vi.mocked(guiApi.connect).mockResolvedValue([]);
+  vi.mocked(guiApi.request).mockResolvedValue({ data: [
+    { id: 'directory-test', preview: '', cwd: '/fixture', updatedAt: 1 },
+  ], nextCursor: null });
+  await host.execute({ kind: 'request', id: 'new-connect', method: 'connect', body: chatHandshake }, 'relay', 'new');
+  await host.execute({ kind: 'request', id: 'old-connect', method: 'connect', body: { protocolVersion: 1 } }, 'relay', 'old');
+  expect(host.directorySessions.has('new')).toBe(true);
+  expect(host.directorySessions.has('old')).toBe(false);
+  const page = await host.execute({ kind: 'request', id: 'new-list', method: 'request',
+    body: { operation: 'list', archived: false } }, 'relay', 'new');
+  expect(page.error).toBeUndefined();
+  expect(page.data).not.toHaveProperty('sidebar');
+  const read = await host.execute({ kind: 'request', id: 'new-read', method: 'request',
+    body: { operation: 'threadRead', threadId: 'directory-test', turnId: 'turn' } }, 'relay', 'new');
+  expect(read.data).toEqual({ ok: true });
+  const legacy = await host.execute({ kind: 'request', id: 'old-list', method: 'request',
+    body: { operation: 'list', archived: false } }, 'relay', 'old');
+  expect(legacy.data).toHaveProperty('sidebar.threads');
+  host.release();
+});

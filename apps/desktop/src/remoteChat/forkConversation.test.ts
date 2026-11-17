@@ -13,7 +13,7 @@ const host = vi.hoisted(() => ({ getSnapshot: vi.fn(), connect: vi.fn(), refresh
   select: vi.fn(), modelSettings: { ready: vi.fn(), created: vi.fn() } }));
 vi.mock('../pages/codexGui/session', () => ({ getGuiController: () => host }));
 vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { request: vi.fn() } }));
-vi.mock('../pages/codexGui/sidebarBridge', () => ({ guiSidebar: { observe: vi.fn() } }));
+vi.mock('../pages/codexGui/sidebarBridge', () => ({ guiSidebar: { observe: vi.fn(), subscribeCatalog: vi.fn() } }));
 let state: GuiState;
 const source: Thread = { id: 'source', cwd: 'D:/project', preview: '', updatedAt: 1,
   turns: [{ id: 'last', status: 'completed', items: [] }] };

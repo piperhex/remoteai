@@ -22,7 +22,7 @@ afterEach(() => { cleanup.splice(0).forEach(stop => stop()); vi.clearAllTimers()
 it('preserves the selected model when an older host refreshes only the catalog', async () => {
   let models = [model];
   const request = vi.fn(async (method: string, body?: Record<string, unknown>) => {
-    if (method === 'connect') return { ...chatHandshake, approvals: [] };
+    if (method === 'connect') return { ...chatHandshake, directorySyncV1: false, approvals: [] };
     return { data: body?.operation === 'models' || body?.operation === 'modelsRefresh' ? models : [],
       nextCursor: null };
   });
@@ -55,7 +55,7 @@ it.each(['empty', 'corrupt'])('recovers %s cache through a phone/Web action whil
   cleanup.push(() => pc.dispose(), bridge.attach(pc));
   await pc.connect();
   const request = vi.fn(async (method: string, body?: Record<string, unknown>) => {
-    if (method === 'connect') return { ...chatHandshake, approvals: [] };
+    if (method === 'connect') return { ...chatHandshake, directorySyncV1: false, approvals: [] };
     if (body?.operation === 'models' || body?.operation === 'modelsRefresh') {
       const composer = body.operation === 'modelsRefresh' ? await bridge.refreshModels(null) : await bridge.read(null);
       return { data: composer.models, nextCursor: null, composer };

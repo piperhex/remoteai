@@ -30,6 +30,7 @@ vi.mock('../../../../shared/conversation/webEvents', () => ({ subscribeGuiEvent:
   native.accountChanged = callback; return vi.fn();
 }) }));
 vi.mock('./operations', () => ({ ChatOperations: class {
+  directorySessions = new Map(); cliDirectorySessions = new Map();
   attachMappingStreams = vi.fn();
   release = native.release; execute = native.execute;
   desktop = { register: vi.fn(), diagnose: vi.fn(), nativeMedia: vi.fn() };

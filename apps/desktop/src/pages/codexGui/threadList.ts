@@ -70,7 +70,8 @@ export class GuiThreadList {
 
   filter = (search: string, archived: boolean) => {
     const cached = this.cache.peek({ search, archived });
-    this.host.patch({ search, archived, threads: cached?.data ?? [], cursor: cached?.nextCursor ?? null });
+    this.host.patch({ search, archived, threads: cached?.data ?? [], cursor: cached?.nextCursor ?? null,
+      groupCursors: {}, groupLoading: {} });
     void this.refresh(false, false);
   };
 }

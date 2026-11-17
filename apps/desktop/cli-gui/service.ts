@@ -1,5 +1,6 @@
 import type { PaseoAgent, PaseoAgentHandle, PaseoClient } from '@getpaseo/client';
-import type { CliCatalog, CliHistory, CliRequest, ExternalEngine } from '../../../shared/cli-gui/types';
+import type { CliCatalog, CliChange, CliHistory, CliRequest, ExternalEngine } from '../../../shared/cli-gui/types';
+import { CliDirectory } from './directory';
 import { CliRuntime } from './runtime';
 import { permission, session } from './mapping';
 import { CliWorkspaces } from './workspaces';
@@ -22,15 +23,17 @@ export class CliService {
   private workspaces: CliWorkspaces;
   private images: CliImages;
   private imageHistory: CliImageHistory;
+  private readonly directory: CliDirectory;
   constructor(readonly runtime: Pick<CliRuntime, 'root' | 'status' | 'install' | 'connect' | 'close' | 'accountBridge'>,
-    private changed: () => void) {
+    private changed: (change?: CliChange) => void) {
+    this.directory = new CliDirectory({ session: (agent, engine) => this.session(agent, engine), changed });
     this.workspaces = new CliWorkspaces(runtime.root); this.images = new CliImages(runtime.root);
     this.imageHistory = new CliImageHistory(this.images);
   }
 
   async request(request: CliRequest): Promise<unknown> {
     if (!['claude', 'gemini'].includes(request.engine)) throw new Error('client.cliGui.invalidRequest');
-    if (request.action === 'status') return this.runtime.status(request.engine);
+    if (request.action === 'status') return { ...await this.runtime.status(request.engine), directorySyncV1: true };
     if (request.action === 'install') return this.install(request.engine);
     if (this.maintaining) throw new Error('client.cliGui.busy');
     this.operations++;
@@ -42,6 +45,7 @@ export class CliService {
 
   private async execute(request: CliRequest) {
     const client = await this.runtime.connect();
+    if (request.action === 'syncList') return this.directory.request(client, request);
     if (request.action === 'catalog') {
       if (request.id) {
         const agent = await this.owned(client, request.engine, request.id);
@@ -74,7 +78,7 @@ export class CliService {
         await agent.archive();
         this.watches.get(agent.id)?.(); this.watches.delete(agent.id);
       } else if (request.action === 'approve') await this.approve(agent, request);
-      this.changed();
+      await this.changedAgent(agent, request.engine);
       return { ok: true };
     });
   }
@@ -212,7 +216,7 @@ export class CliService {
         config: { provider: `claude/${request.model}`, modeId: request.mode } });
       const snapshot = await agent.refresh();
       if (!snapshot) throw new Error('client.cliGui.connectionFailed');
-      await this.watch(agent); this.changed();
+      await this.watch(agent); await this.changedAgent(agent, request.engine);
       return this.session(snapshot.agent, request.engine);
     }
     const bridge = await this.runtime.accountBridge();
@@ -229,16 +233,25 @@ export class CliService {
     const snapshot = await agent.refresh();
     if (!snapshot) throw new Error('client.cliGui.connectionFailed');
     await this.watch(agent);
-    this.changed();
+    await this.changedAgent(agent, request.engine);
     return this.session(snapshot.agent, request.engine);
   }
 
   private async watch(agent: PaseoAgentHandle) {
     if (this.watches.has(agent.id)) return;
-    const unsubscribe = agent.timeline.subscribe(() => this.changed());
+    const unsubscribe = agent.timeline.subscribe(() => {
+      const provider = agent.current()?.provider;
+      if (provider === 'claude' || provider === 'gemini') this.changed({ engine: provider, id: agent.id, history: true });
+    });
     this.watches.set(agent.id, unsubscribe);
     try { await unsubscribe.ready; }
     catch (error) { unsubscribe(); this.watches.delete(agent.id); throw error; }
+  }
+
+  private async changedAgent(agent: PaseoAgentHandle, engine: ExternalEngine) {
+    const current = agent.current?.();
+    if (current) this.directory.observe(await this.session(current, engine));
+    this.changed({ engine, id: agent.id, history: true });
   }
 
   private async read(client: PaseoClient, request: Extract<CliRequest, { action: 'read' }>): Promise<CliHistory> {
@@ -265,6 +278,7 @@ export class CliService {
   }
 
   async close() {
+    this.directory.close();
     for (const unsubscribe of this.watches.values()) unsubscribe();
     this.watches.clear();
     await this.runtime.close();

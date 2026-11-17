@@ -10,12 +10,14 @@ export function useThreadPagination({ state, controller, enabled }: {
     loading: state.loading,
     scope: JSON.stringify([state.archived, state.search, state.connection]),
     cursor: state.cursor,
+    requireGesture: true,
     loadMore: () => controller.refresh(true),
   });
 }
 
 export function useThreadScrollPagination(options: {
   enabled: boolean; loading: boolean; scope: string; cursor: string | null; loadMore: () => Promise<void>;
+  requireGesture?: boolean;
 }) {
   const { list } = useViewportThreadPagination({ ...options, retryOnScroll: true });
   return { ref: list };

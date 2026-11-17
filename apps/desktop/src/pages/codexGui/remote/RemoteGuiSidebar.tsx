@@ -24,6 +24,8 @@ import { remoteSidebarDrag } from '../../../../../../shared/remote-chat/client/s
 import { useCliGui } from '../../../../../../shared/cli-gui/context';
 import { CliThreadRow } from '../../../../../../shared/cli-gui/CliThreadRow';
 import { useCliSidebar } from '../../../../../../shared/cli-gui/useCliSidebar';
+import { CliListMore } from '../../../../../../shared/cli-gui/CliListMore';
+import { GroupPageButton } from '../../../../../../shared/chat/directory/GroupPageButton';
 
 export function RemoteGuiSidebar(props: Parameters<typeof RemoteGuiSidebarContent>[0]) {
   return <BrowserGroups grouping={props.state.sidebar.grouping} client={props.controller.groups}
@@ -38,7 +40,7 @@ function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, fo
 }) {
   const sidebar = useCliSidebar({ threads: state.threads, archived: state.archived, query: state.search });
   const { groups: projectGroups, toggle, toggleCollapse } = useThreadGroups({ ...state,
-    threads: sidebar.threads, selected: sidebar.selected ?? state.selected });
+    threads: sidebar.threads, selected: sidebar.selected ?? state.selected }, sidebar.hasMore);
   const groups = projectGroups.map(group => ({
     ...group, label: group.kind === 'group' || group.cwd ? group.label
       : uiText(group.id === 'ungrouped' ? 'client.groups.ungrouped' : 'client.chat.recent'),
@@ -60,6 +62,7 @@ function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, fo
     loading: state.loading,
     scope: JSON.stringify([state.archived, state.search, state.ready]),
     cursor: state.cursor,
+    requireGesture: state.directorySync,
     loadMore: () => controller.list({ more: true }),
   });
   return <ResizableThreadSidebar className="gui-remote-sidebar" layoutSelector=".chat-diff-layout">
@@ -122,8 +125,18 @@ function RemoteGuiSidebarContent({ state, controller, actions, accountPicker, fo
               </div>
             </RemoteThreadMenu>;
           })}
+          {group.expanded && <CliListMore className={groupsStyle.more} threads={group.data} />}
+          {group.expanded && group.kind === 'group' && <GroupPageButton className={groupsStyle.more}
+            enabled={state.directorySync && state.ready} cursor={state.groupCursors?.[group.id.slice(6)]}
+            busy={state.groupLoading?.[group.id.slice(6)]}
+            load={more => controller.loadGroup(group.id.slice(6), more)} />}
           {group.canToggle && <button type="button" className={groupsStyle.more}
-            aria-expanded={group.expanded} onClick={() => toggle(group.id)}>
+            aria-expanded={group.expanded} onClick={() => {
+              toggle(group.id);
+              if (!group.expanded && group.kind === 'group' && state.groupCursors?.[group.id.slice(6)] === undefined) {
+                void controller.loadGroup(group.id.slice(6));
+              }
+            }}>
             {group.expanded ? uiText("client.chat.collapse") : uiText("client.chat.showMore.83ad87")}</button>}
         </div>
       </section>)}

@@ -170,7 +170,7 @@ impl Client {
                     &app,
                     "codex-gui-event",
                     &json!({
-                        "method":"cliGui/changed", "params":{}, "id":null
+                        "method":"cliGui/changed", "params":frame.get("params").cloned().unwrap_or(json!({})), "id":null
                     }),
                 );
                 continue;

@@ -3,6 +3,8 @@ import { getGuiController } from '../pages/codexGui/session';
 import type { GuiEvent, Thread } from '../../../../shared/conversation/types';
 import { guiApi } from '../../../../shared/conversation/api';
 import { guiSidebar } from '../pages/codexGui/sidebarBridge';
+import { readGroupDirectoryPage } from './directoryGroups';
+import { DIRECTORY_PAGE_SIZE } from '../../../../shared/chat/directory/protocol';
 
 export async function readRemoteThreadList(body: Record<string, unknown>) {
   if ((body.archived !== undefined && typeof body.archived !== 'boolean')
@@ -10,10 +12,12 @@ export async function readRemoteThreadList(body: Record<string, unknown>) {
     || (body.cursor !== undefined && typeof body.cursor !== 'string')
     || (body.force !== undefined && typeof body.force !== 'boolean')) throw new Error('Invalid request');
   const controller = getGuiController();
+  if (body.directory === true && typeof body.groupId === 'string') return readGroupDirectoryPage(body);
   const [page, grouped] = await Promise.all([controller.readThreadList({ archived: body.archived === true,
     search: body.search as string | undefined, cursor: body.cursor as string | undefined },
-  { pageSize: getChatPolicy().threadPageSize, force: body.force === true }),
-  readGroupedSummaries(body)]);
+  { pageSize: body.directory === true ? Math.min(DIRECTORY_PAGE_SIZE, getChatPolicy().threadPageSize)
+    : getChatPolicy().threadPageSize, force: body.force === true }),
+  body.directory === true ? Promise.resolve([]) : readGroupedSummaries(body)]);
   // Supplement the first page without changing its cursor. Later pages deduplicate by thread ID.
   const listed = new Set(page.data.map(thread => thread.id));
   return { ...page, data: [...page.data, ...grouped.filter(thread => !listed.has(thread.id))] };

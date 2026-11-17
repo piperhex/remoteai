@@ -32,6 +32,12 @@ enum Action {
     List {
         archived: bool,
     },
+    SyncList {
+        archived: bool,
+        search: Option<String>,
+        more: Option<bool>,
+        checkpoint: Option<DirectoryCheckpoint>,
+    },
     Create {
         #[serde(default)]
         cwd: String,
@@ -76,6 +82,15 @@ struct Cursor {
     seq: u64,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+struct DirectoryCheckpoint {
+    schema: u32,
+    epoch: String,
+    stream: String,
+    scope: String,
+    revision: u64,
+}
+
 fn bounded(value: &str, limit: usize) -> Result<()> {
     if value.is_empty() || value.len() > limit || value.contains('\0') {
         return Err(Error::Invalid);
@@ -94,6 +109,21 @@ fn directory(value: &str) -> Result<()> {
 impl Request {
     pub(super) fn validate(self) -> Result<Self> {
         match &self.action {
+            Action::SyncList {
+                search, checkpoint, ..
+            } => {
+                if search
+                    .as_ref()
+                    .is_some_and(|value| value.len() > 4000 || value.contains('\0'))
+                {
+                    return Err(Error::Invalid);
+                }
+                if let Some(checkpoint) = checkpoint {
+                    bounded(&checkpoint.epoch, 200)?;
+                    bounded(&checkpoint.stream, 200)?;
+                    bounded(&checkpoint.scope, 5000)?;
+                }
+            }
             Action::Create {
                 cwd,
                 model,
@@ -213,6 +243,35 @@ fn validate_images(images: &[String]) -> Result<()> {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn directory_requests_preserve_scope_and_applied_checkpoint() {
+        let value = json!({"engine":"claude", "action":"syncList", "archived":false,
+        "search":"project", "more":true, "checkpoint":{
+            "schema":1, "epoch":"worker", "stream":"view", "scope":"query", "revision":42
+        }});
+        let request: Request = serde_json::from_value(value.clone()).unwrap();
+        assert_eq!(
+            serde_json::to_value(request.validate().unwrap()).unwrap(),
+            value
+        );
+    }
+
+    #[test]
+    fn directory_requests_reject_unbounded_or_empty_identifiers() {
+        let value = json!({"engine":"gemini", "action":"syncList", "archived":false,
+            "checkpoint":{"schema":1, "epoch":"", "stream":"view", "scope":"query", "revision":0}});
+        assert!(serde_json::from_value::<Request>(value)
+            .unwrap()
+            .validate()
+            .is_err());
+        let value = json!({"engine":"gemini", "action":"syncList", "archived":false,
+            "search":"x".repeat(4001)});
+        assert!(serde_json::from_value::<Request>(value)
+            .unwrap()
+            .validate()
+            .is_err());
+    }
 
     #[test]
     fn preserves_images_and_allows_image_only_messages() {

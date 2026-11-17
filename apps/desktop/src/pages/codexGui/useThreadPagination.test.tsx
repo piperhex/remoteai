@@ -10,13 +10,14 @@ let viewport: number;
 let content: number;
 let cursor: string | null;
 let ready: boolean;
+let requireGesture: boolean;
 let resize: () => void;
 let disconnect: ReturnType<typeof vi.fn>;
 const loadMore = vi.fn<() => Promise<void>>();
 
 function Harness() {
   const pagination = useViewportThreadPagination({ enabled: ready, loading: false,
-    cursor, scope: 'recent', loadMore });
+    cursor, scope: 'recent', loadMore, requireGesture });
   return <div ref={pagination.list} data-list>
     {pagination.failed && <button onClick={pagination.retry}>重试</button>}
   </div>;
@@ -31,6 +32,7 @@ const scroll = (top: number) => act(async () => {
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   viewport = 400; content = 400; cursor = 'first'; ready = true;
+  requireGesture = false;
   disconnect = vi.fn();
   vi.stubGlobal('ResizeObserver', class {
     constructor(callback: () => void) { resize = callback; }
@@ -41,6 +43,20 @@ beforeEach(() => {
   vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(() => content);
   loadMore.mockReset();
   container = document.createElement('div'); document.body.append(container); root = createRoot(container);
+});
+
+it('keeps folded directory previews bounded until each deliberate paging gesture', async () => {
+  requireGesture = true;
+  loadMore.mockImplementation(async () => { cursor += '-next'; root.render(<Harness />); });
+  await render();
+  await act(async () => { resize(); resize(); });
+  expect(loadMore).not.toHaveBeenCalled();
+  await act(async () => list().dispatchEvent(new WheelEvent('wheel', { deltaY: 100 })));
+  expect(loadMore).toHaveBeenCalledTimes(1);
+  await render(); await act(async () => resize());
+  expect(loadMore).toHaveBeenCalledTimes(1);
+  await act(async () => list().dispatchEvent(new WheelEvent('wheel', { deltaY: 100 })));
+  expect(loadMore).toHaveBeenCalledTimes(2);
 });
 
 afterEach(async () => {

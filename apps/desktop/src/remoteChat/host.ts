@@ -13,6 +13,8 @@ import { guiComposer } from '../pages/codexGui/composerBridge';
 import { COMPOSER_EVENT } from '../../../../shared/remote-chat/composer';
 import { SIDEBAR_EVENT } from '../../../../shared/remote-chat/sidebar';
 import { guiSidebar } from '../pages/codexGui/sidebarBridge';
+import { chatDirectory } from './directory';
+import { DIRECTORY_EVENT } from '../../../../shared/chat/directory/protocol';
 import { EventStream } from './eventStream';
 import { remoteQueue } from './queue';
 import { QUEUE_EVENT } from '../../../../shared/remote-chat/queue';
@@ -47,6 +49,7 @@ export class ChatHost {
   private unsubscribeAccounts?: () => void;
   private readonly unsubscribeComposer: () => void;
   private readonly unsubscribeSidebar: () => void;
+  private readonly unsubscribeDirectory: () => void;
   private readonly unsubscribeQueue: () => void;
   private readonly unsubscribeMessages: () => void;
   private readonly unsubscribeBalances: () => void;
@@ -55,6 +58,7 @@ export class ChatHost {
   private bulkRelayAvailable = false;
 
   constructor(private readonly onConnectionChange: (connected: boolean) => void) {
+    this.unsubscribeDirectory = chatDirectory.subscribe(event => this.broadcast(event));
     this.transport = new NativeChatTransport((event) => this.transportEvent(event));
     this.unsubscribeBalances = guiAccountBalances.subscribe(() => {
       this.broadcast({ method: GUI_ACCOUNTS_EVENT, params: {} });
@@ -137,9 +141,19 @@ export class ChatHost {
   }
   private broadcast(event: { method: string; params: object }) {
     for (const [id, link] of this.links) {
+      const directory = this.operations.directorySessions.get(id);
+      if (directory && event.method === SIDEBAR_EVENT) continue;
+      if (event.method === DIRECTORY_EVENT && !directory?.has(
+        (event.params as { checkpoint: { stream: string } }).checkpoint.stream)) continue;
       // Queue/composer/sidebar messages use their own schemas and are always lightweight.
       const conversation = /^(item|turn|thread)\//.test(event.method);
-      const visible = conversation ? this.operations.views.event(id, event as GuiEvent) : event;
+      let visible = conversation ? this.operations.views.event(id, event as GuiEvent) : event;
+      if (event.method === 'cliGui/changed') {
+        const change = event.params as import('../../../../shared/cli-gui/types').CliChange;
+        const streams = this.operations.cliDirectorySessions.get(id);
+        const changes = (change.changes ?? [change]).filter(item => !item.batch || streams?.has(item.batch.checkpoint.stream));
+        visible = directory ? changes.length ? { ...event, params: { changes } } : undefined : { ...event, params: {} };
+      }
       if (visible && !this.assistance.restricted(id)) {
         void link.send({ kind: 'event', event: visible }).catch(() => link.close());
       }
@@ -302,6 +316,7 @@ export class ChatHost {
     this.unsubscribeAccounts?.();
     this.unsubscribeComposer();
     this.unsubscribeSidebar();
+    this.unsubscribeDirectory();
     this.unsubscribeQueue();
     this.unsubscribeMessages();
     this.unsubscribeBalances();

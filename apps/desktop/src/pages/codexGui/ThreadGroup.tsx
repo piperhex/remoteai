@@ -7,6 +7,8 @@ import { previewThreads, THREAD_GROUP_PREVIEW_COUNT } from "../../../../../share
 import styles from "./ThreadGroup.module.less";
 
 interface ThreadGroupProps {
+  hasMore?: boolean;
+  pagination?: ReactNode;
   hideHeading?: boolean;
   label: string;
   pinned: boolean;
@@ -24,7 +26,8 @@ interface ThreadGroupProps {
 }
 
 export function ThreadGroup({ label, pinned, threads, selected, collapsed, expanded, filtering,
-  creatingDisabled, onNewConversation, projectMenu, projectPinned, onToggle, renderThread, hideHeading }: ThreadGroupProps) {
+  creatingDisabled, onNewConversation, projectMenu, projectPinned, onToggle, renderThread, hideHeading,
+  hasMore, pagination }: ThreadGroupProps) {
   const contentId = useId();
   const isCollapsed = collapsed && !filtering;
   const showAll = expanded || filtering;
@@ -51,7 +54,8 @@ export function ThreadGroup({ label, pinned, threads, selected, collapsed, expan
     </div>}
     <div id={contentId} className={styles.content} hidden={isCollapsed}>
       {(showAll ? threads : previewThreads(threads, selected)).map(renderThread)}
-      {threads.length > THREAD_GROUP_PREVIEW_COUNT && !filtering && <button type="button" className={styles.more}
+      {showAll && pagination}
+      {(threads.length > THREAD_GROUP_PREVIEW_COUNT || hasMore) && !filtering && <button type="button" className={styles.more}
         aria-expanded={showAll} aria-controls={contentId} onClick={() => onToggle("expanded")}>
         {showAll ? uiText("client.chat.collapse") : uiText("client.chat.showMore.83ad87")}
       </button>}

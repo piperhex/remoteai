@@ -39,7 +39,7 @@ it('recovers the host through remote reads without reconnecting the phone or com
   await pc.connect();
   await expect(pc.modelCatalog.invalidate()).rejects.toThrow('initial catalog failure');
   const request = vi.fn(async (method: string, body?: Record<string, unknown>) => {
-    if (method === 'connect') return { ...chatHandshake, approvals: [] };
+    if (method === 'connect') return { ...chatHandshake, directorySyncV1: false, approvals: [] };
     if (body?.operation === 'models') {
       const composer = await bridge.read(null);
       return { data: composer.models, nextCursor: null, composer };

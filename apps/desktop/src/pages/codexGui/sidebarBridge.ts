@@ -4,6 +4,7 @@ import type { GuiEvent, GuiState, Thread } from '../../../../../shared/conversat
 import { initialState, savePreferences } from './preferences';
 import { readProjects, folderName } from '../../../../../shared/conversation/projectCatalog';
 import { emptySidebar, type SidebarSnapshot } from '../../../../../shared/remote-chat/sidebar';
+import { threadSummary } from '../../../../../shared/chat/directory/summary';
 
 type Binding = Pick<GuiController, 'getSnapshot' | 'subscribe' | 'readState'>;
 
@@ -11,9 +12,17 @@ type Binding = Pick<GuiController, 'getSnapshot' | 'subscribe' | 'readState'>;
 export class SidebarBridge {
   private binding?: Binding;
   private known = new Map<string, Thread>();
+  private archived = new Map<string, boolean>();
+  private readonly catalogListeners = new Set<(live: boolean) => void>();
+  catalog = () => [...this.known.values()].map(thread => ({ thread, archived: this.archived.get(thread.id) ?? false }));
+  subscribeCatalog = (listener: (live: boolean) => void) => {
+    this.catalogListeners.add(listener);
+    return () => { this.catalogListeners.delete(listener); };
+  };
   private value = emptySidebar();
   private clock = 0;
   private readonly changed = new Map<string, number>();
+  private readonly deleted = new Map<string, number>();
   version = () => this.clock;
   snapshot = () => this.value;
   private readonly listeners = new Set<(snapshot: SidebarSnapshot) => void>();
@@ -33,7 +42,9 @@ export class SidebarBridge {
         && previous.pendingRequest === state.pendingRequest && previous.pins === state.pins
         && previous.pinnedProjects === state.pinnedProjects && previous.grouping === state.grouping) return;
       previous = state;
-      state.threads.forEach((thread) => this.known.set(thread.id, thread));
+      state.threads.forEach((thread) => {
+        this.known.set(thread.id, threadSummary(thread)); this.archived.set(thread.id, state.archived);
+      });
       this.publish(state);
     };
     update();
@@ -41,7 +52,7 @@ export class SidebarBridge {
     return () => { unsubscribe(); if (this.binding === binding) this.binding = undefined; };
   }
 
-  private publish(state = this.binding?.getSnapshot() ?? initialState()) {
+  private publish(state = this.binding?.getSnapshot() ?? initialState(), live = false) {
     const names = new Map(readProjects().map((project) => [project.path, project.name]));
     const threads = Object.fromEntries([...this.known].map(([id, thread]) => {
       const cwd = state.projectOverrides[id] ?? thread.cwd;
@@ -54,36 +65,49 @@ export class SidebarBridge {
       || JSON.stringify(this.value.grouping) === JSON.stringify(state.grouping);
     if (sameGroups && JSON.stringify([threads, state.threadReadState, state.pins, state.pinnedProjects])
       === JSON.stringify([this.value.threads, this.value.readState, this.value.pins, this.value.pinnedProjects])
-      && this.value.revision >= 0) return this.value;
+      && this.value.revision >= 0) {
+      this.catalogListeners.forEach(listener => listener(live));
+      return this.value;
+    }
     this.value = { threads, pins: state.pins, pinnedProjects: state.pinnedProjects, grouping: state.grouping,
       readState: state.threadReadState, revision: this.value.revision + 1 };
     this.listeners.forEach((listener) => listener(this.value));
+    this.catalogListeners.forEach(listener => listener(live));
     return this.value;
   }
 
-  observe(threads: Thread[], since = this.clock) {
+  observe(threads: Thread[], since = this.clock, archived?: boolean, live = false) {
     const state = this.binding?.getSnapshot() ?? initialState();
     const readState = { ...state.threadReadState };
     for (const incoming of threads) {
+      if ((this.deleted.get(incoming.id) ?? 0) > since) continue;
       const known = this.known.get(incoming.id);
       const thread = known && (this.changed.get(incoming.id) ?? 0) > since
         ? { ...incoming, status: known.status, name: known.name ?? incoming.name } : incoming;
       if (!this.binding && this.known.get(thread.id)?.status?.type === 'active' && thread.status?.type !== 'active') {
         readState[thread.id] = { turnId: `refresh:${thread.updatedAt}`, unread: true };
       }
-      this.known.set(thread.id, thread);
+      this.known.set(thread.id, threadSummary(thread));
+      if (archived !== undefined && (this.changed.get(thread.id) ?? 0) <= since) {
+        this.archived.set(thread.id, archived);
+      }
     }
     if (!this.binding) {
       state.threadReadState = readState;
       savePreferences(state);
     }
-    return this.publish(state);
+    return this.publish(state, live);
   }
 
   receive(event: GuiEvent) {
     const { threadId, thread, turn } = event.params;
-    if (['thread/started', 'thread/resumed'].includes(event.method) && thread) this.known.set(thread.id, thread);
+    if (['thread/started', 'thread/resumed'].includes(event.method) && thread) {
+      this.known.set(thread.id, threadSummary(thread)); this.archived.set(thread.id, false);
+    }
     else if (event.method === 'thread/deleted' && threadId) this.known.delete(threadId);
+    else if (['thread/archived', 'thread/unarchived'].includes(event.method) && threadId) {
+      this.archived.set(threadId, event.method === 'thread/archived');
+    }
     else if (event.method === 'thread/name/updated' && threadId && event.params.threadName !== undefined) {
       const known = this.known.get(threadId);
       if (known) this.known.set(threadId, { ...known, name: event.params.threadName });
@@ -91,6 +115,7 @@ export class SidebarBridge {
     else if (threadId && turn && ['turn/started', 'turn/completed'].includes(event.method)) {
       const known = this.known.get(threadId);
       if (known) this.known.set(threadId, { ...known,
+        updatedAt: Math.max(known.updatedAt, turn.completedAt ?? turn.startedAt ?? Math.floor(Date.now() / 1000)),
         status: { type: event.method === 'turn/started' ? 'active' : 'idle' } });
       if (!this.binding && event.method === 'turn/completed') {
         const state = initialState();
@@ -102,7 +127,8 @@ export class SidebarBridge {
     } else return;
     const id = threadId ?? thread?.id;
     if (id) this.changed.set(id, ++this.clock);
-    this.publish();
+    if (id && event.method === 'thread/deleted') this.deleted.set(id, this.clock);
+    this.publish(undefined, true);
   }
 
   markRead(input: Record<string, unknown>) {

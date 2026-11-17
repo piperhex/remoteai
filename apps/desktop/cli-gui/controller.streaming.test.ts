@@ -46,7 +46,7 @@ it.each(['claude', 'gemini'] as const)('coalesces %s reply events without waitin
   test.stop();
 });
 
-it('lets live events preempt the fallback poll and refreshes metadata less often', async () => {
+it('lets live events preempt fallback history polling without refreshing either directory', async () => {
   const test = await setup('claude');
   test.fixture.setHistory('claude', test.controller.getSnapshot().history!.entries, 'running');
   test.changed();
@@ -56,8 +56,8 @@ it('lets live events preempt the fallback poll and refreshes metadata less often
   await vi.advanceTimersByTimeAsync(80);
   expect(test.calls.map(call => call.action)).toEqual(['read']);
   await vi.advanceTimersByTimeAsync(2200);
-  expect(test.calls.filter(call => call.action === 'status')).toHaveLength(2);
-  expect(test.calls.filter(call => call.action === 'list')).toHaveLength(2);
+  expect(test.calls.filter(call => call.action === 'status')).toHaveLength(0);
+  expect(test.calls.filter(call => call.action === 'list')).toHaveLength(0);
   test.stop();
 });
 
@@ -73,7 +73,7 @@ it('runs one queued refresh after a slow read and keeps an explicit full refresh
   expect(test.calls.map(call => call.action)).toEqual(['read']);
   finish(test.controller.getSnapshot().history!);
   await vi.advanceTimersByTimeAsync(0);
-  expect(test.calls.map(call => call.action)).toEqual(['read', 'status', 'status', 'list', 'list', 'read']);
+  expect(test.calls.map(call => call.action)).toEqual(['read', 'list', 'list', 'read']);
   test.stop();
 });
 

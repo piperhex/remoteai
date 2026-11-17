@@ -2,6 +2,9 @@ import { uiText } from "../../../../../shared/localization/uiText";
 import { useCliGui } from '../../../../../shared/cli-gui/context';
 import { CliThreadRow } from '../../../../../shared/cli-gui/CliThreadRow';
 import { useCliSidebar } from '../../../../../shared/cli-gui/useCliSidebar';
+import { CliListMore } from '../../../../../shared/cli-gui/CliListMore';
+import { GroupPageButton } from '../../../../../shared/chat/directory/GroupPageButton';
+import directoryGroupStyles from './ThreadGroup.module.less';
 import { useGuiLanguage } from '../../../../../shared/localization/useGuiLanguage';
 import { useMemo, useState, type ReactNode } from "react";
 import { App, Button, Input, Modal, Segmented, Spin } from "antd";
@@ -152,7 +155,19 @@ function ThreadSidebarContent({ state, controller, accountPicker, focused, onTog
           hideHeading={custom} threads={group.data}
           selected={view === "conversation" ? sidebar.selected?.id ?? state.selected : null}
           collapsed={views.collapsed.includes(key)} expanded={views.expanded.includes(key)}
-          filtering={Boolean(state.search.trim())} onToggle={(field) => toggle(field, key)}
+          filtering={Boolean(state.search.trim())} onToggle={(field) => {
+            toggle(field, key);
+            if (field === 'expanded' && !views.expanded.includes(key) && custom
+              && state.groupCursors?.[group.id.slice(6)] === undefined) void controller.loadGroup(group.id.slice(6));
+          }}
+          hasMore={sidebar.hasMore(group.data) || (custom && state.groupCursors?.[group.id.slice(6)] !== null)}
+          pagination={<>
+            {custom && <GroupPageButton className={directoryGroupStyles.more}
+              cursor={state.groupCursors?.[group.id.slice(6)]} enabled={state.connection === 'ready'}
+              busy={state.groupLoading?.[group.id.slice(6)]}
+              load={more => controller.loadGroup(group.id.slice(6), more)} />}
+            <CliListMore className={directoryGroupStyles.more} threads={group.data} />
+          </>}
           projectPinned={state.pinnedProjects.includes(group.cwd)}
           projectMenu={group.cwd ? (heading) => <ProjectGroupMenu path={group.cwd} label={group.label}
             state={state} controller={controller}>{heading}</ProjectGroupMenu> : undefined}

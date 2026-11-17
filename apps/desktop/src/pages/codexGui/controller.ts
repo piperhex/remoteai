@@ -37,6 +37,7 @@ import { GuiThreadTitles } from "./threadTitles";
 import type { ApprovalReply, GuiEvent, GuiState, Model, Settings, Thread, Turn } from "../../../../../shared/conversation/types";
 import type { Item, MessageInput, SkillReference } from "../../../../../shared/conversation/types";
 import { isTextDelta, StreamFrame } from '../../../../../shared/chat/streamFrame';
+import { readGroupDirectoryPage } from '../../remoteChat/directoryGroups';
 
 export class GuiController {
   readonly groups = createGuiGroups({ snapshot: () => this.state, patch: patch => this.patch(patch) });
@@ -80,6 +81,24 @@ export class GuiController {
   readThreadList = (query: ThreadListQuery, options: { pageSize: number; force?: boolean }) =>
     this.lists.readRemote(query, options);
   receiveThreadListEvent = (event: GuiEvent) => this.lists.receiveRemote(event);
+  loadGroup = async (groupId: string, more = false) => {
+    if (this.state.groupLoading?.[groupId]) return;
+    const { archived, search } = this.state;
+    this.patch({ groupLoading: { ...this.state.groupLoading, [groupId]: true } });
+    try {
+      const page = await readGroupDirectoryPage({ archived, search, groupId,
+        cursor: more ? this.state.groupCursors?.[groupId] : undefined }, this);
+      if (archived !== this.state.archived || search !== this.state.search) return;
+      page.data.forEach(thread => this.threadList.upsert(thread, archived));
+      this.patch({ threads: [...new Map([...this.state.threads, ...page.data].map(thread => [thread.id, thread])).values()],
+        groupCursors: { ...this.state.groupCursors, [groupId]: page.nextCursor } });
+    } catch (error) { this.report(error); }
+    finally {
+      if (archived === this.state.archived && search === this.state.search) {
+        this.patch({ groupLoading: { ...this.state.groupLoading, [groupId]: false } });
+      }
+    }
+  };
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => this.listeners.delete(listener); };
   /** Text deltas cannot introduce acknowledged user messages. */
   subscribeMessageUpdates = (listener: () => void) => {

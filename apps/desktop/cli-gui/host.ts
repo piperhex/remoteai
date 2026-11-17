@@ -2,14 +2,23 @@ import { createInterface } from 'node:readline';
 import { isAbsolute } from 'node:path';
 import { CliRuntime } from './runtime';
 import { CliService } from './service';
-import type { CliRequest } from '../../../shared/cli-gui/types';
+import type { CliChange, CliRequest } from '../../../shared/cli-gui/types';
+import { coalesceCliChanges } from '../../../shared/cli-gui/changes';
 
 const root = process.argv[2];
 if (!root || !isAbsolute(root) || Number(process.versions.node.split('.')[0]) < 22) process.exit(1);
 const write = (value: object) => process.stdout.write(`${JSON.stringify(value)}\n`);
 let timer: ReturnType<typeof setTimeout> | undefined;
-const changed = () => { timer ??= setTimeout(() => { timer = undefined; write({ event: true }); }, 150); };
-const service = new CliService(new CliRuntime(root, changed), changed);
+let changes: CliChange[] = [];
+const changed = (change: CliChange = { runtime: true }) => {
+  changes.push(change);
+  timer ??= setTimeout(() => {
+    timer = undefined;
+    write({ event: true, params: { changes: coalesceCliChanges(changes) } });
+    changes = [];
+  }, 150);
+};
+const service = new CliService(new CliRuntime(root, () => changed({ runtime: true })), changed);
 const input = createInterface({ input: process.stdin, crlfDelay: Infinity });
 
 async function execute(line: string) {

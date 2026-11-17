@@ -12,11 +12,13 @@ import { createDesktopSshProfiles } from '../../../api/sshProfiles';
 import { registerDesktopMappingStream } from '../portForwarding/streamBridge';
 import type { GuiCloudIdentity } from '../../../../../../shared/conversation/remote/types';
 import { browserTrustStore, trustedHost, trustScope } from '../../../../../../shared/remote-chat/trustedHost';
+import { browserDirectoryStorage } from '../../../../../../shared/chat/directory/storage';
 
 const HISTORY_REFRESH_MS = 15_000;
 
 export function useRemoteGui(identity: GuiCloudIdentity, deviceId: string, active: boolean) {
-  const controller = useMemo(() => new ChatController((events) => new ChatConnection({
+  const controller = useMemo(() => {
+    const value = new ChatController((events) => new ChatConnection({
     ...events, ...desktopSessionCrypto, deviceId, tcpPunch: true, managePolicyMode: false,
     verifyHostKey: trustedHost(browserTrustStore, trustScope(identity.baseUrl, deviceId)),
     randomBytes: (length) => crypto.getRandomValues(new Uint8Array(length)),
@@ -27,7 +29,10 @@ export function useRemoteGui(identity: GuiCloudIdentity, deviceId: string, activ
     createNativePath: createDesktopNativePath,
     createPacketCompression: createDesktopPacketCompression,
     registerMappingStream: registerDesktopMappingStream,
-  }), undefined, undefined, createDesktopSshProfiles(identity)), [identity.baseUrl, identity.userId, deviceId]);
+    }), undefined, undefined, createDesktopSshProfiles(identity));
+    value.directoryStorage = browserDirectoryStorage(JSON.stringify([identity.baseUrl, identity.userId]), deviceId);
+    return value;
+  }, [identity.baseUrl, identity.userId, deviceId]);
   controller.deferToolDetails = true;
   controller.deferProcessDetails = true;
   const state = useSyncExternalStore(controller.subscribe, controller.snapshot);
