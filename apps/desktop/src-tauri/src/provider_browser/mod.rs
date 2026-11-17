@@ -4,6 +4,7 @@ pub(crate) mod automation;
 pub(crate) mod data;
 #[cfg(windows)]
 mod data_windows;
+pub(crate) mod downloads;
 pub(crate) mod extensions;
 pub(crate) mod inspector;
 mod lifecycle;
@@ -152,9 +153,13 @@ fn browser_builder(
                 eprintln!("Provider browser navigation notification failed: {error}");
             }
         }
-        allowed || url.as_str() == "about:blank"
-    })
-    .on_download(|_, _| false);
+        let downloadable_blob = url.scheme() == "blob"
+            && url::Url::parse(url.path())
+                .is_ok_and(|source| allowed_url(&source, dev_origin.as_ref()));
+        allowed || downloadable_blob || url.as_str() == "about:blank"
+    });
+    #[cfg(not(windows))]
+    let builder = builder.on_download(|_, _| false);
     #[cfg(all(test, windows))]
     let builder = if owner.config().identifier == "dev.codex.switch.browser-data-smoke" {
         let args = owner

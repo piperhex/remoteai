@@ -52,6 +52,7 @@ import { TotpPage } from "../../pages/TotpPage";
 import { TotpCloudSyncSwitch } from "../TotpCloudSyncSwitch";
 import { LogDiagnosticsPage, type LogDiagnosticsTab } from "../../pages/LogDiagnosticsPage";
 import { DownloadsPage } from "../../pages/DownloadsPage";
+import { useBrowserDownloads } from '../../downloads/useBrowserDownloads';
 import { LoungePage } from "../../../../../shared/lounge/LoungePage";
 import { useDesktopLounge } from "../../lounge/useDesktopLounge";
 import { ExtensionMarketContext } from "../../../../../shared/browser/extensions/market";
@@ -278,6 +279,7 @@ function dashboardTitle(page: DashboardPage, t: Translate, options: {
 }
 
 export function DashboardApp() {
+  const browserDownloadMessages = useBrowserDownloads();
   const [page, setPage] = useState<DashboardPage>("codexGui");
   const notificationTarget = useNotificationNavigation(() => setPage("codexGui"));
   const [diagnosticsTab, setDiagnosticsTab] = useState<LogDiagnosticsTab>("errorLogs");
@@ -1320,6 +1322,7 @@ export function DashboardApp() {
       },
     }}>
       <BrowserNavigationProvider onOpen={() => setPage("browser")}>
+      {browserDownloadMessages}
       <div className={`app-shell${NATIVE_WINDOW_CONTROLS_ENABLED ? " custom-titlebar-shell" : ""}${
         sidebarNavigationEnabled ? " sidebar-navigation-shell" : ""
       }${sidebarNavigationEnabled && navigationStyle.sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
