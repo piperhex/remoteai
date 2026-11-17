@@ -121,6 +121,12 @@ in `.codex-tmp/chat-phone-js-final.json` and `.codex-tmp/chat-phone-rust-final.j
 
 ## Validation scope
 
+The subsequent Android-only profiling and strict hex-decoder optimization are documented in
+[Native local packet profiling](../apps/native/docs/android-packet-throughput.md). Local 16,000-byte
+packet processing improved from 25.62 to 85.62 MiB/s, while the foreground LAN A/B stayed around
+8 MiB/s. Receiver decode/decrypt time fell from 2.092 to 0.968 seconds; this does not establish a
+corresponding end-to-end throughput improvement.
+
 Validation includes native wire vectors, tamper/replay rejection, per-socket TCP keys, ownership,
 late cancellation, IPC batch coalescing, selected-path wrapper depth, real Rust RTC transfer and
 bridge/resume/file hash tests. Desktop local and remote synchronization browser fixtures pass.

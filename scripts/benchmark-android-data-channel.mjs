@@ -31,6 +31,11 @@ const config = { runs: 3, records: 134217728 / recordBytes, recordBytes,
   socketMode: process.env.P2P_BENCH_SOCKET_MODE ?? 'ephemeral', udpBufferKiB: Number(process.env.P2P_BENCH_UDP_KIB ?? '0'),
   workers: nativeApp ? undefined : Number(process.env.P2P_BENCH_WORKERS ?? '4') };
 if (nativeChat) Object.assign(config, { records: 2048, encrypted: false, chat: true,
+  chatLegacy: process.env.P2P_BENCH_CHAT_LEGACY === '1',
+  chatCompare: process.env.P2P_BENCH_CHAT_COMPARE === '1',
+  chatHint: process.env.P2P_BENCH_CHAT_HINT === '1',
+  chatForeground: process.env.P2P_BENCH_CHAT_FOREGROUND === '1',
+  runs: process.env.P2P_BENCH_CHAT_COMPARE === '1' ? 6 : 3,
   chatCrypto: process.env.P2P_BENCH_CHAT_CRYPTO === 'js' ? 'js' : 'rust' });
 const port = 18786;
 const slots = new Map();
