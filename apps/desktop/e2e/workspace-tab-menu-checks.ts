@@ -5,7 +5,7 @@ const drawer = (page: Page) => page.locator('aside[data-details-panel]');
 const tabBar = (page: Page) => drawer(page).getByRole('tablist', { name: '侧栏内容', exact: true });
 const tab = (page: Page, name: string) => tabBar(page).getByRole('tab', { name, exact: true });
 const menu = (page: Page) => page.getByRole('menu', { name: '标签页操作', exact: true });
-const hide = (page: Page) => drawer(page).getByRole('button', { name: '关闭详情抽屉', exact: true }).click();
+const hide = (page: Page) => drawer(page).getByRole('button', { name: '最小化详情抽屉', exact: true }).click();
 async function shot(page: Page, info: TestInfo, name: string) {
   if (await menu(page).count()) {
     await menu(page).hover();

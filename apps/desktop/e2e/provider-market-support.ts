@@ -51,6 +51,7 @@ export async function setupMarket(page: Page, mode: string, authenticated = true
   let item = fixtureItem();
   let userId = authenticated ? 'alice' : '';
   const exchange = async (call: Call): Promise<unknown> => {
+    if (call.command === 'codex_gui_browser') return { entries: [], candidates: [], supported: false };
     if (call.command === 'provider_browser_sync') browserRequests.push(call.args.request as Record<string, unknown>);
     if (call.command === 'fetch_relay_models') {
       const request = call.args.request as Record<string, unknown>;
@@ -90,7 +91,8 @@ export async function setupMarket(page: Page, mode: string, authenticated = true
     if (authenticated) localStorage.setItem('codex-switch.web.session.v1', JSON.stringify({
       baseUrl: location.origin, email: 'alice@test.invalid', accessToken: 'fixture', refreshToken: 'fixture',
     }));
-    if (mode === 'local') Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: {
+    if (mode === 'local') Object.assign(window, { isTauri: true,
+      __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener: () => {} }, __TAURI_INTERNALS__: {
       invoke: (command: string, args: Record<string, unknown>) =>
         (window as unknown as { marketInvoke: (command: string, args: Record<string, unknown>) => Promise<unknown> })
           .marketInvoke(command, args), transformCallback: () => 1, unregisterCallback: () => {},
