@@ -63,7 +63,7 @@ async function contextMenu() {
 
 it("opens a link from the desktop context menu in the system browser", async () => {
   const menu = await contextMenu();
-  await act(async () => menu.find(item => item.textContent === "在浏览器中打开")!.click());
+  await act(async () => menu.find(item => item.textContent === "外部浏览器")!.click());
   expect(openUrl).toHaveBeenCalledWith(href);
 });
 
@@ -74,11 +74,13 @@ it("copies the link from the desktop context menu", async () => {
   expect(openUrl).not.toHaveBeenCalled();
 });
 
-it("preserves the browser context menu", async () => {
+it("offers the same link menu in the browser, disabling unavailable destinations", async () => {
   const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true, button: 2 });
   await act(async () => container.querySelector("a")!.dispatchEvent(event));
-  expect(event.defaultPrevented).toBe(false);
-  expect(document.querySelector('[role="menu"]')).toBeNull();
+  expect(event.defaultPrevented).toBe(true);
+  const items = Array.from(document.querySelectorAll('[role="menuitem"]'));
+  expect(items.map(item => item.textContent)).toEqual(['右侧边浏览器', '独立内置浏览器', '外部浏览器', '复制链接']);
+  expect(items.slice(0, 2).every(item => item.getAttribute('aria-disabled') === 'true')).toBe(true);
 });
 
 it("opens middle-clicks through the desktop opener", async () => {

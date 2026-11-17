@@ -11,6 +11,8 @@ import { setGuiLanguage } from '../../../shared/localization/uiText';
 import { BrowserClientContext, localBrowserClient } from '../../../shared/file-preview/workspace/browserClient';
 import type { BrowserClient } from '../../../shared/browser/automation';
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
+import { BrowserNavigationProvider } from '../../../shared/browser/BrowserNavigationProvider';
+import { BrowserPage } from '../../../shared/browser/BrowserPage';
 import '../src/styles.css';
 import 'antd/dist/reset.css';
 
@@ -18,6 +20,7 @@ const params = new URLSearchParams(location.search);
 const mode = params.get('mode') ?? 'local';
 const origin = params.get('origin') ?? location.origin;
 localStorage.setItem('codex-switch:theme-mode', params.has('dark') ? 'dark' : 'light');
+if (params.has('font')) localStorage.setItem('codex-switch:global-font-size', params.get('font')!);
 setGuiLanguage(params.get('language') === 'en' ? 'en' : 'zh');
 const urls = ['guide', 'dashboard', 'help'].map(name => `${origin}/preview-site/${name}`);
 const automationClient: BrowserClient = { native: false,
@@ -35,6 +38,7 @@ function Harness() {
   const { mode: appearance } = useThemeMode();
   const [dialog, setDialog] = useState(false);
   const [thread, setThread] = useState('preview-thread');
+  const [browserVisible, setBrowserVisible] = useState(false);
   const environment = useMemo<FileEnvironment>(() => ({ remote: true,
     previews: { open: async () => null, close: async () => {} },
     actions: { applications: async () => [], perform: async target => ({ path: target.path, saved: false }) },
@@ -55,11 +59,16 @@ function Harness() {
   if (mode !== 'web') algorithms.push(theme.compactAlgorithm);
   return <ConfigProvider theme={{ algorithm: algorithms }}>
     <BrowserClientContext.Provider value={params.has('automation') ? automationClient : localBrowserClient}>
+    <BrowserNavigationProvider onOpen={() => setBrowserVisible(true)}>
     <FileEnvironmentContext.Provider value={mode === 'remote' ? environment : null}>
-      <div style={{ height: '100vh' }}>{mode === 'local'
-        ? <DetailsWorkspace selected={thread} active>{children}</DetailsWorkspace>
-        : <ChatDetailsWorkspace selected={thread} active enabled>{children}</ChatDetailsWorkspace>}</div>
+      <div hidden={browserVisible} style={{ height: '100vh' }}>{mode === 'local'
+        ? <DetailsWorkspace selected={thread} active={!browserVisible}>{children}</DetailsWorkspace>
+        : <ChatDetailsWorkspace selected={thread} active={!browserVisible} enabled>{children}</ChatDetailsWorkspace>}</div>
     </FileEnvironmentContext.Provider>
+    {browserVisible && <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <button onClick={() => setBrowserVisible(false)}>返回会话</button>
+      <BrowserPage language="zh" onClose={() => setBrowserVisible(false)} /></div>}
+    </BrowserNavigationProvider>
     </BrowserClientContext.Provider>
   </ConfigProvider>;
 }

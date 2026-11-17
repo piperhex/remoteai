@@ -8,6 +8,15 @@ import { DetailsWorkspace } from "../../../shared/conversation/DetailsWorkspace"
 import { ConversationChangesButton } from "../../../shared/conversation/ConversationChangesButton";
 import styles from "../../../shared/conversation/styles.module.less";
 import type { TerminalApi } from '../../../shared/terminal/types';
+import { ConfigProvider, theme } from 'antd';
+import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
+import { BrowserNavigationProvider } from '../../../shared/browser/BrowserNavigationProvider';
+import { BrowserPage } from '../../../shared/browser/BrowserPage';
+import { setGuiLanguage } from '../../../shared/localization/uiText';
+
+const params = new URLSearchParams(location.search);
+setGuiLanguage('zh');
+localStorage.setItem('codex-switch:global-font-size', params.get('font') ?? '14');
 
 const sessions = new Map<string, (event: TerminalEvent) => void>();
 const writes: string[] = [];
@@ -41,12 +50,18 @@ Object.assign(window, { terminalHarness: { snapshot: () => ({ opens, closes, wri
 
 function Fixture() {
   const panel = useTerminalPanel("D:\\projects\\example");
-  const [dark, setDark] = useState(false);
+  const [dark, setDark] = useState(params.has('dark'));
+  const [browserVisible, setBrowserVisible] = useState(false);
   const toggleTheme = () => { document.documentElement.dataset.theme = dark ? "light" : "dark"; setDark(!dark); };
-  return <div style={{ height: "100vh", background: dark ? "#151515" : "#faf8f4", color: dark ? "#eee" : "#222",
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  return <ApplicationTypography><ConfigProvider theme={{ algorithm: [
+    dark ? theme.darkAlgorithm : theme.defaultAlgorithm, theme.compactAlgorithm,
+  ] }}><BrowserNavigationProvider onOpen={() => setBrowserVisible(true)}>
+    <div style={{ height: "100vh", background: dark ? "#151515" : "#faf8f4", color: dark ? "#eee" : "#222",
     fontFamily: "sans-serif", '--panel': dark ? '#151515' : '#faf8f4', '--ink': dark ? '#eee' : '#222',
     '--line': dark ? '#333' : '#ddd', '--muted': '#888' } as React.CSSProperties}>
-    <DetailsWorkspace selected="test" active>
+    <div hidden={browserVisible} style={{ height: '100%' }}>
+    <DetailsWorkspace selected="test" active={!browserVisible}>
       <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
         <header className={styles.header}>
           <div className={styles.heading}><strong>分析表格搜索行为差异</strong></div>
@@ -62,6 +77,10 @@ function Fixture() {
         {panel.tabs.length > 0 && <TerminalPanel panel={panel} api={fixtureApi} active />}
       </div>
     </DetailsWorkspace>
-  </div>;
+    </div>
+    {browserVisible && <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <button onClick={() => setBrowserVisible(false)}>返回会话</button>
+      <BrowserPage language="zh" onClose={() => setBrowserVisible(false)} /></div>}
+  </div></BrowserNavigationProvider></ConfigProvider></ApplicationTypography>;
 }
 createRoot(document.getElementById("root")!).render(<Fixture />);
