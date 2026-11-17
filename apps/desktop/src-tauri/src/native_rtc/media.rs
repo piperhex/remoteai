@@ -16,6 +16,20 @@ use webrtc::{
     track::track_remote::TrackRemote,
 };
 
+#[cfg(test)]
+#[path = "media_tests.rs"]
+mod tests;
+
+// This window includes the entire frame, not only out-of-order packets. At our 1200-byte RTP MTU,
+// a 4 MiB desktop keyframe needs over 3500 packets; the former 64-packet window discarded its start.
+const MAX_BUFFERED_PACKETS: u16 = 4096;
+const MAX_REORDER_DELAY: Duration = Duration::from_millis(100);
+
+fn sample_builder<D: Depacketizer>(decoder: D, clock_rate: u32) -> SampleBuilder<D> {
+    SampleBuilder::new(MAX_BUFFERED_PACKETS, decoder, clock_rate)
+        .with_max_time_delay(MAX_REORDER_DELAY)
+}
+
 #[derive(Default)]
 pub(super) struct Media {
     tracks: Mutex<HashSet<u32>>,
@@ -94,8 +108,7 @@ async fn pump<D: Depacketizer + Send + 'static>(
     decoder: D,
 ) -> Result<()> {
     let codec = track.codec().capability;
-    let mut builder = SampleBuilder::new(64, decoder, codec.clock_rate)
-        .with_max_time_delay(Duration::from_millis(100));
+    let mut builder = sample_builder(decoder, codec.clock_rate);
     let mut origin = None;
     let mut frame = (0, 0usize);
     while let Ok((packet, _)) = track.read_rtp().await {

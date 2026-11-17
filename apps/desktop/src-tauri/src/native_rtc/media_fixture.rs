@@ -13,16 +13,26 @@ use webrtc::{
     },
 };
 
+#[path = "media_clock.rs"]
+mod clock;
+
 enum FixtureTrack {
     Sample(Arc<TrackLocalStaticSample>),
     Hevc(super::hevc_fixture::Fixture),
 }
 
 impl FixtureTrack {
+    fn mime(&self) -> String {
+        match self {
+            Self::Sample(track) => track.codec().mime_type,
+            Self::Hevc(_) => "video/H265".into(),
+        }
+    }
+
     async fn write(&self, sample: &Sample) -> webrtc::error::Result<()> {
         match self {
             Self::Sample(track) => track.write_sample(sample).await,
-            Self::Hevc(track) => track.write(&sample.data).await,
+            Self::Hevc(track) => track.write(sample).await,
         }
     }
 }
@@ -86,12 +96,14 @@ async fn track(peer: &Peer, mime: &str, clock_rate: u32) -> FixtureTrack {
 
 fn stream(peer: &Arc<Peer>, track: FixtureTrack, samples: Vec<Bytes>, duration: Duration) {
     let weak = Arc::downgrade(peer);
-    tokio::spawn(async move {
-        let mut timer = tokio::time::interval(duration);
-        timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+    // Windows' async timer granularity undersupplies a 144 FPS source. Pace the isolated fixture
+    // on its own blocking worker, matching the production capture helper's independent clock.
+    tokio::task::spawn_blocking(move || {
+        let runtime = tokio::runtime::Handle::current();
+        let mut clock = clock::FrameClock::new(duration);
         let mut index = 0;
         loop {
-            timer.tick().await;
+            clock.wait();
             let Some(peer) = weak.upgrade() else {
                 return;
             };
@@ -101,18 +113,18 @@ fn stream(peer: &Arc<Peer>, track: FixtureTrack, samples: Vec<Bytes>, duration: 
             if peer.rtc.connection_state().to_string() != "connected" {
                 continue;
             }
-            if track
-                .write(&Sample {
+            if runtime
+                .block_on(track.write(&Sample {
                     data: samples[index % samples.len()].clone(),
                     duration,
                     ..Default::default()
-                })
-                .await
+                }))
                 .is_err()
             {
                 return;
             }
             index += 1;
+            clock.sent(&track.mime());
         }
     });
 }
@@ -200,11 +212,16 @@ pub(super) async fn native_rtc_fixture_open(
         .await
         .map_err(|_| Error::Transport)?;
     let samples = load(&codec);
+    let fps = std::env::var("NATIVE_RTC_FIXTURE_FPS")
+        .ok()
+        .and_then(|value| value.parse::<u32>().ok())
+        .filter(|fps| (1..=144).contains(fps))
+        .unwrap_or(30);
     stream(
         &peer,
         video,
         samples.0,
-        Duration::from_nanos(1_000_000_000 / 30),
+        Duration::from_nanos(1_000_000_000 / u64::from(fps)),
     );
     stream(&peer, audio, samples.1, Duration::from_millis(20));
     reply(peer.clone(), spec.key);

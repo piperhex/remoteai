@@ -17,10 +17,13 @@ const root = createRoot(document.getElementById('root')!);
 const sessions = new Map<string, string>();
 let selected: 'h264' | 'h265' = 'h264';
 let browserRtcCalls = 0;
+let mediaPeer: RTCPeerConnection | undefined;
 Object.defineProperty(window, 'RTCPeerConnection', { configurable: true, value: function () {
   browserRtcCalls += 1; throw new Error('Desktop must not create browser WebRTC');
 } });
-setNativeDesktopRuntime({ createPeer: config => createNativeRtcConnection(config, true),
+setNativeDesktopRuntime({ createPeer: config => {
+  mediaPeer = createNativeRtcConnection(config, true); return mediaPeer;
+},
   videoCodecs: async () => [selected] });
 const client: DesktopClient = {
   open: async id => {
@@ -42,6 +45,8 @@ const fixture = {
   tcpCrypto: nativeTcpCryptoFixture,
   supported: nativeVideoCodecs,
   calls: () => browserRtcCalls,
+  mediaStats: async (): Promise<RTCInboundRtpStreamStats | undefined> =>
+    (await mediaPeer?.getStats())?.get('native-video'),
   start: (codec: 'h264' | 'h265') => {
     selected = codec;
     root.render(<RemoteDesktop client={client} active nativeWindow close={() => fixture.close()} />);

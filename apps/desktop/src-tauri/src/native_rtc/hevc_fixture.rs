@@ -21,8 +21,8 @@ impl Fixture {
         }
     }
 
-    pub async fn write(&self, bytes: &Bytes) -> webrtc::error::Result<()> {
-        let payloads = payloads(bytes);
+    pub async fn write(&self, sample: &webrtc::media::Sample) -> webrtc::error::Result<()> {
+        let payloads = payloads(&sample.data);
         let mut clock = self.clock.lock().await;
         for (index, payload) in payloads.iter().enumerate() {
             self.track
@@ -39,7 +39,8 @@ impl Fixture {
                 .await?;
             clock.0 = clock.0.wrapping_add(1);
         }
-        clock.1 = clock.1.wrapping_add(3000);
+        let ticks = (sample.duration.as_secs_f64() * 90_000.0).round() as u32;
+        clock.1 = clock.1.wrapping_add(ticks);
         Ok(())
     }
 }
