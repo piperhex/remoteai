@@ -13,7 +13,7 @@ interface Options {
   selected: string | null;
   active: boolean;
   disabled: boolean;
-  addAttachments: (references: AttachmentReference[]) => void;
+  addAttachments: (references: AttachmentReference[], draftKey?: string) => void;
   addImages: (files: File[]) => void;
   setProject: (path: string) => void;
   report: (error: unknown) => void;
@@ -21,7 +21,7 @@ interface Options {
 }
 
 async function selectProject(options: Options, folders: AttachmentReference[], current: () => boolean) {
-  if (!folders.length) return true;
+  if (!folders.length) return undefined;
   if (folders.length !== 1) {
     options.report(uiText("client.composer.pleaseDropOneFolderAtATime"));
     return false;
@@ -39,7 +39,7 @@ async function selectProject(options: Options, folders: AttachmentReference[], c
   try { saveProject({ path: directory, name: projectName(directory) }); }
   catch { options.report(uiText("client.conversation.couldNotSaveTheProjectPleaseTryAgain")); return false; }
   options.setProject(directory);
-  return true;
+  return directory;
 }
 
 /** One native drop consumes one host grant, including both project selection and attachments. */
@@ -51,10 +51,10 @@ export function useComposerDrop(options: Options) {
       const references = await droppedReferences(paths);
       if (!current()) return;
       const folders = references.filter(reference => reference.kind === 'folder');
-      if (!options.selected && !await selectProject(options, folders, current)) return;
-      if (!current()) return;
+      const project = options.selected ? undefined : await selectProject(options, folders, current);
+      if (project === false || !current()) return;
       const attachments = options.selected ? references : references.filter(reference => reference.kind !== 'folder');
-      options.addAttachments(attachments);
+      options.addAttachments(attachments, project === undefined ? undefined : `new:${project}`);
       options.focus();
     },
     addFiles: files => {

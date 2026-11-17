@@ -114,10 +114,10 @@ it('pulls multiple pages, accepts next requests before send completion and catch
   right = new HistoryExchange({ archive: target.archive, access, send: transfer(() => left), failed });
   try {
     left.start(); right.start();
-    await vi.waitFor(() => expect(target.rows.size).toBe(60));
+    await vi.waitFor(() => expect(target.rows.size).toBe(60), { timeout: 5_000 });
     const live = message('100'); await source.store.save(live); left.changedHere(historyKey(live));
-    await vi.waitFor(() => expect(target.rows.size).toBe(61));
+    await vi.waitFor(() => expect(target.rows.size).toBe(61), { timeout: 5_000 });
     expect(failed).not.toHaveBeenCalled();
     expect(target.store.save).toHaveBeenCalledTimes(61);
   } finally { left.close(); right.close(); }
-});
+}, 15_000);

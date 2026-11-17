@@ -236,6 +236,7 @@ it("refills at 70% of the buffered screen without a hint or overlapping requests
   expect(container.textContent).not.toContain("向下滚动，查看更多");
   expect(container.querySelector('[role="status"]')).toBeNull();
   const { scroll, wheel } = scrollList();
+  await wheel(1);
   await scroll(479);
   expect(refresh).not.toHaveBeenCalled();
   await scroll(480);

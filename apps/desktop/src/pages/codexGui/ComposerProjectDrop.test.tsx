@@ -100,7 +100,7 @@ const writeDraft = () => act(async () => {
   editor().textContent = '检查这个项目'; editor().dispatchEvent(new InputEvent('input', { bubbles: true }));
 });
 
-it.each(['Enter', 'button'])('blocks %s during project validation, then uses the new directory', async method => {
+it.each(['Enter', 'button'])('blocks %s during project validation and keeps project drafts separate', async method => {
   const sentPaths: string[] = [];
   vi.spyOn(controller, 'send').mockImplementation(async () => {
     sentPaths.push(controller.getSnapshot().settings.cwd); return true;
@@ -111,6 +111,13 @@ it.each(['Enter', 'button'])('blocks %s during project validation, then uses the
   await act(async () => { if (method === 'Enter') enter(); else submit().click(); });
   expect(sentPaths).toEqual([]);
   await act(async () => finishValidation({ directory: folder.path }));
+  expect(submit().disabled).toBe(true);
+  expect(editor().textContent).toBe('');
+  await act(async () => controller.setProject(oldPath));
+  expect(editor().textContent).toBe('检查这个项目');
+  await act(async () => controller.setProject(folder.path));
+  expect(editor().textContent).toBe('');
+  await writeDraft();
   expect(submit().disabled).toBe(false);
   await act(async () => { if (method === 'Enter') enter(); else submit().click(); });
   expect(sentPaths).toEqual([folder.path]);

@@ -42,9 +42,9 @@ export function useComposerDraft(key: string, controller: GuiController) {
   const draft = drafts[key] ?? EMPTY_DRAFT;
   const latestDrafts = useRef(drafts);
   latestDrafts.current = drafts;
-  const update = (change: (value: Draft) => Draft) => {
+  const update = (change: (value: Draft) => Draft, draftKey = key) => {
     const values = latestDrafts.current;
-    latestDrafts.current = { ...values, [key]: change(values[key] ?? EMPTY_DRAFT) };
+    latestDrafts.current = { ...values, [draftKey]: change(values[draftKey] ?? EMPTY_DRAFT) };
     setDrafts(latestDrafts.current);
   };
   const editText = (text: string) => update((value) => ({ ...value, text, mentions: [] }));
@@ -80,8 +80,8 @@ export function useComposerDraft(key: string, controller: GuiController) {
   const removeQuote = (key: string) => update((value) =>
     ({ ...value, quotes: value.quotes?.filter((item) => quoteKey(item) !== key) }));
   const clearQuotes = () => update((value) => ({ ...value, quotes: [] }));
-  const addAttachments = (attachments: AttachmentReference[]) => {
-    const current = latestDrafts.current[key] ?? EMPTY_DRAFT;
+  const addAttachments = (attachments: AttachmentReference[], draftKey = key) => {
+    const current = latestDrafts.current[draftKey] ?? EMPTY_DRAFT;
     const combined = [...new Map([...(current.attachments ?? []), ...attachments]
       .map((item) => [attachmentKey(item), item])).values()];
     if (combined.filter((item) => item.kind === "conversation").length > MAX_CONVERSATION_REFERENCES) {
@@ -94,7 +94,7 @@ export function useComposerDraft(key: string, controller: GuiController) {
     catch (cause) {
       controller.report(cause instanceof Error ? cause.message : "文件粘贴失败，请重新复制后再试。"); return false;
     }
-    update((value) => ({ ...value, attachments: combined }));
+    update((value) => ({ ...value, attachments: combined }), draftKey);
     return true;
   };
   const removeAttachment = (path: string) => update((value) =>
