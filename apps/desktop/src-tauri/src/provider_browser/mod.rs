@@ -7,6 +7,7 @@ mod data_windows;
 pub(crate) mod extensions;
 pub(crate) mod inspector;
 mod lifecycle;
+pub(crate) mod overlays;
 mod password_focus;
 pub(crate) mod passwords;
 mod platform;
@@ -139,6 +140,7 @@ fn browser_builder(
     .browser_extensions_enabled(true)
     .initialization_script(passwords::initialization())
     .initialization_script(include_str!("links.js"))
+    .initialization_script(include_str!("overlays/dismiss.js"))
     .on_navigation(move |url| {
         let allowed = allowed_url(url, dev_origin.as_ref());
         if allowed {

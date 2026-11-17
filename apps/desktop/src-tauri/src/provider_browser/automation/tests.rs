@@ -75,6 +75,11 @@ fn opens_conversation_browser() {
             super::super::provider_browser_sync, super::super::provider_browser_action,
             super::super::provider_browser_close,
             super::super::preview::provider_browser_preview,
+            super::super::overlays::browser_overlay_prepare,
+            super::super::overlays::browser_overlay_place,
+            super::super::overlays::browser_overlay_focus,
+            super::super::overlays::fixture_size,
+            super::super::passwords::provider_browser_password,
             super::super::inspector::browser_inspector,
         ])
         .setup(move |app| {

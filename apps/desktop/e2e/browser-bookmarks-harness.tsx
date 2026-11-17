@@ -13,6 +13,7 @@ import { setGuiLanguage } from '../../../shared/localization/uiText';
 import { browserMappings } from '../../../shared/port-mapping/browserMappings';
 import type { BrowserHomeTransport, BrowserHomeView } from '../../../shared/browser/useNavigationBrowserHome';
 import workspaceStyles from '../../../shared/conversation/DetailsWorkspace.module.less';
+import { NativePopupFixture } from './browser-native-popup-fixture';
 import '../src/styles.css';
 import 'antd/dist/reset.css';
 
@@ -55,7 +56,8 @@ function Harness() {
   }, []);
   return <ApplicationTypography><ConfigProvider theme={{ algorithm: [dark ? theme.darkAlgorithm : theme.defaultAlgorithm,
     ...(mode === 'web' ? [] : [theme.compactAlgorithm])] }}>
-    <BookmarkProvider scope={`bookmarks-${mode}`}>
+    <BookmarkProvider scope={`${params.has('nativePopups') ? 'native-popups' : 'bookmarks'}-${mode}`}>
+      {params.has('nativePopups') && <NativePopupFixture />}
       <div style={{ height: '100vh', display: 'flex', background: dark ? '#151b25' : '#f4f7fa',
         color: dark ? '#e5e9f0' : '#182230' }}>
         {!params.has('sidebar') && <aside style={{ width: 190, padding: 12, flexShrink: 0 }}>

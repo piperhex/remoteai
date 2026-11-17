@@ -105,6 +105,16 @@ fn forward_login_message(app: &tauri::AppHandle, id: &str, source: &str, raw: &s
         value
     };
     match value["type"].as_str() {
+        Some("browser-overlay-focus") => {
+            if let Err(error) = app.emit_to("main", &format!("browser-overlay-focus-{id}"), ()) {
+                eprintln!("Browser popup keyboard selection unavailable: {error}");
+            }
+        }
+        Some("browser-overlay-dismiss") => {
+            if let Err(error) = app.emit_to("main", "browser-overlay-dismiss", ()) {
+                eprintln!("Browser popup dismissal unavailable: {error}");
+            }
+        }
         Some("browser-login-focus") => {
             let Ok(focus) = serde_json::from_value::<super::password_focus::PasswordFocus>(
                 value["focus"].clone(),
