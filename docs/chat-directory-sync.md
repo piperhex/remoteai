@@ -132,7 +132,7 @@ JSON bytes before compression, encryption, packet framing or network transport. 
 Initial new loading uses three directory/resource requests: snapshot, high-water confirmation and one icon.
 Its directory-only response bytes are 15,949/16,048; the one-time icon response is 16,035 bytes. Initial summary
 count stays 50 instead of 100/1,500. Each measured ordinary change emits one event. Unchanged resume uses one
-request, no events, no summaries and no reset. The measured host-call durations were 0.126/1.264 ms on this run;
+request, no events, no summaries and no reset. One recorded run measured host-call durations of 0.127/3.661 ms;
 they exclude network latency and are not a latency guarantee. Paging emits no duplicate page event.
 
 `src/remoteChat/directory.test.ts` writes reproducible measurements to
@@ -169,6 +169,22 @@ single-row updates and reopening the client from its SQLite cache without retran
 Desktop's relevant Vitest run passes 279 files / 1,789 tests; Native passes 274 files / 1,515 tests.
 Web passes its workspace tests and 4 Vitest files / 15 tests. Desktop and Web production builds, Native
 type checks, boundary checks, localization checks and Rust formatting/Clippy also pass.
+The full parent commit check passes, including 2,966 Rust library tests (41 optional tests ignored),
+integration tests and installer checks.
+
+## Delivered source revisions
+
+| Repository | Revision | Content |
+| --- | --- | --- |
+| Parent implementation | `32b1ef76d` | Desktop hosts, local/remote integration, protocol tests and evidence report |
+| Shared | `5022c3a` | Directory protocol, clients and paging controls; final fixture whitespace cleanup |
+| Native | `974fd08` | SQLite persistence, expanded pagination and generated shared dependencies |
+| Web | `1c423f7` | Browser persistence and generated desktop/shared dependencies |
+
+Native's 1,169 and Web's 2,009 exported files pass their manifest hash verification. Compared with the
+validated snapshots, only revision metadata and a trailing empty line in the Native test fixture changed.
+Both manifests identify parent implementation `32b1ef76d` and shared `5022c3a`; Web also records Native
+`974fd08`. Child revisions were pushed before the parent gitlinks were updated.
 
 Browser command: `npx playwright test --config scripts/playwright.directory.config.ts` from `apps/desktop`.
 Native fixture: build with `scripts/directory-sync.init.gradle`, then run
