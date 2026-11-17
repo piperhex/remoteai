@@ -127,6 +127,11 @@ packet processing improved from 25.62 to 85.62 MiB/s, while the foreground LAN A
 8 MiB/s. Receiver decode/decrypt time fell from 2.092 to 0.968 seconds; this does not establish a
 corresponding end-to-end throughput improvement.
 
+A further [LAN sending-window investigation](chat-lan-window.md) identified native SCTP backpressure
+as a material limit. The selected 512/384 KiB chat window improved the two alternating comparisons
+from 7.87 to 11.76 MiB/s and 7.17 to 11.35 MiB/s, while preserving the existing encrypted wire format.
+That report includes rejected window/batch experiments and separate sender/receiver timing definitions.
+
 Validation includes native wire vectors, tamper/replay rejection, per-socket TCP keys, ownership,
 late cancellation, IPC batch coalescing, selected-path wrapper depth, real Rust RTC transfer and
 bridge/resume/file hash tests. Desktop local and remote synchronization browser fixtures pass.

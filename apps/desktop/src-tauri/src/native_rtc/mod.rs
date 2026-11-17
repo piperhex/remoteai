@@ -5,6 +5,8 @@ pub(crate) mod bulk;
 mod channel;
 mod chat;
 #[cfg(test)]
+mod diagnostics;
+#[cfg(test)]
 mod encrypted_benchmark;
 mod events;
 #[cfg(test)]

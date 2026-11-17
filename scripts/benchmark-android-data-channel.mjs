@@ -1,8 +1,9 @@
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 import { readFile, writeFile, mkdir, open, unlink } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
 import { resolve, join } from 'node:path';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { channelBrowser } from './p2p-channel-browser.mjs';
 import { channelRust } from './p2p-channel-rust.mjs';
 
@@ -35,8 +36,19 @@ if (nativeChat) Object.assign(config, { records: 2048, encrypted: false, chat: t
   chatCompare: process.env.P2P_BENCH_CHAT_COMPARE === '1',
   chatHint: process.env.P2P_BENCH_CHAT_HINT === '1',
   chatForeground: process.env.P2P_BENCH_CHAT_FOREGROUND === '1',
-  runs: process.env.P2P_BENCH_CHAT_COMPARE === '1' ? 6 : 3,
+  chatWindowCompare: process.env.P2P_BENCH_CHAT_WINDOW_COMPARE === '1',
+  chatWindowReverse: process.env.P2P_BENCH_CHAT_WINDOW_REVERSE === '1',
+  chatProductionWindow: process.env.P2P_BENCH_CHAT_PRODUCTION_WINDOW === '1',
+  chatProbe: process.env.P2P_BENCH_CHAT_PROBE === '1',
+  chatBatch: Number(process.env.P2P_BENCH_CHAT_BATCH ?? '16'),
+  runs: process.env.P2P_BENCH_CHAT_COMPARE === '1' || process.env.P2P_BENCH_CHAT_WINDOW_COMPARE === '1' ? 6 : 3,
   chatCrypto: process.env.P2P_BENCH_CHAT_CRYPTO === 'js' ? 'js' : 'rust' });
+if (nativeChat && (!Number.isSafeInteger(config.chatBatch) || config.chatBatch < 1 || config.chatBatch > 96
+  || (config.chatProbe && (config.chatCrypto !== 'rust' || 128 % config.chatBatch !== 0))
+  || (config.chatWindowCompare && (config.chatCompare || config.chatProductionWindow))
+  || (!config.chatProductionWindow && (highWaterBytes < 65536 || highWaterBytes - lowWaterBytes < 65536)))) {
+  throw new Error('Invalid chat benchmark batch, window or combined comparison modes');
+}
 const port = 18786;
 const slots = new Map();
 for (const key of ['offer', 'answer', 'report']) {
@@ -54,6 +66,12 @@ function adb(args) {
     child.on('error', reject);
     child.on('exit', (code) => code === 0 ? resolve(result) : reject(new Error(`adb ${code}: ${result}`)));
   });
+}
+
+async function sha256(path) {
+  const hash = createHash('sha256');
+  for await (const chunk of createReadStream(path)) hash.update(chunk);
+  return hash.digest('hex');
 }
 
 async function respond(request, response) {
@@ -135,6 +153,13 @@ try {
   if (!/OK \(1 test\)/.test(log)) throw new Error(log);
   const report = { config, nativeApp, browserVersion: browser?.version() ?? 'native-webrtc-rs', webviewProfile: engine?.identifier,
     sender, receiver, instrumentation: log };
+  if (nativeChat && webviewTestExecutable) report.localArtifacts = {
+    testExecutableSha256: await sha256(webviewTestExecutable),
+    channelSourceSha256: await sha256('apps/desktop/src-tauri/src/native_rtc/channel.rs'),
+    androidAppSha256: await sha256('apps/native/android/app/build-download-throughput/outputs/apk/debug/app-debug.apk'),
+    androidTestSha256: await sha256(
+      'apps/native/android/app/build-download-throughput/outputs/apk/androidTest/debug/app-debug-androidTest.apk'),
+  };
   await writeFile(output, `${JSON.stringify(report, null, 2)}\n`);
   console.log(JSON.stringify(report, null, 2));
 } finally {

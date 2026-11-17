@@ -57,6 +57,7 @@ fn opens_native_rtc() {
             super::native_rtc_receive,
             super::native_rtc_send,
             super::native_rtc_close,
+            super::diagnostics::native_rtc_fixture_channel,
             super::media_fixture::native_rtc_fixture_open,
             super::media_fixture::native_rtc_fixture_signal,
             super::media_fixture::native_rtc_fixture_close,

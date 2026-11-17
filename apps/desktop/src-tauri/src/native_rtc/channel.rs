@@ -11,13 +11,19 @@ use tokio::sync::{Mutex, Notify};
 use webrtc::data_channel::{data_channel_state::RTCDataChannelState, RTCDataChannel};
 
 // webrtc-sctp releases buffered bytes on ACK, so this bounds in-flight data as well as queued data.
-// Keep the file window fed across Wi-Fi RTTs; interactive channels retain their smaller budget.
+// Keep sustained transfers fed across Wi-Fi RTTs; remote-desktop controls retain their smaller budget.
 const FILE_HIGH_WATER_BYTES: usize = 1024 * 1024;
 const FILE_LOW_WATER_BYTES: usize = 768 * 1024;
+// Chat's compatible hex encoding doubles wire bytes. Refill before ACKs drain most of the window.
+// A 512 KiB cap improved phone throughput without the stalls observed with a 1 MiB chat window.
+const CHAT_HIGH_WATER_BYTES: usize = 512 * 1024;
+const CHAT_LOW_WATER_BYTES: usize = 384 * 1024;
 
 fn watermarks(label: &str) -> (usize, usize) {
     if matches!(label, "remote-ai-file-v1" | "remote-ai-sync-v1") {
         (FILE_HIGH_WATER_BYTES, FILE_LOW_WATER_BYTES)
+    } else if label == "codex-chat-v1" {
+        (CHAT_HIGH_WATER_BYTES, CHAT_LOW_WATER_BYTES)
     } else {
         (HIGH_WATER_BYTES, LOW_WATER_BYTES)
     }
@@ -29,6 +35,8 @@ pub(super) struct Channel {
     outgoing: Mutex<()>,
     writable: Notify,
     high_water: AtomicUsize,
+    #[cfg(test)]
+    pub(super) metrics: super::diagnostics::SendMetrics,
 }
 
 impl Channel {
@@ -40,6 +48,8 @@ impl Channel {
             outgoing: Mutex::new(()),
             writable: Notify::new(),
             high_water: AtomicUsize::new(high),
+            #[cfg(test)]
+            metrics: super::diagnostics::SendMetrics::default(),
         });
         channel.rtc.set_buffered_amount_low_threshold(low).await;
         let weak = Arc::downgrade(&channel);
@@ -142,7 +152,11 @@ impl Channel {
         if bytes.len() > MAX_MESSAGE_BYTES {
             return Err(Error::Capacity);
         }
+        #[cfg(test)]
+        let locking = std::time::Instant::now();
         let _serial = self.outgoing.lock().await;
+        #[cfg(test)]
+        self.metrics.lock(locking.elapsed());
         let send = async {
             loop {
                 let available = self.writable.notified();
@@ -156,6 +170,8 @@ impl Channel {
                 {
                     break;
                 }
+                #[cfg(test)]
+                let waiting = std::time::Instant::now();
                 if cancelled.is_some() {
                     // Cancellation also releases a file send when the peer stops acknowledging bytes.
                     tokio::select! {
@@ -165,7 +181,11 @@ impl Channel {
                 } else {
                     available.await;
                 }
+                #[cfg(test)]
+                self.metrics.wait(waiting.elapsed());
             }
+            #[cfg(test)]
+            let sending = std::time::Instant::now();
             if text {
                 let text = std::str::from_utf8(&bytes).map_err(|_| Error::Invalid)?;
                 self.rtc
@@ -175,6 +195,8 @@ impl Channel {
             } else {
                 self.rtc.send(&bytes).await.map_err(|_| Error::Transport)?;
             }
+            #[cfg(test)]
+            self.metrics.sent(bytes.len(), sending.elapsed());
             Ok(())
         };
         tokio::time::timeout(Duration::from_secs(30), send)
@@ -194,15 +216,16 @@ impl Channel {
 mod tests {
     use super::*;
     #[test]
-    fn file_window_leaves_room_for_multiple_records_before_low_water_notification() {
-        let (high, low) = watermarks("remote-ai-file-v1");
-        assert_eq!((high, low), (1024 * 1024, 768 * 1024));
-        assert!(high - low >= MAX_MESSAGE_BYTES);
-        for label in [
-            "codex-chat-v1",
-            "remote-desktop-controls",
-            "remote-desktop-clipboard",
-        ] {
+    fn sustained_windows_refill_before_draining_and_keep_remote_controls_bounded() {
+        for label in ["remote-ai-file-v1", "remote-ai-sync-v1"] {
+            let (high, low) = watermarks(label);
+            assert_eq!((high, low), (1024 * 1024, 768 * 1024));
+            assert!(high - low >= MAX_MESSAGE_BYTES);
+        }
+        let (high, low) = watermarks("codex-chat-v1");
+        assert_eq!((high, low), (512 * 1024, 384 * 1024));
+        assert!(low < high && high - low >= MAX_MESSAGE_BYTES);
+        for label in ["remote-desktop-controls", "remote-desktop-clipboard"] {
             assert_eq!(watermarks(label), (256 * 1024, 64 * 1024));
         }
     }

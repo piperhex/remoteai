@@ -59,6 +59,80 @@ async fn connect(left: &Peer, right: &Peer) {
         .unwrap();
 }
 
+async fn wait_open(peer: &Peer) {
+    tokio::time::timeout(Duration::from_secs(10), async {
+        loop {
+            if peer
+                .poll()
+                .await
+                .unwrap()
+                .iter()
+                .any(|event| matches!(event, Event::Open { .. }))
+            {
+                return;
+            }
+        }
+    })
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
+async fn chat_window_delivers_ordered_bursts_and_remains_writable_after_draining() {
+    let left = local_peer().await;
+    let right = local_peer().await;
+    let spec = ChannelSpec {
+        key: uuid::Uuid::new_v4().to_string(),
+        label: "codex-chat-v1".into(),
+        negotiated: None,
+    };
+    left.create_channel(spec.clone()).await.unwrap();
+    connect(&left, &right).await;
+    wait_open(&left).await;
+    let channel = left.channel(&spec.key).await.unwrap();
+    let payload = "0123456789abcdef".repeat(2048);
+    let send = async {
+        for sequence in 0..96 {
+            channel
+                .send(format!("{sequence}:{payload}").into(), true)
+                .await
+                .unwrap();
+        }
+        channel
+            .send(bytes::Bytes::from_static(b"after-burst"), true)
+            .await
+            .unwrap();
+    };
+    tokio::time::timeout(Duration::from_secs(15), async {
+        tokio::join!(send, receive_chat_burst(&right, &payload));
+    })
+    .await
+    .unwrap();
+    left.close().await;
+    assert!(channel
+        .send(bytes::Bytes::from_static(b"closed"), true)
+        .await
+        .is_err());
+    right.close().await;
+}
+
+async fn receive_chat_burst(peer: &Peer, payload: &str) {
+    let mut sequence = 0;
+    loop {
+        for event in peer.poll().await.unwrap() {
+            let Event::Text { text, .. } = event else {
+                continue;
+            };
+            if sequence == 96 {
+                assert_eq!(text, "after-burst");
+                return;
+            }
+            assert_eq!(text, format!("{sequence}:{payload}"));
+            sequence += 1;
+        }
+    }
+}
+
 #[tokio::test]
 async fn negotiated_file_channel_delivers_binary_and_rejects_sends_after_close() {
     let left = local_peer().await;
