@@ -1,4 +1,5 @@
 import { expect as baseExpect } from '@playwright/test';
+import { verifyOpeningRegion } from './browser-native-popup-animation.mjs';
 const expect = baseExpect.configure({ timeout: 15_000 });
 
 export async function assertLive({ main, child }) {
@@ -8,9 +9,9 @@ export async function assertLive({ main, child }) {
   await expect.poll(() => child.evaluate(() => window.frameCount)).toBeGreaterThan(frames + 10);
 }
 
-export async function verifySettings({ main, popup, child, capture }) {
+export async function verifySettings({ main, popup, child, capture, nativePid }) {
   const settings = main.getByRole('button', { name: '浏览器设置', exact: true });
-  await settings.click();
+  await verifyOpeningRegion({ popup, nativePid, open: () => settings.click() });
   await expect(popup.locator('.browser-bookmark-settings-popup')).toBeVisible();
   await assertLive({ main, child }); await capture('settings');
   await popup.getByRole('button', { name: '所有书签', exact: true }).hover();

@@ -2,6 +2,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { preparePopupDocument } from '../../../../../shared/browser/overlays/popupDocument';
 import { trackPopupPlacement } from '../../../../../shared/browser/overlays/popupPlacement';
+import { popupRegions } from '../../../../../shared/browser/overlays/popupRegions';
 
 const invoke = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 vi.mock('@tauri-apps/api/core', () => ({ invoke }));
@@ -13,6 +14,13 @@ function portalWindow() {
   const iframe = document.createElement('iframe'); document.body.append(iframe);
   cleanup.push(() => iframe.remove());
   return iframe.contentWindow!;
+}
+
+function setLayout(element: HTMLElement, left: number, top: number) {
+  Object.defineProperties(element, {
+    offsetLeft: { value: left, configurable: true }, offsetTop: { value: top, configurable: true },
+    offsetWidth: { value: 100, configurable: true }, offsetHeight: { value: 50, configurable: true },
+  });
 }
 
 it('preserves owner-realm input behavior while synchronizing theme and stylesheet changes', async () => {
@@ -40,8 +48,7 @@ it('serializes native placement and clears its input region after the last menu 
   vi.stubGlobal('cancelAnimationFrame', () => { frame = undefined; });
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
   const menu = popup.document.createElement('div'); menu.setAttribute('data-browser-popup', '');
-  vi.spyOn(menu, 'getBoundingClientRect').mockReturnValue({ left: 10, top: 20, right: 110,
-    bottom: 70, width: 100, height: 50 } as DOMRect);
+  setLayout(menu, 10, 20);
   let complete: (() => void) | undefined;
   invoke.mockImplementationOnce(() => new Promise<void>(resolve => { complete = resolve; }));
   const failed = vi.fn(); cleanup.push(trackPopupPlacement(popup, failed));
@@ -63,8 +70,7 @@ it('requests native keyboard focus only after the focused popup has a visible in
   vi.stubGlobal('cancelAnimationFrame', () => { frame = undefined; });
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
   const menu = popup.document.createElement('button'); menu.setAttribute('data-browser-popup', '');
-  vi.spyOn(menu, 'getBoundingClientRect').mockReturnValue({ left: 10, top: 20, right: 110,
-    bottom: 70, width: 100, height: 50 } as DOMRect);
+  setLayout(menu, 10, 20);
   cleanup.push(trackPopupPlacement(popup, vi.fn()));
   popup.document.body.append(menu); await Promise.resolve(); frame?.(0);
   await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
@@ -72,4 +78,28 @@ it('requests native keyboard focus only after the focused popup has a visible in
   menu.focus(); frame?.(0);
   await vi.waitFor(() => expect(invoke).toHaveBeenLastCalledWith('browser_overlay_focus'));
   expect(invoke.mock.calls.at(-2)?.[0]).toBe('browser_overlay_place');
+});
+
+it('keeps the complete menu region throughout zero-scale preparation and zoom animation', () => {
+  const popup = portalWindow(), menu = popup.document.createElement('div');
+  menu.className = 'ant-popover'; popup.document.body.append(menu); setLayout(menu, 100, 80);
+  const paintedBounds = vi.spyOn(menu, 'getBoundingClientRect');
+  const expected = [{ x: 86, y: 66, width: 128, height: 78 }];
+  for (const scale of [1, 0, 0.8, 0.9, 1]) {
+    menu.style.transform = `scale(${scale})`;
+    paintedBounds.mockReturnValue({ left: 200 - 100 * scale, top: 80, width: 100 * scale,
+      height: 50 * scale, right: 200, bottom: 80 + 50 * scale } as DOMRect);
+    expect(popupRegions(popup)).toEqual(expected);
+  }
+  menu.style.display = 'none'; expect(popupRegions(popup)).toEqual([]);
+});
+
+it('ignores offscreen preparation and includes positioned ancestors for password suggestions', () => {
+  const popup = portalWindow(), host = popup.document.createElement('div');
+  const menu = popup.document.createElement('div'); menu.dataset.browserPopup = '';
+  popup.document.body.append(host); host.append(menu);
+  setLayout(menu, -10_000, -10_000); expect(popupRegions(popup)).toEqual([]);
+  setLayout(host, 200, 100); setLayout(menu, 10, 20);
+  Object.defineProperty(menu, 'offsetParent', { value: host });
+  expect(popupRegions(popup)).toEqual([{ x: 196, y: 106, width: 128, height: 78 }]);
 });

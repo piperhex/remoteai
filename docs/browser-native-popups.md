@@ -20,6 +20,11 @@ does not activate it. Explicit focus into a popup is handed to WebView2 after it
 password suggestions do not take focus merely because a form field becomes active. Closing the last
 popup returns native keyboard focus to the previous control in the owner window.
 
+Clipping regions use untransformed layout bounds. Ant Design's opening animation briefly scales a
+menu to zero and then grows it without DOM mutations on every frame. Using transformed bounds here
+clips icons and menu edges until the animation finishes. Offscreen alignment preparation is excluded;
+the full menu region stays available throughout the opening and closing animations.
+
 Stylesheets, theme attributes and font variables are mirrored into the portal document. Its element
 factories create nodes in React's realm before DOM adoption, preserving the `instanceof` assumptions
 in React and rc-trigger. Keep this compatibility behavior scoped to this trusted document.
@@ -47,6 +52,11 @@ bookmark editing/right-click/long-press, address navigation and password typing/
 selection. They assert advancing animation frames, visible page state, unchanged page identity and
 preserved input while menus are open. Conversation browser settings and bookmarks are checked too.
 Screenshots go to `.codex-tmp/browser-native-popups/`.
+
+The runner also samples the real Win32 region during each settings-menu opening using
+`browser-popup-region-probe.ps1`. It checks that every visible sample covers the final menu bounds
+and that an opening does not hide/reappear. The probe opts into per-monitor DPI coordinates so its
+native measurements can be compared with CSS coordinates scaled by the popup's device pixel ratio.
 
 Also verify actual OS keyboard focus, window movement and resizing using the running fixture.
 A CDP key directed at a popup can pass even when Windows still sends real keyboard input to the page.

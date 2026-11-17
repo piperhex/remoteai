@@ -86,7 +86,7 @@ try {
     await popup.screenshot({ path: fileURLToPath(new URL(`${label}-${state}-popup.png`, output)) });
     await child.screenshot({ path: fileURLToPath(new URL(`${label}-${state}-page.png`, output)) });
   };
-  const fixture = { main: page, popup, child, capture };
+  const fixture = { main: page, popup, child, capture, nativePid: native.pid };
   await verifySettings(fixture);
   await verifyBookmarks(fixture);
   await verifyAddress(fixture);
@@ -114,7 +114,7 @@ try {
   page = browser.contexts().flatMap(item => item.pages()).find(item => item.url().includes('website-tabs-harness'));
   const popup = browser.contexts().flatMap(item => item.pages()).find(item => item.url().startsWith('about:blank#'));
   const capture = state => popup.screenshot({ path: fileURLToPath(new URL(`windows-managed-${state}.png`, output)) });
-  await verifySettings({ main: page, popup, child, capture });
+  await verifySettings({ main: page, popup, child, capture, nativePid: native.pid });
   await verifyBookmarks({ main: page, popup, child, capture });
   console.log('PASS windows-managed: live conversation browser, settings, bookmarks, right-click and touch');
 } catch (error) {
