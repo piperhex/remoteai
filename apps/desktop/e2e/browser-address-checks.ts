@@ -22,6 +22,29 @@ async function expectAddressStart(address: Locator, url: string) {
   }))).toEqual({ scroll: 0, start: 0, end: 0 });
 }
 
+async function verifyFocusSelection(options: {
+  page: Page; address: Locator; mobile?: boolean; screenshot: (state: string) => Promise<Buffer>;
+}) {
+  const { page, address, mobile, screenshot } = options;
+  const selection = () => address.evaluate((input: HTMLInputElement) => ({
+    start: input.selectionStart, end: input.selectionEnd,
+  }));
+  if (mobile) await address.tap();
+  else await address.click();
+  await expect.poll(selection).toEqual({ start: 0, end: firstUrl.length });
+  await screenshot('focus-selected');
+  // Editing must still allow caret placement without reselecting the address.
+  if (mobile) await address.press('ArrowLeft');
+  else await address.click();
+  await expect.poll(async () => { const range = await selection(); return range.start === range.end; }).toBe(true);
+  await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Tab');
+  await expect(address).toBeFocused();
+  await expect.poll(selection).toEqual({ start: 0, end: firstUrl.length });
+  await address.pressSequentially('example.test');
+  await expect(address).toHaveValue('example.test');
+  await address.fill(firstUrl);
+}
+
 export async function verifyAddressDisplay(options: { page: Page; info: TestInfo; label: string; mobile?: boolean }) {
   const { page, info, label, mobile } = options;
   const browser = page.locator('.browser-main-page, .website-preview-browser');
@@ -36,6 +59,7 @@ export async function verifyAddressDisplay(options: { page: Page; info: TestInfo
   await expect(frame().getByRole('heading', { name: 'Address preview' })).toBeVisible();
   await expectAddressStart(address, firstUrl);
   await screenshot('submitted');
+  await verifyFocusSelection({ page, address, mobile, screenshot });
 
   // Editing may scroll to the end; leaving the field must reveal the origin again.
   await address.focus(); await address.press('End');
