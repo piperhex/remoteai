@@ -3,6 +3,8 @@
 mod focus;
 mod menu;
 mod native;
+#[cfg(test)]
+pub(crate) use menu::fixture;
 
 use super::{Action, BrowserError, Dock, Result};
 use std::{collections::HashMap, sync::Mutex, time::Duration};

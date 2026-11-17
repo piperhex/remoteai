@@ -81,6 +81,7 @@ fn opens_conversation_browser() {
             super::super::overlays::fixture_size,
             super::super::passwords::provider_browser_password,
             super::super::inspector::browser_inspector,
+            super::super::inspector::windows::fixture::context_menu_fixture,
         ])
         .setup(move |app| {
             let url = "http://127.0.0.1:1552/e2e/website-tabs-harness.html?mode=local&native=1&origin=http://127.0.0.1:1553";

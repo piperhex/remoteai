@@ -1,12 +1,6 @@
 use std::{cell::RefCell, collections::HashMap};
 use webview2_com::Microsoft::Web::WebView2::Win32::*;
-use windows::{
-    core::Result,
-    Win32::{
-        Foundation::{POINT, RECT},
-        Graphics::Gdi::ClientToScreen,
-    },
-};
+use windows::core::Result;
 
 struct Pending {
     core: ICoreWebView2,
@@ -28,17 +22,7 @@ pub(super) fn schedule(
     // SAFETY: This is the WebView2 event's owning apartment. Its deferral retains the event until
     // after the callback returns; opening a modal popup inside the original callback is unsupported.
     let pending = unsafe {
-        let mut point = POINT::default();
-        args.Location(&mut point)?;
-        let mut bounds = RECT::default();
-        controller.Bounds(&mut bounds)?;
-        point.x += bounds.left;
-        point.y += bounds.top;
-        let mut parent = windows::Win32::Foundation::HWND::default();
-        controller.ParentWindow(&mut parent)?;
-        if !ClientToScreen(parent, &mut point).as_bool() {
-            return Err(windows::core::Error::from_win32());
-        }
+        let point = super::position::screen_point(controller, &args)?;
         let deferral = args.GetDeferral()?;
         args.SetHandled(true)?;
         Pending {

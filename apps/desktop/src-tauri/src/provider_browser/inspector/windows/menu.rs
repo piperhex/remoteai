@@ -1,6 +1,9 @@
 //! Return the original native command ID to preserve Inspect's exact node, including iframe content.
 mod deferred;
+#[cfg(test)]
+pub(crate) mod fixture;
 mod popup;
+mod position;
 use tauri::Manager;
 use webview2_com::{
     AcceleratorKeyPressedEventHandler, ContextMenuRequestedEventHandler,
