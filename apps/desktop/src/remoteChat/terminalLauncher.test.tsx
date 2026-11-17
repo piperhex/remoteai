@@ -21,6 +21,33 @@ function fixture() {
 }
 vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
 
+it('retains opened tools and their selected terminals across projects until explicit close', async () => {
+  const test = fixture();
+  test.client.list.mockResolvedValue([info]);
+  try {
+    await test.render();
+    await act(async () => test.panel().show());
+    await act(async () => test.panel().hide());
+    expect(test.panel().opened).toBe(true);
+    expect(test.panel().open).toBe(false);
+    await test.render(false, '/another');
+    expect(test.panel().opened).toBe(false);
+    expect(test.panel().anyOpened).toBe(true);
+    await test.render(false);
+    expect(test.panel().selected).toBe(info.id);
+    expect(test.panel().opened).toBe(true);
+    await act(async () => test.panel().show());
+    expect(test.panel().open).toBe(true);
+    await act(async () => { test.panel().hide(); test.panel().show(); });
+    expect(test.panel().open).toBe(true);
+    expect(test.client.open).not.toHaveBeenCalled();
+    await act(async () => test.panel().close());
+    expect(test.panel().opened).toBe(false);
+    expect(test.panel().anyOpened).toBe(false);
+    expect(test.panel().open).toBe(false);
+  } finally { await test.dispose(); }
+});
+
 it('keeps background errors closed and opens their details while offline without retrying', async () => {
   const test = fixture();
   test.client.list.mockRejectedValue(new Error('Offline'));

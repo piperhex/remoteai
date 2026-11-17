@@ -41,5 +41,7 @@ export async function hierarchy(adb) {
   if (!result.includes('OK (1 test)') || result.includes('shortMsg=')) {
     throw new Error(`Hierarchy read failed: ${result}`);
   }
-  return adb('exec-out', 'cat', '/data/local/tmp/local/tmp/chat-live.xml');
+  const xml = await adb('exec-out', 'cat', '/data/local/tmp/chat-live.xml');
+  if (!xml.includes('<hierarchy')) throw new Error('Hierarchy read did not return XML.');
+  return xml;
 }
