@@ -14,7 +14,8 @@ import { chatDirectory } from './directory';
 import { DIRECTORY_OPERATION } from '../../../../shared/chat/directory/protocol';
 import { GROUPS_OPERATION } from '../../../../shared/chat/groups/model';
 import { remoteGroups } from './groups';
-import { historyDelta, parseHistoryVersion } from '../../../../shared/remote-chat/historySync';
+import { parseHistoryVersion } from '../../../../shared/remote-chat/historySync';
+import { prepareBrowserHistoryDelta } from '../../../../shared/remote-chat/browserHistory';
 import { RemoteImages } from './images';
 import { parseHistoryWindow, sliceHistory, type HistoryPage } from '../../../../shared/remote-chat/historyPage';
 import { getChatPolicy } from '../../../../shared/remote-chat/policy';
@@ -355,7 +356,9 @@ export class ChatOperations {
       this.commandMetrics.seed(current);
       const sliced = sliceHistory(acknowledgedMessages.merge(current),
         page ? { start: page.start, deferProcesses: window.deferProcesses } : window);
-      return { ...historyDelta(this.images.prepare(sliced.thread, thread.id), known),
+      const { delta, images } = await prepareBrowserHistoryDelta(sliced.thread, known);
+      this.images.rememberHistory(thread.id, images);
+      return { ...delta,
         page: { ...sliced.page, hasMore: Boolean(page?.hasMore || sliced.page.hasMore) } };
     }
     if (request.method === 'request' && body.operation === 'composerSet') {

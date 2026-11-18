@@ -2,10 +2,11 @@ import { imagePreviewByteLimit, imagePreviewCharLimit } from '../../../../shared
 import { guiApi } from '../../../../shared/conversation/api';
 import type { Thread } from '../../../../shared/conversation/types';
 import { contentHash } from '../../../../shared/remote-chat/historySync';
+import { historyImageReference, isHistoryImageReference, replaceInlineImages, type HistoryImageReference }
+  from '../../../../shared/remote-chat/historyImages';
 import { isInlineImage } from '../../../../shared/chat/imageSources';
 import type { ConnectionMode } from '../../../../shared/remote-chat/protocol';
 
-const IMAGE_PREFIX = 'chat-image://';
 const CHUNK_CHARS = 256 * 1024;
 const CACHE_CHARS = 64 * 1024 * 1024;
 
@@ -16,42 +17,20 @@ export class RemoteImages {
   private readonly pending = new Map<string, Promise<string>>();
   private readonly hashes = new Map<string, string>();
 
-  private remember(threadId: string, source: string) {
-    const reference = `${IMAGE_PREFIX}${contentHash(source)}`;
-    this.sources.set(JSON.stringify([threadId, reference]), source);
-    this.trim(this.sources);
-    return reference;
+  rememberHistory(threadId: string, images: readonly HistoryImageReference[]) {
+    for (const { reference, source } of images) {
+      this.sources.set(JSON.stringify([threadId, reference]), source);
+      this.trim(this.sources);
+    }
   }
 
   prepare<T>(value: T, threadId: string, onImage?: (reference: string, source: string) => void): T {
-    const remember = (source: string) => {
-      const reference = this.remember(threadId, source);
+    return replaceInlineImages(value, source => {
+      const reference = historyImageReference(contentHash(source));
+      this.rememberHistory(threadId, [{ reference, source }]);
       onImage?.(reference, source);
       return reference;
-    };
-    const visit = (entry: unknown): unknown => {
-      if (typeof entry === 'string') {
-        if (isInlineImage(entry)) return remember(entry);
-        return entry.replace(/data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=]+/gi,
-          remember);
-      }
-      if (Array.isArray(entry)) return entry.map(visit);
-      if (!entry || typeof entry !== 'object') return entry;
-      const record = entry as Record<string, unknown>;
-      if (record.type === 'image' && typeof record.data === 'string' && typeof record.mimeType === 'string') {
-        const source = `data:${record.mimeType};base64,${record.data}`;
-        if (isInlineImage(source)) {
-          // Normalize MCP image blocks to the URL-based image form already supported by remote clients.
-          const { data: _data, mimeType: _mimeType, ...metadata } = record;
-          return { ...metadata, type: 'inputImage', imageUrl: remember(source) };
-        }
-      }
-      const result = { ...record };
-      if (record.type === 'imageGeneration' && typeof record.result === 'string'
-        && /^[a-z0-9+/=]+$/i.test(record.result)) result.result = `data:image/png;base64,${record.result}`;
-      return Object.fromEntries(Object.entries(result).map(([key, data]) => [key, visit(data)]));
-    };
-    return visit(value) as T;
+    });
   }
 
   private trim(cache: Map<string, string>) {
@@ -65,7 +44,7 @@ export class RemoteImages {
   }
 
   private async resolve(threadId: string, source: string) {
-    if (!source.startsWith(IMAGE_PREFIX)) return source;
+    if (!isHistoryImageReference(source)) return source;
     const key = JSON.stringify([threadId, source]);
     if (!this.sources.has(key)) {
       const { thread } = await guiApi.request<{ thread: Thread }>({ operation: 'read', threadId });

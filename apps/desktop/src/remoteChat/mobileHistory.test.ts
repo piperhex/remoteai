@@ -85,6 +85,17 @@ async function connected(remote: Thread) {
   return { controller, stream, emit: (event: GuiEvent) => stream.receive(operations.prepareEvent(event)) };
 }
 
+it('keeps the selected history object when a poll has no changes', async () => {
+  const remote = conversation(2);
+  const { controller, stream } = await connected(remote);
+  try {
+    await controller.select({ ...remote, turns: [] });
+    const selected = controller.snapshot().selected;
+    await controller.refreshSelected();
+    expect(controller.snapshot().selected).toBe(selected);
+  } finally { controller.stop(); stream.close(); }
+});
+
 it('clears stale waiting on both host and client after an interrupted turn is replaced', async () => {
   const remote = conversation(2);
   const { controller, stream, emit } = await connected(remote);

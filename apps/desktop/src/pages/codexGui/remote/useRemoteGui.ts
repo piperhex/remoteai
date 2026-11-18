@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { ChatController } from '../../../../../../shared/remote-chat/client/controller';
+import { createBrowserHistoryVersions } from '../../../../../../shared/remote-chat/browserHistory';
 import { ChatConnection } from '../../../../../../shared/remote-chat/client/connection';
 import { useActiveChatPolicy } from '../../../../../../shared/remote-chat/useActiveChatPolicy';
 import { createDesktopPeer } from '../../../remoteChat/peer';
@@ -29,7 +30,7 @@ export function useRemoteGui(identity: GuiCloudIdentity, deviceId: string, activ
     createNativePath: createDesktopNativePath,
     createPacketCompression: createDesktopPacketCompression,
     registerMappingStream: registerDesktopMappingStream,
-    }), undefined, undefined, createDesktopSshProfiles(identity));
+    }), undefined, createBrowserHistoryVersions(), createDesktopSshProfiles(identity));
     value.directoryStorage = browserDirectoryStorage(JSON.stringify([identity.baseUrl, identity.userId]), deviceId);
     return value;
   }, [identity.baseUrl, identity.userId, deviceId]);
