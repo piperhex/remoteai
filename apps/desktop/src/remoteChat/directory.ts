@@ -1,13 +1,13 @@
 import type { GuiEvent, Thread } from '../../../../shared/conversation/types';
 import { guiApi } from '../../../../shared/conversation/api';
 import { DIRECTORY_EVENT, validCheckpoint, type DirectoryEvent,
-  type DirectoryCheckpoint, type DirectoryReply } from '../../../../shared/chat/directory/protocol';
+  type DirectoryCheckpoint, type DirectoryRemoval, type DirectoryReply } from '../../../../shared/chat/directory/protocol';
 import { DirectoryJournal } from '../../../../shared/chat/directory/journal';
 import { DirectoryIcons } from '../../../../shared/chat/directory/icons';
-import { directoryScope, readDirectoryQuery, sidebarEntries, summaryEntry,
+import { directoryScope, readDirectoryQuery, sidebarEntries, sidebarThreadEntries, summaryEntry,
   type ChatDirectoryEntry, type DirectoryQuery } from '../../../../shared/chat/directory/documents';
 import { memberGroup } from '../../../../shared/chat/groups/model';
-import { guiSidebar } from '../pages/codexGui/sidebarBridge';
+import { guiSidebar, type CatalogChange } from '../pages/codexGui/sidebarBridge';
 import { readRemoteThreadList } from './threadList';
 
 const MAX_VIEWS = 64;
@@ -31,9 +31,8 @@ export class ChatDirectory {
   private previous = new Map<string, CatalogRow>();
   private readonly resolving = new Map<string, Promise<void>>();
   private clock = 0;
-  private grouping = '';
 
-  constructor() { guiSidebar.subscribeCatalog(live => this.changed(live)); }
+  constructor() { guiSidebar.subscribeCatalog(change => this.changed(change)); }
   subscribe(listener: Publish) { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; }
 
   async request(body: Record<string, unknown>): Promise<DirectoryReply<ChatDirectoryEntry> | { source?: string }> {
@@ -49,10 +48,12 @@ export class ChatDirectory {
     if (checkpoint !== undefined) {
       if (!validCheckpoint(checkpoint) || checkpoint.scope !== directoryScope(query)) return { kind: 'resetRequired' };
       const view = this.views.get(checkpoint.stream);
-      if (!view || view.journal.resume(checkpoint).kind === 'resetRequired') return { kind: 'resetRequired' };
+      if (!view) return { kind: 'resetRequired' };
+      const replay = view.journal.resume(checkpoint);
+      if (replay.kind === 'resetRequired') return replay;
       view.lastUsed = Date.now();
       if (body.action === 'page') return this.page(view, checkpoint);
-      return view.journal.resume(checkpoint);
+      return replay;
     }
     if (body.action !== 'sync') throw new Error('Invalid request');
     return this.create(query);
@@ -87,16 +88,20 @@ export class ChatDirectory {
     const sidebarVersion = guiSidebar.version();
     const page = await readRemoteThreadList({ ...view.query, cursor, directory: true, force });
     guiSidebar.observe(page.data, sidebarVersion, view.query.archived);
-    const catalog = new Map(guiSidebar.catalog().map(row => [row.thread.id, row]));
     const entries: ChatDirectoryEntry[] = [];
     for (const thread of page.data) {
       // A deletion/archive during the read wins over a late page response.
       if ((view.touched.get(thread.id) ?? 0) > since) continue;
-      const row = catalog.get(thread.id) ?? { thread, archived: view.query.archived };
-      if (this.matches(view, row)) entries.push(summaryEntry(this.present(row.thread)));
+      const row = guiSidebar.catalogRow(thread.id);
+      if (!row) continue;
+      const presented = { ...row, thread: this.present(row.thread) };
+      this.previous.set(thread.id, presented);
+      if (this.matches(view, presented)) entries.push(summaryEntry(presented.thread));
     }
     entries.push({ key: '@page', kind: 'page', cursor: page.nextCursor, complete: page.nextCursor === null });
-    this.commit(view, entries);
+    view.touched.clear();
+    if (cursor) this.commitThreads(view, new Set(page.data.map(thread => thread.id)), { upserts: entries, removals: [] });
+    else this.commit(view, entries);
   }
 
   private present(thread: Thread) {
@@ -107,64 +112,75 @@ export class ChatDirectory {
 
   private matches(view: View, row: CatalogRow) {
     if (row.archived !== view.query.archived) return false;
-    const thread = this.present(row.thread);
+    const thread = row.thread;
     const grouping = guiSidebar.snapshot().grouping;
     return !view.query.groupId || !!grouping && memberGroup(grouping,
       { kind: 'thread', id: thread.id, title: thread.name ?? '', cwd: thread.cwd }) === view.query.groupId;
   }
 
-  private changed(live: boolean) {
-    const grouping = JSON.stringify(guiSidebar.snapshot().grouping);
-    if (this.grouping && grouping !== this.grouping) {
-      for (const [id, view] of this.views) {
-        if (!view.query.groupId) continue;
-        this.listeners.forEach(listener => listener({ method: DIRECTORY_EVENT,
-          params: { kind: 'resetRequired', checkpoint: view.journal.checkpoint() } }));
-        this.views.delete(id);
+  private changed(change: CatalogChange) {
+    const updates = new Map<string, CatalogRow | undefined>();
+    let membership = false;
+    for (const id of change.ids) {
+      const raw = guiSidebar.catalogRow(id);
+      const row = raw && { ...raw, thread: this.present(raw.thread) };
+      const before = this.previous.get(id);
+      if (!row && !before) continue;
+      if (row && before && row.archived === before.archived && row.thread.name === before.thread.name
+        && row.thread.cwd === before.thread.cwd && row.thread.preview === before.thread.preview
+        && row.thread.updatedAt === before.thread.updatedAt && row.thread.status?.type === before.thread.status?.type) {
+        continue;
       }
+      if (row) this.previous.set(id, row); else this.previous.delete(id);
+      updates.set(id, row);
+      if (!row || !before || row.archived !== before.archived || row.thread.name !== before.thread.name
+        || row.thread.preview !== before.thread.preview || row.thread.cwd !== before.thread.cwd) membership = true;
     }
-    this.grouping = grouping;
-    const catalog = new Map(guiSidebar.catalog().map(row => [row.thread.id,
-      { ...row, thread: this.present(row.thread) }]));
-    const changed = [...catalog].filter(([id, row]) => JSON.stringify(row) !== JSON.stringify(this.previous.get(id)));
-    const deleted = [...this.previous.keys()].filter(id => !catalog.has(id));
-    const membershipChanged = live && (deleted.length > 0 || changed.some(([id, row]) => {
-      const previous = this.previous.get(id);
-      return !previous || previous.archived !== row.archived || previous.thread.name !== row.thread.name
-        || previous.thread.preview !== row.thread.preview || previous.thread.cwd !== row.thread.cwd;
-    }));
-    this.previous = catalog;
     const clock = ++this.clock;
-    for (const view of this.views.values()) {
-      if (view.query.search && membershipChanged) {
-        // Search semantics belong to the index, including matches outside the bounded preview DTO.
-        this.views.delete(view.journal.checkpoint().stream);
+    for (const [id, view] of this.views) {
+      if (view.query.groupId && change.grouping || view.query.search && change.live && membership) {
+        this.views.delete(id);
         this.listeners.forEach(listener => listener({ method: DIRECTORY_EVENT,
           params: { kind: 'resetRequired', checkpoint: view.journal.checkpoint() } }));
         continue;
       }
       const upserts: ChatDirectoryEntry[] = [];
-      const removals: import('../../../../shared/chat/directory/protocol').DirectoryRemoval[] =
-        deleted.map(id => ({ key: `thread:${id}`, reason: 'deleted' }));
-      for (const id of deleted) view.touched.set(id, clock);
-      for (const [id, row] of changed) {
-        if (live) view.touched.set(id, clock);
-        const exists = view.journal.entries.has(`thread:${id}`);
-        if (this.matches(view, row)) {
-          if (exists || live) upserts.push(summaryEntry(row.thread));
-        } else if (exists) removals.push({ key: `thread:${id}`, reason: 'outOfScope' });
+      const removals: DirectoryRemoval[] = [];
+      for (const [threadId, row] of updates) {
+        if (view.silent && change.live) view.touched.set(threadId, clock);
+        const key = `thread:${threadId}`;
+        if (!row) removals.push({ key, reason: 'deleted' });
+        else if (this.matches(view, row)) {
+          if (change.live || view.journal.entries.has(key)) upserts.push(summaryEntry(row.thread));
+        } else if (view.journal.entries.has(key)) removals.push({ key, reason: 'outOfScope' });
       }
-      for (const entry of view.journal.entries.values()) {
-        if (entry.kind !== 'thread') continue;
-        const row = catalog.get(entry.value.id);
-        if (row && !this.matches(view, row)) removals.push({ key: entry.key, reason: 'outOfScope' });
-      }
-      this.commit(view, upserts, removals);
+      if (change.global) this.commit(view, upserts, removals);
+      else this.commitThreads(view, change.ids, { upserts, removals });
     }
   }
 
-  private commit(view: View, entries: ChatDirectoryEntry[], removals: import('../../../../shared/chat/directory/protocol')
-    .DirectoryRemoval[] = []) {
+  private commitThreads(view: View, ids: ReadonlySet<string>,
+    { upserts, removals }: { upserts: ChatDirectoryEntry[]; removals: DirectoryRemoval[] }) {
+    const sidebar = guiSidebar.snapshot();
+    const added = new Set(upserts.map(entry => entry.key));
+    const removed = new Set(removals.map(entry => entry.key));
+    upserts.push({ key: '@metadata', kind: 'metadata', revision: sidebar.revision });
+    for (const id of ids) {
+      const key = `thread:${id}`;
+      const loaded = added.has(key) || !removed.has(key) && view.journal.entries.has(key);
+      const metadata = loaded ? sidebarThreadEntries(sidebar, id) : [];
+      upserts.push(...metadata);
+      for (const kind of ['presentation', 'read', 'groupThread']) {
+        const key = `${kind}:${id}`;
+        if (view.journal.entries.has(key) && !metadata.some(entry => entry.key === key)) {
+          removals.push({ key, reason: 'outOfScope' });
+        }
+      }
+    }
+    this.publish(view, upserts, removals);
+  }
+
+  private commit(view: View, entries: ChatDirectoryEntry[], removals: DirectoryRemoval[] = []) {
     const removedKeys = new Set(removals.map(entry => entry.key));
     const ids = new Set([...view.journal.entries.values(), ...entries].flatMap(entry =>
       entry.kind === 'thread' && !removedKeys.has(entry.key) ? [entry.value.id] : []));
@@ -172,7 +188,11 @@ export class ChatDirectory {
     const keys = new Set(metadata.map(entry => entry.key));
     const stale = [...view.journal.entries.values()].filter(entry => entry.kind !== 'thread'
       && entry.kind !== 'page' && !keys.has(entry.key)).map(entry => ({ key: entry.key, reason: 'outOfScope' as const }));
-    const batch = view.journal.commit([...entries, ...metadata], [...removals, ...stale]);
+    this.publish(view, [...entries, ...metadata], [...removals, ...stale]);
+  }
+
+  private publish(view: View, upserts: ChatDirectoryEntry[], removals: DirectoryRemoval[]) {
+    const batch = view.journal.commit(upserts, removals);
     if (batch && !view.silent) this.listeners.forEach(listener => listener({ method: DIRECTORY_EVENT, params: batch }));
   }
 
@@ -183,7 +203,7 @@ export class ChatDirectory {
     }
     const id = event.params.threadId ?? event.params.thread?.id;
     if (!id || event.method === 'thread/deleted' || !/^(thread\/|turn\/(started|completed))/.test(event.method)) return;
-    if (this.previous.has(id) || this.resolving.has(id)) return;
+    if (guiSidebar.catalogRow(id) || this.resolving.has(id)) return;
     const since = guiSidebar.version();
     const pending = Promise.all([false, true].map(async archived => {
       const threads = await guiApi.request<Thread[]>({ operation: 'groupThreadSummaries', threadIds: [id], archived });

@@ -17,6 +17,34 @@ async fn extension_test_resize(
 }
 
 #[tauri::command]
+async fn extension_panel_suspended(app: tauri::AppHandle, session: String) -> Result<bool, String> {
+    use webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2_3;
+    use windows::core::{Interface, BOOL};
+    let view = app
+        .get_webview(&format!("browser-panel-{session}"))
+        .ok_or("panel missing")?;
+    let (send, receive) = tokio::sync::oneshot::channel();
+    view.with_webview(move |native| {
+        let mut suspended = BOOL::default();
+        // SAFETY: the controller and output parameter stay on the owning COM apartment.
+        let result = unsafe {
+            native
+                .controller()
+                .CoreWebView2()
+                .and_then(|core| core.cast::<ICoreWebView2_3>())
+                .and_then(|core| core.IsSuspended(&mut suspended))
+        };
+        // The test runner can close the window while awaiting the result.
+        let _ = send.send(result.map(|()| suspended.as_bool()));
+    })
+    .map_err(|error| error.to_string())?;
+    receive
+        .await
+        .map_err(|error| error.to_string())?
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 async fn extension_panel_probe(
     app: tauri::AppHandle,
     session: String,
@@ -98,6 +126,7 @@ fn opens_extension_browser() {
         .invoke_handler(tauri::generate_handler![
             extension_popup_probe,
             extension_panel_probe,
+            extension_panel_suspended,
             extension_test_resize,
             crate::cloud::fetch_browser_extension_market,
             super::panel::browser_extension_panel_place,

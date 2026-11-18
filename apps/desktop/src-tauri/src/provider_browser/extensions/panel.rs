@@ -17,6 +17,7 @@ pub(crate) enum Command {
     Close,
     Reload,
     Capture,
+    Activity { active: bool },
     Resize { width: f64, height: f64 },
     Click { x: f64, y: f64 },
     Text { text: String },
@@ -58,7 +59,22 @@ pub(crate) async fn execute(app: AppHandle, session: String, command: Command) -
 
 fn perform(app: &AppHandle, session: &str, command: Command) -> Result<Value> {
     match command {
-        Command::Open { extension } => open(app, session, extension.as_deref())?,
+        Command::Open { extension } => {
+            open(app, session, extension.as_deref())?;
+            return Ok(json!({"panelActivity": true}));
+        }
+        Command::Activity { active } => {
+            let browser = view(app, session)?;
+            if active {
+                // Remote sessions render offscreen only while a viewer needs screenshots.
+                browser
+                    .set_position(tauri::LogicalPosition::new(PARK_X, 0.0))
+                    .map_err(|_| Error::Engine)?;
+                browser.show().map_err(|_| Error::Engine)?;
+            } else {
+                hide(&browser)?;
+            }
+        }
         Command::Close => {
             if let Some(browser) = app.get_webview(&label(session)?) {
                 browser.close().map_err(|_| Error::Engine)?;
@@ -184,6 +200,36 @@ pub(super) fn close_extension(app: &AppHandle, id: &str) -> Result<()> {
     Ok(())
 }
 
+fn hide(browser: &Webview) -> Result<()> {
+    browser.hide().map_err(|_| Error::Engine)?;
+    #[cfg(windows)]
+    browser
+        .with_webview(|native| {
+            use webview2_com::{
+                Microsoft::Web::WebView2::Win32::ICoreWebView2_3, TrySuspendCompletedHandler,
+            };
+            use windows::core::Interface;
+            // SAFETY: Tauri runs this closure on the owning COM apartment. WebView2 owns the
+            // completion callback and automatically resumes a suspended document when shown.
+            let suspend = unsafe {
+                native
+                    .controller()
+                    .CoreWebView2()
+                    .and_then(|core| core.cast::<ICoreWebView2_3>())
+                    .and_then(|core| {
+                        core.TrySuspend(&TrySuspendCompletedHandler::create(Box::new(
+                            |_, _| Ok(()),
+                        )))
+                    })
+            };
+            if let Err(error) = suspend {
+                eprintln!("Hidden browser panel suspension unavailable: {error}");
+            }
+        })
+        .map_err(|_| Error::Engine)?;
+    Ok(())
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct Placement {
@@ -206,13 +252,12 @@ pub(crate) async fn browser_extension_panel_place(
         if !super::super::valid_bounds(bounds) {
             return Err(Error::Invalid);
         }
+        if !request.visible {
+            return hide(&browser);
+        }
         browser
             .set_bounds(tauri::Rect {
-                position: tauri::LogicalPosition::new(
-                    if request.visible { bounds.x } else { PARK_X },
-                    bounds.y,
-                )
-                .into(),
+                position: tauri::LogicalPosition::new(bounds.x, bounds.y).into(),
                 size: tauri::LogicalSize::new(bounds.width, bounds.height).into(),
             })
             .map_err(|_| Error::Engine)?;

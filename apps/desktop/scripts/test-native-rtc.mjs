@@ -10,7 +10,8 @@ const [width, height] = size.split('x').map(Number);
 const fps = Number(process.argv[4] ?? 30);
 if (!Number.isInteger(fps) || fps < 1 || fps > 144) throw new Error('Expected a frame rate from 1 to 144');
 const variant = fps === 30 ? size : `${size}-${fps}fps`;
-const output = resolve('.codex-tmp/native-rtc', variant === '640x360' ? '.' : variant);
+const canvasFallback = process.argv.includes('--canvas');
+const output = resolve('.codex-tmp/native-rtc', canvasFallback ? 'canvas-fallback' : 'video-track', variant === '640x360' ? '.' : variant);
 await mkdir(output, { recursive: true });
 process.env.NATIVE_RTC_FIXTURES ??= resolve('.codex-tmp/native-rtc-fixtures');
 process.env.NATIVE_RTC_FIXTURE_FPS = String(fps);
@@ -23,19 +24,32 @@ const logs = [];
 page.on('pageerror', error => errors.push(String(error)));
 page.on('console', message => logs.push({ type: message.type(), text: message.text() }));
 try {
+  await page.addInitScript(fallback => {
+    if (fallback) Object.defineProperty(window, 'MediaStreamTrackGenerator', { value: undefined });
+    const capture = HTMLCanvasElement.prototype.captureStream;
+    window.canvasCaptures = 0;
+    HTMLCanvasElement.prototype.captureStream = function (...args) {
+      window.canvasCaptures++; return capture.apply(this, args);
+    };
+  }, canvasFallback);
   await page.goto('http://127.0.0.1:18787/e2e/native-rtc-harness.html');
   await page.waitForFunction(() => Boolean(window.nativeRtcFixture));
   const supported = await page.evaluate(() => window.nativeRtcFixture.supported());
   const channels = await page.evaluate(() => window.nativeRtcFixture.data());
+  const metrics = await page.context().newCDPSession(page);
+  await metrics.send('Performance.enable');
+  const taskSeconds = async () => (await metrics.send('Performance.getMetrics')).metrics
+    .find(metric => metric.name === 'TaskDuration').value;
   const samples = [];
   for (const codec of [...supported].reverse()) {
-    await page.evaluate(value => window.nativeRtcFixture.start(value), codec);
+    await page.evaluate(value => { window.canvasCaptures = 0; window.nativeRtcFixture.start(value); }, codec);
     await page.waitForFunction(({ width, height }) => {
       const video = document.querySelector('video');
       if (video) video.muted = true;
       return video?.videoWidth === width && video.videoHeight === height
         && video.getVideoPlaybackQuality().totalVideoFrames > 75;
     }, { width, height }, { timeout: 30000 });
+    const busyBefore = await taskSeconds();
     const cadence = await page.evaluate(async () => {
       const video = document.querySelector('video');
       const before = await window.nativeRtcFixture.mediaStats();
@@ -46,6 +60,7 @@ try {
       return { decodedFps: (after.framesDecoded - before.framesDecoded) / seconds,
         presentedFps: (video.getVideoPlaybackQuality().totalVideoFrames - presented) / seconds };
     });
+    const rendererTaskMs = Math.round(1000 * (await taskSeconds() - busyBefore));
     const result = await page.evaluate(async () => {
       const video = document.querySelector('video');
       const context = new AudioContext();
@@ -56,24 +71,25 @@ try {
       const samples = new Float32Array(analyser.fftSize); analyser.getFloatTimeDomainData(samples);
       const audioRms = Math.sqrt(samples.reduce((sum, value) => sum + value * value, 0) / samples.length);
       source.disconnect(); await context.close();
-      return { width: video.videoWidth, height: video.videoHeight,
+      return { canvasCaptures: window.canvasCaptures, generator: typeof MediaStreamTrackGenerator === 'function',
+        width: video.videoWidth, height: video.videoHeight,
         frames: video.getVideoPlaybackQuality().totalVideoFrames,
         audioTracks: video.srcObject.getAudioTracks().length, audioRms, browserRtcCalls: window.nativeRtcFixture.calls(),
         body: document.body.innerText };
     });
-    if (result.browserRtcCalls || result.audioTracks !== 1 || result.audioRms < 0.001) {
+    if (result.canvasCaptures !== (result.generator ? 0 : 1) || result.browserRtcCalls || result.audioTracks !== 1 || result.audioRms < 0.001) {
       throw new Error(`Invalid native media result: ${JSON.stringify(result)}`);
     }
     await page.screenshot({ path: resolve(output, `windows-local-${codec}-playing.png`) });
-    samples.push({ codec, requestedFps: fps, ...cadence, ...result });
+    samples.push({ codec, requestedFps: fps, rendererTaskMs, ...cadence, ...result });
     await page.evaluate(() => window.nativeRtcFixture.close());
     await page.waitForFunction(() => !document.querySelector('video'));
   }
   if (!samples.length || errors.length) throw new Error(`No verified media or page errors: ${errors.join('; ')}`);
   await writeFile(resolve(output, 'report.json'), JSON.stringify({ channels, samples, errors }, null, 2));
   await writeFile(resolve(output, 'native.log'), nativeLogs.join(''));
-  if (samples.some(sample => sample.decodedFps < fps * 0.9)) {
-    throw new Error(`Native decode cadence fell below 90% of ${fps} FPS: ${JSON.stringify(samples)}`);
+  if (samples.some(sample => sample.decodedFps < fps * 0.9 || fps <= 30 && sample.presentedFps < fps * 0.9)) {
+    throw new Error(`Native video cadence fell below 90% of ${fps} FPS: ${JSON.stringify(samples)}`);
   }
   console.log(JSON.stringify({ channels, samples, errors }, null, 2));
 } catch (error) {

@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
+import type { CatalogChange } from '../pages/codexGui/sidebarBridge';
 import type { Thread } from '../../../../shared/conversation/types';
 import type { SidebarSnapshot } from '../../../../shared/remote-chat/sidebar';
 import type { DirectoryReply } from '../../../../shared/chat/directory/protocol';
@@ -8,13 +9,13 @@ import { resolve } from 'node:path';
 
 const mocks = vi.hoisted(() => ({ rows: new Map<string, { thread: Thread; archived: boolean }>(),
   sidebar: { revision: 0, threads: {}, readState: {}, grouping: { groups: [], projects: {}, threads: {} } } as SidebarSnapshot,
-  listeners: new Set<(live: boolean) => void>(), read: vi.fn(), request: vi.fn() }));
+  lookup: vi.fn(), listeners: new Set<(change: CatalogChange) => void>(), read: vi.fn(), request: vi.fn() }));
 vi.mock('../pages/codexGui/sidebarBridge', () => ({ guiSidebar: {
-  catalog: () => [...mocks.rows.values()], snapshot: () => mocks.sidebar, version: () => 0,
-  subscribeCatalog: (fn: (live: boolean) => void) => { mocks.listeners.add(fn); },
+  catalogRow: (id: string) => { mocks.lookup(id); return mocks.rows.get(id); }, snapshot: () => mocks.sidebar, version: () => 0,
+  subscribeCatalog: (fn: (change: CatalogChange) => void) => { mocks.listeners.add(fn); },
   observe: (threads: Thread[], _version: number, archived: boolean) => {
     threads.forEach(thread => mocks.rows.set(thread.id, { thread, archived }));
-    mocks.listeners.forEach(fn => fn(false));
+    mocks.listeners.forEach(fn => fn({ ids: new Set(threads.map(t => t.id)), live: false, global: false, grouping: false }));
   },
 } }));
 vi.mock('./threadList', () => ({ readRemoteThreadList: (...args: unknown[]) => mocks.read(...args) }));
@@ -23,7 +24,10 @@ import { ChatDirectory } from './directory';
 
 const thread = (id: string, time = 1): Thread => ({ id, name: id, preview: '', cwd: '/project', updatedAt: time });
 const query = { archived: false, search: '' };
-const notify = () => { mocks.sidebar.revision++; mocks.listeners.forEach(fn => fn(true)); };
+const notify = (...ids: string[]) => {
+  mocks.sidebar.revision++;
+  mocks.listeners.forEach(fn => fn({ ids: new Set(ids), live: true, global: false, grouping: false }));
+};
 const reply = (value: unknown) => value as DirectoryReply<ChatDirectoryEntry>;
 
 beforeEach(() => {
@@ -45,7 +49,7 @@ it('keeps the first snapshot bounded despite a large warm host and never replays
   const unchanged = await host.request({ action: 'sync', query, checkpoint: snapshot.checkpoint });
   expect(unchanged).toMatchObject({ kind: 'changes', upserts: [], removals: [] });
   expect(mocks.read).toHaveBeenCalledOnce();
-  mocks.rows.set('0', { thread: { ...thread('0'), name: 'Renamed' }, archived: false }); notify();
+  mocks.rows.set('0', { thread: { ...thread('0'), name: 'Renamed' }, archived: false }); notify('0');
   const delta = reply(await host.request({ action: 'sync', query, checkpoint: snapshot.checkpoint }));
   expect(delta).toMatchObject({ kind: 'changes', upserts: expect.arrayContaining([
     expect.objectContaining({ kind: 'thread', value: expect.objectContaining({ id: '0', name: 'Renamed' }) }),
@@ -53,12 +57,30 @@ it('keeps the first snapshot bounded despite a large warm host and never replays
   expect(JSON.stringify(delta)).not.toContain('data:image');
 });
 
+it('looks up only the changed summary across two large loaded views', async () => {
+  const data = Array.from({ length: 1500 }, (_, index) => thread(String(index)));
+  mocks.read.mockResolvedValue({ data, nextCursor: null });
+  const host = new ChatDirectory();
+  const first = reply(await host.request({ action: 'sync', query }));
+  await host.request({ action: 'sync', query });
+  if (first.kind !== 'snapshot') throw new Error('snapshot expected');
+  mocks.lookup.mockClear();
+  const unrelated = vi.fn(() => ({ title: 'unchanged', cwd: '/', projectName: '', running: false }));
+  Object.defineProperty(mocks.sidebar.threads, '712', { get: unrelated });
+  mocks.rows.get('700')!.thread = { ...data[700], name: 'renamed' };
+  notify('700');
+  expect(mocks.lookup.mock.calls).toEqual([['700']]);
+  expect(unrelated).not.toHaveBeenCalled();
+  const delta = reply(await host.request({ action: 'sync', query, checkpoint: first.checkpoint }));
+  expect(delta.kind === 'changes' && delta.upserts.map(entry => entry.key)).toEqual(['thread:700', '@metadata']);
+});
+
 it('replays offline deletion and archival separately without removing unrelated cached entities', async () => {
   mocks.read.mockResolvedValue({ data: [thread('one'), thread('two'), thread('three')], nextCursor: null });
   const host = new ChatDirectory();
   const snapshot = reply(await host.request({ action: 'sync', query }));
   if (snapshot.kind !== 'snapshot') throw new Error('snapshot expected');
-  mocks.rows.delete('one'); mocks.rows.get('two')!.archived = true; notify();
+  mocks.rows.delete('one'); mocks.rows.get('two')!.archived = true; notify('one', 'two');
   const result = await host.request({ action: 'sync', query, checkpoint: snapshot.checkpoint });
   expect(result).toMatchObject({ kind: 'changes', removals: [
     { key: 'thread:one', reason: 'deleted' }, { key: 'thread:two', reason: 'outOfScope' },
@@ -69,9 +91,9 @@ it('does not let a slow initial snapshot resurrect an entity deleted during the 
   mocks.rows.set('one', { thread: thread('one'), archived: false });
   let resolve!: (page: { data: Thread[]; nextCursor: null }) => void;
   mocks.read.mockReturnValue(new Promise(done => { resolve = done; }));
-  const host = new ChatDirectory(); notify();
+  const host = new ChatDirectory(); notify('one');
   const pending = host.request({ action: 'sync', query });
-  mocks.rows.delete('one'); notify();
+  mocks.rows.delete('one'); notify('one');
   resolve({ data: [thread('one')], nextCursor: null });
   const snapshot = reply(await pending);
   expect(snapshot.kind === 'snapshot' && snapshot.entries.filter(entry => entry.kind === 'thread')).toEqual([]);
@@ -113,7 +135,7 @@ it('measures serialized directory traffic with synthetic catalogs and two remote
         mocks.sidebar.threads[id] = { ...mocks.sidebar.threads[id], title: 'Synthetic rename' };
       } else if (operation === 'running') mocks.sidebar.threads[id] = { ...mocks.sidebar.threads[id], running: true };
       else mocks.sidebar.readState[id] = { turnId: 'synthetic-turn', unread: false };
-      notify();
+      notify(id);
       measures.push({ size, operation, legacyBytes: bytes({ method: 'chat/sidebar/updated', params: mocks.sidebar }),
         newBytes: events.reduce<number>((total, event) => total + bytes(event), 0),
         legacyEvents: 1, newEvents: events.length });

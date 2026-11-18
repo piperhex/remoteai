@@ -1,3 +1,4 @@
+import { NativeVideoOutput } from './videoOutput';
 import { NativeRtcAudio } from './audio';
 import type { BinaryHeader } from './types';
 import { videoCodec } from './videoCodec';
@@ -9,20 +10,20 @@ const MAX_DECODE_QUEUE = 3;
 /** Only compressed presentation frames cross IPC. No ICE, DTLS, SCTP or RTP runs in this view. */
 export class NativeRtcMedia {
   readonly stream = new MediaStream();
-  private readonly canvas = document.createElement('canvas');
-  private readonly context = this.canvas.getContext('2d', { alpha: false, desynchronized: true });
-  private track?: CanvasCaptureMediaStreamTrack;
+  private readonly output: NativeVideoOutput;
   private audio?: NativeRtcAudio;
   private decoder?: VideoDecoder;
   private codec = '';
   private dimensions?: HevcDimensions;
   private awaitingKeyframe = true;
-  private frames = 0;
   private bytes = 0;
+  private framesDecoded = 0;
   private lastRequest = 0;
   private stopped = false;
 
-  constructor(private readonly emit: (track: MediaStreamTrack) => void, private readonly requestKeyframe: () => void) {}
+  constructor(private readonly emit: (track: MediaStreamTrack) => void, private readonly requestKeyframe: () => void) {
+    this.output = new NativeVideoOutput(this.stream, emit);
+  }
 
   receive(header: MediaHeader, data: Uint8Array) {
     if (this.stopped) return;
@@ -50,30 +51,13 @@ export class NativeRtcMedia {
   private configure(codec: string, dimensions?: HevcDimensions) {
     this.codec = codec;
     this.dimensions = dimensions;
-    this.decoder ??= new VideoDecoder({ output: frame => this.render(frame), error: error => {
+    this.decoder ??= new VideoDecoder({ output: frame => {
+      this.framesDecoded++; this.output.render(frame, this.dimensions);
+    }, error: error => {
       console.error('Native RTC video decode failed', this.codec, error); this.reset();
     } });
     this.decoder.configure({ codec, hardwareAcceleration: 'prefer-hardware', optimizeForLatency: true,
       ...(dimensions ? { codedWidth: dimensions.codedWidth, codedHeight: dimensions.codedHeight } : {}) });
-  }
-
-  private render(frame: VideoFrame) {
-    try {
-      if (this.stopped || !this.context) return;
-      // Some Windows HEVC decoders expose the padded coded frame instead of its SPS conformance window.
-      const crop = this.dimensions && frame.displayWidth === this.dimensions.codedWidth
-        && frame.displayHeight === this.dimensions.codedHeight ? this.dimensions.crop
-        : { x: 0, y: 0, width: frame.displayWidth, height: frame.displayHeight };
-      if (this.canvas.width !== crop.width) this.canvas.width = crop.width;
-      if (this.canvas.height !== crop.height) this.canvas.height = crop.height;
-      this.context.drawImage(frame, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
-      this.frames += 1;
-      if (!this.track) {
-        this.track = this.canvas.captureStream(0).getVideoTracks()[0] as CanvasCaptureMediaStreamTrack;
-        this.stream.addTrack(this.track); this.emit(this.track);
-      }
-      this.track.requestFrame();
-    } finally { frame.close(); }
   }
 
   private request() {
@@ -88,8 +72,8 @@ export class NativeRtcMedia {
 
   stats() {
     return { id: 'native-video', type: 'inbound-rtp' as const, kind: 'video', timestamp: performance.now(),
-      framesDecoded: this.frames, bytesReceived: this.bytes, frameWidth: this.frames ? this.canvas.width : 0,
-      frameHeight: this.frames ? this.canvas.height : 0, codecId: 'native-video-codec' };
+      framesDecoded: this.framesDecoded, bytesReceived: this.bytes, frameWidth: this.output.width,
+      frameHeight: this.output.height, codecId: 'native-video-codec' };
   }
 
   codecStats() {
@@ -101,6 +85,6 @@ export class NativeRtcMedia {
   close() {
     this.stopped = true;
     if (this.decoder && this.decoder.state !== 'closed') this.decoder.close();
-    this.audio?.close(); this.stream.getTracks().forEach(track => track.stop());
+    this.output.close(); this.audio?.close(); this.stream.getTracks().forEach(track => track.stop());
   }
 }

@@ -34,6 +34,7 @@ const fixture = createServer((request, response) => {
 await new Promise(resolve => fixture.listen(1583, '127.0.0.1', resolve));
 let child, browser, page, viewers, bridge;
 const results = [];
+const counts = { resize: 0, capture: 0, pause: 0, resume: 0 };
 const request = input => page.evaluate(input => window.__TAURI_INTERNALS__.invoke('codex_gui_browser', { request: input }), input);
 const extension = requestValue => request({ threadId: 'browser-extensions',
   command: { action: 'extensions', request: requestValue } });
@@ -52,10 +53,20 @@ async function sessionId(viewer) {
   }).toBe(true);
   return session;
 }
-async function verifySettings(viewer, label) {
+async function verifySettings(viewer, label, remote) {
   const session = await sessionId(viewer);
+  const suspended = () => page.evaluate(session => window.__TAURI_INTERNALS__
+    .invoke('extension_panel_suspended', { session }), session);
+  const pauses = counts.pause;
   await viewer.getByRole('button', { name: '浏览器助手设置', exact: true }).click();
   await expect(viewer.getByRole('list', { name: '浏览器使用顺序' })).toBeVisible();
+  await expect.poll(suspended).toBe(true);
+  if (remote) {
+    await expect.poll(() => counts.pause).toBeGreaterThan(pauses);
+    const captures = counts.capture;
+    await viewer.waitForTimeout(800);
+    assert.equal(counts.capture, captures, 'inactive viewers stop polling');
+  }
   await viewer.getByRole('button', { name: '上移 AgentHub 侧边浏览器', exact: true }).click();
   await expect.poll(async () => (await preference()).preferences.order[0]).toBe('agentHub');
   await expect(viewer.getByRole('list', { name: '浏览器使用顺序' })).toHaveAttribute('aria-busy', 'false');
@@ -63,6 +74,7 @@ async function verifySettings(viewer, label) {
   await viewer.getByRole('button', { name: '上移 Chrome 浏览器助手', exact: true }).click();
   await expect.poll(async () => (await preference()).preferences.order[0]).toBe('chrome');
   await viewer.getByRole('button', { name: '返回聊天', exact: true }).click();
+  await expect.poll(suspended).toBe(false);
   assert.equal(await sessionId(viewer), session, 'settings preserves the native chat document');
   assert.equal((await probe(session)).value, 'draft retained', 'settings preserves the draft');
 }
@@ -80,8 +92,10 @@ try {
   await expect.poll(async () => {
     try { browser = await chromium.connectOverCDP('http://127.0.0.1:9365'); return true; } catch { return false; }
   }, { timeout: 45000 }).toBe(true);
-  page = browser.contexts()[0].pages().find(item => item.url().includes('browser-extensions-harness'));
-  assert.ok(page);
+  await expect.poll(() => {
+    page = browser.contexts()[0].pages().find(item => item.url().includes('browser-extensions-harness'));
+    return Boolean(page);
+  }, { timeout: 30000 }).toBe(true);
   await extension({ action: 'preferences', preferences: { order: ['chrome', 'agentHub', 'standalone'] } });
   await assert.rejects(extension({ action: 'preferences', preferences: { order: ['chrome', 'chrome', 'standalone'] } }));
   for (const entry of (await extension({ action: 'list' })).entries.filter(entry => entry.name === 'Side panel fixture')) {
@@ -117,7 +131,11 @@ try {
     if (incoming.method === 'OPTIONS') { response.writeHead(204); response.end(); return; }
     try {
       let body = ''; for await (const chunk of incoming) body += chunk;
-      response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify(await request(JSON.parse(body))));
+      response.setHeader('Content-Type', 'application/json'); const input = JSON.parse(body);
+      const panel = input.command.request?.command;
+      if (panel?.action === 'activity') counts[panel.active ? 'resume' : 'pause']++;
+      if (panel?.action === 'resize' || panel?.action === 'capture') counts[panel.action]++;
+      response.end(JSON.stringify(await request(input)));
     } catch (error) { response.writeHead(400); response.end(String(error)); }
   });
   await new Promise(resolve => bridge.listen(1584, '127.0.0.1', resolve));
@@ -149,10 +167,31 @@ try {
       assert.equal(fontSize, `${mode === 'web' ? (enlarged ? 20 : 14) : (enlarged ? 16 : 12)}px`);
       // Remote capture is intentionally single-flight; wait for the next frame before recording evidence.
       if (mode !== 'local') await viewer.waitForTimeout(800);
+      if (mode === 'local') {
+        const reads = await viewer.locator('.browser-panel-surface').evaluate(async host => {
+          const original = host.getBoundingClientRect;
+          let calls = 0;
+          host.getBoundingClientRect = function () { calls++; return original.call(this); };
+          const output = document.body.appendChild(document.createElement('section'));
+          output.style.cssText = 'position:fixed;left:0;top:0;width:50px;height:50px;overflow:hidden';
+          try {
+            for (let i = 0; i < 40; i++) {
+              output.appendChild(document.createElement('span')).textContent = String(i);
+              await new Promise(requestAnimationFrame);
+            }
+            return calls;
+          } finally { delete host.getBoundingClientRect; output.remove(); }
+        });
+        assert.equal(reads, 0, 'chat DOM updates do not measure panel bounds');
+      } else {
+        const sizes = counts.resize, before = counts.capture;
+        await expect.poll(() => counts.capture).toBeGreaterThan(before);
+        assert.equal(counts.resize, sizes, 'equal-size captures do not resize the WebView');
+      }
       await viewer.screenshot({ animations: 'disabled', path: `${output}/${label}-chat.png` });
       const image = (await extension({ action: 'panel', session, command: { action: 'capture' } })).result.image;
       await writeFile(`${output}/${label}-native-page.jpg`, Buffer.from(image.data, 'base64'));
-      await verifySettings(viewer, label);
+      await verifySettings(viewer, label, mode !== 'local');
       expect(await viewer.locator('.browser-side-panel').evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
       await viewer.getByRole('button', { name: '关闭侧边栏', exact: true }).click();
       await expect.poll(async () => { try { await probe(session); return false; } catch { return true; } }).toBe(true);

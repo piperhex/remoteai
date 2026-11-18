@@ -58,8 +58,9 @@ The authenticated connection and persistent storage namespace provide the stable
 
 Journals retain at most 512 batches and 2 MiB per view. Codex retains at most 64 views; the CLI worker retains
 at most 32. Clients retain up to eight query scopes per directory adapter. Icon caches are capped at 24 MiB.
-The host still computes differences from its known summaries; the measured improvement concerns transferred
-data, not a claim of constant-time host indexing.
+The host reads the affected summaries by ID. Each retained view updates metadata for those IDs.
+Changes to pins or group definitions can still rebuild the metadata for a whole view. The byte counts
+below measure transferred data.
 
 ## Membership, deletion and resources
 
