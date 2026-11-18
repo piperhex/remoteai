@@ -5,6 +5,11 @@ that page. The default placement is on the right. The toolbar switches to the bo
 window, or closes the inspector. Drag the divider to resize an embedded inspector. The divider
 also supports arrow keys, Home/End, and double-click to reset its size.
 
+The monitor-and-phone button at the start of the inspector toolbar toggles mobile device mode
+for the inspected tab. Its highlighted state enables a responsive phone viewport up to 390 CSS
+pixels wide and touch input with the mouse. Toggling it off or closing the inspector restores
+desktop input and sizing without reloading the page.
+
 This applies to normal browser tabs and conversation-owned native browser previews, including
 desktop local and remote workspaces. Switching placement preserves the page and inspector session.
 Inactive tabs and application overlays hide the native inspector. Closing a tab closes its inspector.
@@ -31,11 +36,14 @@ A COM deferral lets the original callback return before the Windows menu enters 
 - Run Web's `scripts/playwright.browser-inspector.config.ts` using `scripts/run.mjs playwright`.
 - Start the desktop browser harness with `scripts/vite.browser-bookmarks.config.ts` on port 1562.
   Pass a compiled Rust test executable to `scripts/verify-browser-inspector-native.mjs start`.
-  Use its `open local`, `open remote --dark`, `right`, `bottom`, `window`, `resize`, `dedupe`, `tabs` and `close`
-  actions. Choose the native Inspect menu item manually or through the desktop testing tools.
+  Use its `open local`, `open remote --dark`, `right`, `bottom`, `window`, `mobile`, `desktop`,
+  `resize`, `dedupe`, `tabs` and `close` actions. Choose the native Inspect menu item manually
+  or through the desktop testing tools. For a repeatable device-mode check, add `--device-test`
+  to `open` and run `device-cycle` to verify pointer input, page state and restoration on close.
   The `dedupe` action verifies that 60 unrelated DOM updates send no native placement requests.
 - For conversation-owned tabs, serve the harness on port 1552 and add `--managed` to `start` and
-  `open local`. Both fixtures use an isolated application identifier and test-only debugging port.
+  `open local`. Both fixtures isolate the application identifier and use separate test-only debugging
+  ports for the host and inspected page.
 - Inspect running-window screenshots, selected DOM nodes, actual divider drags and retained input.
   Check narrow windows at default and enlarged font settings. Verify touch long-press on Windows
   touch hardware: protocol-emulated touches do not validate the operating system's hold gesture.

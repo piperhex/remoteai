@@ -81,6 +81,7 @@ fn opens_conversation_browser() {
             super::super::overlays::fixture_size,
             super::super::passwords::provider_browser_password,
             super::super::inspector::browser_inspector,
+            super::super::inspector::tests::open_inspector_fixture,
             super::super::inspector::windows::fixture::context_menu_fixture,
         ])
         .setup(move |app| {

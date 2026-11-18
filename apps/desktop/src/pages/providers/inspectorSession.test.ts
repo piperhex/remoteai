@@ -4,13 +4,15 @@ import { inspectorSession, type InspectorPlacement } from '../../../../../shared
 const invoke = vi.hoisted(() => vi.fn());
 vi.mock('@tauri-apps/api/core', () => ({ invoke }));
 const target = { id: 'tab', kind: 'provider' as const };
+const opened = { open: true, mobile: false };
+const closed = { open: false, mobile: false };
 const placement: InspectorPlacement = { action: 'place', dock: 'right', visible: true,
   bounds: { x: 600, y: 150, width: 400, height: 500 } };
 
 it('keeps geometry updates single-flight and applies the latest dock and bounds', async () => {
   let finish!: () => void;
-  invoke.mockReset().mockImplementationOnce(() => new Promise<boolean>(resolve => { finish = () => resolve(true); }))
-    .mockResolvedValue(true);
+  invoke.mockReset().mockImplementationOnce(() => new Promise<typeof opened>(resolve => { finish = () => resolve(opened); }))
+    .mockResolvedValue(opened);
   const session = inspectorSession(target, vi.fn());
   session.update(placement);
   session.update({ ...placement, bounds: { ...placement.bounds, width: 350 } });
@@ -26,8 +28,8 @@ it('keeps geometry updates single-flight and applies the latest dock and bounds'
 
 it('retires pending resizes before hiding and never revives a removed surface', async () => {
   let finish!: () => void;
-  invoke.mockReset().mockImplementationOnce(() => new Promise<boolean>(resolve => { finish = () => resolve(true); }))
-    .mockResolvedValue(true);
+  invoke.mockReset().mockImplementationOnce(() => new Promise<typeof opened>(resolve => { finish = () => resolve(opened); }))
+    .mockResolvedValue(opened);
   const session = inspectorSession(target, vi.fn());
   session.update(placement);
   session.update({ ...placement, dock: 'window' });
@@ -42,8 +44,8 @@ it('retires pending resizes before hiding and never revives a removed surface', 
 
 it('does not let an old surface hide an inspector remounted for the same tab', async () => {
   let finish!: () => void;
-  invoke.mockReset().mockImplementationOnce(() => new Promise<boolean>(resolve => { finish = () => resolve(true); }))
-    .mockResolvedValue(true);
+  invoke.mockReset().mockImplementationOnce(() => new Promise<typeof opened>(resolve => { finish = () => resolve(opened); }))
+    .mockResolvedValue(opened);
   const old = inspectorSession(target, vi.fn());
   old.update(placement);
   await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
@@ -58,7 +60,7 @@ it('does not let an old surface hide an inspector remounted for the same tab', a
 
 it('reports placement failures while keeping a later retry usable', async () => {
   const error = vi.fn();
-  invoke.mockReset().mockRejectedValueOnce(new Error('closed')).mockResolvedValue(true);
+  invoke.mockReset().mockRejectedValueOnce(new Error('closed')).mockResolvedValue(opened);
   const session = inspectorSession(target, error);
   session.update(placement);
   await vi.waitFor(() => expect(error).toHaveBeenCalledOnce());
@@ -69,8 +71,8 @@ it('reports placement failures while keeping a later retry usable', async () => 
 
 it('skips identical placements after success and while the same placement is in flight', async () => {
   let finish!: () => void;
-  invoke.mockReset().mockImplementationOnce(() => new Promise<boolean>(resolve => { finish = () => resolve(true); }))
-    .mockResolvedValue(true);
+  invoke.mockReset().mockImplementationOnce(() => new Promise<typeof opened>(resolve => { finish = () => resolve(opened); }))
+    .mockResolvedValue(opened);
   const session = inspectorSession(target, vi.fn());
   session.update(placement);
   await vi.waitFor(() => expect(invoke).toHaveBeenCalledOnce());
@@ -93,7 +95,7 @@ it.each([
   ...(['x', 'y', 'width', 'height'] as const).map(key => ({ ...placement,
     bounds: { ...placement.bounds, [key]: placement.bounds[key] + 1 } })),
 ])('applies changed placement %j', async changed => {
-  invoke.mockReset().mockResolvedValue(true);
+  invoke.mockReset().mockResolvedValue(opened);
   const session = inspectorSession(target, vi.fn());
   session.update(placement);
   await vi.waitFor(() => expect(invoke).toHaveBeenCalledOnce());
@@ -105,9 +107,9 @@ it.each([
 
 it('restores a previous position after a different in-flight placement completes', async () => {
   let finish!: () => void;
-  invoke.mockReset().mockResolvedValueOnce(true)
-    .mockImplementationOnce(() => new Promise<boolean>(resolve => { finish = () => resolve(true); }))
-    .mockResolvedValue(true);
+  invoke.mockReset().mockResolvedValueOnce(opened)
+    .mockImplementationOnce(() => new Promise<typeof opened>(resolve => { finish = () => resolve(opened); }))
+    .mockResolvedValue(opened);
   const session = inspectorSession(target, vi.fn());
   session.update(placement);
   await vi.waitFor(() => expect(invoke).toHaveBeenCalledOnce());
@@ -121,7 +123,7 @@ it('restores a previous position after a different in-flight placement completes
 });
 
 it('does not cache a placement when the native inspector is unavailable', async () => {
-  invoke.mockReset().mockResolvedValueOnce(false).mockResolvedValue(true);
+  invoke.mockReset().mockResolvedValueOnce(closed).mockResolvedValue(opened);
   const session = inspectorSession(target, vi.fn());
   session.update(placement);
   await vi.waitFor(() => expect(invoke).toHaveBeenCalledOnce());
@@ -132,8 +134,8 @@ it('does not cache a placement when the native inspector is unavailable', async 
 
 it('invalidates the previous placement after a failed move', async () => {
   const error = vi.fn();
-  invoke.mockReset().mockResolvedValueOnce(true).mockRejectedValueOnce(new Error('move failed'))
-    .mockResolvedValue(true);
+  invoke.mockReset().mockResolvedValueOnce(opened).mockRejectedValueOnce(new Error('move failed'))
+    .mockResolvedValue(opened);
   const session = inspectorSession(target, error);
   session.update(placement);
   await vi.waitFor(() => expect(invoke).toHaveBeenCalledOnce());
@@ -145,7 +147,7 @@ it('invalidates the previous placement after a failed move', async () => {
 });
 
 it('does not hide an already hidden inspector again on cleanup', async () => {
-  invoke.mockReset().mockResolvedValue(true);
+  invoke.mockReset().mockResolvedValue(opened);
   const session = inspectorSession(target, vi.fn());
   session.update({ ...placement, visible: false });
   await vi.waitFor(() => expect(invoke).toHaveBeenCalledOnce());
@@ -154,7 +156,7 @@ it('does not hide an already hidden inspector again on cleanup', async () => {
 });
 
 it('reapplies unchanged CSS bounds when moving to a monitor with a different scale', async () => {
-  invoke.mockReset().mockResolvedValue(true);
+  invoke.mockReset().mockResolvedValue(opened);
   const session = inspectorSession(target, vi.fn());
   session.update(placement, 1);
   await vi.waitFor(() => expect(invoke).toHaveBeenCalledOnce());
