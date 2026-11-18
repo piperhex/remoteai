@@ -19,6 +19,8 @@ import { ImageThreadContext } from '../../../shared/conversation/useImageSource'
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
 import { filePreviewKind } from '../../../shared/file-preview/kinds';
 import type { FileClient } from '../../../shared/remote-chat/fileDownload';
+import { readHtmlDocument } from '../../../shared/remote-chat/htmlDocument';
+import type { PreviewLoadOptions } from '../../../shared/remote-chat/previewProgress';
 import { setGuiLanguage } from '../../../shared/localization/uiText';
 import { useThemeMode } from '../src/hooks/useThemeMode';
 import { DEFAULT_CHAT_POLICY, setChatPolicy, setChatConnectionMode } from '../../../shared/remote-chat/policy';
@@ -47,7 +49,8 @@ filePreviewApi.open = async target => {
   return { ...target, kind, name: target.path.split('/').at(-1)!, sessionId: crypto.randomUUID(),
     url: params.get('previewUrl') ?? response.url,
     remote: mode !== 'local',
-    text: ['html', 'markdown', 'text'].includes(kind) ? await response.text() : null };
+    text: kind === 'html' && params.has('largeHtml') ? null
+      : ['html', 'markdown', 'text'].includes(kind) ? await response.text() : null };
 };
 filePreviewApi.close = async id => { document.body.dataset.closed = id; };
 fileApi.applications = async () => [];
@@ -72,8 +75,9 @@ const client: FileClient = {
     data: fromByteArray(transfers.get(id)!.subarray(offset, offset + length)) }),
   close: async (_thread, id) => { transfers.delete(id); document.body.dataset.transfers = String(transfers.size); },
 };
-const load = async (_thread: string, path: string) => {
+const load = async (_thread: string, path: string, options?: PreviewLoadOptions) => {
   document.body.dataset.textRead = path;
+  if (params.has('largeHtml') && filePreviewKind(path) === 'html') return readHtmlDocument(client, _thread, path, options);
   if (filePreviewKind(path) === 'pdf') throw new Error('PDF must not use text preview');
   return { path, text: await (await fetch(address(path))).text() };
 };

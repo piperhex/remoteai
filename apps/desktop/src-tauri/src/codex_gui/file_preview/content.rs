@@ -45,16 +45,15 @@ pub(super) fn load(path: &Path) -> Result<Option<PreviewData>> {
     } else {
         kind(path)
     };
-    let (text, size) = if matches!(
-        kind,
-        PreviewKind::Html | PreviewKind::Markdown | PreviewKind::Text
-    ) {
-        let Some((text, size)) = read_text(path)? else {
-            return Ok(None);
-        };
-        (Some(text), Some(size))
-    } else {
-        (None, Some(std::fs::metadata(path)?.len()))
+    let (text, size) = match kind {
+        // Large HTML is rendered directly from the scoped URL. Small documents also
+        // carry decoded source for the existing line-aware editor and copy action.
+        PreviewKind::Html | PreviewKind::Markdown | PreviewKind::Text => match read_text(path)? {
+            Some((text, size)) => (Some(text), size),
+            None if kind == PreviewKind::Html => (None, std::fs::metadata(path)?.len()),
+            None => return Ok(None),
+        },
+        _ => (None, std::fs::metadata(path)?.len()),
     };
     Ok(Some(PreviewData {
         session_id: String::new(),
@@ -66,7 +65,7 @@ pub(super) fn load(path: &Path) -> Result<Option<PreviewData>> {
             .into_owned(),
         kind,
         text,
-        size,
+        size: Some(size),
         url: String::new(),
         line: None,
         column: None,

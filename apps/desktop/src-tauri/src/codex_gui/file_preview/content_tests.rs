@@ -2,6 +2,23 @@ use super::*;
 use std::io::Write;
 
 #[test]
+fn large_html_opens_without_materializing_source_in_the_preview_reply() {
+    let directory = tempfile::tempdir().unwrap();
+    for (name, size) in [
+        ("index.HTML", MAX_TEXT_BYTES + 1),
+        ("page.htm", 65 * 1024 * 1024),
+        ("book.xhtml", MAX_JSON_BYTES + 1),
+    ] {
+        let path = directory.path().join(name);
+        File::create(&path).unwrap().set_len(size).unwrap();
+        let data = load(&path).unwrap().unwrap();
+        assert_eq!(data.kind, PreviewKind::Html);
+        assert_eq!(data.size, Some(size));
+        assert!(data.text.is_none());
+    }
+}
+
+#[test]
 fn pdf_metadata_reports_exact_size_without_the_text_or_memory_preview_cap() {
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("paper.PDF");

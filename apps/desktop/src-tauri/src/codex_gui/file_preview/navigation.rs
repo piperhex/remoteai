@@ -1,7 +1,11 @@
 //! Add image navigation only to explicitly requested browser resources, retaining their HTTP policy.
 use super::{content, server, PreviewError, Result};
-use std::path::Path;
-use tiny_http::{Request, Response, ResponseBox};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader, Read},
+    path::Path,
+};
+use tiny_http::{Request, Response, ResponseBox, StatusCode};
 
 const CHANNEL_PARAMETER: &str = "__preview_navigation";
 const CHANNEL_PLACEHOLDER: &str = "__PREVIEW_NAVIGATION_CHANNEL__";
@@ -20,16 +24,29 @@ pub(super) fn response(request: &Request, path: &Path) -> Result<Option<Response
     let Some(channel) = channel(request.url()) else {
         return Ok(None);
     };
-    let data = content::load(path)?.ok_or(PreviewError::Read)?;
-    let text = data.text.ok_or(PreviewError::Read)?;
     // The validated UUID cannot terminate the string or script element.
     let script =
         include_str!("navigation.js").replace(CHANNEL_PLACEHOLDER, &format!("\"{channel}\""));
-    let html = format!("{text}\n<script>{script}</script>");
-    let mut response = Response::from_data(html.into_bytes());
-    for header in server::response_headers(path)? {
-        response.add_header(header);
-    }
+    let script = format!("\n<script>{script}</script>");
+    let file = File::open(path)?;
+    let size = file.metadata()?.len();
+    let mut reader = BufReader::new(file.take(size));
+    let suffix = match reader.fill_buf()? {
+        [0xff, 0xfe, ..] => script.encode_utf16().flat_map(u16::to_le_bytes).collect(),
+        [0xfe, 0xff, ..] => script.encode_utf16().flat_map(u16::to_be_bytes).collect(),
+        _ => script.into_bytes(),
+    };
+    let length = usize::try_from(size)
+        .ok()
+        .and_then(|n| n.checked_add(suffix.len()))
+        .ok_or(PreviewError::Read)?;
+    let response = Response::new(
+        StatusCode(200),
+        server::response_headers(path)?,
+        reader.chain(std::io::Cursor::new(suffix)),
+        Some(length),
+        None,
+    );
     Ok(Some(response.boxed()))
 }
 

@@ -41,7 +41,7 @@ import { GUI_TOOL_OPERATIONS } from '../../../../shared/remote-chat/guiTools';
 import { CODEX_STATUS_OPERATION } from '../../../../shared/codex-status/status';
 import { GUI_FILE_OPERATIONS } from '../../../../shared/remote-chat/files';
 import { RemoteFiles } from './files';
-import { RemotePdfTransfers } from './pdfTransfers';
+import { RemoteDocumentTransfers } from './documentTransfers';
 import { guiToolRequest } from './guiTools';
 import { remoteTerminals, type RemoteTerminals } from './terminals';
 import { deleteRemoteThread, pinRemoteThread } from './threadActions';
@@ -147,7 +147,7 @@ export class ChatOperations {
   readonly views = new ConversationViews();
   private readonly dictation = new RemoteDictation();
   private readonly files = new RemoteFiles();
-  private readonly pdfTransfers = new RemotePdfTransfers();
+  private readonly documentTransfers = new RemoteDocumentTransfers();
   attachMappingStreams(owner: string, link: import('../../../../shared/remote-chat/link').ChatLink) {
     this.files.attach(owner, link);
     this.conversationSync.attach(owner, link);
@@ -231,7 +231,7 @@ export class ChatOperations {
     this.views.release(owner);
     this.dictation.release(owner);
     this.files.release(owner);
-    this.pdfTransfers.release(owner);
+    this.documentTransfers.release(owner);
     this.desktop.release(owner);
     if (owner === undefined) { this.titles.clear(); this.commandMetrics.clear(); }
     for (const key of this.cache.keys()) {
@@ -255,7 +255,7 @@ export class ChatOperations {
       if (body.operation === SYNC_OPERATION) return this.conversationSync.request(body, options);
       if (body.operation === DICTATION_OPERATION) return this.dictation.request(body, options.owner);
       if (GUI_FILE_OPERATIONS.has(String(body.operation))) return this.files.request(body, options.owner, options.mode);
-      if (this.pdfTransfers.handles(body)) return this.pdfTransfers.request(body, options);
+      if (this.documentTransfers.handles(body)) return this.documentTransfers.request(body, options);
       if (body.operation === DESKTOP_OPERATION) return this.desktop.request(request.body, options.owner);
     }
     // Conversation subscriptions belong to the live connection; only terminals survive reconnection.
@@ -433,7 +433,8 @@ export class ChatOperations {
       const approvals = await guiApi.connect({ reuseExisting: true });
       this.titles.refreshSettings();
       return body === undefined ? approvals
-        : { ...chatHandshake, approvals, fileBulkV1: true, filePreviewsV1: true, portStreamsV1: true,
+        : { ...chatHandshake, approvals, fileBulkV1: true, filePreviewsV1: true, htmlFileStreamsV1: true,
+          portStreamsV1: true,
           conversationViewsV1: true, taskRecoveryV1: true };
     } catch (error) { throw new Error(guiConnectionError(error)); }
   }

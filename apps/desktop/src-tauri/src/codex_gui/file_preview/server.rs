@@ -261,6 +261,15 @@ fn stream(request: &Request, path: &Path) -> Result<tiny_http::ResponseBox> {
     };
     file.seek(SeekFrom::Start(selected.start))?;
     let mut headers = response_headers(path)?;
+    if matches!(content::extension(path).as_str(), "html" | "htm" | "xhtml")
+        && request.url().split_once('?').is_some_and(|(_, query)| {
+            url::form_urlencoded::parse(query.as_bytes())
+                .any(|(name, value)| name == "__preview_source" && value == "1")
+        })
+    {
+        headers.retain(|header| !header.field.equiv("Content-Type"));
+        headers.push(header("Content-Type", "text/plain; charset=utf-8")?);
+    }
     if range.is_some() {
         headers.push(header(
             "Content-Range",

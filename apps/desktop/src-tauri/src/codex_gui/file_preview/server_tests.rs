@@ -71,6 +71,78 @@ fn image_navigation_retains_the_document_policy_and_existing_asset_scope() {
 }
 
 #[test]
+fn large_html_streams_through_forwarded_host_with_navigation_and_plain_source() {
+    let fixture = Fixture::new();
+    let html = format!(
+        "<h1>Manual</h1><!--{}--><p>End</p>",
+        "x".repeat(3 * 1024 * 1024)
+    );
+    let path = fixture.file("manual.html", html.as_bytes());
+    let server = PreviewServer::start(&path).unwrap();
+    let host = "127.0.0.1:54321";
+    server.forward_host(host.into()).unwrap();
+    let client = client();
+    let get = |query: &str| {
+        client
+            .get(format!("{}{query}", server.url))
+            .header("Host", host)
+            .send()
+            .unwrap()
+    };
+    let page = get(&format!("?__preview_navigation={}", uuid::Uuid::new_v4()));
+    assert_eq!(page.status(), 200);
+    let body = page.text().unwrap();
+    assert!(body.starts_with(&html));
+    assert!(body[html.len()..].contains("parent.postMessage"));
+    let source = get("?__preview_source=1");
+    assert_eq!(
+        source.headers()["content-type"],
+        "text/plain; charset=utf-8"
+    );
+    assert_eq!(source.text().unwrap(), html);
+}
+
+#[test]
+fn navigation_script_matches_the_original_utf16_encoding() {
+    let fixture = Fixture::new();
+    for little in [true, false] {
+        let encode = if little {
+            u16::to_le_bytes
+        } else {
+            u16::to_be_bytes
+        };
+        let html = "<h1>课程</h1>";
+        let bytes: Vec<_> = std::iter::once(0xfeff)
+            .chain(html.encode_utf16())
+            .flat_map(encode)
+            .collect();
+        let path = fixture.file("index.html", &bytes);
+        let server = PreviewServer::start(&path).unwrap();
+        let body = client()
+            .get(format!(
+                "{}?__preview_navigation={}",
+                server.url,
+                uuid::Uuid::new_v4()
+            ))
+            .send()
+            .unwrap()
+            .bytes()
+            .unwrap();
+        let decode = if little {
+            u16::from_le_bytes
+        } else {
+            u16::from_be_bytes
+        };
+        let units: Vec<_> = body[2..]
+            .chunks_exact(2)
+            .map(|p| decode([p[0], p[1]]))
+            .collect();
+        let document = String::from_utf16(&units).unwrap();
+        assert!(document.starts_with(html) && document.contains("parent.postMessage"));
+    }
+}
+
+#[test]
 fn remote_preview_allows_only_the_registered_loopback_host_and_keeps_asset_and_range_scope() {
     let fixture = Fixture::new();
     let path = fixture.file("index.html", b"<img src=\"photo.png\">");
