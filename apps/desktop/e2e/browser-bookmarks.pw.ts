@@ -1,4 +1,13 @@
 import { expect, test } from '@playwright/test';
+import { verifyBookmarkOverflow } from '../../../shared/testing/bookmarkOverflow.mts';
+
+for (const mode of ['local', 'remote']) {
+  test(`${mode} bookmark overflow follows the sidebar width`, async ({ page }, info) => {
+    const theme = mode === 'remote' ? '&dark=1&font=20' : '';
+    await verifyBookmarkOverflow(page, info, { scope: `bookmarks-${mode}`, label: `desktop-${mode}`,
+      harness: `/e2e/browser-bookmarks-harness.html?mode=${mode}&sidebar=1${theme}` });
+  });
+}
 
 test('folder bookmark context actions and manager drag sorting', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('remoteai:browser-bookmarks:bookmarks-local', JSON.stringify({
@@ -16,6 +25,7 @@ test('folder bookmark context actions and manager drag sorting', async ({ page }
   await expect(editor.getByRole('textbox', { name: '名称' })).toHaveValue('第一项');
   await editor.getByRole('button', { name: 'Close', exact: true }).click();
   await page.getByRole('button', { name: '浏览器设置', exact: true }).click();
+  await expect(page.locator('.browser-bookmark-settings-popup:visible')).not.toHaveClass(/-appear|-enter/);
   await page.locator('.browser-bookmark-settings-popup').getByRole('button', { name: '所有书签', exact: true }).click();
   await page.getByRole('menu', { name: '所有书签', exact: true })
     .getByRole('menuitem', { name: '管理书签', exact: true }).click();
