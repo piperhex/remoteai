@@ -1,5 +1,4 @@
 //! Isolated native RTC verification window. Does not run application startup or register global helpers.
-#[cfg(windows)]
 #[test]
 #[ignore = "Manual native RTC viewer verification; requires the loopback Vite fixture"]
 fn opens_native_rtc() {

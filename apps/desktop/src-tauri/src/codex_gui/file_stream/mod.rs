@@ -16,7 +16,7 @@ mod file;
 mod manifest;
 #[cfg(test)]
 mod preview_tests;
-#[cfg(test)]
+#[cfg(all(test, windows))]
 pub(crate) mod rtc_fixture;
 #[cfg(test)]
 mod tests;

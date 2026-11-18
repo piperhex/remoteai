@@ -35,7 +35,7 @@ pub(super) struct Channel {
     outgoing: Mutex<()>,
     writable: Notify,
     high_water: AtomicUsize,
-    #[cfg(test)]
+    #[cfg(all(test, windows))]
     pub(super) metrics: super::diagnostics::SendMetrics,
 }
 
@@ -48,7 +48,7 @@ impl Channel {
             outgoing: Mutex::new(()),
             writable: Notify::new(),
             high_water: AtomicUsize::new(high),
-            #[cfg(test)]
+            #[cfg(all(test, windows))]
             metrics: super::diagnostics::SendMetrics::default(),
         });
         channel.rtc.set_buffered_amount_low_threshold(low).await;
@@ -152,10 +152,10 @@ impl Channel {
         if bytes.len() > MAX_MESSAGE_BYTES {
             return Err(Error::Capacity);
         }
-        #[cfg(test)]
+        #[cfg(all(test, windows))]
         let locking = std::time::Instant::now();
         let _serial = self.outgoing.lock().await;
-        #[cfg(test)]
+        #[cfg(all(test, windows))]
         self.metrics.lock(locking.elapsed());
         let send = async {
             loop {
@@ -170,7 +170,7 @@ impl Channel {
                 {
                     break;
                 }
-                #[cfg(test)]
+                #[cfg(all(test, windows))]
                 let waiting = std::time::Instant::now();
                 if cancelled.is_some() {
                     // Cancellation also releases a file send when the peer stops acknowledging bytes.
@@ -181,10 +181,10 @@ impl Channel {
                 } else {
                     available.await;
                 }
-                #[cfg(test)]
+                #[cfg(all(test, windows))]
                 self.metrics.wait(waiting.elapsed());
             }
-            #[cfg(test)]
+            #[cfg(all(test, windows))]
             let sending = std::time::Instant::now();
             if text {
                 let text = std::str::from_utf8(&bytes).map_err(|_| Error::Invalid)?;
@@ -195,7 +195,7 @@ impl Channel {
             } else {
                 self.rtc.send(&bytes).await.map_err(|_| Error::Transport)?;
             }
-            #[cfg(test)]
+            #[cfg(all(test, windows))]
             self.metrics.sent(bytes.len(), sending.elapsed());
             Ok(())
         };

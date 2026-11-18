@@ -133,10 +133,9 @@ fn navigation_script_matches_the_original_utf16_encoding() {
         } else {
             u16::from_be_bytes
         };
-        let units: Vec<_> = body[2..]
-            .chunks_exact(2)
-            .map(|p| decode([p[0], p[1]]))
-            .collect();
+        let (pairs, remainder) = body[2..].as_chunks::<2>();
+        assert!(remainder.is_empty());
+        let units: Vec<_> = pairs.iter().copied().map(decode).collect();
         let document = String::from_utf16(&units).unwrap();
         assert!(document.starts_with(html) && document.contains("parent.postMessage"));
     }

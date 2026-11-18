@@ -71,7 +71,7 @@ pub(crate) async fn browser_overlay_focus(webview: Webview) -> Result<(), String
     Ok(())
 }
 
-#[cfg(test)]
+#[cfg(all(test, windows))]
 #[tauri::command]
 pub(crate) async fn fixture_size(webview: Webview, width: f64, height: f64) -> Result<(), String> {
     if !(600.0..=1920.0).contains(&width) || !(500.0..=1200.0).contains(&height) {

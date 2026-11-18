@@ -1,5 +1,7 @@
 use super::{Action, Error, Result};
-use std::path::{Path, PathBuf};
+#[cfg(windows)]
+use std::path::Path;
+use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_opener::OpenerExt;
 
@@ -12,6 +14,7 @@ fn record(app: &AppHandle, id: &str) -> Result<PathBuf> {
         .join(format!("{id}.json")))
 }
 
+#[cfg(windows)]
 pub(super) fn completed(app: AppHandle, id: String, path: PathBuf) {
     tauri::async_runtime::spawn_blocking(move || {
         let result = (|| -> Result<()> {
@@ -47,6 +50,7 @@ pub(super) fn open(app: &AppHandle, id: &str, action: Action, live: Option<PathB
     }
 }
 
+#[cfg(windows)]
 pub(super) fn target(app: &AppHandle, id: &str, suggested: &str) -> Result<PathBuf> {
     let name = Path::new(suggested).file_name().ok_or(Error::Invalid)?;
     // Each transfer owns a unique directory, so identical names never overwrite an existing download.

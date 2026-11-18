@@ -230,10 +230,8 @@ mod tests {
         ] {
             let count = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap()) as usize;
             offset += 4;
-            let units: Vec<_> = bytes[offset..offset + count * 2]
-                .chunks_exact(2)
-                .map(|pair| u16::from_le_bytes(pair.try_into().unwrap()))
-                .collect();
+            let (pairs, _) = bytes[offset..offset + count * 2].as_chunks::<2>();
+            let units: Vec<_> = pairs.iter().copied().map(u16::from_le_bytes).collect();
             assert_eq!(String::from_utf16(&units).unwrap(), *expected);
             offset += count * 2;
         }

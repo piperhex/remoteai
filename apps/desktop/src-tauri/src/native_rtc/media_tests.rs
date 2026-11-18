@@ -71,7 +71,7 @@ fn large_keyframe<D: Depacketizer>(decoder: D, hevc: bool, reordered: bool) {
     let mut encoded = packets(hevc, &expected, 9000, &mut sequence);
     assert!(encoded.len() > 64);
     if reordered {
-        for pair in encoded[1..].chunks_exact_mut(2) {
+        for pair in encoded[1..].as_chunks_mut::<2>().0 {
             pair.swap(0, 1);
         }
     }

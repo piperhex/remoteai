@@ -1,6 +1,6 @@
 //! Native binary synchronization between authorized desktop bundle handles.
 pub(crate) mod bridge;
-#[cfg(test)]
+#[cfg(all(test, windows))]
 pub(crate) mod fixture;
 #[cfg(test)]
 mod tests;

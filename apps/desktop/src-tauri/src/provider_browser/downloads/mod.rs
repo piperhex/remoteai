@@ -86,6 +86,7 @@ pub(crate) enum Action {
     Reveal,
 }
 
+#[cfg(any(test, windows))]
 fn insecure(url: &str) -> bool {
     let value = url.strip_prefix("blob:").unwrap_or(url);
     url::Url::parse(value).is_ok_and(|url| url.scheme() == "http")

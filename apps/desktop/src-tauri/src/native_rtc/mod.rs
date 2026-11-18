@@ -4,18 +4,18 @@ mod benchmark;
 pub(crate) mod bulk;
 mod channel;
 mod chat;
-#[cfg(test)]
+#[cfg(all(test, windows))]
 mod diagnostics;
 #[cfg(test)]
 mod encrypted_benchmark;
 mod events;
-#[cfg(test)]
+#[cfg(all(test, windows))]
 mod harness;
 mod hevc;
-#[cfg(test)]
+#[cfg(all(test, windows))]
 mod hevc_fixture;
 mod media;
-#[cfg(test)]
+#[cfg(all(test, windows))]
 mod media_fixture;
 mod model;
 mod peer;
