@@ -19,7 +19,7 @@ function AgentMessage({ item, streaming, completedAt, onFork, forkDisabled }: {
   return <article className={styles.agentMessage} data-phase={item.phase ?? "final_answer"}
     data-streaming={streaming || undefined}>
     <div data-quote-source={item.id}>
-      <RichText text={visible} trailing={!streaming && item.phase !== "commentary" && text.trim()
+      <RichText text={visible} streaming={streaming} trailing={!streaming && item.phase !== "commentary" && text.trim()
         ? <MessageActions text={text} completedAt={completedAt} onFork={onFork}
           forkDisabled={forkDisabled} /> : undefined} /></div>
   </article>;

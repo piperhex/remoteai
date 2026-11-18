@@ -111,6 +111,17 @@ it('refills for a taller viewport and stops when the list is exhausted', async (
   expect(loadMore).toHaveBeenCalledTimes(1);
 });
 
+it('skips layout reads when a stream rerenders a list without another page', async () => {
+  cursor = null;
+  await render();
+  const height = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get');
+  height.mockClear();
+  for (let delta = 0; delta < 10; delta++) await render();
+  await act(async () => resize());
+  expect(height).not.toHaveBeenCalled();
+  expect(loadMore).not.toHaveBeenCalled();
+});
+
 it('pauses a failed page until retry and disconnects its layout observer on unmount', async () => {
   loadMore.mockRejectedValueOnce(new Error('offline')).mockImplementation(async () => {
     content += viewport; cursor = null; root.render(<Harness />);
