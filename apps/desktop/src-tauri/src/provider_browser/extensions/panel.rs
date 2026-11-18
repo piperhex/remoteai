@@ -153,6 +153,7 @@ fn open(app: &AppHandle, session: &str, extension: Option<&str>) -> Result<()> {
                     .map_err(|_| Error::Storage)?
                     .join("browser-profile"),
             )
+            .general_autofill_enabled(false)
             .browser_extensions_enabled(true)
             .on_navigation(move |url| match &extension {
                 Some(id) => url.scheme() == "chrome-extension" && url.host_str() == Some(id),

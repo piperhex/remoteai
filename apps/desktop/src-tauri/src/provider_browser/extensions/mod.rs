@@ -362,6 +362,7 @@ fn open(app: &AppHandle, catalog: &Catalog, id: &str) -> Result<()> {
                 .map_err(|_| Error::Storage)?
                 .join("browser-profile"),
         )
+        .general_autofill_enabled(false)
         .browser_extensions_enabled(true)
         .title(&record.manifest.name)
         .inner_size(420.0, 600.0)

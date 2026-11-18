@@ -138,6 +138,9 @@ fn browser_builder(
             .map_err(|_| BrowserError::Unavailable)?
             .join("browser-profile"),
     )
+    // WebView2 shares autofill across the profile. Extension windows using it must opt out too,
+    // otherwise its saved-email popup covers the application's account chooser.
+    .general_autofill_enabled(false)
     .browser_extensions_enabled(true)
     .initialization_script(passwords::initialization())
     .initialization_script(include_str!("links.js"))
