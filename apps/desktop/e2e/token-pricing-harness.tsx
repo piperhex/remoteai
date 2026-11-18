@@ -34,7 +34,8 @@ function DesktopPrices() {
     };
   }, []);
   const cost = estimateTokenCost({ id: "usage", ts: 0, provider: "", model: "gpt-6-sol",
-    inputTokens: 100_000, outputTokens: 10_000, cachedTokens: 0, serviceTier: "fast" }, []);
+    inputTokens: 100_000, outputTokens: 10_000, cachedTokens: 0,
+    serviceTier: new URLSearchParams(location.search).get("tier") ?? "fast" }, []);
   return <><output aria-label="预估费用">{cost.toFixed(2)}</output>
     <TokenCostPresets referenceModel={reference} onReferenceChange={setReference} t={t} /></>;
 }

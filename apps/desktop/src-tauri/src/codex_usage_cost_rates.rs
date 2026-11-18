@@ -158,6 +158,10 @@ impl CostRates {
             .unwrap_or_else(|| catalog.default_rate());
         let multiplier = match entry.service_tier.as_deref() {
             Some("priority" | "fast") => self.fast_multiplier_for_model(&entry.model),
+            Some("ultrafast") => catalog
+                .preset_for_model(&entry.model)
+                .and_then(|preset| preset.ultrafast_mode_multiplier)
+                .unwrap_or(1.0),
             _ => 1.0,
         };
         let long_context = LongContextCostSettings {

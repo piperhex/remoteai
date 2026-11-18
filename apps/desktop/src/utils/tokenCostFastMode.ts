@@ -49,6 +49,7 @@ export function saveModelFastModeCostMultiplier(model: string, value: number | n
 }
 
 export function costMultiplierForServiceTier(serviceTier: string | null | undefined, model: string): number {
+  if (serviceTier === "ultrafast") return findTokenCostPreset(model)?.ultrafastModeMultiplier ?? 1;
   if (serviceTier !== "priority" && serviceTier !== "fast") return 1;
   const preset = findTokenCostPreset(model) ?? referenceTokenCostPreset();
   return modelFastModeCostOverride(preset.model) ?? preset.fastModeMultiplier ?? 1;

@@ -63,7 +63,36 @@ fn downloaded_prices_reach_native_summaries_and_keep_custom_rule_priority() {
 }
 
 #[test]
+fn ultrafast_uses_only_the_matching_model_multiplier() {
+    let mut catalog = (*PRESET_CATALOG).clone();
+    let model = &mut catalog.models[0];
+    let model_name = model.model.clone();
+    model.aliases.push("priced-alias".into());
+    for (configured, expected) in [(Some(2.5), 2.5), (None, 1.0)] {
+        catalog.models[0].ultrafast_mode_multiplier = configured;
+        let rates = CostRates {
+            preset_catalog: Some(catalog.clone()),
+            reference_model: model_name.clone(),
+            fast_mode_multiplier: Some(7.0),
+            ..CostRates::default()
+        };
+        assert!(rates.validate().is_ok());
+        for (name, multiplier) in [("priced-alias", expected), ("unlisted-model", 1.0)] {
+            let mut entry = usage_entry(name);
+            let standard = rates.estimate_cost(&entry, None);
+            entry.service_tier = Some("ultrafast".into());
+            assert!((rates.estimate_cost(&entry, None) - standard * multiplier).abs() < 1e-10);
+        }
+    }
+}
+
+#[test]
 fn invalid_downloaded_prices_and_multipliers_are_rejected() {
+    for bad in [0.0, -1.0, 101.0] {
+        let mut catalog = (*PRESET_CATALOG).clone();
+        catalog.models[0].ultrafast_mode_multiplier = Some(bad);
+        assert!(!catalog.is_valid());
+    }
     for bad in [-1.0, 101.0] {
         let mut catalog = (*PRESET_CATALOG).clone();
         catalog.models[0].fast_mode_multiplier = Some(bad);

@@ -29,6 +29,8 @@ pub(crate) struct CostPreset {
     #[serde(default)]
     pub(super) fast_mode_multiplier: Option<f64>,
     #[serde(default)]
+    pub(super) ultrafast_mode_multiplier: Option<f64>,
+    #[serde(default)]
     source_url: String,
     #[serde(flatten)]
     pub(super) rate: CostRate,
@@ -91,6 +93,9 @@ fn valid_presets(models: &[CostPreset]) -> bool {
             .all(valid_rate)
             && preset
                 .fast_mode_multiplier
+                .is_none_or(valid_fast_multiplier)
+            && preset
+                .ultrafast_mode_multiplier
                 .is_none_or(valid_fast_multiplier)
             && std::iter::once(&preset.model)
                 .chain(&preset.aliases)

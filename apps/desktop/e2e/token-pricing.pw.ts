@@ -37,7 +37,7 @@ test("per-model Fast multipliers stay editable during a pending preset request",
   } finally { release?.(); }
 });
 
-test("admin can add a priced model with a custom multiplier in the final column", async ({ page }) => {
+test("admin can add a priced model with separate speed multipliers", async ({ page }) => {
   let saved: typeof bundled | undefined;
   await page.route("**/admin/api/token-cost-presets", async (route) => {
     if (route.request().method() === "PATCH") saved = route.request().postDataJSON() as typeof bundled;
@@ -45,12 +45,15 @@ test("admin can add a priced model with a custom multiplier in the final column"
   });
   await page.goto(harness + "?admin");
   await expect(page.getByRole("button", { name: "添加模型" })).toBeEnabled();
-  await expect(page.getByRole("columnheader").last()).toHaveText("快速模式倍率");
+  await expect(page.getByRole("columnheader").last()).toHaveText("Ultrafast 倍率");
   await page.getByRole("button", { name: "添加模型" }).click();
   const row = page.locator("tbody tr").last();
   await row.getByRole("textbox", { name: "模型名称", exact: true }).fill("new-priced-model");
   await row.getByRole("spinbutton", { name: "new-priced-model input", exact: true }).fill("1.2");
   await row.getByRole("spinbutton", { name: "new-priced-model fastModeMultiplier", exact: true }).fill("3.2");
+  const ultrafast = row.getByRole("spinbutton", { name: "new-priced-model Ultrafast 倍率", exact: true });
+  await expect(ultrafast).toHaveValue("");
+  await ultrafast.fill("4.5");
   const threshold = row.getByRole("spinbutton", { name: "new-priced-model longContextThresholdTokens", exact: true });
   await expect(threshold).toBeDisabled();
   await row.getByRole("switch", { name: "new-priced-model long context", exact: true }).click();
@@ -59,8 +62,29 @@ test("admin can add a priced model with a custom multiplier in the final column"
   await page.getByRole("button", { name: "保存预设" }).click();
   await expect(page.getByText("已保存，用户下次启动 PC 端时生效。")).toBeVisible();
   expect(saved?.models.at(-1)).toMatchObject({ model: "new-priced-model", input: 1.2, fastModeMultiplier: 3.2,
-    longContextThresholdTokens: 128000 });
+    longContextThresholdTokens: 128000, ultrafastModeMultiplier: 4.5 });
   await page.screenshot({ path: "../../.codex-tmp/pricing-admin.png", fullPage: true });
+});
+
+test("desktop estimates follow saved and cleared Ultrafast multipliers", async ({ page }) => {
+  let saved = bundled;
+  await page.route("**/admin/api/token-cost-presets", async (route) => {
+    if (route.request().method() === "PATCH") saved = route.request().postDataJSON();
+    await route.fulfill({ json: saved });
+  });
+  await page.route((url) => url.pathname === "/token-cost-presets", (route) => route.fulfill({ json: saved }));
+  const field = page.getByRole("spinbutton", { name: "gpt-6-sol Ultrafast 倍率", exact: true });
+  for (const [value, cost] of [["3.5", "1.05"], ["", "0.30"]]) {
+    await page.goto(harness + "?admin");
+    await field.fill(value);
+    await field.blur();
+    await saveAdminPresets(page);
+    await page.goto(harness + "?admin&readonly");
+    await expect(field).toBeDisabled();
+    await expect(field).toHaveValue(value);
+    await page.goto(harness + "?tier=ultrafast");
+    await expect(page.getByLabel("预估费用")).toHaveText(cost);
+  }
 });
 
 test("model thresholds flow from admin to PC and local edits stay responsive during refresh", async ({ page }) => {
