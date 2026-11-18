@@ -33,7 +33,7 @@ beforeEach(() => {
   const original = window.getComputedStyle;
   vi.spyOn(window, 'getComputedStyle').mockImplementation(element => original(element));
   vi.mocked(invoke).mockReset();
-  client = { accounts: vi.fn().mockResolvedValue(catalog),
+  client = { home: { read: vi.fn(), change: vi.fn(), load: vi.fn(), mutate: vi.fn() }, accounts: vi.fn().mockResolvedValue(catalog),
     autoSwitch: { read: vi.fn().mockResolvedValue(settings), write: vi.fn().mockResolvedValue(settings) },
     context: { read: vi.fn(), write: vi.fn() }, systemPrompts: { read: vi.fn(), write: vi.fn() } };
   container = document.createElement('div'); document.body.append(container); root = createRoot(container);

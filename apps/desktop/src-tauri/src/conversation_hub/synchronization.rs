@@ -173,7 +173,8 @@ fn execute<R: Runtime>(app: tauri::AppHandle<R>, request: SyncRequest) -> Result
     match request {
         SyncRequest::Homes => homes(&app),
         SyncRequest::List { home_id, query } => {
-            projects::list(ThreadContext::new(app, Some(home_id))?, query)
+            let home = crate::codex_home::resolve_sync_source(&app, &home_id)?;
+            projects::list(ThreadContext::for_home(app, home)?, query)
         }
         SyncRequest::Prepare {
             home_id,
@@ -191,9 +192,11 @@ fn execute<R: Runtime>(app: tauri::AppHandle<R>, request: SyncRequest) -> Result
 
 fn homes<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<Value, String> {
     let settings = crate::storage::read_app_settings(app)?;
+    let mut homes = settings.codex_homes;
+    homes.extend(crate::codex_home::location::history(app));
     Ok(
         json!({ "name": sysinfo::System::host_name().unwrap_or_else(|| "PC".into()),
-        "homes": settings.codex_homes }),
+        "homes": homes }),
     )
 }
 
@@ -232,7 +235,7 @@ fn prepare<R: Runtime>(
     ids: Vec<String>,
     export: bool,
 ) -> Result<Value, String> {
-    let source = crate::codex_home::resolve_selected(app, Some(home))?;
+    let source = crate::codex_home::resolve_sync_source(app, home)?;
     let root = transfer_root(app)?;
     let mut transfer = Transfer {
         root,

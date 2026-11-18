@@ -3,6 +3,8 @@ use super::*;
 
 #[derive(Serialize, Deserialize)]
 pub(super) struct Plan {
+    #[serde(default)]
+    target: Option<PathBuf>,
     ids: HashSet<String>,
     duplicates: HashSet<String>,
     fingerprints: HashMap<String, String>,
@@ -90,6 +92,7 @@ pub(super) fn preview_ids(
     let fingerprints = fingerprints(target, &ids)?;
     let result = json!({ "count": ids.len(), "duplicateIds": duplicates });
     entry.plan = Some(Plan {
+        target: Some(target.to_owned()),
         ids,
         duplicates,
         fingerprints,
@@ -106,6 +109,10 @@ pub(super) fn commit<R: Runtime>(
 ) -> Result<Value, String> {
     let target =
         crate::codex_home::resolve_selected(app, Some(crate::codex_home::GUI_CODEX_HOME_ID))?;
+    if let Some(plan) = entry.plan.as_mut().filter(|p| p.target.is_none()) {
+        // Plans created before homes could change always targeted the built-in directory.
+        plan.target = Some(crate::codex_home::default_gui_home(app)?);
+    }
     commit_at_target(&target, entry, overwrites, provider)
 }
 
@@ -118,6 +125,13 @@ pub(super) fn commit_at_target(
     let plan = entry.plan.as_ref().ok_or_else(|| INVALID.to_owned())?;
     if let Some(result) = &plan.result {
         return Ok(result.clone());
+    }
+    if !plan
+        .target
+        .as_deref()
+        .is_some_and(|path| crate::codex_home::paths_match(path, target))
+    {
+        return Err(CHANGED.into());
     }
     let overwrites = normalized_ids(overwrites);
     if !overwrites.is_subset(&plan.duplicates) {

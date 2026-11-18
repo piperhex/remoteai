@@ -5,6 +5,8 @@ const ROOT = 'F:/projects';
 
 export function demoProjectDirectories(input: Record<string, unknown>): ProjectDirectoriesResponse {
   const directory = String(input.directory ?? '');
+  if (directory === 'D:/AgentHub') return { directory, parent: 'D:/', truncated: false,
+    entries: [{ name: 'WorkData', path: 'D:/AgentHub/WorkData', directory: true }] };
   if (directory === '') return { directory, parent: null, entries: [{ name: 'F:', path: 'F:/' }], truncated: false };
   if (directory === 'F:/') return { directory, parent: '', entries: [{ name: 'projects', path: ROOT }], truncated: false };
   if (directory === ROOT) return { directory, parent: 'F:/', truncated: false, entries: [

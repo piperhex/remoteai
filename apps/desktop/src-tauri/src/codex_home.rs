@@ -1,3 +1,4 @@
+pub(crate) mod location;
 mod resolution;
 #[cfg(test)]
 #[path = "codex_home/responsiveness_tests.rs"]
@@ -6,7 +7,8 @@ mod selection;
 use resolution::resolve_for_override;
 pub(crate) use resolution::{initialize_paths, resolve, resolve_all, resolve_default};
 pub(crate) use selection::{
-    ensure_external_home, ensure_gui_entry, gui_home, resolve_selected, GUI_CODEX_HOME_ID,
+    default_gui_home, ensure_external_home, ensure_gui_entry, gui_home, resolve_selected,
+    resolve_sync_source, GUI_CODEX_HOME_ID,
 };
 
 use std::{
@@ -235,7 +237,7 @@ fn validate_entry_id(id: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn paths_match(left: &Path, right: &Path) -> bool {
+pub(crate) fn paths_match(left: &Path, right: &Path) -> bool {
     match (fs::canonicalize(left), fs::canonicalize(right)) {
         (Ok(left), Ok(right)) => left == right,
         _ => left == right,
@@ -331,6 +333,14 @@ fn update_codex_homes<R: Runtime>(
     ensure_default_entry(&mut entries, &resolve_default()?);
     ensure_gui_entry(&mut entries, &gui_home(app)?);
     let entries = normalize_entries(entries)?;
+    let previous = location::history(app);
+    if entries.iter().any(|home| {
+        previous
+            .iter()
+            .any(|old| paths_match(Path::new(&old.path), Path::new(&home.path)))
+    }) {
+        return Err("AGENT_HUB_HOME_INVALID".into());
+    }
     let requested = configured_entries(&entries);
     let requested_primary = requested.first().map(|entry| entry.path.as_path());
     let _switch_guard = crate::commands::account_switch_lock()

@@ -11,10 +11,18 @@ const CODEX_HOME_ENV: &str = "CODEX_HOME";
 const DEFAULT_CODEX_HOME_DIRECTORY: &str = ".codex";
 
 // Set once by application startup, before settings migration or any home resolution.
+static PREVIOUS_HOMES: OnceLock<Vec<PathBuf>> = OnceLock::new();
 static GUI_HOME: OnceLock<PathBuf> = OnceLock::new();
 
 /// Identify the private GUI home before interpreting an inherited CODEX_HOME.
 pub(crate) fn initialize_paths<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<(), String> {
+    super::location::initialize(app)?;
+    PREVIOUS_HOMES.get_or_init(|| {
+        super::location::history(app)
+            .into_iter()
+            .map(|h| PathBuf::from(h.path))
+            .collect()
+    });
     let path = gui_home(app)?;
     if GUI_HOME.get_or_init(|| path.clone()) != &path {
         return Err("Codex Home 初始化失败，请重启应用。".to_string());
@@ -22,10 +30,17 @@ pub(crate) fn initialize_paths<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<
     Ok(())
 }
 
+fn is_previous(path: &Path) -> bool {
+    PREVIOUS_HOMES
+        .get()
+        .is_some_and(|homes| homes.iter().any(|home| paths_match(path, home)))
+}
+
 fn environment_codex_home() -> Option<PathBuf> {
     std::env::var_os(CODEX_HOME_ENV)
         .filter(|value| !value.is_empty())
         .map(PathBuf::from)
+        .filter(|path| !is_previous(path))
 }
 
 fn resolve_from_sources(
@@ -70,9 +85,10 @@ fn external_overrides() -> Vec<ConfiguredCodexHome> {
     current_overrides()
         .into_iter()
         .filter(|home| {
-            GUI_HOME
-                .get()
-                .is_none_or(|gui| !paths_match(&home.path, gui))
+            !is_previous(&home.path)
+                && GUI_HOME
+                    .get()
+                    .is_none_or(|gui| !paths_match(&home.path, gui))
         })
         .collect()
 }

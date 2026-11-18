@@ -7,6 +7,13 @@ pub(crate) const GUI_CODEX_HOME_ID: &str = "codex-gui";
 
 /// Shared with GUI startup so the built-in entry always points at the runtime's home.
 pub(crate) fn gui_home<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<PathBuf, String> {
+    if let Some(locations) = app.try_state::<super::location::RuntimeLocations>() {
+        return Ok(locations.current.clone());
+    }
+    default_gui_home(app)
+}
+
+pub(crate) fn default_gui_home<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<PathBuf, String> {
     app.path()
         .app_data_dir()
         .map(|path| path.join(".codex"))
@@ -45,6 +52,17 @@ pub(crate) fn resolve_selected<R: Runtime>(
     };
     let settings = crate::storage::read_app_settings(app)?;
     selected_path(&settings.codex_homes, id)
+}
+
+/// Historical homes are exposed only as sources for an explicit conversation sync.
+pub(crate) fn resolve_sync_source<R: Runtime>(
+    app: &tauri::AppHandle<R>,
+    id: &str,
+) -> Result<PathBuf, String> {
+    if super::location::is_history_id(id) {
+        return selected_path(&super::location::history(app), id);
+    }
+    resolve_selected(app, Some(id))
 }
 
 fn selected_path(entries: &[CodexHomeEntry], id: &str) -> Result<PathBuf, String> {

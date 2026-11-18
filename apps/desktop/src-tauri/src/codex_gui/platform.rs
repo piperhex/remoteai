@@ -56,7 +56,7 @@ fn known_folder(id: &windows::core::GUID) -> Option<std::path::PathBuf> {
     }
 }
 
-pub(super) fn execution_path(path: &Path) -> String {
+pub(crate) fn execution_path(path: &Path) -> String {
     let value = path.to_string_lossy();
     #[cfg(windows)]
     {

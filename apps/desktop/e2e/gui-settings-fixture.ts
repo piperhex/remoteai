@@ -1,4 +1,4 @@
-import { GUI_SETTINGS_OPERATIONS, type GuiSettingsAccounts, type GuiSystemPromptSettings,
+import { GUI_SETTINGS_OPERATIONS, type GuiSettingsAccounts, type GuiSystemPromptSettings, type HomeLocations,
   type ModelContextSettings } from '../../../shared/remote-chat/guiSettings';
 import type { GuiAutoSwitchSettings } from '../../../shared/conversation/autoSwitchSettings';
 
@@ -15,9 +15,15 @@ let prompts: GuiSystemPromptSettings = { filterEnabled: false, filterRules: [], 
   injectionPrompts: [{ name: '远程工作规则', text: '优先检查项目中的说明。', enabled: true }] };
 const context: ModelContextSettings = { defaults: { 'remote-model': 128_000 }, overrides: {} };
 
+const home: HomeLocations = { current: 'D:/AgentHub/.codex', history: [
+  { id: 'previous:fixture', path: 'C:/Users/demo/AppData/Roaming/dev.codex.switch/.codex' },
+], pending: null, failed: false };
+
 export function demoGuiSettings(input: Record<string, unknown>) {
   if (!GUI_SETTINGS_OPERATIONS.has(String(input.operation))) return undefined;
   switch (input.operation) {
+    case 'guiHomeRead': return { value: home };
+    case 'guiHomeChange': home.pending = input.change as HomeLocations['pending']; return { value: home };
     case 'guiSettingsAccounts': return { value: accounts };
     case 'guiAutoSwitchRead': return { value: autoSwitch };
     case 'guiAutoSwitchWrite': autoSwitch = input.settings as GuiAutoSwitchSettings; return { value: autoSwitch };

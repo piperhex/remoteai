@@ -306,7 +306,7 @@ while importing a deliberately truncated 64 KiB archive displays the damaged-pac
 `unexpected end of file` cause, with local paths redacted. Neither case reported insufficient disk space.
 The clean offline import succeeded; the originally reported failure with a complete package was not reproduced.
 
-Both the executable and the conversation data live under the Tauri application data directory (`dev.codex.switch`):
+By default, the CLI and the Agent Hub data folder live under the Tauri application data directory (`dev.codex.switch`).
 
 ```text
 dev.codex.switch/
@@ -326,6 +326,11 @@ dev.codex.switch/
     ├── state_*.sqlite
     └── log/
 ```
+
+In **Agent Hub settings → Data folder**, use the project file browser to select an empty folder.
+Choose to copy the current data or start fresh. Remote AI applies the change on its next startup on the
+selected computer. Previously used folders are available here for switching back. Conversation sync
+also lists them as inactive sources. The Codex Home list shows the current Agent Hub folder.
 
 On Windows this normally resolves to `%APPDATA%/dev.codex.switch`. Initial Codex preferences are imported once;
 GUI account selection is stored separately in `codex-gui-account.json`. GUI requests use a dedicated local

@@ -2,11 +2,15 @@ import { displayText } from '../../../../../shared/localization/uiText';
 import { uiText } from "../../../../../shared/localization/uiText";
 import { useState, type CSSProperties } from "react";
 import { Button, ConfigProvider, Grid, Modal, Spin, Tabs } from "antd";
-import { ArrowLeftRight, Circle, Image, MessageSquareText, Palette, Settings2, Type } from "lucide-react";
+import { ArrowLeftRight, Circle, FolderOpen, Image, MessageSquareText, Palette, Settings2, Type } from "lucide-react";
 import type { Provider } from "../../types";
 import type { GuiSettingsAccount, GuiSettingsClient } from '../../../../../shared/remote-chat/guiSettings';
 import { DEFAULT_FONT_SIZE, useGlobalFontSize } from '../../../../../shared/appearance/fontSize';
 import { useGuiAutoSwitchSettings } from "./useGuiAutoSwitchSettings";
+import { AgentHubHomeSettings } from '../../../../../shared/conversation/AgentHubHomeSettings';
+import type { HomeClient } from '../../../../../shared/remote-chat/guiSettings';
+import { loadProjectExplorer, mutateProjectExplorer } from './projectExplorerClient';
+import { invoke } from '../../api/backend';
 import { GuiAutoSwitchPanel } from "./GuiAutoSwitchPanel";
 import { GuiAppearanceSettings } from "../../../../../shared/conversation/GuiAppearanceSettings";
 import { GuiMessageSettings } from "../../../../../shared/conversation/GuiMessageSettings";
@@ -16,8 +20,15 @@ import { GuiSystemPromptSettings } from "./GuiSystemPromptSettings";
 import { GuiModelContextSettings } from "./GuiModelContextSettings";
 import styles from "./GuiAutoSwitchSettingsDialog.module.less";
 
+const localHome: HomeClient = {
+  read: () => invoke('agent_hub_home'),
+  change: change => invoke('change_agent_hub_home', { change }),
+  load: loadProjectExplorer, mutate: mutateProjectExplorer,
+};
+
 const sections = [
   { key: "accounts", label: "client.workspaceSettings.automaticAccountSwitching", icon: ArrowLeftRight },
+  { key: "home", label: "client.agentHubHome.title", icon: FolderOpen },
   { key: "context", label: "client.guiSettings.context", icon: MessageSquareText },
   { key: "messages", label: "client.messageQueue.settings", icon: MessageSquareText },
   { key: "appearance", label: "client.workspaceSettings.appearance.785d65", icon: Type },
@@ -54,6 +65,7 @@ export function GuiAutoSwitchSettingsDialog({
   };
   const panels = {
     accounts: accountPanel(),
+    home: tab === "home" && <AgentHubHomeSettings client={client ? client.home : localHome} />,
     context: tab === "context" && <GuiModelContextSettings api={client?.context} />,
     messages: <GuiMessageSettings />,
     appearance: <GuiAppearanceSettings />,
@@ -68,7 +80,7 @@ export function GuiAutoSwitchSettingsDialog({
       <div><span>{uiText("client.workspaceSettings.codexGuiSettings")}</span><p>{uiText("client.workspaceSettings.makeCodexGuiWorkTheWayYouLike")}</p></div></div>}
     onCancel={onClose} closable={!editor.saving} maskClosable={!editor.saving} keyboard={!editor.saving}
     footer={<div className={styles.footer}>
-      <span className={styles.saveHint} data-dirty={editor.dirty}>
+      <span style={{ visibility: tab === "home" && !editor.dirty ? "hidden" : undefined }} className={styles.saveHint} data-dirty={editor.dirty}>
         <Circle size={7} fill="currentColor" aria-hidden="true" />
         {uiText(editor.dirty ? "client.guiSettings.accountSettingsHaveUnsavedChanges" : tab === "accounts"
           ? "client.guiSettings.clickSaveToApplyAccountChanges" : "client.guiSettings.changesOnThisPageSaveAutomatically")}</span>

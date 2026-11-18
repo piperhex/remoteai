@@ -24,6 +24,8 @@ async function readAccounts(): Promise<GuiSettingsAccounts> {
 /** The authenticated connection can access only these GUI settings, never arbitrary host commands. */
 export function guiSettingsRequest(body: Record<string, unknown>): Promise<unknown> {
   switch (body.operation) {
+    case 'guiHomeRead': return invoke('agent_hub_home');
+    case 'guiHomeChange': return invoke('change_agent_hub_home', { change: body.change });
     case 'guiSettingsAccounts': return readAccounts();
     case 'guiAutoSwitchRead': return invoke('codex_gui_auto_switch_settings');
     case 'guiAutoSwitchWrite': return invoke('codex_gui_set_auto_switch_settings', { settings: body.settings });

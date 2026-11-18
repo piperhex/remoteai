@@ -3,6 +3,7 @@ import previewImage from '../src-tauri/icons/32x32.png?inline';
 import { saveGuiFontSize } from '../../../shared/conversation/guiAppearance';
 import { applyThemeMode } from '../src/utils/themeMode';
 import { saveGlobalFontSize } from '../../../shared/appearance/fontSize';
+import { demoProjectDirectories } from './demo-project-directories';
 import { demoGuiSettings } from './gui-settings-fixture';
 import { conversationSyncFixture } from '../../../shared/testing/conversationSyncFixture';
 import type { SyncRequest } from '../../../shared/conversation/sync/types';
@@ -14,6 +15,7 @@ if (parameters.has('font')) saveGlobalFontSize(Number(parameters.get('font')));
 if (parameters.has('dark')) applyThemeMode('dark');
 const syncFixture = conversationSyncFixture(new URLSearchParams());
 const localSettingsOperations: Record<string, string> = {
+  agent_hub_home: 'guiHomeRead', change_agent_hub_home: 'guiHomeChange',
   codex_gui_auto_switch_settings: 'guiAutoSwitchRead', codex_gui_set_auto_switch_settings: 'guiAutoSwitchWrite',
   codex_gui_model_context_settings: 'guiModelContextRead', codex_gui_set_model_context: 'guiModelContextWrite',
   codex_gui_system_prompt_settings: 'guiSystemPromptsRead',
@@ -43,6 +45,10 @@ type NativeArgs = { request: { clientId: string; deviceId: string; publicKey: st
 
 async function invoke(command: string, args: NativeArgs) {
   commands.push(command);
+  if (command === 'codex_gui_request') {
+    const input = args.request as unknown as Record<string, unknown>;
+    if (input.operation === 'projectDirectories') return { data: demoProjectDirectories(input) };
+  }
   if (localSettingsOperations[command]) return demoGuiSettings({ ...args,
     operation: localSettingsOperations[command] })?.value;
   if (command === 'codex_conversation_sync') {

@@ -541,6 +541,8 @@ pub fn run() {
             commands::open_managed_folder,
             codex_home::set_codex_home,
             codex_home::set_codex_homes,
+            codex_home::location::agent_hub_home,
+            codex_home::location::change_agent_hub_home,
             commands::list_accounts,
             commands::copy_account_auth_json,
             commands::import_auth_file,

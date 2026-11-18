@@ -25,3 +25,18 @@ for (const mode of ['local', 'remote']) {
     });
   }
 }
+
+for (const mode of ['local', 'remote']) {
+  test(mode + ': previous Agent Hub folder remains a selectable synchronization source', async ({ page }, info) => {
+    await page.goto('/e2e/conversation-sync-harness.html?previousHome=1&mode=' + mode);
+    const pane = page.getByRole('region', { name: '对话同步', exact: true });
+    await pane.getByRole('combobox', { name: '来源目录' }).press('ArrowDown');
+    const option = page.locator('.ant-select-item-option').filter({ hasText: '旧目录 · 当前未使用' }).last();
+    await option.click();
+    await expect(pane.locator('.ant-select-selection-item').first()).toContainText('D:/AgentHub/Archive/.codex');
+    await expect.poll(() => page.evaluate(() => (Reflect.get(window, 'syncCalls') as {
+      request: { action: string; homeId?: string } }[]).some(call => call.request.action === 'list'
+        && call.request.homeId === 'previous:fixture'))).toBe(true);
+    await page.screenshot({ path: info.outputPath(mode + '-previous-source.png'), animations: 'disabled' });
+  });
+}

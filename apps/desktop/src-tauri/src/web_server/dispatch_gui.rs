@@ -65,6 +65,10 @@ fn dispatch_gui_command(app: AppHandle, command: &str, args: Value) -> Result<Va
                 app, argument(&args, "threadId")?, argument(&args, "selection")?,
             ),
         )),
+        "agent_hub_home" => serialize(block_on(crate::codex_home::location::agent_hub_home(app))),
+        "change_agent_hub_home" => serialize(block_on(crate::codex_home::location::change_agent_hub_home(
+            app, argument(&args, "change")?,
+        ))),
         "codex_gui_auto_switch_settings" => serialize(block_on(
             codex_gui::auto_switch_settings::codex_gui_auto_switch_settings(app),
         )),

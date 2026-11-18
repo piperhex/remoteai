@@ -59,6 +59,7 @@ pub(crate) mod model_settings;
 pub(crate) mod notification_navigation;
 mod notifications;
 mod platform;
+pub(crate) use platform::execution_path;
 pub(crate) mod plugin_client;
 mod prediction;
 mod prediction_transport;

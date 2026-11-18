@@ -328,6 +328,18 @@ fn remote_duplicates_can_be_skipped_before_any_payload_is_received() {
 }
 
 #[test]
+fn changing_home_after_preview_does_not_redirect_the_transfer() {
+    let source = source();
+    let target = self::source();
+    let other = self::source();
+    let mut entry = planned_transfer(&source, false);
+    planning::preview_ids(&target.home, &mut entry, HashSet::from([THREAD.into()])).unwrap();
+    let result =
+        planning::commit_at_target(&other.home, &mut entry, vec![], MigrationModelProvider::Gui);
+    assert_eq!(result.unwrap_err(), CHANGED);
+}
+
+#[test]
 fn archive_identity_must_match_the_conversations_confirmed_before_transfer() {
     let source = source();
     let target = self::source();

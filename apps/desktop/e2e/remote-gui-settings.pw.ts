@@ -9,7 +9,12 @@ import type {} from './remote-gui-native-fixture';
 let server: WebSocketServer;
 let endpoint: string;
 
-test.beforeEach(async () => {
+test.beforeEach(async ({ context }) => {
+  // This browser-hosted IPC fixture has no native RTC process. Negotiate a real Chromium data channel.
+  await context.route('**/src/nativeRtc/connection.ts*', route => route.fulfill({
+    contentType: 'application/javascript',
+    body: 'export const createNativeRtcConnection = configuration => new RTCPeerConnection(configuration);',
+  }));
   const sessions = new ChatSessionsFixture();
   server = new WebSocketServer({ port: 0, host: '127.0.0.1' });
   await once(server, 'listening');
@@ -40,11 +45,11 @@ async function chooseHost(page: Page, name: string) {
 async function openSettings(page: Page) {
   await page.getByRole('button', { name: /^切换 GUI 账户：/ }).click();
   await expect(page.getByRole('button', { name: '刷新账户列表', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Codex GUI 设置', exact: true }).click();
+  await page.getByRole('button', { name: 'Agent Hub 设置', exact: true }).click();
   await expect(page.getByRole('switch', { name: '自动切换账号', exact: true })).toBeVisible();
 }
 
-const dialog = (page: Page) => page.getByRole('dialog', { name: /Codex GUI 设置/ });
+const dialog = (page: Page) => page.getByRole('dialog', { name: /Agent Hub 设置/ });
 const closeSettings = (page: Page) => dialog(page).getByRole('button', { name: 'Close', exact: true }).click();
 
 async function verifyBounds(page: Page) {
@@ -87,9 +92,9 @@ for (const scenario of [
       await chooseHost(page, 'Office PC');
       await expect(page.locator('.gui-remote-workspace:visible .chat-connection-status'))
         .toContainText(scenario.blocked ? 'Relay' : 'P2P', { timeout: 20_000 });
-      const navigation = page.getByRole('navigation', { name: 'Codex GUI 导航' });
+      const navigation = page.getByRole('navigation', { name: 'Agent Hub 导航' });
       await expect(navigation.getByRole('button')).toHaveText(['新对话', '对话同步']);
-      await expect(page.locator('.chat-header').getByRole('button', { name: 'Codex GUI 设置' })).toHaveCount(0);
+      await expect(page.locator('.chat-header').getByRole('button', { name: 'Agent Hub 设置' })).toHaveCount(0);
       await navigation.getByRole('button', { name: '对话同步' }).click();
       await expect(navigation.getByRole('button', { name: '对话同步' })).toHaveAttribute('aria-current', 'page');
       await expect(page.getByRole('region', { name: '对话同步', exact: true })).toBeVisible();
@@ -101,10 +106,10 @@ for (const scenario of [
       await expect(page.getByRole('region', { name: '对话同步', exact: true })).toHaveCount(0);
       await expect(page.getByRole('textbox', { name: '聊天消息', exact: true })).toBeVisible();
       await page.getByRole('button', { name: /^切换 GUI 账户：/ }).click();
-      await page.getByRole('button', { name: 'Codex GUI 设置', exact: true }).click({ trial: true });
+      await page.getByRole('button', { name: 'Agent Hub 设置', exact: true }).click({ trial: true });
       await page.screenshot({ path: info.outputPath('desktop-remote-account-menu.png'), animations: 'disabled' });
-      await page.getByRole('button', { name: 'Codex GUI 设置', exact: true }).click();
-      await expect(page.getByRole('tab')).toHaveText(['自动切号', '上下文', '消息发送', '界面', '系统提示词']);
+      await page.getByRole('button', { name: 'Agent Hub 设置', exact: true }).click();
+      await expect(page.getByRole('tab')).toHaveText(['自动切号', '数据目录', '上下文', '消息发送', '界面', '系统提示词']);
       await expect(dialog(page).locator('.ant-modal-title')).toHaveCSS('font-size', localTitleSize);
       await expect(dialog(page).getByRole('tab', { name: '界面', exact: true }).locator('span').first())
         .toHaveCSS('font-size', localNavigationSize);
@@ -160,3 +165,38 @@ for (const scenario of [
       expect(errors).toEqual([]);
     });
 }
+
+test('manage the Agent Hub data folder on the selected host', async ({ context, page }, info) => {
+  test.setTimeout(100_000);
+  const host = await context.newPage();
+  await host.goto('/e2e/chat-harness.html?role=desktop&demo&device=computer-one&socket=' + encodeURIComponent(endpoint));
+  await expect(host.locator('#status')).toHaveText('registered');
+  await page.setViewportSize({ width: 1280, height: 850 });
+  await page.goto('/e2e/remote-gui-harness.html?settings&socket=' + encodeURIComponent(endpoint));
+  for (const mode of ['local', 'remote']) {
+    if (mode === 'remote') {
+      await chooseHost(page, 'Office PC');
+      await expect(page.locator('.gui-remote-workspace:visible .chat-connection-status')).toContainText(/P2P|Relay/, { timeout: 25_000 });
+    }
+    await openSettings(page);
+    await dialog(page).getByRole('tab', { name: '数据目录' }).click();
+    await expect(dialog(page).getByText('D:/AgentHub/.codex', { exact: true })).toBeVisible();
+    await page.screenshot({ path: info.outputPath(mode + '-folders.png'), animations: 'disabled' });
+    await dialog(page).getByRole('button', { name: '选择新目录' }).click();
+    const picker = page.getByRole('dialog', { name: '选择新目录', exact: true });
+    await picker.getByRole('option', { name: /WorkData/ }).click();
+    await page.screenshot({ path: info.outputPath(mode + '-picker.png'), animations: 'disabled' });
+    await picker.getByRole('button', { name: '选择文件夹', exact: true }).click();
+    await expect(dialog(page).getByRole('radio', { name: '复制当前目录的数据' })).toBeChecked();
+    if (mode === 'remote') await dialog(page).getByRole('radio', { name: '从空目录开始' }).check();
+    await page.screenshot({ path: info.outputPath(mode + '-confirm.png'), animations: 'disabled' });
+    await dialog(page).getByRole('button', { name: '确认更换' }).click();
+    await expect(dialog(page).getByText('下次启动时使用：D:/AgentHub/WorkData')).toBeVisible();
+    await dialog(page).getByRole('button', { name: '撤销更换' }).click();
+    await dialog(page).getByRole('button', { name: '切回此目录' }).click();
+    await expect(dialog(page).getByRole('radio')).toHaveCount(0);
+    await dialog(page).getByRole('button', { name: '确认更换' }).click();
+    await expect(dialog(page).getByText(/下次启动时使用：C:/)).toBeVisible();
+    await closeSettings(page);
+  }
+});
