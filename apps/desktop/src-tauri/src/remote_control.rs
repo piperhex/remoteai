@@ -29,6 +29,10 @@ enum ServerMessage {
         command_id: String,
         action: crate::platform::screen_power::Action,
     },
+    ScreenPowerStatus {
+        #[serde(rename = "commandId")]
+        command_id: String,
+    },
     AccountUsage {
         #[serde(rename = "commandId")]
         command_id: String,
@@ -151,7 +155,7 @@ fn run_connection<R: Runtime>(
         capabilities.push("remote-command");
     }
     #[cfg(windows)]
-    capabilities.push("screen-power");
+    capabilities.extend(["screen-power", "screen-power-status"]);
     socket
         .send(Message::Text(
             json!({
@@ -210,6 +214,12 @@ fn run_connection<R: Runtime>(
                         let result = crate::platform::screen_power::set(action)
                             .map_err(|_| "client.deviceScreen.failed".to_owned());
                         send_command_result(&mut socket, command_id, result, "Screen power")?;
+                    }
+                    ServerMessage::ScreenPowerStatus { command_id } => {
+                        let result = crate::platform::screen_power::state()
+                            .map(|state| json!({ "state": state }))
+                            .map_err(|_| "client.deviceScreen.failed".to_owned());
+                        send_command_reply(&mut socket, command_id, result, "Screen power status")?;
                     }
                     ServerMessage::AccountUsage {
                         command_id,
@@ -420,12 +430,32 @@ fn send_command_result(
     result: Result<(), String>,
     context: &str,
 ) -> Result<(), String> {
+    send_command_reply(
+        socket,
+        command_id,
+        result.map(|()| serde_json::Value::Null),
+        context,
+    )
+}
+
+fn send_command_reply(
+    socket: &mut WebSocket<MaybeTlsStream<TcpStream>>,
+    command_id: String,
+    result: Result<serde_json::Value, String>,
+    context: &str,
+) -> Result<(), String> {
     let response = match result {
-        Ok(()) => json!({
-            "type": "switch-result",
-            "commandId": command_id,
-            "success": true,
-        }),
+        Ok(data) => {
+            let mut reply = json!({
+                "type": "switch-result",
+                "commandId": command_id,
+                "success": true,
+            });
+            if !data.is_null() {
+                reply["data"] = data;
+            }
+            reply
+        }
         Err(error) => json!({
             "type": "switch-result",
             "commandId": command_id,

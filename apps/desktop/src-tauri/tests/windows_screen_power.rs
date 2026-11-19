@@ -119,6 +119,18 @@ fn wait_for(state: u32) {
 }
 
 #[test]
+#[ignore = "reads the display status of the interactive Windows session"]
+fn reads_current_monitor_state_without_a_power_command() {
+    let _observer = PowerObserver::new();
+    let state = screen_power::state().expect("current Windows display state");
+    match DISPLAY_STATE.load(Ordering::SeqCst) {
+        0 => assert_eq!(state, screen_power::DisplayState::Off),
+        1 | 2 => assert_eq!(state, screen_power::DisplayState::On),
+        value => panic!("unknown Windows display state: {value}"),
+    }
+}
+
+#[test]
 #[ignore = "switches physical monitors off/on; requires an interactive Windows session without user input"]
 fn restored_monitor_stays_on() {
     let _observer = PowerObserver::new();

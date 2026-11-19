@@ -30,6 +30,10 @@ fn remote_commands_accept_configured_and_legacy_concurrency_limits() {
 
 #[test]
 fn parses_monitor_power_without_a_desktop_session() {
+    assert!(matches!(
+        serde_json::from_str(r#"{"type":"screen-power-status","commandId":"status-1"}"#).unwrap(),
+        ServerMessage::ScreenPowerStatus { command_id } if command_id == "status-1"
+    ));
     let message = serde_json::from_str::<ServerMessage>(
         r#"{"type":"screen-power","commandId":"screen-1","action":"off"}"#,
     )

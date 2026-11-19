@@ -1,5 +1,5 @@
 //! Explicit display power ownership outlives capture leases and display topology changes.
-use super::{Action, Error};
+use super::{Action, DisplayState, Error};
 use ::windows::{
     core::{w, GUID},
     Win32::{
@@ -24,7 +24,8 @@ use ::windows::{
 };
 use std::{
     ffi::c_void,
-    sync::{mpsc, OnceLock},
+    sync::{mpsc, Condvar, Mutex, OnceLock},
+    time::Duration,
 };
 
 const CONSOLE_DISPLAY_STATE: GUID = GUID::from_u128(0x6fe69556_704a_47a0_8f24_c28d936fda47);
@@ -32,6 +33,9 @@ const OFF_EVENT: ::windows::core::PCWSTR = w!("Local\\RemoteAI.ScreenPower.Off")
 const COMMAND_TIMEOUT_MS: u32 = 2_000;
 const MONITOR_OFF: isize = 2;
 static CONTROLLER: OnceLock<Result<mpsc::Sender<Message>, Error>> = OnceLock::new();
+static DISPLAY_STATE: Mutex<Option<DisplayState>> = Mutex::new(None);
+static DISPLAY_CHANGED: Condvar = Condvar::new();
+const INITIAL_STATE_TIMEOUT: Duration = Duration::from_millis(750);
 
 enum Message {
     Set(Action, mpsc::SyncSender<Result<(), Error>>),
@@ -39,15 +43,28 @@ enum Message {
 }
 
 pub(super) fn set(action: Action) -> Result<(), Error> {
-    let sender = CONTROLLER
-        .get_or_init(start)
-        .as_ref()
-        .map_err(|_| Error::Unavailable)?;
+    let sender = controller()?;
     let (reply, response) = mpsc::sync_channel(1);
     sender
         .send(Message::Set(action, reply))
         .map_err(|_| Error::Unavailable)?;
     response.recv().map_err(|_| Error::Unavailable)?
+}
+
+fn controller() -> Result<&'static mpsc::Sender<Message>, Error> {
+    CONTROLLER
+        .get_or_init(start)
+        .as_ref()
+        .map_err(|_| Error::Unavailable)
+}
+
+pub(super) fn state() -> Result<DisplayState, Error> {
+    controller()?;
+    let state = DISPLAY_STATE.lock().map_err(|_| Error::Unavailable)?;
+    let (state, _) = DISPLAY_CHANGED
+        .wait_timeout_while(state, INITIAL_STATE_TIMEOUT, |state| state.is_none())
+        .map_err(|_| Error::Unavailable)?;
+    state.ok_or(Error::Unavailable)
 }
 
 pub(super) fn is_off() -> bool {
@@ -212,7 +229,16 @@ unsafe extern "system" fn power_changed(
         return 0;
     }
     // SAFETY: the length-checked trailing DWORD may be unaligned.
-    if unsafe { setting.Data.as_ptr().cast::<u32>().read_unaligned() } == 0 {
+    let state = match unsafe { setting.Data.as_ptr().cast::<u32>().read_unaligned() } {
+        0 => DisplayState::Off,
+        1 | 2 => DisplayState::On,
+        _ => return 0,
+    };
+    if let Ok(mut observed) = DISPLAY_STATE.lock() {
+        *observed = Some(state);
+        DISPLAY_CHANGED.notify_all();
+    }
+    if state == DisplayState::Off {
         return 0;
     }
     // SAFETY: the registration retains this heap-stable sender until unregistration succeeds.

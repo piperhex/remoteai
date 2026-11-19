@@ -1,5 +1,5 @@
 //! Physical monitor power commands do not open, capture, or lock the desktop.
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[cfg(windows)]
 #[path = "screen_power/windows.rs"]
@@ -8,6 +8,13 @@ mod windows;
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum Action {
+    Off,
+    On,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub(crate) enum DisplayState {
     Off,
     On,
 }
@@ -27,6 +34,13 @@ pub(crate) fn set(action: Action) -> Result<(), Error> {
         let _ = action;
         Err(Error::Unavailable)
     }
+}
+
+pub(crate) fn state() -> Result<DisplayState, Error> {
+    #[cfg(windows)]
+    return windows::state();
+    #[cfg(not(windows))]
+    Err(Error::Unavailable)
 }
 
 /// Read-only across the interactive host, privileged capture worker and privacy guardian.
