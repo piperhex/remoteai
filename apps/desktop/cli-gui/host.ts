@@ -4,10 +4,11 @@ import { CliRuntime } from './runtime';
 import { CliService } from './service';
 import type { CliChange, CliRequest } from '../../../shared/cli-gui/types';
 import { coalesceCliChanges } from '../../../shared/cli-gui/changes';
+import { MAX_FRAME_BYTES, workerFrame } from './workerFrame';
 
 const root = process.argv[2];
 if (!root || !isAbsolute(root) || Number(process.versions.node.split('.')[0]) < 22) process.exit(1);
-const write = (value: object) => process.stdout.write(`${JSON.stringify(value)}\n`);
+const write = (value: object) => process.stdout.write(workerFrame(value));
 let timer: ReturnType<typeof setTimeout> | undefined;
 let changes: CliChange[] = [];
 const changed = (change: CliChange = { runtime: true }) => {
@@ -23,7 +24,7 @@ const input = createInterface({ input: process.stdin, crlfDelay: Infinity });
 
 async function execute(line: string) {
   // Match the control-channel envelope: images are prepared before entering this worker.
-  if (line.length > 8 * 1024 * 1024) return;
+  if (line.length > MAX_FRAME_BYTES) return;
   let id: unknown;
   try {
     const frame = JSON.parse(line) as { id: number; request: CliRequest };

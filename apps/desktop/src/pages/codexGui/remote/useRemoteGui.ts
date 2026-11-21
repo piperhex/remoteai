@@ -38,6 +38,7 @@ export function useRemoteGui(identity: GuiCloudIdentity, deviceId: string, activ
   controller.deferProcessDetails = true;
   const state = useSyncExternalStore(controller.subscribe, controller.snapshot);
   useActiveChatPolicy(active, state.mode);
+  useEffect(() => { controller.setHistoryActive(active); }, [controller, active]);
   useEffect(() => { controller.start(); return () => controller.stop(); }, [controller]);
   useEffect(() => {
     if (!active || !state.ready) return;

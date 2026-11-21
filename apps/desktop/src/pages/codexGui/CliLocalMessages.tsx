@@ -6,7 +6,7 @@ import { Messages } from './Messages';
 import { RunningChangesSummary } from './RunningChangesSummary';
 
 /** Keep the local GUI's welcome, message viewport and sticky composer for every engine. */
-export function CliLocalMessages({ history, selected, footer, active, loadOlder }: CliMessagesProps) {
+export function CliLocalMessages({ history, selected, footer, active, loadOlder, showLatest }: CliMessagesProps) {
   const value = useMemo<Conversation | undefined>(() => {
     const thread = cliThread(history);
     if (!thread || !history) return undefined;
@@ -17,5 +17,5 @@ export function CliLocalMessages({ history, selected, footer, active, loadOlder 
   }, [history]);
   return <Messages selected={selected} value={value} active={active} canUndoChanges={false}
     footer={<><RunningChangesSummary value={value} />{footer}</>}
-    onLoadOlder={async () => { await loadOlder(); return undefined; }} />;
+    onShowLatest={showLatest} onLoadOlder={async () => { await loadOlder(); return undefined; }} />;
 }

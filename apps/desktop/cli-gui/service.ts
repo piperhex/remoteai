@@ -8,6 +8,8 @@ import { claudeAccountEnvironment, selectedClaudeAccount } from './claudeAccount
 import { cliRequestEffort } from '../../../shared/cli-gui/modelSelection';
 import { cliImages, CliImages } from './images';
 import { CliImageHistory } from './imageHistory';
+import { boundedCliHistory } from '../../../shared/cli-gui/historyWindow';
+import { CliDetailTransfers } from './detailTransfers';
 
 const OWNERSHIP = { remoteai: 'cli-gui' };
 const HISTORY_PAGE_SIZE = 100;
@@ -24,6 +26,7 @@ export class CliService {
   private images: CliImages;
   private imageHistory: CliImageHistory;
   private readonly directory: CliDirectory;
+  private readonly detailTransfers = new CliDetailTransfers();
   constructor(readonly runtime: Pick<CliRuntime, 'root' | 'status' | 'install' | 'connect' | 'close' | 'accountBridge'>,
     private changed: (change?: CliChange) => void) {
     this.directory = new CliDirectory({ session: (agent, engine) => this.session(agent, engine), changed });
@@ -44,6 +47,7 @@ export class CliService {
   }
 
   private async execute(request: CliRequest) {
+    if (request.action === 'read' && request.detailChunk) return this.detailTransfers.read(request);
     const client = await this.runtime.connect();
     if (request.action === 'syncList') return this.directory.request(client, request);
     if (request.action === 'catalog') {
@@ -254,15 +258,19 @@ export class CliService {
     this.changed({ engine, id: agent.id, history: true });
   }
 
-  private async read(client: PaseoClient, request: Extract<CliRequest, { action: 'read' }>): Promise<CliHistory> {
+  private async read(client: PaseoClient, request: Extract<CliRequest, { action: 'read' }>) {
     const agent = await this.owned(client, request.engine, request.id);
     if (!agent.archivedAt) await this.watch(agent);
     const page = await agent.timeline.refetch({ direction: request.cursor ? 'before' : undefined,
       cursor: request.cursor, limit: HISTORY_PAGE_SIZE, projection: 'projected' });
     if (page.error || !page.agent) throw new Error('client.cliGui.historyFailed');
-    return { session: await this.session(page.agent, request.engine),
-      entries: await this.imageHistory.entries(agent, page),
+    const entries = await this.imageHistory.entries(agent, page);
+    const history: CliHistory = { session: await this.session(page.agent, request.engine), entries,
       cursor: page.startCursor ?? undefined, hasOlder: page.hasOlder };
+    if (!request.detailId) return request.previews ? boundedCliHistory(history).history : history;
+    const item = entries.find(entry => entry.id === request.detailId);
+    if (!item) throw new Error('client.cliGui.historyFailed');
+    return this.detailTransfers.open(request, history, item);
   }
 
   private async approve(agent: PaseoAgentHandle, request: Extract<CliRequest, { action: 'approve' }>) {
@@ -278,6 +286,7 @@ export class CliService {
   }
 
   async close() {
+    this.detailTransfers.close();
     this.directory.close();
     for (const unsubscribe of this.watches.values()) unsubscribe();
     this.watches.clear();

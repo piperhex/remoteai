@@ -31,6 +31,7 @@ export function createCliGuiFixture(ready = true, options: { manualInstall?: boo
     updatedAt: '2026-11-10T08:00:00Z', status: 'idle', archived: false, permissions: [],
   }));
   const entries = new Map<string, CliHistory['entries']>();
+  const olderPages = new Map<string, CliHistory['entries']>();
   for (const session of sessions) entries.set(session.id, [
     { id: '1', first: 1, last: 1, role: 'user', text: session.title },
     { id: '2', first: 2, last: 2, role: 'assistant', text: '已读取项目说明。接下来会检查共享组件和现有测试。' },
@@ -84,7 +85,7 @@ export function createCliGuiFixture(ready = true, options: { manualInstall?: boo
     if (!session) throw new Error('client.cliGui.invalidRequest');
     if (input.action === 'image') return images.get(`${session.id}:${input.source}`);
     if (input.action === 'read') return { session: structuredClone(session), entries: input.cursor
-      ? [{ id: '0', first: 0, last: 0, role: 'assistant', text: '更早的项目讨论已恢复。' }]
+      ? olderPages.get(session.id) ?? [{ id: '0', first: 0, last: 0, role: 'assistant', text: '更早的项目讨论已恢复。' }]
       : entries.get(session.id), cursor: { epoch: 'test', seq: input.cursor ? 0 : 1 }, hasOlder: !input.cursor };
     if (input.action === 'send') {
       const sources = input.images?.map((url, index) => {
@@ -109,8 +110,10 @@ export function createCliGuiFixture(ready = true, options: { manualInstall?: boo
     defaultReasoningEffort: 'high', supportedReasoningEfforts: [
       { reasoningEffort: 'medium', description: 'Medium' }, { reasoningEffort: 'high', description: 'High' },
     ] }];
-  const setHistory = (engine: 'claude' | 'gemini', items: CliHistory['entries'], status: string) => {
+  const setHistory = (engine: 'claude' | 'gemini', items: CliHistory['entries'], status: string,
+    older?: CliHistory['entries']) => {
     const session = sessions.find(value => value.id === `${engine}-history`)!;
+    if (older) olderPages.set(session.id, older);
     session.status = status; entries.set(session.id, items); notify();
   };
   return { transport, calls, accounts, models, setInstallProgress, finishInstall, setHistory, setCatalog };

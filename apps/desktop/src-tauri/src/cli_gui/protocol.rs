@@ -48,6 +48,12 @@ enum Action {
     Read {
         id: String,
         cursor: Option<Cursor>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        previews: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        detail_id: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        detail_chunk: Option<DetailChunk>,
     },
     Send {
         id: String,
@@ -80,6 +86,13 @@ enum Action {
 struct Cursor {
     epoch: String,
     seq: u64,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct DetailChunk {
+    token: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    offset: Option<u64>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -173,8 +186,23 @@ impl Request {
                     bounded(effort, 50)?;
                 }
             }
-            Action::Read { id, cursor } => {
+            Action::Read {
+                id,
+                cursor,
+                detail_id,
+                detail_chunk,
+                previews,
+            } => {
                 bounded(id, 200)?;
+                if let Some(detail_id) = detail_id {
+                    bounded(detail_id, 256)?;
+                }
+                if let Some(chunk) = detail_chunk {
+                    if detail_id.is_none() || *previews == Some(true) {
+                        return Err(Error::Invalid);
+                    }
+                    bounded(&chunk.token, 200)?;
+                }
                 if let Some(cursor) = cursor {
                     bounded(&cursor.epoch, 200)?;
                 }
@@ -327,6 +355,49 @@ mod tests {
         let request: Request = serde_json::from_value(value).unwrap();
         let serialized = serde_json::to_value(request.validate().unwrap()).unwrap();
         assert_eq!(serialized["actionId"], "allow-once:exact");
+    }
+
+    #[test]
+    fn forwards_history_previews_and_exact_detail_reads_to_the_worker() {
+        let read =
+            json!({"engine":"claude","action":"read","id":"agent","cursor":{"epoch":"e","seq":7}});
+        for (field, value) in [("previews", json!(true)), ("detailId", json!("entry-7"))] {
+            let mut body = read.clone();
+            body[field] = value;
+            let request: Request = serde_json::from_value(body.clone()).unwrap();
+            assert_eq!(
+                serde_json::to_value(request.validate().unwrap()).unwrap(),
+                body
+            );
+        }
+        let request: Request = serde_json::from_value(read.clone()).unwrap();
+        assert_eq!(
+            serde_json::to_value(request.validate().unwrap()).unwrap(),
+            read
+        );
+    }
+
+    #[test]
+    fn forwards_chunk_offsets_and_explicit_release_for_the_requested_history_entry() {
+        let read = json!({"engine":"gemini","action":"read","id":"agent","cursor":null,"detailId":"entry"});
+        for part in [
+            json!({"token":"lease","offset":0}),
+            json!({"token":"lease"}),
+        ] {
+            let mut body = read.clone();
+            body["detailChunk"] = part;
+            let request: Request = serde_json::from_value(body.clone()).unwrap();
+            assert_eq!(
+                serde_json::to_value(request.validate().unwrap()).unwrap(),
+                body
+            );
+        }
+        let invalid =
+            json!({"engine":"gemini","action":"read","id":"agent","detailChunk":{"token":"lease"}});
+        assert!(serde_json::from_value::<Request>(invalid)
+            .unwrap()
+            .validate()
+            .is_err());
     }
 
     #[test]

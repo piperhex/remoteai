@@ -48,6 +48,7 @@ beforeEach(async () => {
   websitePreviewApi.sync.mockClear(); websitePreviewApi.close.mockClear();
   vi.mocked(invoke).mockImplementation(async (command, args) => {
     const data = args as { request?: object; id?: string };
+    if (command === 'browser_inspector') return { open: false, mobile: false };
     if (command === 'provider_browser_sync') websitePreviewApi.sync(data.request);
     if (command === 'provider_browser_close') websitePreviewApi.close(data.id);
     return undefined;

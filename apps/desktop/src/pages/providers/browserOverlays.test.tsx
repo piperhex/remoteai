@@ -17,6 +17,8 @@ const rect = { x: 600, y: 100, width: 600, height: 600 } as DOMRect;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  invoke.mockImplementation(async command => command === 'browser_inspector'
+    ? { open: false, mobile: false } : undefined);
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(rect);

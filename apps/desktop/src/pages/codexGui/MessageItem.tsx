@@ -9,6 +9,7 @@ import { RichText } from "../../../../../shared/conversation/RichText";
 import { MessageActions } from "./MessageActions";
 import { UserMessage } from "./UserMessage";
 import { useStreamingText } from "./useStreamingText";
+import { DeferredMessageBody } from '../../../../../shared/chat/DeferredMessageBody';
 import styles from "../../../../../shared/conversation/styles.module.less";
 
 function AgentMessage({ item, streaming, completedAt, onFork, forkDisabled }: {
@@ -44,6 +45,9 @@ export const MessageItem = memo(function MessageItem({ item, streaming, startedA
   completedAt?: number | null; onFork?: () => void; forkDisabled?: boolean;
 }) {
   useGuiLanguage();
+  if (item.deferredBody) return <DeferredMessageBody item={item}>{full =>
+    <MessageItem item={full} streaming={streaming} startedAt={startedAt} completedAt={completedAt} />}
+  </DeferredMessageBody>;
   if (item.type === "modelChange") return <ModelChangeNotice item={item} />;
   if (item.type === "userMessage") return <ViewportContent>{() => <UserMessage item={item} startedAt={startedAt}
     onEdit={onEdit} onDelete={onDelete} editDisabled={editDisabled} />}</ViewportContent>;

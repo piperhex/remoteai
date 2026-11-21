@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { CliController } from '../../../shared/cli-gui/controller';
+import { HISTORY_CONTENT_CHARS, HISTORY_ENTRY_LIMIT, historyChars } from '../../../shared/chat/historyBudget';
 import type { CliEntry, CliHistory, CliRequest, CliSession, CliTransport } from '../../../shared/cli-gui/types';
 
 const session: CliSession = { id: 'chat', engine: 'claude', title: 'chat', cwd: '', model: 'test',
@@ -34,6 +35,50 @@ function setup() {
 }
 
 describe('CLI history pagination races', () => {
+  it('moves the live cursor through 10,000 entries and can read older pages past the resident boundary', async () => {
+    const { controller, refresh, page, nextPage } = setup();
+    let newest = history([]);
+    for (let i = 0; i < 100; i++) {
+      newest = history(Array.from({ length: 100 }, (_, offset) => entry(100 * i + offset, String(i))));
+      await refresh(newest);
+    }
+    expect(controller.getSnapshot().history?.entries).toEqual(newest.entries);
+    const read = controller.loadOlder();
+    page.resolve(history(Array.from({ length: HISTORY_ENTRY_LIMIT }, (_, i) => entry(9500 + i, 'old'))));
+    await read;
+    expect(controller.getSnapshot().olderView?.entries[0].first).toBe(9500);
+    const next = nextPage();
+    const second = controller.loadOlder();
+    next.resolve(history([entry(9499, 'previous page')]));
+    await second;
+    expect(controller.getSnapshot().olderView?.entries[0].first).toBe(9499);
+    expect(controller.getSnapshot().olderView?.entries).toHaveLength(HISTORY_ENTRY_LIMIT);
+    controller.showLatest();
+    expect(controller.getSnapshot().olderView).toBeUndefined();
+    expect(controller.getSnapshot().history?.entries).toEqual(newest.entries);
+  });
+
+  it.each(['assistant', 'tool'] as const)('reads the entire oversized %s entry on demand', async role => {
+    const { controller, refresh, page } = setup();
+    const source = { ...entry(10, 'z'.repeat(16 * 1024 * 1024)), role };
+    await refresh(history([source]));
+    const preview = controller.getSnapshot().history!;
+    expect(historyChars(preview)).toBeLessThan(HISTORY_CONTENT_CHARS);
+    const reading = controller.loadToolDetails({ threadId: session.id, turnId: source.id, itemId: source.id });
+    page.resolve(history([source]));
+    expect((await reading).item[role === 'assistant' ? 'text' : 'aggregatedOutput']).toBe(source.text);
+  });
+
+  it('preserves the expanded reading window when a live burst moves beyond the visible pages', async () => {
+    const { controller, page, refresh } = setup();
+    const read = controller.loadOlder();
+    page.resolve(history([entry(1, 'earlier')]));
+    await read;
+    const expanded = controller.getSnapshot().history;
+    await refresh(history([entry(2000, 'latest')]));
+    expect(controller.getSnapshot().olderView).toBe(expanded);
+    expect(controller.getSnapshot().history?.entries[0].text).toBe('latest');
+  });
   it('merges into the completed refresh, retains new messages and deduplicates overlap', async () => {
     const { controller, page, refresh, calls } = setup();
     const reading = controller.loadOlder();

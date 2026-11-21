@@ -26,7 +26,7 @@ const EMPTY_TURNS: Turn[] = [];
 
 export function Messages({ value, selected, active = true, footer, pendingRequest, onQuote,
   onEdit, onDelete, editDisabled, editCwd, onFork, forkDisabled, retry, onCancelRetry, onLoadOlder,
-  canUndoChanges = true }: {
+  canUndoChanges = true, onShowLatest }: {
   value?: Conversation; selected: string | null; active?: boolean; footer?: ReactNode;
   pendingRequest?: PendingRequest;
   onQuote?: (quote: ReplyQuote) => boolean;
@@ -34,6 +34,7 @@ export function Messages({ value, selected, active = true, footer, pendingReques
   onDelete?: DeleteMessage;
   canUndoChanges?: boolean;
   onLoadOlder?: () => Promise<Turn[] | undefined>;
+  onShowLatest?: () => void;
   onFork?: (threadId: string, turnId: string) => Promise<boolean>; forkDisabled?: boolean;
 } & CapacityRetryControl) {
   const last = lastUserMessage(value);
@@ -102,7 +103,8 @@ export function Messages({ value, selected, active = true, footer, pendingReques
           {sending && <WorkingStatus key={`sending:${selected}`} active={active} pendingRequest={pendingRequest} />}
         </div>
         <div className={styles.messageFooter}>
-          {showJumpToLatest && <button type="button" className={styles.jumpToLatest} onClick={jumpToLatest}>
+          {(showJumpToLatest || onShowLatest) && <button type="button" className={styles.jumpToLatest}
+            onClick={() => { onShowLatest?.(); jumpToLatest(); }}>
             <ArrowDown size={15} />{uiText("client.conversation.jumpToLatestMessage")}</button>}
           {footer}
         </div>

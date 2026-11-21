@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { AttachmentExchange } from '../../../../shared/lounge/attachmentExchange';
 import { ATTACHMENT_CHUNK_BYTES, attachmentByteLimit, checkAttachmentSize, parseAttachments,
-  type LoungeAttachment } from '../../../../shared/lounge/attachments';
+  type AttachmentSource, type LoungeAttachment } from '../../../../shared/lounge/attachments';
 import { DEFAULT_CHAT_POLICY, setChatPolicy } from '../../../../shared/remote-chat/policy';
 import { hotLinkHarness } from '../remoteChat/hotLinkHarness';
 
@@ -66,15 +66,20 @@ it('streams ordered bounded chunks through relay, P2P, and relay recovery withou
 it('queues the next range while a previous response acknowledgement is still in flight', async () => {
   const content = Buffer.alloc(file.size, 42), chunks: Buffer[] = [];
   let source: AttachmentExchange, target: AttachmentExchange;
-  source = new AttachmentExchange({ fileId: file.id, source: () => ({ ...file,
-    read: async (offset, length) => content.subarray(offset, offset + length).toString('base64') }),
+  // Once the sender accepts the peer, deleting the conversation must not interrupt this download.
+  const readSource = vi.fn<() => AttachmentSource | undefined>().mockReturnValueOnce({ ...file,
+    read: async (offset, length) => content.subarray(offset, offset + length).toString('base64') });
+  source = new AttachmentExchange({ fileId: file.id, source: readSource,
     send: async message => { target.receive(message); await new Promise(resolve => setTimeout(resolve, 1)); } });
+  source.claimSource();
+  expect(readSource).toHaveBeenCalledOnce();
   target = new AttachmentExchange({ fileId: file.id, source: () => undefined,
     send: async message => { source.receive(message); } });
   try {
     await target.download(file, { write: async data => { chunks.push(Buffer.from(data, 'base64')); },
       finish: async () => '', abort: vi.fn() });
     expect(Buffer.concat(chunks)).toEqual(content);
+    expect(readSource).toHaveBeenCalledOnce();
   } finally { source.close(); target.close(); }
 });
 

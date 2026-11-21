@@ -7,6 +7,7 @@ import type { ChatConnection, ConnectionEvents } from '../../../../shared/remote
 import { applyHistoryDelta, historyVersion } from '../../../../shared/remote-chat/historySync';
 import { sliceHistory, type PagedHistoryDelta } from '../../../../shared/remote-chat/historyPage';
 import { EventStream } from './eventStream';
+import { UNSUPPORTED_OPERATION } from '../../../../shared/remote-chat/client/historyReader';
 
 vi.mock('../../../../shared/conversation/api', () => ({ guiApi: { connect: vi.fn(), request: vi.fn(), respond: vi.fn() } }));
 vi.mock('../api/backend', () => ({ invoke: vi.fn(), hasLocalBackend: false, isDesktopApp: false }));
@@ -60,7 +61,7 @@ it('keeps page anchors stable when new messages arrive and recovers from a delet
   expect(reset.thread.turns!.flatMap((turn) => turn.items)).toHaveLength(10);
 });
 
-async function connected(remote: Thread) {
+async function connected(remote: Thread, legacyDetails = false) {
   const operations = new ChatOperations();
   vi.mocked(guiApi.connect).mockResolvedValue([]);
   vi.mocked(guiApi.request).mockImplementation(async (request) => request.operation === 'read'
@@ -72,6 +73,9 @@ async function connected(remote: Thread) {
     handlers = events;
     return { start() { events.mode('relay'); events.ready(); }, stop() {},
       async request(method, body) {
+        if (legacyDetails && (body as { operation?: string })?.operation === 'historyItem') {
+          throw new Error(UNSUPPORTED_OPERATION);
+        }
         if ((body as { operation?: string })?.operation === 'models') return { data: [], nextCursor: null };
         const response = await operations.execute({ kind: 'request', id: String(++serial), method, body });
         if (response.error) throw new Error(response.error);
@@ -85,6 +89,35 @@ async function connected(remote: Thread) {
   return { controller, stream, emit: (event: GuiEvent) => stream.receive(operations.prepareEvent(event)) };
 }
 
+it.each([false, true])('keeps oversized replies readable on demand (legacy detail operation: %s)', async legacy => {
+  const text = 'x'.repeat(2 * 1024 * 1024);
+  const remote = conversation(2);
+  remote.turns![0].items[0].text = text;
+  const { controller, stream } = await connected(remote, legacy);
+  try {
+    await controller.select({ ...remote, turns: [] });
+    const preview = controller.snapshot().selected!.turns![0].items[0];
+    expect(preview.deferredBody).toBe(true);
+    expect(preview.text!.length).toBeLessThan(text.length);
+    expect((await controller.toolDetails(preview.detailsRef!)).item.text).toBe(text);
+    expect(controller.snapshot().selected!.turns![0].items[0]).toBe(preview);
+  } finally { controller.stop(); stream.close(); }
+});
+
+it('transfers a large original body only on an explicit direct detail read', async () => {
+  const text = 'x'.repeat(16 * 1024 * 1024);
+  const remote = conversation(2);
+  remote.turns![0].items[0].text = text;
+  vi.mocked(guiApi.request).mockResolvedValue({ thread: remote });
+  const host = new ChatOperations();
+  try {
+    const body = { operation: 'historyItem', threadId: remote.id, turnId: 'turn-0', itemId: 'item-0' };
+    const response = await host.execute({ kind: 'request', method: 'request', id: 'detail', body }, 'direct');
+    expect(response.error).toBeUndefined();
+    expect((response.data as { item: { text: string } }).item.text).toBe(text);
+  } finally { host.release(); }
+});
+
 it('keeps the selected history object when a poll has no changes', async () => {
   const remote = conversation(2);
   const { controller, stream } = await connected(remote);
@@ -93,6 +126,46 @@ it('keeps the selected history object when a poll has no changes', async () => {
     const selected = controller.snapshot().selected;
     await controller.refreshSelected();
     expect(controller.snapshot().selected).toBe(selected);
+  } finally { controller.stop(); stream.close(); }
+});
+
+it('advances the automatic cursor and reads older windows past the residency limit without losing the live tail', async () => {
+  const remote = conversation(0);
+  const items = (from: number, count: number) => Array.from({ length: count }, (_, index) =>
+    ({ id: String(index + from), type: 'agentMessage', text: String(index + from) }));
+  remote.turns![0].items = items(0, 100);
+  const { controller, stream } = await connected(remote);
+  try {
+    await controller.select({ ...remote, turns: [] });
+    remote.turns![0].items.push(...items(100, 1000));
+    await controller.refreshSelected();
+    expect(controller.snapshot().selected?.turns?.[0].items[0].id).toBe('1090');
+    for (let pull = 0; pull < 41; pull++) await controller.loadOlder();
+    const older = controller.snapshot().olderView!;
+    expect(older.thread.turns![0].items).toHaveLength(400);
+    expect(older.page.start?.itemId).toBe('680');
+    remote.turns![0].items.push(...items(1100, 1));
+    await controller.refreshSelected();
+    expect(controller.snapshot().olderView).toBe(older);
+    controller.showLatest();
+    expect(controller.snapshot().olderView).toBeUndefined();
+    expect(controller.snapshot().selected?.turns?.flatMap(turn => turn.items).at(-1)?.id).toBe('1100');
+  } finally { controller.stop(); stream.close(); }
+});
+
+it('keeps an explicitly expanded window while a burst moves the live cursor beyond its start', async () => {
+  const remote = conversation(35);
+  const { controller, stream } = await connected(remote);
+  try {
+    await controller.select({ ...remote, turns: [] });
+    await controller.loadOlder();
+    const expanded = controller.snapshot().selected;
+    remote.turns!.push({ id: 'burst', status: 'completed', items: Array.from({ length: 500 }, (_, i) =>
+      ({ id: String(i), type: 'agentMessage', text: String(i) })) });
+    await controller.refreshSelected();
+    expect(controller.snapshot().olderView?.thread).toBe(expanded);
+    controller.showLatest();
+    expect(controller.snapshot().selected?.turns?.at(-1)?.items.at(-1)?.id).toBe('499');
   } finally { controller.stop(); stream.close(); }
 });
 

@@ -18,6 +18,7 @@ import { parseHistoryVersion } from '../../../../shared/remote-chat/historySync'
 import { prepareBrowserHistoryDelta } from '../../../../shared/remote-chat/browserHistory';
 import { RemoteImages } from './images';
 import { parseHistoryWindow, sliceHistory, type HistoryPage } from '../../../../shared/remote-chat/historyPage';
+import { residentHistory, residentPage } from '../../../../shared/remote-chat/client/residentHistory';
 import { getChatPolicy } from '../../../../shared/remote-chat/policy';
 import { historyNotification } from '../../../../shared/remote-chat/historyNotification';
 import { LiveHistory } from './liveHistory';
@@ -99,6 +100,7 @@ function terminalLinkRequest(request: RpcRequest): Cached['terminalLink'] {
     action: udpActions[String(stream.type)] ?? stream.type };
 }
 const READ_OPERATIONS = new Set([
+  'historyItem',
   DIRECTORY_OPERATION,
   'recoveryList',
   'toolDetails',
@@ -210,7 +212,8 @@ export class ChatOperations {
       if (operation === SYNC_OPERATION && ['read', 'write', 'list', 'homes']
         .includes(String(object(object(request.body).request).action))
         || operation === 'videoRead' || operation === 'fileRead' || operation === 'projectFileRead'
-        || operation === 'toolDetails'
+        || operation === 'toolDetails' || operation === 'historyItem'
+        || (operation === 'cliGui' && object(object(request.body).request).detailId !== undefined)
         || operation === 'processDetails'
         || operation === 'projectFileBlame'
         || operation === 'guiFilePreviewText'
@@ -356,10 +359,25 @@ export class ChatOperations {
       this.commandMetrics.seed(current);
       const sliced = sliceHistory(acknowledgedMessages.merge(current),
         page ? { start: page.start, deferProcesses: window.deferProcesses } : window);
-      const { delta, images } = await prepareBrowserHistoryDelta(sliced.thread, known);
+      const bounded = window.bounded ? residentHistory(sliced.thread, window.older)
+        : { thread: sliced.thread, cut: false };
+      const { delta, images } = await prepareBrowserHistoryDelta(bounded.thread, known);
       this.images.rememberHistory(thread.id, images);
+      const hasMore = Boolean(page?.hasMore || sliced.page.hasMore || (bounded.cut && !window.older));
       return { ...delta,
-        page: { ...sliced.page, hasMore: Boolean(page?.hasMore || sliced.page.hasMore) } };
+        page: { ...residentPage(bounded.thread, hasMore),
+          ...(bounded.cut && (window.older ? { hasNewer: true } : { trimmedOlder: true })) } };
+    }
+    if (request.method === 'request' && body.operation === 'historyItem') {
+      const { threadId, turnId, itemId } = body;
+      if (typeof threadId !== 'string') throw new Error('client.cliGui.historyFailed');
+      const window = parseHistoryWindow({ start: { turnId, itemId } });
+      const thread = await this.liveHistory.read(threadId, () => guiApi.request({ operation: 'read', threadId,
+        includeToolDetails: true, window }));
+      const turn = thread.turns?.find(turn => turn.id === turnId);
+      const item = thread.id === threadId && turn?.items.find(entry => entry.id === itemId);
+      if (!item) throw new Error('client.cliGui.historyFailed');
+      return this.images.prepare({ item }, threadId);
     }
     if (request.method === 'request' && body.operation === 'composerSet') {
       return guiComposer.update(body.settings, composerThreadId(body.threadId));
