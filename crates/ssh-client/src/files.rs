@@ -9,51 +9,34 @@ use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 
 const MAX_ENTRIES: usize = 5000;
 
-pub(crate) struct FileSession {
-    sftp: SftpSession,
-    uploads: Uploads,
-}
-
-impl FileSession {
-    pub(crate) fn new(sftp: SftpSession) -> Self {
-        Self {
-            sftp,
-            uploads: Uploads::default(),
+pub(crate) async fn perform(
+    sftp: &SftpSession,
+    uploads: &mut Uploads,
+    action: FileAction,
+) -> Result<FileReply> {
+    match action {
+        FileAction::UploadStart { path, size, mode } => {
+            uploads.start(sftp, StartUpload { path, size, mode }).await
         }
-    }
-
-    pub(crate) async fn cleanup(&mut self) {
-        self.uploads.cleanup(&self.sftp, true).await;
-    }
-
-    pub(crate) async fn perform(&mut self, action: FileAction) -> Result<FileReply> {
-        self.uploads.cleanup(&self.sftp, false).await;
-        match action {
-            FileAction::UploadStart { path, size, mode } => {
-                self.uploads
-                    .start(&self.sftp, StartUpload { path, size, mode })
-                    .await
-            }
-            FileAction::UploadChunk {
-                token,
-                offset,
-                data,
-            } => {
-                self.uploads
-                    .chunk(
-                        &self.sftp,
-                        WriteChunk {
-                            token,
-                            offset,
-                            data,
-                        },
-                    )
-                    .await
-            }
-            FileAction::UploadFinish { token } => self.uploads.finish(&self.sftp, &token).await,
-            FileAction::UploadCancel { token } => self.uploads.cancel(&self.sftp, &token).await,
-            action => perform(&self.sftp, action).await,
+        FileAction::UploadChunk {
+            token,
+            offset,
+            data,
+        } => {
+            uploads
+                .chunk(
+                    sftp,
+                    WriteChunk {
+                        token,
+                        offset,
+                        data,
+                    },
+                )
+                .await
         }
+        FileAction::UploadFinish { token } => uploads.finish(sftp, &token).await,
+        FileAction::UploadCancel { token } => uploads.cancel(sftp, &token).await,
+        action => path_action(sftp, action).await,
     }
 }
 
@@ -64,7 +47,7 @@ pub(crate) fn validate_path(path: &str) -> Result<()> {
     Ok(())
 }
 
-pub(crate) async fn perform(sftp: &SftpSession, action: FileAction) -> Result<FileReply> {
+async fn path_action(sftp: &SftpSession, action: FileAction) -> Result<FileReply> {
     let path = match &action {
         FileAction::List { path }
         | FileAction::ReadChunk { path, .. }

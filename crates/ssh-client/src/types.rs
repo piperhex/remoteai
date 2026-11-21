@@ -24,6 +24,8 @@ pub enum Error {
     Closed,
     #[error("client.ssh.fileFailed")]
     File,
+    #[error("client.runtimeErrors.tooManyRequestsTryAgainLater")]
+    FileBusy,
     #[error("client.ssh.fileTooLarge")]
     FileTooLarge,
     #[error("client.ssh.conflict")]

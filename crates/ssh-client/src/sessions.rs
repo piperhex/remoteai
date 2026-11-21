@@ -1,10 +1,9 @@
 use crate::{
     connection::{self, HostKey, TIMEOUT},
-    files,
+    file_worker::FileRequests,
     types::*,
 };
-use russh::{client, Channel, ChannelMsg, Disconnect};
-use russh_sftp::client::SftpSession;
+use russh::{client, Channel, ChannelMsg};
 use std::{collections::HashMap, sync::Arc};
 use tokio::sync::{mpsc, oneshot, Mutex, Semaphore};
 
@@ -15,8 +14,7 @@ struct Input {
 }
 struct Session {
     input: mpsc::Sender<Input>,
-    ssh: Arc<client::Handle<HostKey>>,
-    files: Mutex<Option<files::FileSession>>,
+    files: FileRequests,
     x11: Option<crate::x11::Lease>,
 }
 
@@ -77,12 +75,9 @@ impl Client {
                 .await
                 .map_err(|_| Error::Connection)??;
         let (input, receive) = mpsc::channel(16);
-        let session = Arc::new(Session {
-            input,
-            ssh: Arc::new(ssh),
-            files: Mutex::new(None),
-            x11,
-        });
+        let ssh = Arc::new(ssh);
+        let (files, worker) = FileRequests::start(Arc::clone(&ssh));
+        let session = Arc::new(Session { input, files, x11 });
         let id = format!("ssh-{}", uuid::Uuid::new_v4());
         self.sessions
             .lock()
@@ -99,17 +94,7 @@ impl Client {
                 x11.0.stop();
             }
             state.sessions.lock().await.remove(&task_id);
-            if let Some(files) = session.files.lock().await.as_mut() {
-                files.cleanup().await;
-            }
-            if session
-                .ssh
-                .disconnect(Disconnect::ByApplication, "", "")
-                .await
-                .is_err()
-            {
-                // A server-initiated disconnect is an expected terminal exit.
-            }
+            worker.shutdown(&ssh).await;
         });
         Ok(Info {
             id,
@@ -178,32 +163,7 @@ impl Client {
     }
 
     pub async fn files(&self, id: &str, action: FileAction) -> Result<FileReply> {
-        let session = self.get(id).await?;
-        // Let a mutation finish (or roll back) even if its caller times out or disconnects.
-        let operation = tokio::spawn(async move {
-            let mut sftp = session.files.lock().await;
-            if sftp.is_none() {
-                let channel = session
-                    .ssh
-                    .channel_open_session()
-                    .await
-                    .map_err(|_| Error::File)?;
-                channel
-                    .request_subsystem(true, "sftp")
-                    .await
-                    .map_err(|_| Error::File)?;
-                *sftp = Some(files::FileSession::new(
-                    SftpSession::new(channel.into_stream())
-                        .await
-                        .map_err(|_| Error::File)?,
-                ));
-            }
-            sftp.as_mut().ok_or(Error::File)?.perform(action).await
-        });
-        tokio::time::timeout(TIMEOUT, operation)
-            .await
-            .map_err(|_| Error::File)?
-            .map_err(|_| Error::File)?
+        self.get(id).await?.files.perform(action).await
     }
 }
 

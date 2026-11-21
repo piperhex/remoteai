@@ -2,6 +2,7 @@
 mod connection;
 mod execute;
 mod file_mutations;
+mod file_worker;
 mod files;
 mod sessions;
 mod shell_integration;
