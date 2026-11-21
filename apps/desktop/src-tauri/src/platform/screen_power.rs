@@ -15,7 +15,9 @@ pub(crate) enum Action {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub(crate) enum DisplayState {
+    #[cfg(windows)]
     Off,
+    #[cfg(windows)]
     On,
 }
 
