@@ -1,5 +1,12 @@
 # Remote port mapping
 
+The PC app's sidebar includes a standalone **端口映射** page. The top-navigation layout includes the same page
+in its toolbox. It groups mappings by computer and can filter the list to one device. **新建映射** saves a
+stopped mapping for the selected computer. Use the green **启动** button to connect and the red **停止** button
+to release the local listener. The page and the remote workspace share each mapping's live state.
+Configuration can be edited while a listed computer is offline. A display alias set through **更多操作 → 修改别名**
+is stored on the viewing computer. Switching pages keeps running mappings available.
+
 In a remote computer's desktop chat workspace, **端口映射** appears immediately to the left of
 **远程桌面**. Choose **TCP**, **UDP** or **全部（TCP + UDP）**, enter a **目标 IP**, remote port and local port,
 then choose **添加并启动**. Existing mappings default to TCP. Editing a mapping can also change its protocol.
@@ -56,8 +63,8 @@ suspend the app in the background. The UI recommends the in-app preview for this
 
 ## Web
 
-Port mapping is available in the desktop and phone apps. The Web client does not expose port mapping
-or embedded mapping previews. Existing saved settings remain available to the desktop and phone apps.
+Desktop and phone apps can listen on a local port. The Web browser's **端口映射** menu supports address
+previews and explains that local listeners require an app. Use the desktop sidebar to manage those listeners.
 
 ## Configuration synchronization
 
@@ -67,8 +74,9 @@ Fresh databases include the identical `015_port_mappings.sql` migration. The aut
 Kong `/devices` JWT route (`strip_path: false`). No public route or new mapping listener is needed.
 The configuration table is keyed by owner and remote device, and cascades when that device is removed.
 
-Clients sync immediately after configuration changes and poll every five seconds while that computer's
-workspace is mounted. Requests are single-flight and stop on unmount/sign-out. Offline edits and deletions
+Clients sync immediately after configuration changes. On desktop, each listed computer shares one sync
+session across the management page and its chat workspace. Polling slows down for idle mappings and
+background windows. Requests are single-flight and polling stops on device removal or sign-out. Offline edits and deletions
 are persisted and retried. Stable IDs and revision-checked writes merge unrelated concurrent changes without
 replacing the whole collection with stale local data. After a revision conflict the client fetches again and
 reapplies only its pending edits; for the same mapping, the last accepted edit wins. Unchanged old caches do

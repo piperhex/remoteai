@@ -1,9 +1,12 @@
 import { displayError, displayText } from '../../../../../../shared/localization/uiText';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { Alert, Button, ConfigProvider, Modal } from 'antd';
 import { ArrowLeft, Cable, Check, Cloud, CloudUpload, LockKeyhole, Plus, X } from 'lucide-react';
 import { uiText as t } from "../../../../../../shared/localization/uiText";
 import { usePortForwarding } from './usePortForwarding';
+import { useMappingSessions } from '../../portMappings/MappingSessions';
+import type { DesktopMappingSession } from '../../portMappings/DesktopMappingSession';
+import { mappingSyncScope } from '../../../../../../shared/port-mapping/sync';
 import { MappingForm, MappingFormActions } from './MappingForm';
 import { MappingList } from './MappingList';
 import { MAX_PORT_MAPPINGS } from './settings';
@@ -12,13 +15,35 @@ import launcherStyles from '../../../../../../shared/conversation/GuiRemoteDeskt
 import styles from './portForwarding.module.less';
 
 type MappingView = { type: 'list' } | { type: 'create' } | { type: 'edit'; entry: ForwardingEntry };
-const MAPPING_COLORS = { colorPrimary: '#07838c', green: '#196b3e', red: '#aa3138' };
+export const MAPPING_COLORS = { colorPrimary: '#07838c', green: '#196b3e', red: '#aa3138' };
 const VIEW_TITLES = { list: "client.portForwarding.portMapping", create: "client.portMappingEditing.newMapping", edit: "client.portMappingEditing.editMapping" } as const;
 
-export function PortForwarding(props: {
+interface LauncherProps {
   client: ForwardingClient; scope: string; connected: boolean; active: boolean;
+}
+
+export function PortForwarding(props: LauncherProps) {
+  const sessions = useMappingSessions();
+  if (!sessions) return <ConversationMappings {...props} />;
+  const session = sessions.get(mappingSyncScope(props.scope)?.deviceId ?? '');
+  return session?.scope === props.scope ? <SessionMappings {...props} session={session} /> : null;
+}
+
+function ConversationMappings(props: LauncherProps) {
+  const model = usePortForwarding(props);
+  return <MappingDialog {...props} {...model} />;
+}
+
+function SessionMappings({ session, ...props }: LauncherProps & { session: DesktopMappingSession }) {
+  const entries = useSyncExternalStore(session.service.subscribe, session.service.snapshot);
+  const syncStatus = useSyncExternalStore(session.sync.subscribe, session.sync.snapshot);
+  return <MappingDialog {...props} entries={entries} service={session.service} syncStatus={syncStatus} />;
+}
+
+function MappingDialog(props: ReturnType<typeof usePortForwarding> & {
+  connected: boolean; active: boolean;
 }) {
-  const { entries, service, syncStatus } = usePortForwarding(props);
+  const { entries, service, syncStatus } = props;
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<MappingView>({ type: 'list' });
   const [saving, setSaving] = useState(false);

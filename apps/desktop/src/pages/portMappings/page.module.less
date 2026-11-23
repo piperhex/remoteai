@@ -1,0 +1,93 @@
+.page, .editor {
+  --mapping-accent: #07838c;
+  --mapping-surface: color-mix(in srgb, var(--panel) 94%, var(--muted));
+  --mapping-tint: color-mix(in srgb, var(--panel) 89%, var(--mapping-accent));
+}
+.page {
+  container-type: inline-size;
+  max-width: 1320px;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: clamp(20px, 3.4vw, 48px);
+  color: var(--ink);
+}
+.header, .toolbar, .groupHeader, .filters, .meta, .privacy, .presence, .sync {
+  display: flex; align-items: center;
+}
+.header {
+  gap: 16px; padding-bottom: 26px; border-bottom: 1px solid var(--line);
+  h1 { margin: 0; color: var(--ink); font-size: 1.8em; font-weight: 680; line-height: 1.25; }
+  p { margin: 5px 0 0; color: var(--muted); line-height: 1.6; }
+}
+.heroIcon, .deviceIcon, .emptyIcon {
+  flex: none; display: inline-grid; place-items: center;
+  background: var(--mapping-tint); color: var(--green-dark, var(--mapping-accent));
+}
+.heroIcon { width: 50px; height: 50px; border-radius: 15px; }
+.create { margin-inline-start: auto; flex: none; }
+.create, .filters :global(.ant-btn) { display: inline-flex; align-items: center; justify-content: center; }
+.toolbar {
+  justify-content: space-between; gap: 16px; margin: 24px 0 14px;
+  h2 { margin: 0; font-size: 1.12em; font-weight: 650; }
+  h2 span { margin-inline-start: 5px; color: var(--muted); font-size: .85em; font-variant-numeric: tabular-nums; }
+}
+.filters { gap: 8px; :global(.ant-select) { width: 156px; } }
+.group, .empty { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+.group { overflow: hidden; margin-bottom: 14px; }
+.groupHeader {
+  gap: 10px; padding: 14px 18px; flex-wrap: wrap; border-bottom: 1px solid var(--line);
+  h3 { margin: 0; font-size: 1.08em; font-weight: 650; overflow-wrap: anywhere; }
+}
+.deviceIcon { width: 32px; height: 32px; border-radius: 9px; }
+.presence, .sync, .privacy, .meta { gap: 6px; color: var(--muted); font-size: .9em; }
+.presence::before { content: ''; width: 6px; height: 6px; background: currentColor; border-radius: 50%; }
+.presence[data-online='true']::before { background: #29985f; }
+.sync { margin-inline-start: auto; }
+.columns, .row {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; column-gap: 24px; align-items: center;
+  padding-inline: 18px;
+}
+.columns {
+  padding-block: 7px; color: var(--muted); background: var(--mapping-surface); font-size: .87em;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 220px;
+  > :last-child { text-align: end; }
+}
+.row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 220px;
+  padding-block: 15px;
+  + .row { border-top: 1px solid var(--line); }
+  code { color: var(--ink); font: 600 1em/1.5 ui-monospace, Consolas, monospace; overflow-wrap: anywhere; }
+  button:disabled code { color: var(--ink); }
+}
+.local, .target { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.target {
+  position: relative;
+  > svg { position: absolute; top: .15em; inset-inline-start: -22px; color: var(--muted); }
+  small { font-size: .86em; color: var(--muted); }
+}
+.alias { max-width: 100%; overflow-wrap: anywhere; color: var(--ink); font-size: .95em; }
+.protocol { border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; line-height: 1.5; white-space: nowrap; }
+.meta { gap: 9px; flex-wrap: wrap; > span { font-size: inherit; } }
+.actions { justify-self: end; }
+.empty { min-height: 220px; padding: 24px; display: grid; justify-items: center; align-content: center; gap: 12px; }
+.empty h3 { margin: 0; color: var(--muted); font-size: 1em; font-weight: 500; text-align: center; }
+.emptyIcon { width: 52px; height: 52px; border-radius: 15px; }
+.error { grid-column: 1 / -1; color: var(--danger, #bc4048); margin: 8px 0 0; max-width: 400px; }
+.privacy { margin-top: 16px; justify-content: flex-end; }
+.editor {
+  :global(.ant-select) { width: 100%; margin-bottom: 16px; }
+  :global(.ant-modal-body) { max-height: 66vh; overflow-y: auto; padding: 4px; }
+}
+.deviceLabel { display: block; margin-bottom: 6px; font-weight: 600; }
+@container (max-width: 670px) {
+  .row, .columns { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 26px; }
+  .columns > :last-child { display: none; }
+  .actions { grid-column: 1 / -1; margin-top: 10px; }
+  .header { gap: 10px; flex-wrap: wrap; }
+}
+@container (max-width: 430px) {
+  .heroIcon { width: 40px; height: 40px; }
+  .header .create { margin-inline-start: 0; }
+  .toolbar { flex-wrap: wrap; }
+  .sync { margin-inline-start: 0; }
+}

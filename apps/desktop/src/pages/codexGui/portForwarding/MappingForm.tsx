@@ -14,12 +14,13 @@ interface MappingFormProps {
   service: PortForwardingService;
   entry?: ForwardingEntry;
   connected: boolean;
+  saveOnly?: boolean;
   done: () => void;
   saving: boolean;
   setSaving: (saving: boolean) => void;
 }
 
-function useMappingForm({ service, entry, done, saving, setSaving }: MappingFormProps) {
+function useMappingForm({ service, entry, done, saving, setSaving, saveOnly, connected }: MappingFormProps) {
   const [remoteHost, setRemoteHost] = useState(entry?.remoteHost ?? '');
   const [protocol, setProtocol] = useState<MappingProtocol>(entry?.protocol ?? 'tcp');
   const [remotePort, setRemotePort] = useState<number | null>(entry?.remotePort ?? null);
@@ -32,9 +33,12 @@ function useMappingForm({ service, entry, done, saving, setSaving }: MappingForm
     try {
       const target = { remoteHost, remotePort: remotePort ?? 0, localPort: localPort ?? remotePort ?? 0, protocol };
       if (entry) await service.edit(entry.id, target);
+      else if (saveOnly || !connected) service.save(target);
       else service.add(target.remotePort, target.localPort, target.remoteHost, protocol);
       done();
-    } catch (reason) { setError(reason instanceof Error ? reason.message : '映射未能保存，请重试。'); }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'client.portMappingEditing.couldNotSaveTheMappingPleaseTryAgain');
+    }
     finally { setSaving(false); }
   };
   return { remoteHost, setRemoteHost, protocol, setProtocol, remotePort, setRemotePort,
@@ -44,8 +48,9 @@ function useMappingForm({ service, entry, done, saving, setSaving }: MappingForm
 export function MappingForm(props: MappingFormProps) {
   const { entry, saving, formId } = props;
   const form = useMappingForm(props);
-  return <form id={formId} className={styles.form} onSubmit={form.submit}>
+  return <form id={formId} className={props.saveOnly ? styles.compactForm : styles.form} onSubmit={form.submit}>
     <div className={styles.field}>
+      {props.saveOnly && <span className={styles.label}>{t('client.mappingEditor.protocolType')}</span>}
       <Radio.Group className={styles.protocols} aria-label={t("client.portMappingEditing.transportProtocol")} value={form.protocol}
         disabled={saving} onChange={event => form.setProtocol(event.target.value as MappingProtocol)}>
         <Radio.Button value="tcp">TCP</Radio.Button><Radio.Button value="udp">UDP</Radio.Button>

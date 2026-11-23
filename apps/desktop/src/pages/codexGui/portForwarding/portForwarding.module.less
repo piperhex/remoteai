@@ -174,6 +174,16 @@ code.address { cursor: text; }
 .privacy { margin-left: auto; }
 .error { max-width: 400px; margin-top: 8px; color: var(--error, #d14343); font-size: 13px; }
 .count { min-width: 16px; border-radius: 8px; color: var(--green); font-variant-numeric: tabular-nums; }
+.compactForm {
+  display: grid; gap: 15px;
+  .field { gap: 5px; }
+  .protocols { padding: 3px; border-radius: 8px; font-size: inherit; }
+  .protocols :global(.ant-radio-button-wrapper) { padding: 5px; font-size: inherit; }
+  .label, .label > span, .hint, .field :global(.ant-input), .field :global(.ant-input-number) { font-size: inherit; }
+  .field :global(.ant-input), .field :global(.ant-input-number-input) { height: 32px; }
+  .field :global(.ant-input), .field :global(.ant-input-number) { border-radius: 7px; }
+  .previewSection { gap: 8px; }
+}
 
 @media (max-width: 520px) {
   .dialog {

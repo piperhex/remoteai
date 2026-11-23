@@ -39,7 +39,7 @@ const clipboard: string[] = [];
 const browserUrls: string[] = [];
 const previewUrls: string[] = [];
 const resolvedUrls: string[] = [];
-const fixture = { resources, openedPorts, openedUdpPorts, targetUrls, clipboard, browserUrls, previewUrls,
+const fixture = { client, resources, openedPorts, openedUdpPorts, targetUrls, clipboard, browserUrls, previewUrls,
   resolvedUrls, failBrowser: false };
 const environment: FileEnvironment = { remote: new URLSearchParams(location.search).get('mode') !== 'local',
   actions: fileApi, previews: filePreviewApi,
@@ -115,5 +115,11 @@ style.textContent = `*{box-sizing:border-box}body{margin:0;font:14px "Microsoft 
   .toolbar{height:48px;display:flex;
   align-items:center;gap:10px;padding:8px 18px;background:var(--panel)}.toolbar strong{flex:1}
   .controls{display:flex;gap:8px;padding:24px}.toolbar>div[hidden]{display:none}`;
-document.head.append(style);
-createRoot(document.getElementById('root')!).render(<StrictMode><Harness /></StrictMode>);
+const root = createRoot(document.getElementById('root')!);
+if (new URLSearchParams(location.search).has('hub')) {
+  void import('./port-mapping-hub-harness').then(({ MappingHubHarness }) =>
+    root.render(<StrictMode><MappingHubHarness client={client} /></StrictMode>));
+} else {
+  document.head.append(style);
+  root.render(<StrictMode><Harness /></StrictMode>);
+}

@@ -5,21 +5,20 @@ import type { SkillsMarketPageProps } from "../skillsMarket/types";
 import { CodexGuiPage } from "../CodexGuiPage";
 import { ProxyAccountPicker } from "./ProxyAccountPicker";
 import { useGuiAccountSelection } from "./useGuiAccountSelection";
-import { useGuiComputers } from "./remote/useGuiComputers";
+import type { useGuiComputers } from "./remote/useGuiComputers";
 import { useGuiLayout } from "./useGuiLayout";
 import { GuiHostPicker } from "../../../../../shared/conversation/GuiHostPicker";
 import { RemoteGuiWorkspaces } from "./remote/RemoteGuiWorkspaces";
 import type { ThreadNavigation } from "./useNotificationNavigation";
 
 export function GuiWorkspace(props: {
+  computers: ReturnType<typeof useGuiComputers>;
   active: boolean; accounts: Account[]; providers: Provider[]; privacyMode: boolean;
   loading: boolean; windowControls?: ReactNode;
   notificationTarget?: ThreadNavigation;
   plugins: Omit<SkillsMarketPageProps, "active">;
 }) {
-  const computers = useGuiComputers({ active: props.active, login: props.plugins.onLogin,
-    identity: props.plugins.authenticated && props.plugins.baseUrl && props.plugins.currentUserId
-      ? { baseUrl: props.plugins.baseUrl, userId: props.plugins.currentUserId } : null });
+  const { computers } = props;
   const { choose } = computers;
   const notificationRequest = props.notificationTarget?.requestId;
   const handledNotification = useRef<string>();

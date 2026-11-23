@@ -1,36 +1,18 @@
+import { desktopChatConnection } from './desktopChatConnection';
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { ChatController } from '../../../../../../shared/remote-chat/client/controller';
 import { createBrowserHistoryVersions } from '../../../../../../shared/remote-chat/browserHistory';
-import { ChatConnection } from '../../../../../../shared/remote-chat/client/connection';
 import { useActiveChatPolicy } from '../../../../../../shared/remote-chat/useActiveChatPolicy';
-import { createDesktopPeer } from '../../../remoteChat/peer';
-import { desktopSessionCrypto } from '../../../remoteChat/sessionCipher';
-import { createDesktopNativePath } from '../../../remoteChat/nativePath';
-import { createDesktopPacketCompression } from '../../../remoteChat/packetCompression';
-import { NativeGuiSocket } from './nativeSocket';
-import { NativeFileSocket } from '../../../remoteChat/fileSocket';
 import { createDesktopSshProfiles } from '../../../api/sshProfiles';
-import { registerDesktopMappingStream } from '../portForwarding/streamBridge';
 import type { GuiCloudIdentity } from '../../../../../../shared/conversation/remote/types';
-import { browserTrustStore, trustedHost, trustScope } from '../../../../../../shared/remote-chat/trustedHost';
 import { browserDirectoryStorage } from '../../../../../../shared/chat/directory/storage';
 
 const HISTORY_REFRESH_MS = 15_000;
 
 export function useRemoteGui(identity: GuiCloudIdentity, deviceId: string, active: boolean) {
   const controller = useMemo(() => {
-    const value = new ChatController((events) => new ChatConnection({
-    ...events, ...desktopSessionCrypto, deviceId, tcpPunch: true, managePolicyMode: false,
-    verifyHostKey: trustedHost(browserTrustStore, trustScope(identity.baseUrl, deviceId)),
-    randomBytes: (length) => crypto.getRandomValues(new Uint8Array(length)),
-    authorize: async () => ({ baseUrl: identity.baseUrl, accessToken: '' }),
-    createSocket: () => new NativeGuiSocket(identity),
-    createFileSocket: () => new NativeFileSocket(),
-    createPeer: createDesktopPeer,
-    createNativePath: createDesktopNativePath,
-    createPacketCompression: createDesktopPacketCompression,
-    registerMappingStream: registerDesktopMappingStream,
-    }), undefined, createBrowserHistoryVersions(), createDesktopSshProfiles(identity));
+    const value = new ChatController(events => desktopChatConnection(identity, deviceId, events),
+      undefined, createBrowserHistoryVersions(), createDesktopSshProfiles(identity));
     value.directoryStorage = browserDirectoryStorage(JSON.stringify([identity.baseUrl, identity.userId]), deviceId);
     return value;
   }, [identity.baseUrl, identity.userId, deviceId]);

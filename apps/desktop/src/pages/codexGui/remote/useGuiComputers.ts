@@ -14,8 +14,8 @@ export function useGuiComputers(options: { active: boolean; identity: GuiCloudId
   const refresh = useRef(() => {});
   const scope = scopeOf(options.identity);
 
+  useEffect(() => { setDirectory(null); setError(''); setLoading(false); }, [scope]);
   useEffect(() => {
-    setDirectory(null); setError(''); setLoading(false);
     if (!isDesktopApp || !options.active || !scope) return;
     let cancelled = false;
     let pending = false;
@@ -42,7 +42,8 @@ export function useGuiComputers(options: { active: boolean; identity: GuiCloudId
     setSelected({ scope, device });
   }, [scope, directory]);
   return {
-    current, identity: options.identity, devices: directory?.devices ?? [], authenticated: Boolean(scope),
+    current, identity: options.identity, devices: scopeOf(directory?.identity ?? null) === scope
+      ? directory?.devices ?? [] : [], authenticated: Boolean(scope),
     loading, error, choose, refresh: () => refresh.current(), login: options.login,
   };
 }

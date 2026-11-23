@@ -52,6 +52,9 @@ import { TotpPage } from "../../pages/TotpPage";
 import { TotpCloudSyncSwitch } from "../TotpCloudSyncSwitch";
 import { LogDiagnosticsPage, type LogDiagnosticsTab } from "../../pages/LogDiagnosticsPage";
 import { DownloadsPage } from "../../pages/DownloadsPage";
+import { PortMappingsPage } from "../../pages/portMappings/PortMappingsPage";
+import { MappingSessions } from "../../pages/portMappings/MappingSessions";
+import { useGuiComputers } from "../../pages/codexGui/remote/useGuiComputers";
 import { useBrowserDownloads } from '../../downloads/useBrowserDownloads';
 import { LoungePage } from "../../../../../shared/lounge/LoungePage";
 import { useDesktopLounge } from "../../lounge/useDesktopLounge";
@@ -602,6 +605,9 @@ export function DashboardApp() {
     setShowCloudLogin(true);
   }, []);
   const openCloudAccount = useCallback(() => setShowCloudAccount(true), []);
+  const computers = useGuiComputers({ active: page === "codexGui" || page === "portMappings", login: openCloudLogin,
+    identity: cloud.state.authenticated && cloud.state.baseUrl && cloud.state.userId
+      ? { baseUrl: cloud.state.baseUrl, userId: cloud.state.userId } : null });
   const refreshUsage = useCallback((id: string) => {
     void manager.refreshUsage(id);
   }, [manager.refreshUsage]);
@@ -1322,6 +1328,7 @@ export function DashboardApp() {
       },
     }}>
       <BrowserNavigationProvider onOpen={() => setPage("browser")}>
+      <MappingSessions identity={computers.identity} devices={computers.devices}>
       {browserDownloadMessages}
       <div className={`app-shell${NATIVE_WINDOW_CONTROLS_ENABLED ? " custom-titlebar-shell" : ""}${
         sidebarNavigationEnabled ? " sidebar-navigation-shell" : ""
@@ -1355,7 +1362,7 @@ export function DashboardApp() {
           </aside>
         )}
         <header className="app-menu" hidden={sidebarNavigationEnabled &&
-          (page === "codexGui" || page === "coze" || page === "lounge" || page === "browser")}>
+          (page === "codexGui" || page === "coze" || page === "lounge" || page === "browser" || page === "portMappings")}>
           {!sidebarNavigationEnabled && (
             <button type="button" className="brand" onClick={openRepository}
               aria-label={t("help.github")} title={t("help.github")}>
@@ -1363,7 +1370,7 @@ export function DashboardApp() {
               <span className="brand-name">Remote AI</span>
             </button>
           )}
-          {page !== "codexGui" && page !== "coze" && page !== "browser" && <AnnouncementBanner link={announcementLink}
+          {page !== "codexGui" && page !== "coze" && page !== "browser" && page !== "portMappings" && <AnnouncementBanner link={announcementLink}
             onOpenLink={openAnnouncementLink}
             scrollDurationSeconds={announcement?.scrollDurationSeconds ?? 22}
             style={announcementStyle} text={announcementText}
@@ -1386,7 +1393,7 @@ export function DashboardApp() {
             : page === "dreamSkin" ? "dream-skin-main"
               : page === "sessions" ? "sessions-main"
               : page === "codexConfig" ? codexConfigStyles.main : undefined}>
-          {!['tokens', 'dreamSkin', 'codexGui', 'coze', 'logDiagnostics', 'downloads', 'lounge', 'browser'].includes(page) && (
+          {!['tokens', 'dreamSkin', 'codexGui', 'coze', 'logDiagnostics', 'downloads', 'lounge', 'browser', 'portMappings'].includes(page) && (
           <>
           {isAccountManagementPage(page) ? (
             <AccountManagementToolbar section={page} onSectionChange={setPage} t={t}
@@ -1462,6 +1469,7 @@ export function DashboardApp() {
 
           {page === "totp" && <TotpPage accounts={manager.accounts} manager={totpManager} t={t} />}
           {page === "downloads" && <DownloadsPage auth={cloud.state} />}
+          {page === "portMappings" && <PortMappingsPage key={JSON.stringify(computers.identity)} computers={computers} />}
           <RetainedView active={page === "browser"}>
             <BrowserPage language={language} active={page === "browser"} onClose={() => setPage("codexGui")}
               homeBaseUrl={cloud.state.baseUrl?.trim() || DEFAULT_CLOUD_BASE_URL}
@@ -1611,7 +1619,7 @@ export function DashboardApp() {
             <RetainedView active={page === "codexGui"}
               scope={JSON.stringify([cloud.state.authenticated, cloud.state.baseUrl, cloud.state.userId,
                 manager.info?.codexHome])}>
-            <GuiWorkspace active={page === "codexGui"} notificationTarget={notificationTarget}
+            <GuiWorkspace active={page === "codexGui"} computers={computers} notificationTarget={notificationTarget}
               plugins={{ baseUrl: cloud.state.baseUrl, authenticated: cloud.state.authenticated,
                 currentUserId: cloud.state.userId, onLogin: openCloudLogin, notify, t }}
               windowControls={NATIVE_WINDOW_CONTROLS_ENABLED && <WindowControls onError={notify} t={t} />}
@@ -1802,6 +1810,7 @@ export function DashboardApp() {
         {toast && <div className="toast"><Check size={17} />{toast}</div>}
       </div>
       {isDesktopApp && <RemoteAssistance auth={cloud.state} onLogin={openCloudLogin} />}
+      </MappingSessions>
       </BrowserNavigationProvider>
     </ConfigProvider>
     </BookmarkProvider></ExtensionMarketContext.Provider>

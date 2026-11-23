@@ -13,10 +13,10 @@ const fixture = vi.hoisted(() => ({ current: null as GuiComputer | null, mounts:
   notify: (_message: string) => {} }));
 vi.mock('../../api/backend', () => ({ isDesktopApp: true }));
 vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
-vi.mock('./remote/useGuiComputers', () => ({ useGuiComputers: () => ({
+const computers = () => ({
   current: fixture.current, identity: fixture.identity, devices: [],
-  choose: fixture.choose,
-}) }));
+  choose: fixture.choose, authenticated: !!fixture.identity, loading: false, error: '', refresh() {}, login() {},
+});
 vi.mock('./useGuiLayout', () => ({ useGuiLayout: () => ({ focused: false, onToggleFocus() {} }) }));
 vi.mock('./useGuiAccountSelection', () => ({ useGuiAccountSelection: () => ({ accounts: [], providers: [] }) }));
 vi.mock('./ProxyAccountPicker', () => ({ ProxyAccountPicker: () => null }));
@@ -47,6 +47,7 @@ vi.mock('../CodexGuiPage', () => ({ CodexGuiPage: function LocalConversation({ a
 let root: Root;
 let host: HTMLDivElement;
 const render = () => act(async () => root.render(<GuiWorkspace active={fixture.active} accounts={[]} providers={[]}
+  computers={computers()}
   notificationTarget={fixture.notificationTarget}
   privacyMode={false} loading={false} plugins={{ authenticated: true, baseUrl: 'https://fixture.test',
     currentUserId: 'owner', onLogin() {}, notify() {}, t: text => text }} />));
