@@ -43,7 +43,22 @@ export async function verifyBookmarks({ main, popup, child, capture }) {
   const editor = popup.getByRole('dialog', { name: '编辑书签', exact: true });
   await expect(editor).toBeVisible();
   const title = editor.locator('input').first();
-  await title.fill('实时测试页面（已编辑）');
+  await expect(editor).not.toHaveClass(/-appear|-enter/);
+  await expect(title).toBeFocused();
+  await popup.keyboard.press('ControlOrMeta+a');
+  const ime = await popup.context().newCDPSession(popup);
+  try {
+    await ime.send('Input.imeSetComposition', { text: 'shuqian', selectionStart: 7, selectionEnd: 7 });
+    // Reproduce WebView2 also delivering a raw letter while the Windows IME owns the composition.
+    await ime.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'n', code: 'KeyN', text: 'n',
+      windowsVirtualKeyCode: 78 });
+    await ime.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'n', code: 'KeyN', windowsVirtualKeyCode: 78 });
+    await expect(title).toHaveValue('shuqian');
+    await ime.send('Input.insertText', { text: '实时测试页面（已编辑）' });
+    await expect(title).toHaveValue('实时测试页面（已编辑）');
+  } finally {
+    await ime.detach();
+  }
   await assertLive({ main, child }); await capture('bookmark-editor');
   await editor.getByRole('button', { name: '保 存', exact: true }).click();
   await expect(bookmark).toContainText('实时测试页面（已编辑）');

@@ -77,7 +77,15 @@ it('requests native keyboard focus only after the focused popup has a visible in
   expect(invoke.mock.calls[0][0]).toBe('browser_overlay_place');
   menu.focus(); frame?.(0);
   await vi.waitFor(() => expect(invoke).toHaveBeenLastCalledWith('browser_overlay_focus'));
-  expect(invoke.mock.calls.at(-2)?.[0]).toBe('browser_overlay_place');
+  expect(invoke.mock.calls.map(([command]) => command)).toEqual(['browser_overlay_place', 'browser_overlay_focus']);
+  // Native activation can blur and refocus the window without changing its active DOM element.
+  menu.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+  menu.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+  frame?.(0);
+  expect(invoke).toHaveBeenCalledTimes(2);
+  menu.blur(); menu.focus(); frame?.(0);
+  await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(3));
+  expect(invoke).toHaveBeenLastCalledWith('browser_overlay_focus');
 });
 
 it('keeps the complete menu region throughout zero-scale preparation and zoom animation', () => {
