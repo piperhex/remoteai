@@ -5,7 +5,7 @@ const port = 1496;
 const baseURL = `http://127.0.0.1:${port}`;
 
 export default defineConfig({
-  testDir: '../e2e', testMatch: 'terminal.pw.ts', workers: 1, timeout: 60_000,
+  testDir: '../e2e', testMatch: ['terminal.pw.ts', 'terminal-clipboard.pw.ts'], workers: 1, timeout: 60_000,
   outputDir: '../../../.codex-tmp/terminal-destinations-desktop',
   use: { baseURL, launchOptions: testBrowserLaunchOptions(), locale: 'zh-CN', headless: true },
   webServer: { cwd: '..',

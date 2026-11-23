@@ -31,6 +31,7 @@ let opens = 0;
 if (new URLSearchParams(location.search).has('scripts')) seedNpmScripts();
 if (new URLSearchParams(location.search).has('large')) seedLargeText();
 const scriptSessions = new Map<string, { name: string; receive: Parameters<typeof terminalApi.open>[2] }>();
+const shellOutputs = new Map<string, Parameters<typeof terminalApi.open>[2]>();
 window.addEventListener('npm-fixture-exit', () => {
   for (const session of scriptSessions.values()) session.receive({ type: 'exit', code: 0 });
   scriptSessions.clear();
@@ -44,11 +45,16 @@ terminalApi.open = async (cwd, _size, receive, options) => {
     document.body.dataset.scriptCwd = cwd;
     document.body.dataset.savedBeforeRun = savedFiles.at(-1)?.text ?? '';
   }
+  shellOutputs.set(id, receive);
   receive({ type: 'output', data: [...new TextEncoder().encode(`PS ${cwd}> `)] });
   return { id, cwd, shell: 'PowerShell', ...options };
 };
-terminalApi.write = terminalApi.resize = async () => {};
+terminalApi.resize = async () => {};
+terminalApi.write = async (id, text) => {
+  shellOutputs.get(id)?.({ type: 'output', data: [...new TextEncoder().encode(text)] });
+};
 terminalApi.close = async id => {
+  shellOutputs.delete(id);
   scriptSessions.get(id)?.receive({ type: 'exit', code: 0 });
   scriptSessions.delete(id);
   document.body.dataset.terminalCloses = String(Number(document.body.dataset.terminalCloses ?? 0) + 1);
