@@ -11,7 +11,6 @@ import { DetailsWorkspace } from '../../../shared/conversation/DetailsWorkspace'
 import { FileEnvironmentContext, type FileEnvironment } from '../../../shared/conversation/fileEnvironment';
 import { fileApi } from '../../../shared/conversation/fileApi';
 import { filePreviewApi } from '../../../shared/file-preview/workspace/api';
-import { websitePreviewApi } from '../src/pages/codexGui/filePreview/websiteApi';
 import { exchangeMappingFixture, mappingFixtureScope } from './port-mapping-sync-fixture';
 import type { MappingDocument } from '../../../shared/port-mapping/sync';
 
@@ -42,8 +41,6 @@ const previewUrls: string[] = [];
 const resolvedUrls: string[] = [];
 const fixture = { resources, openedPorts, openedUdpPorts, targetUrls, clipboard, browserUrls, previewUrls,
   resolvedUrls, failBrowser: false };
-websitePreviewApi.sync = async request => { previewUrls.push(request.url); };
-websitePreviewApi.close = async () => {};
 const environment: FileEnvironment = { remote: new URLSearchParams(location.search).get('mode') !== 'local',
   actions: fileApi, previews: filePreviewApi,
   resolveWebsite: async url => { resolvedUrls.push(url); throw new Error('Already forwarded URLs must stay local'); },
@@ -51,9 +48,12 @@ const environment: FileEnvironment = { remote: new URLSearchParams(location.sear
 Object.defineProperty(navigator, 'clipboard', { configurable: true,
   value: { writeText: async (text: string) => { clipboard.push(text); } } });
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: {
-  invoke: async (command: string, args: { request: { type: string; port: number; scope: string }; url?: string;
-    deviceId: string; document?: MappingDocument }) => {
+  transformCallback: () => 1,
+  invoke: async (command: string, args: { request: { type: string; port: number; scope: string; url: string };
+    url?: string; deviceId: string; document?: MappingDocument }) => {
     if (command === 'sync_port_mappings') return exchangeMappingFixture(args);
+    if (command === 'provider_browser_sync') { previewUrls.push(args.request.url); return; }
+    if (command === 'browser_inspector') return { open: false, mobile: false };
     if (command === 'plugin:opener|open_url') {
       if (fixture.failBrowser) throw new Error('Private browser failure');
       browserUrls.push(args.url!); return;
@@ -76,7 +76,7 @@ Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: {
     }
     return { type: 'done' };
   },
-}, portForwardingFixture: fixture });
+}, __TAURI_EVENT_PLUGIN_INTERNALS__: { unregisterListener() {} }, portForwardingFixture: fixture });
 
 function Harness() {
   const [connected, setConnected] = useState(true);

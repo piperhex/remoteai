@@ -12,7 +12,7 @@ import launcherStyles from '../../../../../../shared/conversation/GuiRemoteDeskt
 import styles from './portForwarding.module.less';
 
 type MappingView = { type: 'list' } | { type: 'create' } | { type: 'edit'; entry: ForwardingEntry };
-const MAPPING_ACCENT = '#07838c';
+const MAPPING_COLORS = { colorPrimary: '#07838c', green: '#196b3e', red: '#aa3138' };
 const VIEW_TITLES = { list: "client.portForwarding.portMapping", create: "client.portMappingEditing.newMapping", edit: "client.portMappingEditing.editMapping" } as const;
 
 export function PortForwarding(props: {
@@ -38,7 +38,7 @@ export function PortForwarding(props: {
       <Cable size={14} aria-hidden="true" /><span>{t("client.portForwarding.portMapping")}</span>
       {count > 0 && <span className={styles.count}>{count}</span>}
     </button>
-    <ConfigProvider theme={{ token: { colorPrimary: MAPPING_ACCENT } }}>
+    <ConfigProvider theme={{ token: MAPPING_COLORS }}>
       <Modal open={open && props.active} centered width={720} className={styles.dialog} destroyOnHidden
         maskClosable={false} keyboard={!saving} onCancel={close} closable={{ disabled: saving }}
         closeIcon={<X size={20} aria-label={t("client.projectBrowser.close")} />} footer={<>

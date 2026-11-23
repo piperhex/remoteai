@@ -152,6 +152,9 @@ test('multiple mappings, port conflicts, stop, copy and reconnect stay independe
   expect(await page.evaluate(() => window.portForwardingFixture.clipboard)).toEqual(['127.0.0.1:13000']);
   await entry(page, '127.0.0.1:13000 → 127.0.0.1:3000').getByRole('button', { name: '停止映射 127.0.0.1:13000 → 127.0.0.1:3000' }).click();
   await expect(entry(page, '127.0.0.1:13000 → 127.0.0.1:3000').getByRole('status')).toHaveText('已停止');
+  await page.getByRole('heading', { name: '端口映射', exact: true }).hover();
+  await expect(panel(page).getByRole('button', { name: /^启动映射/ })).toHaveCSS('background-color', 'rgb(25, 107, 62)');
+  await expect(panel(page).getByRole('button', { name: /^停止映射/ })).toHaveCSS('background-color', 'rgb(170, 49, 56)');
   await expect(entry(page, '127.0.0.1:13000 → 127.0.0.1:3000').getByRole('button', { name: '127.0.0.1:13000', exact: true })).toBeDisabled();
   await expect(entry(page, '127.0.0.1:15432 → 127.0.0.1:5432').getByRole('status')).toHaveText('映射中');
   await add(page, 8080, 9999);
@@ -181,7 +184,8 @@ test('opens the mapped local address in the preview drawer and system browser', 
   expect((await menu.boundingBox())!.width).toBeLessThanOrEqual(400);
   await page.screenshot({ path: '../../.codex-tmp/port-forwarding-link-menu.png', animations: 'disabled' });
   await menu.getByRole('menuitem', { name: '在 Remote AI 中预览' }).click();
-  await expect(page.getByRole('region', { name: '网页预览' })).toContainText('http://127.0.0.1:13000');
+  const preview = page.getByRole('region', { name: '网页预览' });
+  await expect(preview.getByRole('combobox', { name: '页面地址' })).toHaveValue('http://127.0.0.1:13000');
   await expect.poll(() => page.evaluate(() => window.portForwardingFixture.previewUrls))
     .toContain('http://127.0.0.1:13000');
   await expect(panel(page)).toBeHidden();

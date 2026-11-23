@@ -24,6 +24,7 @@ export function MappingRow({ entry, service, connected, onOpen, edit }: {
 }) {
   const busy = entry.status === 'starting' || entry.status === 'stopping';
   const running = entry.status === 'running';
+  const stopAction = running || busy;
   const target = mappingAddress(entry);
   const label = `127.0.0.1:${entry.localPort} → ${target}`;
   return <article className={styles.mapping} aria-label={label}>
@@ -53,12 +54,12 @@ export function MappingRow({ entry, service, connected, onOpen, edit }: {
             icon={<MoreHorizontal size={20} />} />
         </Dropdown>
         <span className={styles.actionDivider} aria-hidden="true" />
-        <Button className={styles.toggle} loading={entry.status === 'stopping'}
-          disabled={entry.status === 'stopping' || (!connected && !running && !busy)}
-          aria-label={`${t(running || busy ? "client.portForwarding.stopMapping" : "client.portForwarding.startMapping")} ${label}`}
-          icon={running || busy ? <Square size={16} /> : <Play size={18} />}
-          onClick={() => { void (running || busy ? service.stop(entry.id) : service.start(entry.id)); }}>
-          {t(running || busy ? "client.shared.stop" : "client.portForwarding.start")}</Button>
+        <Button className={styles.toggle} variant="solid" color={stopAction ? 'red' : 'green'}
+          loading={entry.status === 'stopping'} disabled={entry.status === 'stopping' || (!connected && !stopAction)}
+          aria-label={`${t(stopAction ? "client.portForwarding.stopMapping" : "client.portForwarding.startMapping")} ${label}`}
+          icon={stopAction ? <Square size={16} /> : <Play size={18} />}
+          onClick={() => { void (stopAction ? service.stop(entry.id) : service.start(entry.id)); }}>
+          {t(stopAction ? "client.shared.stop" : "client.portForwarding.start")}</Button>
       </div>
     </div>
     {entry.error && <div className={styles.error} role="alert">{displayError(entry.error)}</div>}
