@@ -25,6 +25,8 @@ import { cloudFixtureCommand, fixtureProfiles } from './ssh-cloud-fixture';
 import { useLocalGitDownloads } from '../src/downloads/localGitDownloads';
 import { SshDownloadConnection, SshDownloadsPage } from './ssh-downloads-fixture';
 import { ApplicationTypography } from '../../../shared/appearance/ApplicationTypography';
+import { DEFAULT_THEME_COLOR } from '../../../shared/appearance/themeColor';
+import { WorkspaceHarness } from './ssh-workspace-harness';
 import { DEFAULT_CHAT_POLICY, setChatPolicy, setChatConnectionMode } from '../../../shared/remote-chat/policy';
 
 const mode = new URLSearchParams(location.search).get('mode') ?? 'local';
@@ -57,6 +59,7 @@ mockIPC(async (command, body) => {
     return post('/rpc', { type: 'ensureX11', options: (body as { options: object }).options });
   }
   if (command === 'codex_gui_ssh_files') return post('/rpc', { type: 'files', id: args.id, request: args.request });
+  if (command === 'codex_gui_ssh_monitor') return post('/rpc', { type: 'monitor', id: args.id });
   if (command === 'codex_gui_ssh_command') return simulatedShell ? undefined
     : post('/rpc', { type: 'command', request: args.request });
   if (command === 'codex_gui_ssh_open') {
@@ -107,6 +110,16 @@ function App() {
     {mode === 'local' ? <Local /> : <Remote />}
   </div>;
   const algorithm = dark ? theme.darkAlgorithm : theme.defaultAlgorithm;
+  if (new URLSearchParams(location.search).has('workspace')) {
+    const night = new URLSearchParams(location.search).has('dark');
+    applyThemeMode(night ? 'dark' : 'light');
+    const palette = night ? theme.darkAlgorithm : theme.defaultAlgorithm;
+    return <ApplicationTypography><ConfigProvider theme={{ token: { colorPrimary: DEFAULT_THEME_COLOR },
+      algorithm: mode === 'web' ? palette : [palette, theme.compactAlgorithm] }}>
+      <SshDownloadConnection mode={mode} client={client} />
+      <WorkspaceHarness mode={mode} remoteApi={remoteApi} client={client.terminal} />
+    </ConfigProvider></ApplicationTypography>;
+  }
   return <ApplicationTypography><ConfigProvider theme={{
     algorithm: mode === 'web' ? algorithm : [algorithm, theme.compactAlgorithm],
   }}>
