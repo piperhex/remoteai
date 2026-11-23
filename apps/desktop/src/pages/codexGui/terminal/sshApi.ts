@@ -1,6 +1,6 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
 import type { SshApi, SshConnect, SshEndpoint, SshFileAction, SshFileReply,
-  SshX11 } from '../../../../../../shared/terminal/ssh';
+  ServerSample, SshX11 } from '../../../../../../shared/terminal/ssh';
 import type { TerminalEvent, TerminalInfo } from '../../../../../../shared/terminal/types';
 import { TerminalOutput } from '../../../remoteChat/terminalOutput';
 import { desktopSshProfiles } from '../../../api/sshProfiles';
@@ -15,6 +15,7 @@ export function openNativeSsh(request: SshConnect, onEvent: (event: TerminalEven
   return invoke<TerminalInfo>('codex_gui_ssh_open', { request, onEvent: channel });
 }
 export const probeSsh = (endpoint: SshEndpoint) => invoke<string>('codex_gui_ssh_probe', { endpoint });
+export const monitorSsh = (id: string) => invoke<ServerSample>('codex_gui_ssh_monitor', { id });
 export const ensureSshX11 = (options: SshX11) => invoke<void>('codex_gui_ssh_ensure_x11', { options });
 export const sshFiles = (id: string, request: SshFileAction) =>
   invoke<SshFileReply>('codex_gui_ssh_files', { id, request });
@@ -22,6 +23,7 @@ export const sshFiles = (id: string, request: SshFileAction) =>
 export const sshApi: SshApi = {
   previewMode: isDesktopApp ? 'direct' : undefined,
   profiles: desktopSshProfiles,
+  monitor: monitorSsh,
   probe: probeSsh, files: sshFiles, ensureX11: ensureSshX11,
   async open(request, projectCwd) {
     const attachment: Attachment = { output: new TerminalOutput() };
@@ -34,7 +36,7 @@ export const sshApi: SshApi = {
   },
 };
 
-export async function attachSsh(info: TerminalInfo, onEvent: (event: TerminalEvent) => void) {
+export async function attachSsh(info: TerminalInfo, onEvent: (event: TerminalEvent) => void, closeOnDetach = true) {
   const attachment = attachments.get(info.id);
   if (!attachment) throw new Error('client.ssh.closed');
   attachment.listener = onEvent;
@@ -47,6 +49,7 @@ export async function attachSsh(info: TerminalInfo, onEvent: (event: TerminalEve
   return { ...info, detach: () => {
     if (attachment.listener !== onEvent) return;
     attachment.listener = undefined;
+    if (!closeOnDetach) return;
     // React can immediately reattach effects in development; only an abandoned view owns the close.
     setTimeout(() => {
       if (!attachment.listener) void closeSsh(info.id).catch(() => console.error('SSH cleanup failed'));

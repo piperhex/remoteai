@@ -4,6 +4,7 @@ mod execute;
 mod file_mutations;
 mod file_worker;
 mod files;
+mod monitor;
 mod sessions;
 mod shell_integration;
 mod types;
@@ -13,6 +14,7 @@ mod x11;
 
 pub use connection::probe;
 pub use execute::{Execution, ExecutionError, ExecutionOptions};
+pub use monitor::ServerSample;
 pub use sessions::Client;
 pub use types::*;
 pub use x11::ensure_x11;

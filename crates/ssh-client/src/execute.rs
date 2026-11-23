@@ -148,7 +148,7 @@ impl Client {
     }
 }
 
-async fn execute_channel(
+pub(crate) async fn execute_channel(
     session: &russh::client::Handle<connection::HostKey>,
     options: ExecutionOptions,
 ) -> Result<Execution> {

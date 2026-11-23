@@ -9,6 +9,7 @@ import {
   SquareTerminal,
   Settings,
   ShieldCheck,
+  Server,
   UserRound,
   MessagesSquare,
   Globe,
@@ -37,6 +38,7 @@ export type DashboardPage =
   | "logDiagnostics"
   | "downloads"
   | "portMappings"
+  | "ssh"
   | "lounge"
   | "browser"
   | "totp"
@@ -75,6 +77,7 @@ const LOG_DIAGNOSTICS_ITEM = {
 const DOWNLOADS_ITEM = { page: "downloads", icon: Download, labelKey: "downloads.title" } as const;
 const PORT_MAPPINGS_ITEM = { page: "portMappings", icon: Cable,
   get label() { return displayText('client.portForwarding.portMapping'); } } as const;
+const SSH_ITEM = { page: "ssh", icon: Server, get label() { return displayText('client.discovery.ssh'); } } as const;
 const LOUNGE_ITEM = { page: "lounge", icon: MessagesSquare,
   get label() { return displayText('client.lounge.title'); } } as const;
 
@@ -89,7 +92,7 @@ const TOOLBOX_NAVIGATION_ITEMS = [
 
 export function isToolboxPage(page: DashboardPage) {
   return page === "codexConfig" || page === "systemPrompts" || page === "logDiagnostics"
-    || page === "downloads" || page === "portMappings" || page === "lounge" || page === "totp"
+    || page === "downloads" || page === "portMappings" || page === "ssh" || page === "lounge" || page === "totp"
     || TOOLBOX_NAVIGATION_ITEMS.some((item) => item.page === page);
 }
 
@@ -104,7 +107,7 @@ export function DashboardNavigation({
   variant = "top",
 }: DashboardNavigationProps) {
   const navigationButton = (item: typeof NAVIGATION_ITEMS[number] | typeof TOOLBOX_NAVIGATION_ITEMS[number]
-    | typeof LOUNGE_ITEM | typeof BROWSER_ITEM | typeof PORT_MAPPINGS_ITEM | {
+    | typeof LOUNGE_ITEM | typeof BROWSER_ITEM | typeof PORT_MAPPINGS_ITEM | typeof SSH_ITEM | {
     page: "settings" | "logDiagnostics" | "downloads" | "totp";
     icon: typeof Settings;
     labelKey: "nav.settings" | "logDiagnostics.title" | "downloads.title" | "totp.action";
@@ -136,6 +139,7 @@ export function DashboardNavigation({
       {variant === "toolbox" && loungeAvailable && navigationButton(LOUNGE_ITEM)}
       {variant === "toolbox" && navigationButton(DOWNLOADS_ITEM)}
       {variant === "toolbox" && isDesktopApp && navigationButton(PORT_MAPPINGS_ITEM)}
+      {variant === "toolbox" && isDesktopApp && navigationButton(SSH_ITEM)}
       {variant === "toolbox" && navigationButton(LOG_DIAGNOSTICS_ITEM)}
       {variant === "toolbox" && navigationButton(TOTP_ITEM)}
       {variant === "sidebar" && (
@@ -143,6 +147,7 @@ export function DashboardNavigation({
           {loungeAvailable && navigationButton(LOUNGE_ITEM)}
           {navigationButton(DOWNLOADS_ITEM)}
           {isDesktopApp && navigationButton(PORT_MAPPINGS_ITEM)}
+          {isDesktopApp && navigationButton(SSH_ITEM)}
           {navigationButton(LOG_DIAGNOSTICS_ITEM)}
           {navigationButton(TOTP_ITEM)}
           {navigationButton({ page: "settings", icon: Settings, labelKey: "nav.settings" })}

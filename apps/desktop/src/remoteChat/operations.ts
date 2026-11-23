@@ -113,7 +113,7 @@ const READ_OPERATIONS = new Set([
   'suggestNextPrompt',
   PROJECT_LIST_OPERATION,
   'downloadOpen', 'downloadBrowse', 'previewOpen',
-  'guiCliStatus', 'guiCliRelease', 'guiTerminalRead', 'guiTerminalList', 'guiTerminalSshProfiles',
+  'guiCliStatus', 'guiCliRelease', 'guiTerminalRead', 'guiTerminalList', 'guiTerminalSshProfiles', 'guiTerminalSshMonitor',
   'guiGitChanges', 'guiGitDiff', 'guiGitHistory', 'guiGitRepository', 'guiGitCommitFiles',
   'fileOpen', 'fileRead', 'fileClose',
   CONTEXT_READ_OPERATION,
@@ -222,7 +222,7 @@ export class ChatOperations {
           && !(object(request.body).upload as Record<string, unknown>).finish)
         || (operation === 'guiTerminalSshFiles' && ['read', 'readChunk', 'list', 'uploadChunk']
           .includes(String(object(object(request.body).request).type)))
-        || operation === 'guiTerminalSshProbe' || operation === 'guiTerminalSshProfiles'
+        || operation === 'guiTerminalSshProbe' || operation === 'guiTerminalSshProfiles' || operation === 'guiTerminalSshMonitor'
         || (operation === 'guiTerminalRead' && object(request.body).cursor !== undefined)) this.cache.delete(cacheKey);
     });
     return result;

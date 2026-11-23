@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { RetainedView } from '../../../../../shared/RetainedView';
 import { HelpAssistant } from "../helpAssistant/HelpAssistant";
 import { Button, ConfigProvider, Dropdown, Modal, theme as antdTheme } from "antd";
@@ -53,6 +53,7 @@ import { TotpCloudSyncSwitch } from "../TotpCloudSyncSwitch";
 import { LogDiagnosticsPage, type LogDiagnosticsTab } from "../../pages/LogDiagnosticsPage";
 import { DownloadsPage } from "../../pages/DownloadsPage";
 import { PortMappingsPage } from "../../pages/portMappings/PortMappingsPage";
+import type { RemoteSshHost } from "../../pages/ssh/DesktopSshPage";
 import { MappingSessions } from "../../pages/portMappings/MappingSessions";
 import { useGuiComputers } from "../../pages/codexGui/remote/useGuiComputers";
 import { useBrowserDownloads } from '../../downloads/useBrowserDownloads';
@@ -162,6 +163,7 @@ const LATEST_RELEASE_API_URL = "https://api.github.com/repos/piperhex/remoteai/r
 const APP_LOGO_URL = new URL("../../../src-tauri/icons/128x128.png", import.meta.url).href;
 const NATIVE_WINDOW_CONTROLS_ENABLED = isDesktopApp && navigator.userAgent.includes("Windows");
 const MemoAccountsPage = memo(AccountsPage);
+const DesktopSshPage = lazy(() => import("../../pages/ssh/DesktopSshPage"));
 const MemoThirdPartyAppsPage = memo(ThirdPartyAppsPage);
 const MemoDreamSkinPage = memo(DreamSkinPage);
 const MemoProvidersPage = memo(ProvidersPage);
@@ -605,6 +607,7 @@ export function DashboardApp() {
     setShowCloudLogin(true);
   }, []);
   const openCloudAccount = useCallback(() => setShowCloudAccount(true), []);
+  const [sshHost, setSshHost] = useState<RemoteSshHost | null>(null);
   const computers = useGuiComputers({ active: page === "codexGui" || page === "portMappings", login: openCloudLogin,
     identity: cloud.state.authenticated && cloud.state.baseUrl && cloud.state.userId
       ? { baseUrl: cloud.state.baseUrl, userId: cloud.state.userId } : null });
@@ -1362,7 +1365,7 @@ export function DashboardApp() {
           </aside>
         )}
         <header className="app-menu" hidden={sidebarNavigationEnabled &&
-          (page === "codexGui" || page === "coze" || page === "lounge" || page === "browser" || page === "portMappings")}>
+          (["codexGui", "coze", "lounge", "browser", "portMappings", "ssh"].includes(page))}>
           {!sidebarNavigationEnabled && (
             <button type="button" className="brand" onClick={openRepository}
               aria-label={t("help.github")} title={t("help.github")}>
@@ -1370,7 +1373,7 @@ export function DashboardApp() {
               <span className="brand-name">Remote AI</span>
             </button>
           )}
-          {page !== "codexGui" && page !== "coze" && page !== "browser" && page !== "portMappings" && <AnnouncementBanner link={announcementLink}
+          {!["codexGui", "coze", "browser", "portMappings", "ssh"].includes(page) && <AnnouncementBanner link={announcementLink}
             onOpenLink={openAnnouncementLink}
             scrollDurationSeconds={announcement?.scrollDurationSeconds ?? 22}
             style={announcementStyle} text={announcementText}
@@ -1382,7 +1385,7 @@ export function DashboardApp() {
         </header>
 
         <main className={page === "accounts" ? "accounts-main"
-          : page === "browser" ? "browser-desktop-main"
+          : page === "browser" || page === "ssh" ? "browser-desktop-main"
           : page === "lounge" ? "lounge-desktop-main"
           : page === "codexGui" ? codexGuiStyles.main
           : page === "coze" ? cozeStyles.main
@@ -1393,7 +1396,7 @@ export function DashboardApp() {
             : page === "dreamSkin" ? "dream-skin-main"
               : page === "sessions" ? "sessions-main"
               : page === "codexConfig" ? codexConfigStyles.main : undefined}>
-          {!['tokens', 'dreamSkin', 'codexGui', 'coze', 'logDiagnostics', 'downloads', 'lounge', 'browser', 'portMappings'].includes(page) && (
+          {!['tokens', 'dreamSkin', 'codexGui', 'coze', 'logDiagnostics', 'downloads', 'lounge', 'browser', 'portMappings', 'ssh'].includes(page) && (
           <>
           {isAccountManagementPage(page) ? (
             <AccountManagementToolbar section={page} onSectionChange={setPage} t={t}
@@ -1470,6 +1473,11 @@ export function DashboardApp() {
           {page === "totp" && <TotpPage accounts={manager.accounts} manager={totpManager} t={t} />}
           {page === "downloads" && <DownloadsPage auth={cloud.state} />}
           {page === "portMappings" && <PortMappingsPage key={JSON.stringify(computers.identity)} computers={computers} />}
+          <RetainedView active={page === "ssh"} scope={JSON.stringify([computers.identity, computers.current?.deviceId])}>
+            <Suspense fallback={null}>
+              <DesktopSshPage active={page === "ssh"} identity={computers.identity} computers={computers} remote={sshHost} />
+            </Suspense>
+          </RetainedView>
           <RetainedView active={page === "browser"}>
             <BrowserPage language={language} active={page === "browser"} onClose={() => setPage("codexGui")}
               homeBaseUrl={cloud.state.baseUrl?.trim() || DEFAULT_CLOUD_BASE_URL}
@@ -1619,7 +1627,7 @@ export function DashboardApp() {
             <RetainedView active={page === "codexGui"}
               scope={JSON.stringify([cloud.state.authenticated, cloud.state.baseUrl, cloud.state.userId,
                 manager.info?.codexHome])}>
-            <GuiWorkspace active={page === "codexGui"} computers={computers} notificationTarget={notificationTarget}
+            <GuiWorkspace active={page === "codexGui"} computers={computers} onSshHost={setSshHost} notificationTarget={notificationTarget}
               plugins={{ baseUrl: cloud.state.baseUrl, authenticated: cloud.state.authenticated,
                 currentUserId: cloud.state.userId, onLogin: openCloudLogin, notify, t }}
               windowControls={NATIVE_WINDOW_CONTROLS_ENABLED && <WindowControls onError={notify} t={t} />}

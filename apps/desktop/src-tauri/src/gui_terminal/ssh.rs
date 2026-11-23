@@ -55,6 +55,19 @@ pub(crate) async fn codex_gui_ssh_command(
 }
 
 #[tauri::command]
+pub(crate) async fn codex_gui_ssh_monitor(
+    app: AppHandle,
+    window: Window,
+    id: String,
+) -> Result<csw_ssh_client::ServerSample, String> {
+    super::authorize(&window).map_err(|error| error.to_string())?;
+    app.state::<Arc<Client>>()
+        .monitor(&id)
+        .await
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
 pub(crate) async fn codex_gui_ssh_files(
     app: AppHandle,
     window: Window,

@@ -3,7 +3,7 @@ import { TerminalOutput } from './terminalOutput';
 import { TerminalFlow } from './terminalFlow';
 import { terminalBelongsToProject } from '../../../../shared/remote-chat/terminalProject';
 import { invoke } from '../api/backend';
-import { ensureSshX11, openNativeSsh, probeSsh, sshFiles } from '../pages/codexGui/terminal/sshApi';
+import { ensureSshX11, monitorSsh, openNativeSsh, probeSsh, sshFiles } from '../pages/codexGui/terminal/sshApi';
 import type { SshConnect, SshEndpoint, SshFileAction, SshX11 } from '../../../../shared/terminal/ssh';
 
 const MAX_TERMINALS = 8;
@@ -41,6 +41,9 @@ export class RemoteTerminals {
         if (!session.info.ssh || session.exited) throw new Error('client.ssh.closed');
         session.flow ??= new TerminalFlow(session.info.id, session.output);
         return session.flow.mode(body.token, body.enabled);
+      case 'guiTerminalSshMonitor':
+        if (!session.info.ssh || session.exited) throw new Error('client.ssh.closed');
+        return monitorSsh(session.info.id);
       case 'guiTerminalSshFiles':
         if (!session.info.ssh || session.exited) throw new Error('client.ssh.closed');
         return sshFiles(session.info.id, body.request as SshFileAction);

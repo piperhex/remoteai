@@ -1,4 +1,5 @@
-import { lazy, Suspense, useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { RemoteSshHost } from '../../ssh/DesktopSshPage';
 import { ConfigProvider } from 'antd';
 import { ConnectedChat } from '../../../../../../shared/remote-chat/views/ConnectedChat';
 import { FocusModeButton, type GuiFocusMode } from '../FocusModeButton';
@@ -34,6 +35,7 @@ const nativeFileDrop = { subscribe: subscribeFileDrop, readFiles: readDroppedFil
 export default function RemoteGuiWorkspace(props: {
   active: boolean; identity: GuiCloudIdentity; device: GuiComputer; computers: GuiComputerNavigation;
   privacyMode: boolean; focusMode: GuiFocusMode; windowControls?: ReactNode;
+  onSshHost?: (host: RemoteSshHost | null) => void;
 }) {
   const { active, identity, device, computers } = props;
   const [syncing, setSyncing] = useState(false);
@@ -48,6 +50,11 @@ export default function RemoteGuiWorkspace(props: {
   const resolveLink = useTerminalLinkTunnels(chat.controller.guiTools.terminal);
   const terminalApi = useMemo(() => remoteTerminalApi(chat.controller.guiTools.terminal, resolveLink),
     [chat.controller, resolveLink]);
+  useEffect(() => {
+    if (computers.current?.deviceId !== device.deviceId || !props.onSshHost) return;
+    props.onSshHost({ scope, api: terminalApi, ready: chat.state.ready });
+    return () => props.onSshHost?.(null);
+  }, [scope, terminalApi, computers.current?.deviceId, device.deviceId, chat.state.ready, props.onSshHost]);
   const skinStyle = useDreamSkin(active);
   const workspace = useRef<HTMLElement>(null);
   const popupContainer = useCallback(() => workspace.current ?? document.body, []);

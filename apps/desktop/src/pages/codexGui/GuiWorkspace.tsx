@@ -10,9 +10,11 @@ import { useGuiLayout } from "./useGuiLayout";
 import { GuiHostPicker } from "../../../../../shared/conversation/GuiHostPicker";
 import { RemoteGuiWorkspaces } from "./remote/RemoteGuiWorkspaces";
 import type { ThreadNavigation } from "./useNotificationNavigation";
+import type { RemoteSshHost } from '../ssh/DesktopSshPage';
 
 export function GuiWorkspace(props: {
   computers: ReturnType<typeof useGuiComputers>;
+  onSshHost?: (host: RemoteSshHost | null) => void;
   active: boolean; accounts: Account[]; providers: Provider[]; privacyMode: boolean;
   loading: boolean; windowControls?: ReactNode;
   notificationTarget?: ThreadNavigation;
@@ -46,7 +48,7 @@ export function GuiWorkspace(props: {
     } /></div>
     {isDesktopApp && computers.identity &&
       <RemoteGuiWorkspaces key={JSON.stringify([computers.identity.baseUrl, computers.identity.userId])}
-        active={props.active} current={remote} identity={computers.identity} computers={computers}
+        active={props.active} current={remote} identity={computers.identity} computers={computers} onSshHost={props.onSshHost}
         privacyMode={props.privacyMode} focusMode={focusMode} windowControls={props.windowControls} />
     }
   </>;

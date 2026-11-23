@@ -13,6 +13,7 @@ enum Request {
     Open { request: Connect },
     Command { request: Command },
     Files { id: String, request: FileAction },
+    Monitor { id: String },
 }
 
 async fn request(
@@ -49,6 +50,7 @@ async fn request(
             client.command(request).await.map_err(|e| e.to_string())?;
             Value::Null
         }
+        Request::Monitor { id } => json!(client.monitor(&id).await.map_err(|e| e.to_string())?),
         Request::Files { id, request } => json!(client
             .files(&id, request)
             .await

@@ -425,6 +425,7 @@ pub fn run() {
             gui_terminal::ssh::codex_gui_ssh_open,
             gui_terminal::ssh::codex_gui_ssh_command,
             gui_terminal::ssh::codex_gui_ssh_files,
+            gui_terminal::ssh::codex_gui_ssh_monitor,
             gui_terminal::ssh_drop::codex_gui_ssh_drop_files,
             gui_terminal::codex_gui_terminal_command,
             gui_terminal::links::codex_gui_terminal_link,

@@ -13,6 +13,8 @@ struct Input {
     reply: oneshot::Sender<Result<()>>,
 }
 struct Session {
+    ssh: Arc<client::Handle<HostKey>>,
+    sampler: Mutex<Option<crate::monitor::Platform>>,
     input: mpsc::Sender<Input>,
     files: FileRequests,
     x11: Option<crate::x11::Lease>,
@@ -77,7 +79,13 @@ impl Client {
         let (input, receive) = mpsc::channel(16);
         let ssh = Arc::new(ssh);
         let (files, worker) = FileRequests::start(Arc::clone(&ssh));
-        let session = Arc::new(Session { input, files, x11 });
+        let session = Arc::new(Session {
+            ssh: Arc::clone(&ssh),
+            sampler: Mutex::new(None),
+            input,
+            files,
+            x11,
+        });
         let id = format!("ssh-{}", uuid::Uuid::new_v4());
         self.sessions
             .lock()
@@ -164,6 +172,12 @@ impl Client {
 
     pub async fn files(&self, id: &str, action: FileAction) -> Result<FileReply> {
         self.get(id).await?.files.perform(action).await
+    }
+
+    pub async fn monitor(&self, id: &str) -> Result<crate::ServerSample> {
+        let session = self.get(id).await?;
+        let mut platform = session.sampler.try_lock().map_err(|_| Error::FileBusy)?;
+        crate::monitor::sample(&session.ssh, &mut platform).await
     }
 }
 
