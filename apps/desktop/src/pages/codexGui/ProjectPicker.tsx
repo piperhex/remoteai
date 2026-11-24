@@ -50,7 +50,7 @@ export function ProjectPicker({ value, projects, disabled, onChange, onError,
     {hostPicker}
   </>;
   return <>
-    <ProjectBar barRef={bar} active={active} scope={value} trailing={trailing} draftDirectory={gitEnabled ? value : undefined}
+    <ProjectBar barRef={bar} active={active} scope={value} trailing={trailing}
       hint={(drop.dragging || drop.reading) && <div className={dropStyles.dropHint} role="status">
         <span>{drop.reading ? uiText("client.chat.addingAttachments")
           : uiText("client.composer.dropToAddFilesOrFolders")}</span>

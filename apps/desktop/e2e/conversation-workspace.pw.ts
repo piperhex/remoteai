@@ -90,11 +90,14 @@ for (const mode of ['local', 'remote', 'web']) {
     await page.goto(`/e2e/conversation-workspace-harness.html?mode=${mode}&draft`, { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: 'Narrow chat', exact: true }).click();
     const more = page.getByRole('button', { name: '更多项目选项', exact: true });
+    await expect(more).toBeVisible();
+    await expect(page.locator('[data-project-bar]')).not.toContainText('F:/projects/codex-switch');
+    await page.screenshot({ path: `../../.codex-tmp/workspace-location-${mode}-compact.png` });
     await more.click();
     const project = page.getByRole('button', { name: mode === 'local'
       ? '选择项目文件夹：codex-switch' : '选择远程项目' });
     await project.click();
-    const search = page.getByRole('searchbox', { name: '在当前文件夹中搜索', exact: true });
+    const search = page.getByRole('textbox', { name: '搜索项目', exact: true });
     await expect(search).toBeVisible();
     await search.focus();
     await expect(search).toBeFocused();

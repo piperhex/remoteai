@@ -131,11 +131,15 @@ for (const mode of ['local', 'remote', 'web']) {
     }
     await page.getByRole('button', { name: /在 .*agenthub-review-.* 中新建对话/i }).click();
     const bar = page.locator('[data-project-bar]:visible');
-    await expect(bar.getByText(cwd, { exact: true }).first()).toBeVisible();
-    await page.screenshot({ path: join(evidence, mode + '-directory.png') });
+    await expect(bar).toBeVisible();
+    await expect(bar).not.toContainText(cwd);
+    await page.screenshot({ path: join(evidence, mode + '-location.png') });
     const overflow = bar.getByRole('button', { name: '更多项目选项' });
     if (await overflow.isVisible()) await overflow.click();
-    await page.getByRole('button', { name: '工作位置', exact: true }).click();
+    const location = page.getByRole('button', { name: '工作位置', exact: true });
+    await expect(location).toHaveText(mode === 'local' ? '本地' : '远程电脑');
+    await location.click();
+    await expect(page.locator('.ant-popover:visible').getByText(cwd, { exact: true })).toBeVisible();
     await page.getByRole('button', { name: /新建.*工作树/ }).click();
     await expect(page.getByRole('dialog').getByText(/未提交的修改会保留在原目录/)).toBeVisible();
     await expect(page.locator('.ant-popover').filter({ hasText: '从当前提交创建独立副本' }).first()).toBeHidden();
