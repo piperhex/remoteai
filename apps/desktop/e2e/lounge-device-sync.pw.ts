@@ -8,11 +8,28 @@ const { LoungeSyncBroker } = createRequire(import.meta.url)('../../../shared/lou
   typeof import('../../../shared/lounge/testing/syncBroker');
 test.setTimeout(120_000);
 
+async function openGroup(page: Page, mode: string) {
+  if (mode !== 'mobile') {
+    await page.getByRole('button', { name: '在线交流', exact: true }).click();
+    return;
+  }
+  await page.getByRole('tab', { name: '发现', exact: true }).click();
+  await page.locator('.discovery-lounge').click();
+  await page.getByRole('button', { name: '群聊', exact: true }).click();
+}
+
 async function connect(page: Page, broker: Broker, mode: string, direct: boolean) {
   const web = mode === 'web' || mode === 'mobile';
   const lounge = await setupLounge(page, web);
+  // The desktop fixture runs in Chromium, which supplies the data channel in place of native RTC IPC.
+  if (direct && !web) await page.route('**/src/nativeRtc/connection.ts*', route => route.fulfill({
+    contentType: 'application/javascript',
+    body: 'export const createNativeRtcConnection = configuration => new RTCPeerConnection(configuration);',
+  }));
   lounge.enableDeviceSync();
+  let offlineAttempts = 0;
   await page.routeWebSocket('**/device-chat', route => {
+    if (broker.fail) offlineAttempts++;
     const client = broker.attach({ send: data => route.send(typeof data === 'string' ? data : Buffer.from(data)),
       close: () => route.close({ code: 1001 }) });
     route.onMessage(client.receive); route.onClose(client.disconnect);
@@ -33,12 +50,8 @@ async function connect(page: Page, broker: Broker, mode: string, direct: boolean
   else await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(web ? webURL : `/e2e/lounge-harness.html?mode=${mode}`);
   await lounge.ready();
-  if (mode === 'mobile') {
-    await page.locator('.mobile-tabbar').getByText('发现', { exact: true }).click();
-    await page.locator('.discovery-lounge').click();
-    await page.getByRole('button', { name: '群聊', exact: true }).click();
-  } else await page.getByRole('button', { name: '在线交流', exact: true }).click();
-  return lounge;
+  await openGroup(page, mode);
+  return { ...lounge, offlineAttempts: () => offlineAttempts };
 }
 
 for (const mode of ['local', 'remote', 'web', 'mobile']) {
@@ -51,7 +64,7 @@ for (const mode of ['local', 'remote', 'web', 'mobile']) {
     await expect(page.locator('.lounge-message')).toHaveCount(62);
     const context = await browser.newContext();
     try {
-      const other = await context.newPage(); await connect(other, broker, mode, direct);
+      const other = await context.newPage(); const sink = await connect(other, broker, mode, direct);
       await expect(other.locator('.lounge-message')).toHaveCount(62, { timeout: 30_000 });
       await expect(other.locator('.lounge-avatar-unread')).toHaveCount(0);
       await expect(other.locator('.lounge-text').filter({ hasText: '带引用的历史消息' })).toBeVisible();
@@ -62,21 +75,20 @@ for (const mode of ['local', 'remote', 'web', 'mobile']) {
         expect(broker.signalFrames).toBeGreaterThan(0);
       }
       broker.fail = true; broker.disconnectAll();
-      await expect(other.getByRole('alert')).toContainText('设备间消息同步暂时中断');
+      await expect.poll(sink.offlineAttempts).toBeGreaterThan(0);
+      await expect(other.getByRole('textbox', { name: '消息', exact: true })).toBeEditable();
+      await expect(other.getByText('设备间消息同步暂时中断，正在重试。', { exact: true })).toHaveCount(0);
+      await expect(other.getByRole('button', { name: '重试', exact: true })).toHaveCount(0);
+      await other.screenshot({ path: `../../.codex-tmp/lounge-device-sync-${mode}-offline.png`, animations: 'disabled' });
       source.push('断线期间补回的消息');
       broker.fail = false;
-      await other.getByRole('alert').getByRole('button', { name: '重试', exact: true }).click();
       await expect(other.locator('.lounge-message')).toHaveCount(63, { timeout: 30_000 });
       await expect(other.getByRole('alert')).toHaveCount(0);
       await other.screenshot({ path: `../../.codex-tmp/lounge-device-sync-${mode}.png`, animations: 'disabled' });
       expect(await other.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       await other.reload();
       await expect.poll(() => broker.clients.size).toBe(2);
-      if (mode === 'mobile') {
-        await other.locator('.mobile-tabbar').getByText('发现', { exact: true }).click();
-        await other.locator('.discovery-lounge').click();
-        await other.getByRole('button', { name: '群聊', exact: true }).click();
-      } else await other.getByRole('button', { name: '在线交流', exact: true }).click();
+      await openGroup(other, mode);
       await expect(other.locator('.lounge-message')).toHaveCount(63);
     } finally { await context.close(); broker.disconnectAll(); }
   });
@@ -98,14 +110,14 @@ test('private history excludes deleted generations and never replays the sender�
   } finally { await context.close(); broker.disconnectAll(); }
 });
 
-test('sync retry notices switch languages and stay compact', async ({ page }) => {
+test('device sync interruptions stay silent across language changes', async ({ page }) => {
   const broker = new LoungeSyncBroker(); broker.fail = true;
-  await connect(page, broker, 'local', false);
-  const notice = page.getByRole('alert');
+  const sink = await connect(page, broker, 'local', false);
+  await expect.poll(sink.offlineAttempts).toBeGreaterThan(1);
   for (const [language, text] of [['zh', '设备间消息同步暂时中断'], ['en', 'Message sync between devices'],
     ['ja', '端末間のメッセージ同期'], ['ru', 'Синхронизация сообщений между устройствами']] as const) {
     await page.evaluate(language => window.loungeFixture.setLanguage(language), language);
-    await expect(notice).toContainText(text);
-    expect((await notice.boundingBox())!.width).toBeLessThanOrEqual(400);
+    await expect(page.getByText(text)).toHaveCount(0);
+    await expect(page.getByRole('alert')).toHaveCount(0);
   }
 });
