@@ -3,10 +3,12 @@ import { MessageImage } from '../../../shared/conversation/MessageImage';
 import { FileEnvironmentContext, type FileEnvironment } from '../../../shared/conversation/fileEnvironment';
 import { ChatImage } from '../../../shared/remote-chat/views/ChatImage';
 import { ImageAiContext } from '../../../shared/chat/ImageAiContext';
+import { installBrowserDefaultsGuard } from '../../../shared/browser/installBrowserDefaultsGuard';
 import '../src/styles.css';
 import '../../../shared/remote-chat/views/messages.css';
 
 const params = new URLSearchParams(location.search);
+installBrowserDefaultsGuard();
 const canvas = document.createElement('canvas');
 canvas.width = params.has('large') ? 7680 : 1800;
 canvas.height = params.has('large') ? 4320 : 1000;

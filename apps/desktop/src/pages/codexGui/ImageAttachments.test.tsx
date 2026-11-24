@@ -150,6 +150,8 @@ it("copies and saves the selected attachment from its preview context menu", asy
   await render();
   await click("放大查看：图片 2");
   await act(async () => dialog()?.querySelector<HTMLButtonElement>('.cs-image-original')?.click());
+  const displayed = dialog()!.querySelector("img")!;
+  Object.defineProperties(displayed, { currentSrc: { value: displayed.src }, naturalWidth: { value: 32 } });
   const event = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
   await act(async () => { dialog()?.querySelector("img")?.dispatchEvent(event); });
   expect(event.defaultPrevented).toBe(true);

@@ -5,10 +5,12 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import { Menu } from "@tauri-apps/api/menu";
 import { ImagePreview } from "../../../../../shared/conversation/ImagePreview";
+import { EMPTY_IMAGE } from "../../../../../shared/chat/ImageGallery";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(), isTauri: vi.fn(() => true) }));
 vi.mock("@tauri-apps/api/menu", () => ({ Menu: { new: vi.fn() } }));
 const original = "data:image/png;base64,b3JpZ2luYWw=";
+const thumbnail = "data:image/png;base64,dGh1bWI=";
 const popup = vi.fn().mockResolvedValue(undefined);
 const release = vi.fn().mockResolvedValue(undefined);
 let items: { text: string; action: () => void }[];
@@ -19,6 +21,10 @@ beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   vi.clearAllMocks();
+  vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(32);
+  vi.spyOn(HTMLImageElement.prototype, 'currentSrc', 'get').mockImplementation(function (this: HTMLImageElement) {
+    return this.src;
+  });
   vi.mocked(isTauri).mockReturnValue(true);
   vi.mocked(invoke).mockResolvedValue({ completed: true });
   vi.mocked(Menu.new).mockImplementation(async (options) => {
@@ -33,11 +39,12 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   container.remove();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
-async function render(load = async () => original) {
-  await act(async () => root.render(<ImagePreview thumbnail="thumbnail" description="截图"
+async function render(load = async () => original, preview = thumbnail) {
+  await act(async () => root.render(<ImagePreview thumbnail={preview} description="截图"
     load={load} close={() => {}} />));
 }
 
@@ -92,23 +99,38 @@ it("does not start overlapping actions while copying or saving", async () => {
   await act(async () => finish({ completed: true }));
 });
 
-it("keeps actions unavailable while the original is loading or has failed", async () => {
+it("copies the thumbnail while the original loads or after it fails, then copies the retried original", async () => {
   let fail: (reason: Error) => void = () => {};
   const load = vi.fn().mockImplementationOnce(() => new Promise((_, reject) => { fail = reject; }))
     .mockResolvedValue(original);
   await render(load);
   expect(container.querySelector('.cs-image-original')).toBeNull();
   await openMenu();
-  expect(Menu.new).not.toHaveBeenCalled();
+  expect(items.map(item => item.text)).toEqual(["复制图片"]);
+  await act(async () => items[0].action());
+  expect(invoke).toHaveBeenLastCalledWith("codex_gui_image_action", { request: { source: thumbnail, action: "copy" } });
   await act(async () => fail(new Error("missing")));
   await openMenu();
-  expect(Menu.new).not.toHaveBeenCalled();
+  await act(async () => items[0].action());
+  expect(invoke).toHaveBeenLastCalledWith("codex_gui_image_action", { request: { source: thumbnail, action: "copy" } });
   expect(load).toHaveBeenCalledOnce();
   await act(async () => container.querySelector<HTMLButtonElement>('.cs-image-original')!.click());
   expect(load).toHaveBeenCalledTimes(2);
   expect(container.querySelector('dialog img')?.getAttribute('src')).toBe(original);
+  await act(async () => items[0].action());
+  expect(invoke).toHaveBeenLastCalledWith("codex_gui_image_action", { request: { source: original, action: "copy" } });
   await openMenu();
-  expect(Menu.new).toHaveBeenCalledOnce();
+  expect(items.map(item => item.text)).toEqual(["复制图片", "另存为…"]);
+});
+
+it("never offers a copy of the gallery placeholder or an undecoded image", async () => {
+  const load = () => new Promise<string>(() => {});
+  await render(load, EMPTY_IMAGE);
+  await openMenu();
+  vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(0);
+  await render(load);
+  await openMenu();
+  expect(Menu.new).not.toHaveBeenCalled();
 });
 
 it("does not capture right-button drags and preserves browser context menus", async () => {
