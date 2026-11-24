@@ -1,5 +1,21 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mockDiscoverySshStore } from '../../web/e2e/discovery-ssh-store';
+import { checkProfileActions, checkSessionMenu } from './ssh-workspace-actions';
+
+async function expectMonitorBelowTerminal(workspace: Locator) {
+  const [terminal, monitor, sidebar, region] = await Promise.all([
+    workspace.locator('.sshw-console').boundingBox(),
+    workspace.locator('.sshw-monitor').boundingBox(),
+    workspace.locator('.sshw-files:visible, .sshw-profiles:visible').boundingBox(),
+    workspace.boundingBox(),
+  ]);
+  if (!terminal || !monitor || !sidebar || !region) throw new Error('Missing SSH workspace panels');
+  expect(monitor.x).toBe(terminal.x);
+  expect(monitor.width).toBe(terminal.width);
+  expect(monitor.y).toBe(terminal.y + terminal.height);
+  expect(sidebar.y + sidebar.height).toBe(region.y + region.height);
+  expect(monitor.y + monitor.height).toBe(region.y + region.height);
+}
 
 async function uploadAndRead(page: Page, workspace: Locator, mode: string) {
   const name = mode + '-' + crypto.randomUUID().slice(0, 6) + '.txt';
@@ -53,7 +69,21 @@ for (const mode of ['local', 'remote', 'web']) {
     await expect(monitor.locator('.sshm-values > span').first()).toContainText(/CPU\d+%/);
     await page.mouse.move(0, 0);
     await expect(page.getByRole('tooltip')).toHaveCount(0);
+    await expectMonitorBelowTerminal(workspace);
     await page.screenshot({ path: info.outputPath(mode + '-connected.png'), animations: 'disabled' });
+    await workspace.locator('.sshw-switch').getByRole('button', { name: '已保存的连接' }).click();
+    await expect(workspace.locator('.sshw-profiles')).toBeVisible();
+    await expectMonitorBelowTerminal(workspace);
+    await page.screenshot({ path: info.outputPath(mode + '-saved.png'), animations: 'disabled' });
+    const capture = async (state: string) => {
+      const popup = page.locator('.ant-dropdown:visible, .ant-modal:visible').last();
+      await expect(popup).toBeVisible();
+      await expect(popup).not.toHaveClass(/-(?:appear|enter|leave)(?:\s|$|-)/);
+      await expect(popup).toHaveCSS('opacity', '1');
+      await page.screenshot({ path: info.outputPath(mode + '-' + state + '.png'), animations: 'disabled' });
+    };
+    await checkProfileActions(page, workspace, capture);
+    await checkSessionMenu(page, workspace, capture);
     await nav.getByRole('button', { name: 'Agent Hub' }).click();
     await nav.getByRole('button', { name: 'SSH', exact: true }).click();
     await expect(tty).toContainText('SSH workspace file transfer');
@@ -69,6 +99,7 @@ for (const mode of ['local', 'remote', 'web']) {
       localStorage.setItem('codex-switch:global-font-size', '20');
       window.dispatchEvent(new Event('codex-switch:gui-appearance-changed'));
     });
+    await expectMonitorBelowTerminal(workspace);
     await page.screenshot({ path: info.outputPath(mode + '-two-tabs-large.png'), animations: 'disabled' });
     await workspace.getByRole('button', { name: '关闭终端 2', exact: true }).click();
     await expect(workspace.getByRole('tab')).toHaveCount(1);
