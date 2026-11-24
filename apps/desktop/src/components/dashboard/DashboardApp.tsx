@@ -287,6 +287,7 @@ function dashboardTitle(page: DashboardPage, t: Translate, options: {
 export function DashboardApp() {
   const browserDownloadMessages = useBrowserDownloads();
   const [page, setPage] = useState<DashboardPage>("codexGui");
+  const [browserTabBarHost, setBrowserTabBarHost] = useState<HTMLDivElement | null>(null);
   const notificationTarget = useNotificationNavigation(() => setPage("codexGui"));
   const [diagnosticsTab, setDiagnosticsTab] = useState<LogDiagnosticsTab>("errorLogs");
   const openProxySessions = () => {
@@ -1347,13 +1348,14 @@ export function DashboardApp() {
       }${sidebarNavigationEnabled && navigationStyle.sidebarCollapsed ? " sidebar-collapsed" : ""}${
         page === "browser" ? " browser-window-shell" : ""
       }`}>
-        {page !== "browser" && <DashboardTopbar menuItems={menuItems}
+        {(page !== "browser" || !NATIVE_WINDOW_CONTROLS_ENABLED) && <DashboardTopbar menuItems={menuItems}
           nativeWindowControls={NATIVE_WINDOW_CONTROLS_ENABLED}
           navigationStyle={navigationStyle.style}
           onMenuAction={(action) => handleSystemMenuAction(action as SystemMenuAction)}
           onSearch={() => setShowMenuSearch(true)} onWindowError={notify} t={t}
           sidebarToggle={sidebarToggle}
           tools={<>{proxyStatusControls}{menuTools}</>} />}
+        {page === "browser" && <div className="pm-browser browser-tabstrip-host" ref={setBrowserTabBarHost} />}
         {sidebarNavigationEnabled && (
           <aside className="app-sidebar" data-tauri-drag-region>
             <button type="button" className="brand sidebar-brand" onClick={openRepository}
@@ -1484,7 +1486,7 @@ export function DashboardApp() {
           </RetainedView>
           <RetainedView active={page === "browser"}>
             <BrowserPage language={language} active={page === "browser"} onClose={() => setPage("codexGui")}
-              sidebarToggle={sidebarToggle}
+              sidebarToggle={sidebarToggle} tabBarHost={browserTabBarHost}
               windowControls={page === "browser" && NATIVE_WINDOW_CONTROLS_ENABLED
                 && <WindowControls onError={notify} t={t} />}
               homeBaseUrl={cloud.state.baseUrl?.trim() || DEFAULT_CLOUD_BASE_URL}

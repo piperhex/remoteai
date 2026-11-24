@@ -1,3 +1,9 @@
+.browser-window-shell > .browser-tabstrip-host {
+  position: relative; z-index: 1000; grid-area: 1 / 1 / 2 / -1; min-height: var(--window-titlebar-height);
+}
+/* On platforms with a wrapping app menu, preserve its actual row height when switching pages. */
+.browser-window-shell > .window-titlebar-content { grid-area: 1 / 1 / 2 / -1; visibility: hidden; }
+.window-titlebar-content + .browser-tabstrip-host .pm-browser-tabs-bar { align-self: center; }
 .browser-window-shell > .app-menu { grid-row: 2; }
 .browser-window-shell > main { grid-row: 3; scrollbar-gutter: auto; }
 .pm-browser-titlebar .window-controls { align-self: stretch; }
