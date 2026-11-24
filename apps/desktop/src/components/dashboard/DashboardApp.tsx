@@ -87,6 +87,7 @@ import { AnnouncementBanner } from "./AnnouncementBanner";
 import { announcementColors } from "./announcementColors";
 import { DashboardMenuTools } from "./DashboardMenuTools";
 import { DashboardTopbar } from "./DashboardTopbar";
+import "./browserWindow.css";
 import { ProxyProgressModal } from "./ProxyProgressModal";
 import { buildDashboardMenuItems } from "./dashboardMenuItems";
 import { DashboardNavigation, isAccountManagementPage, type DashboardPage } from "./DashboardNavigation";
@@ -286,6 +287,7 @@ function dashboardTitle(page: DashboardPage, t: Translate, options: {
 export function DashboardApp() {
   const browserDownloadMessages = useBrowserDownloads();
   const [page, setPage] = useState<DashboardPage>("codexGui");
+  const [browserTabBarHost, setBrowserTabBarHost] = useState<HTMLDivElement | null>(null);
   const notificationTarget = useNotificationNavigation(() => setPage("codexGui"));
   const [diagnosticsTab, setDiagnosticsTab] = useState<LogDiagnosticsTab>("errorLogs");
   const openProxySessions = () => {
@@ -1313,6 +1315,14 @@ export function DashboardApp() {
   const sidebarToggleLabel = t(navigationStyle.sidebarCollapsed
     ? "nav.expandSidebar"
     : "nav.collapseSidebar");
+  const SidebarToggleIcon = navigationStyle.sidebarCollapsed ? PanelLeftOpen : PanelLeftClose;
+  const sidebarToggle = sidebarNavigationEnabled && (
+    <button type="button" className="sidebar-collapse-button" aria-label={sidebarToggleLabel}
+      title={sidebarToggleLabel} aria-expanded={!navigationStyle.sidebarCollapsed}
+      onClick={() => navigationStyle.setSidebarCollapsed(!navigationStyle.sidebarCollapsed)}>
+      <SidebarToggleIcon size="1em" aria-hidden="true" />
+    </button>
+  );
 
   return (
     <ExtensionMarketContext.Provider value={cloud.state.baseUrl?.trim() || DEFAULT_CLOUD_BASE_URL}>
@@ -1335,21 +1345,17 @@ export function DashboardApp() {
       {browserDownloadMessages}
       <div className={`app-shell${NATIVE_WINDOW_CONTROLS_ENABLED ? " custom-titlebar-shell" : ""}${
         sidebarNavigationEnabled ? " sidebar-navigation-shell" : ""
-      }${sidebarNavigationEnabled && navigationStyle.sidebarCollapsed ? " sidebar-collapsed" : ""}`}>
-        <DashboardTopbar menuItems={menuItems} nativeWindowControls={NATIVE_WINDOW_CONTROLS_ENABLED}
+      }${sidebarNavigationEnabled && navigationStyle.sidebarCollapsed ? " sidebar-collapsed" : ""}${
+        page === "browser" ? " browser-window-shell" : ""
+      }`}>
+        {(page !== "browser" || !NATIVE_WINDOW_CONTROLS_ENABLED) && <DashboardTopbar menuItems={menuItems}
+          nativeWindowControls={NATIVE_WINDOW_CONTROLS_ENABLED}
           navigationStyle={navigationStyle.style}
           onMenuAction={(action) => handleSystemMenuAction(action as SystemMenuAction)}
           onSearch={() => setShowMenuSearch(true)} onWindowError={notify} t={t}
-          sidebarToggle={sidebarNavigationEnabled && (
-            <button type="button" className="sidebar-collapse-button" aria-label={sidebarToggleLabel}
-              title={sidebarToggleLabel} aria-expanded={!navigationStyle.sidebarCollapsed}
-              onClick={() => navigationStyle.setSidebarCollapsed(!navigationStyle.sidebarCollapsed)}>
-              {navigationStyle.sidebarCollapsed
-                ? <PanelLeftOpen size="1em" aria-hidden="true" />
-                : <PanelLeftClose size="1em" aria-hidden="true" />}
-            </button>
-          )}
-          tools={<>{proxyStatusControls}{menuTools}</>} />
+          sidebarToggle={sidebarToggle}
+          tools={<>{proxyStatusControls}{menuTools}</>} />}
+        {page === "browser" && <div className="pm-browser browser-tabstrip-host" ref={setBrowserTabBarHost} />}
         {sidebarNavigationEnabled && (
           <aside className="app-sidebar" data-tauri-drag-region>
             <button type="button" className="brand sidebar-brand" onClick={openRepository}
@@ -1480,6 +1486,9 @@ export function DashboardApp() {
           </RetainedView>
           <RetainedView active={page === "browser"}>
             <BrowserPage language={language} active={page === "browser"} onClose={() => setPage("codexGui")}
+              sidebarToggle={sidebarToggle} tabBarHost={browserTabBarHost}
+              windowControls={page === "browser" && NATIVE_WINDOW_CONTROLS_ENABLED
+                && <WindowControls onError={notify} t={t} />}
               homeBaseUrl={cloud.state.baseUrl?.trim() || DEFAULT_CLOUD_BASE_URL}
               homeTransport={nativeBrowserHomeTransport} />
           </RetainedView>
