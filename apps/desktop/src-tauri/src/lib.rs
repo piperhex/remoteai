@@ -521,6 +521,7 @@ pub fn run() {
             provider_browser::overlays::browser_overlay_focus,
             provider_browser::inspector::browser_inspector,
             provider_browser::provider_browser_action,
+            provider_browser::zoom::browser_set_zoom,
             provider_browser::passwords::provider_browser_password,
             provider_browser::data::provider_browser_clear_data,
             provider_browser::vault_key::browser_vault_key,

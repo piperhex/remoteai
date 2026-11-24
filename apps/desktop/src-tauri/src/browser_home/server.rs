@@ -98,6 +98,14 @@ fn response(
     })?;
     let body = if request.method() == &Method::Head {
         Vec::new()
+    } else if mime.starts_with("text/html") {
+        let mut html = bytes.clone();
+        html.extend_from_slice(b"<script>");
+        html.extend_from_slice(include_bytes!(
+            "../../../../../shared/browser/home/zoomWheel.js"
+        ));
+        html.extend_from_slice(b"</script>");
+        html
     } else {
         bytes.clone()
     };

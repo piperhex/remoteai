@@ -1,5 +1,44 @@
 import { expect, test } from '@playwright/test';
 
+test('page zoom follows the active tab and dismisses two seconds after the last wheel', async ({ page, baseURL }) => {
+  await page.goto('/e2e/browser-bookmarks-harness.html');
+  const browser = page.locator('.browser-main-page');
+  const address = browser.getByRole('combobox');
+  const url = new URL('/zoom-document', baseURL).href;
+  await page.route(url, route => route.fulfill({ contentType: 'text/html', body: '<main>Zoom</main>' }));
+  await address.fill(url);
+  await address.press('Enter');
+  const frame = browser.locator('iframe').contentFrame().locator('main');
+  await expect(frame).toBeVisible();
+  const width = await frame.evaluate(() => innerWidth);
+  const hint = browser.locator('.browser-zoom-popup');
+  await page.clock.install();
+  await frame.hover();
+  await page.keyboard.down('Control');
+  await page.mouse.wheel(0, -100);
+  await expect(hint.locator('output')).toHaveText('110%');
+  await page.clock.fastForward(1500);
+  await page.mouse.wheel(0, -100);
+  await page.keyboard.up('Control');
+  await expect(hint.locator('output')).toHaveText('125%');
+  await page.clock.fastForward(1000);
+  await expect(hint).toBeVisible();
+  await page.clock.fastForward(1000);
+  await expect(hint).toBeHidden();
+  expect(await frame.evaluate(() => innerWidth)).toBeLessThan(width);
+  await browser.getByRole('button', { name: '新标签页', exact: true }).click();
+  const control = browser.getByRole('button', { name: '缩放比例' });
+  await control.click();
+  await expect(hint.locator('output')).toHaveText('100%');
+  await browser.getByRole('tab').first().click();
+  await expect(hint).toBeHidden();
+  await control.click();
+  await expect(hint.locator('output')).toHaveText('125%');
+  await hint.getByRole('button', { name: '重置' }).click();
+  await expect(hint.locator('output')).toHaveText('100%');
+  expect(await frame.evaluate(() => innerWidth)).toEqual(width);
+});
+
 for (const mode of ['local', 'remote']) for (const enlarged of [false, true]) {
   test(`${mode} main browser ${enlarged ? 'dark narrow enlarged' : 'light wide'}`, async ({ page }, info) => {
     await page.setViewportSize({ width: enlarged ? 900 : 1440, height: 900 });

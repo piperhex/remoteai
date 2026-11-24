@@ -57,9 +57,8 @@ pub(super) unsafe fn install_capture(
     app: tauri::AppHandle,
     label: String,
 ) -> windows::core::Result<()> {
-    let id = capture_tab_id(&label)
-        .ok_or_else(|| windows::core::Error::from(windows::Win32::Foundation::E_INVALIDARG))?
-        .to_string();
+    capture_tab_id(&label)
+        .ok_or_else(|| windows::core::Error::from(windows::Win32::Foundation::E_INVALIDARG))?;
     // SAFETY: Registration and handler run on the owning COM apartment. WebMessageReceived is scoped
     // to the top-level document; its native source URL is checked before forwarding credentials.
     unsafe {
@@ -73,7 +72,7 @@ pub(super) unsafe fn install_capture(
                 let mut raw = PWSTR::null();
                 args.WebMessageAsJson(&mut raw)?;
                 let raw = take_pwstr(raw);
-                forward_login_message(&app, &id, &source, &raw);
+                forward_page_message(&app, &label, &source, &raw);
                 Ok(())
             })),
             &mut token,
@@ -88,8 +87,11 @@ fn capture_tab_id(label: &str) -> Option<&str> {
         .or_else(|| label.strip_prefix("conversation-browser-"))
 }
 
-fn forward_login_message(app: &tauri::AppHandle, id: &str, source: &str, raw: &str) {
+fn forward_page_message(app: &tauri::AppHandle, label: &str, source: &str, raw: &str) {
     const MAX_MESSAGE_BYTES: usize = 40_000;
+    let Some(id) = capture_tab_id(label) else {
+        return;
+    };
     if raw.len() > MAX_MESSAGE_BYTES {
         return;
     }
@@ -105,6 +107,11 @@ fn forward_login_message(app: &tauri::AppHandle, id: &str, source: &str, raw: &s
         value
     };
     match value["type"].as_str() {
+        Some("browser-zoom-wheel") => {
+            if let Err(error) = app.emit_to("main", label, serde_json::json!({"zoomWheel":true})) {
+                eprintln!("Browser zoom notification failed: {error}");
+            }
+        }
         Some("browser-overlay-focus") => {
             if let Err(error) = app.emit_to("main", &format!("browser-overlay-focus-{id}"), ()) {
                 eprintln!("Browser popup keyboard selection unavailable: {error}");

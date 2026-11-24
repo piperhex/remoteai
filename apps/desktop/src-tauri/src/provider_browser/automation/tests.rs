@@ -74,6 +74,7 @@ fn opens_conversation_browser() {
             super::codex_gui_browser, super::codex_gui_browser_place,
             super::super::provider_browser_sync, super::super::provider_browser_action,
             super::super::provider_browser_close,
+            super::super::zoom::browser_set_zoom,
             super::super::preview::provider_browser_preview,
             super::super::overlays::browser_overlay_prepare,
             super::super::overlays::browser_overlay_place,

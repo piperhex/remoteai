@@ -1,7 +1,7 @@
 //! User-operated inspectors. Only the trusted main view can place a tab's inspector.
-use super::{Bounds, BrowserError, Result};
+use super::{Bounds, BrowserError, Result, TabKind};
 use serde::{Deserialize, Serialize};
-use tauri::{Manager, Webview};
+use tauri::Webview;
 
 #[cfg(test)]
 pub(super) mod tests;
@@ -42,37 +42,20 @@ pub(crate) struct Status {
 }
 
 #[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) enum Kind {
-    Provider,
-    Conversation,
-}
-
-#[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct Request {
     id: uuid::Uuid,
-    kind: Kind,
+    kind: TabKind,
     command: Action,
 }
 
 fn target(owner: &Webview, request: &Request) -> Result<Webview> {
-    if owner.label() != "main" {
-        return Err(BrowserError::Invalid);
-    }
     if let Action::Place { bounds, .. } = request.command {
         if !super::valid_bounds(bounds) {
             return Err(BrowserError::Invalid);
         }
     }
-    let prefix = match request.kind {
-        Kind::Provider => super::LABEL_PREFIX,
-        Kind::Conversation => "conversation-browser-",
-    };
-    owner
-        .app_handle()
-        .get_webview(&format!("{prefix}{}", request.id))
-        .ok_or(BrowserError::Unavailable)
+    request.kind.child(owner, request.id)
 }
 
 #[tauri::command]

@@ -14,6 +14,7 @@ pub(crate) mod passwords;
 mod platform;
 pub(crate) mod preview;
 pub(crate) mod vault_key;
+pub(crate) mod zoom;
 pub(crate) use lifecycle::handle_page_load;
 #[cfg(all(test, windows))]
 mod data_smoke;
@@ -35,6 +36,29 @@ enum BrowserError {
     HeadersUnsupported,
 }
 type Result<T> = std::result::Result<T, BrowserError>;
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum TabKind {
+    Provider,
+    Conversation,
+}
+
+impl TabKind {
+    fn child(&self, owner: &Webview, id: uuid::Uuid) -> Result<Webview> {
+        if owner.label() != "main" {
+            return Err(BrowserError::Invalid);
+        }
+        let prefix = match self {
+            Self::Provider => LABEL_PREFIX,
+            Self::Conversation => "conversation-browser-",
+        };
+        owner
+            .app_handle()
+            .get_webview(&format!("{prefix}{id}"))
+            .ok_or(BrowserError::Unavailable)
+    }
+}
+
 const LABEL_PREFIX: &str = "provider-browser-";
 const MAX_BROWSER_URL_BYTES: usize = 20 * 1024;
 const MAX_PREVIEW_EXTENT: f64 = 32_768.0;
@@ -145,7 +169,12 @@ fn browser_builder(
     .initialization_script(passwords::initialization())
     .initialization_script(include_str!("links.js"))
     .initialization_script(include_str!("overlays/dismiss.js"))
+    .initialization_script_for_all_frames(include_str!("zoom_wheel.js"))
     .on_navigation(move |url| {
+        #[cfg(not(windows))]
+        if zoom::handle_wheel(&app, &event, url) {
+            return false;
+        }
         let allowed = allowed_url(url, dev_origin.as_ref());
         if allowed {
             if let Err(error) = app.emit_to(
