@@ -28,9 +28,10 @@ var RemoteAIBrowserPassword = (() => {
   var formInputs = (form) => Array.from(form.querySelectorAll("input")).filter((input) => !input.disabled && input.type !== "hidden" && input.getClientRects().length > 0);
   var usernameInput = (fields) => fields.find((input) => input.autocomplete === "username") ?? fields.find((input) => input.type === "email") ?? fields.find((input) => ["text", "tel"].includes(input.type));
   var passwordInput = (fields) => fields.find((input) => input.type === "password" && input.autocomplete !== "new-password");
-  function safeLoginForm(form) {
+  function safeLoginForm(form, submitter) {
     try {
-      return new URL(form.action || location.href, location.href).origin === location.origin;
+      const override = submitter?.getAttribute("formaction");
+      return new URL(form.action || location.href, location.href).origin === location.origin && (!override || new URL(override, document.baseURI).origin === location.origin);
     } catch {
       return false;
     }
@@ -48,21 +49,55 @@ var RemoteAIBrowserPassword = (() => {
     return false;
   }
 
-  // browser/data/passwordPageCapture.ts
-  function captureLogin(event, options) {
-    const form = event.target, page = loginPage();
-    if (!(form instanceof HTMLFormElement) || !event.isTrusted || !safeLoginForm(form)) return;
-    const fields = formInputs(form), password = fields.find((input) => input.type === "password");
+  // browser/data/passwordPageSubmission.ts
+  function readLogin(form, commandClick) {
+    const fields = formInputs(form);
+    const password = commandClick ? passwordInput(fields) : fields.find((input) => input.type === "password");
     if (!password?.value || password.value.length > 4096) return;
-    const login = {
+    return {
       origin: location.origin,
       username: usernameInput(fields)?.value.slice(0, 512) ?? "",
       password: password.value
     };
+  }
+  function offerLogin(options, login) {
+    const page = loginPage();
     if (!postLoginMessage(options, { type: "browser-login", login }) && page.__remoteaiLogin) {
       page.__remoteaiLogin.pending = login;
     }
   }
+  function clickedSubmitter(event) {
+    if (!event.isTrusted || !(event.target instanceof Element)) return;
+    const control = event.target.closest("button, input");
+    if (!(control instanceof HTMLButtonElement || control instanceof HTMLInputElement)) return;
+    if ((control.type === "submit" || control.type === "image") && !control.matches(":disabled")) return control;
+  }
+  function observeLoginSubmissions(options) {
+    const pending = /* @__PURE__ */ new WeakMap();
+    document.addEventListener("submit", (event) => {
+      const form = event.target;
+      if (!event.isTrusted || !(form instanceof HTMLFormElement)) return;
+      const clickedLogin = pending.get(form);
+      pending.delete(form);
+      if (!safeLoginForm(form, event.submitter)) return;
+      const login = readLogin(form, false) ?? clickedLogin;
+      if (login) offerLogin(options, login);
+    }, true);
+    document.addEventListener("click", (event) => {
+      const control = clickedSubmitter(event), form = control?.form;
+      if (!form || !safeLoginForm(form, control) || form.matches(":invalid")) return;
+      const login = readLogin(form, true);
+      if (!login) return;
+      pending.set(form, login);
+      window.setTimeout(() => {
+        if (pending.get(form) !== login) return;
+        pending.delete(form);
+        if (event.defaultPrevented && safeLoginForm(form, control)) offerLogin(options, login);
+      }, 0);
+    }, true);
+  }
+
+  // browser/data/passwordPageCapture.ts
   function captureFocus(event, options) {
     const input = event.target, page = loginPage();
     if (!event.isTrusted || !(input instanceof HTMLInputElement) || !input.form || !page.__remoteaiLogin) return;
@@ -84,7 +119,7 @@ var RemoteAIBrowserPassword = (() => {
     const page = loginPage();
     if (page.__remoteaiLogin?.installed) return true;
     page.__remoteaiLogin = { installed: true, pending: null };
-    document.addEventListener("submit", (event) => captureLogin(event, options), true);
+    observeLoginSubmissions(options);
     document.addEventListener("click", (event) => captureFocus(event, options), true);
     let tabFocus = false;
     document.addEventListener("keydown", (event) => {

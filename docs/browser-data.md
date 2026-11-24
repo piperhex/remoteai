@@ -30,7 +30,8 @@ platform views, random bytes, and background PBKDF2 through its BrowserData modu
 
 ## Platform behavior
 
-- Windows recognizes top-level HTTP and HTTPS login form submissions and asks before saving.
+- Windows asks before saving credentials from top-level HTTP and HTTPS login forms. A login button
+  handled by JavaScript can trigger the same prompt when its click cancels native submission.
   Clicking an account/password input or tabbing into it opens matching accounts in trusted app UI.
   Only the selected login is passed to the page; focus messages carry no password. Filling requires
   the exact origin (including scheme and port), a current focus token and a same-origin form action, and
@@ -58,6 +59,8 @@ unseen existing vault. Source changes alone do not deploy or enable synchronizat
 
 - Desktop unit tests: `browserData.test.ts`, `browserPasswordPage.test.ts`, `browserVaultPersistence.test.ts`,
   `browserBookmarks.test.ts` cover synchronization, remembered unlock, races and origin/form validation.
+- `node --test apps/desktop/scripts/test-browser-password-submissions.mjs` checks native and
+  JavaScript-handled login submissions in bundled Chromium, including keyboard activation and duplicate detection.
 - Backend: Go vet/full tests and `TestBrowserDataPostgresPersistence` against isolated PostgreSQL.
 - `apps/desktop/scripts/verify-browser-data.mjs` uses bundled Chromium for mobile/desktop Web; `--native`
   attaches to the isolated `provider_browser::data_smoke::opens_browser_data` WebView2 test on port 9355.
