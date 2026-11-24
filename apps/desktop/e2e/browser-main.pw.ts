@@ -1,4 +1,14 @@
 import { expect, test } from '@playwright/test';
+import { verifyBrowserTabHover } from './browser-tab-hover';
+
+for (const mode of ['local', 'remote']) {
+  test(`${mode} background browser tab hover card`, async ({ page }, info) => {
+    const narrow = mode === 'remote';
+    await page.setViewportSize({ width: narrow ? 900 : 1440, height: 800 });
+    const entry = `/e2e/browser-bookmarks-harness.html?mode=${mode}${narrow ? '&dark=1&font=20' : ''}`;
+    await verifyBrowserTabHover(page, entry, info);
+  });
+}
 
 test('page zoom follows the active tab and dismisses two seconds after the last wheel', async ({ page, baseURL }) => {
   await page.goto('/e2e/browser-bookmarks-harness.html');

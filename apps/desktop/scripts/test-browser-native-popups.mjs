@@ -87,6 +87,13 @@ try {
     await child.screenshot({ path: fileURLToPath(new URL(`${label}-${state}-page.png`, output)) });
   };
   const fixture = { main: page, popup, child, capture, nativePid: native.pid };
+  await page.getByRole('tab').first().hover();
+  const card = popup.locator('.pm-tab-hover-card');
+  await expect(card).toContainText(new URL(origin).host);
+  await expect(card).toContainText(/\d+(?:\.\d+)?\s*MB \(JavaScript\)/);
+  await capture('tab-hover');
+  await page.getByRole('combobox').hover();
+  await expect(card).toBeHidden();
   await verifySettings(fixture);
   await verifyBookmarks(fixture);
   await verifyAddress(fixture);

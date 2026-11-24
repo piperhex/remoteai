@@ -13,6 +13,7 @@ mod password_focus;
 pub(crate) mod passwords;
 mod platform;
 pub(crate) mod preview;
+pub(crate) mod tab_memory;
 pub(crate) mod vault_key;
 pub(crate) mod zoom;
 pub(crate) use lifecycle::handle_page_load;

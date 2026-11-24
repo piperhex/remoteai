@@ -76,6 +76,7 @@ fn opens_conversation_browser() {
             super::super::provider_browser_close,
             super::super::zoom::browser_set_zoom,
             super::super::preview::provider_browser_preview,
+            super::super::tab_memory::browser_tab_memory,
             super::super::overlays::browser_overlay_prepare,
             super::super::overlays::browser_overlay_place,
             super::super::overlays::browser_overlay_focus,

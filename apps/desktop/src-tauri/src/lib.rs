@@ -516,6 +516,7 @@ pub fn run() {
             browser_home::browser_home_cached,
             browser_home::browser_home_check,
             provider_browser::preview::provider_browser_preview,
+            provider_browser::tab_memory::browser_tab_memory,
             provider_browser::overlays::browser_overlay_prepare,
             provider_browser::overlays::browser_overlay_place,
             provider_browser::overlays::browser_overlay_focus,
