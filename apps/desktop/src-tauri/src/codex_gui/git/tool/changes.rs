@@ -44,6 +44,7 @@ pub(super) fn read(root: &Path) -> Result<Changes> {
             "-z",
             "--untracked-files=all",
             "--ignore-submodules=none",
+            "--find-renames",
         ],
     )?;
     if !result.status.success() {
@@ -115,7 +116,13 @@ pub(super) fn parse(bytes: &[u8]) -> Result<Vec<Change>> {
             return Err(GitError::File);
         }
         let status = &record[..2];
-        let path = &record[3..];
+        let name = &record[3..];
+        // Git marks an embedded untracked repository as a directory, even with -uall.
+        let path = if status == "??" {
+            name.strip_suffix('/').unwrap_or(name)
+        } else {
+            name
+        };
         validate_path(path)?;
         let original_path = if status.contains(['R', 'C']) {
             let original = records.next().ok_or(GitError::File)?;

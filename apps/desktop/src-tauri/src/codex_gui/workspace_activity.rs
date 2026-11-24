@@ -116,6 +116,18 @@ pub(super) fn admits_work(method: &str, params: &Value) -> bool {
 }
 
 impl WorkspaceActivity {
+    pub(super) async fn cwd(&self, session: &str, id: &str) -> Option<String> {
+        self.0
+            .lock()
+            .await
+            .sessions
+            .get(session)?
+            .threads
+            .get(id)?
+            .cwd
+            .clone()
+    }
+
     pub(super) async fn workspace(&self, session: &str, thread: &str) -> Option<WorkspaceKey> {
         self.0
             .lock()

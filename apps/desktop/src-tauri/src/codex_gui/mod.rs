@@ -53,6 +53,8 @@ mod native_history;
 mod process_details;
 mod ssh_reference;
 mod tool_details;
+mod turn_review;
+mod worktree_observation;
 pub(crate) use model_catalog_cache::cached_catalog;
 pub(crate) mod model_context;
 pub(crate) mod model_settings;
@@ -406,6 +408,15 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
         if method == "thread/resume" && !summary_only {
             if let Some(thread) = data.get_mut("thread") {
                 process_details::summarize_thread(thread);
+            }
+        }
+        if !summary_only && matches!(method, "thread/read" | "thread/resume") {
+            if turn_review::restore(&client.home, &mut data["thread"]).is_err() {
+                if let Some(turns) = data["thread"]["turns"].as_array_mut() {
+                    for turn in turns {
+                        turn["reviewIncomplete"] = serde_json::json!(true);
+                    }
+                }
             }
         }
         if !include_tool_details {

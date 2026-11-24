@@ -50,7 +50,7 @@ export function ProjectPicker({ value, projects, disabled, onChange, onError,
     {hostPicker}
   </>;
   return <>
-    <ProjectBar barRef={bar} active={active} scope={value} trailing={trailing}
+    <ProjectBar barRef={bar} active={active} scope={value} trailing={trailing} draftDirectory={gitEnabled ? value : undefined}
       hint={(drop.dragging || drop.reading) && <div className={dropStyles.dropHint} role="status">
         <span>{drop.reading ? uiText("client.chat.addingAttachments")
           : uiText("client.composer.dropToAddFilesOrFolders")}</span>
@@ -63,8 +63,7 @@ export function ProjectPicker({ value, projects, disabled, onChange, onError,
       {(gitEnabled === false || running) && <ConversationWorkspaceStatus key={value} cwd={value}
         enabled={active} />}
       {!running && gitEnabled && onBusyChange && <WorkspacePicker key={value} cwd={value} disabled={disabled}
-        onChange={onChange} onBusyChange={onBusyChange}
-        localLabel={hostPicker ? uiText("client.conversation.worktree") : undefined} />}
+        onChange={onChange} onBusyChange={onBusyChange} />}
       {actions}
     </ProjectBar>
     {creating && <CreateProjectDialog disabled={disabled} onCreate={create} onError={onError}

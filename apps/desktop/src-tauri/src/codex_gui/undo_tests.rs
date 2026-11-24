@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "review_acceptance.rs"]
+mod review_acceptance;
+
 struct Workspace(PathBuf);
 impl Workspace {
     fn new() -> Self {
@@ -93,6 +96,16 @@ fn preview_reports_conflicts_without_touching_any_files() {
         fs::read_to_string(workspace.0.join("file.txt")).unwrap(),
         "someone else's edit\n"
     );
+}
+
+#[test]
+fn a_matching_line_elsewhere_must_not_receive_another_writers_undo() {
+    let workspace = Workspace::new();
+    let actual = "later writer\nafter\n";
+    fs::write(workspace.0.join("A"), actual).unwrap();
+    let edits = vec![change("A", "update", "@@ -1 +1 @@\n-before\n+after\n")];
+    assert!(matches!(workspace.undo(edits), Err(UndoError::Conflict)));
+    assert_eq!(fs::read_to_string(workspace.0.join("A")).unwrap(), actual);
 }
 
 #[test]

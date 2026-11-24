@@ -92,6 +92,7 @@ pub(crate) enum Request {
         cwd: String,
         path: String,
         commit: Option<String>,
+        scope: Option<history::ReviewScope>,
     },
     History {
         cwd: String,
@@ -192,9 +193,17 @@ fn execute(request: Request) -> Result<Response> {
         Request::Action { request, .. } => actions::execute(&root, &request).map(Response::Done),
         Request::Revision { request, .. } => revision::execute(&root, &request).map(Response::Done),
         Request::Changes { .. } => changes::read(&root).map(Response::Changes),
-        Request::Diff { path, commit, .. } => {
-            history::diff(&root, &path, commit.as_deref()).map(Response::Diff)
+        Request::Diff {
+            path,
+            commit,
+            scope,
+            ..
+        } => match (commit, scope) {
+            (None, Some(scope)) => history::workspace_diff(&root, &path, scope),
+            (commit, None) => history::diff(&root, &path, commit.as_deref()),
+            _ => Err(GitError::File),
         }
+        .map(Response::Diff),
         Request::History { skip, .. } => history::read(&root, skip).map(Response::History),
         Request::CommitFiles { commit, .. } => {
             commit_files::read(&root, &commit).map(Response::CommitFiles)
@@ -213,6 +222,12 @@ fn execute(request: Request) -> Result<Response> {
             ..
         } => file_actions::execute(&root, head.as_deref(), action, &files).map(Response::Done),
     }
+}
+
+#[cfg(test)]
+pub(in crate::codex_gui) fn test_request(input: serde_json::Value) -> serde_json::Value {
+    let request = serde_json::from_value(input).unwrap();
+    serde_json::to_value(execute(request).unwrap()).unwrap()
 }
 
 pub(super) fn validate_path(path: &str) -> Result<()> {

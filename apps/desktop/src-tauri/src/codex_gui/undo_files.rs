@@ -59,21 +59,61 @@ fn patch_hunks(staging: &Path, edit: &Change) -> Result<String> {
             .enumerate()
             .filter(|(_, byte)| **byte == b'\n')
             .all(|(index, _)| index > 0 && bytes[index - 1] == b'\r');
-    if !crlf {
-        return Ok(hunks.to_owned());
-    }
     // Hunk metadata stays LF; match and restore file content with its existing Windows line endings.
-    Ok(hunks
+    let hunks: String = hunks
         .split_inclusive('\n')
         .map(|line| {
-            if line.starts_with(['+', '-', ' ']) && line.ends_with('\n') && !line.ends_with("\r\n")
+            if crlf
+                && line.starts_with(['+', '-', ' '])
+                && line.ends_with('\n')
+                && !line.ends_with("\r\n")
             {
                 format!("{}\r\n", &line[..line.len() - 1])
             } else {
                 line.to_owned()
             }
         })
-        .collect())
+        .collect();
+    verify_after_image(&bytes, &hunks)?;
+    Ok(hunks)
+}
+
+// git apply can relocate an otherwise matching hunk into another writer's identical text.
+fn verify_after_image(content: &[u8], hunks: &str) -> Result<()> {
+    let lines: Vec<_> = content.split_inclusive(|byte| *byte == b'\n').collect();
+    let mut patch = hunks.split_inclusive('\n').peekable();
+    let mut index = 0;
+    while let Some(line) = patch.next() {
+        if line.starts_with("@@ ") {
+            let range = line
+                .split_ascii_whitespace()
+                .nth(2)
+                .and_then(|field| field.strip_prefix('+'))
+                .ok_or(UndoError::Invalid)?;
+            let (start, count) = range.split_once(',').unwrap_or((range, "1"));
+            if count == "0" {
+                return Err(UndoError::Conflict);
+            }
+            index = start
+                .parse::<usize>()
+                .ok()
+                .and_then(|n| n.checked_sub(1))
+                .ok_or(UndoError::Invalid)?;
+        } else if line.starts_with(['+', ' ']) {
+            let mut expected = &line[1..];
+            if patch.peek().is_some_and(|next| next.starts_with("\\ ")) {
+                expected = expected
+                    .trim_end_matches('\n')
+                    .strip_suffix('\r')
+                    .unwrap_or(expected.trim_end_matches('\n'));
+            }
+            if lines.get(index).copied() != Some(expected.as_bytes()) {
+                return Err(UndoError::Conflict);
+            }
+            index += 1;
+        }
+    }
+    Ok(())
 }
 
 fn capture(root: &Path, edits: &[Change]) -> Result<Snapshot> {
@@ -149,13 +189,9 @@ fn reverse(staging: &Path, edit: &Change) -> Result<()> {
             }
             write(&target, Some(edit.diff.as_bytes()))
         }
+        // An empty rename record has no content witness for the file now at the destination.
         "update" if edit.kind.move_path.is_some() && edit.diff.is_empty() => {
-            if staging.join(&edit.path).exists() {
-                return Err(UndoError::Conflict);
-            }
-            let content = read(&target)?.ok_or(UndoError::Conflict)?;
-            write(&staging.join(&edit.path), Some(&content))?;
-            write(&target, None)
+            Err(UndoError::Conflict)
         }
         "update" => reverse_update(staging, edit),
         _ => Err(UndoError::Invalid),
@@ -175,21 +211,31 @@ fn apply(root: &Path, before: &Snapshot, after: &Snapshot) -> Result<()> {
         if before[path] == *bytes {
             continue;
         }
-        if write(&root.join(path), bytes.as_deref()).is_ok() {
+        let target = root.join(path);
+        let result = read(&target).and_then(|current| {
+            if current != before[path] {
+                return Err(UndoError::Conflict);
+            }
+            write(&target, bytes.as_deref())
+        });
+        if result.is_ok() {
             written.push(path);
             continue;
         }
         let mut recovered = true;
         for path in written.into_iter().rev() {
-            if write(&root.join(path), before[path].as_deref()).is_err() {
+            let target = root.join(path);
+            if !matches!(read(&target), Ok(value) if value == after[path])
+                || write(&target, before[path].as_deref()).is_err()
+            {
                 recovered = false;
             }
         }
-        return Err(if recovered {
-            UndoError::Io
+        return if recovered {
+            result
         } else {
-            UndoError::Recovery
-        });
+            Err(UndoError::Recovery)
+        };
     }
     Ok(())
 }
@@ -206,13 +252,17 @@ fn prepare(staging: &Path, edits: &[Change], before: &Snapshot) -> Result<Snapsh
     capture(&workspace, edits)
 }
 
-pub(super) fn preview(root: &Path, staging: &Path, edits: &[Change]) -> Result<(String, bool)> {
+fn snapshot_version(before: &Snapshot) -> Result<String> {
     use sha2::{Digest, Sha256};
-    let before = capture(root, edits)?;
-    let version = format!(
+    Ok(format!(
         "{:x}",
-        Sha256::digest(serde_json::to_vec(&before).map_err(|_| UndoError::Io)?)
-    );
+        Sha256::digest(serde_json::to_vec(before).map_err(|_| UndoError::Io)?)
+    ))
+}
+
+pub(super) fn preview(root: &Path, staging: &Path, edits: &[Change]) -> Result<(String, bool)> {
+    let before = capture(root, edits)?;
+    let version = snapshot_version(&before)?;
     match prepare(staging, edits, &before) {
         Ok(_) => Ok((version, false)),
         Err(UndoError::Conflict) => Ok((version, true)),
@@ -220,8 +270,18 @@ pub(super) fn preview(root: &Path, staging: &Path, edits: &[Change]) -> Result<(
     }
 }
 
-pub(super) fn prepare_and_apply(root: &Path, staging: &Path, edits: &[Change]) -> Result<()> {
+pub(super) fn prepare_and_apply(
+    root: &Path,
+    staging: &Path,
+    edits: &[Change],
+    expected: Option<&str>,
+) -> Result<()> {
     let before = capture(root, edits)?;
+    if let Some(expected) = expected {
+        if snapshot_version(&before)? != expected {
+            return Err(UndoError::Conflict);
+        }
+    }
     // Backups remain available when an OS error prevents a complete recovery.
     fs::write(
         staging.join("before.json"),

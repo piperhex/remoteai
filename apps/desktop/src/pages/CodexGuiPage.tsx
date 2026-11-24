@@ -187,7 +187,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
           {isDesktopApp && view === "conversation" && <PanelToggleButton icon={<PanelBottom size={16} />}
             label={terminal.open ? uiText("client.chat.hideTerminal") : uiText("client.composer.openTerminal")}
             expanded={terminal.open} active={terminal.tabs.length > 0} onClick={terminal.toggle} />}
-          {view === "conversation" && (external ? <CliChangesButton /> : <ConversationChangesButton value={current} />)}
+          {view === "conversation" && (external ? <CliChangesButton git={localGitClient} cwd={workspaceProject} />
+            : <ConversationChangesButton value={current} git={localGitClient} cwd={workspaceProject} threadId={thread?.id} />)}
         </div>
         {focused && windowControls && <div className={styles.focusWindowControls}>{windowControls}</div>}
         <LocalRunningConversations state={state} onSelect={openTaskConversation}

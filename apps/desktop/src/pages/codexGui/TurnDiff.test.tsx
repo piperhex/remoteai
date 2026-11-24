@@ -9,9 +9,11 @@ import { DetailsContext } from "../../../../../shared/conversation/detailsContex
 import { WorkspaceOperationContext } from "./workspaceOperationContext";
 
 vi.mock("../../../../../shared/conversation/gitApi", () => ({ gitApi: { undo: vi.fn() } }));
-vi.mock("antd", () => ({ Popconfirm: ({ children, onConfirm, disabled }: {
-  children: ReactNode; onConfirm: () => void; disabled: boolean;
-}) => <div onClick={() => { if (!disabled) onConfirm(); }}>{children}</div> }));
+vi.mock("antd", () => ({ Popconfirm: ({ children, onOpenChange, onConfirm, disabled, okButtonProps }: {
+  children: ReactNode; onOpenChange: (open: boolean) => void; onConfirm: () => void;
+  disabled: boolean; okButtonProps: { disabled: boolean };
+}) => <><div onClick={() => { if (!disabled) onOpenChange(true); }}>{children}</div>
+  <button data-confirm disabled={okButtonProps.disabled} onClick={onConfirm} /></> }));
 const files = changedFiles([{ path: "file.ts", kind: { type: "update" }, diff: "@@ -1 +1 @@\n-old\n+new\n" }]);
 let root: Root;
 let container: HTMLDivElement;
@@ -34,9 +36,11 @@ afterEach(async () => { await act(async () => root.unmount()); vi.clearAllMocks(
 
 it("persists the undone state, prevents a second undo, and keeps review available", async () => {
   await act(async () => root.render(<Fixture />));
-  vi.mocked(gitApi.undo).mockResolvedValue({ undone: true });
+  vi.mocked(gitApi.undo).mockResolvedValueOnce({ undone: false, preview: { files: ['file.ts'], conflict: false, version: 'v1' } })
+    .mockResolvedValue({ undone: true });
   await act(async () => button().click());
-  expect(gitApi.undo).toHaveBeenLastCalledWith({ threadId: "thread", turnId: "turn" });
+  await act(async () => container.querySelector<HTMLButtonElement>('[data-confirm]')!.click());
+  expect(gitApi.undo).toHaveBeenLastCalledWith({ threadId: "thread", turnId: "turn", expectedVersion: 'v1' });
   expect(container.textContent).toContain("已撤销 1 个文件");
   expect(button().disabled).toBe(true);
   expect(container.querySelector('button[aria-label^="查看本轮修改"]')).not.toBeNull();
@@ -55,5 +59,5 @@ it("blocks undo while running and leaves conflicts retryable", async () => {
   expect(container.querySelector('[role="alert"]')?.textContent).toBe("文件已有其他修改");
   expect(container.textContent).toContain("已编辑 1 个文件");
   expect(button().disabled).toBe(false);
-  expect(setBusy).toHaveBeenLastCalledWith(false);
+  expect(container.querySelector<HTMLButtonElement>('[data-confirm]')?.disabled).toBe(true);
 });

@@ -14,6 +14,7 @@ export function demoGitTools(input: Record<string, unknown>) {
     case 'guiGitChanges': return git.changes(cwd);
     case 'guiGitHistory': return git.history(cwd, Number(input.skip));
     case 'guiGitCommitFiles': return git.commitFiles(cwd, String(input.commit));
+    case 'guiGitWorkspaceDiff':
     case 'guiGitDiff': return git.diff(cwd, String(input.path), input.commit as string | undefined);
     case 'guiGitCommit': return git.commit(input as unknown as GitCommitRequest);
     case 'guiGitFileAction': return git.fileAction(input as unknown as GitFileActionRequest) ?? null;

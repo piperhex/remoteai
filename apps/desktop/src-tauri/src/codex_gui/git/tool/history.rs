@@ -1,6 +1,6 @@
 use super::super::command;
 use super::{changes, commit_files, validate_path, GitError, Result};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
     io::Read,
     path::Path,
@@ -10,6 +10,79 @@ use std::{
 const DIFF_BYTES: u64 = 256 * 1024;
 const HISTORY_BYTES: u64 = 1024 * 1024;
 const PAGE_SIZE: usize = 80;
+
+#[derive(Clone, Copy, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum ReviewScope {
+    Staged,
+    Unstaged,
+}
+
+pub(super) fn workspace_diff(root: &Path, path: &str, scope: ReviewScope) -> Result<Diff> {
+    validate_path(path)?;
+    let status = super::super::run(
+        root,
+        &[
+            "--no-optional-locks",
+            "status",
+            "--porcelain=v1",
+            "-z",
+            "--untracked-files=all",
+            "--ignore-submodules=none",
+            "--find-renames",
+        ],
+    )?;
+    if !status.status.success() {
+        return Err(GitError::Repository);
+    }
+    let files = changes::parse(&status.stdout)?;
+    let side = match scope {
+        ReviewScope::Staged => 0,
+        ReviewScope::Unstaged => 1,
+    };
+    let file = files
+        .iter()
+        .find(|file| {
+            file.path == path
+                && file.status.as_bytes()[side] != b' '
+                && (side == 1 || file.status != "??")
+        })
+        .ok_or(GitError::Changed)?;
+    let code = file.status.as_bytes()[side];
+    let mut args = vec![
+        "-c",
+        "core.quotePath=false",
+        "--no-pager",
+        "diff",
+        "--no-ext-diff",
+        "--no-textconv",
+        "--no-color",
+        "--find-renames",
+        "--ignore-submodules=none",
+    ];
+    if file.status == "??" {
+        if root
+            .join(path)
+            .symlink_metadata()
+            .is_ok_and(|entry| entry.is_dir())
+        {
+            return Ok(Diff {
+                text: String::new(),
+                truncated: false,
+            });
+        }
+        args.extend(["--no-index", "--", "/dev/null", path]);
+    } else {
+        if side == 0 {
+            args.push("--cached");
+        }
+        args.extend(["--", path]);
+        if matches!(code, b'R' | b'C') {
+            args.extend(file.original_path.as_deref());
+        }
+    }
+    read_diff(root, &args)
+}
 
 #[derive(Serialize)]
 pub(crate) struct Diff {

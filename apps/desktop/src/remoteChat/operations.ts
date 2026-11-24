@@ -114,7 +114,7 @@ const READ_OPERATIONS = new Set([
   PROJECT_LIST_OPERATION,
   'downloadOpen', 'downloadBrowse', 'previewOpen',
   'guiCliStatus', 'guiCliRelease', 'guiTerminalRead', 'guiTerminalList', 'guiTerminalSshProfiles', 'guiTerminalSshMonitor',
-  'guiGitChanges', 'guiGitDiff', 'guiGitHistory', 'guiGitRepository', 'guiGitCommitFiles',
+  'guiGitChanges', 'guiGitDiff', 'guiGitWorkspaceDiff', 'guiGitHistory', 'guiGitRepository', 'guiGitCommitFiles',
   'fileOpen', 'fileRead', 'fileClose',
   CONTEXT_READ_OPERATION,
   TOKEN_SUMMARY_OPERATION,

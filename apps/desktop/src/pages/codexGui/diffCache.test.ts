@@ -35,7 +35,7 @@ describe('diff content cache', () => {
       let first: ReturnType<typeof completedTurnFiles> | undefined;
       const startedAt = performance.now();
       for (let i = 0; i <= 100; i++) {
-        const turn: Turn = { id: 'turn', status: 'inProgress', diff: mode === 'net' ? diff : '', items: [
+        const turn: Turn = { id: 'turn', status: 'inProgress', diff: mode === 'net' ? diff : undefined, items: [
           { id: 'edit', type: 'fileChange', status: 'completed', changes: [change(diff, 'src/large.ts')] },
           { id: 'text', type: 'agentMessage', text: `text delta ${i}` },
         ] };
@@ -92,13 +92,14 @@ describe('diff content cache', () => {
     expect(completedTurnFiles(turn)).toEqual([]);
     turn.items[0] = { ...turn.items[0], status: 'completed' };
     const completed = completedTurnFiles({ ...turn, diff: ' \r\n\t' });
-    expect(completed).toHaveLength(1);
+    expect(completed).toHaveLength(0);
+    expect(completedTurnFiles(turn)).toHaveLength(1);
     for (const status of ['declined', 'failed', 'inProgress']) {
       expect(completedTurnFiles({ ...turn, items: [{ ...turn.items[0], status }] })).toEqual([]);
     }
     const other = completedTurnFiles({ ...turn, diff: patch('other.ts') });
     expect(other[0].path).toBe('other.ts');
-    expect(completedTurnFiles({ ...turn, diff: '' })).toBe(completed);
+    expect(completedTurnFiles({ ...turn, diff: '' })).toEqual(completed);
     expect(completedTurnFiles({ ...turn, items: [] })).toEqual([]);
   });
 

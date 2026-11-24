@@ -9,6 +9,8 @@ import { TurnDuration } from "./TurnDuration";
 import { TurnPlan } from "./TurnPlan";
 import { TurnDiff } from "./TurnDiff";
 import { useTurnChangedFiles } from "../../../../../shared/conversation/useTurnChangedFiles";
+import { turnReview } from '../../../../../shared/conversation/turnReview';
+import { TurnReviewNotice } from '../../../../../shared/conversation/TurnReviewNotice';
 import styles from "../../../../../shared/conversation/styles.module.less";
 import { GeneratedImages } from "./GeneratedImages";
 import { RequestErrorNotice } from "./RequestErrorNotice";
@@ -23,11 +25,11 @@ export { groupTurnItems } from "../../../../../shared/chat/turnGroups";
 
 export const TurnMessage = memo(function TurnMessage({ turn, running, active, followsInterruption = false,
   editableItemId, onEdit, onDelete, editDisabled, threadId, visibleItems = turn.items, onFork, forkDisabled,
-  retry, onCancelRetry, messageGroups }: {
+  retry, onCancelRetry, messageGroups, canUndoChanges = true }: {
   turn: Turn; running: boolean; active: boolean; followsInterruption?: boolean;
   editableItemId?: string; onEdit?: SubmitMessageEdit; editDisabled?: boolean;
   onDelete?: () => Promise<boolean>;
-  threadId?: string;
+  threadId?: string; canUndoChanges?: boolean;
   visibleItems?: Item[];
   messageGroups?: TurnMessageGroup[];
   onFork?: () => void; forkDisabled?: boolean;
@@ -41,6 +43,7 @@ export const TurnMessage = memo(function TurnMessage({ turn, running, active, fo
     { turn, items: visibleItems, followsInterruption },
   ])[0].groups, [turn, followsInterruption, visibleItems, messageGroups]));
   const files = useTurnChangedFiles(turn);
+  const review = useMemo(() => turnReview(turn, threadId), [turn, threadId]);
   const showChanges = !running && turn.status !== "inProgress" && files.length > 0;
   const responseIndex = groups.findIndex((group) => group.type !== "error" && group.items[0].type !== "userMessage");
   const showDuration = responseIndex === -1
@@ -67,8 +70,9 @@ export const TurnMessage = memo(function TurnMessage({ turn, running, active, fo
       && <TurnDuration turn={turn} running={running} active={active} />}
     <GeneratedImages items={visibleItems} />
     <TurnPlan turn={turn} />
+    {!running && !files.length && (review.result === 'empty' || turn.reviewIncomplete) && <TurnReviewNotice review={review} />}
     {showChanges && <TurnDiff files={files} title={turn.diff ? uiText("client.chat.changesThisTurn") : uiText("client.chat.fileChanges")}
-      threadId={threadId} turnId={turn.id}
+      threadId={canUndoChanges ? threadId : undefined} turnId={turn.id} review={review}
       disabled={running || turn.status === "inProgress" || Boolean(editDisabled)} />}
   </div>;
 });

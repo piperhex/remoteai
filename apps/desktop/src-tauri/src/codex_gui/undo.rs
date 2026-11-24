@@ -98,7 +98,18 @@ fn changes(thread: &Value, turn_id: &str) -> Result<Vec<Change>> {
         .find(|turn| turn["id"] == turn_id)
         .ok_or(UndoError::Invalid)?;
     let mut changes = Vec::new();
-    for item in turn["items"].as_array().ok_or(UndoError::Invalid)? {
+    if turn["reviewIncomplete"] == true
+        || turn["diff"]
+            .as_str()
+            .is_some_and(|diff| diff.trim().is_empty())
+    {
+        return Err(UndoError::Invalid);
+    }
+    let items = turn["reviewEdits"]
+        .as_array()
+        .filter(|items| !items.is_empty())
+        .or_else(|| turn["items"].as_array());
+    for item in items.ok_or(UndoError::Invalid)? {
         if item["type"] != "fileChange" || item["status"] != "completed" {
             continue;
         }
@@ -192,7 +203,17 @@ fn receipt_path(app: &AppHandle, request: &UndoRequest) -> Result<PathBuf> {
         .join(hash))
 }
 
+#[cfg(test)]
 fn execute(root: &Path, edits: Vec<Change>, receipt: &Path) -> Result<UndoResponse> {
+    execute_version(root, edits, receipt, None)
+}
+
+fn execute_version(
+    root: &Path,
+    edits: Vec<Change>,
+    receipt: &Path,
+    expected: Option<&str>,
+) -> Result<UndoResponse> {
     if receipt.join("completed").is_file() {
         return Ok(UndoResponse::done(true));
     }
@@ -200,7 +221,7 @@ fn execute(root: &Path, edits: Vec<Change>, receipt: &Path) -> Result<UndoRespon
     fs::create_dir_all(receipt).map_err(|_| UndoError::Io)?;
     let staging = receipt.join(uuid::Uuid::new_v4().to_string());
     fs::create_dir(&staging).map_err(|_| UndoError::Io)?;
-    let result = files::prepare_and_apply(root, &staging, &edits);
+    let result = files::prepare_and_apply(root, &staging, &edits, expected);
     // Preserve a failed recovery's backups; successful and untouched staging directories are disposable.
     if !matches!(result, Err(UndoError::Recovery)) && fs::remove_dir_all(&staging).is_err() {
         eprintln!("Could not clean up an edit undo staging directory");
@@ -241,37 +262,62 @@ fn perform(
         return Ok(UndoResponse::done(true));
     }
     let edits = normalized_changes(root, edits)?;
-    if request.preview || request.expected_version.is_some() {
+    if request.preview {
         let preview = preview(root, &edits, receipt)?;
-        if request.preview {
-            return Ok(UndoResponse {
-                undone: false,
-                preview: Some(preview),
-            });
-        }
-        if preview.conflict || request.expected_version.as_deref() != Some(&preview.version) {
-            return Err(UndoError::Conflict);
-        }
+        return Ok(UndoResponse {
+            undone: false,
+            preview: Some(preview),
+        });
     }
-    execute(root, edits, receipt)
+    execute_version(root, edits, receipt, request.expected_version.as_deref())
 }
 
 async fn read_turn(state: &GuiState, request: &UndoRequest) -> Result<(String, Vec<Change>)> {
     let client = super::connected(state).await?;
-    let source = client
+    let header = client
         .request(
             "thread/read",
-            json!({
-                "threadId": request.thread_id, "includeTurns": true,
-            }),
+            json!({"threadId": request.thread_id, "includeTurns": false}),
         )
         .await?;
-    let edits = changes(&source["thread"], &request.turn_id)?;
-    let cwd = source["thread"]["cwd"]
-        .as_str()
-        .ok_or(UndoError::Invalid)?
-        .to_owned();
-    Ok((cwd, edits))
+    if header["thread"]["id"] != request.thread_id {
+        return Err(UndoError::Invalid);
+    }
+    if header["thread"]["status"]["type"] == "active" {
+        return Err(UndoError::Busy);
+    }
+    let source =
+        super::history_access::turn(&request.thread_id, &request.turn_id, |method, params| {
+            client.request(method, params)
+        })
+        .await?;
+    let home = client.home.clone();
+    let turn_id = request.turn_id.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut thread = source["thread"].clone();
+        super::turn_review::restore(&home, &mut thread).map_err(|_| UndoError::Io)?;
+        let edits = changes(&thread, &turn_id)?;
+        let turn = thread["turns"]
+            .as_array()
+            .and_then(|turns| turns.iter().find(|turn| turn["id"] == turn_id))
+            .ok_or(UndoError::Invalid)?;
+        // Old histories without a bound cwd are reversible only when every recorded path is absolute.
+        let absolute = edits.iter().all(|edit| {
+            Path::new(&edit.path).is_absolute()
+                && edit
+                    .kind
+                    .move_path
+                    .as_ref()
+                    .is_none_or(|path| Path::new(path).is_absolute())
+        });
+        let cwd = turn
+            .get("reviewCwd")
+            .or_else(|| absolute.then_some(&header["thread"]["cwd"]))
+            .ok_or(UndoError::Invalid)?;
+        Ok((cwd.as_str().ok_or(UndoError::Invalid)?.to_owned(), edits))
+    })
+    .await
+    .map_err(|_| UndoError::Io)?
 }
 
 #[tauri::command]

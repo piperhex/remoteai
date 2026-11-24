@@ -14,7 +14,7 @@ export const localGitClient: GitClient = {
     invoke('codex_gui_git_tool', { request: { operation: 'repository', cwd, includeChildren } }),
   action: request => invoke('codex_gui_git_tool', { request: { ...request, operation: 'action' } }),
   changes: cwd => invoke('codex_gui_git_tool', { request: { operation: 'changes', cwd } }),
-  diff: (cwd, path, commit) => invoke('codex_gui_git_tool', { request: { operation: 'diff', cwd, path, commit } }),
+  diff: (cwd, path, commit, scope) => invoke('codex_gui_git_tool', { request: { operation: 'diff', cwd, path, commit, scope } }),
   history: (cwd, skip) => invoke('codex_gui_git_tool', { request: { operation: 'history', cwd, skip } }),
   commitFiles: (cwd, commit) => invoke('codex_gui_git_tool', { request: { operation: 'commitFiles', cwd, commit } }),
   commit: request => invoke('codex_gui_git_tool', { request: { ...request, operation: 'commit' } }),

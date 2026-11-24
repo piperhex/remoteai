@@ -4,16 +4,18 @@ import { useId, useMemo } from "react";
 import { ChevronRight, FileText } from "lucide-react";
 import { useDetailsEntry } from "../../../../../shared/conversation/detailsContext";
 import { useTurnChangedFiles } from "../../../../../shared/conversation/useTurnChangedFiles";
+import { turnReview } from '../../../../../shared/conversation/turnReview';
 import { summarizeDiffFiles } from "../../../../../shared/chat/diffSummary";
 import type { Conversation, Turn } from "../../../../../shared/conversation/types";
 import styles from "./RunningChangesSummary.module.less";
 
-function TurnChangesBadge({ turn }: { turn: Turn }) {
+function TurnChangesBadge({ turn, threadId }: { turn: Turn; threadId?: string }) {
   useGuiLanguage();
   const id = useId();
   const files = useTurnChangedFiles(turn);
   const title = uiText("client.chat.changesThisTurn");
-  const entry = useMemo(() => ({ id, title, files }), [id, files, title]);
+  const entry = useMemo(() => ({ id, title, files, turnReview: turnReview(turn, threadId) }),
+    [id, files, title, turn, threadId]);
   const panel = useDetailsEntry(entry);
   if (!files.length) return null;
   const { files: summary, added, removed } = summarizeDiffFiles(files);
@@ -33,5 +35,5 @@ function TurnChangesBadge({ turn }: { turn: Turn }) {
 
 export function RunningChangesSummary({ value }: { value?: Conversation }) {
   const turn = value?.turns.find((entry) => entry.id === value.activeTurn);
-  return turn ? <TurnChangesBadge key={`${value?.thread.id}:${turn.id}`} turn={turn} /> : null;
+  return turn ? <TurnChangesBadge key={`${value?.thread.id}:${turn.id}`} turn={turn} threadId={value?.thread.id} /> : null;
 }

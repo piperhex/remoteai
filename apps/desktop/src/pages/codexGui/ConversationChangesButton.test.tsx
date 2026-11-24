@@ -56,7 +56,7 @@ it.each(['declined', 'failed', 'inProgress'])('skips %s edits at the top level a
   const turn = latest([{ ...edit, status }]);
   for (const turns of [[turn], folded([turn])]) {
     expect((await render(turns)).files).toEqual([]);
-    expect((await render([old, ...turns])).files.map(file => file.path)).toEqual(['old.ts']);
+    expect((await render([old, ...turns])).files).toEqual([]);
   }
 });
 
@@ -68,13 +68,15 @@ it.each([
   'skips turns without file changes: $items', async ({ items }) => {
     for (const turns of [[latest(items)], folded([latest(items)])]) {
       expect((await render(turns)).files).toEqual([]);
-      expect((await render([old, ...turns])).files.map(file => file.path)).toEqual(['old.ts']);
+      expect((await render([old, ...turns])).turnReview).toMatchObject({ turnId: 'latest', result: 'incomplete' });
     }
   },
 );
 
 it('skips whitespace diffs and clears files when switching to an empty conversation', async () => {
-  expect((await render([old, { ...latest([]), diff: ' \r\n\t' }])).files[0].path).toBe('old.ts');
+  const current = await render([old, { ...latest([edit]), diff: ' \r\n\t' }]);
+  expect(current.files).toEqual([]);
+  expect(current.turnReview).toMatchObject({ turnId: 'latest', result: 'empty' });
   expect((await render([])).files).toEqual([]);
   expect((await render()).files).toEqual([]);
 });

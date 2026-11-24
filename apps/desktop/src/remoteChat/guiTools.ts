@@ -68,6 +68,7 @@ export async function guiToolRequest(body: Record<string, unknown>) {
       return invoke('codex_gui_git_tool', { request: { ...body, operation: 'resolveConflict' } });
     case 'guiGitContinueIntegration':
       return invoke('codex_gui_git_tool', { request: { ...body, operation: 'continueIntegration' } });
+    case 'guiGitWorkspaceDiff':
     case 'guiGitDiff': return invoke('codex_gui_git_tool', { request: { ...body, operation: 'diff' } });
     case 'guiGitHistory': return invoke('codex_gui_git_tool', { request: { ...body, operation: 'history' } });
     case 'guiGitCommitFiles': return invoke('codex_gui_git_tool', { request: { ...body, operation: 'commitFiles' } });

@@ -13,6 +13,7 @@ mod plugin_refresh;
 mod predictions;
 #[path = "title_service.rs"]
 mod title_service;
+mod turn_review;
 mod workspace_activity;
 
 use std::{
@@ -61,6 +62,7 @@ pub(super) struct Client {
     approvals: Mutex<HashMap<String, GuiEvent>>,
     active_turns: Mutex<HashMap<String, String>>,
     live_history: std::sync::Mutex<super::live_history::LiveHistory>,
+    review_baselines: Mutex<turn_review::Baselines>,
     completion_notifications: Mutex<completion_notifications::CompletionNotifications>,
     context_capacity: context_capacity::ContextCapacity,
     context_usage: Mutex<context_usage::UsageCache>,
@@ -144,6 +146,7 @@ impl Client {
             approvals: Mutex::new(HashMap::new()),
             active_turns: Mutex::new(HashMap::new()),
             live_history: std::sync::Mutex::default(),
+            review_baselines: Mutex::default(),
             completion_notifications: Mutex::default(),
             context_capacity: context_capacity::ContextCapacity::default(),
             context_usage: Mutex::default(),
@@ -268,6 +271,9 @@ impl Client {
             workspace,
         )
         .await?;
+        if method == "turn/start" {
+            self.begin_review(id, &params).await;
+        }
         let (sender, receiver) = oneshot::channel();
         {
             let mut pending = self.pending.lock().await;
@@ -279,6 +285,7 @@ impl Client {
             .await
         {
             self.pending.lock().await.remove(&id);
+            self.review_baselines.lock().await.pending.remove(&id);
             return Err(error);
         }
         let deadline = if method == "model/list" {
@@ -326,6 +333,9 @@ impl Client {
                 params: value["params"].clone(),
                 id: value.get("id").cloned(),
             };
+            if super::turn_review::observes(&event) {
+                self.record_turn_review(&mut event).await;
+            }
             workspaces::hide_project_paths(&mut event.params, &self.projectless_root);
             super::push_notifications::identify(&mut event, &self.notification_session);
             if matches!(method, "turn/started" | "turn/completed") {
@@ -372,6 +382,7 @@ impl Client {
             }
             self.emit(event).await;
         } else if let Some(id) = value["id"].as_u64() {
+            self.bind_review(id, &value["result"]).await;
             self.workspaces
                 .response(
                     &self.notification_session,

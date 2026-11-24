@@ -80,7 +80,7 @@ export function Messages({ value, selected, active = true, footer, pendingReques
           {entries.map(({ turn, items, followsInterruption, groups }) => <TurnMessage
             key={`${selected}:${turn.id}`} turn={turn} visibleItems={items}
             messageGroups={groups}
-            threadId={canUndoChanges ? selected ?? undefined : undefined}
+            threadId={value?.thread.id ?? selected ?? undefined} canUndoChanges={canUndoChanges}
             retry={retry?.threadId === selected && retry.turnId === turn.id ? retry : undefined}
             onCancelRetry={onCancelRetry}
             onFork={onFork && selected ? () => { void onFork(selected, turn.id); } : undefined}

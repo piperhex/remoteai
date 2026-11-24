@@ -52,6 +52,11 @@ const controller = new ChatController(events => ({ start() {
   request: async <T,>(method: string, value?: unknown): Promise<T> => {
     const body = value as { operation?: string; threadId?: string; known?: HistoryVersion; archived?: boolean } | undefined;
     if (method === 'connect') return [] as T;
+    if (params.has('changeReview') && (body?.operation?.startsWith('guiGit') ||
+      ['list', 'read', 'resume', 'syncHistory'].includes(body?.operation ?? ''))) {
+      const data = await fetch('/__review_fixture__', { method: 'POST', body: JSON.stringify(body) }).then(r => r.json());
+      return body?.operation === 'syncHistory' ? historyDelta(data.thread, body.known) as T : data as T;
+    }
     if (body?.operation === 'queueRead') return { revision: 0, threads: {} } as T;
     if (body?.operation === 'list') return {
       data: runningThreads ? (body.archived ? [] : runningThreads.slice(0, 3)) : [sidebarCodexThread],
