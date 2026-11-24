@@ -1,0 +1,5 @@
+.browser-window-shell > .app-menu { grid-row: 2; }
+.browser-window-shell > main { grid-row: 3; scrollbar-gutter: auto; }
+.pm-browser-titlebar .window-controls { align-self: stretch; }
+.pm-browser .window-controls .window-control { height: auto; padding: 0; border-radius: 0; cursor: default; }
+.pm-browser .window-controls .window-control-close:hover { color: #fff; background: #c42b1c; }
