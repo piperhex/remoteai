@@ -47,6 +47,36 @@ async function verifyPlacementDeduplication(page) {
   console.log('60 unrelated DOM updates produced 0 native inspector placement calls.');
 }
 
+async function checkViewport(child, width, height) {
+  await expect.poll(() => child.evaluate(() => [screen.width, screen.height])).toEqual([width, height]);
+  // Narrow mobile documents can zoom out to show overflowing content. CSS breakpoints use the layout viewport.
+  await expect.poll(() => child.evaluate(([w, h]) => {
+    const root = document.documentElement;
+    return Math.max(Math.abs(root.clientWidth - w), Math.abs(root.clientHeight - h));
+  }, [width, height])).toBeLessThanOrEqual(1);
+}
+
+async function verifyResizeHandles(page, child) {
+  const fields = page.locator('.browser-device-toolbar input');
+  const dimensions = () => fields.evaluateAll(inputs => inputs.map(input => input.valueAsNumber));
+  for (const edge of ['right', 'bottom', 'corner']) {
+    const [width, height] = await dimensions();
+    const handle = page.locator(`.browser-device-handle[data-edge="${edge}"]`);
+    const box = await handle.boundingBox();
+    const x = box.x + box.width / 2, y = box.y + box.height / 2;
+    await page.mouse.move(x, y); await page.mouse.down();
+    try {
+      await page.mouse.move(x - (edge === 'bottom' ? 0 : 20), y - (edge === 'right' ? 0 : 20), { steps: 6 });
+      const [nextWidth, nextHeight] = await dimensions();
+      if (edge === 'bottom') expect(nextWidth).toBe(width); else expect(nextWidth).toBeLessThan(width);
+      if (edge === 'right') expect(nextHeight).toBe(height); else expect(nextHeight).toBeLessThan(height);
+      if (edge !== 'bottom') await expect.poll(async () => (await handle.boundingBox()).x).toBeCloseTo(box.x - 20, 0);
+      if (edge !== 'right') await expect.poll(async () => (await handle.boundingBox()).y).toBeCloseTo(box.y - 20, 0);
+      await checkViewport(child, nextWidth, nextHeight);
+    } finally { await page.mouse.up(); }
+  }
+}
+
 async function verifyDeviceCycle(page, child) {
   const toggle = page.getByRole('button', { name: '手机模式' });
   const draft = child.getByRole('textbox', { name: 'draft' });
@@ -60,17 +90,41 @@ async function verifyDeviceCycle(page, child) {
   await draft.fill('edited');
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await expect.poll(async () => Math.round((await page.locator('.pm-browser-surface:visible').boundingBox()).width))
-    .toBeLessThanOrEqual(390);
+  const preset = page.getByRole('combobox', { name: '设备' });
+  const widthInput = page.getByRole('spinbutton', { name: '视口宽度' });
+  const heightInput = page.getByRole('spinbutton', { name: '视口高度' });
+  await checkViewport(child, 393, 852);
+  await expect(page.locator('.browser-device-handle')).toHaveCount(0);
+  await preset.selectOption('Pixel 9 Pro');
+  await checkViewport(child, 427, 952);
+  await preset.selectOption('responsive');
+  await verifyResizeHandles(page, child);
+  await widthInput.fill('480'); await widthInput.press('Enter');
+  await heightInput.fill('720'); await heightInput.press('Enter');
+  await expect(preset).toHaveValue('responsive');
+  await checkViewport(child, 480, 720);
+  await page.getByRole('button', { name: '旋转视口' }).click();
+  await checkViewport(child, 720, 480);
+  await widthInput.fill('0'); await widthInput.press('Enter');
+  await expect(widthInput).toHaveValue('720');
+  await checkViewport(child, 720, 480);
+  await preset.selectOption('iPhone 16');
+  await checkViewport(child, 393, 852);
   expect(await device()).toMatchObject({ coarse: true, start: desktop.start });
-  await child.evaluate(() => document.addEventListener('pointerdown', event => {
+  await draft.evaluate(input => input.addEventListener('pointerdown', event => {
     document.body.dataset.pointer = event.pointerType;
   }));
-  // A docked WebView2 can deliver input without acknowledging the CDP click.
   const clickAs = async type => {
+    const box = await draft.boundingBox();
+    const scale = type === 'touch' ? (await page.locator('.pm-browser-surface:visible').boundingBox()).width / 393 : 1;
+    const point = { x: (box.x + box.width / 2) * scale, y: (box.y + box.height / 2) * scale };
+    const session = await child.context().newCDPSession(child);
     const pointer = child.waitForFunction(expected => document.body.dataset.pointer === expected, type);
-    await Promise.race([draft.click(), pointer]);
-    await pointer;
+    // WebView2 may acknowledge emulated presses only after release. Queue both in protocol order.
+    const events = ['mousePressed', 'mouseReleased'].map(event => session.send('Input.dispatchMouseEvent',
+      { type: event, ...point, button: 'left', clickCount: 1 }));
+    try { await Promise.race([Promise.all(events), pointer]); await pointer; }
+    finally { await session.detach(); }
   };
   await clickAs('touch');
   await toggle.click();
@@ -189,12 +243,13 @@ if (action === 'start') {
       if ((await toggle.getAttribute('aria-pressed') === 'true') !== mobile) await toggle.click();
       await expect(toggle).toHaveAttribute('aria-pressed', String(mobile));
       const surface = page.locator('.pm-browser-surface:visible');
-      await expect.poll(async () => Math.abs((await surface.boundingBox()).width
-        - await child.evaluate(() => innerWidth))).toBeLessThanOrEqual(1);
       if (mobile) {
-        expect(Math.round((await surface.boundingBox()).width)).toBeLessThanOrEqual(390);
+        const fields = page.locator('.browser-device-toolbar input');
+        const size = await fields.evaluateAll(inputs => inputs.map(input => input.valueAsNumber));
+        await checkViewport(child, ...size);
         expect(await child.evaluate(() => navigator.maxTouchPoints)).toBeGreaterThan(0);
-      }
+      } else await expect.poll(async () => Math.abs((await surface.boundingBox()).width
+        - await child.evaluate(() => innerWidth))).toBeLessThanOrEqual(1);
       await expect(child.getByRole('textbox', { name: 'draft' })).toHaveValue('retained');
       console.log(await child.evaluate(() => ({ width: innerWidth, height: innerHeight,
         touchPoints: navigator.maxTouchPoints, coarse: matchMedia('(pointer: coarse)').matches })));

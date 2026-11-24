@@ -92,6 +92,7 @@ it.each([
   { ...placement, dock: 'bottom' as const },
   { ...placement, dock: 'window' as const },
   { ...placement, visible: false },
+  { ...placement, viewport: { width: 393, height: 852, scale: 0.75 } },
   ...(['x', 'y', 'width', 'height'] as const).map(key => ({ ...placement,
     bounds: { ...placement.bounds, [key]: placement.bounds[key] + 1 } })),
 ])('applies changed placement %j', async changed => {
@@ -103,6 +104,21 @@ it.each([
   await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
   expect(invoke.mock.calls[1][1].request.command).toEqual(changed);
   await session.stop();
+});
+
+it('updates emulated dimensions even when the displayed page bounds stay the same', async () => {
+  invoke.mockReset().mockResolvedValue(opened);
+  const session = inspectorSession(target, vi.fn());
+  const place = (width: number, height: number, scale: number) =>
+    session.update({ ...placement, viewport: { width, height, scale } });
+  place(393, 852, 1);
+  await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+  place(786, 1704, 0.5);
+  await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(2));
+  place(786, 1704, 0.5);
+  await session.stop();
+  expect(invoke).toHaveBeenCalledTimes(3);
+  expect(invoke.mock.calls[2][1].request.command.visible).toBe(false);
 });
 
 it('restores a previous position after a different in-flight placement completes', async () => {

@@ -1,5 +1,6 @@
 use super::{BrowserError, Result};
 use crate::provider_browser::automation::devtools;
+use crate::provider_browser::inspector::DeviceViewport;
 use serde_json::{json, Value};
 use tauri::Webview;
 
@@ -7,9 +8,18 @@ use tauri::Webview;
 pub(super) struct DeviceMode {
     pub(super) mobile: bool,
     needs_restore: bool,
+    viewport: Option<DeviceViewport>,
 }
 
 impl DeviceMode {
+    pub(super) fn resize(&mut self, view: &Webview, viewport: DeviceViewport) -> Result<()> {
+        if self.viewport != Some(viewport) {
+            tauri::async_runtime::block_on(metrics(view, Some(viewport)))?;
+            self.viewport = Some(viewport);
+        }
+        Ok(())
+    }
+
     /// Called on a blocking worker under this tab's session lock, including on native close.
     pub(super) fn set(&mut self, view: &Webview, enabled: bool) -> Result<()> {
         if self.mobile == enabled && !self.needs_restore {
@@ -17,31 +27,38 @@ impl DeviceMode {
         }
         let previous = self.mobile;
         self.needs_restore = true;
-        if let Err(error) = tauri::async_runtime::block_on(apply(view, enabled)) {
-            if tauri::async_runtime::block_on(apply(view, previous)).is_ok() {
+        if let Err(error) = tauri::async_runtime::block_on(apply(view, enabled, None)) {
+            if tauri::async_runtime::block_on(apply(view, previous, self.viewport)).is_ok() {
                 self.needs_restore = false;
             }
             return Err(error);
         }
         self.mobile = enabled;
+        self.viewport = None;
         self.needs_restore = false;
         Ok(())
     }
 }
 
-async fn apply(view: &Webview, mobile: bool) -> Result<()> {
-    // The shared surface sizes the actual controller. Zero dimensions track its bounds on resize.
-    let (method, metrics) = if mobile {
-        (
-            "Emulation.setDeviceMetricsOverride",
-            json!({
-                "mobile": true, "width": 0, "height": 0, "deviceScaleFactor": 0
-            }),
-        )
+async fn metrics(view: &Webview, viewport: Option<DeviceViewport>) -> Result<()> {
+    let (width, height, scale) = viewport.map_or((0, 0, 1.0), |v| (v.width, v.height, v.scale));
+    call(
+        view,
+        "Emulation.setDeviceMetricsOverride",
+        json!({
+            "mobile": true, "width": width, "height": height, "deviceScaleFactor": 0,
+            "scale": scale, "dontSetVisibleSize": true
+        }),
+    )
+    .await
+}
+
+async fn apply(view: &Webview, mobile: bool, viewport: Option<DeviceViewport>) -> Result<()> {
+    if mobile {
+        metrics(view, viewport).await?;
     } else {
-        ("Emulation.clearDeviceMetricsOverride", json!({}))
-    };
-    call(view, method, metrics).await?;
+        call(view, "Emulation.clearDeviceMetricsOverride", json!({})).await?;
+    }
     call(
         view,
         "Emulation.setTouchEmulationEnabled",

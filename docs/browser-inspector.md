@@ -6,8 +6,13 @@ window, or closes the inspector. Drag the divider to resize an embedded inspecto
 also supports arrow keys, Home/End, and double-click to reset its size.
 
 The monitor-and-phone button at the start of the inspector toolbar toggles mobile device mode
-for the inspected tab. Its highlighted state enables a responsive phone viewport up to 390 CSS
-pixels wide and touch input with the mouse. Toggling it off or closing the inspector restores
+for the inspected tab. A device toolbar above the page starts with iPhone 16 at 393 × 852 CSS
+pixels. Choose a device preset, enter a custom width and height, or rotate the viewport.
+In Responsive mode, drag the right edge for width, the bottom edge for height, or the bottom-right
+corner for both. The size fields update while dragging. Focus a grip and use the arrow keys for
+one-pixel adjustments, or hold Shift for ten pixels.
+The preview scales to fit the available space while the page sees the selected viewport dimensions.
+The mouse provides touch input. Toggling device mode off or closing the inspector restores
 desktop input and sizing without reloading the page.
 
 This applies to normal browser tabs and conversation-owned native browser previews, including

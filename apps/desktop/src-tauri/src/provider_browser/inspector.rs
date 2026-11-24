@@ -16,6 +16,23 @@ pub(crate) enum Dock {
     Window,
 }
 
+#[derive(Clone, Copy, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct DeviceViewport {
+    width: u32,
+    height: u32,
+    scale: f64,
+}
+
+impl DeviceViewport {
+    fn valid(self) -> bool {
+        (50..=4096).contains(&self.width)
+            && (50..=4096).contains(&self.height)
+            && self.scale > 0.0
+            && self.scale <= 1.0
+    }
+}
+
 #[derive(Deserialize)]
 #[serde(tag = "action", rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) enum Action {
@@ -30,6 +47,7 @@ pub(crate) enum Action {
         #[cfg_attr(not(windows), allow(dead_code))]
         dock: Dock,
         bounds: Bounds,
+        viewport: Option<DeviceViewport>,
         #[cfg_attr(not(windows), allow(dead_code))]
         visible: bool,
     },
@@ -50,8 +68,11 @@ pub(crate) struct Request {
 }
 
 fn target(owner: &Webview, request: &Request) -> Result<Webview> {
-    if let Action::Place { bounds, .. } = request.command {
-        if !super::valid_bounds(bounds) {
+    if let Action::Place {
+        bounds, viewport, ..
+    } = request.command
+    {
+        if !super::valid_bounds(bounds) || viewport.is_some_and(|size| !size.valid()) {
             return Err(BrowserError::Invalid);
         }
     }

@@ -156,7 +156,13 @@ pub(super) fn execute(view: &Webview, action: Action) -> Result<Status> {
             dock,
             bounds,
             visible,
-        } => session.window.place(view, dock, bounds, visible)?,
+            viewport,
+        } => {
+            session.window.place(view, dock, bounds, visible)?;
+            if let Some(viewport) = viewport.filter(|_| visible && session.device.mobile) {
+                session.device.resize(view, viewport)?;
+            }
+        }
     }
     let status = Status {
         open: true,
