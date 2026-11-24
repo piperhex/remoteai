@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { listen } from '@tauri-apps/api/event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ProviderBrowserSurface } from '../../../../../shared/browser/managed/ProviderBrowserSurface';
 import { WebsiteBrowserSurface } from '../../../../../shared/file-preview/workspace/ManagedBrowserSurface';
@@ -61,6 +62,23 @@ async function expectVisible(visible: boolean, managed: boolean) {
 
 for (const managed of [false, true]) {
   const browser = managed ? 'managed' : 'provider';
+  it(`${browser} places a fullscreen player over the window and restores the current tab bounds on exit`, async () => {
+    await mountBrowser(managed);
+    await expectVisible(true, managed);
+    const event = `${managed ? 'conversation' : 'provider'}-browser-overlay-tab`;
+    const receive = vi.mocked(listen).mock.calls.find(([name]) => name === event)?.[1];
+    expect(receive).toBeDefined();
+    const fullscreen = (active: boolean) => receive!({ event, id: 1, payload: { pageFullscreen: active } });
+    const command = managed ? 'codex_gui_browser_place' : 'provider_browser_sync';
+    const bounds = () => invoke.mock.calls.filter(([name]) => name === command).at(-1)?.[1].request.bounds;
+    await act(async () => { fullscreen(true); });
+    await vi.waitFor(() => expect(bounds()).toEqual({ x: 0, y: 0, width: innerWidth, height: innerHeight }));
+    const resized = { ...rect, x: 100, width: 750 };
+    vi.mocked(HTMLElement.prototype.getBoundingClientRect).mockReturnValue(resized);
+    await act(async () => { fullscreen(false); });
+    await vi.waitFor(() => expect(bounds()).toEqual(resized));
+  });
+
   it(`${browser} browser hides for native dialogs and restores after the last closes`, async () => {
     await mountBrowser(managed);
     await expectVisible(true, managed);

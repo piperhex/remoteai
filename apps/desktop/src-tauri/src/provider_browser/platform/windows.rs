@@ -2,8 +2,8 @@ use super::{BrowserError, Result};
 use std::{collections::BTreeMap, sync::mpsc, time::Duration};
 use tauri::{Emitter, Manager};
 use webview2_com::{
-    take_pwstr, Microsoft::Web::WebView2::Win32::*, NewWindowRequestedEventHandler,
-    SourceChangedEventHandler, WebResourceRequestedEventHandler,
+    take_pwstr, ContainsFullScreenElementChangedEventHandler, Microsoft::Web::WebView2::Win32::*,
+    NewWindowRequestedEventHandler, SourceChangedEventHandler, WebResourceRequestedEventHandler,
 };
 use windows::core::{w, HSTRING, PWSTR};
 
@@ -53,6 +53,7 @@ pub(super) fn configure_headers(
                     event.clone(),
                 )?;
                 install_source_changed(&core, app.clone(), event.clone())?;
+                install_fullscreen_changed(&core, app.clone(), event.clone())?;
                 install_popup(&core, app, event)?;
                 if !headers.is_empty() {
                     install(&core, origin, headers)?;
@@ -69,6 +70,32 @@ pub(super) fn configure_headers(
         .recv_timeout(Duration::from_secs(10))
         .map_err(|_| BrowserError::Unavailable)?
         .map_err(|_| BrowserError::Unavailable)
+}
+
+fn install_fullscreen_changed(
+    view: &ICoreWebView2,
+    app: tauri::AppHandle,
+    event: String,
+) -> windows::core::Result<()> {
+    // Tauri already makes the host window fullscreen. Its independently placed child still needs resizing.
+    // SAFETY: WebView2 retains this handler and invokes it on the sender's COM apartment.
+    unsafe {
+        let mut token = 0;
+        view.add_ContainsFullScreenElementChanged(
+            &ContainsFullScreenElementChangedEventHandler::create(Box::new(move |sender, _| {
+                if let Some(sender) = sender {
+                    let mut fullscreen = windows::core::BOOL::default();
+                    sender.ContainsFullScreenElement(&mut fullscreen)?;
+                    let payload = serde_json::json!({ "pageFullscreen": fullscreen.as_bool() });
+                    if let Err(error) = app.emit_to("main", &event, payload) {
+                        eprintln!("Browser fullscreen notification failed: {error}");
+                    }
+                }
+                Ok(())
+            })),
+            &mut token,
+        )
+    }
 }
 
 unsafe fn install_source_changed(
