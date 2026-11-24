@@ -1,5 +1,7 @@
 use super::*;
 
+mod http;
+
 /// Only the main window can invite another account or answer an invitation.
 #[derive(Deserialize)]
 #[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
@@ -180,7 +182,7 @@ fn run(
         .map_err(|_| AssistanceError::Unavailable)?
         .device_id;
     let (method, path, body) = command.request(&device);
-    let client = api_client().map_err(|_| AssistanceError::Unavailable)?;
+    let client = http::client(&settings, &path)?;
     let response = cloud_request(
         app,
         &client,

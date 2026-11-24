@@ -21,6 +21,40 @@ it('keeps polling single-flight and ignores results from before logout', async (
   expect(store.allows('invite')).toBe(false);
 });
 
+it('uses 60s reconciliation only after negotiation and returns to 3s polling on disconnect', async () => {
+  vi.useFakeTimers();
+  invoke.mockResolvedValue(reply([]));
+  const stop = store.watch(true);
+  try {
+    await vi.advanceTimersByTimeAsync(3_000);
+    expect(invoke).toHaveBeenCalledTimes(2);
+    store.setEventsOnline(true);
+    store.invalidate();
+    await vi.advanceTimersByTimeAsync(59_999);
+    expect(invoke).toHaveBeenCalledTimes(3);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(invoke).toHaveBeenCalledTimes(4);
+    store.setEventsOnline(false);
+    await vi.advanceTimersByTimeAsync(3_000);
+    expect(invoke).toHaveBeenCalledTimes(5);
+    stop();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(invoke).toHaveBeenCalledTimes(5);
+  } finally { stop(); vi.useRealTimers(); }
+});
+
+it('coalesces invalidations received during a list request into one fresh read', async () => {
+  let release!: (value: unknown) => void;
+  invoke.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }))
+    .mockResolvedValueOnce(reply([]));
+  const first = store.refresh();
+  store.invalidate(); store.invalidate();
+  expect(invoke).toHaveBeenCalledTimes(1);
+  release(reply()); await first;
+  expect(invoke).toHaveBeenCalledTimes(2);
+  expect(store.snapshot().requests).toEqual([]);
+});
+
 it('revokes local access immediately when ending fails to reach the cloud', async () => {
   invoke.mockResolvedValueOnce(reply()); await store.refresh();
   expect(store.allows('invite')).toBe(true);

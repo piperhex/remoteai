@@ -356,20 +356,17 @@ impl Runtime {
         if message["type"] == "registered" {
             self.registered = true;
             self.backoff.reset();
-        } else {
-            let data = if message["type"] == "peer-open" {
-                let config = self.config.as_ref().ok_or(ChatError::Transport)?;
-                // Stable across reconnects; a different account or server cannot attach old terminals.
-                message["terminalOwner"] =
-                    json!(
-                        json!([config.websocket_url, config.owner, config.device_id]).to_string()
-                    );
-                message.to_string()
-            } else {
-                text.to_owned()
-            };
-            self.emit(Event::Message { data });
         }
+        let data = if message["type"] == "peer-open" {
+            let config = self.config.as_ref().ok_or(ChatError::Transport)?;
+            // Stable across reconnects; a different account or server cannot attach old terminals.
+            message["terminalOwner"] =
+                json!(json!([config.websocket_url, config.owner, config.device_id]).to_string());
+            message.to_string()
+        } else {
+            text.to_owned()
+        };
+        self.emit(Event::Message { data });
         Ok(())
     }
 

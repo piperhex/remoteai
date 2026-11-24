@@ -69,6 +69,22 @@ afterEach(() => {
   host.close(); assistanceStore.reset(false); setChatPolicy(DEFAULT_CHAT_POLICY); vi.unstubAllGlobals();
 });
 
+it('refreshes on negotiated registration and invitation changes, falling back when the socket closes', async () => {
+  const online = vi.spyOn(assistanceStore, 'setEventsOnline');
+  const invalidate = vi.spyOn(assistanceStore, 'invalidate');
+  try {
+    await message({ type: 'registered', assistanceEvents: true });
+    expect(online).toHaveBeenLastCalledWith(true);
+    await message({ type: 'assistance-changed' });
+    expect(invalidate).toHaveBeenCalledTimes(2);
+    native.receive!({ type: 'disconnected', generation: 2 });
+    expect(online).toHaveBeenLastCalledWith(false);
+    native.receive!({ type: 'message', generation: 3, data: JSON.stringify({ type: 'registered' }) });
+    await vi.waitFor(() => expect(invalidate).toHaveBeenCalledTimes(3));
+    expect(online).toHaveBeenLastCalledWith(false);
+  } finally { online.mockRestore(); invalidate.mockRestore(); }
+});
+
 it('accepts configuration from the coordinator before pairing and while a direct session is active', async () => {
   const policy = { ...DEFAULT_CHAT_POLICY, threadPageSize: 6 };
   await message({ type: 'chat-policy', policy });

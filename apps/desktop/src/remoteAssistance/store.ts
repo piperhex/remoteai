@@ -18,6 +18,8 @@ interface Snapshot {
   identity?: GuiCloudIdentity; currentDeviceId?: string; viewerId?: string;
 }
 const INITIAL: Snapshot = { authenticated: false, dialog: false, busy: false, error: '', requests: [], email: '' };
+const FALLBACK_POLL_MS = 3_000;
+const RECONCILE_INTERVAL_MS = 60_000;
 
 export function liveInvitation(request: AssistanceInvitation) {
   return (request.state === 'pending' || request.state === 'accepted') && Date.parse(request.expiresAt) > Date.now();
@@ -31,6 +33,9 @@ export class AssistanceStore {
   private generation = 0;
   private revision = 0;
   private polling = false;
+  private refreshPending = false;
+  private eventsOnline = false;
+  private timer?: ReturnType<typeof setInterval>;
   snapshot = () => this.state;
   subscribe = (listener: () => void) => {
     this.listeners.add(listener); return () => { this.listeners.delete(listener); };
@@ -41,9 +46,36 @@ export class AssistanceStore {
   }
   reset(authenticated: boolean) {
     this.generation++;
+    this.refreshPending = false;
     for (const id of revokedInvitations()) this.revoked.add(id);
     this.state = { ...INITIAL, authenticated };
     this.listeners.forEach(listener => listener());
+  }
+  watch(authenticated: boolean) {
+    this.reset(authenticated);
+    if (authenticated) {
+      this.schedulePoll();
+      this.invalidate();
+    }
+    return () => {
+      clearInterval(this.timer);
+      this.timer = undefined;
+      this.reset(false);
+    };
+  }
+  private schedulePoll() {
+    clearInterval(this.timer);
+    this.timer = setInterval(() => { void this.refresh(); }, this.eventsOnline ? RECONCILE_INTERVAL_MS : FALLBACK_POLL_MS);
+  }
+  setEventsOnline(online: boolean) {
+    if (this.eventsOnline === online) return;
+    this.eventsOnline = online;
+    if (this.timer !== undefined) this.schedulePoll();
+  }
+  invalidate() {
+    if (!this.state.authenticated) return;
+    this.refreshPending = true;
+    void this.refresh();
   }
   open = () => this.update({ dialog: true, error: '' });
   setEmail = (email: string) => this.update({ email });
@@ -65,13 +97,17 @@ export class AssistanceStore {
   async refresh() {
     if (!this.state.authenticated || this.polling || this.state.busy) return;
     const generation = this.generation, revision = this.revision;
+    this.refreshPending = false;
     this.polling = true;
     try {
       const reply = await invoke<Reply>('remote_assistance', { request: { kind: 'list' } });
       if (generation === this.generation && revision === this.revision) this.update(reply);
     } catch {
       // A transient poll failure must not turn into repeated dialogs or revoke a valid direct connection.
-    } finally { this.polling = false; }
+    } finally {
+      this.polling = false;
+      if (this.refreshPending) void this.refresh();
+    }
   }
   async invite(email: string) {
     const normalized = email.trim();
@@ -118,7 +154,10 @@ export class AssistanceStore {
       if (generation === this.generation) this.update({ error: typeof error === 'string' ? error
         : error instanceof Error ? error.message : '远程协助暂不可用，请稍后重试。' });
       return false;
-    } finally { if (generation === this.generation) this.update({ busy: false }); }
+    } finally {
+      if (generation === this.generation) this.update({ busy: false });
+      if (this.refreshPending) void this.refresh();
+    }
   }
 }
 

@@ -8,7 +8,6 @@ import { useGuiLanguage } from '../../../../shared/localization/useGuiLanguage';
 import { assistanceStore as store, liveInvitation, type AssistanceInvitation } from './store';
 import styles from './assistance.module.less';
 
-const POLL_INTERVAL_MS = 3_000;
 const AssistanceViewer = lazy(() => import('./AssistanceViewer')
   .then(module => ({ default: module.AssistanceViewer })));
 const STATE_LABELS = {
@@ -19,13 +18,7 @@ export function RemoteAssistance({ auth, onLogin }: { auth: CloudAuthState; onLo
   useGuiLanguage();
   const state = useSyncExternalStore(store.subscribe, store.snapshot);
   const { email } = state;
-  useEffect(() => {
-    store.reset(auth.authenticated);
-    if (!auth.authenticated) return;
-    void store.refresh();
-    const timer = setInterval(() => { void store.refresh(); }, POLL_INTERVAL_MS);
-    return () => { clearInterval(timer); store.reset(false); };
-  }, [auth.authenticated, auth.baseUrl, auth.userId]);
+  useEffect(() => store.watch(auth.authenticated), [auth.authenticated, auth.baseUrl, auth.userId]);
   const outgoing = state.requests.filter(request => request.hostDeviceId === state.currentDeviceId);
   const active = outgoing.find(liveInvitation);
   const incoming = state.requests.find(request => request.hostDeviceId !== state.currentDeviceId

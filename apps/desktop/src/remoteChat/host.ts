@@ -28,6 +28,7 @@ import { RelayQuota } from '../../../../shared/remote-chat/relayUsage';
 import { BulkSource } from './bulkSource';
 import { BULK_OPERATION } from '../../../../shared/remote-chat/bulkControl';
 import { AssistanceHostAccess } from '../remoteAssistance/hostAccess';
+import { assistanceStore } from '../remoteAssistance/store';
 import { FileRelay } from '../../../../shared/remote-chat/fileRelay';
 import { NativeFileSocket } from './fileSocket';
 
@@ -96,6 +97,7 @@ export class ChatHost {
     if (event.type === 'bulk') {
       this.links.get(event.sessionId)?.bulk?.receive(event.bytes, 'relay'); return;
     }
+    if (event.type === 'reset' || event.type === 'disconnected') assistanceStore.setEventsOnline(false);
     if (event.type === 'reset') { this.resetSessions(); return; }
     if (event.type === 'disconnected') {
       this.diagnosticsEnabled = false;
@@ -171,6 +173,15 @@ export class ChatHost {
 
   private async receive(data: string) {
     const message = parseMessage(data);
+    if (message.type === 'registered') {
+      assistanceStore.setEventsOnline(message.assistanceEvents === true);
+      assistanceStore.invalidate();
+      return;
+    }
+    if (message.type === 'assistance-changed') {
+      assistanceStore.invalidate();
+      return;
+    }
     if (message.type === CHAT_POLICY_MESSAGE) {
       this.bulkRelayAvailable = message.fileBulkV1 === true;
       this.diagnosticsEnabled = message.connectionDiagnostics === 1;
@@ -302,6 +313,7 @@ export class ChatHost {
 
   close() {
     if (this.closed) return;
+    assistanceStore.setEventsOnline(false);
     this.assistance.close();
     for (const sessionId of this.links.keys()) this.endSession(sessionId);
     this.closed = true;
