@@ -28,6 +28,8 @@ test.beforeAll(() => {
     added, '检查完成\n'], { cwd, windowsHide: true });
   thread = { id: 'codex-history', name: '更新项目说明', cwd, preview: '更新说明并生成检查结果',
     updatedAt: Date.now() / 1000, status: { type: 'idle' }, turns: [
+      { id: 'large-03', status: 'completed', reviewCwd: cwd, reviewDeferred: 'net', reviewHasEdits: true, reviewEdits: [],
+        items: [{ id: 'earlier', type: 'userMessage', content: [{ type: 'text', text: '整理较长的项目说明' }] }] },
       { id: 'edits-01', status: 'completed', reviewCwd: cwd, diff: git('diff', '--', base),
         reviewEdits: [{ id: 'patch', type: 'fileChange', status: 'completed', changes: [
           { path: base, kind: { type: 'update' }, diff: git('diff', '--', base) }] }], items: [
@@ -40,9 +42,18 @@ test.beforeAll(() => {
 });
 test.afterAll(() => rmSync(cwd, { recursive: true, force: true }));
 
-function reply(operation: string, input: { cwd?: string; path?: string; scope?: string }) {
+function reply(operation: string, input: { cwd?: string; path?: string; scope?: string;
+  threadId?: string; turnId?: string; file?: number; offset?: number }) {
   if (operation === 'list') return { data: [{ ...thread, turns: undefined }], nextCursor: null };
   if (['read', 'resume', 'syncHistory'].includes(operation)) return { thread };
+  if (operation === 'savedTurnReview') {
+    expect([input.threadId, input.turnId]).toEqual([thread.id, 'large-03']);
+    const header = 'diff --git a/历史说明.md b/历史说明.md\n--- a/历史说明.md\n+++ b/历史说明.md';
+    if (input.file == null) return { files: [{ header }], next: null };
+    expect(input.file).toBe(0);
+    return input.offset ? { text: '+已保存的末行\n', next: null }
+      : { text: header + '\n@@ -0,0 +1,2 @@\n+已保存的首行\n', next: 150 };
+  }
   expect(input.cwd).toBe(cwd);
   if (['guiGitRepository', 'repository'].includes(operation)) return { repositories: [{ root: cwd, path: '', available: true }] };
   if (['guiGitChanges', 'changes'].includes(operation)) return { root: cwd, files: git('status', '--porcelain=v1', '-z')
@@ -63,6 +74,9 @@ for (const mode of ['local', 'remote', 'web']) {
     });
     await page.route('**/__codex_switch__/api/invoke', route => {
       const { command, args } = route.request().postDataJSON();
+      if (command === 'codex_gui_request' && args.request.operation === 'savedTurnReview') {
+        return route.fulfill({ json: { ok: true, result: { data: reply('savedTurnReview', args.request) } } });
+      }
       if (command === 'codex_gui_undo') return route.fulfill({ json: { ok: true, result: {
         undone: false, preview: args.request.preview ? { files: [base], conflict: false, version: 'fixture' } : undefined,
       } } });
@@ -92,13 +106,22 @@ for (const mode of ['local', 'remote', 'web']) {
     await expect(panel.getByText(dirty, { exact: true })).toHaveCount(0);
     await expect(panel.getByText(added, { exact: true })).toHaveCount(0);
     await page.screenshot({ path: join(evidence, mode + '-turn.png') });
+    await panel.getByRole('combobox').selectOption('large-03');
+    const archive = panel.getByRole('button', { name: '历史说明.md' });
+    await expect(archive).toBeVisible();
+    await expect(panel.getByText('已保存的首行')).toHaveCount(0);
+    await archive.click();
+    await expect(panel.getByText('已保存的首行')).toBeVisible();
+    await panel.getByRole('button', { name: '加载更多' }).click();
+    await expect(panel.getByText('已保存的末行')).toBeVisible();
+    await page.screenshot({ path: join(evidence, mode + '-archive.png') });
     await page.getByRole('button', { name: '收起文件更改', exact: true }).click();
     await page.getByRole('button', { name: '已记录的编辑没有留下差异。', exact: true }).click();
     await expect(panel).toContainText('check-02');
     await expect(panel.getByRole('combobox')).toHaveCount(0);
     await page.getByRole('button', { name: '收起文件更改', exact: true }).click();
     if (mode === 'local') {
-      await page.getByRole('button', { name: '撤销本轮修改', exact: true }).click();
+      await page.locator('[data-turn-id="edits-01"]').getByRole('button', { name: '撤销本轮修改', exact: true }).click();
       const preview = page.locator('.ant-popconfirm:visible');
       await expect(preview.getByText(base, { exact: true })).toBeVisible();
       const cancel = preview.getByRole('button', { name: /^取\s*消$/ });

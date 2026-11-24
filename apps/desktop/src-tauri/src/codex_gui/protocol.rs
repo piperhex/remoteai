@@ -21,6 +21,7 @@ pub(crate) enum GuiRequest {
     RecoveryList,
     RecoveryDecide(super::recovery::Decision),
     ToolDetails(super::tool_details::Target),
+    SavedTurnReview(super::turn_review::archive::Target),
     ProcessDetails(super::process_details::Target),
     GroupMembersPage(super::group_members::Query),
     GroupThreadSummaries(super::group_members::summaries::Query),
@@ -238,7 +239,7 @@ impl GuiRequest {
     pub(super) fn into_rpc(self) -> Result<(&'static str, Value)> {
         match self {
             Self::RecoveryList | Self::RecoveryDecide(_) => Err(GuiError::InvalidRequest),
-            Self::ToolDetails(_) => Err(GuiError::InvalidRequest),
+            Self::ToolDetails(_) | Self::SavedTurnReview(_) => Err(GuiError::InvalidRequest),
             Self::ProcessDetails(_) => Err(GuiError::InvalidRequest),
             Self::GroupMembersPage(_) | Self::GroupThreadSummaries(_) => {
                 Err(GuiError::InvalidRequest)

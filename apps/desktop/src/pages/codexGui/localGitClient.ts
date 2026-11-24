@@ -1,8 +1,10 @@
 import { invoke } from '../../api/backend';
+import { guiApi } from '../../../../../shared/conversation/api';
 import type { GitClient } from '../../../../../shared/remote-chat/gitTypes';
 
 /** Use the same Git service as remote viewers, on this computer's native command worker. */
 export const localGitClient: GitClient = {
+  savedReview: target => guiApi.request({ ...target, operation: 'savedTurnReview' }),
   conflict: (cwd, path) => invoke('codex_gui_git_tool', { request: { operation: 'conflict', cwd, path } }),
   resolveConflict: request => invoke('codex_gui_git_tool', { request: { ...request, operation: 'resolveConflict' } }),
   continueIntegration: (cwd, version) =>

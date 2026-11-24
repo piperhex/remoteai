@@ -5,6 +5,7 @@ use serde_json::{json, Value};
 use std::path::Path;
 
 const DATABASE: &str = "turn-reviews.sqlite";
+pub(super) mod archive;
 #[path = "turn_review_net.rs"]
 mod net;
 
@@ -179,6 +180,16 @@ pub(super) fn restore(home: &Path, thread: &mut Value) -> Result<()> {
     let db = open(home)?;
     for turn in turns {
         restore_turn(&db, &id, turn)?;
+    }
+    Ok(())
+}
+
+pub(super) fn restore_page(home: &Path, thread: &mut Value) -> Result<()> {
+    restore(home, thread)?;
+    for turn in thread["turns"].as_array_mut().into_iter().flatten() {
+        if turn["reviewEdits"].is_array() {
+            archive::project(turn);
+        }
     }
     Ok(())
 }

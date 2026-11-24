@@ -67,7 +67,7 @@ import { RemoteConversationSync } from './conversationSync';
 
 const OPERATIONS = new Set([
   'recoveryList', 'recoveryDecide',
-  'toolDetails',
+  'toolDetails', 'savedTurnReview',
   'processDetails',
   'projectFileRead', 'projectFileBlame', 'projectFileWrite', 'projectEntryAction',
   'suggestNextPrompt',
@@ -103,7 +103,7 @@ const READ_OPERATIONS = new Set([
   'historyItem',
   DIRECTORY_OPERATION,
   'recoveryList',
-  'toolDetails',
+  'toolDetails', 'savedTurnReview',
   'processDetails',
   'viewThread',
   CODEX_STATUS_OPERATION,
@@ -212,7 +212,7 @@ export class ChatOperations {
       if (operation === SYNC_OPERATION && ['read', 'write', 'list', 'homes']
         .includes(String(object(object(request.body).request).action))
         || operation === 'videoRead' || operation === 'fileRead' || operation === 'projectFileRead'
-        || operation === 'toolDetails' || operation === 'historyItem'
+        || operation === 'toolDetails' || operation === 'historyItem' || operation === 'savedTurnReview'
         || (operation === 'cliGui' && object(object(request.body).request).detailId !== undefined)
         || operation === 'processDetails'
         || operation === 'projectFileBlame'
@@ -430,7 +430,7 @@ export class ChatOperations {
       : await guiApi.request(body as unknown as Request);
     completeRemoteThreadListWrite(body, result);
     // File documents must stay byte-faithful; conversation image rewriting would corrupt embedded data URLs.
-    if (['projectFileRead', 'projectFileBlame', 'projectFileWrite', 'projectEntryAction']
+    if (['projectFileRead', 'projectFileBlame', 'projectFileWrite', 'projectEntryAction', 'savedTurnReview']
       .includes(String(body.operation))) return result;
     this.titles.completed(body, result);
     if (body.operation === 'skills') return composerCatalog(result as SkillsResponse, body);

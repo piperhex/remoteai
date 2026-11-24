@@ -234,6 +234,9 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
         GuiRequest::RecoveryDecide(decision) => return client.recovery_decide(decision).await,
         GuiRequest::ToolDetails(target) => return tool_details::read(client, target).await,
         GuiRequest::ProcessDetails(target) => return process_details::read(client, target).await,
+        GuiRequest::SavedTurnReview(target) => {
+            return turn_review::archive::read(client.home.clone(), target).await
+        }
         GuiRequest::GroupThreadSummaries(query) => {
             return group_members::summaries::load(
                 client.home.clone(),
@@ -411,7 +414,7 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
             }
         }
         if !summary_only && matches!(method, "thread/read" | "thread/resume") {
-            if turn_review::restore(&client.home, &mut data["thread"]).is_err() {
+            if turn_review::restore_page(&client.home, &mut data["thread"]).is_err() {
                 if let Some(turns) = data["thread"]["turns"].as_array_mut() {
                     for turn in turns {
                         turn["reviewIncomplete"] = serde_json::json!(true);

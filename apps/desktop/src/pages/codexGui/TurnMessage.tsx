@@ -44,7 +44,7 @@ export const TurnMessage = memo(function TurnMessage({ turn, running, active, fo
   ])[0].groups, [turn, followsInterruption, visibleItems, messageGroups]));
   const files = useTurnChangedFiles(turn);
   const review = useMemo(() => turnReview(turn, threadId), [turn, threadId]);
-  const showChanges = !running && turn.status !== "inProgress" && files.length > 0;
+  const showChanges = !running && turn.status !== "inProgress" && (files.length > 0 || !!turn.reviewHasEdits);
   const responseIndex = groups.findIndex((group) => group.type !== "error" && group.items[0].type !== "userMessage");
   const showDuration = responseIndex === -1
     && (!turnRequestErrors(turn).length || groups.some((group) => group.type === "error"));
@@ -70,7 +70,8 @@ export const TurnMessage = memo(function TurnMessage({ turn, running, active, fo
       && <TurnDuration turn={turn} running={running} active={active} />}
     <GeneratedImages items={visibleItems} />
     <TurnPlan turn={turn} />
-    {!running && !files.length && (review.result === 'empty' || turn.reviewIncomplete) && <TurnReviewNotice review={review} />}
+    {!running && !showChanges && (review.deferred || review.result === 'empty' || turn.reviewIncomplete)
+      && <TurnReviewNotice review={review} />}
     {showChanges && <TurnDiff files={files} title={turn.diff ? uiText("client.chat.changesThisTurn") : uiText("client.chat.fileChanges")}
       threadId={canUndoChanges ? threadId : undefined} turnId={turn.id} review={review}
       disabled={running || turn.status === "inProgress" || Boolean(editDisabled)} />}

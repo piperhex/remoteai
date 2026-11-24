@@ -53,7 +53,7 @@ const controller = new ChatController(events => ({ start() {
     const body = value as { operation?: string; threadId?: string; known?: HistoryVersion; archived?: boolean } | undefined;
     if (method === 'connect') return [] as T;
     if (params.has('changeReview') && (body?.operation?.startsWith('guiGit') ||
-      ['list', 'read', 'resume', 'syncHistory'].includes(body?.operation ?? ''))) {
+      ['list', 'read', 'resume', 'syncHistory', 'savedTurnReview'].includes(body?.operation ?? ''))) {
       const data = await fetch('/__review_fixture__', { method: 'POST', body: JSON.stringify(body) }).then(r => r.json());
       return body?.operation === 'syncHistory' ? historyDelta(data.thread, body.known) as T : data as T;
     }

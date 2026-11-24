@@ -118,7 +118,7 @@ impl Client {
             let turn = &snapshot.params["turn"];
             let mut history = json!({"id":snapshot.params["threadId"],
                 "turns":[{"id":turn["id"],"status":turn["status"]}]});
-            turn_review::restore(&home, &mut history)?;
+            turn_review::restore_page(&home, &mut history)?;
             Ok::<_, rusqlite::Error>(Some(history["turns"][0].take()))
         })
         .await;
@@ -126,6 +126,11 @@ impl Client {
             if let Some(saved) = saved {
                 for field in ["diff", "reviewCwd", "reviewIncomplete"] {
                     event.params["turn"][field] = saved[field].clone();
+                }
+                if saved["reviewDeferred"].is_string() {
+                    event.params["turn"]["reviewDeferred"] = saved["reviewDeferred"].clone();
+                    event.params["turn"]["reviewHasEdits"] = saved["reviewHasEdits"].clone();
+                    event.params["turn"]["reviewEdits"] = json!([]);
                 }
             }
             if incomplete {
