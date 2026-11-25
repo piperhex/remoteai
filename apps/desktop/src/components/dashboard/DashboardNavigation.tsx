@@ -1,6 +1,7 @@
 import {
   BarChart3,
   Cable,
+  Monitor,
   Bot,
   Download,
   FolderOpen,
@@ -38,6 +39,7 @@ export type DashboardPage =
   | "logDiagnostics"
   | "downloads"
   | "portMappings"
+  | "remoteDesktop"
   | "ssh"
   | "lounge"
   | "browser"
@@ -75,6 +77,8 @@ const LOG_DIAGNOSTICS_ITEM = {
   page: "logDiagnostics", icon: LogDiagnosticsIcon, labelKey: "logDiagnostics.title",
 } as const;
 const DOWNLOADS_ITEM = { page: "downloads", icon: Download, labelKey: "downloads.title" } as const;
+const REMOTE_DESKTOP_ITEM = { page: "remoteDesktop", icon: Monitor,
+  get label() { return displayText('client.remoteDesktop.remoteDesktop'); } } as const;
 const PORT_MAPPINGS_ITEM = { page: "portMappings", icon: Cable,
   get label() { return displayText('client.portForwarding.portMapping'); } } as const;
 const SSH_ITEM = { page: "ssh", icon: Server, get label() { return displayText('client.discovery.ssh'); } } as const;
@@ -93,7 +97,7 @@ const TOOLBOX_NAVIGATION_ITEMS = [
 export function isToolboxPage(page: DashboardPage) {
   return page === "codexConfig" || page === "systemPrompts" || page === "logDiagnostics"
     || page === "downloads" || page === "portMappings" || page === "ssh" || page === "lounge" || page === "totp"
-    || TOOLBOX_NAVIGATION_ITEMS.some((item) => item.page === page);
+    || page === "remoteDesktop" || TOOLBOX_NAVIGATION_ITEMS.some((item) => item.page === page);
 }
 
 export function DashboardNavigation({
@@ -107,7 +111,8 @@ export function DashboardNavigation({
   variant = "top",
 }: DashboardNavigationProps) {
   const navigationButton = (item: typeof NAVIGATION_ITEMS[number] | typeof TOOLBOX_NAVIGATION_ITEMS[number]
-    | typeof LOUNGE_ITEM | typeof BROWSER_ITEM | typeof PORT_MAPPINGS_ITEM | typeof SSH_ITEM | {
+    | typeof LOUNGE_ITEM | typeof BROWSER_ITEM | typeof REMOTE_DESKTOP_ITEM
+    | typeof PORT_MAPPINGS_ITEM | typeof SSH_ITEM | {
     page: "settings" | "logDiagnostics" | "downloads" | "totp";
     icon: typeof Settings;
     labelKey: "nav.settings" | "logDiagnostics.title" | "downloads.title" | "totp.action";
@@ -138,6 +143,7 @@ export function DashboardNavigation({
         .map(navigationButton)}
       {variant === "toolbox" && loungeAvailable && navigationButton(LOUNGE_ITEM)}
       {variant === "toolbox" && navigationButton(DOWNLOADS_ITEM)}
+      {variant === "toolbox" && isDesktopApp && navigationButton(REMOTE_DESKTOP_ITEM)}
       {variant === "toolbox" && isDesktopApp && navigationButton(PORT_MAPPINGS_ITEM)}
       {variant === "toolbox" && isDesktopApp && navigationButton(SSH_ITEM)}
       {variant === "toolbox" && navigationButton(LOG_DIAGNOSTICS_ITEM)}
@@ -146,6 +152,7 @@ export function DashboardNavigation({
         <div className="sidebar-nav-tools" data-tauri-drag-region>
           {loungeAvailable && navigationButton(LOUNGE_ITEM)}
           {navigationButton(DOWNLOADS_ITEM)}
+          {isDesktopApp && navigationButton(REMOTE_DESKTOP_ITEM)}
           {isDesktopApp && navigationButton(PORT_MAPPINGS_ITEM)}
           {isDesktopApp && navigationButton(SSH_ITEM)}
           {navigationButton(LOG_DIAGNOSTICS_ITEM)}
