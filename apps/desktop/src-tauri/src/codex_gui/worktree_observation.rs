@@ -58,9 +58,8 @@ impl Baseline {
 
     pub(super) fn finish(self) -> Observation {
         let Some((before, after)) = self.files.and_then(|before| {
-            fingerprints(&self.directory)
-                .ok()
-                .map(|after| (before, after))
+            let after = fingerprints(&self.directory).ok()?;
+            Some((before, after))
         }) else {
             return Observation {
                 paths: Vec::new(),
