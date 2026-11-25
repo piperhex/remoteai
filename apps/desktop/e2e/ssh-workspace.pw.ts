@@ -84,7 +84,18 @@ for (const mode of ['local', 'remote', 'web']) {
     const search = workspace.getByRole('textbox', { name: '搜索名称、地址或用户名' });
     await search.fill('开发');
     await expect(workspace.locator('.ssh-profile-card')).toHaveCount(1);
+    const firstComputer = mode === 'local' ? 'Studio PC' : 'Workstation';
+    const picker = page.getByRole('dialog', { name: '选择电脑' });
     await workspace.locator('.ssh-profile-card').click();
+    await expect(picker.getByRole('button', { name: /Offline PC/ })).toBeDisabled();
+    await expect(workspace.getByRole('tab')).toHaveCount(0);
+    await expect(picker).not.toHaveClass(/-(?:appear|enter)(?:\s|$|-)/);
+    await page.screenshot({ path: info.outputPath(mode + '-choose-device.png'), animations: 'disabled' });
+    await page.keyboard.press('Escape');
+    await expect(picker).toBeHidden();
+    await workspace.locator('.ssh-profile-card').click();
+    await picker.getByRole('button', { name: new RegExp(firstComputer) }).click();
+    await expect(workspace.getByRole('tab').locator('small')).toHaveText(firstComputer);
     const tty = workspace.locator('.xterm-rows:visible');
     await expect(tty).toContainText('wsl-ssh>', { timeout: 25_000 });
     await expect(workspace.getByRole('textbox', { name: '远程路径' })).toHaveValue('/');
@@ -112,7 +123,7 @@ for (const mode of ['local', 'remote', 'web']) {
       await page.screenshot({ path: info.outputPath(mode + '-' + state + '.png'), animations: 'disabled' });
     };
     await checkProfileActions(page, workspace, capture);
-    await checkSessionMenu(page, workspace, capture);
+    await checkSessionMenu(page, workspace, capture, firstComputer);
     await nav.getByRole('button', { name: 'Agent Hub' }).click();
     await nav.getByRole('button', { name: 'SSH', exact: true }).click();
     await expect(tty).toContainText('SSH workspace file transfer');
@@ -120,15 +131,24 @@ for (const mode of ['local', 'remote', 'web']) {
     await expect(monitor).toHaveCount(0);
     await expect(workspace.locator('.sshw-quick h3')).toHaveText('最近');
     await workspace.locator('.sshw-quick button').first().click();
+    await picker.getByRole('button', { name: /Laptop/ }).click();
+    await expect(workspace.getByRole('tab').locator('small')).toHaveText([firstComputer, 'Laptop']);
     await expect(workspace.getByRole('tab')).toHaveCount(2);
     await expect(tty).toContainText('wsl-ssh>');
     await expect(monitor.locator('[data-speed="download"]')).toHaveText(/\/s$/);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.screenshot({ path: info.outputPath(mode + '-two-computers.png'), animations: 'disabled' });
     await page.setViewportSize({ width: 1040, height: 800 });
     await page.evaluate(() => {
       localStorage.setItem('codex-switch:global-font-size', '20');
       window.dispatchEvent(new Event('codex-switch:gui-appearance-changed'));
     });
     await expectMonitorBelowTerminal(workspace);
+    const tab = workspace.getByRole('tab').nth(1);
+    const [title, origin, bounds] = await Promise.all([tab.locator('span > span').boundingBox(),
+      tab.locator('small').boundingBox(), tab.boundingBox()]);
+    expect(origin!.y).toBeGreaterThanOrEqual(title!.y + title!.height);
+    expect(origin!.y + origin!.height).toBeLessThanOrEqual(bounds!.y + bounds!.height);
     await page.screenshot({ path: info.outputPath(mode + '-two-tabs-large.png'), animations: 'disabled' });
     await workspace.getByRole('button', { name: '关闭终端 2', exact: true }).click();
     await expect(workspace.getByRole('tab')).toHaveCount(1);

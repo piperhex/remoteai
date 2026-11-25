@@ -56,7 +56,7 @@ export async function checkProfileActions(page: Page, workspace: Locator, captur
   await expect(workspace.getByRole('tab')).toHaveCount(1);
 }
 
-export async function checkSessionMenu(page: Page, workspace: Locator, capture: Capture) {
+export async function checkSessionMenu(page: Page, workspace: Locator, capture: Capture, computer: string) {
   const trigger = workspace.getByRole('button', { name: '终端连接选项' });
   const items = page.getByRole('menuitem');
   await trigger.click();
@@ -71,6 +71,7 @@ export async function checkSessionMenu(page: Page, workspace: Locator, capture: 
   await dialog.getByRole('button', { name: '取消', exact: true }).click();
   await trigger.click();
   await page.getByRole('menuitem', { name: /开发服务器/ }).click();
+  await page.getByRole('dialog').getByRole('button', { name: new RegExp(computer) }).click();
   await expect(workspace.getByRole('tab')).toHaveCount(2);
   await expect(workspace.locator('.xterm-rows:visible')).toContainText('wsl-ssh>');
   await workspace.getByRole('button', { name: '关闭终端 2', exact: true }).click();

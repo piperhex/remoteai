@@ -27,6 +27,7 @@ pub(crate) struct GuiCloudIdentity {
 pub(crate) struct GuiDeviceDirectory {
     identity: Option<GuiCloudIdentity>,
     current_device_id: String,
+    current_device_name: Option<String>,
     devices: Vec<GuiDevice>,
 }
 
@@ -48,6 +49,7 @@ fn read_directory<R: Runtime>(
     let mut directory = GuiDeviceDirectory {
         identity: None,
         current_device_id: installation.device_id,
+        current_device_name: None,
         devices: Vec::new(),
     };
     if !cloud_state(&settings, &credentials).authenticated {
@@ -62,11 +64,13 @@ fn read_directory<R: Runtime>(
             .cloud_user_id
             .ok_or(DirectoryError::Authentication)?,
     });
-    directory.devices = response
-        .devices
-        .into_iter()
-        .filter(|device| device.device_id != directory.current_device_id)
-        .collect();
+    for device in response.devices {
+        if device.device_id == directory.current_device_id {
+            directory.current_device_name = Some(device.name);
+        } else {
+            directory.devices.push(device);
+        }
+    }
     Ok(directory)
 }
 

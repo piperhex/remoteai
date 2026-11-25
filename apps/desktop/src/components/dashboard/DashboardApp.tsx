@@ -53,7 +53,7 @@ import { TotpCloudSyncSwitch } from "../TotpCloudSyncSwitch";
 import { LogDiagnosticsPage, type LogDiagnosticsTab } from "../../pages/LogDiagnosticsPage";
 import { DownloadsPage } from "../../pages/DownloadsPage";
 import { PortMappingsPage } from "../../pages/portMappings/PortMappingsPage";
-import type { RemoteSshHost } from "../../pages/ssh/DesktopSshPage";
+import { useSshHosts } from "../../../../../shared/terminal/workspace/useSshHosts";
 import { MappingSessions } from "../../pages/portMappings/MappingSessions";
 import { useGuiComputers } from "../../pages/codexGui/remote/useGuiComputers";
 import { useBrowserDownloads } from '../../downloads/useBrowserDownloads';
@@ -610,11 +610,11 @@ export function DashboardApp() {
     setShowCloudLogin(true);
   }, []);
   const openCloudAccount = useCallback(() => setShowCloudAccount(true), []);
-  const [sshHost, setSshHost] = useState<RemoteSshHost | null>(null);
-  const computers = useGuiComputers({ active: ["codexGui", "portMappings", "remoteDesktop"].includes(page),
+  const computers = useGuiComputers({ active: ["codexGui", "portMappings", "remoteDesktop", "ssh"].includes(page),
     login: openCloudLogin,
     identity: cloud.state.authenticated && cloud.state.baseUrl && cloud.state.userId
       ? { baseUrl: cloud.state.baseUrl, userId: cloud.state.userId } : null });
+  const sshHosts = useSshHosts(JSON.stringify(computers.identity));
   const refreshUsage = useCallback((id: string) => {
     void manager.refreshUsage(id);
   }, [manager.refreshUsage]);
@@ -1490,7 +1490,7 @@ export function DashboardApp() {
           {page === "portMappings" && <PortMappingsPage key={JSON.stringify(computers.identity)} computers={computers} />}
           <RetainedView active={page === "ssh"} scope={JSON.stringify([computers.identity, computers.current?.deviceId])}>
             <Suspense fallback={null}>
-              <DesktopSshPage active={page === "ssh"} identity={computers.identity} computers={computers} remote={sshHost} />
+              <DesktopSshPage active={page === "ssh"} identity={computers.identity} computers={computers} hosts={sshHosts} />
             </Suspense>
           </RetainedView>
           <RetainedView active={page === "browser"}>
@@ -1642,10 +1642,11 @@ export function DashboardApp() {
           </section>
           <CozeTab active={page === "coze"} />
           <section className={codexGuiStyles.panel} hidden={page !== "codexGui"}>
-            <RetainedView active={page === "codexGui"}
+            <RetainedView active={page === "codexGui" || (page === "ssh" && !!sshHosts.requestedId)}
               scope={JSON.stringify([cloud.state.authenticated, cloud.state.baseUrl, cloud.state.userId,
                 manager.info?.codexHome])}>
-            <GuiWorkspace active={page === "codexGui"} computers={computers} onSshHost={setSshHost} notificationTarget={notificationTarget}
+            <GuiWorkspace active={page === "codexGui"} computers={computers} onSshHost={sshHosts.report}
+              sshDeviceId={sshHosts.requestedId} notificationTarget={notificationTarget}
               plugins={{ baseUrl: cloud.state.baseUrl, authenticated: cloud.state.authenticated,
                 currentUserId: cloud.state.userId, onLogin: openCloudLogin, notify, t }}
               windowControls={NATIVE_WINDOW_CONTROLS_ENABLED && <WindowControls onError={notify} t={t} />}

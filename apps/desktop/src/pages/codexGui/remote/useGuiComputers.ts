@@ -1,12 +1,19 @@
 import { uiText } from "../../../../../../shared/localization/uiText";
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { invoke, isDesktopApp } from '../../../api/backend';
-import type { GuiCloudIdentity, GuiComputer, GuiDeviceDirectory } from '../../../../../../shared/conversation/remote/types';
+import type { GuiCloudIdentity, GuiComputer, GuiComputerNavigation, GuiDeviceDirectory } from '../../../../../../shared/conversation/remote/types';
 
 const DEVICE_REFRESH_MS = 15_000;
 const scopeOf = (identity: GuiCloudIdentity | null) => identity ? `${identity.baseUrl}\n${identity.userId}` : '';
 
-export function useGuiComputers(options: { active: boolean; identity: GuiCloudIdentity | null; login: () => void }) {
+interface ComputerDirectory extends GuiComputerNavigation {
+  identity: GuiCloudIdentity | null;
+  localName?: string;
+}
+
+export function useGuiComputers(options: {
+  active: boolean; identity: GuiCloudIdentity | null; login: () => void;
+}): ComputerDirectory {
   const [directory, setDirectory] = useState<GuiDeviceDirectory | null>(null);
   const [selected, setSelected] = useState<{ scope: string; device: GuiComputer } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,6 +49,7 @@ export function useGuiComputers(options: { active: boolean; identity: GuiCloudId
     setSelected({ scope, device });
   }, [scope, directory]);
   return {
+    localName: scopeOf(directory?.identity ?? null) === scope ? directory?.currentDeviceName ?? undefined : undefined,
     current, identity: options.identity, devices: scopeOf(directory?.identity ?? null) === scope
       ? directory?.devices ?? [] : [], authenticated: Boolean(scope),
     loading, error, choose, refresh: () => refresh.current(), login: options.login,
