@@ -70,8 +70,24 @@ export async function checkSessionMenu(page: Page, workspace: Locator, capture: 
   await expect(dialog.locator('.ssh-dialog-title')).toHaveText('新建 SSH 连接');
   await dialog.getByRole('button', { name: '取消', exact: true }).click();
   await trigger.click();
-  await page.getByRole('menuitem', { name: /开发服务器/ }).click();
-  await page.getByRole('dialog').getByRole('button', { name: new RegExp(computer) }).click();
+  const profile = page.getByRole('menuitem', { name: /开发服务器/ });
+  await profile.click();
+  await expect(profile).toHaveAttribute('aria-expanded', 'true');
+  const host = page.getByRole('menuitem', { name: new RegExp(computer) });
+  await expect(host).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: /Offline PC/ })).toBeDisabled();
+  await host.click({ trial: true });
+  const bounds = (await profile.boundingBox())!;
+  const submenu = (await host.locator('..').boundingBox())!;
+  const viewport = page.viewportSize()!;
+  if (viewport.width - bounds.x - bounds.width >= submenu.width + 4) {
+    expect(submenu.x).toBeGreaterThanOrEqual(bounds.x + bounds.width - 1);
+  } else {
+    expect(submenu.x + submenu.width).toBeLessThanOrEqual(bounds.x + 1);
+  }
+  await expect(host).toBeInViewport({ ratio: 1 });
+  await capture('session-computers');
+  await host.click();
   await expect(workspace.getByRole('tab')).toHaveCount(2);
   await expect(workspace.locator('.xterm-rows:visible')).toContainText('wsl-ssh>');
   await workspace.getByRole('button', { name: '关闭终端 2', exact: true }).click();
