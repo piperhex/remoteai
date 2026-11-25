@@ -40,6 +40,47 @@ beforeEach(async () => {
 afterEach(() => { controller.stop(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('application lifetime lounge', () => {
+  it('deduplicates a retried broadcast against history outside the current viewport', async () => {
+    controller.stop();
+    const received = { type: 'message' as const, id: 'already-saved', text: 'first copy', images: [],
+      sender: { id: 'bob', account: 'bob' }, sentAt: new Date().toISOString() };
+    const save = vi.fn(async () => {});
+    controller = new LoungeController({ baseUrl: 'https://example.test', authorize: authorization,
+      history: { get: async key => key === '["bob","already-saved"]' ? received : undefined,
+        page: async () => ({ messages: [] }), save } });
+    controller.start(); await settle();
+    const socket = Socket.instances.at(-1)!; socket.ready();
+    socket.frame({ ...received, groupRetry: true }); await vi.advanceTimersByTimeAsync(0);
+    expect(save).not.toHaveBeenCalled();
+    expect(controller.snapshot().unread).toBe(0);
+    socket.frame({ ...received, id: 'previously-missed', groupRetry: true }); await vi.advanceTimersByTimeAsync(0);
+    expect(save).toHaveBeenCalledOnce();
+    expect(controller.snapshot().unread).toBe(1);
+  });
+  it('withholds private receipts and preserves the sender draft when local history cannot commit', async () => {
+    controller.stop();
+    const save = vi.fn(async () => {});
+    controller = new LoungeController({ baseUrl: 'https://example.test', authorize: authorization,
+      history: { page: async () => ({ messages: [] }), save } });
+    controller.start(); await settle();
+    const socket = Socket.instances.at(-1)!;
+    const self = { id: 'self', account: 'alice' }, peer = { id: 'bob', account: 'bob' };
+    socket.frame({ type: 'ready', user: self, direct: true, receipts: true });
+    controller.selectConversation(peer);
+    const frames = () => socket.send.mock.calls.map(call => JSON.parse(call[0]));
+    save.mockRejectedValueOnce(new Error('quota'));
+    await expect(controller.send({ text: 'out', images: [], to: peer.id })).rejects.toThrow();
+    expect(frames().some(f => f.type === 'message')).toBe(false);
+    const incoming = { type: 'message', id: 'in', sender: peer, recipient: self, receipts: true,
+      sentAt: new Date().toISOString(), text: 'in', images: [] };
+    save.mockRejectedValueOnce(new Error('quota'));
+    socket.frame(incoming); await vi.advanceTimersByTimeAsync(0);
+    expect(controller.snapshot().historyError).toBe(true);
+    expect(frames().some(f => f.type === 'receipt')).toBe(false);
+    socket.frame(incoming); await vi.advanceTimersByTimeAsync(0);
+    expect(frames().filter(f => f.type === 'receipt')).toMatchObject([{ id: 'in', status: 'delivered' }]);
+    expect(controller.snapshot().messages.map(m => m.id)).toEqual(['in']);
+  });
   it('loads cached avatars on reconnect, repairs misses and persists remote resets', async () => {
     const store = browserAvatarStore('https://example.test');
     const avatar = 'data:image/png;base64,AAAA';

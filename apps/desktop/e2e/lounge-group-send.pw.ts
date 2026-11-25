@@ -13,7 +13,7 @@ for (const mode of ['local', 'remote', 'web', 'mobile-web']) {
     await page.goto(web ? webURL : `/e2e/lounge-harness.html?mode=${mode}`);
     await relay.ready();
     if (mode === 'mobile-web') {
-      await page.locator('.mobile-tabbar').getByText('发现', { exact: true }).click();
+      await page.getByRole('tab', { name: '发现', exact: true }).click();
       await page.locator('.discovery-lounge').click();
       await page.getByRole('button', { name: '群聊', exact: true }).click();
     } else await page.getByRole('button', { name: '在线交流', exact: true }).click();
@@ -25,7 +25,12 @@ for (const mode of ['local', 'remote', 'web', 'mobile-web']) {
     await expect.poll(() => relay.sent.length).toBe(1);
     await expect(input).toHaveValue('群聊文字和图片');
     await expect(page.locator('.lounge-message.is-own')).toHaveCount(0);
-    relay.acceptGroup(0);
+    relay.close();
+    await expect(page.locator('.lounge-composer [role=alert]')).toBeVisible();
+    await page.getByRole('button', { name: '发送', exact: true }).click();
+    await expect.poll(() => relay.sent.length).toBe(2);
+    expect(relay.sent[1].id).toBe(relay.sent[0].id);
+    relay.acceptGroup(1);
     await expect(input).toHaveValue('');
     await expect(page.locator('.lounge-attachments img')).toHaveCount(0);
     await expect(page.locator('.lounge-message.is-own')).toHaveCount(1);
@@ -36,13 +41,13 @@ for (const mode of ['local', 'remote', 'web', 'mobile-web']) {
     await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
     await page.screenshot({ path: `../../.codex-tmp/lounge-group-accepted-${mode}.png`, animations: 'disabled' });
     await page.getByRole('button', { name: '发送', exact: true }).click();
-    await expect.poll(() => relay.sent.length).toBe(2);
-    await input.fill('发送期间继续编辑'); relay.acceptGroup(1);
+    await expect.poll(() => relay.sent.length).toBe(3);
+    await input.fill('发送期间继续编辑'); relay.acceptGroup(2);
     await expect(page.locator('.lounge-message.is-own')).toHaveCount(2);
     await expect(input).toHaveValue('发送期间继续编辑');
     await expect(page.getByRole('button', { name: '发送', exact: true })).toBeEnabled();
     await page.getByRole('button', { name: '发送', exact: true }).click();
-    await expect.poll(() => relay.sent.length).toBe(3); relay.rejectGroup(2);
+    await expect.poll(() => relay.sent.length).toBe(4); relay.rejectGroup(3);
     await expect(page.locator('.lounge-composer [role=alert]')).toBeVisible();
     await expect(input).toHaveValue('发送期间继续编辑');
     await expect(page.locator('.lounge-message.is-own')).toHaveCount(2);

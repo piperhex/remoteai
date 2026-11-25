@@ -116,7 +116,7 @@ export async function setupLounge(page: Page, web = false, reset = false, savedC
       }
       if (frame.type === 'receipt') route.send(JSON.stringify({ type: 'receipt-confirm', id: frame.id,
         from: frame.to, to: 'alice', status: frame.status }));
-      if (frame.type === 'receipt' || frame.type === 'receipt-confirm') receipts.push(frame);
+      if (['receipt', 'receipt-confirm', 'image-pending'].includes(frame.type)) receipts.push(frame);
       if (frame.type === 'group-read' || frame.type === 'group-read-confirm') groupReadFrames.push(frame);
       if (frame.type === 'moderate') {
         moderation.push(frame);
