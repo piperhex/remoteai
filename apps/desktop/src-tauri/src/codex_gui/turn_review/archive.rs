@@ -3,9 +3,9 @@ use super::super::{
     error::{GuiError, Result},
     protocol::GuiResponse,
 };
+use rusqlite::{Connection, DatabaseName, OptionalExtension};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 // One transport page; reading continues until the complete saved file has been delivered.
@@ -24,179 +24,95 @@ pub(crate) struct Target {
     activity: bool,
 }
 
-fn edits(turn: &Value) -> impl Iterator<Item = (&Value, &Value)> {
-    turn["reviewEdits"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .flat_map(|item| {
-            item["changes"]
-                .as_array()
-                .into_iter()
-                .flatten()
-                .map(move |change| (item, change))
-        })
+impl Target {
+    fn key(&self) -> [&str; 2] {
+        [&self.thread_id, &self.turn_id]
+    }
+
+    fn ordinal(&self) -> &'static str {
+        if self.activity {
+            "activity_index"
+        } else {
+            "file_index"
+        }
+    }
 }
 
-pub(super) fn project(turn: &mut Value, thread: &str) {
-    let diff = turn["diff"].as_str();
-    if turn["status"] == "inProgress"
-        || (diff.is_none_or(|text| text.trim().is_empty()) && edits(turn).next().is_none())
-    {
-        return;
+fn summaries(db: &Connection, target: &Target) -> rusqlite::Result<Value> {
+    let column = target.ordinal();
+    let mut query = db.prepare(&format!(
+        "SELECT summary FROM review_files WHERE thread=?1 AND turn=?2 AND {column}>=?3
+         ORDER BY {column} LIMIT ?4"
+    ))?;
+    let mut rows = query.query(rusqlite::params![
+        target.thread_id,
+        target.turn_id,
+        i64::try_from(target.offset).unwrap_or(i64::MAX),
+        PAGE + 1
+    ])?;
+    let mut files = Vec::<Value>::new();
+    while let Some(row) = rows.next()? {
+        if files.len() == PAGE {
+            return Ok(json!({"files":files,"next":target.offset + PAGE}));
+        }
+        let summary: String = row.get(0)?;
+        files.push(serde_json::from_str(&summary).map_err(|_| rusqlite::Error::InvalidQuery)?);
     }
-    let result = match (turn["reviewIncomplete"] == true, diff) {
-        (true, _) => "incomplete",
-        (_, Some(text)) if text.trim().is_empty() => "empty",
-        (_, Some(_)) => "net",
-        _ if edits(turn).any(|(item, _)| item["status"] == "completed") => "tools",
-        _ => "incomplete",
-    };
-    let recorded: HashSet<String> = edits(turn)
-        .filter_map(|(item, _)| item["id"].as_str().map(str::to_owned))
-        .collect();
-    turn["reviewHasEdits"] = json!(
-        matches!(result, "net" | "tools")
-            && edits(turn).any(|(item, _)| item["status"] == "completed")
+    Ok(json!({"files":files,"next":null}))
+}
+
+fn file_body(db: &Connection, target: &Target, file: usize) -> Result<Value> {
+    let file = i64::try_from(file).map_err(|_| GuiError::InvalidRequest)?;
+    let sql = format!(
+        "SELECT f.id, f.patch_offset, f.byte_length, t.rowid FROM review_files f JOIN turns t USING(thread,turn)
+         WHERE f.thread=?1 AND f.turn=?2 AND f.{}=?3", target.ordinal(),
     );
-    turn["reviewDeferred"] = json!(result);
-    turn["diff"] = Value::Null;
-    turn["reviewEdits"] = json!([]);
-    let turn_id = turn["id"].clone();
-    for item in turn
-        .get_mut("items")
-        .and_then(Value::as_array_mut)
-        .into_iter()
-        .flatten()
-    {
-        omit_edit_body(item, &recorded, thread, &turn_id);
-        for output in item
-            .get_mut("processOutputs")
-            .and_then(Value::as_array_mut)
-            .into_iter()
-            .flatten()
-        {
-            omit_edit_body(output, &recorded, thread, &turn_id);
-        }
-    }
-}
-
-fn omit_edit_body(item: &mut Value, recorded: &HashSet<String>, thread: &str, turn_id: &Value) {
-    if item["type"] == "fileChange" && item["id"].as_str().is_some_and(|id| recorded.contains(id)) {
-        item["detailsRef"] = json!({"threadId":thread,"turnId":turn_id,"itemId":item["id"]});
-        for change in item["changes"].as_array_mut().into_iter().flatten() {
-            change["diff"] = json!("");
-        }
-    }
-}
-
-struct File<'a> {
-    meta: Value,
-    text: &'a str,
-}
-
-impl File<'_> {
-    fn summary(mut self) -> Value {
-        let (added, removed) = match self.meta["kind"]["type"].as_str() {
-            Some("add") => (self.text.lines().count(), 0),
-            Some("delete") => (0, self.text.lines().count()),
-            _ => {
-                // Only hunk content contributes lines. File headers and binary patches do not.
-                self.text
-                    .lines()
-                    .skip_while(|line| !line.starts_with("@@ "))
-                    .fold((0, 0), |(added, removed), line| {
-                        (
-                            added + usize::from(line.starts_with('+')),
-                            removed + usize::from(line.starts_with('-')),
-                        )
-                    })
-            }
-        };
-        self.meta["added"] = json!(added);
-        self.meta["removed"] = json!(removed);
-        self.meta
-    }
-}
-
-fn patch_files(diff: &str) -> impl Iterator<Item = File<'_>> {
-    let git = diff.starts_with("diff --git ") || diff.contains("\ndiff --git ");
-    let separator = if git { "\ndiff --git " } else { "\n--- " };
-    let positions = move || {
-        diff.match_indices(separator)
-            .map(|(index, _)| index + 1)
-            .filter(move |&index| {
-                git || diff[index..]
-                    .split_once('\n')
-                    .is_some_and(|(_, tail)| tail.starts_with("+++ "))
-            })
+    let (id, patch_offset, size, turn): (i64, Option<usize>, usize, i64) = db
+        .query_row(
+            &sql,
+            rusqlite::params![target.thread_id, target.turn_id, file],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+        )
+        .optional()
+        .map_err(|_| GuiError::FileRead)?
+        .ok_or(GuiError::InvalidRequest)?;
+    let left = size
+        .checked_sub(target.offset)
+        .ok_or(GuiError::InvalidRequest)?;
+    let (table, column, row, start) = match patch_offset {
+        Some(start) => ("turns", "diff", turn, start),
+        None => ("review_bodies", "data", id, 0),
     };
-    std::iter::once(0)
-        .chain(positions())
-        .zip(positions().chain(std::iter::once(diff.len())))
-        .map(|(start, end)| {
-            let text = &diff[start..end];
-            let end = text.floor_char_boundary(text.len().min(16 * 1024));
-            let header = text[..end]
-                .lines()
-                .take_while(|line| !line.starts_with("@@"))
-                .take(12)
-                .collect::<Vec<_>>()
-                .join("\n");
-            File {
-                meta: json!({"header":header}),
-                text,
-            }
-        })
-}
-
-fn body(text: &str, offset: usize) -> Result<Value> {
-    if !text.is_char_boundary(offset) {
-        return Err(GuiError::InvalidRequest);
-    }
-    let mut end = offset.saturating_add(BODY_PAGE_BYTES).min(text.len());
-    while !text.is_char_boundary(end) {
-        end -= 1;
-    }
-    Ok(json!({"text": &text[offset..end], "next": (end < text.len()).then_some(end)}))
-}
-
-fn page<'a>(mut files: impl Iterator<Item = File<'a>>, target: &Target) -> Result<Value> {
-    if let Some(index) = target.file {
-        return body(
-            files.nth(index).ok_or(GuiError::InvalidRequest)?.text,
-            target.offset,
-        );
-    }
-    let mut files = files.skip(target.offset).peekable();
-    let rows: Vec<_> = files.by_ref().take(PAGE).map(File::summary).collect();
-    let next = files.peek().map(|_| target.offset + rows.len());
-    Ok(json!({"files": rows, "next": next}))
-}
-
-pub(super) fn saved(home: &Path, target: &Target) -> Result<Value> {
-    let mut history =
-        json!({"id":target.thread_id,"turns":[{"id":target.turn_id,"status":"completed"}]});
-    super::restore(home, &mut history).map_err(|_| GuiError::FileRead)?;
-    let turn = &history["turns"][0];
-    if !turn["reviewEdits"].is_array() {
-        return Err(GuiError::FileRead);
-    }
-    if !target.activity {
-        if let Some(diff) = turn["diff"].as_str() {
-            return page(
-                patch_files(diff).filter(|file| !file.text.is_empty()),
-                target,
-            );
+    let blob = db
+        .blob_open(DatabaseName::Main, table, column, row, true)
+        .map_err(|_| GuiError::FileRead)?;
+    let mut bytes = vec![0; left.min(BODY_PAGE_BYTES)];
+    blob.read_at_exact(&mut bytes, start + target.offset)
+        .map_err(|_| GuiError::FileRead)?;
+    let text = match std::str::from_utf8(&bytes) {
+        Ok(text) => text,
+        Err(error) if error.error_len().is_none() && left > bytes.len() => {
+            std::str::from_utf8(&bytes[..error.valid_up_to()]).map_err(|_| GuiError::FileRead)?
         }
-    }
-    let files = edits(turn)
-        .filter(|(item, _)| target.activity || item["status"] == "completed")
-        .map(|(item, edit)| File {
-            meta: json!({"path":edit["path"],"kind":edit["kind"],"item":item["id"]}),
-            text: edit["diff"].as_str().unwrap_or_default(),
-        });
-    page(files, target)
+        Err(_) => return Err(GuiError::InvalidRequest),
+    };
+    let end = target.offset + text.len();
+    Ok(json!({"text":text, "next":(end < size).then_some(end)}))
+}
+
+fn saved(home: &Path, target: &Target) -> Result<Value> {
+    let db = super::existing(home)
+        .map_err(|_| GuiError::FileRead)?
+        .ok_or(GuiError::FileRead)?;
+    let tx = super::index::snapshot(&db, target.key())
+        .map_err(|_| GuiError::FileRead)?
+        .ok_or(GuiError::FileRead)?;
+    let page = match target.file {
+        Some(file) => file_body(&tx, target, file),
+        None => summaries(&tx, target).map_err(|_| GuiError::FileRead),
+    };
+    tx.commit().map_err(|_| GuiError::FileRead)?;
+    page
 }
 
 pub(crate) async fn read(home: PathBuf, target: Target) -> Result<GuiResponse> {
@@ -210,88 +126,4 @@ pub(crate) async fn read(home: PathBuf, target: Target) -> Result<GuiResponse> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn paged_reviews_do_not_depend_on_patch_size() {
-        for size in [
-            1,
-            BODY_PAGE_BYTES - 1,
-            BODY_PAGE_BYTES,
-            BODY_PAGE_BYTES + 1,
-            2 * BODY_PAGE_BYTES,
-        ] {
-            let mut turn = json!({"status":"completed","diff":"x".repeat(size),"reviewEdits":[]});
-            project(&mut turn, "thread");
-            assert_eq!(turn["reviewDeferred"], "net");
-            assert!(turn["diff"].is_null());
-        }
-        for mut turn in [
-            json!({"status":"inProgress","diff":"live"}),
-            json!({"status":"completed","diff":null,"reviewEdits":[]}),
-        ] {
-            project(&mut turn, "thread");
-            assert!(turn.get("reviewDeferred").is_none());
-        }
-    }
-
-    #[test]
-    fn large_review_reopens_exact_saved_files_and_tool_activity_in_pages() {
-        let dir = tempfile::tempdir().unwrap();
-        let patch = |path: &str, text: &str| {
-            format!("diff --git a/{path} b/{path}\n--- a/{path}\n+++ b/{path}\n@@ -0,0 +1 @@\n+{text}\n")
-        };
-        let first = patch("大 文件", &"数".repeat(BODY_PAGE_BYTES));
-        let second = patch("B", "second");
-        let db = super::super::open(dir.path()).unwrap();
-        db.execute(
-            "INSERT INTO turns VALUES ('thread','one','original',?1,1,1)",
-            [format!("{first}{second}")],
-        )
-        .unwrap();
-        let item = json!({"id":"edit","status":"completed","type":"fileChange",
-            "changes":[{"path":"B","kind":{"type":"add"},"diff":"second"}]});
-        db.execute(
-            "INSERT INTO edits VALUES ('thread','one','edit',?1)",
-            [item.to_string()],
-        )
-        .unwrap();
-        drop(db);
-        let mut history = json!({"id":"thread","turns":[{"id":"one","status":"completed",
-            "items":[{"id":"folded","processOutputs":[{"type":"fileChange","id":"edit",
-                "changes":[{"path":"B","diff":first}]}]}]}]});
-        super::super::restore_page(dir.path(), &mut history).unwrap();
-        assert_eq!(history["turns"][0]["reviewDeferred"], "net");
-        assert_eq!(history["turns"][0]["reviewCwd"], "original");
-        assert!(history.to_string().len() < 512);
-        let mut target: Target =
-            serde_json::from_value(json!({"threadId":"thread","turnId":"one"})).unwrap();
-        let list = saved(dir.path(), &target).unwrap();
-        assert_eq!(list["files"].as_array().unwrap().len(), 2);
-        assert_eq!(list["files"][0]["added"], 1);
-        assert_eq!(list["files"][0]["removed"], 0);
-        assert!(list.to_string().len() < 512);
-        target.file = Some(0);
-        let mut text = String::new();
-        loop {
-            let page = saved(dir.path(), &target).unwrap();
-            text.push_str(page["text"].as_str().unwrap());
-            let Some(next) = page["next"].as_u64() else {
-                break;
-            };
-            target.offset = next as usize;
-        }
-        assert_eq!(text, first);
-        target.offset = 0;
-        target.file = Some(1);
-        assert_eq!(saved(dir.path(), &target).unwrap()["text"], second);
-        target.file = Some(0);
-        target.activity = true;
-        assert_eq!(saved(dir.path(), &target).unwrap()["text"], "second");
-        target.file = None;
-        assert_eq!(saved(dir.path(), &target).unwrap()["files"][0]["added"], 1);
-        target.thread_id = "other".into();
-        assert!(saved(dir.path(), &target).is_err());
-    }
-}
+mod tests;

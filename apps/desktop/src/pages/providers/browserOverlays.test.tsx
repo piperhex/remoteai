@@ -60,15 +60,19 @@ async function expectVisible(visible: boolean, managed: boolean) {
   });
 }
 
+function pageFullscreenEvent(managed: boolean) {
+  const event = `${managed ? 'conversation' : 'provider'}-browser-overlay-tab`;
+  const receive = vi.mocked(listen).mock.calls.find(([name]) => name === event)?.[1];
+  expect(receive).toBeDefined();
+  return (active: boolean) => receive!({ event, id: 1, payload: { pageFullscreen: active } });
+}
+
 for (const managed of [false, true]) {
   const browser = managed ? 'managed' : 'provider';
   it(`${browser} places a fullscreen player over the window and restores the current tab bounds on exit`, async () => {
     await mountBrowser(managed);
     await expectVisible(true, managed);
-    const event = `${managed ? 'conversation' : 'provider'}-browser-overlay-tab`;
-    const receive = vi.mocked(listen).mock.calls.find(([name]) => name === event)?.[1];
-    expect(receive).toBeDefined();
-    const fullscreen = (active: boolean) => receive!({ event, id: 1, payload: { pageFullscreen: active } });
+    const fullscreen = pageFullscreenEvent(managed);
     const command = managed ? 'codex_gui_browser_place' : 'provider_browser_sync';
     const bounds = () => invoke.mock.calls.filter(([name]) => name === command).at(-1)?.[1].request.bounds;
     await act(async () => { fullscreen(true); });
@@ -78,6 +82,36 @@ for (const managed of [false, true]) {
     await act(async () => { fullscreen(false); });
     await vi.waitFor(() => expect(bounds()).toEqual(resized));
   });
+
+  it.each(['right', 'bottom', 'window'] as const)(
+    `${browser} preserves the %s inspector across page fullscreen and overlays`, async dock => {
+      invoke.mockImplementation(async name => name === 'browser_inspector' ? { open: true, mobile: false } : undefined);
+      await mountBrowser(managed);
+      const placement = () => invoke.mock.calls.filter(([name, args]) =>
+        name === 'browser_inspector' && args.request.command.action === 'place').at(-1)?.[1].request.command;
+      const labels = { right: 'market.inspectorRight', bottom: 'market.inspectorBottom',
+        window: 'market.inspectorWindow' } as const;
+      const button = container.querySelector<HTMLButtonElement>(`button[title="${marketText('zh')(labels[dock])}"]`);
+      await act(async () => button!.click());
+      await vi.waitFor(() => expect(placement()).toMatchObject({ dock, visible: true }));
+      const fullscreen = pageFullscreenEvent(managed);
+      await act(async () => fullscreen(true));
+      const command = managed ? 'codex_gui_browser_place' : 'provider_browser_sync';
+      const bounds = () => invoke.mock.calls.filter(([name]) => name === command).at(-1)?.[1].request.bounds;
+      await vi.waitFor(() => expect(bounds()).toEqual({ x: 0, y: 0, width: innerWidth, height: innerHeight }));
+      await vi.waitFor(() => expect(placement()).toMatchObject({ dock, visible: dock === 'window' }));
+      const dialog = document.createElement('dialog');
+      await act(async () => { dialog.open = true; document.body.append(dialog); });
+      await expectVisible(false, managed);
+      await vi.waitFor(() => expect(placement()).toMatchObject({ dock, visible: false }));
+      await act(async () => fullscreen(false));
+      expect(placement()).toMatchObject({ dock, visible: false });
+      await act(async () => dialog.remove());
+      await vi.waitFor(() => expect(placement()).toMatchObject({ dock, visible: true }));
+      expect(button!.getAttribute('aria-pressed')).toBe('true');
+      expect(invoke.mock.calls.some(([name, args]) =>
+        name === 'browser_inspector' && args.request.command.action === 'close')).toBe(false);
+    });
 
   it(`${browser} browser hides for native dialogs and restores after the last closes`, async () => {
     await mountBrowser(managed);
