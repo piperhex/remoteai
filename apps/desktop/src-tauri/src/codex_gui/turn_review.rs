@@ -6,13 +6,16 @@ use std::path::Path;
 
 const DATABASE: &str = "turn-reviews.sqlite";
 pub(super) mod archive;
+mod files;
+mod index;
 #[path = "turn_review_net.rs"]
 mod net;
 
 fn open(home: &Path) -> Result<Connection> {
     let db = Connection::open(home.join(DATABASE))?;
     db.execute_batch(
-        "CREATE TABLE IF NOT EXISTS turns (
+        "PRAGMA foreign_keys=ON;
+        CREATE TABLE IF NOT EXISTS turns (
         thread TEXT NOT NULL, turn TEXT NOT NULL, cwd TEXT, diff TEXT,
         started INTEGER NOT NULL DEFAULT 0, finished INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY(thread,turn));
@@ -24,7 +27,20 @@ fn open(home: &Path) -> Result<Connection> {
         CREATE TABLE IF NOT EXISTS gaps(thread TEXT, turn TEXT,
         PRIMARY KEY(thread,turn));",
     )?;
+    index::init(&db)?;
     Ok(db)
+}
+
+fn existing(home: &Path) -> Result<Option<Connection>> {
+    if home
+        .join(DATABASE)
+        .try_exists()
+        .map_err(|_| rusqlite::Error::InvalidPath(home.into()))?
+    {
+        open(home).map(Some)
+    } else {
+        Ok(None)
+    }
 }
 
 pub(super) fn observes(event: &GuiEvent) -> bool {
@@ -107,6 +123,11 @@ pub(super) fn record(home: &Path, event: &GuiEvent, cwd: Option<String>) -> Resu
             params![thread, turn, value.to_string()],
         )?;
     }
+    let key = [thread, turn];
+    tx.execute("DELETE FROM review_pages WHERE thread=?1 AND turn=?2", key)?;
+    if finished {
+        index::build(&tx, key)?;
+    }
     tx.commit()
 }
 
@@ -162,37 +183,33 @@ fn restore_turn(db: &Connection, thread: &str, turn: &mut Value) -> Result<()> {
     Ok(())
 }
 
-pub(super) fn restore(home: &Path, thread: &mut Value) -> Result<()> {
+fn restore_with(
+    home: &Path,
+    thread: &mut Value,
+    read_turn: fn(&Connection, &str, &mut Value) -> Result<()>,
+) -> Result<()> {
     let Some(id) = thread["id"].as_str().map(str::to_owned) else {
         return Ok(());
     };
     let Some(turns) = thread["turns"].as_array_mut() else {
         return Ok(());
     };
-    if turns.is_empty()
-        || !home
-            .join(DATABASE)
-            .try_exists()
-            .map_err(|_| rusqlite::Error::InvalidPath(home.into()))?
-    {
+    if turns.is_empty() {
         return Ok(());
     }
-    let db = open(home)?;
+    let Some(db) = existing(home)? else {
+        return Ok(());
+    };
     for turn in turns {
-        restore_turn(&db, &id, turn)?;
+        read_turn(&db, &id, turn)?;
     }
     Ok(())
 }
 
+pub(super) fn restore(home: &Path, thread: &mut Value) -> Result<()> {
+    restore_with(home, thread, restore_turn)
+}
+
 pub(super) fn restore_page(home: &Path, thread: &mut Value) -> Result<()> {
-    restore(home, thread)?;
-    let Some(thread_id) = thread["id"].as_str().map(str::to_owned) else {
-        return Ok(());
-    };
-    for turn in thread["turns"].as_array_mut().into_iter().flatten() {
-        if turn["reviewEdits"].is_array() {
-            archive::project(turn, &thread_id);
-        }
-    }
-    Ok(())
+    restore_with(home, thread, index::restore_page)
 }
