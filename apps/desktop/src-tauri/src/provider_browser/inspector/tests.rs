@@ -14,6 +14,49 @@ pub(crate) async fn open_inspector_fixture(
 }
 
 #[test]
+fn shared_device_commands_accept_named_presets_and_legacy_viewports() {
+    for preset in [
+        None,
+        Some("iPhone 16"),
+        Some("Pixel 9 Pro"),
+        Some("responsive"),
+    ] {
+        let mut mobile = json!({"action":"setMobile","enabled":true});
+        let mut viewport = json!({"width":393,"height":852,"scale":0.75});
+        if let Some(name) = preset {
+            mobile["name"] = json!(name);
+            viewport["name"] = json!(name);
+        }
+        let place = json!({"action":"place","dock":"right","visible":true,"viewport":viewport,
+            "bounds":{"x":0,"y":0,"width":400,"height":500}});
+        for command in [mobile, place] {
+            let request: Request = serde_json::from_value(json!({
+                "id":uuid::Uuid::new_v4(),"kind":"provider","command":command
+            }))
+            .unwrap();
+            let name = match request.command {
+                Action::SetMobile {
+                    enabled: true,
+                    name,
+                } => name,
+                Action::Place {
+                    viewport: Some(size),
+                    ..
+                } if size.valid() => size.name,
+                _ => panic!("device command lost its settings"),
+            };
+            assert!(
+                name == match preset {
+                    Some("iPhone 16") => DevicePreset::IPhone,
+                    Some("Pixel 9 Pro") => DevicePreset::Pixel9Pro,
+                    _ => DevicePreset::Responsive,
+                }
+            );
+        }
+    }
+}
+
+#[test]
 fn inspector_requests_reject_unscoped_handles_and_invalid_modes() {
     for request in [
         json!({"id":"main","kind":"provider","command":{"action":"close"}}),
