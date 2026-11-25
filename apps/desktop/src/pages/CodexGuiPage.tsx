@@ -21,7 +21,9 @@ import { useUsageStatus } from './codexGui/useUsageStatus';
 import { prepareImageEdit } from '../../../../shared/remote-chat/views/prepareImageEdit';
 import { uiText } from "../../../../shared/localization/uiText";
 import { useGuiLanguage } from '../../../../shared/localization/useGuiLanguage';
-import { formatRemoteError } from "../../../../shared/localization/errors";
+import { formatRemoteError } from '../../../../shared/localization/errors';
+import { GuiAccountMenuRef, GuiAccountNotice, useOpenGuiAccountMenu,
+  visibleAccountError } from '../../../../shared/conversation/GuiAccountPrompt';
 import { DiffTextContext } from "../../../../shared/chat/diffText";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useVisibleGuiState } from './codexGui/useVisibleGuiState';
@@ -75,7 +77,7 @@ const TerminalPanel = lazy(() => import("../../../../shared/terminal/views/Termi
 type CodexGuiPageProps = {
   active: boolean; accountPicker: ReactNode; providers: Provider[]; aggregateApis: AggregateApi[];
   windowControls?: ReactNode; plugins: Omit<SkillsMarketPageProps, "active">;
-  hostPicker?: ReactNode;
+  hostPicker?: ReactNode; accountRequired?: boolean;
   focusMode?: GuiFocusMode;
   notificationTarget?: ThreadNavigation;
   syncComputers?: SyncComputerDirectory;
@@ -94,7 +96,7 @@ export function CodexGuiPage(props: CodexGuiPageProps) {
 }
 
 function Workspace({ active, accountPicker, windowControls, plugins, hostPicker, notificationTarget, syncComputers,
-  focused, onToggleFocus }: CodexGuiPageProps & GuiFocusMode) {
+  focused, onToggleFocus, accountRequired = false }: CodexGuiPageProps & GuiFocusMode) {
   const language = useGuiLanguage();
   const cli = useCliGui();
   const diffText = useCallback((source: string, values?: Record<string, string | number>) =>
@@ -117,6 +119,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
   useOpenNotifiedThread({ target: notificationTarget, ready: active && state.connection === "ready", controller,
     showConversation: () => { cli?.controller.showCodex(); setView("conversation"); } });
   const [collapsed, setCollapsed] = useState(() => window.innerWidth < 900);
+  const accounts = useOpenGuiAccountMenu(() => setCollapsed(false));
+  const error = visibleAccountError(state.error, accountRequired);
   const installer = useCliInstaller(active, controller, true);
   useEffect(retainGuiSession, [controller]);
   useTitleSettings(active, controller.titles.settings);
@@ -155,7 +159,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
     <div className={`${styles.page} ${collapsed ? styles.collapsed : ""}`}
       data-dream-skin={skinStyle ? "true" : undefined} style={skinStyle}>
     {!collapsed && <ThreadSidebar state={external ? { ...state, selected: null } : state}
-      controller={controller} accountPicker={accountPicker}
+      controller={controller} accountPicker={<GuiAccountMenuRef.Provider value={accounts.menu}>
+        {accountPicker}</GuiAccountMenuRef.Provider>}
       focused={focused} onToggleFocus={onToggleFocus} view={view} onNavigate={setView}
       scheduledTasksAvailable={canManageCodexConnection} />}
     <div className={styles.workspace}>
@@ -208,7 +213,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
           onChange={cwd => { cli.controller.patch({ cwd }); void cli.controller.loadCatalog(); }}
           onError={cli.controller.report} />} />}
       <div className="cli-gui-codex-content" hidden={external}>
-      {state.error && <Alert className={styles.error} message={formatRemoteError(language, state.error)}
+      {accountRequired && view === 'conversation' && installer.version && <GuiAccountNotice className={styles.error} />}
+      {error && <Alert className={styles.error} message={formatRemoteError(language, error)}
         type="error" closable onClose={controller.clearError} />}
       <GuiSetupAlerts computerUseSetup={state.computerUseSetup} unattendedSetup={state.unattendedSetup} />
       {navigationApproval && <button className={styles.pendingBanner} onClick={() => {
@@ -241,7 +247,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
             disabled={state.connection !== "ready" || state.sending || state.archived || Boolean(state.workspaceBusy)
               || Boolean(state.deleting) || state.compacting === state.selected} />
           <Composer ref={composer} state={state} controller={controller} active={conversationActive}
-            hostPicker={hostPicker} cliVersion={installer.version} />
+            hostPicker={hostPicker} cliVersion={installer.version} chooseAccount={accountRequired ? accounts.open : undefined} />
         </>} /></ConversationRetryProvider>}
       </div>
       </div>

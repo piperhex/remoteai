@@ -7,6 +7,9 @@ import { DEMO_ACCOUNTS } from "../../demo";
 import { subscribeGuiEvent } from "../../../../../shared/conversation/webEvents";
 import { selectedGuiEntries, useGuiAccountSelection, type GuiAccountSelection } from "./useGuiAccountSelection";
 import { useUsageStatus } from "./useUsageStatus";
+import { visibleAccountError } from '../../../../../shared/conversation/GuiAccountPrompt';
+import { uiText } from '../../../../../shared/localization/uiText';
+import { MODEL_CATALOG_ERROR } from '../../../../../shared/remote-chat/composer';
 import type { GuiEngine } from '../../../../../shared/cli-gui/types';
 
 let engine: GuiEngine;
@@ -141,6 +144,29 @@ it("retains selection on failure and receives changes from another GUI client", 
   vi.mocked(invoke).mockClear();
   await act(async () => vi.advanceTimersByTimeAsync(10_000));
   expect(invoke).not.toHaveBeenCalled();
+});
+
+it('prompts only after the host confirms no selection, including when models were previously cached', async () => {
+  let finish!: (value: GuiAccountSelection) => void;
+  vi.mocked(invoke).mockImplementation(async command => command === 'codex_gui_account_selection'
+    ? new Promise(resolve => { finish = resolve; }) : { running: true });
+  await render();
+  expect(selection.accountRequired).toBe(false);
+  await act(async () => finish({ kind: 'none' }));
+  expect(selection.accountRequired).toBe(true);
+  const receive = vi.mocked(subscribeGuiEvent).mock.calls[0][1];
+  for (const kind of ['account', 'provider', 'aggregate'] as const) {
+    await act(async () => receive({ kind, id: 'selected' }));
+    expect(selection.accountRequired).toBe(false);
+  }
+});
+
+it('replaces only catalog notices while an account is required, regardless of the host language', () => {
+  for (const error of [MODEL_CATALOG_ERROR, uiText(MODEL_CATALOG_ERROR, {}, 'ja')]) {
+    expect(visibleAccountError(error, true)).toBe('');
+    expect(visibleAccountError(error, false)).toBe(error);
+  }
+  expect(visibleAccountError('Connection lost', true)).toBe('Connection lost');
 });
 
 it("does not let a slow initial read overwrite a newer GUI selection", async () => {

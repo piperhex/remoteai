@@ -13,6 +13,7 @@ import { checkRemoteTiming } from './remote-timing-checks';
 import { checkRemoteHistory } from './remote-history-checks';
 import { checkRemoteWindowLayout } from './remote-window-layout';
 import { checkModelAvailability } from './model-availability-checks';
+import { checkRemoteAccountPrompt } from './gui-account-prompt-check';
 
 declare global { interface Window { desktopTest: typeof desktopTest } }
 
@@ -52,6 +53,24 @@ async function chooseHost(page: Page, name: string) {
   await page.getByRole('button', { name: /^切换主机：/ }).click();
   await page.getByRole('menu', { name: '主机列表' }).getByRole('menuitemradio', { name: new RegExp(name) }).click();
   await expect(page.getByRole('menu', { name: '主机列表' })).toBeHidden();
+}
+
+for (const width of [1280, 800]) {
+  test(`remote desktop prompts to choose a GUI account with cached models at ${width}px`,
+    async ({ context, page }, info) => {
+      test.slow();
+      const host = await context.newPage();
+      await host.goto('/e2e/chat-harness.html?role=desktop&demo&device=computer-one&blocked=true&noGuiAccount'
+        + `&socket=${encodeURIComponent(endpoint)}`);
+      await expect(host.locator('#status')).toHaveText('registered', { timeout: 20_000 });
+      await page.setViewportSize({ width: 1280, height: 800 });
+      await page.goto(`/e2e/remote-gui-harness.html?socket=${encodeURIComponent(endpoint)}`);
+      await chooseHost(page, 'Office PC');
+      await expect(page.locator('.gui-remote-workspace:visible .chat-connection-status'))
+        .toContainText('Relay', { timeout: 20_000 });
+      await page.setViewportSize({ width, height: 800 });
+      await checkRemoteAccountPrompt(page, info, 'remote', expect);
+    });
 }
 
 test('remote desktop preserves an unavailable model and restores sending after account recovery',

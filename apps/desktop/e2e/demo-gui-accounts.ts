@@ -1,7 +1,8 @@
 import type { GuiAccountsSnapshot } from '../../../shared/remote-chat/guiAccounts';
 
 const accounts: GuiAccountsSnapshot = {
-  running: true, selection: { kind: 'account', id: 'first' },
+  running: true, selection: new URLSearchParams(location.search).has('noGuiAccount')
+    ? { kind: 'none' } : { kind: 'account', id: 'first' },
   choices: [
     { kind: 'account', id: 'first', name: '演示账户一', detail: '当前工作账户',
       plan: 'pro', primaryRemainingPercent: 28, available: true },

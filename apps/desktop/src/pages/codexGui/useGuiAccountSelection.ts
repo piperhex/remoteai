@@ -12,14 +12,14 @@ import type { GuiAccountSelection } from "../../../../../shared/remote-chat/guiA
 export type { GuiAccountSelection } from "../../../../../shared/remote-chat/guiAccounts";
 
 export function selectedGuiEntries<T extends { id: string; active: boolean }>(
-  entries: T[], selection: GuiAccountSelection, kind: "account" | "provider" | "aggregate",
+  entries: T[], selection: GuiAccountSelection | undefined, kind: "account" | "provider" | "aggregate",
 ): T[] {
-  return entries.map((entry) => ({ ...entry, active: selection.kind === kind && entry.id === selection.id }));
+  return entries.map((entry) => ({ ...entry, active: selection?.kind === kind && entry.id === selection.id }));
 }
 
 export function useGuiAccountSelection(options: { active: boolean; accounts: Account[]; providers: Provider[] }) {
   const cli = useCliGui();
-  const [selection, setSelection] = useState<GuiAccountSelection>({ kind: "none" });
+  const [selection, setSelection] = useState<GuiAccountSelection>();
   const savedClaudeId = options.accounts.find(account => account.accountSource === 'claudeCode' && account.active)?.id;
   const [claudeAccountId, setClaudeAccountId] = useState(savedClaudeId);
   useEffect(() => { setClaudeAccountId(savedClaudeId); }, [savedClaudeId]);
@@ -93,13 +93,14 @@ export function useGuiAccountSelection(options: { active: boolean; accounts: Acc
     } finally { switching.current = false; }
   };
   const accounts = useMemo(() => options.accounts.map(account => isCodexAccount(account)
-    ? { ...account, active: selection.kind === 'account' && selection.id === account.id }
+    ? { ...account, active: selection?.kind === 'account' && selection.id === account.id }
     : { ...account, active: account.id === claudeAccountId }),
   [options.accounts, selection, claudeAccountId]);
   const providers = useMemo(() => selectedGuiEntries(options.providers, selection, "provider"),
     [options.providers, selection]);
   const aggregateApis = useMemo(() => selectedGuiEntries(aggregates, selection, "aggregate"), [aggregates, selection]);
-  return { accounts, providers, aggregateApis, loading, error,
+  const accountRequired = selection?.kind === 'none';
+  return { accounts, providers, aggregateApis, loading, error, accountRequired,
     switchAccount: (id: string) => switchSelection({ kind: "account", id }),
     switchProvider: (id: string) => switchSelection({ kind: "provider", id }),
     switchAggregate: (id: string) => switchSelection({ kind: "aggregate", id }) };

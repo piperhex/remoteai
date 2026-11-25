@@ -103,6 +103,46 @@ async function openGui(page: Page, suffix = "") {
   if (await expand.isVisible()) await expand.click();
 }
 
+test('an unselected GUI account opens the account list from the model control', async ({ page }, info) => {
+  test.slow();
+  await mockCommands(page);
+  let selection: { kind: string; id?: string } = { kind: 'none' };
+  await page.route('**/__codex_switch__/api/invoke', async route => {
+    const { command, args } = route.request().postDataJSON();
+    if (command === 'codex_gui_request' && args.request.operation === 'models' && selection.kind === 'none') {
+      return route.fulfill({ json: { ok: true, result: { data: { data: [], nextCursor: null } } } });
+    }
+    if (command === 'codex_gui_switch_account') selection = args.selection;
+    if (command === 'list_aggregate_apis') return route.fulfill({ json: { ok: true, result: [] } });
+    if (['codex_gui_account_selection', 'codex_gui_switch_account'].includes(command)) {
+      return route.fulfill({ json: { ok: true, result: selection } });
+    }
+    return route.fallback();
+  });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openGui(page, '?accounts');
+  const banner = page.getByRole('status').filter({ hasText: '请选择可用账户。' });
+  const choose = page.getByRole('button', { name: '选择账户', exact: true });
+  await expect(banner).toBeVisible();
+  await expect(choose).toBeVisible();
+  const draft = page.getByRole('textbox', { name: '消息', exact: true });
+  await draft.fill('保留草稿');
+  await expect(page.getByRole('button', { name: '发送消息', exact: true })).toBeDisabled();
+  await page.screenshot({ path: info.outputPath('local-unselected.png'), animations: 'disabled' });
+  await page.getByRole('button', { name: '收起对话列表' }).click();
+  await choose.click();
+  const list = page.getByRole('region', { name: '账户列表' });
+  await expect(list).toBeVisible();
+  await page.screenshot({ path: info.outputPath('local-picker.png'), animations: 'disabled' });
+  await list.getByRole('button', { name: /@/ }).first().click();
+  await expect(banner).toHaveCount(0);
+  await expect(choose).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^模型与推理强度/ })).toContainText('测试模型');
+  await expect(draft).toHaveText('保留草稿');
+  await expect(page.getByRole('button', { name: '发送消息', exact: true })).toBeEnabled();
+  await page.screenshot({ path: info.outputPath('local-selected.png'), animations: 'disabled' });
+});
+
 test('opens local search from the header icon and restores the list after closing', async ({ page }) => {
   await mockCommands(page);
   await page.setViewportSize({ width: 1280, height: 900 });

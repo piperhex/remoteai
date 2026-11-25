@@ -27,6 +27,7 @@ import { ImageAttachments } from "./ImageAttachments";
 import { useComposerDrop } from './useComposerDrop';
 import { IMAGE_TYPES, useComposerDraft } from "./useComposerDraft";
 import { ModelPicker } from "./ModelPicker";
+import { ChooseGuiAccount } from '../../../../../shared/conversation/GuiAccountPrompt';
 import { modelSelectionError } from "../../../../../shared/conversation/modelSelection";
 import { useGuiRequestSpeed } from "./useGuiRequestSpeed";
 import { UsageStatus } from "./UsageStatus";
@@ -52,8 +53,8 @@ export interface ComposerHandle { addQuote: (quote: ReplyQuote) => boolean }
 
 export const Composer = forwardRef<ComposerHandle, {
   state: GuiState; controller: GuiController; active: boolean; hostPicker?: ReactNode;
-  cliVersion?: string | null;
-}>(function Composer({ state, controller, active, hostPicker, cliVersion }, ref) {
+  cliVersion?: string | null; chooseAccount?: () => void;
+}>(function Composer({ state, controller, active, hostPicker, cliVersion, chooseAccount }, ref) {
   useLocalGitDownloads();
   const fileInput = useRef<HTMLInputElement>(null);
   const composer = useRef<HTMLDivElement>(null);
@@ -103,7 +104,7 @@ export const Composer = forwardRef<ComposerHandle, {
     return true;
   } }));
   const goal = state.selected ? state.goals?.[state.selected] : null;
-  const canSend = !disabled && !reading && !state.modelSettingsLoading && !state.modelCatalogLoading
+  const canSend = !chooseAccount && !disabled && !reading && !state.modelSettingsLoading && !state.modelCatalogLoading
     && !modelSelectionError(state.models, state.settings) && hasDraft;
   const send = async () => {
     if (!canSend || drop.isReading()) return;
@@ -177,18 +178,19 @@ export const Composer = forwardRef<ComposerHandle, {
             <UsageStatus active={active} threadId={state.selected} tokenUsage={current?.tokenUsage}
               tokens={current?.tokens} metrics={metrics} />
           </div>
+          {chooseAccount ? <ChooseGuiAccount onClick={chooseAccount} /> :
           <ModelPicker models={state.models} model={state.settings.model} effort={state.settings.effort}
             speed={requestSpeed}
             error={state.modelCatalogError}
             onRetry={() => controller.refreshModels().catch(controller.report)}
             disabled={state.connection !== "ready" || Boolean(state.modelCatalogLoading)}
-            onChange={controller.settings} />
+            onChange={controller.settings} />}
           <ComposerDictation key={`dictation:${key}`} active={active && !disabled} disabled={disabled || !active}
             onBusyChange={setDictating}
             onText={(text) => { flushSync(() => appendDictation(text)); skillInput.current?.focus(); }} />
           <ComposerSubmit state={state} controller={controller}
             goalMode={goalMode.enabled}
-            hasDraft={hasDraft} reading={reading || workspaceBusy
+            hasDraft={hasDraft} reading={reading || workspaceBusy || !!chooseAccount
               || Boolean(state.modelSettingsLoading || state.modelCatalogLoading)} onSend={send} />
         </div>
       </div>

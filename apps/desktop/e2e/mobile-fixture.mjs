@@ -125,8 +125,10 @@ const httpServer = http.createServer((request, response) => {
     void (async () => {
       let body = '';
       for await (const chunk of request) body += chunk.toString();
-      const transportVersion = body ? JSON.parse(body).transportVersion : 1;
+      const { transportVersion, noGuiAccount } = body ? JSON.parse(body) : {};
       const target = new URL(page.url());
+      if (noGuiAccount) target.searchParams.set('noGuiAccount', '1');
+      else target.searchParams.delete('noGuiAccount');
       target.searchParams.set('transportVersion', transportVersion === 2 ? '2' : '1');
       await page.evaluate(() => localStorage.clear());
       await page.goto(target.toString());
