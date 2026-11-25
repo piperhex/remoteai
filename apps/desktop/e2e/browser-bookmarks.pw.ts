@@ -1,7 +1,13 @@
 import { expect, test } from '@playwright/test';
 import { verifyBookmarkOverflow } from '../../../shared/testing/bookmarkOverflow.mts';
+import { verifyBookmarkFolders } from '../../../shared/testing/bookmarkFolders.mts';
 
 for (const mode of ['local', 'remote']) {
+  test(`${mode} bookmark folder creation and drops`, async ({ page }, info) => {
+    const theme = mode === 'remote' ? '&dark=1&font=20' : '';
+    await verifyBookmarkFolders(page, info, { label: `desktop-${mode}`,
+      harness: `/e2e/browser-bookmarks-harness.html?mode=${mode}${theme}` });
+  });
   test(`${mode} bookmark overflow follows the sidebar width`, async ({ page }, info) => {
     const theme = mode === 'remote' ? '&dark=1&font=20' : '';
     await verifyBookmarkOverflow(page, info, { scope: `bookmarks-${mode}`, label: `desktop-${mode}`,
