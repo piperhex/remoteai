@@ -4,6 +4,7 @@ import { mkdir, copyFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium, expect as playwrightExpect } from '@playwright/test';
 import { testBrowserArguments } from '../../../scripts/test-browser.mjs';
+import { userAgentFixture, verifyUserAgents } from './verify-inspector-user-agents.mjs';
 
 const expect = playwrightExpect.configure({ timeout: 15_000 });
 
@@ -149,12 +150,18 @@ if (action === 'start') {
   await mkdir(directory, { recursive: true });
   const fixture = fileURLToPath(new URL('inspector-smoke.exe', directory));
   await copyFile(executable, fixture);
-  const server = http.createServer((_request, response) => {
+  const server = http.createServer((request, response) => {
+    response.setHeader('Accept-CH', 'Sec-CH-UA-Model');
+    response.setHeader('Cache-Control', 'no-store');
+    if (request.url === '/user-agent') return userAgentFixture(request, response);
     response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     response.end('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">'
       + '<style>body{font:18px system-ui;padding:32px;background:#f4f7fa;color:#182230}'
       + 'h1{color:#6175db}input{padding:12px;font:inherit}</style><h1 id="inspect-target">Inspector test page</h1>'
-      + '<p>Keep this page and its input while moving the inspector.</p><input aria-label="draft" value="retained">');
+      + '<p>Keep this page and its input while moving the inspector.</p><input aria-label="draft" value="retained">'
+      + '<h2>HTTP User-Agent</h2><output style="overflow-wrap:anywhere"></output>'
+      + '<script>fetch("/user-agent").then(r => r.json())'
+      + '.then(h => document.querySelector("output").value = h.ua)</script>');
   });
   await new Promise(resolve => server.listen(18316, '127.0.0.1', resolve));
   const test = process.argv.includes('--managed') ? 'provider_browser::automation::tests::opens_conversation_browser'
@@ -253,6 +260,8 @@ if (action === 'start') {
       await expect(child.getByRole('textbox', { name: 'draft' })).toHaveValue('retained');
       console.log(await child.evaluate(() => ({ width: innerWidth, height: innerHeight,
         touchPoints: navigator.maxTouchPoints, coarse: matchMedia('(pointer: coarse)').matches })));
+    } else if (action === 'user-agents') {
+      await verifyUserAgents(page, context.pages().find(page => page.url().includes(':18316/')));
     } else if (action === 'device-cycle') {
       await verifyDeviceCycle(page, context.pages().find(page => page.url().includes(':18316/')));
     } else if (action === 'resize') {

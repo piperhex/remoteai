@@ -4,6 +4,7 @@ mod device;
 mod focus;
 mod menu;
 mod native;
+mod user_agent;
 #[cfg(test)]
 pub(crate) use menu::fixture;
 
@@ -110,12 +111,12 @@ fn acquire(
                 view,
                 Status {
                     open: true,
-                    mobile: session.device.mobile,
+                    mobile: session.device.mobile(),
                 },
             );
             return Ok(None);
         }
-        session.device.set(view, false)?;
+        session.device.update(view, None, None)?;
     }
     let window = native::InspectorWindow::open(view, discovery)?;
     let identity = window.identity();
@@ -143,7 +144,7 @@ pub(super) fn execute(view: &Webview, action: Action) -> Result<Status> {
         return Ok(Status::default());
     };
     if !session.window.alive() || matches!(action, Action::Close) {
-        session.device.set(view, false)?;
+        session.device.update(view, None, None)?;
         session.window.close()?;
         *current = None;
         notify(view, Status::default());
@@ -151,7 +152,9 @@ pub(super) fn execute(view: &Webview, action: Action) -> Result<Status> {
     }
     match action {
         Action::Status | Action::Close => (),
-        Action::SetMobile { enabled } => session.device.set(view, enabled)?,
+        Action::SetMobile { enabled, name } => {
+            session.device.update(view, enabled.then_some(name), None)?
+        }
         Action::Place {
             dock,
             bounds,
@@ -159,14 +162,16 @@ pub(super) fn execute(view: &Webview, action: Action) -> Result<Status> {
             viewport,
         } => {
             session.window.place(view, dock, bounds, visible)?;
-            if let Some(viewport) = viewport.filter(|_| visible && session.device.mobile) {
-                session.device.resize(view, viewport)?;
+            if let Some(viewport) = viewport.filter(|_| visible && session.device.mobile()) {
+                session
+                    .device
+                    .update(view, Some(viewport.name), Some(viewport))?;
             }
         }
     }
     let status = Status {
         open: true,
-        mobile: session.device.mobile,
+        mobile: session.device.mobile(),
     };
     if matches!(action, Action::SetMobile { .. }) {
         notify(view, status);
@@ -209,7 +214,7 @@ fn watch_status(view: &Webview, slot: &Slot, identity: usize) -> Result<bool> {
     } else if session.window.alive() {
         return Ok(true);
     } else {
-        session.device.set(view, false)?;
+        session.device.update(view, None, None)?;
     }
     *current = None;
     notify(view, Status::default());

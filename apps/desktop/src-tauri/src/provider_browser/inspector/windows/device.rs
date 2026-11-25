@@ -1,41 +1,64 @@
 use super::{BrowserError, Result};
 use crate::provider_browser::automation::devtools;
-use crate::provider_browser::inspector::DeviceViewport;
+use crate::provider_browser::inspector::{DevicePreset, DeviceViewport};
 use serde_json::{json, Value};
 use tauri::Webview;
 
-#[derive(Default)]
-pub(super) struct DeviceMode {
-    pub(super) mobile: bool,
-    needs_restore: bool,
+#[derive(Clone, Copy, Default)]
+struct Settings {
+    preset: Option<DevicePreset>,
     viewport: Option<DeviceViewport>,
 }
 
+#[derive(Default)]
+pub(super) struct DeviceMode {
+    applied: Settings,
+    needs_restore: bool,
+    chrome_version: Option<String>,
+}
+
 impl DeviceMode {
-    pub(super) fn resize(&mut self, view: &Webview, viewport: DeviceViewport) -> Result<()> {
-        if self.viewport != Some(viewport) {
-            tauri::async_runtime::block_on(metrics(view, Some(viewport)))?;
-            self.viewport = Some(viewport);
-        }
-        Ok(())
+    pub(super) fn mobile(&self) -> bool {
+        self.applied.preset.is_some()
     }
 
     /// Called on a blocking worker under this tab's session lock, including on native close.
-    pub(super) fn set(&mut self, view: &Webview, enabled: bool) -> Result<()> {
-        if self.mobile == enabled && !self.needs_restore {
-            return Ok(());
-        }
-        let previous = self.mobile;
-        self.needs_restore = true;
-        if let Err(error) = tauri::async_runtime::block_on(apply(view, enabled, None)) {
-            if tauri::async_runtime::block_on(apply(view, previous, self.viewport)).is_ok() {
-                self.needs_restore = false;
-            }
+    pub(super) fn update(
+        &mut self,
+        view: &Webview,
+        preset: Option<DevicePreset>,
+        viewport: Option<DeviceViewport>,
+    ) -> Result<()> {
+        let next = Settings { preset, viewport };
+        if let Err(error) =
+            tauri::async_runtime::block_on(self.apply(view, next, self.needs_restore))
+        {
+            self.needs_restore =
+                tauri::async_runtime::block_on(self.apply(view, self.applied, true)).is_err();
             return Err(error);
         }
-        self.mobile = enabled;
-        self.viewport = None;
+        self.applied = next;
         self.needs_restore = false;
+        Ok(())
+    }
+
+    async fn apply(&mut self, view: &Webview, next: Settings, force: bool) -> Result<()> {
+        let mobile = next.preset.is_some();
+        if force || next.preset != self.applied.preset {
+            let params =
+                super::user_agent::parameters(view, next.preset, &mut self.chrome_version).await?;
+            call(view, "Emulation.setUserAgentOverride", params).await?;
+        }
+        if force || self.mobile() != mobile || self.applied.viewport != next.viewport {
+            if mobile {
+                metrics(view, next.viewport).await?;
+            } else {
+                call(view, "Emulation.clearDeviceMetricsOverride", json!({})).await?;
+            }
+        }
+        if force || self.mobile() != mobile {
+            touch(view, mobile).await?;
+        }
         Ok(())
     }
 }
@@ -53,12 +76,7 @@ async fn metrics(view: &Webview, viewport: Option<DeviceViewport>) -> Result<()>
     .await
 }
 
-async fn apply(view: &Webview, mobile: bool, viewport: Option<DeviceViewport>) -> Result<()> {
-    if mobile {
-        metrics(view, viewport).await?;
-    } else {
-        call(view, "Emulation.clearDeviceMetricsOverride", json!({})).await?;
-    }
+async fn touch(view: &Webview, mobile: bool) -> Result<()> {
     call(
         view,
         "Emulation.setTouchEmulationEnabled",

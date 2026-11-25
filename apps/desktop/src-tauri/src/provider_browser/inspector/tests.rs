@@ -19,6 +19,8 @@ fn inspector_requests_reject_unscoped_handles_and_invalid_modes() {
         json!({"id":"main","kind":"provider","command":{"action":"close"}}),
         json!({"id":uuid::Uuid::new_v4(),"kind":"provider","handle":123,"command":{"action":"status"}}),
         json!({"id":uuid::Uuid::new_v4(),"kind":"provider","command":{
+            "action":"setMobile","enabled":true,"name":"arbitrary User-Agent"}}),
+        json!({"id":uuid::Uuid::new_v4(),"kind":"provider","command":{
             "action":"place","dock":"left","visible":true,"bounds":{"x":0,"y":0,"width":400,"height":400}}}),
     ] {
         assert!(serde_json::from_value::<Request>(request).is_err());
