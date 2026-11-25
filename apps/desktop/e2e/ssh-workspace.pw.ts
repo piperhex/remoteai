@@ -29,6 +29,33 @@ async function uploadAndRead(page: Page, workspace: Locator, mode: string) {
   await expect(workspace.locator('.xterm-rows:visible')).toContainText('SSH workspace file transfer');
 }
 
+async function resizeFiles(page: Page, workspace: Locator, screenshot: string) {
+  const rail = workspace.locator('.sshw-rail');
+  const handle = rail.getByRole('separator', { name: '远程文件浏览', exact: true });
+  const screen = workspace.locator('.xterm-screen:visible');
+  const width = (element: Locator) => element.evaluate(node => node.getBoundingClientRect().width);
+  const initial = await width(rail);
+  const terminalWidth = await width(screen);
+  await handle.focus();
+  await handle.press('ArrowLeft');
+  await expect.poll(() => width(rail)).toBe(initial - 16);
+  await handle.dblclick();
+  await expect.poll(() => width(rail)).toBe(initial);
+  const box = await handle.boundingBox();
+  if (!box) throw new Error('Missing SSH sidebar divider');
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 120, y, { steps: 8 });
+  await expect.poll(() => width(rail)).toBe(initial + 120);
+  await expect.poll(() => width(screen)).toBeLessThan(terminalWidth - 100);
+  await page.screenshot({ path: screenshot, animations: 'disabled' });
+  await page.mouse.up();
+  await expectMonitorBelowTerminal(workspace);
+  return initial + 120;
+}
+
 test.skip(!process.env.SSH_FIXTURE_CONFIG, 'Requires the disposable WSL SSH server and Rust bridge');
 for (const mode of ['local', 'remote', 'web']) {
   test(`${mode} opens a saved SSH terminal with its files and retains it across navigation`, async ({ page, request }, info) => {
@@ -71,8 +98,10 @@ for (const mode of ['local', 'remote', 'web']) {
     await expect(page.getByRole('tooltip')).toHaveCount(0);
     await expectMonitorBelowTerminal(workspace);
     await page.screenshot({ path: info.outputPath(mode + '-connected.png'), animations: 'disabled' });
+    const resizedWidth = await resizeFiles(page, workspace, info.outputPath(mode + '-dragging.png'));
     await workspace.locator('.sshw-switch').getByRole('button', { name: '已保存的连接' }).click();
     await expect(workspace.locator('.sshw-profiles')).toBeVisible();
+    await expect(workspace.locator('.sshw-rail')).toHaveCSS('width', resizedWidth + 'px');
     await expectMonitorBelowTerminal(workspace);
     await page.screenshot({ path: info.outputPath(mode + '-saved.png'), animations: 'disabled' });
     const capture = async (state: string) => {
@@ -106,5 +135,11 @@ for (const mode of ['local', 'remote', 'web']) {
     await expect(tty).toContainText('SSH workspace file transfer');
     await workspace.getByRole('button', { name: '关闭终端 1', exact: true }).click();
     await expect(workspace.locator('.sshw-launch')).toBeVisible();
+    await page.reload();
+    await nav.getByRole('button', { name: 'SSH', exact: true }).click();
+    const rail = workspace.locator('.sshw-rail');
+    await expect(rail).toHaveCSS('width', resizedWidth + 'px');
+    await rail.getByRole('separator').press('End');
+    await expect(workspace.locator('.sshw-main')).toHaveCSS('width', '300px');
   });
 }
