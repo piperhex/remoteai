@@ -156,7 +156,8 @@ export class CliService {
     }
     const bridge = await this.runtime.accountBridge();
     const route = bridge.selection(agent.labels.remoteaiRoute);
-    return { ...session(agent, engine), ...(route ?? {}), cwd: await this.workspaces.display(agent.cwd) };
+    return { ...session(agent, engine), ...(route ?? {}), metricsSessionId: agent.labels.remoteaiRoute,
+      cwd: await this.workspaces.display(agent.cwd) };
   }
 
   private async serialized(id: string, work: () => Promise<unknown>) {

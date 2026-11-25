@@ -3,6 +3,15 @@ import type { SidebarSnapshot } from '../../../shared/remote-chat/sidebar';
 
 const titles = ['检查浏览器入口', '修复触屏导航返回', '整理共享组件', '验证对话同步', '更新项目文档',
   '检查深色主题与超长中文对话标题在窄窗口中的显示效果', '验证远程连接', '整理网页测试结果'];
+
+export function runningFixtureMetrics(id?: string) {
+  const speeds = [48, 72, null, 0, 36, 84, 58, 52];
+  const index = titles.findIndex((_, i) => id === `running-${i}`);
+  const speed = speeds[index];
+  const seconds = index + 1;
+  return { totalOutputTokens: (speed ?? 0) * seconds, totalOutputTimeMs: speed == null ? 0 : seconds * 1000,
+    outputRequestCount: speed == null ? 0 : 1 };
+}
 export function runningFixtureThreads(): Thread[] {
   return titles.map((title, index) => ({ id: `running-${index}`, name: title, preview: title,
     cwd: index % 2 ? 'F:/projects/remoteai-web' : 'F:/projects/remoteai', updatedAt: 100 - index,

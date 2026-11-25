@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { localBackend, nativeShell } from './cli-gui-support';
 import { runningFixtureThreads } from './running-conversations-fixture';
 
-const evidence = resolve('../../.codex-tmp/running-conversations');
+const evidence = resolve('../../.codex-tmp/running-conversation-tps');
 for (const mode of ['local', 'remote', 'web']) {
   for (const enlarged of [false, true]) {
     test(`${mode}: ${enlarged ? 'dark enlarged narrow' : 'light default'} running list`, async ({ page }) => {
@@ -21,12 +21,19 @@ for (const mode of ['local', 'remote', 'web']) {
       const list = panel.locator('[data-running-conversations-list]');
       const rows = list.getByRole('button');
       await expect(rows).toHaveCount(8);
+      const average = panel.locator('[data-running-average]');
+      await expect(average).toHaveText('50.0 TPS');
+      for (const [index, value] of ['48.0 TPS', '72.0 TPS', '', '0.0 TPS'].entries()) {
+        await expect(rows.nth(index)).toHaveAccessibleDescription(value);
+      }
+      await expect(rows.nth(2)).not.toContainText('TPS');
       const dimensions = await list.evaluate(node => ({ height: node.clientHeight, scroll: node.scrollHeight,
         row: node.firstElementChild!.getBoundingClientRect().height }));
       expect(dimensions.height).toBeCloseTo(5 * dimensions.row, 0);
       expect(dimensions.scroll).toBeGreaterThan(dimensions.height);
       const label = `${mode}-${enlarged ? 'dark-20px-960' : 'light-14px-1440'}`;
       await page.screenshot({ path: resolve(evidence, `${label}-expanded.png`) });
+      await panel.screenshot({ path: resolve(evidence, `${label}-panel.png`) });
       await panel.getByRole('button', { name: '收起对话列表', exact: true }).click();
       await expect(list).toHaveCount(0);
       expect((await panel.boundingBox())!.width).toBeLessThan(65);
@@ -66,6 +73,7 @@ for (const mode of ['local', 'remote', 'web']) {
       };
       await finish(3);
       await expect(rows).toHaveCount(5);
+      await expect(average).toHaveText('46.0 TPS');
       expect(await list.evaluate(node => node.scrollHeight - node.clientHeight)).toBe(0);
       await finish(8);
       await expect(panel).toHaveCount(0);

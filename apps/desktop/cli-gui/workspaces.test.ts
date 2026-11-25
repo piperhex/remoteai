@@ -4,6 +4,7 @@ import { join, relative } from 'node:path';
 import { tmpdir } from 'node:os';
 import type { PaseoClient } from '@getpaseo/client';
 import type { CliSession } from '../../../shared/cli-gui/types';
+import { cliSummary } from '../../../shared/cli-gui/summary';
 import { CliService } from './service';
 import type { AccountBridge } from './bridge';
 
@@ -60,6 +61,7 @@ it.each(['claude', 'gemini'] as const)('%s keeps projectless conversations isola
   expect(relative(await realpath(join(root, 'workspaces')), firstPath)).toMatch(/^chat-[^\\/]+$/);
   expect(first.cwd).toBe(''); expect(second.cwd).toBe('');
   expect(first.model).toBe('account-model');
+  expect(cliSummary(first).metricsSessionId).toBe('route');
   await writeFile(join(firstPath, 'note.txt'), 'Keep this across turns');
   const restored = await service.request({ engine, action: 'read', id: first.id });
   expect(restored).toMatchObject({ session: { id: first.id, cwd: '' } });

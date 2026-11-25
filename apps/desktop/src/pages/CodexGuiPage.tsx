@@ -196,7 +196,7 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
             : <ConversationChangesButton value={current} git={localGitClient} cwd={workspaceProject} threadId={thread?.id} />)}
         </div>
         {focused && windowControls && <div className={styles.focusWindowControls}>{windowControls}</div>}
-        <LocalRunningConversations state={state} onSelect={openTaskConversation}
+        <LocalRunningConversations state={state} visible={visible} onSelect={openTaskConversation}
           onOpen={() => setView('conversation')} />
       </header>
       {external && cli && <CliConversationPane cwd={project} dictation={dictationClient}

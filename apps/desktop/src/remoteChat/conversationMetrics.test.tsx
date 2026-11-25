@@ -2,7 +2,8 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { useConversationMetrics } from '../../../../shared/remote-chat/client/useConversationMetrics';
+import { useConversationMetrics, useConversationMetricsForThreads }
+  from '../../../../shared/remote-chat/client/useConversationMetrics';
 import { formatConversationCost, formatConversationTps, formatConversationTtft, type ConversationMetrics,
   type ReadConversationMetrics } from '../../../../shared/remote-chat/conversationMetrics';
 
@@ -21,6 +22,23 @@ function deferred() {
   const promise = new Promise<ConversationMetrics>(done => { resolve = done; });
   return { promise, resolve };
 }
+
+it('shares the selected thread poll with the running list and retains other polls when the list changes', async () => {
+  const read = vi.fn<ReadConversationMetrics>().mockResolvedValue(metrics);
+  function RunningList({ ids }: { ids: string[] }) {
+    useConversationMetricsForThreads(read, ids);
+    return null;
+  }
+  const show = (ids: string[]) => act(async () => root.render(<><Probe read={read} /><RunningList ids={ids} /></>));
+  await show(['first', 'second']);
+  expect(read.mock.calls).toEqual([['first'], ['second']]);
+  await show(['third', 'first', 'second']);
+  expect(read.mock.calls).toEqual([['first'], ['second'], ['third']]);
+  read.mockClear();
+  await show(['third']);
+  await act(async () => vi.advanceTimersByTimeAsync(2_000));
+  expect(read.mock.calls).toEqual([['first'], ['third']]);
+});
 beforeEach(() => {
   vi.useFakeTimers(); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   root = createRoot(document.createElement('div'));

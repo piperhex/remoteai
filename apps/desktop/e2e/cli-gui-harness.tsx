@@ -20,7 +20,7 @@ import { RemoteGuiTools } from '../../../shared/conversation/remote/RemoteGuiToo
 import { RemoteGuiProject } from '../../../shared/conversation/remote/RemoteGuiProject';
 import { useRemoteCliInstaller } from '../../../shared/conversation/remote/useRemoteCliInstaller';
 import { getGuiController } from '../src/pages/codexGui/session';
-import { runningFixtureThreads, runningFixtureSidebar } from './running-conversations-fixture';
+import { runningFixtureMetrics, runningFixtureThreads, runningFixtureSidebar } from './running-conversations-fixture';
 import type { GuiEvent } from '../../../shared/conversation/types';
 import { SIDEBAR_EVENT } from '../../../shared/remote-chat/sidebar';
 import { historyDelta, type HistoryVersion } from '../../../shared/remote-chat/historySync';
@@ -53,6 +53,7 @@ const controller = new ChatController(events => ({ start() {
   request: async <T,>(method: string, value?: unknown): Promise<T> => {
     const body = value as { operation?: string; threadId?: string; known?: HistoryVersion; archived?: boolean } | undefined;
     if (method === 'connect') return [] as T;
+    if (runningThreads && body?.operation === 'conversationMetrics') return runningFixtureMetrics(body.threadId) as T;
     if (params.has('changeReview') && body?.operation === 'guiTaskReview') return demoTaskReview(body) as T;
     if (params.has('changeReview') && (body?.operation?.startsWith('guiGit') ||
       ['list', 'read', 'resume', 'syncHistory', 'savedTurnReview'].includes(body?.operation ?? ''))) {

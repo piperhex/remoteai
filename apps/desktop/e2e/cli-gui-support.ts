@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { createCliGuiFixture, sidebarCodexThread, cliGitStatus } from './cli-gui-fixture';
 import type { Thread } from '../../../shared/conversation/types';
+import { runningFixtureMetrics } from './running-conversations-fixture';
 
 export async function localBackend(page: Page, ready = true,
   options: { codexReady?: boolean; manualInstall?: boolean; threads?: Thread[] } = {}) {
@@ -14,6 +15,7 @@ export async function localBackend(page: Page, ready = true,
     const { command, args = {} } = route.request().postDataJSON();
     commands.push(command);
     let result: unknown = {};
+    if (options.threads && command === 'get_proxy_session_metrics') result = runningFixtureMetrics(args.threadId);
     if (command === 'get_dream_skin_theme_preview') {
       result = '/src-tauri/resources/dream-skin/presets/preset-doraemon-ocean-submarine/background.jpg';
     }
