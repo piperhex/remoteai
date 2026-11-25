@@ -120,15 +120,6 @@ impl Journal {
     }
 }
 
-pub(in crate::codex_gui) async fn access<T: Send + 'static>(
-    journal: Journal,
-    operation: impl FnOnce(Journal) -> Result<T> + Send + 'static,
-) -> Result<T> {
-    tauri::async_runtime::spawn_blocking(move || operation(journal))
-        .await
-        .map_err(|_| Error::Storage)?
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

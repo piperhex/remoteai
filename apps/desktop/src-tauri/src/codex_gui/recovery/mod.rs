@@ -1,6 +1,8 @@
 //! Host-owned recovery decisions shared by desktop and authenticated remote clients.
 mod store;
-pub(super) use store::{access, Journal};
+mod writer;
+pub(super) use store::Journal;
+pub(super) use writer::Writer;
 
 use super::{client::Client, error::GuiError, protocol::GuiResponse};
 use futures_util::{stream, StreamExt};
@@ -81,46 +83,12 @@ fn partition_candidates(
 }
 
 impl Client {
-    pub(super) async fn record_recovery_event(&self, method: &str, params: &Value) {
-        if matches!(method, "thread/archived" | "thread/deleted") {
-            if let Some(thread) = params["threadId"].as_str() {
-                if self.forget_recovery_thread(thread).await.is_err() {
-                    eprintln!("Codex GUI could not clear an archived task recovery record");
-                }
-            }
-            return;
-        }
-        let started = method == "turn/started";
-        // Unexpected interruptions survive; an acknowledged explicit stop removes its actual turn.
-        if !started && (method != "turn/completed" || params["turn"]["status"] == "interrupted") {
-            return;
-        }
-        let (Some(thread), Some(turn)) =
-            (params["threadId"].as_str(), params["turn"]["id"].as_str())
-        else {
-            return;
-        };
-        let (thread, turn) = (thread.to_owned(), turn.to_owned());
-        let result = store::access(store::Journal::new(&self.home), move |journal| {
-            if started {
-                journal.started(&thread, &turn)
-            } else {
-                journal.finished(&thread, &turn)
-            }
-        })
-        .await;
-        if result.is_err() {
-            eprintln!("Codex GUI could not persist task recovery state");
-        }
-    }
-
     pub(super) async fn forget_recovery_thread(&self, thread: &str) -> super::error::Result<()> {
         let thread = thread.to_owned();
-        store::access(store::Journal::new(&self.home), move |journal| {
-            journal.remove_thread(&thread)
-        })
-        .await
-        .map_err(GuiError::Recovery)
+        self.recovery
+            .access(move |journal| journal.remove_thread(&thread))
+            .await
+            .map_err(GuiError::Recovery)
     }
 
     async fn recovery_thread(&self, entry: &Entry) -> super::error::Result<Value> {
@@ -134,7 +102,9 @@ impl Client {
     }
 
     pub(super) async fn recovery_list(&self) -> super::error::Result<GuiResponse> {
-        let entries = store::access(store::Journal::new(&self.home), |journal| journal.pending())
+        let entries = self
+            .recovery
+            .access(|journal| journal.pending())
             .await
             .map_err(GuiError::Recovery)?;
         let checked: Vec<_> = stream::iter(entries)
@@ -147,11 +117,10 @@ impl Client {
             .await;
         let (candidates, obsolete) = partition_candidates(checked);
         if !obsolete.is_empty() {
-            store::access(store::Journal::new(&self.home), move |journal| {
-                journal.claim(&obsolete)
-            })
-            .await
-            .map_err(GuiError::Recovery)?;
+            self.recovery
+                .access(move |journal| journal.claim(&obsolete))
+                .await
+                .map_err(GuiError::Recovery)?;
         }
         Ok(GuiResponse {
             data: json!({"batchId": store::launch_id(), "candidates": candidates}),
@@ -165,11 +134,11 @@ impl Client {
         if decision.batch_id != store::launch_id() || decision.entries.len() > 1000 {
             return Err(GuiError::InvalidRequest);
         }
-        let entries = store::access(store::Journal::new(&self.home), move |journal| {
-            journal.claim(&decision.entries)
-        })
-        .await
-        .map_err(GuiError::Recovery)?;
+        let entries = self
+            .recovery
+            .access(move |journal| journal.claim(&decision.entries))
+            .await
+            .map_err(GuiError::Recovery)?;
         self.emit(super::protocol::GuiEvent {
             method: EVENT.into(),
             params: json!({}),

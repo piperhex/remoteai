@@ -292,6 +292,7 @@ async fn read_turn(state: &GuiState, request: &UndoRequest) -> Result<(String, V
         })
         .await?;
     let home = client.home.clone();
+    client.wait_for_reviews(&request.thread_id).await;
     let turn_id = request.turn_id.clone();
     tauri::async_runtime::spawn_blocking(move || {
         let mut thread = source["thread"].clone();

@@ -7,6 +7,8 @@ import { summarizeTools } from '../../../../shared/conversation/toolDetails';
 import { viewedThreadIds } from '../../../../shared/conversation/viewedThreads';
 import { applyHistoryDelta } from '../../../../shared/remote-chat/historySync';
 import { pagedReviewEvent } from '../../../../shared/conversation/savedReview';
+import { conversation, reduceConversation } from '../../../../shared/conversation/events';
+import { updateThread } from '../../../../shared/remote-chat/client/events';
 import type { PagedHistoryDelta } from '../../../../shared/remote-chat/historyPage';
 import type { GuiEvent, Item, Thread } from '../../../../shared/conversation/types';
 
@@ -20,6 +22,26 @@ const thread: Thread = { id: 'chat', cwd: '', preview: '', updatedAt: 0,
   turns: [{ id: 'turn', status: 'inProgress', items: [item] }] };
 const started: GuiEvent = { method: 'item/started', params: { threadId: 'chat', turnId: 'turn', item } };
 const hosts: ChatOperations[] = [];
+it('applies delayed review data to the completed turn across local and remote viewers', () => {
+  const first = { id: 'first', items: [item], status: 'completed', diff: '+live', completedAt: 15 };
+  const next = { id: 'next', items: [], status: 'inProgress' };
+  const snapshot = { ...thread, turns: [first, next] };
+  const update: GuiEvent = { method: 'turn/review/updated', params: { threadId: thread.id,
+    review: { turnId: first.id, fields: { savedReviewResult: 'net', reviewHasEdits: true,
+      workspaceObservation: { paths: ['file'], complete: true } } } } };
+  const paged = pagedReviewEvent(update);
+  const local = reduceConversation(conversation(snapshot), paged);
+  expect(local.activeTurn).toBe(next.id);
+  const remote = updateThread(snapshot, paged);
+  for (const turns of [local.turns, remote.turns!]) {
+    expect(turns[0]).toMatchObject({ id: first.id, items: [item], status: 'completed', reviewDeferred: 'net',
+      completedAt: 15, diff: undefined, workspaceObservation: { paths: ['file'], complete: true } });
+    expect(turns[1]).toMatchObject(next);
+  }
+  expect(updateThread(snapshot, update).turns![0].diff).toBe('+live');
+  expect(updateThread({ ...thread, turns: [next] }, paged).turns).toEqual([next]);
+  expect(reduceConversation(conversation({ ...thread, turns: [next] }), paged).turns.map(t => t.id)).toEqual(['next']);
+});
 afterEach(() => { hosts.splice(0).forEach(host => host.release()); vi.restoreAllMocks(); vi.clearAllMocks(); });
 
 function fixture() {

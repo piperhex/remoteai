@@ -43,6 +43,7 @@ mod image_download;
 mod image_preview;
 mod image_thumbnail;
 mod images;
+mod journal_worker;
 mod live_history;
 mod local_file;
 mod mcp_approval;
@@ -111,6 +112,7 @@ pub(crate) struct GuiState {
     dictation: dictation::Sessions,
     pub(crate) model_discovery: model_discovery::ModelDiscovery,
     workspaces: Arc<workspace_activity::WorkspaceActivity>,
+    recovery: tokio::sync::OnceCell<Arc<recovery::Writer>>,
     pub(crate) proxy: crate::local_proxy::gui_runtime::GuiProxyRuntime,
     pub(crate) upload_policy: Arc<upload_policy::UploadPolicyStore>,
     client: Mutex<Option<Arc<Client>>>,
@@ -235,7 +237,8 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
         GuiRequest::ToolDetails(target) => return tool_details::read(client, target).await,
         GuiRequest::ProcessDetails(target) => return process_details::read(client, target).await,
         GuiRequest::SavedTurnReview(target) => {
-            return turn_review::archive::read(client.home.clone(), target).await
+            client.wait_for_reviews(&target.thread_id).await;
+            return turn_review::archive::read(client.home.clone(), target).await;
         }
         GuiRequest::GroupThreadSummaries(query) => {
             return group_members::summaries::load(
@@ -402,6 +405,14 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
         history_access::resume(&mut data, |method, params| client.request(method, params)).await?;
     }
     let data = icons::resolve(method, data).await?;
+    if !summary_only && matches!(method, "thread/read" | "thread/resume") {
+        if let Some(thread) = data["thread"]["id"]
+            .as_str()
+            .filter(|_| data["thread"]["turns"].is_array())
+        {
+            client.wait_for_reviews(thread).await;
+        }
+    }
     // Discard unrequested history before serializing IPC, away from the UI and async workers.
     tauri::async_runtime::spawn_blocking(move || {
         let mut data = data;

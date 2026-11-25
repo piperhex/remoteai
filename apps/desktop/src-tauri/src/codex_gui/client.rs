@@ -11,6 +11,9 @@ mod live_settings;
 mod model_context;
 mod plugin_refresh;
 mod predictions;
+#[cfg(all(test, windows))]
+mod reader_tests;
+mod startup;
 #[path = "title_service.rs"]
 mod title_service;
 mod turn_review;
@@ -19,7 +22,6 @@ mod workspace_activity;
 use std::{
     collections::HashMap,
     path::PathBuf,
-    process::Stdio,
     sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
         Arc,
@@ -27,7 +29,7 @@ use std::{
 };
 
 use serde_json::{json, Value};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use tokio::{
     io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, ChildStdout},
@@ -37,7 +39,6 @@ use tokio::{
 
 use super::{
     error::{GuiError, Result},
-    identity, platform,
     protocol::{approval_response, ApprovalReply, GuiEvent},
     workspaces,
 };
@@ -62,7 +63,9 @@ pub(super) struct Client {
     approvals: Mutex<HashMap<String, GuiEvent>>,
     active_turns: Mutex<HashMap<String, String>>,
     live_history: std::sync::Mutex<super::live_history::LiveHistory>,
-    review_baselines: Mutex<turn_review::Baselines>,
+    review_starts: Mutex<turn_review::PendingStarts>,
+    reviews: turn_review::ReviewQueue,
+    pub(super) recovery: Arc<super::recovery::Writer>,
     completion_notifications: Mutex<completion_notifications::CompletionNotifications>,
     context_capacity: context_capacity::ContextCapacity,
     context_usage: Mutex<context_usage::UsageCache>,
@@ -78,111 +81,6 @@ pub(super) struct Client {
 }
 
 impl Client {
-    pub(super) async fn start(
-        app: AppHandle,
-        executable: super::releases::Executable,
-        home: PathBuf,
-        projectless_root: PathBuf,
-    ) -> Result<Arc<Self>> {
-        let client = Self::start_staged(app, executable, home, projectless_root).await?;
-        client.activate();
-        Ok(client)
-    }
-
-    /// Handshake before replacing the current client; failed updates must not publish disconnects.
-    pub(super) async fn start_staged(
-        app: AppHandle,
-        executable: super::releases::Executable,
-        home: PathBuf,
-        projectless_root: PathBuf,
-    ) -> Result<Arc<Self>> {
-        let mut command = super::cli_command::new(&executable.path);
-        // Keep every override in the app-server argument scope; subcommand overrides replace root ones.
-        command.arg("app-server");
-        super::conversation_tools::configure(app.clone(), &mut command).await?;
-        #[cfg(windows)]
-        let plugin_host =
-            crate::windows_plugin_host::Host::start(&home).map_err(|_| GuiError::Startup)?;
-        #[cfg(windows)]
-        plugin_host.configure(&mut command);
-        command
-            .arg("-c")
-            .arg("features.step_model_switching=true")
-            .arg("-c")
-            .arg(context_capacity::UNLOAD_CONFIG)
-            .arg("-c")
-            .arg(format!("sqlite_home={}", json!(home.to_string_lossy())))
-            .arg("-c")
-            .arg(format!(
-                "log_dir={}",
-                json!(home.join("log").to_string_lossy())
-            ))
-            .env("CODEX_HOME", &home)
-            .env(
-                "CODEX_INTERNAL_ORIGINATOR_OVERRIDE",
-                identity::CLI_ORIGINATOR,
-            )
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .kill_on_drop(true);
-        context_usage::configure(&mut command);
-        platform::hide_window(&mut command);
-        let mut process = command.spawn().map_err(|_| GuiError::Startup)?;
-        let writer = process.stdin.take().ok_or(GuiError::Startup)?;
-        let stdout = process.stdout.take().ok_or(GuiError::Startup)?;
-        let stderr = process.stderr.take().ok_or(GuiError::Startup)?;
-        let client = Arc::new(Self {
-            workspaces: Arc::clone(&app.state::<super::GuiState>().workspaces),
-            title_jobs: Mutex::default(),
-            title_writes: Mutex::default(),
-            title_slots: tokio::sync::Semaphore::new(MAX_CONCURRENT_TITLE_JOBS),
-            prediction_slot: tokio::sync::Semaphore::new(1),
-            home,
-            projectless_root,
-            writer: Mutex::new(writer),
-            process: Mutex::new(process),
-            pending: Mutex::new(HashMap::new()),
-            approvals: Mutex::new(HashMap::new()),
-            active_turns: Mutex::new(HashMap::new()),
-            live_history: std::sync::Mutex::default(),
-            review_baselines: Mutex::default(),
-            completion_notifications: Mutex::default(),
-            context_capacity: context_capacity::ContextCapacity::default(),
-            context_usage: Mutex::default(),
-            idle_threads: idle_threads::IdleThreads::default(),
-            plugin_revision: Mutex::new(None),
-            next_id: AtomicU64::new(1),
-            alive: AtomicBool::new(true),
-            events_enabled: AtomicBool::new(false),
-            notification_session: uuid::Uuid::new_v4().to_string(),
-            #[cfg(windows)]
-            plugin_host,
-            app,
-        });
-        tokio::spawn(client.clone().read(stdout));
-        tokio::spawn(client.clone().read_context_usage(stderr));
-        let handshake = client
-            .request(
-                "initialize",
-                identity::initialize_params(&executable.version),
-            )
-            .await;
-        if handshake.is_err() {
-            client.stop().await;
-            return Err(GuiError::Startup);
-        }
-        if client
-            .write(json!({"method": "initialized"}))
-            .await
-            .is_err()
-        {
-            client.stop().await;
-            return Err(GuiError::Startup);
-        }
-        Ok(client)
-    }
-
     pub(super) fn activate(self: &Arc<Self>) {
         self.events_enabled.store(true, Ordering::Release);
         self.start_idle_cleanup();
@@ -285,7 +183,7 @@ impl Client {
             .await
         {
             self.pending.lock().await.remove(&id);
-            self.review_baselines.lock().await.pending.remove(&id);
+            self.review_starts.lock().await.remove(&id);
             return Err(error);
         }
         let deadline = if method == "model/list" {
@@ -322,7 +220,7 @@ impl Client {
             if method.starts_with("codex/event/") {
                 return;
             }
-            self.record_recovery_event(method, &value["params"]).await;
+            self.recovery.event(method, &value["params"]);
             self.workspaces
                 .event(&self.notification_session, method, &value["params"])
                 .await;
@@ -333,9 +231,7 @@ impl Client {
                 params: value["params"].clone(),
                 id: value.get("id").cloned(),
             };
-            if super::turn_review::observes(&event) {
-                self.record_turn_review(&mut event).await;
-            }
+            let submit_review = self.prepare_review(&event).await;
             workspaces::hide_project_paths(&mut event.params, &self.projectless_root);
             super::push_notifications::identify(&mut event, &self.notification_session);
             if matches!(method, "turn/started" | "turn/completed") {
@@ -381,6 +277,9 @@ impl Client {
                     .remove(&event.params["requestId"].to_string());
             }
             self.emit(event).await;
+            if let Some(submit) = submit_review {
+                submit();
+            }
         } else if let Some(id) = value["id"].as_u64() {
             self.bind_review(id, &value["result"]).await;
             self.workspaces
@@ -429,7 +328,9 @@ impl Client {
     }
 
     pub(super) async fn is_running(&self) -> bool {
-        !self.active_turns.lock().await.is_empty() || !self.pending.lock().await.is_empty()
+        self.reviews.busy()
+            || !self.active_turns.lock().await.is_empty()
+            || !self.pending.lock().await.is_empty()
     }
 
     pub(super) async fn emit(&self, event: GuiEvent) {

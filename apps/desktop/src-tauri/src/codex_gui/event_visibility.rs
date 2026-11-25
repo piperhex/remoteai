@@ -14,7 +14,10 @@ pub(super) fn filter(mut event: Value, viewed: &HashSet<String>) -> Option<Value
     }
     let method = event["method"].as_str().unwrap_or_default();
     if (method.starts_with("item/") && !matches!(method, "item/started" | "item/completed"))
-        || matches!(method, "turn/diff/updated" | "turn/plan/updated")
+        || matches!(
+            method,
+            "turn/diff/updated" | "turn/plan/updated" | "turn/review/updated"
+        )
     {
         return None;
     }

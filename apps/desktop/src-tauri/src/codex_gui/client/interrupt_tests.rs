@@ -1,16 +1,19 @@
 use super::*;
-use crate::codex_gui::recovery::Entry;
+use crate::codex_gui::recovery::{Entry, Journal};
 
 struct Fixture {
     home: tempfile::TempDir,
     state: ThreadCapacity,
     active: Mutex<HashMap<String, String>>,
+    writer: Writer,
 }
 
 impl Fixture {
     fn new() -> Self {
+        let home = tempfile::tempdir().unwrap();
         Self {
-            home: tempfile::tempdir().unwrap(),
+            writer: Writer::open(home.path()).unwrap(),
+            home,
             state: ThreadCapacity::default(),
             active: Mutex::default(),
         }
@@ -24,13 +27,16 @@ impl Fixture {
         Interrupt {
             state: &self.state,
             active_turns: &self.active,
-            journal: self.journal(),
+            journal: &self.writer,
         }
     }
 
     async fn started(&self, thread: &str, turn: &str) {
-        // The production event reader persists turn/started before updating active_turns.
-        self.journal().started(thread, turn).unwrap();
+        self.writer.event(
+            "turn/started",
+            &json!({"threadId":thread,"turn":{"id":turn}}),
+        );
+        self.writer.access(|_| Ok(())).await.unwrap();
         self.active.lock().await.insert(thread.into(), turn.into());
     }
 
@@ -259,7 +265,8 @@ async fn unavailable_journal_does_not_prevent_stopping_the_actual_turn() {
     let fixture = Fixture::new();
     fixture.started("task", "B").await;
     let mut stopping = fixture.interrupt();
-    stopping.journal = Journal::new(&fixture.home.path().join("missing-parent"));
+    let unavailable = Writer::open(&fixture.home.path().join("missing-parent")).unwrap();
+    stopping.journal = &unavailable;
     let response = stopping
         .run(stop_a(), |method, params| async move {
             assert_eq!(method, "turn/interrupt");

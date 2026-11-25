@@ -61,9 +61,9 @@ async fn delete_thread(
             id: None,
         };
         // Local deletion publishes directly, bypassing the app-server event recorder.
-        client
-            .record_recovery_event(&event.method, &event.params)
-            .await;
+        if client.forget_recovery_thread(id).await.is_err() {
+            eprintln!("Codex GUI could not clear a deleted task recovery record");
+        }
         super::web::publish(&app, "codex-gui-event", event);
     }
     Ok(DeletionReport {

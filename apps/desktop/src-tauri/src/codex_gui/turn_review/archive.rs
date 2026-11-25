@@ -15,7 +15,7 @@ const PAGE: usize = 100;
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Target {
-    thread_id: String,
+    pub(in crate::codex_gui) thread_id: String,
     turn_id: String,
     file: Option<usize>,
     #[serde(default)]

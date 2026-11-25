@@ -7,7 +7,7 @@ use tokio::sync::Mutex;
 use super::{context_capacity::ThreadCapacity, Client};
 use crate::codex_gui::{
     error::{GuiError, Result},
-    recovery::{access, Journal},
+    recovery::Writer,
 };
 
 impl Client {
@@ -19,7 +19,7 @@ impl Client {
         Interrupt {
             state: &state,
             active_turns: &self.active_turns,
-            journal: Journal::new(&self.home),
+            journal: &self.recovery,
         }
         .run(params, |method, target| self.request_raw(method, target))
         .await
@@ -29,7 +29,7 @@ impl Client {
 struct Interrupt<'a> {
     state: &'a ThreadCapacity,
     active_turns: &'a Mutex<HashMap<String, String>>,
-    journal: Journal,
+    journal: &'a Writer,
 }
 
 impl Interrupt<'_> {
@@ -86,11 +86,11 @@ impl Interrupt<'_> {
             .to_owned();
         // Keep failed/uncertain stops recoverable. Never clear a newer turn that started while
         // awaiting the acknowledgement, or another thread's record.
-        if access(self.journal.clone(), move |journal| {
-            journal.finished(&thread, &turn)
-        })
-        .await
-        .is_err()
+        if self
+            .journal
+            .access(move |journal| journal.finished(&thread, &turn))
+            .await
+            .is_err()
         {
             // Journal failure must not prevent the user's stop request.
             eprintln!("Codex GUI could not clear a stopped task recovery record");
