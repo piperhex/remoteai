@@ -56,6 +56,16 @@ export async function checkProfileActions(page: Page, workspace: Locator, captur
   await expect(workspace.getByRole('tab')).toHaveCount(1);
 }
 
+export async function expectCenteredProfileIcons(profile: Locator) {
+  const label = (await profile.locator('.sshw-session-label').boundingBox())!;
+  const icons = profile.locator('svg');
+  await expect(icons).toHaveCount(2);
+  for (const icon of await icons.all()) {
+    const box = (await icon.boundingBox())!;
+    expect(Math.abs(box.y + box.height / 2 - (label.y + label.height / 2))).toBeLessThan(1);
+  }
+}
+
 export async function checkSessionMenu(page: Page, workspace: Locator, capture: Capture, computer: string) {
   const trigger = workspace.getByRole('button', { name: '终端连接选项' });
   const items = page.getByRole('menuitem');
@@ -64,13 +74,14 @@ export async function checkSessionMenu(page: Page, workspace: Locator, capture: 
   await expect(items.first()).toHaveText('新建 SSH 连接');
   await expect(items.nth(1)).toContainText('开发服务器');
   await expect(items.nth(2)).toContainText('备份服务器');
+  const profile = page.getByRole('menuitem', { name: /开发服务器/ });
   await capture('session-menu');
+  await expectCenteredProfileIcons(profile);
   await items.first().click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.locator('.ssh-dialog-title')).toHaveText('新建 SSH 连接');
   await dialog.getByRole('button', { name: '取消', exact: true }).click();
   await trigger.click();
-  const profile = page.getByRole('menuitem', { name: /开发服务器/ });
   await profile.click();
   await expect(profile).toHaveAttribute('aria-expanded', 'true');
   const host = page.getByRole('menuitem', { name: new RegExp(computer) });

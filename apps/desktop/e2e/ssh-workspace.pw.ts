@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mockDiscoverySshStore } from '../../web/e2e/discovery-ssh-store';
-import { checkProfileActions, checkSessionMenu } from './ssh-workspace-actions';
+import { checkProfileActions, checkSessionMenu, expectCenteredProfileIcons } from './ssh-workspace-actions';
 
 async function expectMonitorBelowTerminal(workspace: Locator) {
   const [terminal, monitor, sidebar, region] = await Promise.all([
@@ -163,6 +163,10 @@ for (const mode of ['local', 'remote', 'web']) {
     expect(origin!.y).toBeGreaterThanOrEqual(title!.y + title!.height);
     expect(origin!.y + origin!.height).toBeLessThanOrEqual(bounds!.y + bounds!.height);
     await page.screenshot({ path: info.outputPath(mode + '-two-tabs-large.png'), animations: 'disabled' });
+    await workspace.getByRole('button', { name: '终端连接选项' }).click();
+    await capture('session-menu-large');
+    await expectCenteredProfileIcons(page.getByRole('menuitem', { name: /开发服务器/ }));
+    await page.keyboard.press('Escape');
     await workspace.locator('.sshw-switch').getByRole('button', { name: '已保存的连接' }).click();
     await row.press('Enter');
     await expect(picker.getByRole('menuitem', { name: /Laptop/ })).toBeInViewport();
