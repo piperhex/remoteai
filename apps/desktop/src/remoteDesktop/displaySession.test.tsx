@@ -52,8 +52,8 @@ const client: DesktopClient = { open: vi.fn(), signal: vi.fn(), settings: vi.fn(
 const createPeer = vi.fn();
 let root: Root;
 let session: ReturnType<typeof useDesktopSession>;
-function Harness({ active = true, connected = true }) {
-  session = useDesktopSession({ client, active, connected, createPeer }); return null;
+function Harness({ active = true, connected = true, background = false }) {
+  session = useDesktopSession({ client, active, connected, background, createPeer }); return null;
 }
 beforeEach(async () => {
   runtime.sessions.length = 0; runtime.multiDisplay = false; runtime.openFailure = '';
@@ -312,6 +312,42 @@ it('opens only visited displays, parks the previous one at 1 FPS and reuses it o
   expect(second.input).not.toHaveBeenCalled();
   await act(async () => root.render(<Harness active={false} />));
   expect(first.stop).toHaveBeenCalledOnce(); expect(second.stop).toHaveBeenCalledOnce();
+});
+
+it('parks every visited display when leaving during a switch and restores only the selected one', async () => {
+  await enableDisplaySessions();
+  const first = runtime.sessions[0];
+  let finish!: () => void;
+  first.settings.mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; }));
+  const chosen: DesktopSettings = { fps: 48, quality: 'clear', displayId: 'second' };
+  await act(async () => { void session.update(chosen); });
+  await act(async () => root.render(<Harness background />));
+  await act(async () => finish());
+  const second = runtime.sessions[1];
+  expect(first.settings).toHaveBeenLastCalledWith({ fps: 1, quality: 'auto', displayId: 'first' });
+  expect(second.settings).toHaveBeenLastCalledWith({ ...chosen, fps: 1 });
+  expect(session.settings).toEqual(chosen);
+
+  let resume!: () => void;
+  second.settings.mockImplementationOnce(() => new Promise<void>(resolve => { resume = resolve; }));
+  await act(async () => root.render(<Harness />));
+  await act(async () => root.render(<Harness background />));
+  await act(async () => root.render(<Harness />));
+  await act(async () => resume());
+  expect(second.settings).toHaveBeenLastCalledWith(chosen);
+  expect(first.settings).toHaveBeenCalledOnce();
+  expect(runtime.sessions).toHaveLength(2);
+  expect(first.stop).not.toHaveBeenCalled();
+  expect(second.stop).not.toHaveBeenCalled();
+});
+
+it('opens a reconnecting background session at 1 FPS and restores automatic FPS on return', async () => {
+  await act(async () => root.render(<Harness background />));
+  await act(async () => session.retry());
+  const reconnected = runtime.sessions[1];
+  expect(reconnected.start).toHaveBeenCalledWith({ fps: 1, quality: 'auto', displayId: 'first' });
+  await act(async () => root.render(<Harness />));
+  expect(reconnected.settings).toHaveBeenLastCalledWith({ fps: 'auto', quality: 'auto', displayId: 'first' });
 });
 
 it('ignores background media callbacks and closes backgrounds before enabling privacy', async () => {

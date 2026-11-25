@@ -1482,9 +1482,11 @@ export function DashboardApp() {
 
           {page === "totp" && <TotpPage accounts={manager.accounts} manager={totpManager} t={t} />}
           {page === "downloads" && <DownloadsPage auth={cloud.state} />}
-          {page === "remoteDesktop" && <Suspense fallback={null}>
-            <DesktopRemoteDesktopPage key={JSON.stringify(computers.identity)} computers={computers} />
-          </Suspense>}
+          <RetainedView active={page === "remoteDesktop"} key={JSON.stringify(computers.identity)}>
+            <Suspense fallback={null}>
+              <DesktopRemoteDesktopPage computers={computers} />
+            </Suspense>
+          </RetainedView>
           {page === "portMappings" && <PortMappingsPage key={JSON.stringify(computers.identity)} computers={computers} />}
           <RetainedView active={page === "ssh"} scope={JSON.stringify([computers.identity, computers.current?.deviceId])}>
             <Suspense fallback={null}>
