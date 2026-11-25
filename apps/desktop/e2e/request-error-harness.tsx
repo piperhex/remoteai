@@ -41,9 +41,8 @@ function Harness() {
     })), REFRESH_MS);
     return () => clearInterval(timer);
   }, []);
-  const resume = () => setValue((current) => reduceConversation(current, { method: "item/completed", params: {
-    turnId: "first", item: { id: "after", type: "agentMessage", phase: "commentary",
-      text: "连接已恢复，正在继续检查。" },
+  const resume = () => setValue((current) => reduceConversation(current, { method: "item/agentMessage/delta", params: {
+    turnId: "first", itemId: "before", delta: "连接已恢复，正在继续检查。",
   } }));
   const nextReply = () => setValue((current) => {
     const completed = reduceConversation(current, { method: "turn/completed", params: {

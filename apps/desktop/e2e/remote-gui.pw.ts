@@ -55,6 +55,42 @@ async function chooseHost(page: Page, name: string) {
   await expect(page.getByRole('menu', { name: '主机列表' })).toBeHidden();
 }
 
+test('remote PC clears the retry notice when the host resumes the same response', async ({ context, page }, info) => {
+  test.slow();
+  const host = await context.newPage();
+  await host.goto('/e2e/chat-harness.html?role=desktop&demo&device=computer-one&blocked=true'
+    + `&title=连接检查&socket=${encodeURIComponent(endpoint)}`);
+  await expect(host.locator('#status')).toHaveText('registered');
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto(`/e2e/remote-gui-harness.html?socket=${encodeURIComponent(endpoint)}`);
+  await chooseHost(page, 'Office PC');
+  const chat = page.locator('.gui-remote-workspace:visible');
+  await expect(chat.locator('.chat-connection-status')).toContainText('Relay', { timeout: 20_000 });
+  await chat.getByRole('button', { name: '连接检查', exact: true }).click();
+  await host.evaluate(async () => {
+    const { emitEvent } = window.chatTest;
+    const threadId = window.chatTest.demoState().threads[0].id;
+    await emitEvent({ method: 'turn/started', params: { threadId,
+      turn: { id: 'checking', status: 'inProgress', items: [
+        { id: 'partial', type: 'agentMessage', text: '正在检查连接。' },
+      ] } } });
+    await emitEvent({ method: 'error', params: { threadId, turnId: 'checking',
+      willRetry: true, error: { message: 'Upstream connection interrupted' } } });
+  });
+  const notice = chat.locator('.chat-turn-error');
+  await expect(notice).toContainText('Codex 正在重试');
+  await page.screenshot({ path: info.outputPath('pc-remote-retrying.png') });
+  await notice.getByRole('button', { name: '查看报错详情' }).click();
+  await host.evaluate(() => window.chatTest.emitEvent({ method: 'item/agentMessage/delta', params: {
+    threadId: window.chatTest.demoState().threads[0].id, turnId: 'checking', itemId: 'partial',
+    delta: '连接已恢复，正在继续检查。',
+  } }));
+  await expect(chat.getByText('正在检查连接。连接已恢复，正在继续检查。', { exact: true })).toBeVisible();
+  await expect(notice).toHaveCount(0);
+  await expect(page.getByText('报错详情', { exact: true })).toHaveCount(0);
+  await page.screenshot({ path: info.outputPath('pc-remote-resumed.png') });
+});
+
 for (const width of [1280, 800]) {
   test(`remote desktop prompts to choose a GUI account with cached models at ${width}px`,
     async ({ context, page }, info) => {

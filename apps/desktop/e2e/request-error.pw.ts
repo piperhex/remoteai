@@ -29,8 +29,7 @@ for (const width of [390, 1280]) {
     await page.getByRole("button", { name: "恢复连接" }).click();
     await expect(notice).toHaveCount(0);
     await expect(first).not.toContainText("现已恢复");
-    const after = first.locator('[data-message-id="after"]');
-    await expect(after).toBeVisible();
+    await expect(before).toContainText("连接已恢复，正在继续检查。");
     await page.screenshot({ path: info.outputPath('desktop-local-resumed.png'), animations: 'disabled' });
     await page.getByRole("button", { name: "继续对话" }).click();
     await expect(notice).toHaveCount(0);
@@ -52,7 +51,7 @@ for (const width of [390, 1280]) {
     await page.getByRole("button", { name: "恢复连接" }).dispatchEvent('click');
     await expect(notice).toHaveCount(0);
     await expect(page.getByText('报错详情', { exact: true })).toHaveCount(0);
-    await expect(page.getByText('连接已恢复，正在继续检查。', { exact: true })).toBeVisible();
+    await expect(page.locator('[data-message-id="before"]')).toContainText('连接已恢复，正在继续检查。');
     await page.screenshot({ path: info.outputPath('desktop-remote-resumed.png'), animations: 'disabled' });
     await page.getByRole("button", { name: "继续对话" }).click();
     await expect(page.getByText('连接检查完成。', { exact: true })).toBeVisible();
