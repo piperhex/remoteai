@@ -337,6 +337,16 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
         GuiRequest::Read { window, .. } => window.clone(),
         _ => None,
     };
+    let paged_turn_reviews = matches!(
+        &request,
+        GuiRequest::Read {
+            paged_turn_reviews: true,
+            ..
+        } | GuiRequest::Resume {
+            paged_turn_reviews: true,
+            ..
+        }
+    );
     if let Some(window) = &history_window {
         window.validate()?;
     }
@@ -414,7 +424,12 @@ async fn execute_request(state: &GuiState, request: GuiRequest) -> Result<GuiRes
             }
         }
         if !summary_only && matches!(method, "thread/read" | "thread/resume") {
-            if turn_review::restore_page(&client.home, &mut data["thread"]).is_err() {
+            let restore = if paged_turn_reviews {
+                turn_review::restore_page
+            } else {
+                turn_review::restore
+            };
+            if restore(&client.home, &mut data["thread"]).is_err() {
                 if let Some(turns) = data["thread"]["turns"].as_array_mut() {
                     for turn in turns {
                         turn["reviewIncomplete"] = serde_json::json!(true);

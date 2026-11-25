@@ -71,7 +71,7 @@ export const TurnMessage = memo(function TurnMessage({ turn, running, active, fo
     <GeneratedImages items={visibleItems} />
     <TurnPlan turn={turn} />
     {!running && !showChanges && (review.deferred || review.result === 'empty' || turn.reviewIncomplete)
-      && <TurnReviewNotice review={review} />}
+      && <TurnReviewNotice review={review} localFiles />}
     {showChanges && <TurnDiff files={files} title={turn.diff ? uiText("client.chat.changesThisTurn") : uiText("client.chat.fileChanges")}
       threadId={canUndoChanges ? threadId : undefined} turnId={turn.id} review={review}
       disabled={running || turn.status === "inProgress" || Boolean(editDisabled)} />}

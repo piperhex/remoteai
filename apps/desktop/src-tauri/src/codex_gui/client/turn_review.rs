@@ -124,13 +124,19 @@ impl Client {
         .await;
         if let Ok(Ok(saved)) = stored {
             if let Some(saved) = saved {
-                for field in ["diff", "reviewCwd", "reviewIncomplete"] {
+                for field in ["reviewCwd", "reviewIncomplete"] {
                     event.params["turn"][field] = saved[field].clone();
                 }
                 if saved["reviewDeferred"].is_string() {
-                    event.params["turn"]["reviewDeferred"] = saved["reviewDeferred"].clone();
+                    // Legacy viewers merge the original completion with the last live diff.
+                    // Paged viewers use the persisted result even when they missed earlier edits.
+                    event.params["turn"]["savedReviewResult"] = saved["reviewDeferred"].clone();
                     event.params["turn"]["reviewHasEdits"] = saved["reviewHasEdits"].clone();
-                    event.params["turn"]["reviewEdits"] = json!([]);
+                    if saved["reviewDeferred"] == "empty" {
+                        event.params["turn"]["diff"] = json!("");
+                    }
+                } else {
+                    event.params["turn"]["diff"] = saved["diff"].clone();
                 }
             }
             if incomplete {

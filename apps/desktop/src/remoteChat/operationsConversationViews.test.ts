@@ -6,6 +6,7 @@ import { guiApi } from '../../../../shared/conversation/api';
 import { summarizeTools } from '../../../../shared/conversation/toolDetails';
 import { viewedThreadIds } from '../../../../shared/conversation/viewedThreads';
 import { applyHistoryDelta } from '../../../../shared/remote-chat/historySync';
+import { pagedReviewEvent } from '../../../../shared/conversation/savedReview';
 import type { PagedHistoryDelta } from '../../../../shared/remote-chat/historyPage';
 import type { GuiEvent, Item, Thread } from '../../../../shared/conversation/types';
 
@@ -34,6 +35,20 @@ function fixture() {
     id: `view:${++sequence}`, method: 'request', body }, 'relay', session, 'shared-account');
   return { host, request };
 }
+
+it('preserves inline review data for legacy clients and pages reviews for capable viewers', async () => {
+  const { request } = fixture();
+  for (const [session, options] of [['desktop', { pagedTurnReviews: true }], ['phone', {}]] as const) {
+    await request(session, { operation: 'syncHistory', threadId: 'chat', ...options });
+    expect(guiApi.request).toHaveBeenLastCalledWith(expect.objectContaining({
+      operation: 'read', pagedTurnReviews: session === 'desktop',
+    }));
+  }
+  const event: GuiEvent = { method: 'turn/completed', params: { threadId: 'chat',
+    turn: { id: 'turn', status: 'completed', items: [], diff: '+line', savedReviewResult: 'net' } } };
+  expect(pagedReviewEvent(event).params.turn).toMatchObject({ reviewDeferred: 'net', diff: undefined });
+  expect(event.params.turn?.diff).toBe('+line');
+});
 
 it.each(['pc', 'web', 'mobile-web'])('delivers the running summary to %s before completion without details', async session => {
   const { host, request } = fixture();

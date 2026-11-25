@@ -1,5 +1,4 @@
-//! Keep large immutable review bodies on the execution host. History carries their result,
-//! and a viewer can page through the saved files without consulting the current workspace.
+//! A paged viewer gets the same saved review for any edit size, independent of the current workspace.
 use super::super::{
     error::{GuiError, Result},
     protocol::GuiResponse,
@@ -9,8 +8,8 @@ use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-const INLINE_BYTES: usize = 128 * 1024;
-const BODY_BYTES: usize = 128 * 1024;
+// One transport page; reading continues until the complete saved file has been delivered.
+const BODY_PAGE_BYTES: usize = 128 * 1024;
 const PAGE: usize = 100;
 
 #[derive(Debug, Deserialize)]
@@ -39,13 +38,10 @@ fn edits(turn: &Value) -> impl Iterator<Item = (&Value, &Value)> {
         })
 }
 
-pub(super) fn project(turn: &mut Value) {
+pub(super) fn project(turn: &mut Value, thread: &str) {
     let diff = turn["diff"].as_str();
-    let size = edits(turn)
-        .map(|(_, edit)| edit["diff"].as_str().map_or(0, str::len))
-        .sum::<usize>();
     if turn["status"] == "inProgress"
-        || size.saturating_add(diff.map_or(0, str::len)) <= INLINE_BYTES
+        || (diff.is_none_or(|text| text.trim().is_empty()) && edits(turn).next().is_none())
     {
         return;
     }
@@ -66,26 +62,28 @@ pub(super) fn project(turn: &mut Value) {
     turn["reviewDeferred"] = json!(result);
     turn["diff"] = Value::Null;
     turn["reviewEdits"] = json!([]);
+    let turn_id = turn["id"].clone();
     for item in turn
         .get_mut("items")
         .and_then(Value::as_array_mut)
         .into_iter()
         .flatten()
     {
-        omit_edit_body(item, &recorded);
+        omit_edit_body(item, &recorded, thread, &turn_id);
         for output in item
             .get_mut("processOutputs")
             .and_then(Value::as_array_mut)
             .into_iter()
             .flatten()
         {
-            omit_edit_body(output, &recorded);
+            omit_edit_body(output, &recorded, thread, &turn_id);
         }
     }
 }
 
-fn omit_edit_body(item: &mut Value, recorded: &HashSet<String>) {
+fn omit_edit_body(item: &mut Value, recorded: &HashSet<String>, thread: &str, turn_id: &Value) {
     if item["type"] == "fileChange" && item["id"].as_str().is_some_and(|id| recorded.contains(id)) {
+        item["detailsRef"] = json!({"threadId":thread,"turnId":turn_id,"itemId":item["id"]});
         for change in item["changes"].as_array_mut().into_iter().flatten() {
             change["diff"] = json!("");
         }
@@ -95,6 +93,30 @@ fn omit_edit_body(item: &mut Value, recorded: &HashSet<String>) {
 struct File<'a> {
     meta: Value,
     text: &'a str,
+}
+
+impl File<'_> {
+    fn summary(mut self) -> Value {
+        let (added, removed) = match self.meta["kind"]["type"].as_str() {
+            Some("add") => (self.text.lines().count(), 0),
+            Some("delete") => (0, self.text.lines().count()),
+            _ => {
+                // Only hunk content contributes lines. File headers and binary patches do not.
+                self.text
+                    .lines()
+                    .skip_while(|line| !line.starts_with("@@ "))
+                    .fold((0, 0), |(added, removed), line| {
+                        (
+                            added + usize::from(line.starts_with('+')),
+                            removed + usize::from(line.starts_with('-')),
+                        )
+                    })
+            }
+        };
+        self.meta["added"] = json!(added);
+        self.meta["removed"] = json!(removed);
+        self.meta
+    }
 }
 
 fn patch_files(diff: &str) -> impl Iterator<Item = File<'_>> {
@@ -132,7 +154,7 @@ fn body(text: &str, offset: usize) -> Result<Value> {
     if !text.is_char_boundary(offset) {
         return Err(GuiError::InvalidRequest);
     }
-    let mut end = offset.saturating_add(BODY_BYTES).min(text.len());
+    let mut end = offset.saturating_add(BODY_PAGE_BYTES).min(text.len());
     while !text.is_char_boundary(end) {
         end -= 1;
     }
@@ -147,7 +169,7 @@ fn page<'a>(mut files: impl Iterator<Item = File<'a>>, target: &Target) -> Resul
         );
     }
     let mut files = files.skip(target.offset).peekable();
-    let rows: Vec<_> = files.by_ref().take(PAGE).map(|file| file.meta).collect();
+    let rows: Vec<_> = files.by_ref().take(PAGE).map(File::summary).collect();
     let next = files.peek().map(|_| target.offset + rows.len());
     Ok(json!({"files": rows, "next": next}))
 }
@@ -192,12 +214,35 @@ mod tests {
     use super::*;
 
     #[test]
+    fn paged_reviews_do_not_depend_on_patch_size() {
+        for size in [
+            1,
+            BODY_PAGE_BYTES - 1,
+            BODY_PAGE_BYTES,
+            BODY_PAGE_BYTES + 1,
+            2 * BODY_PAGE_BYTES,
+        ] {
+            let mut turn = json!({"status":"completed","diff":"x".repeat(size),"reviewEdits":[]});
+            project(&mut turn, "thread");
+            assert_eq!(turn["reviewDeferred"], "net");
+            assert!(turn["diff"].is_null());
+        }
+        for mut turn in [
+            json!({"status":"inProgress","diff":"live"}),
+            json!({"status":"completed","diff":null,"reviewEdits":[]}),
+        ] {
+            project(&mut turn, "thread");
+            assert!(turn.get("reviewDeferred").is_none());
+        }
+    }
+
+    #[test]
     fn large_review_reopens_exact_saved_files_and_tool_activity_in_pages() {
         let dir = tempfile::tempdir().unwrap();
         let patch = |path: &str, text: &str| {
             format!("diff --git a/{path} b/{path}\n--- a/{path}\n+++ b/{path}\n@@ -0,0 +1 @@\n+{text}\n")
         };
-        let first = patch("大 文件", &"数".repeat(BODY_BYTES));
+        let first = patch("大 文件", &"数".repeat(BODY_PAGE_BYTES));
         let second = patch("B", "second");
         let db = super::super::open(dir.path()).unwrap();
         db.execute(
@@ -224,6 +269,8 @@ mod tests {
             serde_json::from_value(json!({"threadId":"thread","turnId":"one"})).unwrap();
         let list = saved(dir.path(), &target).unwrap();
         assert_eq!(list["files"].as_array().unwrap().len(), 2);
+        assert_eq!(list["files"][0]["added"], 1);
+        assert_eq!(list["files"][0]["removed"], 0);
         assert!(list.to_string().len() < 512);
         target.file = Some(0);
         let mut text = String::new();
@@ -242,6 +289,8 @@ mod tests {
         target.file = Some(0);
         target.activity = true;
         assert_eq!(saved(dir.path(), &target).unwrap()["text"], "second");
+        target.file = None;
+        assert_eq!(saved(dir.path(), &target).unwrap()["files"][0]["added"], 1);
         target.thread_id = "other".into();
         assert!(saved(dir.path(), &target).is_err());
     }

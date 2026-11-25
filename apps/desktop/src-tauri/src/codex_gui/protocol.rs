@@ -94,6 +94,8 @@ pub(crate) enum GuiRequest {
         window: Option<super::history_page::HistoryWindow>,
         #[serde(default)]
         include_tool_details: bool,
+        #[serde(default)]
+        paged_turn_reviews: bool,
     },
     Compact {
         thread_id: String,
@@ -109,6 +111,8 @@ pub(crate) enum GuiRequest {
         cwd: Option<String>,
         #[serde(default)]
         summary_only: bool,
+        #[serde(default)]
+        paged_turn_reviews: bool,
     },
     Fork {
         thread_id: String,

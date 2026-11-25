@@ -149,8 +149,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
     } }}><DiffTextContext.Provider value={diffText}><WorkspaceOperationContext.Provider value={{ busy: Boolean(state.workspaceBusy),
     setBusy: controller.setWorkspaceBusy }}>
     <TerminalWorkspaceProvider panel={isDesktopApp ? terminal : undefined}>
-    <DetailsWorkspace selected={external ? `cli:${cli?.state.engine}:${cli?.state.selected?.id ?? 'draft'}`
-      : state.selected} active={workspaceActive}>
+    <DetailsWorkspace readSavedReview={localGitClient.savedReview} active={workspaceActive}
+      selected={external ? `cli:${cli?.state.engine}:${cli?.state.selected?.id ?? 'draft'}` : state.selected}>
     <ChatFileReferencesProvider><ImageAnnotationsProvider>
     <div className={`${styles.page} ${collapsed ? styles.collapsed : ""}`}
       data-dream-skin={skinStyle ? "true" : undefined} style={skinStyle}>

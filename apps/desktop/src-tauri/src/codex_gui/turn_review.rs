@@ -186,9 +186,12 @@ pub(super) fn restore(home: &Path, thread: &mut Value) -> Result<()> {
 
 pub(super) fn restore_page(home: &Path, thread: &mut Value) -> Result<()> {
     restore(home, thread)?;
+    let Some(thread_id) = thread["id"].as_str().map(str::to_owned) else {
+        return Ok(());
+    };
     for turn in thread["turns"].as_array_mut().into_iter().flatten() {
         if turn["reviewEdits"].is_array() {
-            archive::project(turn);
+            archive::project(turn, &thread_id);
         }
     }
     Ok(())

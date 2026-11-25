@@ -289,6 +289,7 @@ export class ChatOperations {
       return result;
     }
     const body = { ...object(request.body) };
+    if (body.operation === 'read' || body.operation === 'resume') body.pagedTurnReviews = body.pagedTurnReviews === true;
     if (request.method === 'request' && body.operation === DIRECTORY_OPERATION) {
       if (!this.directorySessions.has(owner)) throw new Error('Invalid request');
       const result = await chatDirectory.request(body);
@@ -351,6 +352,7 @@ export class ChatOperations {
       const thread = await this.liveHistory.read(threadId, async () => {
         const result = await guiApi.request<{ thread: Thread; page?: HistoryPage }>({ operation: 'read', threadId,
           includeToolDetails: !this.views.deferred(owner),
+          pagedTurnReviews: body.pagedTurnReviews === true,
           window: { ...window, pageSize: getChatPolicy().historyPageSize } });
         page = result.page;
         return result;
@@ -373,7 +375,7 @@ export class ChatOperations {
       if (typeof threadId !== 'string') throw new Error('client.cliGui.historyFailed');
       const window = parseHistoryWindow({ start: { turnId, itemId } });
       const thread = await this.liveHistory.read(threadId, () => guiApi.request({ operation: 'read', threadId,
-        includeToolDetails: true, window }));
+        includeToolDetails: true, pagedTurnReviews: false, window }));
       const turn = thread.turns?.find(turn => turn.id === turnId);
       const item = thread.id === threadId && turn?.items.find(entry => entry.id === itemId);
       if (!item) throw new Error('client.cliGui.historyFailed');
