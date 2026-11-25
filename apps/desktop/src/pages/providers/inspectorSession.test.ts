@@ -92,7 +92,7 @@ it.each([
   { ...placement, dock: 'bottom' as const },
   { ...placement, dock: 'window' as const },
   { ...placement, visible: false },
-  { ...placement, viewport: { width: 393, height: 852, scale: 0.75 } },
+  { ...placement, viewport: { name: 'iPhone 16', width: 393, height: 852, scale: 0.75 } },
   ...(['x', 'y', 'width', 'height'] as const).map(key => ({ ...placement,
     bounds: { ...placement.bounds, [key]: placement.bounds[key] + 1 } })),
 ])('applies changed placement %j', async changed => {
@@ -110,7 +110,7 @@ it('updates emulated dimensions even when the displayed page bounds stay the sam
   invoke.mockReset().mockResolvedValue(opened);
   const session = inspectorSession(target, vi.fn());
   const place = (width: number, height: number, scale: number) =>
-    session.update({ ...placement, viewport: { width, height, scale } });
+    session.update({ ...placement, viewport: { name: 'responsive', width, height, scale } });
   place(393, 852, 1);
   await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
   place(786, 1704, 0.5);
@@ -119,6 +119,17 @@ it('updates emulated dimensions even when the displayed page bounds stay the sam
   await session.stop();
   expect(invoke).toHaveBeenCalledTimes(3);
   expect(invoke.mock.calls[2][1].request.command.visible).toBe(false);
+});
+
+it('applies device changes with identical viewport geometry', async () => {
+  invoke.mockReset().mockResolvedValue(opened);
+  const session = inspectorSession(target, vi.fn());
+  const viewport = { name: 'Pixel 9', width: 412, height: 924, scale: 0.5 };
+  session.update({ ...placement, viewport });
+  await vi.waitFor(() => expect(invoke).toHaveBeenCalledOnce());
+  session.update({ ...placement, viewport: { ...viewport, name: 'Pixel 10' } });
+  await vi.waitFor(() => expect(invoke.mock.lastCall?.[1].request.command.viewport.name).toBe('Pixel 10'));
+  await session.stop();
 });
 
 it('restores a previous position after a different in-flight placement completes', async () => {

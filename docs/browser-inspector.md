@@ -12,8 +12,11 @@ In Responsive mode, drag the right edge for width, the bottom edge for height, o
 corner for both. The size fields update while dragging. Focus a grip and use the arrow keys for
 one-pixel adjustments, or hold Shift for ten pixels.
 The preview scales to fit the available space while the page sees the selected viewport dimensions.
-The mouse provides touch input. Toggling device mode off or closing the inspector restores
-desktop input and sizing without reloading the page.
+New requests from the inspected tab use the selected device's User-Agent. Responsive mode uses
+a generic Android mobile identity. Rotation preserves the selected identity. To request the
+current document again with the new identity, reload it. The mouse provides touch input.
+Toggling device mode off or closing the inspector restores the tab's original User-Agent,
+input and sizing without reloading the page.
 
 This applies to normal browser tabs and conversation-owned native browser previews, including
 desktop local and remote workspaces. Switching placement preserves the page and inspector session.
@@ -45,6 +48,8 @@ A COM deferral lets the original callback return before the Windows menu enters 
   `resize`, `dedupe`, `tabs` and `close` actions. Choose the native Inspect menu item manually
   or through the desktop testing tools. For a repeatable device-mode check, add `--device-test`
   to `open` and run `device-cycle` to verify pointer input, page state and restoration on close.
+  From a freshly opened inspector, run `user-agents` to check each preset against HTTP request
+  headers, client hints and the inspected page's reported User-Agent.
   The `dedupe` action verifies that 60 unrelated DOM updates send no native placement requests.
 - For conversation-owned tabs, serve the harness on port 1552 and add `--managed` to `start` and
   `open local`. Both fixtures isolate the application identifier and use separate test-only debugging

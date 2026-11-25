@@ -3,6 +3,8 @@ use super::{Bounds, BrowserError, Result, TabKind};
 use serde::{Deserialize, Serialize};
 use tauri::Webview;
 
+mod preset;
+use preset::DevicePreset;
 #[cfg(test)]
 pub(super) mod tests;
 #[cfg(windows)]
@@ -19,6 +21,8 @@ pub(crate) enum Dock {
 #[derive(Clone, Copy, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct DeviceViewport {
+    #[serde(default)]
+    name: DevicePreset,
     width: u32,
     height: u32,
     scale: f64,
@@ -39,6 +43,9 @@ pub(crate) enum Action {
     Status,
     Close,
     SetMobile {
+        #[serde(default)]
+        #[cfg_attr(not(windows), allow(dead_code))]
+        name: DevicePreset,
         #[cfg_attr(not(windows), allow(dead_code))]
         enabled: bool,
     },
