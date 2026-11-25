@@ -88,6 +88,7 @@ async function mockCommands(page: Page, migrationError?: string, grouped = false
         : [thread]).filter(entry => !request.archived && entry.name.includes(request.search ?? '')), nextCursor: null };
       if (request.operation === "read") data = { thread };
       if (request.operation === "goals") data = { goals: [] };
+      if (request.operation === "recoveryList") data = { batchId: "", candidates: [] };
       if (request.operation === "plugins") data = { marketplaces: [], marketplaceLoadErrors: [] };
       result = { data };
     }

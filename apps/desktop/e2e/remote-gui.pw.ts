@@ -213,6 +213,11 @@ test('keeps remote search in its header dialog without filtering the sidebar', a
 test('remote chat sidebar resizes and restores its width after hiding and mobile layout',
   async ({ context, page }) => {
     test.setTimeout(90_000);
+    // The browser-hosted desktop fixture negotiates its P2P channel through Chromium.
+    await page.route('**/src/nativeRtc/connection.ts*', route => route.fulfill({
+      contentType: 'application/javascript',
+      body: 'export const createNativeRtcConnection = configuration => new RTCPeerConnection(configuration);',
+    }));
     const host = await context.newPage();
     await host.goto(`/e2e/chat-harness.html?role=desktop&demo&device=computer-one&blocked=false&title=Window%20layout`
       + `&socket=${encodeURIComponent(endpoint)}`);
