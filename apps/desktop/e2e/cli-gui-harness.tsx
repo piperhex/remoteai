@@ -10,6 +10,7 @@ import { saveGlobalFontSize } from '../../../shared/appearance/fontSize';
 import { setInterfaceLanguage } from '../../../shared/localization/interfaceLanguage';
 import { translate, type Translate } from '../src/i18n';
 import { createCliGuiFixture, sidebarCodexThread, cliGitStatus } from './cli-gui-fixture';
+import { demoTaskReview } from './demo-task-review';
 import { RemoteAccountPicker } from '../../../shared/conversation/remote/RemoteAccountPicker';
 import { saveProject } from '../../../shared/conversation/projectCatalog';
 import { applyThemeMode } from '../src/utils/themeMode';
@@ -52,6 +53,7 @@ const controller = new ChatController(events => ({ start() {
   request: async <T,>(method: string, value?: unknown): Promise<T> => {
     const body = value as { operation?: string; threadId?: string; known?: HistoryVersion; archived?: boolean } | undefined;
     if (method === 'connect') return [] as T;
+    if (params.has('changeReview') && body?.operation === 'guiTaskReview') return demoTaskReview(body) as T;
     if (params.has('changeReview') && (body?.operation?.startsWith('guiGit') ||
       ['list', 'read', 'resume', 'syncHistory', 'savedTurnReview'].includes(body?.operation ?? ''))) {
       const data = await fetch('/__review_fixture__', { method: 'POST', body: JSON.stringify(body) }).then(r => r.json());
@@ -72,6 +74,7 @@ const controller = new ChatController(events => ({ start() {
     return { data: [], nextCursor: null } as T;
   },
 }));
+controller.pagedTurnReviews = true;
 controller.cliGui.request = fixture.transport.request;
 controller.cliGui.subscribe = fixture.transport.subscribe;
 controller.cliGui.subscribeAccountChange = fixture.transport.subscribeAccountChange;

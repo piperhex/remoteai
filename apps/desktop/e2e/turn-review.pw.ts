@@ -10,6 +10,12 @@ const evidence = resolve('../../.codex-tmp/turn-review-evidence');
 const base = '说明.md';
 const added = '脚本结果.txt';
 const dirty = '个人笔记.txt';
+const archivePaths = ['历史说明.md', 'src/摘要.ts', 'src/审核.ts', 'src/文件.ts', 'src/消息.ts',
+  'tests/摘要.ts', 'tests/审核.ts', 'tests/文件.ts', 'tests/消息.ts', '变更记录.md'];
+const archiveFiles = archivePaths.map((path, index) => ({
+  header: `diff --git a/${path} b/${path}\n--- a/${path}\n+++ b/${path}`,
+  added: index === 0 ? 2 : 1, removed: index === 0 ? 0 : 1,
+}));
 let cwd: string;
 let thread: Thread;
 const git = (...args: string[]) => execFileSync('git', ['-c', 'core.quotePath=false', ...args],
@@ -42,15 +48,53 @@ test.beforeAll(() => {
 });
 test.afterAll(() => rmSync(cwd, { recursive: true, force: true }));
 
+test('remote reopens a saved turn from an older host and retries a failed file list', async ({ page }) => {
+  test.setTimeout(150_000);
+  await page.setViewportSize({ width: 1536, height: 960 });
+  await localBackend(page, true, { threads: [thread] });
+  let unavailable = true;
+  let legacy = true;
+  await page.route('**/__review_fixture__', route => {
+    const request = route.request().postDataJSON();
+    if (request.operation !== 'savedTurnReview') return route.fulfill({ json: reply(request.operation, request) });
+    expect(request.file).toBeUndefined();
+    if (unavailable) return route.abort();
+    const files = legacy ? archiveFiles.map(({ header }) => ({ header })) : archiveFiles;
+    return route.fulfill({ json: { files, next: null } });
+  });
+  await page.goto('/e2e/cli-gui-harness.html?mode=remote&native&hub&changeReview&skin', { waitUntil: 'domcontentloaded' });
+  const select = async () => {
+    await page.getByText('更新项目说明', { exact: true }).first().click();
+    await page.getByText('整理较长的项目说明', { exact: true }).first().scrollIntoViewIfNeeded();
+  };
+  await select();
+  const card = page.getByRole('region', { name: '本轮修改', exact: true });
+  const retry = card.getByRole('button', { name: /^重\s*试$/ });
+  await expect(retry).toBeVisible();
+  unavailable = false;
+  await retry.click();
+  const archive = card.filter({ hasText: '历史说明.md' });
+  await expect(archive).toContainText('已编辑 10 个文件');
+  await expect(archive.locator('li')).toHaveCount(3);
+  await expect(archive).not.toContainText('+0');
+  legacy = false;
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await select();
+  await expect(archive.getByRole('button', { name: /新增 11 行，删除 9 行/ })).toBeVisible();
+  await archive.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: join(evidence, 'remote-light-files.png') });
+});
+
 function reply(operation: string, input: { cwd?: string; path?: string; scope?: string;
   threadId?: string; turnId?: string; file?: number; offset?: number }) {
   if (operation === 'list') return { data: [{ ...thread, turns: undefined }], nextCursor: null };
   if (['read', 'resume', 'syncHistory'].includes(operation)) return { thread };
   if (operation === 'savedTurnReview') {
     expect([input.threadId, input.turnId]).toEqual([thread.id, 'large-03']);
-    const header = 'diff --git a/历史说明.md b/历史说明.md\n--- a/历史说明.md\n+++ b/历史说明.md';
-    if (input.file == null) return { files: [{ header }], next: null };
-    expect(input.file).toBe(0);
+    if (input.file == null) return input.offset
+      ? { files: archiveFiles.slice(input.offset), next: null } : { files: archiveFiles.slice(0, 4), next: 4 };
+    const { header } = archiveFiles[input.file];
+    if (input.file !== 0) return { text: header + '\n@@ -1 +1 @@\n-旧内容\n+新内容\n', next: null };
     return input.offset ? { text: '+已保存的末行\n', next: null }
       : { text: header + '\n@@ -0,0 +1,2 @@\n+已保存的首行\n', next: 150 };
   }
@@ -68,14 +112,19 @@ for (const mode of ['local', 'remote', 'web']) {
     await page.setViewportSize({ width: mode === 'remote' ? 1140 : 1440, height: 900 });
     if (mode === 'local') await nativeShell(page);
     await localBackend(page, true, { threads: [thread] });
+    const bodyReads: number[] = [];
+    function read(operation: string, input: Parameters<typeof reply>[1]) {
+      if (operation === 'savedTurnReview' && input.file !== undefined) bodyReads.push(input.file);
+      return reply(operation, input);
+    }
     await page.route('**/__review_fixture__', route => {
       const body = JSON.parse(route.request().postData()!);
-      return route.fulfill({ json: reply(body.operation, body) });
+      return route.fulfill({ json: read(body.operation, body) });
     });
     await page.route('**/__codex_switch__/api/invoke', route => {
       const { command, args } = route.request().postDataJSON();
       if (command === 'codex_gui_request' && args.request.operation === 'savedTurnReview') {
-        return route.fulfill({ json: { ok: true, result: { data: reply('savedTurnReview', args.request) } } });
+        return route.fulfill({ json: { ok: true, result: { data: read('savedTurnReview', args.request) } } });
       }
       if (command === 'codex_gui_undo') return route.fulfill({ json: { ok: true, result: {
         undone: false, preview: args.request.preview ? { files: [base], conflict: false, version: 'fixture' } : undefined,
@@ -86,8 +135,38 @@ for (const mode of ['local', 'remote', 'web']) {
     await page.goto(`/e2e/cli-gui-harness.html?mode=${mode}&native&hub&changeReview${mode === 'remote' ? '&dark&large' : ''}`,
       { waitUntil: 'domcontentloaded' });
     await page.getByText('更新项目说明', { exact: true }).first().click();
-    await page.getByRole('button', { name: '查看文件更改', exact: true }).click();
+    const card = page.getByRole('region', { name: '本轮修改', exact: true }).filter({ hasText: '历史说明.md' });
+    const archivedPrompt = page.getByText('整理较长的项目说明', { exact: true }).first();
+    await archivedPrompt.scrollIntoViewIfNeeded();
+    await expect(card).toContainText('已编辑 10 个文件');
+    await expect(card.getByRole('button', { name: /新增 11 行，删除 9 行/ })).toBeVisible();
+    await expect(card.locator('li')).toHaveCount(3);
+    await expect(card.locator('li').first()).toContainText('+2−0');
+    if (mode !== 'local') await expect(card.getByRole('button', { name: '验收结果' })).toBeVisible();
+    await card.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: join(evidence, mode + '-files-collapsed.png') });
+    await card.getByRole('button', { name: '再显示 7 个文件' }).click();
+    await expect(card.locator('li')).toHaveCount(10);
+    expect(bodyReads).toEqual([]);
+    await page.screenshot({ path: join(evidence, mode + '-files-expanded.png') });
+    await card.locator('li').last().getByRole('button').click();
     const panel = page.locator('aside[data-details-panel]:visible');
+    await expect(panel.getByRole('button', { name: '变更记录.md' })).toHaveAttribute('aria-expanded', 'true');
+    await expect(panel.getByText('新内容', { exact: true })).toBeVisible();
+    expect(bodyReads).toEqual([9]);
+    await panel.getByRole('button', { name: '并排', exact: true }).click();
+    await expect(panel.getByText('修改前', { exact: true })).toBeVisible();
+    await page.screenshot({ path: join(evidence, mode + '-file-selected.png') });
+    await page.getByRole('button', { name: '收起文件更改', exact: true }).click();
+    if (mode !== 'local') {
+      await card.getByRole('button', { name: '验收结果' }).click();
+      const review = page.locator('.chat-review-panel:visible');
+      await review.getByRole('button', { name: '历史说明.md', exact: true }).click();
+      await expect(review.getByRole('button', { name: /第 1 行/ })).toBeVisible();
+      await page.screenshot({ path: join(evidence, mode + '-saved-result.png') });
+      await page.getByRole('button', { name: '关闭详情抽屉' }).click();
+    }
+    await page.getByRole('button', { name: '查看文件更改', exact: true }).click();
     await expect(panel.getByText(added, { exact: true })).toBeVisible();
     await expect(panel.getByText(dirty, { exact: true })).toBeVisible();
     await panel.getByRole('button', { name: new RegExp(base) }).click();
@@ -109,10 +188,10 @@ for (const mode of ['local', 'remote', 'web']) {
     await panel.getByRole('combobox').selectOption('large-03');
     const archive = panel.getByRole('button', { name: '历史说明.md' });
     await expect(archive).toBeVisible();
-    await expect(panel.getByText('已保存的首行')).toHaveCount(0);
+    await expect(archive).toHaveAttribute('aria-expanded', 'false');
     await archive.click();
-    await expect(panel.getByText('已保存的首行')).toBeVisible();
-    await panel.getByRole('button', { name: '加载更多' }).click();
+    await expect(archive.locator('..').getByText('已保存的首行')).toBeVisible();
+    await archive.locator('..').getByRole('button', { name: '加载更多' }).click();
     await expect(panel.getByText('已保存的末行')).toBeVisible();
     await page.screenshot({ path: join(evidence, mode + '-archive.png') });
     await page.getByRole('button', { name: '收起文件更改', exact: true }).click();

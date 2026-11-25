@@ -16,7 +16,8 @@ export const DiffView = memo(function DiffView({ files, title = uiText("client.s
   const entry = useMemo(() => ({ id: review ? JSON.stringify([id, review.threadId, review.turnId, review.cwd]) : id,
     files, title, status, turnReview: review }), [id, files, title, status, review]);
   const panel = useDetailsEntry(entry);
-  if (!files.length) return review?.deferred ? <><TurnReviewNotice review={review} />{undo}</> : null;
+  if (!files.length) return review?.deferred
+    ? <TurnReviewNotice review={review} actions={undo} localFiles status={status} /> : null;
   if (!panel) return <>{undo}<DiffDocument files={files} title={title} status={status} /></>;
   return <EditedFilesSummary files={files} title={title} status={status} undo={undo}
     renderFile={props => <FileMenu {...props}>{props.path}</FileMenu>}

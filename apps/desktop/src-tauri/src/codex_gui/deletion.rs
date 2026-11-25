@@ -40,6 +40,7 @@ async fn delete_thread(
 ) -> Result<DeletionReport> {
     GuiRequest::Read {
         include_tool_details: false,
+        paged_turn_reviews: false,
         window: None,
         thread_id: thread_id.clone(),
     }

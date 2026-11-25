@@ -136,7 +136,7 @@ pub(super) async fn read(client: Connection, target: Target) -> Result<GuiRespon
     })
     .await
     .map_err(|_| GuiError::InvalidRequest)??;
-    if let Some(item) = live.filter(deferred) {
+    if let Some(item) = live.filter(readable) {
         return Ok(GuiResponse {
             data: json!({"item": item}),
         });
@@ -159,6 +159,10 @@ pub(super) async fn read(client: Connection, target: Target) -> Result<GuiRespon
     .map_err(|_| GuiError::InvalidRequest)?
 }
 
+fn readable(item: &Value) -> bool {
+    deferred(item) || item["type"] == "fileChange"
+}
+
 fn take_item(data: &mut Value, target: &Target) -> Option<Value> {
     if data["thread"]["id"] != target.thread_id {
         return None;
@@ -170,6 +174,6 @@ fn take_item(data: &mut Value, target: &Target) -> Option<Value> {
     let item = turn["items"]
         .as_array_mut()?
         .iter_mut()
-        .find(|item| item["id"] == target.item_id && deferred(item))?;
+        .find(|item| item["id"] == target.item_id && readable(item))?;
     Some(item.take())
 }

@@ -17,6 +17,7 @@ export function useRemoteGui(identity: GuiCloudIdentity, deviceId: string, activ
     return value;
   }, [identity.baseUrl, identity.userId, deviceId]);
   controller.deferToolDetails = true;
+  controller.pagedTurnReviews = true;
   controller.deferProcessDetails = true;
   const state = useSyncExternalStore(controller.subscribe, controller.snapshot);
   useActiveChatPolicy(active, state.mode);

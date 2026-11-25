@@ -175,6 +175,7 @@ async fn refresh_run(app: AppHandle, task: &ScheduledTask) -> Result<()> {
         &app,
         GuiRequest::Read {
             include_tool_details: false,
+            paged_turn_reviews: false,
             thread_id,
             window: None,
         },
