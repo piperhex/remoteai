@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium, expect as playwrightExpect } from '@playwright/test';
 import { testBrowserArguments } from '../../../scripts/test-browser.mjs';
 import { userAgentFixture, verifyUserAgents } from './verify-inspector-user-agents.mjs';
+import { verifyInspectorFullscreen } from './verify-inspector-fullscreen.mjs';
 
 const expect = playwrightExpect.configure({ timeout: 15_000 });
 
@@ -260,6 +261,8 @@ if (action === 'start') {
       await expect(child.getByRole('textbox', { name: 'draft' })).toHaveValue('retained');
       console.log(await child.evaluate(() => ({ width: innerWidth, height: innerHeight,
         touchPoints: navigator.maxTouchPoints, coarse: matchMedia('(pointer: coarse)').matches })));
+    } else if (action === 'fullscreen') {
+      await verifyInspectorFullscreen(page, context.pages().find(page => page.url().includes(':18316/')));
     } else if (action === 'user-agents') {
       await verifyUserAgents(page, context.pages().find(page => page.url().includes(':18316/')));
     } else if (action === 'device-cycle') {
