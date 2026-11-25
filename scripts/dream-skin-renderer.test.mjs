@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { after, before, test } from "node:test";
 import { chromium } from "@playwright/test";
+import { testBrowserLaunchOptions } from "./test-browser.mjs";
 
 const assetsRoot = new URL("../apps/desktop/src-tauri/resources/dream-skin/assets/", import.meta.url);
 const nativeStyles = `
@@ -23,7 +24,7 @@ const nativeStyles = `
   }
 `;
 let browser;
-before(async () => { browser = await chromium.launch({ headless: true }); });
+before(async () => { browser = await chromium.launch(testBrowserLaunchOptions({ headless: true })); });
 after(async () => { await browser?.close(); });
 
 function shellMarkup({ placement = "home", legacy = false, hashedBody = false } = {}) {
@@ -139,6 +140,39 @@ async function inspectFooter(page) {
 }
 
 for (const platform of ["windows", "macos"]) {
+  test(`${platform}: 26.1120 wallpaper shows through the workspace with the sidebar closed`, async () => {
+    const page = await browser.newPage();
+    try {
+      await page.setContent(`<div data-app-shell-frame style="background-image:linear-gradient(white,white)">
+        <header data-app-shell-titlebar style="background:white">ChatGPT</header>
+        <div data-app-shell-workspace>
+          <div aria-hidden="true" class="pointer-events-none" data-app-shell-surface-backing
+            style="background:white"></div>
+          ${shellMarkup()}
+        </div></div>`);
+      await page.locator("aside.app-shell-left-panel").evaluate((sidebar) => sidebar.remove());
+      const paints = () => page.evaluate(() => [
+        getComputedStyle(document.querySelector("[data-app-shell-frame]")).backgroundImage,
+        getComputedStyle(document.querySelector("[data-app-shell-surface-backing]")).backgroundColor,
+        getComputedStyle(document.querySelector("header")).backgroundColor,
+        getComputedStyle(document.body).backgroundImage,
+      ]);
+      const original = await paints();
+      for (const appearance of ["light", "dark"]) {
+        await page.evaluate(await rendererPayload(page, { platform, appearance }));
+        const [frame, backing, titlebar, wallpaper] = await paints();
+        assert.equal(frame, "none");
+        assert.equal(backing, "rgba(0, 0, 0, 0)");
+        assert.notEqual(titlebar, original[2]);
+        assert.match(wallpaper, /url\(/);
+      }
+      await page.evaluate(() => window.__CODEX_DREAM_SKIN_STATE__.cleanup());
+      assert.deepEqual(await paints(), original);
+    } finally {
+      await page.close();
+    }
+  });
+
   for (const version of ["legacy", "26.928", "26.1021"]) {
     test(`${platform}: ${version} thread footer stays clear when switching skins`, async () => {
       const page = await browser.newPage();

@@ -9,7 +9,7 @@ fn start_managed_runtime(
     state.begin_launch(&install.executable, reason);
     write_session(&state)?;
     let result = launch_runtime_renderer(paths, install, &mut state)
-        .and_then(|()| verify_runtime_skin(verification_mode, state.port));
+        .and_then(|()| verify_runtime_skin(paths, verification_mode, state.port));
     if result.is_err() {
         state.fail_launch();
         write_session(&state)?;
@@ -39,7 +39,13 @@ fn launch_runtime_renderer(
     launch_codex(install, &arguments)?;
     ensure_monitor(paths.clone());
     wake_monitor();
-    wait_for_targets(port, CODEX_RENDERER_START_TIMEOUT)?;
+    wait_for_startup_window(port, CODEX_RENDERER_START_TIMEOUT, || {
+        #[cfg(target_os = "windows")]
+        if install.app_user_model_id.is_some() {
+            launch_codex(install, &arguments)?;
+        }
+        Ok(())
+    })?;
     state.session = NativeRuntimeStatus::Active;
     write_session(state)?;
     refresh_after_launch();

@@ -11,10 +11,16 @@
   // The modern home layout owns its own spacing; legacy hero sizing would
   // expand its empty announcement slot and push the composer off screen.
   const LEGACY_HOME_START = '.dream-home > div:first-child:not([class~="group/home-composer-layout"])';
+  const HEADER_SELECTOR = 'header:is(.app-header-tint, [data-app-shell-header-edge-scroll], ' +
+    '[data-app-shell-titlebar], [class*="_Header_"])';
+  // The workspace title bar can sit outside main when the sidebar is collapsed.
+  const WORKSPACE_HEADER = `:is(${SHELL_MAIN_SELECTOR} > ${HEADER_SELECTOR}, ` +
+    '[data-app-shell-frame] header[data-app-shell-titlebar])';
   const compatibleCssText = cssText
     .replaceAll(".dream-home > div:first-child", LEGACY_HOME_START)
+    .replace(/main\.main-surface\s*>\s*header\.app-header-tint/g, WORKSPACE_HEADER)
     .replaceAll("main.main-surface", SHELL_MAIN_SELECTOR)
-    .replaceAll("header.app-header-tint", 'header:is(.app-header-tint, [data-app-shell-header-edge-scroll], [class*="_Header_"])')
+    .replaceAll("header.app-header-tint", HEADER_SELECTOR)
     .replaceAll(".app-shell-main-content-top-fade", TOP_FADE_SELECTOR)
     .replaceAll("[data-message-author-role]", ':is([data-message-author-role], [data-local-conversation-user-anchor], [data-local-conversation-final-assistant])')
     .replaceAll(".composer-surface-chrome", COMPOSER_SURFACE_SELECTOR);
@@ -355,9 +361,10 @@
     if (!root || !document.body) return;
 
     const shellMain = document.querySelector(SHELL_MAIN_SELECTOR);
-    const shellSidebar = document.querySelector("aside.app-shell-left-panel");
+    const shellChrome = document.querySelector("aside.app-shell-left-panel") ||
+      shellMain?.closest("[data-app-shell-frame]")?.querySelector("header[data-app-shell-titlebar]");
     const settingsSurface = document.querySelector(SETTINGS_SURFACE_SELECTOR);
-    if ((!shellMain || !shellSidebar) && !settingsSurface) {
+    if ((!shellMain || !shellChrome) && !settingsSurface) {
       clearSkinDom();
       return;
     }
@@ -378,7 +385,7 @@
 
     // Codex 26.727 renders Settings in its own surface without the primary
     // shell/sidebar pair. The root theme and stylesheet are still valid there.
-    if (!shellMain || !shellSidebar) return;
+    if (!shellMain || !shellChrome) return;
 
     const home = document.querySelector('[role="main"]:has([data-testid="home-icon"])') ||
       document.querySelector('[data-codex-composer-root][data-composer-placement="home"]')

@@ -2,9 +2,8 @@ pub(crate) fn set_appearance(app: &AppHandle, appearance: &str) -> Result<(), St
     if !matches!(appearance, "auto" | "light" | "dark") {
         return Err("Theme appearance is invalid.".to_string());
     }
-    let _operation = OPERATION_LOCK
-        .lock()
-        .map_err(|_| "Dream Skin operation lock is unavailable.".to_string())?;
+    let _operation = crate::client_lifecycle::try_lock(&OPERATION_LOCK)
+        .map_err(|error| error.to_string())?;
     let paths = ensure_installed(app)?;
     let active_root = active_theme_root()?;
     let mut document = load_theme(&active_root)?.document;
@@ -26,9 +25,8 @@ pub(crate) fn set_overlay_opacity(app: &AppHandle, opacity: f64) -> Result<(), S
     if !opacity.is_finite() || !(0.0..=1.0).contains(&opacity) {
         return Err("Theme overlay opacity must be between 0 and 1.".to_string());
     }
-    let _operation = OPERATION_LOCK
-        .lock()
-        .map_err(|_| "Dream Skin operation lock is unavailable.".to_string())?;
+    let _operation = crate::client_lifecycle::try_lock(&OPERATION_LOCK)
+        .map_err(|error| error.to_string())?;
     let paths = ensure_installed(app)?;
     let active_root = active_theme_root()?;
     let mut document = load_theme(&active_root)?.document;
@@ -48,9 +46,8 @@ pub(crate) fn set_overlay_opacity(app: &AppHandle, opacity: f64) -> Result<(), S
 }
 
 pub(crate) fn set_paused(app: &AppHandle, paused: bool) -> Result<(), String> {
-    let _operation = OPERATION_LOCK
-        .lock()
-        .map_err(|_| "Dream Skin operation lock is unavailable.".to_string())?;
+    let _operation = crate::client_lifecycle::try_lock(&OPERATION_LOCK)
+        .map_err(|error| error.to_string())?;
     let paths = ensure_installed(app)?;
     if paused {
         fs::write(pause_path()?, b"paused\n")
@@ -75,24 +72,22 @@ pub(crate) fn set_paused(app: &AppHandle, paused: bool) -> Result<(), String> {
 }
 
 pub(crate) fn reapply(app: &AppHandle) -> Result<(), String> {
-    let _operation = OPERATION_LOCK
-        .lock()
-        .map_err(|_| "Dream Skin operation lock is unavailable.".to_string())?;
+    let _operation = crate::client_lifecycle::try_lock(&OPERATION_LOCK)
+        .map_err(|error| error.to_string())?;
     let paths = ensure_installed(app)?;
     let _ = fs::remove_file(pause_path()?);
     restart_managed_runtime(&paths, SkinVerificationMode::Required)
 }
 
 pub(crate) fn verify(app: &AppHandle) -> Result<String, String> {
-    let _operation = OPERATION_LOCK
-        .lock()
-        .map_err(|_| "Dream Skin operation lock is unavailable.".to_string())?;
+    let _operation = crate::client_lifecycle::try_lock(&OPERATION_LOCK)
+        .map_err(|error| error.to_string())?;
     ensure_installed(app)?;
     let state = read_session();
     let port = state.port.ok_or_else(|| {
         "Dream Skin is installed but Codex has not been launched with it.".to_string()
     })?;
-    let targets = wait_for_verified(port, Duration::from_secs(10))?;
+    let targets = wait_for_verified(port, Duration::from_secs(10), None)?;
     serde_json::to_string_pretty(&json!({
         "pass": true,
         "runtime": "rust-native",
@@ -105,9 +100,8 @@ pub(crate) fn verify(app: &AppHandle) -> Result<String, String> {
 }
 
 pub(crate) fn restore(app: &AppHandle) -> Result<(), String> {
-    let _operation = OPERATION_LOCK
-        .lock()
-        .map_err(|_| "Dream Skin operation lock is unavailable.".to_string())?;
+    let _operation = crate::client_lifecycle::try_lock(&OPERATION_LOCK)
+        .map_err(|error| error.to_string())?;
     if !marker_path()?.is_file() {
         return Err("Dream Skin is not installed.".to_string());
     }
@@ -181,11 +175,12 @@ pub(crate) fn status(platform: &str) -> DreamSkinStatus {
     let active = active_theme_root()
         .ok()
         .and_then(|path| load_theme(&path).ok());
+    let connected = installed && available && live_skin_port(&session_state).is_some();
     let session = if !installed {
         "notInstalled"
     } else if paused || session_state.session == NativeRuntimeStatus::Paused {
         "paused"
-    } else if session_state.port.is_some() && session_state.session == NativeRuntimeStatus::Active {
+    } else if connected && session_state.session == NativeRuntimeStatus::Active {
         "active"
     } else {
         "ready"
@@ -193,7 +188,7 @@ pub(crate) fn status(platform: &str) -> DreamSkinStatus {
     DreamSkinStatus {
         supported: true,
         available,
-        restart_required: session_state.port.is_none(),
+        restart_required: !connected,
         platform: platform.to_string(),
         installed,
         runtime_installed: installed,

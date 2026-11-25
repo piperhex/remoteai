@@ -1187,3 +1187,15 @@ html.codex-dream-skin [data-message-author-role] { border-radius: 16px; }
     animation-iteration-count: 1 !important;
   }
 }
+
+
+/* 26.1120 paints an opaque backing above the wallpaper and a tint on the frame. */
+html.codex-dream-skin[data-dream-art-wide="true"]:is(:has(main.main-surface.dream-skin-home-shell), [data-dream-art-task-mode="ambient"], [data-dream-art-task-mode="banner"])
+  [data-app-shell-frame]:has([data-app-shell-surface-backing][aria-hidden="true"].pointer-events-none) {
+  background-image: none !important;
+}
+
+html.codex-dream-skin[data-dream-art-wide="true"]:is(:has(main.main-surface.dream-skin-home-shell), [data-dream-art-task-mode="ambient"], [data-dream-art-task-mode="banner"])
+  [data-app-shell-frame] [data-app-shell-surface-backing][aria-hidden="true"].pointer-events-none {
+  background-color: transparent !important;
+}

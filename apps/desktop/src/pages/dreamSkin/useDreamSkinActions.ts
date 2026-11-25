@@ -19,7 +19,7 @@ import type {
   DreamSkinMarketTheme,
   DreamSkinStatus,
 } from "../../types";
-import { DEFAULT_IMPORT_OPTIONS } from "./constants";
+import { DEFAULT_IMPORT_OPTIONS, isRestartRequired } from "./constants";
 import type { CatalogState, ImportSaveActions, RunStatusOperation, StatusState, ThemeActions } from "./types";
 
 type SharedOptions = Pick<StatusState, "confirmChatGptRestart" | "runStatusOperation" | "setError"> & {
@@ -57,16 +57,15 @@ function useImportActions(options: SharedOptions) {
 
   const submitImport = useCallback(async () => {
     if (!importPath || !importOptions.name.trim()) return;
-    const operation = async () => {
+    const operation = async (restartConfirmed: boolean) => {
       const ok = await runStatusOperation(
         "import",
-        () => importDreamSkinImage(importPath, { ...importOptions, name: importOptions.name.trim() }),
+        () => importDreamSkinImage(importPath, { ...importOptions, name: importOptions.name.trim() }, restartConfirmed),
         t("dreamSkin.toast.imported"),
       );
       if (ok) setImportOpen(false);
     };
-    if (status?.installed && !status.restartRequired) await operation();
-    else confirmChatGptRestart(operation);
+    await runInstalledOperation(status, operation, confirmChatGptRestart);
   }, [confirmChatGptRestart, importOptions, importPath, runStatusOperation, status, t]);
 
   return { chooseCustomImage, importOpen, importOptions, setImportOpen, setImportOptions, submitImport };
@@ -92,13 +91,20 @@ function useSaveActions(options: SharedOptions) {
 
 type ThemeOptions = SharedOptions & Pick<CatalogState, "refreshMarket" | "setCommunityThemes">;
 
-function runInstalledOperation(
+async function runInstalledOperation(
   status: DreamSkinStatus | null,
-  operation: () => Promise<unknown>,
+  operation: (restartConfirmed: boolean) => Promise<unknown>,
   confirmChatGptRestart: (operation: () => Promise<unknown>) => void,
 ) {
-  if (status?.installed && !status.restartRequired) void operation();
-  else confirmChatGptRestart(operation);
+  if (status?.installed && !status.restartRequired) {
+    try {
+      await operation(false);
+      return;
+    } catch (error) {
+      if (!isRestartRequired(error)) throw error;
+    }
+  }
+  confirmChatGptRestart(() => operation(true));
 }
 
 function marketSuccessMessage(theme: DreamSkinMarketTheme | DreamSkinCommunityTheme, t: Translate) {
@@ -108,9 +114,9 @@ function marketSuccessMessage(theme: DreamSkinMarketTheme | DreamSkinCommunityTh
 export function useThemeActions(options: ThemeOptions): ThemeActions {
   const { confirmChatGptRestart, refreshMarket, runStatusOperation, setCommunityThemes, status, t } = options;
   const applyTheme = useCallback((themeId: string) => {
-    const operation = () => runStatusOperation(
+    const operation = (restartConfirmed: boolean) => runStatusOperation(
       `apply:${themeId}`,
-      () => applyDreamSkinTheme(themeId),
+      () => applyDreamSkinTheme(themeId, restartConfirmed),
       t("dreamSkin.toast.applied"),
     );
     runInstalledOperation(status, operation, confirmChatGptRestart);
@@ -149,11 +155,12 @@ export function useThemeActions(options: ThemeOptions): ThemeActions {
 
   const installAndApplyMarketTheme = useCallback((theme: DreamSkinMarketTheme) => {
     if (theme.installed && !theme.updateAvailable) return applyTheme(theme.id);
-    const operation = async () => runStatusOperation(
+    let installation: ReturnType<typeof installDreamSkinMarketTheme> | undefined;
+    const operation = (restartConfirmed: boolean) => runStatusOperation(
       `market:${theme.id}`,
       async () => {
-        await installDreamSkinMarketTheme(theme.id);
-        const next = await applyDreamSkinTheme(theme.id);
+        await (installation ??= installDreamSkinMarketTheme(theme.id));
+        const next = await applyDreamSkinTheme(theme.id, restartConfirmed);
         void refreshMarket();
         return next;
       },
@@ -164,11 +171,12 @@ export function useThemeActions(options: ThemeOptions): ThemeActions {
 
   const installAndApplyCommunityTheme = useCallback((theme: DreamSkinCommunityTheme) => {
     if (theme.installed && !theme.updateAvailable) return applyTheme(theme.themeId);
-    const operation = async () => runStatusOperation(
+    let installation: ReturnType<typeof installDreamSkinCommunityTheme> | undefined;
+    const operation = (restartConfirmed: boolean) => runStatusOperation(
       `community:${theme.id}`,
       async () => {
-        await installDreamSkinCommunityTheme(theme.id);
-        const next = await applyDreamSkinTheme(theme.themeId);
+        await (installation ??= installDreamSkinCommunityTheme(theme.id));
+        const next = await applyDreamSkinTheme(theme.themeId, restartConfirmed);
         setCommunityThemes((current) => current.map((item) => item.themeId === theme.themeId
           ? { ...item, installed: true, installedVersion: item.version, updateAvailable: false }
           : item));

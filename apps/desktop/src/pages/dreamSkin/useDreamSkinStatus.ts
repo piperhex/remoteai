@@ -4,6 +4,7 @@ import { loadDreamSkinResourcesStatus, loadDreamSkinStatus, subscribeToProviderE
 import type { Translate } from "../../i18n";
 import type { DreamSkinResourcesStatus, DreamSkinStatus } from "../../types";
 import type { StatusState } from "./types";
+import { isRestartRequired } from "./constants";
 import { publishDreamSkinStatus } from "./statusEvents";
 
 export function useDreamSkinStatus(t: Translate, notify: (message: string) => void): StatusState {
@@ -76,6 +77,7 @@ export function useDreamSkinStatus(t: Translate, notify: (message: string) => vo
       notify(successMessage);
       return true;
     } catch (operationError) {
+      if (isRestartRequired(operationError)) throw operationError;
       setError(String(operationError));
       return false;
     } finally {

@@ -102,12 +102,20 @@ fn wake_monitor() {
     record_debug_operation();
 }
 
-fn wait_for_targets(_: u16, _: Duration) -> Result<(), String> {
+fn wait_for_startup_window(
+    _: u16,
+    _: Duration,
+    _: impl FnOnce() -> Result<(), String>,
+) -> Result<(), String> {
     record_debug_operation();
     Ok(())
 }
 
-fn verify_runtime_skin(_: SkinVerificationMode, _: Option<u16>) -> Result<(), String> {
+fn verify_runtime_skin(
+    _: &RuntimePaths,
+    _: SkinVerificationMode,
+    _: Option<u16>,
+) -> Result<(), String> {
     Ok(())
 }
 

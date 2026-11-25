@@ -1,6 +1,37 @@
 import { test, expect } from '@playwright/test';
 import { BUILT_IN_DREAM_SKIN_THEMES } from '../src/dreamSkinBuiltIns';
 
+test('a closed ChatGPT window requires confirmation when applying from an open gallery', async ({ page }) => {
+  const confirmations: boolean[] = [];
+  const status = {
+    supported: true, available: true, installed: true, runtimeInstalled: true,
+    session: 'active', restartRequired: false, savedThemes: [],
+  };
+  await page.route('**/__codex_switch__/api/invoke', async route => {
+    const { command, args } = route.request().postDataJSON();
+    let result: unknown = null;
+    if (command === 'get_dream_skin_status') result = status;
+    if (command === 'get_dream_skin_resources_status') result = { installed: true, phase: 'ready' };
+    if (command === 'apply_dream_skin_theme') {
+      confirmations.push(args.restartConfirmed);
+      if (!args.restartConfirmed) {
+        return route.fulfill({ json: { ok: false, error: 'DREAM_SKIN_RESTART_REQUIRED' } });
+      }
+      result = { ...status, activeThemeId: args.themeId };
+    }
+    await route.fulfill({ json: { ok: true, result } });
+  });
+  await page.goto('/e2e/theme-gallery-harness.html');
+  const card = page.locator('article').first();
+  await card.getByRole('button').click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('ChatGPT 将退出并重启');
+  expect(confirmations).toEqual([false]);
+  await dialog.getByRole('button', { name: '退出 ChatGPT 并继续' }).click();
+  await expect(card.getByRole('button', { name: '已应用' })).toBeDisabled();
+  expect(confirmations).toEqual([false, true]);
+});
+
 test('theme cards bound image references while scrolling and release them when closed', async ({ page }) => {
   const calls: { themeId: string; thumbnail?: boolean }[] = [];
   const preview = 'data:image/svg+xml,' + encodeURIComponent(

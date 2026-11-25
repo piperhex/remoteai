@@ -1,17 +1,20 @@
 use std::path::PathBuf;
 
 use windows::{
-    core::PWSTR,
+    core::{BOOL, PWSTR},
     Win32::{
-        Foundation::{CloseHandle, FILETIME, HANDLE},
+        Foundation::{CloseHandle, FILETIME, HANDLE, HWND, LPARAM, WPARAM},
         System::Threading::{
             GetProcessTimes, OpenProcess, QueryFullProcessImageNameW, TerminateProcess,
             PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
         },
+        UI::WindowsAndMessaging::{
+            EnumWindows, GetWindowThreadProcessId, IsWindowVisible, PostMessageW, WM_CLOSE,
+        },
     },
 };
 
-use super::{same_process_instance, ObservedProcess};
+use super::{is_named, same_process_instance, ObservedProcess, DESKTOP_SHELL};
 
 const MAX_WINDOWS_PATH_UNITS: usize = 32_768;
 const FILETIME_UNITS_PER_SECOND: u64 = 10_000_000;
@@ -29,16 +32,12 @@ impl Drop for ProcessHandle {
 }
 
 impl ProcessHandle {
-    fn open(pid: u32) -> Option<Self> {
+    fn open(
+        pid: u32,
+        access: windows::Win32::System::Threading::PROCESS_ACCESS_RIGHTS,
+    ) -> Option<Self> {
         // SAFETY: the PID is an observed integer and no handle is inherited.
-        let handle = unsafe {
-            OpenProcess(
-                PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE,
-                false,
-                pid,
-            )
-        }
-        .ok()?;
+        let handle = unsafe { OpenProcess(access, false, pid) }.ok()?;
         Some(Self(handle))
     }
 
@@ -75,20 +74,69 @@ impl ProcessHandle {
     }
 }
 
+/// Let the desktop release its profile and package resources before forced shutdown.
+pub(super) fn request_window_close(observed: &[ObservedProcess]) -> bool {
+    struct CloseRequest<'a> {
+        observed: &'a [ObservedProcess],
+        posted: bool,
+    }
+    unsafe extern "system" fn visit(hwnd: HWND, data: LPARAM) -> BOOL {
+        // SAFETY: EnumWindows calls synchronously with our live, exclusive CloseRequest.
+        let request = unsafe { &mut *(data.0 as *mut CloseRequest<'_>) };
+        let mut pid = 0;
+        // SAFETY: hwnd comes from EnumWindows and pid is a writable local.
+        unsafe { GetWindowThreadProcessId(hwnd, Some(&mut pid)) };
+        if let Some(expected) = request
+            .observed
+            .iter()
+            .find(|p| p.pid == pid && is_named(&p.executable, DESKTOP_SHELL))
+        {
+            let handle = ProcessHandle::open(pid, PROCESS_QUERY_LIMITED_INFORMATION);
+            request.posted |= handle.is_some_and(|handle| {
+                // SAFETY: WM_CLOSE takes no pointers and the verified process handle remains live.
+                handle.matches(expected)
+                    && unsafe {
+                        IsWindowVisible(hwnd).as_bool()
+                            && PostMessageW(Some(hwnd), WM_CLOSE, WPARAM(0), LPARAM(0)).is_ok()
+                    }
+            });
+        }
+        BOOL(1)
+    }
+    let mut request = CloseRequest {
+        observed,
+        posted: false,
+    };
+    // SAFETY: visit never retains this pointer. If enumeration fails, the existing stop path still runs.
+    let _ = unsafe { EnumWindows(Some(visit), LPARAM(&mut request as *mut _ as isize)) };
+    request.posted
+}
+
+impl ProcessHandle {
+    fn matches(&self, expected: &ObservedProcess) -> bool {
+        let (Some(executable), Some(started_at)) = (self.executable(), self.started_at()) else {
+            return false;
+        };
+        same_process_instance(
+            expected,
+            &ObservedProcess {
+                pid: expected.pid,
+                started_at,
+                executable,
+            },
+        )
+    }
+}
+
 /// The same handle is used to verify identity and terminate, avoiding PID reuse races.
 pub(super) fn terminate_observed_process(expected: &ObservedProcess) -> bool {
-    let Some(handle) = ProcessHandle::open(expected.pid) else {
+    let Some(handle) = ProcessHandle::open(
+        expected.pid,
+        PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE,
+    ) else {
         return false;
     };
-    let (Some(executable), Some(started_at)) = (handle.executable(), handle.started_at()) else {
-        return false;
-    };
-    let current = ObservedProcess {
-        pid: expected.pid,
-        started_at,
-        executable,
-    };
-    if !same_process_instance(expected, &current) {
+    if !handle.matches(expected) {
         return false;
     }
     // SAFETY: this owned handle still refers to the process whose path and creation

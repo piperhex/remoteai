@@ -2921,7 +2921,7 @@ export async function installDreamSkin(): Promise<DreamSkinStatus> {
   return invoke<DreamSkinStatus>("install_dream_skin");
 }
 
-export async function applyDreamSkinTheme(themeId: string): Promise<DreamSkinStatus> {
+export async function applyDreamSkinTheme(themeId: string, restartConfirmed?: boolean): Promise<DreamSkinStatus> {
   if (!hasLocalBackend) {
     window.localStorage.setItem(DREAM_SKIN_INSTALLED_PREVIEW_KEY, "true");
     window.localStorage.setItem(DREAM_SKIN_SESSION_PREVIEW_KEY, "active");
@@ -2933,7 +2933,7 @@ export async function applyDreamSkinTheme(themeId: string): Promise<DreamSkinSta
     window.localStorage.removeItem(DREAM_SKIN_OVERLAY_OPACITY_PREVIEW_KEY);
     return previewDreamSkinStatus();
   }
-  return invoke<DreamSkinStatus>("apply_dream_skin_theme", { themeId });
+  return invoke<DreamSkinStatus>("apply_dream_skin_theme", { themeId, restartConfirmed });
 }
 
 export type ChooseDreamSkinImageResult =
@@ -2956,6 +2956,7 @@ export async function chooseDreamSkinImage(): Promise<ChooseDreamSkinImageResult
 export async function importDreamSkinImage(
   path: string,
   options: DreamSkinImportOptions,
+  restartConfirmed?: boolean,
 ): Promise<DreamSkinStatus> {
   if (!isDesktopApp) {
     window.localStorage.setItem(DREAM_SKIN_INSTALLED_PREVIEW_KEY, "true");
@@ -2965,7 +2966,7 @@ export async function importDreamSkinImage(
     window.localStorage.removeItem(DREAM_SKIN_OVERLAY_OPACITY_PREVIEW_KEY);
     return previewDreamSkinStatus();
   }
-  return invoke<DreamSkinStatus>("import_dream_skin_image", { path, options });
+  return invoke<DreamSkinStatus>("import_dream_skin_image", { path, options, restartConfirmed });
 }
 
 export async function saveDreamSkinTheme(name: string): Promise<DreamSkinStatus> {

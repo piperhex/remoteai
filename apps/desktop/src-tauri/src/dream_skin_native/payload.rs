@@ -167,12 +167,15 @@ const VERIFY_PAYLOAD: &str = r#"(() => {
     installed: document.documentElement.classList.contains('codex-dream-skin'),
     version: window.__CODEX_DREAM_SKIN_STATE__?.version ?? null,
     expectedVersion: '1.2.3',
+    revision: window.__CODEX_DREAM_SKIN_EARLY_APPLIED__ ?? null,
     stylePresent: Boolean(document.getElementById('codex-dream-skin-style')),
     chromePresent: Boolean(document.getElementById('codex-dream-skin-chrome')),
     shellPresent: Boolean(document.querySelector(
       'main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])'
     )),
     sidebarPresent: Boolean(document.querySelector('aside.app-shell-left-panel')),
+    titlebarPresent: Boolean(document.querySelector('main[data-app-shell-main-surface]')
+      ?.closest('[data-app-shell-frame]')?.querySelector('header[data-app-shell-titlebar]')),
     composerPresent: Boolean(document.querySelector(
       '.composer-surface-chrome, [data-codex-composer-root] [data-composer-layout][data-composer-surface-variant]'
     )),
@@ -181,7 +184,7 @@ const VERIFY_PAYLOAD: &str = r#"(() => {
   // Composer markup is route- and version-dependent. Codex 26.803 replaced
   // .composer-surface-chrome with semantic data attributes, and some valid
   // detail routes have no composer at all. Verify the stable shell instead.
-  const primarySurface = result.chromePresent && result.shellPresent && result.sidebarPresent;
+  const primarySurface = result.chromePresent && result.shellPresent && (result.sidebarPresent || result.titlebarPresent);
   result.pass = result.installed && result.version === result.expectedVersion &&
     result.stylePresent && (primarySurface || result.settingsPresent);
   return result;
@@ -191,7 +194,9 @@ const CODEX_PROBE_PAYLOAD: &str = concat!(
     r#"(() => ({
   codex: location.protocol === 'app:' && Boolean(
     (document.querySelector('main:is(.main-surface, [data-app-shell-main-surface], [class*="_MainContentSurface_"])') &&
-      document.querySelector('aside.app-shell-left-panel')) ||
+      (document.querySelector('aside.app-shell-left-panel') ||
+        document.querySelector('main[data-app-shell-main-surface]')?.closest('[data-app-shell-frame]')
+          ?.querySelector('header[data-app-shell-titlebar]'))) ||
     document.querySelector('[data-settings-panel-slug="general-settings"], "#,
     r#"input[name="appearance-theme"], [data-testid="theme-preview"]')
   )

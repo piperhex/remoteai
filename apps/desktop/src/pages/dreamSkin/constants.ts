@@ -1,5 +1,9 @@
 import type { DreamSkinImportOptions } from "../../types";
 
+export function isRestartRequired(error: unknown): boolean {
+  return (error instanceof Error ? error.message : error) === "DREAM_SKIN_RESTART_REQUIRED";
+}
+
 export const APPEARANCE_OPTIONS = [
   { value: "auto", labelKey: "dreamSkin.option.auto" },
   { value: "light", labelKey: "dreamSkin.option.light" },

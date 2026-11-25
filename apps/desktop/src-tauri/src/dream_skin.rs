@@ -155,6 +155,13 @@ where
         .map_err(|error| format!("Dream Skin operation did not complete: {error}"))?
 }
 
+// Includes the process exit, renderer startup and visual verification deadlines.
+async fn run_skin_launch<T: Send + 'static>(
+    operation: impl FnOnce() -> Result<T, String> + Send + 'static,
+) -> Result<T, String> {
+    crate::client_lifecycle::run_with_timeout(operation, std::time::Duration::from_secs(150)).await
+}
+
 #[tauri::command]
 pub(crate) async fn get_dream_skin_status() -> Result<DreamSkinStatus, String> {
     run_blocking(|| Ok(read_dream_skin_status())).await
@@ -169,7 +176,7 @@ fn read_dream_skin_status() -> DreamSkinStatus {
 
 #[tauri::command]
 pub(crate) async fn install_dream_skin(app: AppHandle) -> Result<DreamSkinStatus, String> {
-    run_blocking(move || {
+    run_skin_launch(move || {
         #[cfg(any(target_os = "windows", target_os = "macos"))]
         crate::dream_skin_native::install(&app)?;
         #[cfg(not(any(target_os = "windows", target_os = "macos")))]
@@ -183,10 +190,11 @@ pub(crate) async fn install_dream_skin(app: AppHandle) -> Result<DreamSkinStatus
 pub(crate) async fn apply_dream_skin_theme(
     app: AppHandle,
     theme_id: String,
+    restart_confirmed: Option<bool>,
 ) -> Result<DreamSkinStatus, String> {
-    run_blocking(move || {
+    run_skin_launch(move || {
         #[cfg(any(target_os = "windows", target_os = "macos"))]
-        crate::dream_skin_native::apply_theme(&app, &theme_id)?;
+        crate::dream_skin_native::apply_theme(&app, &theme_id, restart_confirmed)?;
         #[cfg(not(any(target_os = "windows", target_os = "macos")))]
         return Err("Codex Dream Skin currently supports Windows and macOS.".to_string());
         Ok(read_dream_skin_status())
@@ -199,10 +207,11 @@ pub(crate) async fn import_dream_skin_image(
     app: AppHandle,
     path: String,
     options: DreamSkinImportOptions,
+    restart_confirmed: Option<bool>,
 ) -> Result<DreamSkinStatus, String> {
-    run_blocking(move || {
+    run_skin_launch(move || {
         #[cfg(any(target_os = "windows", target_os = "macos"))]
-        crate::dream_skin_native::import_image(&app, &path, &options)?;
+        crate::dream_skin_native::import_image(&app, &path, &options, restart_confirmed)?;
         #[cfg(not(any(target_os = "windows", target_os = "macos")))]
         return Err("Codex Dream Skin currently supports Windows and macOS.".to_string());
         Ok(read_dream_skin_status())
@@ -274,7 +283,7 @@ pub(crate) async fn set_dream_skin_paused(
     app: AppHandle,
     paused: bool,
 ) -> Result<DreamSkinStatus, String> {
-    run_blocking(move || {
+    run_skin_launch(move || {
         #[cfg(any(target_os = "windows", target_os = "macos"))]
         crate::dream_skin_native::set_paused(&app, paused)?;
         #[cfg(not(any(target_os = "windows", target_os = "macos")))]
@@ -286,7 +295,7 @@ pub(crate) async fn set_dream_skin_paused(
 
 #[tauri::command]
 pub(crate) async fn reapply_dream_skin(app: AppHandle) -> Result<DreamSkinStatus, String> {
-    run_blocking(move || {
+    run_skin_launch(move || {
         #[cfg(any(target_os = "windows", target_os = "macos"))]
         crate::dream_skin_native::reapply(&app)?;
         #[cfg(not(any(target_os = "windows", target_os = "macos")))]
@@ -309,7 +318,7 @@ pub(crate) async fn verify_dream_skin(app: AppHandle) -> Result<String, String> 
 
 #[tauri::command]
 pub(crate) async fn restore_dream_skin(app: AppHandle) -> Result<DreamSkinStatus, String> {
-    run_blocking(move || {
+    run_skin_launch(move || {
         #[cfg(any(target_os = "windows", target_os = "macos"))]
         crate::dream_skin_native::restore(&app)?;
         #[cfg(not(any(target_os = "windows", target_os = "macos")))]

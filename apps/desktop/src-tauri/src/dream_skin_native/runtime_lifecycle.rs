@@ -1,4 +1,4 @@
-fn verify_runtime_skin(mode: SkinVerificationMode, port: Option<u16>) -> Result<(), String> {
+fn verify_runtime_skin(paths: &RuntimePaths, mode: SkinVerificationMode, port: Option<u16>) -> Result<(), String> {
     if !runtime_enhancements_enabled() {
         return Ok(());
     }
@@ -9,7 +9,8 @@ fn verify_runtime_skin(mode: SkinVerificationMode, port: Option<u16>) -> Result<
         if let Some(port) =
             port.filter(|_| wait_for_skin_verification(skin_installed, skin_paused, mode))
         {
-            wait_for_verified(port, DREAM_SKIN_START_VERIFICATION_TIMEOUT)?;
+            let revision = load_payload(paths)?.revision;
+            wait_for_verified(port, DREAM_SKIN_START_VERIFICATION_TIMEOUT, Some(&revision))?;
         }
     }
     Ok(())
@@ -113,9 +114,8 @@ fn install_unlocked(app: &AppHandle, restart_chatgpt: bool) -> Result<(), String
 }
 
 pub(crate) fn install(app: &AppHandle) -> Result<(), String> {
-    let _operation = OPERATION_LOCK
-        .lock()
-        .map_err(|_| "Dream Skin operation lock is unavailable.".to_string())?;
+    let _operation = crate::client_lifecycle::try_lock(&OPERATION_LOCK)
+        .map_err(|error| error.to_string())?;
     install_unlocked(app, true)
 }
 
@@ -130,17 +130,57 @@ fn ensure_installed(app: &AppHandle) -> Result<RuntimePaths, String> {
     Ok(paths)
 }
 
-pub(crate) fn apply_theme(app: &AppHandle, theme_id: &str) -> Result<(), String> {
+/// A saved port outlives ChatGPT when it exits or Windows replaces the package.
+fn live_skin_port(state: &NativeSessionState) -> Option<u16> {
+    if !matches!(state.session, NativeRuntimeStatus::Active | NativeRuntimeStatus::Paused) {
+        return None;
+    }
+    state.port.filter(|port| list_targets(*port).is_ok_and(|targets| {
+        targets.iter().any(|target| is_workspace_page(&target.url))
+    }))
+}
+
+fn theme_change_port(restart_confirmed: Option<bool>) -> Result<Option<u16>, String> {
+    let state = read_session();
+    let installed = marker_path()?.is_file();
+    let port = installed.then(|| live_skin_port(&state)).flatten();
+    // Older clients only asked for confirmation on first install or when no port was saved.
+    if port.is_none() && !restart_confirmed.unwrap_or(!installed || state.port.is_none()) {
+        return Err("DREAM_SKIN_RESTART_REQUIRED".to_string());
+    }
+    Ok(port)
+}
+
+fn activate_selected_theme(paths: &RuntimePaths, port: Option<u16>) -> Result<(), String> {
+    match fs::remove_file(pause_path()?) {
+        Ok(()) => {}
+        Err(error) if error.kind() == ErrorKind::NotFound => {}
+        Err(error) => return Err(error.to_string()),
+    }
+    if let Some(port) = port {
+        let revision = load_payload(paths)?.revision;
+        wake_monitor();
+        wait_for_verified(port, DREAM_SKIN_START_VERIFICATION_TIMEOUT, Some(&revision))?;
+        let mut state = read_session();
+        if state.port == Some(port) && state.session == NativeRuntimeStatus::Paused {
+            state.session = NativeRuntimeStatus::Active;
+            write_session(&state)?;
+        }
+        return Ok(());
+    }
+    restart_managed_runtime(paths, SkinVerificationMode::Required)
+}
+
+pub(crate) fn apply_theme(app: &AppHandle, theme_id: &str, restart_confirmed: Option<bool>) -> Result<(), String> {
     if !valid_theme_id(theme_id) {
         return Err("Theme id is invalid.".to_string());
     }
-    let _operation = OPERATION_LOCK
-        .lock()
-        .map_err(|_| "Dream Skin operation lock is unavailable.".to_string())?;
+    let _operation = crate::client_lifecycle::try_lock(&OPERATION_LOCK)
+        .map_err(|error| error.to_string())?;
     // A running Dream Skin session watches the active theme payload and
     // reinjects it when its revision changes. Initial installation and returning
     // from an ordinary launch both need a renderer channel before injection.
-    let already_installed = marker_path()?.is_file();
+    let port = theme_change_port(restart_confirmed)?;
     let paths = ensure_installed(app)?;
     let directory = if BUILT_IN_THEME_IDS.contains(&theme_id) {
         let resource_root = crate::dream_skin_resources::installed_pack_root()?;
@@ -149,14 +189,7 @@ pub(crate) fn apply_theme(app: &AppHandle, theme_id: &str) -> Result<(), String>
         saved_theme_directory(theme_id)?
     };
     copy_theme_to_active(&directory)?;
-    let _ = fs::remove_file(pause_path()?);
-    if already_installed && read_session().port.is_some() {
-        ensure_monitor(paths);
-        wake_monitor();
-        Ok(())
-    } else {
-        restart_managed_runtime(&paths, SkinVerificationMode::Required)
-    }
+    activate_selected_theme(&paths, port)
 }
 
 fn validate_import_options(options: &DreamSkinImportOptions) -> Result<(), String> {
@@ -188,15 +221,15 @@ pub(crate) fn import_image(
     app: &AppHandle,
     path: &str,
     options: &DreamSkinImportOptions,
+    restart_confirmed: Option<bool>,
 ) -> Result<(), String> {
     validate_import_options(options)?;
     let source = PathBuf::from(path);
     image_details(&source)?;
     ensure_no_reparse_points(&source)?;
-    let _operation = OPERATION_LOCK
-        .lock()
-        .map_err(|_| "Dream Skin operation lock is unavailable.".to_string())?;
-    let already_installed = marker_path()?.is_file();
+    let _operation = crate::client_lifecycle::try_lock(&OPERATION_LOCK)
+        .map_err(|error| error.to_string())?;
+    let port = theme_change_port(restart_confirmed)?;
     let paths = ensure_installed(app)?;
     let staging = state_root()?.join("import-staging");
     ensure_directory(&staging)?;
@@ -232,20 +265,12 @@ pub(crate) fn import_image(
     write_json(&staging.join("theme.json"), &document)?;
     copy_theme_to_active(&staging)?;
     save_current_theme(&options.name)?;
-    let _ = fs::remove_file(pause_path()?);
-    if already_installed && read_session().port.is_some() {
-        ensure_monitor(paths);
-        wake_monitor();
-        Ok(())
-    } else {
-        restart_managed_runtime(&paths, SkinVerificationMode::Required)
-    }
+    activate_selected_theme(&paths, port)
 }
 
 pub(crate) fn save_theme(app: &AppHandle, name: &str) -> Result<(), String> {
-    let _operation = OPERATION_LOCK
-        .lock()
-        .map_err(|_| "Dream Skin operation lock is unavailable.".to_string())?;
+    let _operation = crate::client_lifecycle::try_lock(&OPERATION_LOCK)
+        .map_err(|error| error.to_string())?;
     ensure_installed(app)?;
     save_current_theme(name)?;
     Ok(())
@@ -276,9 +301,8 @@ pub(crate) fn delete_themes(theme_ids: &[String]) -> Result<(), String> {
     if theme_ids.is_empty() {
         return Err("Select at least one saved theme to delete.".to_string());
     }
-    let _operation = OPERATION_LOCK
-        .lock()
-        .map_err(|_| "Dream Skin operation lock is unavailable.".to_string())?;
+    let _operation = crate::client_lifecycle::try_lock(&OPERATION_LOCK)
+        .map_err(|error| error.to_string())?;
     let unique_ids = theme_ids.iter().collect::<HashSet<_>>();
     let directories = unique_ids
         .into_iter()

@@ -88,6 +88,7 @@ fn apply_skin_in_session(
             "window.__CODEX_DREAM_SKIN_EARLY_GENERATION__ = {fallback_generation}"
         ))?;
         session.evaluate(&payload.source)?;
+        session.evaluate(&format!("window.__CODEX_DREAM_SKIN_EARLY_APPLIED__ = {revision_json}"))?;
     }
     let verification = session.evaluate(VERIFY_PAYLOAD)?;
     if verification.get("pass").and_then(Value::as_bool) != Some(true) {
@@ -276,29 +277,11 @@ fn wake_monitor() {
     }
 }
 
-fn wait_for_targets(port: u16, timeout: Duration) -> Result<Vec<CdpTarget>, String> {
-    let deadline = Instant::now() + timeout;
-    let mut last_error = String::new();
-    while Instant::now() < deadline {
-        match list_targets(port) {
-            Ok(targets) if !targets.is_empty() => return Ok(targets),
-            Ok(_) => last_error = "no Codex renderer target was published".to_string(),
-            Err(error) => last_error = error,
-        }
-        thread::sleep(Duration::from_millis(300));
-    }
-    Err(format!(
-        "Codex did not expose a renderer on 127.0.0.1:{port}: {last_error}"
-    ))
-}
-
-fn verification_succeeded(results: &[Value]) -> bool {
+fn verification_succeeded(results: &[Value], expected_revision: Option<&str>) -> bool {
     results.iter().any(|entry| {
-        entry
-            .get("result")
-            .and_then(|result| result.get("pass"))
-            .and_then(Value::as_bool)
-            == Some(true)
+        let result = &entry["result"];
+        result["pass"].as_bool() == Some(true)
+            && expected_revision.is_none_or(|revision| result["revision"].as_str() == Some(revision))
     })
 }
 
@@ -312,7 +295,7 @@ fn verification_timeout_reason(last_error: &str, results: &[Value]) -> String {
     }
 }
 
-fn wait_for_verified(port: u16, timeout: Duration) -> Result<Vec<Value>, String> {
+fn wait_for_verified(port: u16, timeout: Duration, expected_revision: Option<&str>) -> Result<Vec<Value>, String> {
     let deadline = Instant::now() + timeout;
     let mut last_results = Vec::new();
     let mut last_error = String::new();
@@ -323,7 +306,7 @@ fn wait_for_verified(port: u16, timeout: Duration) -> Result<Vec<Value>, String>
                 last_error.clear();
                 for target in targets
                     .into_iter()
-                    .filter(|target| is_skin_surface_url(&target.url))
+                    .filter(|target| is_workspace_page(&target.url))
                 {
                     match CdpSession::connect(&target, port).and_then(|mut session| {
                         session.enable()?;
@@ -341,7 +324,7 @@ fn wait_for_verified(port: u16, timeout: Duration) -> Result<Vec<Value>, String>
                         Err(error) => last_error = error,
                     }
                 }
-                if verification_succeeded(&last_results) {
+                if verification_succeeded(&last_results, expected_revision) {
                     return Ok(last_results);
                 }
             }

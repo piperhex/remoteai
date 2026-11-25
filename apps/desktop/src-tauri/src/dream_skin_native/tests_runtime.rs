@@ -122,7 +122,7 @@
         assert!(VERIFY_PAYLOAD.contains("[data-codex-composer-root]"));
         assert!(VERIFY_PAYLOAD.contains("shellPresent"));
         assert!(VERIFY_PAYLOAD
-            .contains("result.chromePresent && result.shellPresent && result.sidebarPresent"));
+            .contains("result.chromePresent && result.shellPresent && (result.sidebarPresent || result.titlebarPresent)"));
         assert!(!VERIFY_PAYLOAD
             .contains("result.chromePresent && result.sidebarPresent && result.composerPresent"));
     }

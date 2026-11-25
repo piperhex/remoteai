@@ -103,9 +103,16 @@
         let auxiliary = json!({ "result": { "pass": false } });
         let primary = json!({ "result": { "pass": true } });
 
-        assert!(verification_succeeded(&[auxiliary.clone(), primary]));
-        assert!(!verification_succeeded(&[auxiliary]));
-        assert!(!verification_succeeded(&[]));
+        assert!(verification_succeeded(&[auxiliary.clone(), primary], None));
+        assert!(!verification_succeeded(&[auxiliary], None));
+        assert!(!verification_succeeded(&[], None));
+    }
+
+    #[test]
+    fn hot_switch_must_verify_the_requested_revision() {
+        let results = [json!({ "result": { "pass": true, "revision": "previous" } })];
+        assert!(!verification_succeeded(&results, Some("current")));
+        assert!(verification_succeeded(&results, Some("previous")));
     }
 
     #[test]

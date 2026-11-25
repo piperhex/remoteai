@@ -15,6 +15,7 @@ const DESKTOP_SHELL: &str = "ChatGPT.exe";
 const DESKTOP_HELPER: &str = "codex.exe";
 const EXIT_POLL_INTERVAL: Duration = Duration::from_millis(150);
 const STOP_TIMEOUT: Duration = Duration::from_secs(10);
+const WINDOW_CLOSE_GRACE: Duration = Duration::from_secs(3);
 
 #[derive(Debug)]
 pub(crate) enum ProcessControlError {
@@ -204,12 +205,18 @@ pub(crate) fn stop_install_processes(
         .filter_map(observe_process)
         .filter(|process| matches_install_executable(&process.executable, &shell))
         .collect::<Vec<_>>();
+    let deadline = Instant::now() + timeout;
+    if native::request_window_close(&observed) {
+        let grace = deadline.min(Instant::now() + WINDOW_CLOSE_GRACE);
+        while Instant::now() < grace && observed_processes_are_running(&observed) {
+            thread::sleep(EXIT_POLL_INTERVAL);
+        }
+    }
     for process in &observed {
         // A disappearing process or denied handle can make termination fail. The
         // wait confirms whether this exact instance is gone and reports a timeout.
         native::terminate_observed_process(process);
     }
-    let deadline = Instant::now() + timeout;
     while observed_processes_are_running(&observed) {
         if Instant::now() >= deadline {
             return Err(ProcessControlError::ExitTimedOut);

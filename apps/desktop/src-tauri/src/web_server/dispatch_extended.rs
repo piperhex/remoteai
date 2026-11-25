@@ -406,6 +406,7 @@ fn dispatch_extended_command(app: AppHandle, command: &str, args: Value) -> Resu
         "apply_dream_skin_theme" => serialize(block_on(crate::dream_skin::apply_dream_skin_theme(
             app,
             argument(&args, "themeId")?,
+            args.get("restartConfirmed").and_then(Value::as_bool),
         ))),
         "save_dream_skin_theme" => serialize(block_on(crate::dream_skin::save_dream_skin_theme(
             app,

@@ -23,8 +23,9 @@
   const install = () => {
     if (window[generationKey] !== generation) { stop(); return true; }
     if (!document.documentElement || !document.body || location.protocol !== "app:") return false;
-    const primarySurface = document.querySelector(shellSelector) &&
-      document.querySelector("aside.app-shell-left-panel");
+    const main = document.querySelector(shellSelector);
+    const primarySurface = main && (document.querySelector("aside.app-shell-left-panel") ||
+      main.closest("[data-app-shell-frame]")?.querySelector("header[data-app-shell-titlebar]"));
     if (!primarySurface && !document.querySelector(settingsSelector)) return false;
     stop();
     __DREAM_SKIN_SOURCE__;

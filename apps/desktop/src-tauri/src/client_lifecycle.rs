@@ -32,7 +32,7 @@ pub(crate) async fn run<T: Send + 'static>(
     run_with_timeout(operation, CLIENT_OPERATION_TIMEOUT).await
 }
 
-async fn run_with_timeout<T: Send + 'static>(
+pub(crate) async fn run_with_timeout<T: Send + 'static>(
     operation: impl FnOnce() -> Result<T, String> + Send + 'static,
     timeout: Duration,
 ) -> Result<T, String> {
