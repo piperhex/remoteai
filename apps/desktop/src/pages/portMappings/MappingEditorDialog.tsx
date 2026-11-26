@@ -4,6 +4,7 @@ import { MAX_PORT_MAPPINGS } from '../../../../../shared/port-mapping/settings';
 import { MAX_MAPPING_ALIAS_LENGTH } from '../../../../../shared/port-mapping/localAliases';
 import { displayError, uiText as t } from '../../../../../shared/localization/uiText';
 import { MappingForm } from '../codexGui/portForwarding/MappingForm';
+import formStyles from '../codexGui/portForwarding/portForwarding.module.less';
 import type { MappingSelection } from './MappingDeviceGroup';
 import type { MappingGroup } from './useMappingGroups';
 import { mappingComputerLabel, mappingComputerOption, renderComputerOption } from './computerOption';
@@ -25,7 +26,7 @@ export function MappingEditorDialog({ groups, selection, close }: {
     return <AliasDialog group={group} entryId={entry.id} close={close} />;
   }
   const title = t(selection.mode === 'new' ? 'client.portMappingEditing.newMapping' : 'client.portMappingEditing.editMapping');
-  return <Modal open centered width={480} title={title} className={styles.editor}
+  return <Modal open centered width={480} title={title} className={`${styles.editor} ${formStyles.editor}`}
     onCancel={close} maskClosable={!saving} closable={!saving} keyboard={!saving} footer={<>
       <Button disabled={saving} onClick={close}>{t('client.accounts.cancel')}</Button>
       <Button type="primary" form={formId} htmlType="submit" aria-label={t('client.mappingEditor.save')}
@@ -35,6 +36,7 @@ export function MappingEditorDialog({ groups, selection, close }: {
       : <><label className={styles.deviceLabel} htmlFor={formId + '-device'}>{t('client.mappingEditor.chooseDevice')}</label>
         <Select id={formId + '-device'} aria-label={t('client.mappingEditor.chooseDevice')} value={deviceId}
           disabled={selection.mode !== 'new' || saving} onChange={setDeviceId} showSearch optionFilterProp="label"
+          classNames={{ popup: { root: formStyles.editor } }}
           className={styles.computerSelect} labelRender={() => mappingComputerLabel(group.device)}
           optionRender={renderComputerOption} options={groups.map(mappingComputerOption)} />
         {full && <Alert type="info" message={t('client.portForwarding.youCanAddUpTo8MappingsRemoveOneTo')} />}

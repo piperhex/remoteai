@@ -102,7 +102,15 @@ for (const remote of [false, true]) {
     await dialog.getByRole('button', { name: '保存', exact: true }).click();
     await expect(saved).toContainText('Studio API');
     await saved.getByRole('button', { name: /^编辑映射/ }).click();
-    await expect(dialog.getByRole('textbox', { name: '自定义域名' })).toHaveValue('studio.localhost');
+    const domain = dialog.getByRole('textbox', { name: '自定义域名' });
+    await expect(domain).toHaveValue('studio.localhost');
+    await expect(domain).toHaveCSS('user-select', 'text');
+    const preview = dialog.getByText('studio.localhost:15000', { exact: true });
+    await expect(preview).toHaveCSS('cursor', 'default');
+    await expect(preview).toHaveCSS('caret-color', 'rgba(0, 0, 0, 0)');
+    await preview.dblclick();
+    expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('');
+    await page.screenshot({ path: info.outputPath(prefix + '-edit.png'), animations: 'disabled' });
     await dialog.getByRole('textbox', { name: '目标 IP' }).fill('192.168.5.4');
     await dialog.getByRole('button', { name: '保存', exact: true }).click();
     await expect(saved).toContainText('192.168.5.4:5000');

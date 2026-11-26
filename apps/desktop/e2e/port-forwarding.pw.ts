@@ -169,10 +169,19 @@ test('edits an active mapping, cancels drafts and retains the edited settings af
   await page.getByRole('dialog').getByRole('button', { name: '取消', exact: true }).click();
   await expect(entry(page, '127.0.0.1:13000 → 127.0.0.1:3000').getByRole('status')).toHaveText('映射中');
   await entry(page, '127.0.0.1:13000 → 127.0.0.1:3000').getByRole('button', { name: /^编辑映射/ }).click();
-  await panel(page).getByRole('textbox', { name: '目标 IP' }).fill('172.16.200.85');
+  const host = panel(page).getByRole('textbox', { name: '目标 IP' });
+  await host.fill('172.16.200.85');
+  await expect(host).toHaveCSS('user-select', 'text');
+  await host.press('ControlOrMeta+a');
+  expect(await host.evaluate((input: HTMLInputElement) =>
+    input.value.slice(input.selectionStart ?? 0, input.selectionEnd ?? 0))).toBe('172.16.200.85');
   await panel(page).getByRole('spinbutton', { name: '远程端口' }).fill('8306');
   await panel(page).getByRole('spinbutton', { name: '本地端口' }).fill('8306');
-  await page.screenshot({ path: '../../.codex-tmp/port-forwarding-edit.png' });
+  const title = page.getByRole('heading', { name: '编辑映射', exact: true });
+  await expect(title).toHaveCSS('caret-color', 'rgba(0, 0, 0, 0)');
+  await title.dblclick();
+  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('');
+  await page.screenshot({ path: '../../.codex-tmp/port-forwarding-edit.png', animations: 'disabled' });
   await page.getByRole('dialog').getByRole('button', { name: '保存修改' }).click();
   await expect(panel(page).getByRole('article')).toHaveCount(1);
   await expect(entry(page, '127.0.0.1:8306 → 172.16.200.85:8306').getByRole('status')).toHaveText('映射中');

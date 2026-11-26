@@ -64,7 +64,8 @@ function MappingDialog(props: ReturnType<typeof usePortForwarding> & {
       {count > 0 && <span className={styles.count}>{count}</span>}
     </button>
     <ConfigProvider theme={{ token: MAPPING_COLORS }}>
-      <Modal open={open && props.active} centered width={720} className={styles.dialog} destroyOnHidden
+      <Modal open={open && props.active} centered width={720} destroyOnHidden
+        className={view.type === 'list' ? styles.dialog : `${styles.dialog} ${styles.editor}`}
         maskClosable={false} keyboard={!saving} onCancel={close} closable={{ disabled: saving }}
         closeIcon={<X size={20} aria-label={t("client.projectBrowser.close")} />} footer={<>
           {showForm && <MappingFormActions formId={formId} entry={editing}

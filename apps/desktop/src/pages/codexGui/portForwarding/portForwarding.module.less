@@ -1,3 +1,17 @@
+.editor {
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+  caret-color: transparent;
+
+  input:not([type='radio']):enabled {
+    cursor: text;
+    -webkit-user-select: text;
+    user-select: text;
+    caret-color: auto;
+  }
+}
+
 .dialog {
   --mapping-accent: #07838c;
   --mapping-surface: color-mix(in srgb, var(--panel) 94%, var(--muted));
