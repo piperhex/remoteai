@@ -30,6 +30,7 @@ mod codex_notification;
 mod codex_runtime;
 mod codex_service_status;
 mod codex_settings;
+mod codex_sidebar;
 mod codex_usage_cost_rates;
 mod codex_usage_summary;
 mod commands;

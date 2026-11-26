@@ -47,6 +47,9 @@ Codex GUI 是内置的图形化对话工作区。选择项目后，用自然语�
 
 ### 账号管理与本地代理
 
+官方账号切换可选补齐本机 Codex 自定义分区中的项目归属，保留目标账号已有布局。
+该功能默认关闭，配置方式、支持版本和恢复方法见 [本地分区映射同步](docs/codex-sidebar-sync.md)。
+
 ![Remote AI 账号管理界面](docs/assets/codex-switch-dashboard.png)
 
 ### 会话管理

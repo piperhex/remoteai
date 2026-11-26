@@ -15,6 +15,13 @@ mod account_switch_reason_tests {
         assert!(AccountSwitchReason::Automatic.refreshes_official_model_catalog());
         assert!(!AccountSwitchReason::CredentialRefresh.refreshes_official_model_catalog());
     }
+
+    #[test]
+    fn credential_refreshes_do_not_import_sidebar_membership() {
+        assert!(AccountSwitchReason::Manual.syncs_sidebar_membership());
+        assert!(AccountSwitchReason::Automatic.syncs_sidebar_membership());
+        assert!(!AccountSwitchReason::CredentialRefresh.syncs_sidebar_membership());
+    }
 }
 
 #[cfg(test)]

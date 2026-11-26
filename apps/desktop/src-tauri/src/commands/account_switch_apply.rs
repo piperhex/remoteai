@@ -13,6 +13,10 @@ impl AccountSwitchReason {
     fn refreshes_official_model_catalog(self) -> bool {
         !matches!(self, Self::CredentialRefresh)
     }
+
+    fn syncs_sidebar_membership(self) -> bool {
+        !matches!(self, Self::CredentialRefresh)
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -60,6 +64,9 @@ fn apply_account_switch<R: Runtime>(
     let state = official_account_state(&original_state, id, reason);
     let write_codex = crate::claude_code::should_write_codex_for_app(app)?;
     let enhancements_enabled = crate::client_integration::enabled_for(proxy_running);
+    if write_codex && !proxy_running && reason.syncs_sidebar_membership() {
+        sync_offline_sidebar_membership(app, &selected)?;
+    }
     if !write_codex {
         write_state(&paths, &state)?;
     } else if proxy_running {
@@ -86,6 +93,40 @@ fn write_direct_account_auth(paths: &Paths, auth: &Value, enhancements_enabled: 
     write_json_atomic(&paths.current_auth, auth)?;
     if enhancements_enabled {
         crate::providers::restore_official_config(paths)?;
+    }
+    Ok(())
+}
+
+fn sync_offline_sidebar_membership<R: Runtime>(
+    app: &tauri::AppHandle<R>,
+    selected: &Value,
+) -> Result<(), String> {
+    let settings = match read_app_settings(app) {
+        Ok(settings) => settings,
+        Err(_) => {
+            eprintln!("sidebar_sync_settings_unavailable");
+            return Ok(());
+        }
+    };
+    if !settings.codex_sidebar_sync_enabled {
+        return Ok(());
+    }
+    // A running desktop retains these preferences in memory and would overwrite an offline merge.
+    // Hot proxy switches keep the desktop identity and do not need this synchronization.
+    if chatgpt_or_codex_is_running()? {
+        eprintln!("sidebar_sync_skipped_desktop_running");
+        return Ok(());
+    }
+    for target in resolve_enabled_paths(app)? {
+        let previous = match read_json(&target.current_auth) {
+            Ok(previous) => previous,
+            Err(_) => continue,
+        };
+        if let Err(error) = crate::codex_sidebar::sync(&target.codex_home, &previous, selected) {
+            // Optional layout compatibility must not prevent a valid credential switch.
+            // Log only the error category, never identifiers, paths or credential contents.
+            eprintln!("{error}");
+        }
     }
     Ok(())
 }

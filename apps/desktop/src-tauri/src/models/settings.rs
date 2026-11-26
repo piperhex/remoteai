@@ -12,6 +12,9 @@ pub(crate) struct AppSettings {
     pub(crate) close_to_tray: bool,
     #[serde(default = "default_non_proxy_enhancements_enabled")]
     pub(crate) non_proxy_enhancements_enabled: bool,
+    /// Share missing machine-local sidebar project memberships on offline account switches.
+    #[serde(default)]
+    pub(crate) codex_sidebar_sync_enabled: bool,
     #[serde(default = "default_floating_bubble_enabled")]
     pub(crate) floating_bubble_enabled: bool,
     #[serde(default)]
@@ -279,6 +282,7 @@ impl Default for AppSettings {
             launch_at_startup: default_launch_at_startup(),
             close_to_tray: default_close_to_tray(),
             non_proxy_enhancements_enabled: default_non_proxy_enhancements_enabled(),
+            codex_sidebar_sync_enabled: false,
             floating_bubble_enabled: default_floating_bubble_enabled(),
             quota_display_all_accounts: false,
             quota_window_sync_enabled: false,
@@ -354,4 +358,20 @@ pub(crate) struct CloudAuthState {
 pub(crate) struct CloudSyncResult {
     pub(crate) uploaded: usize,
     pub(crate) downloaded: usize,
+}
+
+#[cfg(test)]
+mod sidebar_sync_tests {
+    use super::*;
+
+    #[test]
+    fn local_sidebar_sync_is_an_explicit_persisted_opt_in() {
+        let mut settings: AppSettings = serde_json::from_value(serde_json::json!({})).unwrap();
+        assert!(!settings.codex_sidebar_sync_enabled);
+        settings.codex_sidebar_sync_enabled = true;
+        let saved = serde_json::to_value(settings).unwrap();
+        assert_eq!(saved["codexSidebarSyncEnabled"], true);
+        let restored: AppSettings = serde_json::from_value(saved).unwrap();
+        assert!(restored.codex_sidebar_sync_enabled);
+    }
 }
