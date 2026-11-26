@@ -24,6 +24,7 @@ pub(crate) mod bulk;
 struct Hub {
     runtime: Runtime,
     handles: Mutex<HashMap<String, OwnedConnection>>,
+    browser_proxies: Mutex<HashMap<String, crate::browser_mapping::BrowserMappingProxy>>,
 }
 struct OwnedConnection {
     owner: String,
@@ -40,6 +41,10 @@ pub(crate) fn reset() -> Result<()> {
     for (_, entry) in hub.handles.lock().map_err(|_| Error::Closed)?.drain() {
         entry.connection.close();
     }
+    hub.browser_proxies
+        .lock()
+        .map_err(|_| Error::Closed)?
+        .clear();
     Ok(())
 }
 
@@ -52,6 +57,7 @@ fn hub() -> Result<&'static Hub> {
                 .build()
                 .map_err(Error::Io)?,
             handles: Mutex::default(),
+            browser_proxies: Mutex::default(),
         })
     })
     .as_ref()
@@ -113,6 +119,9 @@ enum Operation {
     },
     Reset,
     Addresses,
+    BrowserMappings {
+        routes: std::collections::BTreeSet<crate::browser_mapping::BrowserRoute>,
+    },
     PacketCodec {
         request: crate::packet_codec::Request,
     },
@@ -160,6 +169,10 @@ fn dispatch(request: Request) -> Result<Value> {
             Ok(Value::Null)
         }
         Operation::Reset => {
+            hub.browser_proxies
+                .lock()
+                .map_err(|_| Error::Closed)?
+                .remove(&request.owner);
             hub.handles
                 .lock()
                 .map_err(|_| Error::Closed)?
@@ -174,6 +187,23 @@ fn dispatch(request: Request) -> Result<Value> {
         }
         Operation::Poll { id, wait_ms } => poll(hub, &id, wait_ms),
         Operation::Addresses => Ok(json!(crate::local_addresses()?)),
+        Operation::BrowserMappings { routes } => {
+            let mut proxies = hub.browser_proxies.lock().map_err(|_| Error::Closed)?;
+            if routes.is_empty() {
+                proxies.remove(&request.owner);
+                return Ok(Value::Null);
+            }
+            if let Some(proxy) = proxies.get(&request.owner) {
+                proxy.configure(routes)?;
+                return Ok(json!(proxy.port()));
+            }
+            let proxy = hub
+                .runtime
+                .block_on(crate::browser_mapping::BrowserMappingProxy::start(routes))?;
+            let port = proxy.port();
+            proxies.insert(request.owner, proxy);
+            Ok(json!(port))
+        }
         Operation::MediaOpen { id, view_id } => Ok(json!(hub
             .runtime
             .block_on(owned_connection(hub, &id, &request.owner)?.open_media(&view_id))?)),

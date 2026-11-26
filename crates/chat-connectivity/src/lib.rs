@@ -6,6 +6,7 @@ mod addresses;
 mod android;
 #[cfg(target_os = "android")]
 mod android_packet_codec;
+pub mod browser_mapping;
 mod bulk;
 mod config;
 mod connection;
