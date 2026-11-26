@@ -7,15 +7,14 @@ import { BrowserNavigationContext } from '../../../../../../shared/browser/Brows
 import { openWebsiteInBrowser } from '../../../../../../shared/conversation/WebsiteLinkMenu';
 import styles from './portForwarding.module.less';
 
-export function ForwardedAddress({ port, running, onOpen }: {
-  port: number; running: boolean; onOpen?: () => void;
+export function ForwardedAddress({ address, running, onOpen }: {
+  address: string; running: boolean; onOpen?: () => void;
 }) {
   const panel = useContext(DetailsContext);
   const browser = useContext(BrowserNavigationContext);
   const preview = panel ?? browser;
   const [open, setOpen] = useState(false);
   useEffect(() => { if (!running) setOpen(false); }, [running]);
-  const address = `127.0.0.1:${port}`;
   const url = `http://${address}`;
   return <Dropdown trigger={['click']} disabled={!running} open={running && open} onOpenChange={setOpen}
     overlayStyle={{ maxWidth: 400, overflowWrap: 'anywhere' }}

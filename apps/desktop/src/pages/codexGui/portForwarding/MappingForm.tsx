@@ -5,7 +5,8 @@ import { ArrowRight } from 'lucide-react';
 import { guiLocale, uiText as t } from "../../../../../../shared/localization/uiText";
 import { MAX_PORT } from './settings';
 import type { MappingProtocol } from '../../../../../../shared/port-mapping/settings';
-import { DEFAULT_MAPPING_HOST, mappingAddress } from '../../../../../../shared/port-mapping/target';
+import { DEFAULT_MAPPING_HOST, EXAMPLE_MAPPING_DOMAIN, localMappingAddress, mappingAddress,
+  normalizeMappingDomain } from '../../../../../../shared/port-mapping/target';
 import type { ForwardingEntry, PortForwardingService } from './service';
 import styles from './portForwarding.module.less';
 
@@ -22,6 +23,7 @@ interface MappingFormProps {
 
 function useMappingForm({ service, entry, done, saving, setSaving, saveOnly, connected }: MappingFormProps) {
   const [remoteHost, setRemoteHost] = useState(entry?.remoteHost ?? '');
+  const [localDomain, setLocalDomain] = useState(entry?.localDomain ?? '');
   const [protocol, setProtocol] = useState<MappingProtocol>(entry?.protocol ?? 'tcp');
   const [remotePort, setRemotePort] = useState<number | null>(entry?.remotePort ?? null);
   const [localPort, setLocalPort] = useState<number | null>(entry?.localPort ?? null);
@@ -31,10 +33,13 @@ function useMappingForm({ service, entry, done, saving, setSaving, saveOnly, con
     if (saving) return;
     setSaving(true);
     try {
-      const target = { remoteHost, remotePort: remotePort ?? 0, localPort: localPort ?? remotePort ?? 0, protocol };
+      const target = { remoteHost, remotePort: remotePort ?? 0, localPort: localPort ?? remotePort ?? 0,
+        protocol, localDomain };
       if (entry) await service.edit(entry.id, target);
-      else if (saveOnly || !connected) service.save(target);
-      else service.add(target.remotePort, target.localPort, target.remoteHost, protocol);
+      else {
+        const id = service.save(target);
+        if (!saveOnly && connected) void service.start(id);
+      }
       done();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'client.portMappingEditing.couldNotSaveTheMappingPleaseTryAgain');
@@ -42,7 +47,7 @@ function useMappingForm({ service, entry, done, saving, setSaving, saveOnly, con
     finally { setSaving(false); }
   };
   return { remoteHost, setRemoteHost, protocol, setProtocol, remotePort, setRemotePort,
-    localPort, setLocalPort, error, submit };
+    localPort, setLocalPort, localDomain, setLocalDomain, error, submit };
 }
 
 export function MappingForm(props: MappingFormProps) {
@@ -76,7 +81,15 @@ export function MappingForm(props: MappingFormProps) {
           placeholder={t("client.portMappingEditing.sameAsRemotePort")} disabled={saving} />
       </div>
     </div>
-    {entry && <MappingPreview remoteHost={form.remoteHost} remotePort={form.remotePort}
+    <div className={styles.field}>
+      <label className={styles.label} htmlFor={`${formId}-domain`}>{t('client.mappingEditor.localDomain')}
+        <span>{t('client.portMappingEditing.optional')}</span></label>
+      <Input id={`${formId}-domain`} aria-describedby={`${formId}-domain-hint`} value={form.localDomain}
+        onChange={event => form.setLocalDomain(event.target.value)} placeholder={EXAMPLE_MAPPING_DOMAIN}
+        disabled={saving} autoComplete="off" spellCheck={false} />
+      <p className={styles.hint} id={`${formId}-domain-hint`}>{t('client.mappingEditor.localDomainHelp')}</p>
+    </div>
+    {entry && <MappingPreview remoteHost={form.remoteHost} remotePort={form.remotePort} localDomain={form.localDomain}
       localPort={form.localPort} updatedAt={entry.updatedAt} />}
     {form.error && <div className={styles.error} role="alert">{displayError(form.error)}</div>}
   </form>;
@@ -91,17 +104,22 @@ export function MappingFormActions({ formId, entry, connected, done, saving }:
   </div>;
 }
 
-function MappingPreview({ remoteHost, remotePort, localPort, updatedAt }: {
-  remoteHost: string; remotePort: number | null; localPort: number | null; updatedAt?: number;
+function MappingPreview({ remoteHost, remotePort, localPort, localDomain, updatedAt }: {
+  remoteHost: string; remotePort: number | null; localPort: number | null; localDomain: string; updatedAt?: number;
 }) {
   let target = '—';
+  let access = '—';
+  const port = localPort ?? remotePort;
   try {
     if (remotePort) target = mappingAddress({ remoteHost, remotePort });
   } catch { /* Keep the draft editable; submission reports invalid IP addresses. */ }
+  try {
+    if (port) access = localMappingAddress({ localDomain: normalizeMappingDomain(localDomain), localPort: port });
+  } catch { /* Submission reports invalid domains. */ }
   return <div className={styles.previewSection}>
     <div className={styles.preview}>
       <span>{t("client.portMappingEditing.localAccess")} → {t("client.portMappingEditing.remoteTarget")}</span>
-      <div><code>127.0.0.1:{localPort ?? remotePort ?? '—'}</code><ArrowRight size={18} aria-hidden="true" />
+      <div><code>{access}</code><ArrowRight size={18} aria-hidden="true" />
         <code>{target}</code></div>
     </div>
     {updatedAt && <p className={styles.hint}>

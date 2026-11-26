@@ -17,10 +17,11 @@ describe('browser mapping index', () => {
   it('exposes only active TCP addresses and follows stop, disconnect and disposal', () => {
     const store = new BrowserMappingStore();
     const service = source([mapping('tcp'), mapping('udp', { protocol: 'udp' }),
-      mapping('both', { protocol: 'both', localPort: 18081 }), mapping('stopped', { status: 'stopped' }),
+      mapping('both', { protocol: 'both', localPort: 18081, localDomain: 'app.localhost' }),
+      mapping('stopped', { status: 'stopped' }),
       mapping('starting', { status: 'starting' }), mapping('error', { status: 'error' })]);
     const unregister = store.register('computer', service);
-    expect(store.snapshot().map(entry => entry.url)).toEqual(['http://127.0.0.1:18080/', 'http://127.0.0.1:18081/']);
+    expect(store.snapshot().map(entry => entry.url)).toEqual(['http://127.0.0.1:18080/', 'http://app.localhost:18081/']);
     service.replace([mapping('tcp', { status: 'stopping' })]);
     expect(store.snapshot()).toEqual([]);
     service.replace([mapping('tcp')]); unregister();

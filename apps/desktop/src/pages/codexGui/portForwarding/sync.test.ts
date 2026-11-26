@@ -12,12 +12,12 @@ const storage = (): MappingStorage => {
   return { getItem: key => values.get(key) ?? null, setItem: (key, value) => { values.set(key, value); } };
 };
 function server(mappings: PortMapping[] = []) {
-  let doc: MappingDocument = { revision: 0, mappings };
+  let doc: MappingDocument = { revision: 0, mappings, supportsLocalDomain: true };
   const exchange = vi.fn(async (input?: MappingDocument) => {
     if (!input) return structuredClone(doc);
     if (input.mappings.length > MAX_PORT_MAPPINGS) throw new Error('Invalid port mapping configuration');
     if (input.revision !== doc.revision) return { ...structuredClone(doc), accepted: false };
-    doc = { revision: doc.revision + 1, mappings: structuredClone(input.mappings) };
+    doc = { ...doc, revision: doc.revision + 1, mappings: structuredClone(input.mappings) };
     return { ...structuredClone(doc), accepted: true };
   });
   return { exchange, document: () => doc };
@@ -57,6 +57,34 @@ it('syncs additions, protocols, stable IDs, edits and removals between phone, de
   await web.service.remove(original.id); await flush(); await phone.sync.refresh(); await desktop.sync.refresh();
   expect(phone.service.snapshot()).toEqual([]);
   expect(desktop.service.snapshot()).toEqual([]);
+});
+
+it('synchronizes domain changes and clears, keeping domain changes queued during a server upgrade', async () => {
+  const cloud = server();
+  let legacy = true;
+  const exchange = vi.fn(async (input?: MappingDocument) => {
+    const doc = await cloud.exchange(input);
+    return { ...doc, supportsLocalDomain: !legacy };
+  });
+  const phone = device({ exchange }), desktop = device({ exchange });
+  await flush();
+  const target = { remotePort: 3000, localPort: 13000 };
+  const id = phone.service.save({ ...target, localDomain: 'app.localhost' });
+  await flush();
+  expect(phone.service.snapshot()[0].localDomain).toBe('app.localhost');
+  expect(phone.sync.isSynced()).toBe(false);
+  expect(cloud.document().mappings[0]).not.toHaveProperty('localDomain');
+  const revision = cloud.document().revision;
+  await phone.sync.refresh();
+  expect(cloud.document().revision).toBe(revision);
+  legacy = false;
+  await phone.sync.refresh(); await desktop.sync.refresh();
+  expect(phone.sync.isSynced()).toBe(true);
+  expect(desktop.service.snapshot()[0].localDomain).toBe('app.localhost');
+  await desktop.service.edit(id, { ...target, localDomain: '' });
+  await flush(); await phone.sync.refresh();
+  expect(phone.service.snapshot()[0].localDomain || '').toBe('');
+  expect(desktop.sync.isSynced()).toBe(true);
 });
 
 it('retains UDP locally and retries when an older server silently drops the protocol field', async () => {

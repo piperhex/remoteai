@@ -22,7 +22,8 @@ async function add(page: Page, remotePort: number, localPort: number) {
   await page.getByRole('dialog').getByRole('button', { name: '添加并启动' }).click();
 }
 test.beforeEach(async ({ page }) => {
-  await page.goto('/e2e/port-forwarding-harness.html');
+  await page.route(/^https:\/\/fonts\./, route => route.abort());
+  await page.goto('/e2e/port-forwarding-harness.html', { waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: '端口映射', exact: true }).click();
 });
 
@@ -55,6 +56,43 @@ test('opens separate forms, discards drafts, and uses optional defaults', async 
   await expect(mapping.getByRole('status')).toHaveText('已停止');
   await mapping.getByRole('button', { name: /^复制本地地址/ }).click();
   expect(await page.evaluate(() => window.portForwardingFixture.clipboard)).toEqual(['127.0.0.1:3002']);
+});
+
+test('copies and opens a custom domain and restores the IP address after clearing it', async ({ page }, info) => {
+  await page.setViewportSize({ width: 540, height: 760 });
+  await page.getByRole('dialog').getByRole('button', { name: '新建映射', exact: true }).click();
+  await panel(page).getByRole('spinbutton', { name: '远程端口' }).fill('3000');
+  await panel(page).getByRole('spinbutton', { name: '本地端口' }).fill('13000');
+  const domain = panel(page).getByRole('textbox', { name: '自定义域名' });
+  const start = page.getByRole('dialog').getByRole('button', { name: '添加并启动' });
+  await domain.fill('https://app.localhost/');
+  await start.click();
+  await expect(panel(page).getByRole('alert')).toContainText('请输入域名');
+  await domain.fill('App.Localhost');
+  await start.click();
+  const mapping = entry(page, 'app.localhost:13000 → 127.0.0.1:3000');
+  await expect(mapping.getByRole('status')).toHaveText('映射中');
+  await mapping.getByRole('button', { name: /^复制本地地址/ }).click();
+  expect(await page.evaluate(() => window.portForwardingFixture.clipboard)).toEqual(['app.localhost:13000']);
+  await mapping.getByRole('button', { name: 'app.localhost:13000', exact: true }).click();
+  await expect(page.getByRole('menuitem', { name: '在 Remote AI 中预览' })).toBeVisible();
+  await page.screenshot({ path: info.outputPath('pc-remote-domain-open.png'), animations: 'disabled' });
+  await page.getByRole('menuitem', { name: '在 Remote AI 中预览' }).click();
+  await expect.poll(() => page.evaluate(() => window.portForwardingFixture.previewUrls))
+    .toContain('http://app.localhost:13000');
+  await page.getByRole('button', { name: '关闭详情抽屉' }).click();
+  await page.getByRole('button', { name: '端口映射', exact: true }).click();
+  await mapping.getByRole('button', { name: 'app.localhost:13000', exact: true }).click();
+  await page.getByRole('menuitem', { name: '在浏览器中打开' }).click();
+  await expect.poll(() => page.evaluate(() => window.portForwardingFixture.browserUrls))
+    .toEqual(['http://app.localhost:13000']);
+  await page.reload();
+  await page.getByRole('button', { name: '端口映射', exact: true }).click();
+  await mapping.getByRole('button', { name: /^编辑映射/ }).click();
+  await expect(domain).toHaveValue('app.localhost');
+  await domain.fill('');
+  await page.getByRole('button', { name: '保存修改' }).click();
+  await expect(entry(page, '127.0.0.1:13000 → 127.0.0.1:3000')).toBeVisible();
 });
 
 test('keeps eight cards and the form usable in a small window', async ({ page }) => {
@@ -229,12 +267,8 @@ test('keeps mappings by computer, restores settings, and fits compact light and 
     await page.setViewportSize({ width, height: 800 });
     await expect.poll(async () => {
       const bounds = await panel(page).boundingBox();
-      return bounds!.x + bounds!.width;
-    }).toBeLessThanOrEqual(width);
-    const bounds = await panel(page).boundingBox();
-    expect(bounds!.width).toBeLessThanOrEqual(720);
-    expect(bounds!.x).toBeGreaterThanOrEqual(0);
-    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+      return !!bounds && bounds.width <= 720 && bounds.x >= 0 && bounds.x + bounds.width <= width;
+    }).toBe(true);
   }
   await closePanel(page); await page.getByRole('button', { name: '切换深色' }).click(); await launcher.click();
   await expect(entry(page, '127.0.0.1:13000 → 127.0.0.1:3000')).toBeVisible();

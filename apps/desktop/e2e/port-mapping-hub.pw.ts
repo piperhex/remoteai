@@ -88,12 +88,13 @@ for (const remote of [false, true]) {
     await dialog.locator('.ant-select-selector').click();
     await chooseStudio(page);
     await dialog.getByRole('spinbutton', { name: '远程端口' }).fill('5000');
+    await dialog.getByRole('textbox', { name: '自定义域名' }).fill('studio.localhost');
     await page.screenshot({ path: info.outputPath(prefix + '-create.png'), animations: 'disabled' });
     await dialog.getByRole('button', { name: '保存', exact: true }).click();
     await expect(dialog.getByRole('alert')).toContainText('这个本地端口已用于其他映射');
     await dialog.getByRole('spinbutton', { name: '本地端口' }).fill('15000');
     await dialog.getByRole('button', { name: '保存', exact: true }).click();
-    const saved = screen.getByRole('article', { name: /127\.0\.0\.1:15000 →/ });
+    const saved = screen.getByRole('article', { name: /studio\.localhost:15000 →/ });
     await expect(saved.getByRole('status')).toHaveText('已停止');
     await saved.getByRole('button', { name: /^更多操作/ }).click();
     await page.getByRole('menuitem', { name: '修改别名' }).click();
@@ -101,6 +102,7 @@ for (const remote of [false, true]) {
     await dialog.getByRole('button', { name: '保存', exact: true }).click();
     await expect(saved).toContainText('Studio API');
     await saved.getByRole('button', { name: /^编辑映射/ }).click();
+    await expect(dialog.getByRole('textbox', { name: '自定义域名' })).toHaveValue('studio.localhost');
     await dialog.getByRole('textbox', { name: '目标 IP' }).fill('192.168.5.4');
     await dialog.getByRole('button', { name: '保存', exact: true }).click();
     await expect(saved).toContainText('192.168.5.4:5000');

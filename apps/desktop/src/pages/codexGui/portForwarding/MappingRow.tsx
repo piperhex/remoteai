@@ -3,7 +3,7 @@ import { MappingActions } from './MappingActions';
 import { ArrowRight } from 'lucide-react';
 import { ForwardedAddress } from './ForwardedAddress';
 import { protocolLabel } from '../../../../../../shared/port-mapping/settings';
-import { mappingAddress } from '../../../../../../shared/port-mapping/target';
+import { localMappingAddress, mappingAddress } from '../../../../../../shared/port-mapping/target';
 import type { ForwardingEntry, PortForwardingService } from './service';
 import styles from './portForwarding.module.less';
 
@@ -21,11 +21,12 @@ export function MappingRow({ entry, service, connected, onOpen, edit }: {
 }) {
   const running = entry.status === 'running';
   const target = mappingAddress(entry);
-  const label = `127.0.0.1:${entry.localPort} → ${target}`;
+  const address = localMappingAddress(entry);
+  const label = `${address} → ${target}`;
   return <article className={styles.mapping} aria-label={label}>
     <div className={styles.endpoints}>
-      {entry.protocol === 'udp' ? <code className={styles.address}>127.0.0.1:{entry.localPort}</code>
-        : <ForwardedAddress port={entry.localPort} running={running} onOpen={onOpen} />}
+      {entry.protocol === 'udp' ? <code className={styles.address}>{address}</code>
+        : <ForwardedAddress address={address} running={running} onOpen={onOpen} />}
       <ArrowRight size={20} className={styles.direction} aria-hidden="true" /><code>{target}</code>
     </div>
     <div className={styles.mappingBottom}>

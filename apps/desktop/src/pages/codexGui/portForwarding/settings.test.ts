@@ -1,9 +1,22 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, it } from 'vitest';
 import { readPortMappings, savePortMappings } from './settings';
-import { mappingConflicts } from '../../../../../../shared/port-mapping/settings';
+import { mappingConfig, mappingConflicts } from '../../../../../../shared/port-mapping/settings';
+import { localMappingAddress } from '../../../../../../shared/port-mapping/target';
 
 beforeEach(() => localStorage.clear());
+
+it('restores the optional domain in the saved and synchronized configuration', () => {
+  const entry = { id: 'custom', remotePort: 3000, localPort: 13000, localDomain: ' App.Localhost ' };
+  savePortMappings('scope', [entry]);
+  const [restored] = readPortMappings('scope');
+  expect(localMappingAddress(restored)).toBe('app.localhost:13000');
+  expect(mappingConfig(restored)).toHaveProperty('localDomain', 'app.localhost');
+  expect(readPortMappings('another')).toEqual([]);
+  savePortMappings('scope', [{ ...entry, localDomain: '' }]);
+  expect(localMappingAddress(readPortMappings('scope')[0])).toBe('127.0.0.1:13000');
+});
+
 it('preserves protocols, accepts separate TCP/UDP on one port, and rejects overlapping or invalid protocols', () => {
   const tcp = { id: 'tcp', remotePort: 53, localPort: 1053, protocol: 'tcp' as const };
   const udp = { ...tcp, id: 'udp', protocol: 'udp' as const };

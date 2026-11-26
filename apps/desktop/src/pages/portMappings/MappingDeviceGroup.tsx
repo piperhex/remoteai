@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { computerDetails } from '../../../../../shared/remote-chat/devices';
 import { ArrowRight, Cloud, CloudUpload, Monitor } from 'lucide-react';
 import { displayError, guiLocale, uiText as t } from '../../../../../shared/localization/uiText';
-import { mappingAddress } from '../../../../../shared/port-mapping/target';
+import { localMappingAddress, mappingAddress } from '../../../../../shared/port-mapping/target';
 import { protocolLabel } from '../../../../../shared/port-mapping/settings';
 import { ForwardedAddress } from '../codexGui/portForwarding/ForwardedAddress';
 import { MappingActions } from '../codexGui/portForwarding/MappingActions';
@@ -39,13 +39,13 @@ function DeviceRow({ entry, group, select }: { entry: ForwardingEntry; group: Ma
   const { device, session } = group;
   const alias = useSyncExternalStore(session.aliases.subscribe, () => session.aliases.get(entry.id));
   const target = mappingAddress(entry);
-  const local = `127.0.0.1:${entry.localPort}`;
+  const local = localMappingAddress(entry);
   const open = (mode: MappingSelection['mode']) => select({ mode, deviceId: device.deviceId, entryId: entry.id });
   return <article className={styles.row} aria-label={`${local} → ${target}`}>
     <div className={styles.local}>
       {alias && <strong className={styles.alias}>{alias}</strong>}
       {entry.protocol === 'udp' ? <code>{local}</code>
-        : <ForwardedAddress port={entry.localPort} running={entry.status === 'running'} />}
+        : <ForwardedAddress address={local} running={entry.status === 'running'} />}
       <div className={styles.meta}><span className={styles.protocol}>{protocolLabel(entry.protocol)}</span>
         <MappingStatus entry={entry} /></div>
     </div>

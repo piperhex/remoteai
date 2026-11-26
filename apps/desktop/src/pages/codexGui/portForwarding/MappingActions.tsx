@@ -2,13 +2,13 @@ import { Button, Dropdown, Tooltip, message } from 'antd';
 import { Copy, MoreHorizontal, Pencil, Play, Square, Trash2 } from 'lucide-react';
 import { uiText as t } from '../../../../../../shared/localization/uiText';
 import { copyText } from '../../../../../../shared/clipboard';
-import { mappingAddress } from '../../../../../../shared/port-mapping/target';
+import { localMappingAddress, mappingAddress } from '../../../../../../shared/port-mapping/target';
 import type { ForwardingEntry, PortForwardingService } from './service';
 import styles from './portForwarding.module.less';
 
-async function copyAddress(port: number) {
+async function copyAddress(address: string) {
   try {
-    await copyText(`127.0.0.1:${port}`);
+    await copyText(address);
     void message.success({ content: t("client.portForwarding.localAddressCopied"), style: { maxWidth: 400, marginInline: 'auto' } });
   } catch { void message.error({ content: t("client.chat.couldNotCopyTryAgain"), style: { maxWidth: 400, marginInline: 'auto' } }); }
 }
@@ -18,11 +18,12 @@ export function MappingActions({ entry, service, connected, edit, rename }: {
 }) {
   const busy = entry.status === 'starting' || entry.status === 'stopping';
   const stopAction = entry.status === 'running' || busy;
-  const label = `127.0.0.1:${entry.localPort} → ${mappingAddress(entry)}`;
+  const address = localMappingAddress(entry);
+  const label = `${address} → ${mappingAddress(entry)}`;
   return <div className={styles.rowActions}>
     <Tooltip title={t("client.portForwarding.copyLocalAddress")} styles={{ root: { maxWidth: 400 } }}>
       <Button type="text" aria-label={`${t("client.portForwarding.copyLocalAddress")} ${label}`} icon={<Copy size={18} />}
-        onClick={() => { void copyAddress(entry.localPort); }} />
+        onClick={() => { void copyAddress(address); }} />
     </Tooltip>
     <Tooltip title={t("client.portMappingEditing.editMapping")} styles={{ root: { maxWidth: 400 } }}>
       <Button type="text" aria-label={`${t("client.portMappingEditing.editMapping")} ${label}`} icon={<Pencil size={18} />}

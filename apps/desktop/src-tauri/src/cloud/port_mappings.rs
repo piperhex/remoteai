@@ -10,6 +10,8 @@ pub(crate) struct PortMapping {
     remote_port: u16,
     local_port: u16,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    local_domain: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     protocol: Option<MappingProtocol>,
     updated_at: Option<u64>,
 }
@@ -29,6 +31,8 @@ pub(crate) struct MappingDocument {
     mappings: Vec<PortMapping>,
     #[serde(default)]
     accepted: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    supports_local_domain: Option<bool>,
 }
 
 fn valid_document(document: &MappingDocument) -> bool {
@@ -37,10 +41,35 @@ fn valid_document(document: &MappingDocument) -> bool {
             valid_id(&entry.id)
                 && entry.remote_port > 0
                 && entry.local_port > 0
+                && entry.local_domain.as_deref().is_none_or(valid_local_domain)
                 && entry
                     .remote_host
                     .parse::<std::net::IpAddr>()
                     .is_ok_and(|ip| !ip.is_unspecified())
+        })
+}
+
+fn valid_local_domain(domain: &str) -> bool {
+    if matches!(domain, "" | "localhost") {
+        return true;
+    }
+    let Some((_, last_label)) = domain.rsplit_once('.') else {
+        return false;
+    };
+    domain.len() <= 253
+        && last_label
+            .as_bytes()
+            .first()
+            .is_some_and(u8::is_ascii_lowercase)
+        && domain.split('.').all(|label| {
+            let bytes = label.as_bytes();
+            !bytes.is_empty()
+                && bytes.len() <= 63
+                && bytes[0] != b'-'
+                && bytes[bytes.len() - 1] != b'-'
+                && bytes
+                    .iter()
+                    .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || *byte == b'-')
         })
 }
 
@@ -88,7 +117,7 @@ fn exchange<R: Runtime>(
         &mut settings,
         &mut credentials,
         method,
-        &format!("/devices/{device_id}/port-mappings"),
+        &format!("/devices/{device_id}/port-mappings?localDomain=1"),
         body,
     )?;
     let result: MappingDocument = response
@@ -144,11 +173,13 @@ mod tests {
         let mut doc = MappingDocument {
             revision: 0,
             accepted: false,
+            supports_local_domain: None,
             mappings: vec![PortMapping {
                 id: "mapping-1".into(),
                 remote_host: "::1".into(),
                 remote_port: 3000,
                 local_port: 13000,
+                local_domain: None,
                 protocol: None,
                 updated_at: None,
             }],
@@ -156,5 +187,21 @@ mod tests {
         assert!(valid_document(&doc));
         doc.mappings[0].remote_host = "0.0.0.0".into();
         assert!(!valid_document(&doc));
+    }
+
+    #[test]
+    fn custom_domains_round_trip_and_reject_urls() {
+        let value = serde_json::json!({ "revision": 1, "supportsLocalDomain": true, "mappings": [{
+            "id": "one", "remoteHost": "127.0.0.1", "remotePort": 3000, "localPort": 13000,
+            "localDomain": "app.localhost"
+        }] });
+        let mut document: MappingDocument = serde_json::from_value(value).unwrap();
+        assert!(valid_document(&document));
+        assert_eq!(
+            serde_json::to_value(&document).unwrap()["mappings"][0]["localDomain"],
+            "app.localhost"
+        );
+        document.mappings[0].local_domain = Some("app.localhost:8080".into());
+        assert!(!valid_document(&document));
     }
 }

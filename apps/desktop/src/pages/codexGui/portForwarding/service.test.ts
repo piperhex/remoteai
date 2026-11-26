@@ -63,6 +63,29 @@ it('rejects invalid IP input before opening a resource', () => {
   expect(client.openResource).not.toHaveBeenCalled();
 });
 
+it('applies domain edits from either device without restarting the listener', async () => {
+  const target = { remotePort: 3000, localPort: 13000 };
+  const id = service.save({ ...target, localDomain: ' App.Localhost ' });
+  await service.start(id);
+  const changes = vi.fn();
+  service.subscribeChanges(changes);
+  expect(service.snapshot()[0].localDomain).toBe('app.localhost');
+  expect(client.openResource).toHaveBeenCalledWith('http://127.0.0.1:3000');
+  await expect(service.edit(id, { ...target, localDomain: 'app.localhost:80' })).rejects
+    .toThrow('client.mappingEditor.invalidLocalDomain');
+  await service.edit(id, { ...target, localDomain: 'second.localhost' });
+  expect(service.snapshot()[0]).toMatchObject({ status: 'running', localDomain: 'second.localhost' });
+  expect(changes).toHaveBeenLastCalledWith(id, expect.objectContaining({ localDomain: 'second.localhost' }));
+  expect(client.closeResource).not.toHaveBeenCalled();
+  service.applySaved([{ ...target, id, localDomain: 'synced.localhost' }]);
+  await flush();
+  expect(service.snapshot()[0]).toMatchObject({ status: 'running', localDomain: 'synced.localhost' });
+  await service.edit(id, { ...target, localDomain: '' });
+  expect(service.snapshot()[0]).toMatchObject({ status: 'running', localDomain: '' });
+  expect(changes).toHaveBeenLastCalledWith(id, expect.objectContaining({ localDomain: '' }));
+  expect(client.closeResource).not.toHaveBeenCalled();
+});
+
 it('edits a running mapping in place, releases the old port, and restarts with the new target', async () => {
   service.add(3000, 13000); await flush();
   const id = service.snapshot()[0].id;
