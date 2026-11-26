@@ -171,6 +171,7 @@ fn browser_builder(
     .initialization_script(include_str!("links.js"))
     .initialization_script(include_str!("overlays/dismiss.js"))
     .initialization_script_for_all_frames(include_str!("zoom_wheel.js"))
+    .on_document_title_changed(lifecycle::title_changed)
     .on_navigation(move |url| {
         #[cfg(not(windows))]
         if zoom::handle_wheel(&app, &event, url) {

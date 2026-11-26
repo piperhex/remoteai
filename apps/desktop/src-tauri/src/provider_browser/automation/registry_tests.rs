@@ -25,6 +25,11 @@ fn finish_lookup_distinguishes_closed_tabs_from_another_conversations_tabs() {
     assert!(state.find("owner", &id).unwrap().is_some());
     assert!(matches!(state.find("other", &id), Err(Error::Missing)));
     assert!(state.find("owner", &id).unwrap().is_some());
+    assert!(state
+        .title(&id, "https://example.com", "Search results")
+        .unwrap());
+    state.navigated(&id, "https://example.com".into()).unwrap();
+    assert_eq!(state.get("owner", &id).unwrap().title, "Search results");
     state
         .icons(
             &id,
@@ -37,6 +42,13 @@ fn finish_lookup_distinguishes_closed_tabs_from_another_conversations_tabs() {
         .navigated(&id, "https://other.example.com".into())
         .unwrap();
     assert!(state.get("owner", &id).unwrap().icons.is_empty());
+    assert!(!state
+        .title(&id, "https://example.com", "Stale title")
+        .unwrap());
+    assert!(state
+        .title(&id, "https://other.example.com", "Next page")
+        .unwrap());
+    assert_eq!(state.get("owner", &id).unwrap().title, "Next page");
     state
         .icons(
             &id,

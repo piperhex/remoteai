@@ -87,13 +87,23 @@ impl State {
         {
             if tab.url != address {
                 tab.icons.clear();
-            }
-            tab.url = address;
-            if let Ok(url) = url::Url::parse(&tab.url) {
-                tab.title = url.host_str().unwrap_or_default().into();
+                tab.title.clear();
+                tab.url = address;
             }
         }
         Ok(())
+    }
+
+    pub(super) fn title(&self, id: &str, address: &str, title: &str) -> Result<bool> {
+        let mut tabs = self.tabs.lock().map_err(|_| Error::Unavailable)?;
+        let Some(tab) = tabs.get_mut(id) else {
+            return Ok(false);
+        };
+        if tab.url != address || tab.title == title {
+            return Ok(false);
+        }
+        tab.title = title.to_owned();
+        Ok(true)
     }
 
     pub(super) fn icons(&self, id: &str, address: &str, icons: Vec<String>) -> Result<()> {

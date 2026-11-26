@@ -132,6 +132,7 @@ pub(crate) async fn execute(app: AppHandle, request: Request) -> Result<Value> {
             let current = state.get(&tab.thread_id, &tab.id)?;
             image["loading"] = json!(current.loading);
             if current.url == address.as_str() {
+                image["title"] = json!(current.title);
                 image["icons"] = json!(current.icons);
             }
             image

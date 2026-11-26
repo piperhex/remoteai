@@ -33,14 +33,26 @@ pub(crate) fn handle_page_load(webview: &Webview, payload: &PageLoadPayload<'_>)
 }
 
 fn notify_visit(view: &Webview) {
-    let app = view.app_handle().clone();
-    let label = view.label().to_string();
     let icons =
         include_str!("../../../../../shared/browser/icons/pageIcons.js").replace("export ", "");
     let script = format!(
         "(()=>{{{icons};return JSON.stringify({{url:location.href,title:document.title,\
         visited:true,icons:readPageIcons(document)}});}})()"
     );
+    emit_page_metadata(view, &script);
+}
+
+pub(super) fn title_changed(view: Webview, _title: String) {
+    // Read the URL and DOM title together. Some engines supply the URL as the title of an untitled page.
+    emit_page_metadata(
+        &view,
+        "JSON.stringify({pageTitle:{url:location.href,title:document.title}})",
+    );
+}
+
+fn emit_page_metadata(view: &Webview, script: &str) {
+    let app = view.app_handle().clone();
+    let label = view.label().to_string();
     if view
         .eval_with_callback(script, move |raw| {
             let value = serde_json::from_str::<serde_json::Value>(&raw)
@@ -54,13 +66,13 @@ fn notify_visit(view: &Webview) {
                 });
             if let Some(value) = value {
                 if app.emit_to("main", &label, value).is_err() {
-                    eprintln!("Browser visit notification unavailable");
+                    eprintln!("Browser page metadata notification unavailable");
                 }
             }
         })
         .is_err()
     {
-        eprintln!("Browser visit unavailable");
+        eprintln!("Browser page metadata unavailable");
     }
 }
 
