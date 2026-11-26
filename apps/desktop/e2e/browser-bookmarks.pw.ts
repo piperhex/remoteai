@@ -2,8 +2,14 @@ import { expect, test } from '@playwright/test';
 import { verifyBookmarkOverflow } from '../../../shared/testing/bookmarkOverflow.mts';
 import { verifyBookmarkFolders } from '../../../shared/testing/bookmarkFolders.mts';
 import { verifyAddPageToFolder } from '../../../shared/testing/bookmarkFolderPages.mts';
+import { verifyBookmarkContextMenu } from '../../../shared/testing/bookmarkContextMenu.mts';
 
 for (const mode of ['local', 'remote']) {
+  test(`${mode} bookmark context menu above folder contents`, async ({ page }, info) => {
+    const theme = mode === 'remote' ? '&dark=1&font=20' : '';
+    await verifyBookmarkContextMenu(page, info, { label: `desktop-${mode}`, scope: `bookmarks-${mode}`,
+      harness: `/e2e/browser-bookmarks-harness.html?mode=${mode}${theme}` });
+  });
   test(`${mode} add a page from a bookmark folder`, async ({ page }, info) => {
     const theme = mode === 'remote' ? '&dark=1&font=20' : '';
     await verifyAddPageToFolder(page, info, { label: `desktop-${mode}`, scope: `bookmarks-${mode}`,
