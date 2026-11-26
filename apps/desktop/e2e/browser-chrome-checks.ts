@@ -46,13 +46,13 @@ async function verifyNavigation(browser: Locator) {
   const address = browser.getByLabel('页面地址', { exact: true });
   await browser.getByRole('button', { name: '新标签页', exact: true }).click();
   await expect(browser.getByRole('tab').last().locator('img')).toHaveCount(0);
-  await expect(browser.locator('.pm-browser-toolbar .lucide-globe')).toBeVisible();
+  await expect(browser.locator('.pm-browser-toolbar form .lucide-globe')).toBeVisible();
   await address.fill(site.replace('https://', '')); await address.press('Enter');
   await expect(address).toHaveValue(site);
   const selectedIcon = browser.getByRole('tab').last().locator('img');
   await expect(selectedIcon).toHaveAttribute('src', 'https://docs.example.test/favicon.png');
   await expect(selectedIcon).toHaveAttribute('data-loaded', 'true');
-  await expect(browser.locator('.pm-browser-toolbar img')).toHaveAttribute('data-loaded', 'true');
+  await expect(browser.locator('.pm-browser-toolbar form img')).toHaveAttribute('data-loaded', 'true');
   await expect(browser.locator('.pm-browser-page:not([hidden]) iframe')).toHaveAttribute('src', site);
   await address.fill('javascript:alert(1)'); await address.press('Enter');
   await expect(address).toHaveAttribute('aria-invalid', 'true');
@@ -66,7 +66,7 @@ async function verifyFallbackAndOverflow(page: Page, browser: Locator, info: Tes
   await address.fill('missing.example.test/preview-site/page'); await address.press('Enter');
   await expect(browser.getByRole('tab').last().locator('img')).toHaveCount(0);
   await expect(browser.getByRole('tab').last().locator('.lucide-globe')).toBeVisible();
-  await expect(browser.locator('.pm-browser-toolbar img')).toHaveCount(0);
+  await expect(browser.locator('.pm-browser-toolbar form img')).toHaveCount(0);
   await page.screenshot({ path: info.outputPath(`${label}-missing-icon.png`) });
   await browser.getByRole('button', { name: '后退', exact: true }).click();
   await expect(address).toHaveValue(site);

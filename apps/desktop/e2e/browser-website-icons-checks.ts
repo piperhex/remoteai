@@ -35,7 +35,7 @@ export async function verifyWebsiteIcons(options: {
   const bookmark = browser.locator('[data-bookmark-id="page"]');
   await bookmark.click();
   const url = new URL('/icon-site/assets/logo.png', page.url()).href;
-  for (const image of [browser.getByRole('tab').locator('img'), browser.locator('.pm-browser-toolbar img'),
+  for (const image of [browser.getByRole('tab').locator('img'), browser.locator('.pm-browser-toolbar form img'),
     bookmark.locator('img')]) {
     await expect(image).toHaveAttribute('src', url);
     await expect(image).toHaveAttribute('data-loaded', 'true');
