@@ -26,6 +26,10 @@
     "type": "module"
   },
   "action": {
+    "default_icon": {
+      "16": "icon-16.png",
+      "32": "icon-32.png"
+    },
     "default_title": "__MSG_extensionName__"
   },
   "side_panel": {
@@ -35,6 +39,9 @@
     "extension_pages": "script-src 'self'; object-src 'none'; frame-src 'self' https://codex.onepiper.cloud"
   },
   "icons": {
+    "16": "icon-16.png",
+    "32": "icon-32.png",
+    "48": "icon-48.png",
     "128": "icon.png"
   }
 }

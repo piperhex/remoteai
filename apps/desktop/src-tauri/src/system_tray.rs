@@ -81,8 +81,15 @@ pub(crate) fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         builder = builder.menu(&menu);
     }
 
-    if let Some(icon) = app.default_window_icon().cloned() {
-        builder = builder.icon(icon);
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder
+            .icon(tauri::include_image!("icons/tray-black.png"))
+            .icon_as_template(true);
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        builder = builder.icon(tauri::include_image!("icons/32x32.png"));
     }
 
     let tray = builder.build(app)?;

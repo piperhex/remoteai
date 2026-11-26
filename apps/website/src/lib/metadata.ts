@@ -132,6 +132,8 @@ export function renderHead(route: Route) {
     `<meta name="description" content="${escapeHtml(description)}">`,
     `<meta name="robots" content="${path === '404/' ? 'noindex, follow' : 'index, follow, max-image-preview:large'}">`,
     `<link rel="icon" type="image/png" href="${new URL('media/favicon.png', SITE_URL).pathname}">`,
+    `<link rel="icon" type="image/svg+xml" href="${new URL('favicon.svg', SITE_URL).pathname}">`,
+    `<link rel="apple-touch-icon" href="${new URL('apple-touch-icon.png', SITE_URL).pathname}">`,
     ...socialTags({ title, description, url, image, language }),
   ];
   if (path === '404/') return tags.join('\n');
