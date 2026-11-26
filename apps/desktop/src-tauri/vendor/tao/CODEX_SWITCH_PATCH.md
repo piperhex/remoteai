@@ -25,9 +25,8 @@ The backport changes only four Windows source files:
 - `minimal_ime.rs`: consume the character-lookahead snapshot without pumping
   messages while window state is locked.
 
-The only additional source change is a safety comment for the moved Win32 call.
-Library sources, README, and licenses are otherwise preserved. The normalized
-Cargo manifest omits unused examples and their development dependencies.
+The backport also adds a safety comment for the moved Win32 call.
+The normalized Cargo manifest omits unused examples and their development dependencies.
 The upstream formatting configuration is included without its nightly-only
 import grouping option so the vendored source can be checked with stable rustfmt.
 
@@ -56,3 +55,14 @@ release CI, including nextest. Remove this patch when Tauri accepts a released
 Tao version containing the fix and that version passes the same regression
 tests. Do not replace the mutex with a reentrant mutex or skip input events;
 neither addresses all shared state protected across message pumping.
+
+## Maximized windows entering fullscreen
+
+Windows can retain the maximized state when a borderless window enters fullscreen.
+In `event_loop.rs`, the `WM_NCCALCSIZE` handler reserves the taskbar work area
+only outside fullscreen. WebView2 then receives the full monitor bounds during
+video playback and the maximized work area again on exit.
+
+`../../tests/windows_fullscreen.rs` checks the transition against the current
+monitor's physical size and position. Keep this fix until the same regression
+test passes with the replacement Tao version.

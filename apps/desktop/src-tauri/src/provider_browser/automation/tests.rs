@@ -90,6 +90,8 @@ fn opens_conversation_browser() {
             let url = "http://127.0.0.1:1552/e2e/website-tabs-harness.html?mode=local&native=1&origin=http://127.0.0.1:1553";
             crate::webview_windows::builder(app.handle(), "main", WebviewUrl::External(url.parse()?))
                 .additional_browser_args(&main_arguments)
+                // Match the production Windows host, including its fullscreen client-area calculation.
+                .decorations(false)
                 .title("Conversation browser verification").inner_size(1440.0, 900.0).focused(false).build()?;
             Ok(())
         }).run(context).unwrap();

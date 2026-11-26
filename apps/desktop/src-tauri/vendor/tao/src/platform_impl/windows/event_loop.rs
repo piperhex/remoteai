@@ -2185,8 +2185,8 @@ unsafe fn public_window_callback_inner<T: 'static>(
       if wparam == WPARAM(0) || window_flags.contains(WindowFlags::MARKER_DECORATIONS) {
         result = ProcResult::DefSubclassProc;
       } else {
-        // adjust the maximized borderless window so it doesn't cover the taskbar
-        if util::is_maximized(window).unwrap_or(false) {
+        // Windows keeps the maximized state during fullscreen. Only reserve the taskbar in windowed mode.
+        if !is_fullscreen && util::is_maximized(window).unwrap_or(false) {
           let params = &mut *(lparam.0 as *mut NCCALCSIZE_PARAMS);
           if let Ok(monitor_info) =
             monitor::get_monitor_info(MonitorFromRect(&params.rgrc[0], MONITOR_DEFAULTTONULL))
