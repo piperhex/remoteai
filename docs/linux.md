@@ -32,6 +32,14 @@ chmod +x "./CodexSwitch.AppImage"
 同样需要将文件名替换为实际名称。AppImage 若提示缺少系统库或 FUSE，可改用 `.deb` 安装。
 后面的后台服务示例使用 `.deb` 提供的 `/usr/bin/csw`。
 
+### 从 Agent Hub 连接这台电脑
+
+Remote AI 使用系统密钥环保存这台电脑的身份密钥。通过 `apt` 安装新版 `.deb` 时会一并安装 GNOME Keyring。
+如果使用 AppImage 时遇到密钥环服务不可用的提示，请先确认已登录图形会话。Ubuntu、Debian、Fedora 和 Arch 用户可以在提示中找到安装命令。
+
+首次连接时，如果 Linux 上弹出“系统密钥环”，请按提示在系统窗口中创建或解锁密钥环。密码只需在 Linux 电脑上输入。
+完成后，另一台设备上的 Agent Hub 会自动重试连接。WSL 如果在重启后再次要求解锁，请在可显示图形窗口的 WSL 会话中完成操作。
+
 ### 界面语言
 
 首次启动时，中文系统默认显示中文，其他语言环境默认显示英文。

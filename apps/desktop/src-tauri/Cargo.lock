@@ -1743,6 +1743,7 @@ dependencies = [
  "reqwest 0.12.28",
  "rqrr",
  "rusqlite",
+ "secret-service",
  "semver",
  "serde",
  "serde_json",

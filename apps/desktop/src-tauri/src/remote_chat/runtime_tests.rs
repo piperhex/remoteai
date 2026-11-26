@@ -155,6 +155,7 @@ fn forgetting_a_destroyed_key_works_offline_and_across_a_socket_reconnect() {
         generation,
         message: Outgoing::PeerClose {
             session_id: "phone".into(),
+            reason: None,
         },
     });
     assert!(runtime.sessions.contains("phone"));
@@ -163,6 +164,7 @@ fn forgetting_a_destroyed_key_works_offline_and_across_a_socket_reconnect() {
         generation,
         message: Outgoing::PeerClose {
             session_id: "phone".into(),
+            reason: None,
         },
     });
     assert!(!runtime.sessions.contains("phone"));

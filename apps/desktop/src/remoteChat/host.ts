@@ -94,6 +94,7 @@ export class ChatHost {
   private transportEvent(event: HostTransportEvent) {
     if (this.closed) return;
     this.generation = event.generation;
+    if (event.type === 'keyring-required') { this.drop(event.sessionId, 'host-keyring'); return; }
     if (event.type === 'bulk') {
       this.links.get(event.sessionId)?.bulk?.receive(event.bytes, 'relay'); return;
     }
@@ -166,8 +167,8 @@ export class ChatHost {
     this.transport.send(message);
   }
 
-  private endSession(sessionId: string) {
-    try { this.transport.forgetSession(sessionId); }
+  private endSession(sessionId: string, reason?: 'host-keyring') {
+    try { this.transport.forgetSession(sessionId, reason); }
     catch { /* Local teardown must finish even if the closing socket cannot notify the coordinator. */ }
   }
 
@@ -295,7 +296,7 @@ export class ChatHost {
     if (mode === 'offline') this.drop(sessionId);
   }
 
-  private drop(sessionId: string) {
+  private drop(sessionId: string, reason?: 'host-keyring') {
     this.assistance.release(sessionId);
     this.bulkSources.get(sessionId)?.close(); this.bulkSources.delete(sessionId);
     this.fileRelays.get(sessionId)?.close(); this.fileRelays.delete(sessionId);
@@ -308,7 +309,7 @@ export class ChatHost {
     this.connectedSessions.delete(sessionId);
     this.onConnectionChange(this.connectedSessions.size > 0);
     link?.close();
-    if (!this.closed) this.endSession(sessionId);
+    if (!this.closed) this.endSession(sessionId, reason);
   }
 
   close() {

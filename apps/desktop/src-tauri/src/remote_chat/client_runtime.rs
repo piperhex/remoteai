@@ -207,7 +207,7 @@ impl ClientRuntime {
                     if self.session_id.as_deref() != Some(message.session_id()) {
                         return Err(ChatError::InvalidFrame);
                     }
-                    if let Outgoing::PeerClose { session_id } = &message {
+                    if let Outgoing::PeerClose { session_id, .. } = &message {
                         self.tcp
                             .receive(
                                 &serde_json::json!({"type":"peer-close", "sessionId":session_id}),

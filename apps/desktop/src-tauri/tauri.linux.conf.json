@@ -2,6 +2,9 @@
   "$schema": "https://schema.tauri.app/config/2",
   "bundle": {
     "useLocalToolsDir": true,
-    "targets": ["deb", "appimage"]
+    "targets": ["deb", "appimage"],
+    "linux": {
+      "deb": { "depends": ["gnome-keyring"] }
+    }
   }
 }

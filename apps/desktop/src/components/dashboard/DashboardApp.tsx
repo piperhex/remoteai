@@ -141,6 +141,7 @@ import { CODEX_CONFIG_TOPBAR_ID, CodexConfigPage } from "../../pages/CodexConfig
 import codexConfigStyles from "../../pages/codexConfig/pageStyles.module.less";
 import { SystemPromptPage } from "../../pages/SystemPromptPage";
 import { NetworkProxySettingsModal } from "../../pages/settings/NetworkProxySettings";
+import { KeyringSetup } from "../../remoteChat/KeyringSetup";
 import type { Translate } from "../../i18n";
 import { uiText } from "../../../../../shared/localization/uiText";
 import { AccountDisplayTabs } from "./AccountDisplayTabs";
@@ -1356,7 +1357,7 @@ export function DashboardApp() {
           onMenuAction={(action) => handleSystemMenuAction(action as SystemMenuAction)}
           onSearch={() => setShowMenuSearch(true)} onWindowError={notify} t={t}
           sidebarToggle={sidebarToggle}
-          tools={<>{proxyStatusControls}{menuTools}</>} />}
+          tools={<><KeyringSetup />{proxyStatusControls}{menuTools}</>} />}
         {page === "browser" && <div className="pm-browser browser-tabstrip-host" ref={setBrowserTabBarHost} />}
         {sidebarNavigationEnabled && (
           <aside className="app-sidebar" data-tauri-drag-region>

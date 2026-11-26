@@ -16,6 +16,12 @@ pub(super) enum ChatError {
     Transport,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub(crate) enum CloseReason {
+    HostKeyring,
+}
+
 /// Peer frames and bounded diagnostics may cross IPC. Authentication stays in Rust.
 #[derive(Deserialize, Serialize)]
 #[serde(
@@ -24,11 +30,27 @@ pub(super) enum ChatError {
     rename_all_fields = "camelCase"
 )]
 pub(crate) enum Outgoing {
-    Signal { session_id: String, payload: Value },
-    Diagnostic { session_id: String, payload: Value },
-    Relay { session_id: String, payload: String },
-    RelayRequest { session_id: String, reason: String },
-    PeerClose { session_id: String },
+    Signal {
+        session_id: String,
+        payload: Value,
+    },
+    Diagnostic {
+        session_id: String,
+        payload: Value,
+    },
+    Relay {
+        session_id: String,
+        payload: String,
+    },
+    RelayRequest {
+        session_id: String,
+        reason: String,
+    },
+    PeerClose {
+        session_id: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        reason: Option<CloseReason>,
+    },
 }
 
 impl Outgoing {
@@ -38,7 +60,7 @@ impl Outgoing {
             | Self::Diagnostic { session_id, .. }
             | Self::Relay { session_id, .. }
             | Self::RelayRequest { session_id, .. }
-            | Self::PeerClose { session_id } => session_id,
+            | Self::PeerClose { session_id, .. } => session_id,
         }
     }
 

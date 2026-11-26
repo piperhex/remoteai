@@ -4,6 +4,7 @@ import { NativeChatTransport, type HostTransportEvent } from './nativeTransport'
 import { BulkCipher } from '../../../../shared/remote-chat/bulkCipher';
 import { encodeBulkIpc } from './bulkIpc';
 import { encodeBulkRelay } from '../../../../shared/remote-chat/bulkRelayWire';
+import { clearKeyringIssue, getKeyringIssue } from './keyringState';
 
 interface Batch { sequence: number; events: HostTransportEvent[] }
 const state = vi.hoisted(() => ({ invoke: vi.fn(), channels: [] as { onmessage: (batch: Batch | ArrayBuffer) => void }[] }));
@@ -123,6 +124,19 @@ it('still reconnects when a chat frame fails to cross IPC', async () => {
   });
   expect(transport.ready).toBe(false);
   expect(transport.bufferedAmount).toBe(0);
+});
+
+it('reports a locked host keyring for one peer and keeps the registered transport online', async () => {
+  const receive = vi.fn();
+  const transport = host(receive); await settle();
+  state.channels[0].onmessage({ sequence: 1, events: [{ type: 'ready', generation: 2 }] });
+  state.invoke.mockRejectedValueOnce('KEYRING_LOCKED');
+  transport.send({ type: 'signal', sessionId: 'pc', payload: { kind: 'key' } }); await settle();
+  expect(receive).toHaveBeenCalledWith({ type: 'keyring-required', sessionId: 'pc', generation: 2 });
+  expect(getKeyringIssue()).toBe('KEYRING_LOCKED');
+  expect(transport.ready).toBe(true);
+  expect(state.invoke).not.toHaveBeenCalledWith('remote_chat_reconnect', expect.anything());
+  clearKeyringIssue();
 });
 
 it('submits one bounded binary batch with its generation and retains backpressure until native acknowledgement', async () => {

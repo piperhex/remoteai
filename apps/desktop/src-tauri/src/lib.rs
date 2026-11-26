@@ -444,6 +444,8 @@ pub fn run() {
             remote_chat::crypto::tcp_commands::remote_chat_tcp_crypto_close,
             remote_chat::bulk::remote_chat_bulk_send,
             remote_chat::identity::remote_chat_identity,
+            #[cfg(target_os = "linux")]
+            remote_chat::identity::prepare_chat_keyring,
             remote_chat::host_health::remote_chat_host_alive,
             remote_chat::remote_chat_ack,
             remote_chat::remote_chat_bulk_ack,

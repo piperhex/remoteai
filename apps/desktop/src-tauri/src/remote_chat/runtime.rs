@@ -376,7 +376,7 @@ impl Runtime {
         {
             return;
         }
-        if let Outgoing::PeerClose { session_id } = &request.message {
+        if let Outgoing::PeerClose { session_id, .. } = &request.message {
             // A local expiry may race a native reconnect. Never resume keys that the frontend destroyed.
             // Session UUIDs are not reused across owners, so forgetting is safe across socket generations.
             self.sessions.remove(session_id);

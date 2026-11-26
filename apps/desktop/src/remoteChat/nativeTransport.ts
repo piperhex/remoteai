@@ -1,10 +1,12 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
 import { encodeBulkIpc } from './bulkIpc';
 import { decodeGuiBulkBatch } from '../../../../shared/remote-chat/nativeRelayBatch';
+import { reportKeyringIssue, clearKeyringIssue } from './keyringState';
 
 export type HostTransportEvent = { generation: number } & (
   { type: 'ready' | 'reset' | 'disconnected' } | { type: 'message'; data: string }
   | { type: 'bulk'; sessionId: string; bytes: Uint8Array }
+  | { type: 'keyring-required'; sessionId: string }
 );
 interface Batch { sequence: number; events: HostTransportEvent[] }
 const MAX_BUFFER_BYTES = 4 * 1024 * 1024;
@@ -86,8 +88,8 @@ export class NativeChatTransport {
     this.enqueue(message);
   }
 
-  forgetSession(sessionId: string) {
-    if (!this.closed) this.enqueue({ type: 'peer-close', sessionId }, true);
+  forgetSession(sessionId: string, reason?: 'host-keyring') {
+    if (!this.closed) this.enqueue({ type: 'peer-close', sessionId, reason }, true);
   }
 
   private enqueue(message: object, forgetting = false) {
@@ -100,10 +102,19 @@ export class NativeChatTransport {
       if (this.closed || (!forgetting && generation !== this.generation)) return;
       await invoke('remote_chat_send', { request: { clientId: this.clientId, generation, message } });
     });
-    this.outgoing = sent.catch(() => {
+    const keySignal = 'type' in message && message.type === 'signal' && 'payload' in message
+      && (message.payload as { kind?: string } | null)?.kind === 'key';
+    this.outgoing = sent.then(() => {
+      if (keySignal && !this.closed && generation === this.generation) clearKeyringIssue();
+    }).catch((error: unknown) => {
       // Diagnostics are best-effort; an IPC rejection must not restart every paired chat.
       if ('type' in message && message.type === 'diagnostic') return;
-      if (!this.closed && generation === this.generation) this.reconnect();
+      if (this.closed || generation !== this.generation) return;
+      if (keySignal && 'sessionId' in message && typeof message.sessionId === 'string' && reportKeyringIssue(error)) {
+        this.receive({ type: 'keyring-required', generation, sessionId: message.sessionId });
+        return;
+      }
+      this.reconnect();
     }).finally(() => { this.buffered -= bytes; });
   }
 

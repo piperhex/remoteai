@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { ChatConnection } from '../../../../shared/remote-chat/client/connection';
-import { CONNECTION_ERRORS } from '../../../../shared/remote-chat/connectionErrors';
+import { CONNECTION_ERRORS, HOST_KEYRING_REQUIRED } from '../../../../shared/remote-chat/connectionErrors';
 import { DEFAULT_CHAT_POLICY, getChatPolicy, setChatPolicy } from '../../../../shared/remote-chat/policy';
 
 class Socket {
@@ -176,6 +176,7 @@ it('recognizes the H5 login error without showing it as a network failure', asyn
 
 it.each([
   ['{"type":"peer-close"}', CONNECTION_ERRORS.interrupted], ['invalid json', CONNECTION_ERRORS.invalid],
+  ['{"type":"peer-close","reason":"host-keyring"}', HOST_KEYRING_REQUIRED],
 ])('reports a disconnected peer or invalid connection message', async (data, message) => {
   const { connection, error } = harness();
   await vi.advanceTimersByTimeAsync(0);
