@@ -181,6 +181,7 @@ pub fn run() {
         .manage(codex_gui::GuiState::default())
         .manage(cli_gui::CliGuiState::default())
         .manage(provider_browser::automation::State::default())
+        .manage(provider_browser::mappings::State::default())
         .manage(browser_home::State::default())
         .manage(codex_gui::dropped_files::DroppedFilesState::default())
         .manage(gui_terminal::ssh_drop::SshDropState::default())
@@ -462,6 +463,7 @@ pub fn run() {
             remote_chat::traversal::remote_native_bulk_send,
             remote_chat::traversal::remote_native_bulk_receive,
             port_mapping::port_mapping_receiver,
+            provider_browser::mappings::configure_browser_mappings,
             port_mapping::port_mapping_poll,
             port_mapping::port_mapping_socket,
             port_mapping::port_mapping_read,

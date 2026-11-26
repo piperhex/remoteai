@@ -40,7 +40,7 @@ const browserUrls: string[] = [];
 const previewUrls: string[] = [];
 const resolvedUrls: string[] = [];
 const fixture = { client, resources, openedPorts, openedUdpPorts, targetUrls, clipboard, browserUrls, previewUrls,
-  resolvedUrls, failBrowser: false };
+  resolvedUrls, browserRoutes: [] as { domain: string; port: number }[], failBrowser: false };
 const environment: FileEnvironment = { remote: new URLSearchParams(location.search).get('mode') !== 'local',
   actions: fileApi, previews: filePreviewApi,
   resolveWebsite: async url => { resolvedUrls.push(url); throw new Error('Already forwarded URLs must stay local'); },
@@ -50,7 +50,8 @@ Object.defineProperty(navigator, 'clipboard', { configurable: true,
 Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: {
   transformCallback: () => 1,
   invoke: async (command: string, args: { request: { type: string; port: number; scope: string; url: string };
-    url?: string; deviceId: string; document?: MappingDocument }) => {
+    url?: string; deviceId: string; document?: MappingDocument; routes: typeof fixture.browserRoutes }) => {
+    if (command === 'configure_browser_mappings') { fixture.browserRoutes = args.routes; return; }
     if (command === 'sync_port_mappings') return exchangeMappingFixture(args);
     if (command === 'provider_browser_sync') { previewUrls.push(args.request.url); return; }
     if (command === 'browser_inspector') return { open: false, mobile: false };

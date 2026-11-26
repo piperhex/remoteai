@@ -2,6 +2,15 @@
 mod service_manifest;
 
 fn main() {
+    if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos") {
+        let source = "src/provider_browser/platform/mapping_domains.m";
+        println!("cargo:rerun-if-changed={source}");
+        cc::Build::new()
+            .file(source)
+            .flag("-fobjc-arc")
+            .compile("browser_mapping_domains");
+        println!("cargo:rustc-link-lib=framework=Network");
+    }
     service_manifest::generate();
     tauri_build::build();
 

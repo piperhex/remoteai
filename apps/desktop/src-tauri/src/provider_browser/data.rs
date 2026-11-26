@@ -13,12 +13,17 @@ fn clear(owner: &Webview, request: ClearRequest) -> Result<()> {
     if owner.label() != "main" || !(request.cookies || request.cache) {
         return Err(BrowserError::Invalid);
     }
-    let existing = owner
-        .app_handle()
-        .webviews()
-        .into_iter()
-        .find(|(label, _)| label.starts_with(super::LABEL_PREFIX))
-        .map(|(_, view)| view);
+    let mut existing = None;
+    for (label, view) in owner.app_handle().webviews() {
+        if !label.starts_with(super::LABEL_PREFIX) && !label.starts_with("conversation-browser-") {
+            continue;
+        }
+        if super::mappings::matches(owner, &label, None)? {
+            existing.get_or_insert(view);
+        } else {
+            clear_profile(&view, request)?;
+        }
+    }
     let temporary = existing.is_none();
     let view = match existing {
         Some(view) => view,

@@ -139,11 +139,30 @@ pub(crate) async fn execute(app: AppHandle, request: Request) -> Result<Value> {
         }
         Action::Navigate { url: address } => {
             let address = url(&app, &address)?;
-            tauri::async_runtime::spawn_blocking(move || browser.navigate(address))
+            let (handle, id) = (app.clone(), tab.id.clone());
+            tauri::async_runtime::spawn_blocking(move || registry::navigate(&handle, &id, address))
                 .await
-                .map_err(|_| Error::Unavailable)?
-                .map_err(|_| Error::Unavailable)?;
+                .map_err(|_| Error::Unavailable)??;
             json!({"tabId":tab.id,"navigating":true})
+        }
+        Action::Reload => {
+            let owner = app.get_webview("main").ok_or(Error::Unavailable)?;
+            let address = url(&app, &tab.url)?;
+            let mapping =
+                super::mappings::lookup(&owner, &address).map_err(|_| Error::Unavailable)?;
+            if super::mappings::matches(&owner, browser.label(), mapping.as_ref())
+                .map_err(|_| Error::Unavailable)?
+            {
+                page::execute(&browser, &Action::Reload).await?
+            } else {
+                let (handle, id) = (app.clone(), tab.id.clone());
+                tauri::async_runtime::spawn_blocking(move || {
+                    registry::navigate(&handle, &id, address)
+                })
+                .await
+                .map_err(|_| Error::Unavailable)??;
+                json!({"tabId":tab.id,"navigating":true})
+            }
         }
         action => page::execute(&browser, &action).await?,
     };
@@ -152,6 +171,10 @@ pub(crate) async fn execute(app: AppHandle, request: Request) -> Result<Value> {
 
 /// The caller holds the tab's operation lock through native closure and registry cleanup.
 async fn close(app: &AppHandle, tab: &registry::Tab) -> Result<()> {
+    if let Some(owner) = app.get_webview("main") {
+        super::mappings::remember(&owner, &format!("{LABEL_PREFIX}{}", tab.id), None)
+            .map_err(|_| Error::Unavailable)?;
+    }
     if let Some(browser) = app.get_webview(&format!("{LABEL_PREFIX}{}", tab.id)) {
         tauri::async_runtime::spawn_blocking(move || browser.close())
             .await

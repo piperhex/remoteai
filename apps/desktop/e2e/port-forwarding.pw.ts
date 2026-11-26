@@ -8,6 +8,7 @@ declare global {
     portForwardingFixture: {
       targetUrls: string[]; clipboard: string[]; browserUrls: string[]; previewUrls: string[];
       resolvedUrls: string[]; failBrowser: boolean;
+      browserRoutes: { domain: string; port: number }[];
       openedPorts: Set<number>; openedUdpPorts: Set<number>;
     };
   }
@@ -68,28 +69,30 @@ test('copies and opens a custom domain and restores the IP address after clearin
   await domain.fill('https://app.localhost/');
   await start.click();
   await expect(panel(page).getByRole('alert')).toContainText('请输入域名');
-  await domain.fill('App.Localhost');
+  await domain.fill('Test.Local');
   await start.click();
-  const mapping = entry(page, 'app.localhost:13000 → 127.0.0.1:3000');
+  const mapping = entry(page, 'test.local:13000 → 127.0.0.1:3000');
   await expect(mapping.getByRole('status')).toHaveText('映射中');
+  expect(await page.evaluate(() => window.portForwardingFixture.browserRoutes))
+    .toEqual([{ domain: 'test.local', port: 13000 }]);
   await mapping.getByRole('button', { name: /^复制本地地址/ }).click();
-  expect(await page.evaluate(() => window.portForwardingFixture.clipboard)).toEqual(['app.localhost:13000']);
-  await mapping.getByRole('button', { name: 'app.localhost:13000', exact: true }).click();
+  expect(await page.evaluate(() => window.portForwardingFixture.clipboard)).toEqual(['test.local:13000']);
+  await mapping.getByRole('button', { name: 'test.local:13000', exact: true }).click();
   await expect(page.getByRole('menuitem', { name: '在 Remote AI 中预览' })).toBeVisible();
   await page.screenshot({ path: info.outputPath('pc-remote-domain-open.png'), animations: 'disabled' });
   await page.getByRole('menuitem', { name: '在 Remote AI 中预览' }).click();
   await expect.poll(() => page.evaluate(() => window.portForwardingFixture.previewUrls))
-    .toContain('http://app.localhost:13000');
+    .toContain('http://test.local:13000');
   await page.getByRole('button', { name: '关闭详情抽屉' }).click();
   await page.getByRole('button', { name: '端口映射', exact: true }).click();
-  await mapping.getByRole('button', { name: 'app.localhost:13000', exact: true }).click();
+  await mapping.getByRole('button', { name: 'test.local:13000', exact: true }).click();
   await page.getByRole('menuitem', { name: '在浏览器中打开' }).click();
   await expect.poll(() => page.evaluate(() => window.portForwardingFixture.browserUrls))
-    .toEqual(['http://app.localhost:13000']);
+    .toEqual(['http://test.local:13000']);
   await page.reload();
   await page.getByRole('button', { name: '端口映射', exact: true }).click();
   await mapping.getByRole('button', { name: /^编辑映射/ }).click();
-  await expect(domain).toHaveValue('app.localhost');
+  await expect(domain).toHaveValue('test.local');
   await domain.fill('');
   await page.getByRole('button', { name: '保存修改' }).click();
   await expect(entry(page, '127.0.0.1:13000 → 127.0.0.1:3000')).toBeVisible();

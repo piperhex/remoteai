@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { BrowserMappingStore } from '../../../../../../shared/port-mapping/browserMappings';
+import { browserMappings, BrowserMappingStore } from '../../../../../../shared/port-mapping/browserMappings';
 import type { ForwardingEntry } from '../../../../../../shared/port-mapping/service';
+import { browserInput } from '../../../../../../shared/browser/addressInput';
 
 function source(entries: ForwardingEntry[]) {
   const listeners = new Set<() => void>();
@@ -14,6 +15,15 @@ const mapping = (id: string, extra: Partial<ForwardingEntry> = {}): ForwardingEn
 });
 
 describe('browser mapping index', () => {
+  it('uses HTTP for bare active mapping addresses and keeps explicit protocols and other ports', () => {
+    const unregister = browserMappings.register('scope', source([mapping('custom', { localDomain: 'dev.test' })]));
+    try {
+      expect(browserInput('dev.test:18080/path?q=1')?.href).toBe('http://dev.test:18080/path?q=1');
+      expect(browserInput('https://dev.test:18080')?.protocol).toBe('https:');
+      expect(browserInput('dev.test:18081')?.protocol).toBe('https:');
+    } finally { unregister(); }
+    expect(browserInput('dev.test:18080')?.protocol).toBe('https:');
+  });
   it('exposes only active TCP addresses and follows stop, disconnect and disposal', () => {
     const store = new BrowserMappingStore();
     const service = source([mapping('tcp'), mapping('udp', { protocol: 'udp' }),

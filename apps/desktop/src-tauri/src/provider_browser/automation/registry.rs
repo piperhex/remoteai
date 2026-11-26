@@ -206,8 +206,15 @@ fn existing(state: &State, thread: &str, request: &str) -> Result<Option<Tab>> {
 
 fn create(app: &AppHandle, id: &str, url: url::Url) -> Result<()> {
     let owner = app.get_webview("main").ok_or(Error::Unavailable)?;
-    let builder = super::super::browser_builder(&owner, &format!("{LABEL_PREFIX}{id}"))
-        .map_err(|_| Error::Unavailable)?;
+    let label = format!("{LABEL_PREFIX}{id}");
+    let mapping = super::super::mappings::lookup(&owner, &url).map_err(|_| Error::Unavailable)?;
+    let builder = super::super::browser_builder(&owner, &label).map_err(|_| Error::Unavailable)?;
+    let builder = match &mapping {
+        Some(mapping) => mapping
+            .builder(&owner, builder)
+            .map_err(|_| Error::Unavailable)?,
+        None => builder,
+    };
     let view = owner
         .window()
         .add_child(
@@ -216,15 +223,38 @@ fn create(app: &AppHandle, id: &str, url: url::Url) -> Result<()> {
             tauri::LogicalSize::new(1000.0, 700.0),
         )
         .map_err(|_| Error::Unavailable)?;
-    let configured =
-        super::super::platform::configure(&view, "", &std::collections::BTreeMap::new());
+    let configured = super::super::platform::configure(
+        &view,
+        "",
+        &std::collections::BTreeMap::new(),
+        mapping.as_ref(),
+    );
     if configured.is_err() || view.navigate(url).is_err() {
         if let Err(error) = view.close() {
             eprintln!("Browser creation cleanup failed: {error}");
         }
         return Err(Error::Unavailable);
     }
+    super::super::mappings::remember(&owner, &label, mapping.as_ref())
+        .map_err(|_| Error::Unavailable)?;
     Ok(())
+}
+
+pub(super) fn navigate(app: &AppHandle, id: &str, url: url::Url) -> Result<()> {
+    let owner = app.get_webview("main").ok_or(Error::Unavailable)?;
+    let view = super::view(app, id)?;
+    let mapping = super::super::mappings::lookup(&owner, &url).map_err(|_| Error::Unavailable)?;
+    if super::super::mappings::matches(&owner, view.label(), mapping.as_ref())
+        .map_err(|_| Error::Unavailable)?
+    {
+        return view.navigate(url).map_err(|_| Error::Unavailable);
+    }
+    let bounds = view.bounds().map_err(|_| Error::Unavailable)?;
+    view.close().map_err(|_| Error::Unavailable)?;
+    create(app, id, url)?;
+    super::view(app, id)?
+        .set_bounds(bounds)
+        .map_err(|_| Error::Unavailable)
 }
 
 #[cfg(test)]

@@ -8,6 +8,7 @@ pub(crate) mod downloads;
 pub(crate) mod extensions;
 pub(crate) mod inspector;
 mod lifecycle;
+pub(crate) mod mappings;
 pub(crate) mod overlays;
 mod password_focus;
 pub(crate) mod passwords;
@@ -246,8 +247,17 @@ fn popup_handler(
     })
 }
 
-fn create(owner: &Webview, request: &BrowserRequest, label: &str) -> Result<Webview> {
+fn create(
+    owner: &Webview,
+    request: &BrowserRequest,
+    label: &str,
+    mapping: Option<&mappings::BrowserMapping>,
+) -> Result<Webview> {
     let builder = browser_builder(owner, label)?;
+    let builder = match mapping {
+        Some(route) => route.builder(owner, builder)?,
+        None => builder,
+    };
     let bounds = request.bounds;
     let view = owner
         .window()
@@ -257,12 +267,15 @@ fn create(owner: &Webview, request: &BrowserRequest, label: &str) -> Result<Webv
             LogicalSize::new(bounds.width, bounds.height),
         )
         .map_err(|_| BrowserError::Unavailable)?;
-    if let Err(error) = platform::configure(&view, &request.header_origin, &request.headers) {
+    if let Err(error) =
+        platform::configure(&view, &request.header_origin, &request.headers, mapping)
+    {
         if let Err(close_error) = view.close() {
             eprintln!("Provider browser cleanup failed: {close_error}");
         }
         return Err(error);
     }
+    mappings::remember(owner, label, mapping)?;
     Ok(view)
 }
 
@@ -279,10 +292,19 @@ fn sync(owner: &Webview, request: BrowserRequest) -> Result<()> {
     if !valid_bounds(request.bounds) {
         return Err(BrowserError::Invalid);
     }
+    let mapping = mappings::lookup(owner, &url)?;
+    let mut existing = existing;
+    if (request.navigate || mapping.is_some())
+        && !mappings::matches(owner, &label, mapping.as_ref())?
+    {
+        if let Some(view) = existing.take() {
+            view.close().map_err(|_| BrowserError::Unavailable)?;
+        }
+    }
     let created = existing.is_none();
     let view = match existing {
         Some(view) => view,
-        None => create(owner, &request, &label)?,
+        None => create(owner, &request, &label, mapping.as_ref())?,
     };
     if created || request.navigate {
         view.navigate(url).map_err(|_| BrowserError::Unavailable)?;
@@ -357,6 +379,7 @@ pub(crate) async fn provider_browser_close(
         if let Some(view) = webview.app_handle().get_webview(&label) {
             view.close().map_err(|_| BrowserError::Unavailable)?;
         }
+        mappings::remember(&webview, &label, None)?;
         Ok::<_, BrowserError>(())
     })
     .await

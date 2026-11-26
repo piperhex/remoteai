@@ -67,11 +67,13 @@ fn opens_conversation_browser() {
     context.config_mut().build.dev_url = Some("http://127.0.0.1:1552".parse().unwrap());
     tauri::Builder::default().any_thread()
         .manage(super::State::default())
+        .manage(super::super::mappings::State::default())
         .manage(crate::codex_gui::web::WebEventState::default())
         .plugin(tauri_plugin_opener::init())
         .on_page_load(super::super::handle_page_load)
         .invoke_handler(tauri::generate_handler![
             super::codex_gui_browser, super::codex_gui_browser_place,
+            super::super::mappings::configure_browser_mappings,
             super::super::provider_browser_sync, super::super::provider_browser_action,
             super::super::provider_browser_close,
             super::super::zoom::browser_set_zoom,

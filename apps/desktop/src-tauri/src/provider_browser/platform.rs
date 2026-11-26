@@ -16,7 +16,12 @@ pub(super) fn configure(
     view: &tauri::Webview,
     origin: &str,
     headers: &BTreeMap<String, String>,
+    _mapping: Option<&super::mappings::BrowserMapping>,
 ) -> Result<()> {
+    #[cfg(target_os = "macos")]
+    if let Some(mapping) = _mapping {
+        mapping.configure_view(view)?;
+    }
     configure_headers(view, origin, headers)
 }
 

@@ -20,6 +20,11 @@ pub(crate) fn handle_page_load(webview: &Webview, payload: &PageLoadPayload<'_>)
         return;
     }
     let app = webview.app_handle().clone();
+    if let Some(state) = app.try_state::<super::mappings::State>() {
+        if let Err(error) = state.revoke() {
+            eprintln!("Browser mapping cleanup failed: {error}");
+        }
+    }
     tauri::async_runtime::spawn_blocking(move || {
         super::automation::hide_all(&app);
         for (label, view) in app.webviews() {

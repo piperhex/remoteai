@@ -30,7 +30,7 @@ pub(crate) fn child_builder<R: Runtime>(
     }
 }
 
-fn browser_arguments(config: &tauri::Config) -> Option<&str> {
+pub(crate) fn browser_arguments(config: &tauri::Config) -> Option<&str> {
     config
         .app
         .windows
