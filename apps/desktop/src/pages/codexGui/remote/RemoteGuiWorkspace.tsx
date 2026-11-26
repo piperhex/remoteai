@@ -15,6 +15,7 @@ import { isDesktopApp } from '../../../api/backend';
 import { useRemoteTerminalPanel } from '../../../../../../shared/remote-chat/useRemoteTerminalPanel';
 import { TerminalWorkspaceProvider } from '../../../../../../shared/terminal/TerminalWorkspaceProvider';
 import { remoteTerminalApi } from './terminalApi';
+import { nativeSshDrop } from '../../../../../../shared/terminal/views/sshDrop';
 import { useTerminalLinkTunnels } from '../terminal/useTerminalLinkTunnels';
 import { RemoteGuiTools } from '../../../../../../shared/conversation/remote/RemoteGuiTools';
 import { useRemoteCliInstaller } from '../../../../../../shared/conversation/remote/useRemoteCliInstaller';
@@ -94,7 +95,8 @@ export default function RemoteGuiWorkspace(props: {
       headerEnd={props.focusMode.focused && props.windowControls
         && <div className={styles.focusWindowControls}>{props.windowControls}</div>}
       conversationFooter={(terminal.open || terminal.tabs.length > 0) && <Suspense fallback={null}>
-        <TerminalPanel panel={terminal} active={active && !syncing} api={terminalApi} notice={terminal.error} />
+        <TerminalPanel panel={terminal} active={active && !syncing} api={terminalApi} notice={terminal.error}
+          nativeDrop={nativeSshDrop} />
       </Suspense>}
       readClipboardImages={readClipboardImages}
       nativeFileDrop={isDesktopApp ? nativeFileDrop : undefined}

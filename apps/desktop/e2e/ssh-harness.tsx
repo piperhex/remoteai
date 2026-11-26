@@ -4,6 +4,7 @@ import { mockIPC } from '@tauri-apps/api/mocks';
 import type { Channel } from '@tauri-apps/api/core';
 import { ConfigProvider, theme } from 'antd';
 import TerminalPanel from '../../../shared/terminal/views/TerminalPanel';
+import { nativeSshDrop } from '../../../shared/terminal/views/sshDrop';
 import { terminalApi } from '../src/pages/codexGui/terminal/api';
 import { useTerminalPanel } from '../../../shared/terminal/views/useTerminalPanel';
 import { DetailsWorkspace } from '../../../shared/conversation/DetailsWorkspace';
@@ -95,12 +96,12 @@ function Local() {
   useLocalGitDownloads();
   const panel = useTerminalPanel('/fixture');
   return <><button onClick={panel.toggle}>打开终端</button>
-    <div style={{ flex: 1 }}>本地模式</div><TerminalPanel panel={panel} api={terminalApi} active /></>;
+    <div style={{ flex: 1 }}>本地模式</div><TerminalPanel panel={panel} api={terminalApi} nativeDrop={nativeSshDrop} active /></>;
 }
 function Remote() {
   const panel = useRemoteTerminalPanel({ client: client.terminal, cwd: '/fixture', connected: true });
   return <><button onClick={panel.toggle}>打开终端</button>
-    <div style={{ flex: 1 }}>远程模式</div><TerminalPanel panel={panel} api={remoteApi} active /></>;
+    <div style={{ flex: 1 }}>远程模式</div><TerminalPanel panel={panel} api={remoteApi} nativeDrop={nativeSshDrop} active /></>;
 }
 function App() {
   const [dark, setDark] = useState(false);

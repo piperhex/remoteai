@@ -3,7 +3,7 @@ import { testBrowserLaunchOptions } from '../../../scripts/test-browser.mjs';
 
 export default defineConfig({
   testDir: '../e2e', testMatch: ['browser-file-preview.pw.ts', 'browser-preview-gestures.pw.ts',
-    'project-browser.pw.ts', 'ssh-project-browser.pw.ts'],
+    'project-browser.pw.ts', 'ssh-project-browser.pw.ts', 'ssh-workspace-drop.pw.ts'],
   workers: 1, timeout: 45_000, outputDir: '../../../.codex-tmp/file-preview-playwright',
   use: { baseURL: 'http://127.0.0.1:1546', headless: true, locale: 'zh-CN',
     launchOptions: testBrowserLaunchOptions() },

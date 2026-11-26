@@ -1,4 +1,5 @@
 import { SshWorkspace } from '../../../../../shared/terminal/workspace/SshWorkspace';
+import { nativeSshDrop } from '../../../../../shared/terminal/views/sshDrop';
 import type { useSshHosts } from '../../../../../shared/terminal/workspace/useSshHosts';
 import type { TerminalApi } from '../../../../../shared/terminal/types';
 import { uiText as t } from '../../../../../shared/localization/uiText';
@@ -23,7 +24,7 @@ export default function DesktopSshPage({ active, computers, identity, hosts }: {
   const local = { deviceId: LOCAL_DEVICE, name: localName, api: localApi, ready: !!identity };
   const device = computers.current;
   const defaultHost = device ? hosts.get(device.deviceId) ?? { ...local, ready: false } : local;
-  return <SshWorkspace key={scope} active={active} scope={scope} defaultHost={defaultHost}
+  return <SshWorkspace key={scope} active={active} scope={scope} defaultHost={defaultHost} nativeDrop={nativeSshDrop}
     directory={{ localDeviceId: LOCAL_DEVICE, devices: [
       { deviceId: LOCAL_DEVICE, name: localName, platform: '', ...computers.localSystem, online: true }, ...computers.devices],
       get: id => id === LOCAL_DEVICE ? local : hosts.get(id),

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { invoke } from '@tauri-apps/api/core';
 import { ConfigProvider } from 'antd';
 import TerminalPanel from '../../../../shared/terminal/views/TerminalPanel';
+import { nativeSshDrop } from '../../../../shared/terminal/views/sshDrop';
 import { terminalApi } from '../../src/pages/codexGui/terminal/api';
 import { useTerminalPanel } from '../../../../shared/terminal/views/useTerminalPanel';
 import { DetailsWorkspace } from '../../../../shared/conversation/DetailsWorkspace';
@@ -39,7 +40,7 @@ function App({ config }: { config: FixtureConfig }) {
         <span>{config.name} · {config.host}:{config.port}</span>
       </header>
       <div style={{ flex: 1, padding: 16 }}>Open the terminal connection menu and choose the WSL fixture.</div>
-      <TerminalPanel panel={{ ...panel, open: true }} api={api} active />
+      <TerminalPanel panel={{ ...panel, open: true }} api={api} nativeDrop={nativeSshDrop} active />
     </div>
   </DetailsWorkspace></ConfigProvider>;
 }

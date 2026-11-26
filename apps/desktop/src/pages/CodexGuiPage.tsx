@@ -59,6 +59,7 @@ import { useDreamSkin } from "./codexGui/useDreamSkin";
 import { FocusModeButton, type GuiFocusMode } from "./codexGui/FocusModeButton";
 import { useTerminalPanel } from "../../../../shared/terminal/views/useTerminalPanel";
 import { terminalApi } from "./codexGui/terminal/api";
+import { nativeSshDrop } from "../../../../shared/terminal/views/sshDrop";
 import { TerminalWorkspaceProvider } from '../../../../shared/terminal/TerminalWorkspaceProvider';
 import { MobileConnectionStatus } from "./codexGui/MobileConnectionStatus";
 import { AssistanceButton } from '../remoteAssistance/AssistanceButton';
@@ -252,7 +253,8 @@ function Workspace({ active, accountPicker, windowControls, plugins, hostPicker,
       </div>
       </div>
       {isDesktopApp && terminal.tabs.length > 0 && <Suspense fallback={null}>
-        <TerminalPanel panel={terminal} active={workspaceActive} api={terminalApi} notice={terminal.error} />
+        <TerminalPanel panel={terminal} active={workspaceActive} api={terminalApi} notice={terminal.error}
+          nativeDrop={nativeSshDrop} />
       </Suspense>}
     </div>
     </div>
