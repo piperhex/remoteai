@@ -164,6 +164,7 @@ fn run_connection<R: Runtime>(
                 "deviceId": config.device_id,
                 "name": config.device_name,
                 "platform": config.platform,
+                "ipAddress": crate::cloud::local_device_ip(),
                 "appVersion": config.app_version,
                 "activeAccountId": config.active_account_id,
                 "openaiAuthAccountId": config.openai_auth_account_id,

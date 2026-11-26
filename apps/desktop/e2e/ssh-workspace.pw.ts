@@ -86,6 +86,7 @@ for (const mode of ['local', 'remote', 'web']) {
     await expect(workspace.locator('.ssh-profile-card')).toHaveCount(1);
     await search.fill('');
     const firstComputer = mode === 'local' ? 'Studio PC' : 'Workstation';
+    const firstSubtitle = `${firstComputer} ${mode === 'local' ? 'Windows · 192.168.1.10' : 'Linux · 192.168.1.21'}`;
     const picker = page.getByRole('menu', { name: '选择电脑' });
     const row = workspace.locator('.ssh-profile-card').filter({ hasText: '开发服务器' });
     await row.locator('.sshw-profile-arrow').click();
@@ -108,7 +109,7 @@ for (const mode of ['local', 'remote', 'web']) {
     await expect(picker).toBeHidden();
     await row.click();
     await picker.getByRole('menuitem', { name: new RegExp(firstComputer) }).click();
-    await expect(workspace.getByRole('tab').locator('small')).toHaveText(firstComputer);
+    await expect(workspace.getByRole('tab').locator('small')).toHaveText(firstSubtitle);
     const tty = workspace.locator('.xterm-rows:visible');
     await expect(tty).toContainText('wsl-ssh>', { timeout: 25_000 });
     await expect(workspace.getByRole('textbox', { name: '远程路径' })).toHaveValue('/');
@@ -145,7 +146,7 @@ for (const mode of ['local', 'remote', 'web']) {
     await expect(workspace.locator('.sshw-quick h3')).toHaveText('最近');
     await workspace.locator('.sshw-quick button').first().click();
     await picker.getByRole('menuitem', { name: /Laptop/ }).click();
-    await expect(workspace.getByRole('tab').locator('small')).toHaveText([firstComputer, 'Laptop']);
+    await expect(workspace.getByRole('tab').locator('small')).toHaveText([firstSubtitle, 'Laptop macOS · 192.168.1.22']);
     await expect(workspace.getByRole('tab')).toHaveCount(2);
     await expect(tty).toContainText('wsl-ssh>');
     await expect(monitor.locator('[data-speed="download"]')).toHaveText(/\/s$/);

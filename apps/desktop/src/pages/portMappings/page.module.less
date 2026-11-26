@@ -31,13 +31,14 @@
   h2 { margin: 0; font-size: 1.12em; font-weight: 650; }
   h2 span { margin-inline-start: 5px; color: var(--muted); font-size: .85em; font-variant-numeric: tabular-nums; }
 }
-.filters { gap: 8px; :global(.ant-select) { width: 156px; } }
+.filters { gap: 8px; :global(.ant-select) { width: min(210px, 52vw); } }
 .group, .empty { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
 .group { overflow: hidden; margin-bottom: 14px; }
 .groupHeader {
   gap: 10px; padding: 14px 18px; flex-wrap: wrap; border-bottom: 1px solid var(--line);
   h3 { margin: 0; font-size: 1.08em; font-weight: 650; overflow-wrap: anywhere; }
 }
+.groupIdentity { min-width: 0; overflow-wrap: anywhere; small { color: var(--muted); } }
 .deviceIcon { width: 32px; height: 32px; border-radius: 9px; }
 .presence, .sync, .privacy, .meta { gap: 6px; color: var(--muted); font-size: .9em; }
 .presence::before { content: ''; width: 6px; height: 6px; background: currentColor; border-radius: 50%; }
@@ -77,6 +78,11 @@
 .editor {
   :global(.ant-select) { width: 100%; margin-bottom: 16px; }
   :global(.ant-modal-body) { max-height: 66vh; overflow-y: auto; padding: 4px; }
+}
+.computerSelect:global(.ant-select-single) {
+  height: auto;
+  :global(.ant-select-selector) { padding-block: .28em; }
+  :global(.computer-identity) { line-height: 1.35; }
 }
 .deviceLabel { display: block; margin-bottom: 6px; font-weight: 600; }
 @container (max-width: 670px) {

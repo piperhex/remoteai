@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { computerDetails } from '../../../../../shared/remote-chat/devices';
 import { ArrowRight, Cloud, CloudUpload, Monitor } from 'lucide-react';
 import { displayError, guiLocale, uiText as t } from '../../../../../shared/localization/uiText';
 import { mappingAddress } from '../../../../../shared/port-mapping/target';
@@ -20,7 +21,7 @@ export function MappingDeviceGroup({ group, select }: { group: MappingGroup; sel
   return <section className={styles.group} aria-label={device.name}>
     <header className={styles.groupHeader}>
       <span className={styles.deviceIcon}><Monitor size={19} /></span>
-      <h3>{device.name}</h3>
+      <div className={styles.groupIdentity}><h3>{device.name}</h3><small>{computerDetails(device)}</small></div>
       <span className={styles.presence} data-online={device.online}>{t(device.online ? 'client.chat.online' : 'client.chat.offline')}</span>
       {sync && <span className={styles.sync} role="status"><SyncIcon size={15} />{displayError(sync)}</span>}
     </header>

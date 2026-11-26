@@ -23,7 +23,7 @@ export function useGuiComputers(options: {
 
   useEffect(() => { setDirectory(null); setError(''); setLoading(false); }, [scope]);
   useEffect(() => {
-    if (!isDesktopApp || !options.active || !scope) return;
+    if (!isDesktopApp || !options.active) return;
     let cancelled = false;
     let pending = false;
     const read = async () => {
@@ -38,7 +38,7 @@ export function useGuiComputers(options: {
     };
     refresh.current = () => { void read(); };
     void read();
-    const timer = setInterval(() => { void read(); }, DEVICE_REFRESH_MS);
+    const timer = scope ? setInterval(() => { void read(); }, DEVICE_REFRESH_MS) : undefined;
     return () => { cancelled = true; clearInterval(timer); refresh.current = () => {}; };
   }, [scope, options.active]);
 
@@ -49,6 +49,9 @@ export function useGuiComputers(options: {
     setSelected({ scope, device });
   }, [scope, directory]);
   return {
+    localSystem: directory?.currentDevicePlatform ? {
+      platform: directory.currentDevicePlatform, ipAddress: directory.currentDeviceIpAddress,
+    } : undefined,
     localName: scopeOf(directory?.identity ?? null) === scope ? directory?.currentDeviceName ?? undefined : undefined,
     current, identity: options.identity, devices: scopeOf(directory?.identity ?? null) === scope
       ? directory?.devices ?? [] : [], authenticated: Boolean(scope),

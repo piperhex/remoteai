@@ -5,6 +5,7 @@ import type { GuiComputerNavigation } from '../../../../../shared/conversation/r
 import { uiText as t } from '../../../../../shared/localization/uiText';
 import { MAX_PORT_MAPPINGS } from '../../../../../shared/port-mapping/settings';
 import { MAPPING_COLORS } from '../codexGui/portForwarding/PortForwarding';
+import { mappingComputerLabel, mappingComputerOption, renderComputerOption } from './computerOption';
 import { MappingDeviceGroup } from './MappingDeviceGroup';
 import { MappingEditorDialog, type EditorSelection } from './MappingEditorDialog';
 import { useMappingGroups } from './useMappingGroups';
@@ -37,8 +38,10 @@ export function PortMappingsPage({ computers }: { computers: GuiComputerNavigati
       <div className={styles.filters}>
         <Select aria-label={t('client.mappingEditor.chooseDevice')} value={selected?.device.deviceId ?? ''}
           onChange={setFilter} disabled={!groups.length} popupMatchSelectWidth={false} showSearch optionFilterProp="label"
-          prefix={<Monitor size={14} />} options={[{ value: '', label: t('client.app.allDevices') },
-            ...groups.map(({ device }) => ({ value: device.deviceId, label: device.name }))]} />
+          className={selected ? styles.computerSelect : undefined}
+          labelRender={({ label }) => selected ? mappingComputerLabel(selected.device) : label}
+          prefix={<Monitor size={14} />} optionRender={renderComputerOption}
+          options={[{ value: '', label: t('client.app.allDevices') }, ...groups.map(mappingComputerOption)]} />
         <Tooltip title={refreshText}><Button aria-label={refreshText} icon={<RefreshCw size={15} />}
           disabled={!computers.authenticated || computers.loading} onClick={refresh} /></Tooltip>
       </div>

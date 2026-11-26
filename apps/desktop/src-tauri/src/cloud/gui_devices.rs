@@ -7,6 +7,7 @@ pub(crate) struct GuiDevice {
     device_id: String,
     name: String,
     platform: String,
+    ip_address: Option<std::net::IpAddr>,
     online: bool,
 }
 
@@ -28,6 +29,8 @@ pub(crate) struct GuiDeviceDirectory {
     identity: Option<GuiCloudIdentity>,
     current_device_id: String,
     current_device_name: Option<String>,
+    current_device_platform: String,
+    current_device_ip_address: Option<std::net::IpAddr>,
     devices: Vec<GuiDevice>,
 }
 
@@ -37,6 +40,26 @@ enum DirectoryError {
     Authentication,
     #[error("暂时无法读取电脑列表，请重试。")]
     Unavailable,
+}
+
+/// Ask the routing table which IPv4 interface it would use. UDP connect sends no packets.
+pub(crate) fn local_device_ip() -> Option<std::net::IpAddr> {
+    use std::net::{IpAddr, Ipv4Addr, UdpSocket};
+    let routed = UdpSocket::bind((Ipv4Addr::UNSPECIFIED, 0))
+        .ok()
+        .and_then(|socket| {
+            socket.connect((Ipv4Addr::new(192, 0, 2, 1), 9)).ok()?;
+            Some(socket.local_addr().ok()?.ip())
+        });
+    routed
+        .filter(|ip| !ip.is_loopback() && !ip.is_unspecified())
+        .or_else(|| {
+            csw_chat_connectivity::local_addresses()
+                .ok()?
+                .into_iter()
+                .filter_map(|address| address.parse::<IpAddr>().ok())
+                .min_by_key(|ip| !ip.is_ipv4())
+        })
 }
 
 fn read_directory<R: Runtime>(
@@ -50,6 +73,8 @@ fn read_directory<R: Runtime>(
         identity: None,
         current_device_id: installation.device_id,
         current_device_name: None,
+        current_device_platform: installation.platform,
+        current_device_ip_address: local_device_ip(),
         devices: Vec::new(),
     };
     if !cloud_state(&settings, &credentials).authenticated {

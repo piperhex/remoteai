@@ -9,10 +9,10 @@ import { createGuiToolsClient, type GuiToolsClient } from '../../../shared/remot
 import { RemoteTerminals } from '../src/remoteChat/terminals';
 import { remoteTerminalApi } from '../../../shared/remote-chat/terminalApi';
 
-const device = { deviceId: 'workstation', name: 'Workstation', online: true, platform: 'linux',
+const device = { deviceId: 'workstation', name: 'Workstation', online: true, platform: 'linux', ipAddress: '192.168.1.21',
   localProxyRunning: false, capabilities: [], lastSeenAt: new Date().toISOString() };
-const laptop = { ...device, deviceId: 'laptop', name: 'Laptop' };
-const offline = { ...device, deviceId: 'offline', name: 'Offline PC', online: false };
+const laptop = { ...device, deviceId: 'laptop', name: 'Laptop', platform: 'darwin', ipAddress: '192.168.1.22' };
+const offline = { ...device, deviceId: 'offline', name: 'Offline PC', ipAddress: null, online: false };
 const devices = [device, laptop, offline];
 const scope = JSON.stringify([sshFixtureIdentity.baseUrl, sshFixtureIdentity.userId, device.deviceId]);
 
@@ -33,6 +33,7 @@ export function WorkspaceHarness({ mode, remoteApi, client }: {
   const hosts = { request, get: (id: string) => id === device.deviceId ? first
     : id === laptop.deviceId && requested === id ? { deviceId: laptop.deviceId, name: laptop.name, api: secondApi, ready: true } : undefined };
   const computers = { devices, localName: 'Studio PC', current: mode === 'remote' ? device : null, authenticated: true,
+    localSystem: { platform: 'windows', ipAddress: '192.168.1.10' },
     loading: false, error: '', login() {}, refresh() {}, choose() {} };
   return <div className="app-shell sidebar-navigation-shell">
     <aside className="app-sidebar"><div className="brand sidebar-brand"><span className="brand-name">Remote AI</span></div>

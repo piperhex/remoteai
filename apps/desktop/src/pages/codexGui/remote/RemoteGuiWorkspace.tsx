@@ -78,7 +78,7 @@ export default function RemoteGuiWorkspace(props: {
       renderUserMessage={props => <RemoteUserMessage {...props} state={chat.state}
         controller={chat.controller} active={active} />}
       scope={scope} draggableHeader={isDesktopApp} scrollableComposer onWorkspaceChange={setWorkspaceCwd}
-      chooseLocal={() => computers.choose(null)}
+      localSystem={computers.localSystem} chooseLocal={() => computers.choose(null)}
       deviceRefresh={computers}
       chooseDevice={(id) => { const device = computers.devices.find((entry) => entry.deviceId === id);
         if (device) computers.choose(device); }}

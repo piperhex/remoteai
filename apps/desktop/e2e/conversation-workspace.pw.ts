@@ -5,6 +5,17 @@ test.beforeEach(async ({ page }) => {
 });
 
 for (const mode of ['local', 'remote', 'web']) {
+  test(`${mode}: the host picker distinguishes computers with the same name`, async ({ page }) => {
+    await page.goto(`/e2e/conversation-workspace-harness.html?mode=${mode}`, { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: /切换主机/ }).click();
+    const options = page.getByRole('menuitemradio');
+    await expect(options.filter({ hasText: 'Office PC' })).toHaveCount(2);
+    await expect(options.filter({ hasText: 'Windows · 192.168.1.21' })).toBeEnabled();
+    await expect(options.filter({ hasText: 'macOS · 192.168.1.22' })).toBeEnabled();
+    await expect(options.filter({ hasText: 'Linux PC' })).toBeDisabled();
+    if (mode !== 'web') await expect(options.filter({ hasText: '本地' })).toContainText('Windows · 192.168.1.10');
+  });
+
   test(`${mode}: conversation context stays visible while running and follows workspace changes`, async ({ page }) => {
     test.setTimeout(180_000);
     await page.setViewportSize({ width: 1280, height: 800 });

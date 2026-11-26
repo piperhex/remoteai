@@ -25,7 +25,7 @@ export default function DesktopSshPage({ active, computers, identity, hosts }: {
   const defaultHost = device ? hosts.get(device.deviceId) ?? { ...local, ready: false } : local;
   return <SshWorkspace key={scope} active={active} scope={scope} defaultHost={defaultHost}
     directory={{ localDeviceId: LOCAL_DEVICE, devices: [
-      { deviceId: LOCAL_DEVICE, name: localName, platform: '', online: true }, ...computers.devices],
+      { deviceId: LOCAL_DEVICE, name: localName, platform: '', ...computers.localSystem, online: true }, ...computers.devices],
       get: id => id === LOCAL_DEVICE ? local : hosts.get(id),
       request: id => { if (id !== LOCAL_DEVICE) hosts.request(id); }, refresh: computers }}
     login={identity ? undefined : computers.login} />;

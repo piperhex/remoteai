@@ -19,8 +19,8 @@ applyThemeColor(DEFAULT_THEME_COLOR);
 saveGlobalFontSize(Number(query.get('font') ?? 14));
 const identity = { baseUrl: 'https://fixture.test', userId: 'owner' };
 const devices = [
-  { deviceId: 'office', name: 'Office PC', platform: 'windows', online: true },
-  { deviceId: 'studio', name: 'Mac Studio', platform: 'darwin', online: true },
+  { deviceId: 'office', name: 'Office PC', platform: 'windows', ipAddress: '192.168.1.21', online: true },
+  { deviceId: 'studio', name: 'Mac Studio', platform: 'darwin', ipAddress: '192.168.1.22', online: true },
   { deviceId: 'home', name: 'Home PC', platform: 'linux', online: false },
 ];
 const scope = JSON.stringify([identity.baseUrl, identity.userId, devices[0].deviceId]);

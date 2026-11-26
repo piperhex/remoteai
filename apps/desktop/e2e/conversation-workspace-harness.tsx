@@ -40,8 +40,11 @@ const controller = new ChatController(() => ({ start() {}, stop() {}, request: a
 } }));
 controller.guiTools.workspace = workspace;
 controller.guiTools.projects.list = async () => [{ cwd: initialCwd, label: 'codex-switch' }];
-const device = { deviceId: 'remote', name: 'Office PC', platform: 'windows', online: true };
-const computers: GuiComputerNavigation = { current: device, devices: [device], authenticated: true,
+const device = { deviceId: 'remote', name: 'Office PC', platform: 'windows', ipAddress: '192.168.1.21', online: true };
+const computers: GuiComputerNavigation = { current: device, authenticated: true,
+  devices: [device, { ...device, deviceId: 'studio', platform: 'darwin', ipAddress: '192.168.1.22' },
+    { ...device, deviceId: 'legacy', name: 'Linux PC', platform: 'linux', ipAddress: null, online: false }],
+  localSystem: { platform: 'windows', ipAddress: '192.168.1.10' },
   allowLocal: mode !== 'web', loading: false, error: '', refresh() {}, choose() {}, login() {} };
 setGuiLanguage('zh');
 

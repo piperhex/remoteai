@@ -6,6 +6,7 @@ import { displayError, uiText as t } from '../../../../../shared/localization/ui
 import { MappingForm } from '../codexGui/portForwarding/MappingForm';
 import type { MappingSelection } from './MappingDeviceGroup';
 import type { MappingGroup } from './useMappingGroups';
+import { mappingComputerLabel, mappingComputerOption, renderComputerOption } from './computerOption';
 import styles from './page.module.less';
 
 export type EditorSelection = MappingSelection | { mode: 'new'; deviceId: string };
@@ -34,7 +35,8 @@ export function MappingEditorDialog({ groups, selection, close }: {
       : <><label className={styles.deviceLabel} htmlFor={formId + '-device'}>{t('client.mappingEditor.chooseDevice')}</label>
         <Select id={formId + '-device'} aria-label={t('client.mappingEditor.chooseDevice')} value={deviceId}
           disabled={selection.mode !== 'new' || saving} onChange={setDeviceId} showSearch optionFilterProp="label"
-          options={groups.map(({ device }) => ({ value: device.deviceId, label: device.name }))} />
+          className={styles.computerSelect} labelRender={() => mappingComputerLabel(group.device)}
+          optionRender={renderComputerOption} options={groups.map(mappingComputerOption)} />
         {full && <Alert type="info" message={t('client.portForwarding.youCanAddUpTo8MappingsRemoveOneTo')} />}
         <MappingForm key={deviceId} formId={formId} service={group.session.service} entry={entry} saveOnly
           connected={group.device.online} saving={saving} setSaving={setSaving} done={close} /></>}
