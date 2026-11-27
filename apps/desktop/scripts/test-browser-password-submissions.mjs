@@ -14,6 +14,8 @@ test('a login attempt offers its password once and only for an eligible form', a
   const cases = [
     { name: 'command disables fields and cancels the icon click', handler: `event.preventDefault();
       event.stopPropagation(); form.elements.password.disabled = true; form.elements.password.value = '';` },
+    { name: 'command clears a required password after accepting it', passwordAttrs: 'required',
+      handler: "event.preventDefault(); form.elements.password.value = '';" },
     { name: 'Enter activates the command submitter', enter: true, handler: 'event.preventDefault()' },
     { name: 'ordinary submit' },
     { name: 'command also requests a native submit', handler: `event.preventDefault();
@@ -22,6 +24,14 @@ test('a login attempt offers its password once and only for an eligible form', a
     { name: 'synthetic command click', synthetic: true, handler: 'event.preventDefault()', count: 0 },
     { name: 'non-submit button', control: '<button type="button">Other</button>', count: 0 },
     { name: 'invalid email', username: 'invalid', handler: 'event.preventDefault()', count: 0 },
+    { name: 'native validation blocks a short username in an email field', username: 'mail-user', count: 0 },
+    ...[false, true].map(enter => ({
+      name: `mail login command accepts a short username via ${enter ? 'Enter' : 'click'}`,
+      username: 'mail-user', enter, handler: `event.preventDefault();
+        form.elements.email.disabled = true;
+        form.elements.password.disabled = true;
+        form.elements.password.value = '';`,
+    })),
     { name: 'hidden password', passwordAttrs: 'style="display:none"', handler: 'event.preventDefault()', count: 0 },
     { name: 'new password in a command form', autocomplete: 'new-password',
       handler: 'event.preventDefault()', count: 0 },
@@ -54,7 +64,8 @@ test('a login attempt offers its password once and only for an eligible form', a
       else await page.locator('button span, button:not(:has(span)), input[type=submit]').click();
       // Let the browser finish the click's default action and any deferred capture decision.
       const captured = await page.evaluate(() => new Promise(resolve => setTimeout(() => resolve(window.records), 0)));
-      assert.deepEqual(captured, scenario.count === 0 ? [] : [login]);
+      const expected = { ...login, username: scenario.username ?? login.username };
+      assert.deepEqual(captured, scenario.count === 0 ? [] : [expected]);
     } finally { await page.close(); }
   });
 });

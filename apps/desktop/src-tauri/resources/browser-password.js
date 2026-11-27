@@ -85,14 +85,16 @@ var RemoteAIBrowserPassword = (() => {
     }, true);
     document.addEventListener("click", (event) => {
       const control = clickedSubmitter(event), form = control?.form;
-      if (!form || !safeLoginForm(form, control) || form.matches(":invalid")) return;
+      if (!form || !safeLoginForm(form, control)) return;
       const login = readLogin(form, true);
       if (!login) return;
+      const validBeforeClick = !form.matches(":invalid");
       pending.set(form, login);
       window.setTimeout(() => {
         if (pending.get(form) !== login) return;
         pending.delete(form);
-        if (event.defaultPrevented && safeLoginForm(form, control)) offerLogin(options, login);
+        if (!event.defaultPrevented || !safeLoginForm(form, control)) return;
+        if (validBeforeClick || !form.matches(":invalid")) offerLogin(options, login);
       }, 0);
     }, true);
   }
