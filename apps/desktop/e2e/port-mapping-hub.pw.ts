@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import type { RemoteFiles } from '../src/remoteChat/files';
 
 declare global {
-  interface Window { mappingPeerFixture: { starts: number; stops: number; ready(): void } }
+  interface Window { mappingPeerFixture: { starts: number; stops: number; ready(): void }; mappingHostFixture: RemoteFiles }
 }
 
 const nav = (page: Page) => page.locator('.sidebar-tabs');
@@ -64,6 +65,59 @@ test('a pending peer can recover, share a connection and release its last listen
 });
 
 for (const remote of [false, true]) {
+  test(`local mappings in ${remote ? 'remote' : 'local'} desktop mode show only live unique consumers`, async ({ page }, info) => {
+    await page.setViewportSize(remote ? { width: 930, height: 860 } : { width: 1400, height: 900 });
+    await page.addInitScript(() => {
+      const scope = JSON.stringify(['https://fixture.test', 'owner', 'local']);
+      localStorage.setItem('codex-port-forwarding:' + scope, JSON.stringify([
+        { id: 'design', remotePort: 3000, localPort: 8080, localDomain: 'design.localhost',
+          linkProtocol: 'https', updatedAt: 1792116626000 },
+        { id: 'other', remotePort: 3000, localPort: 15000, updatedAt: 1792116625000 },
+      ]));
+      localStorage.setItem('codex-port-mapping-aliases:' + scope, JSON.stringify({ design: '设计预览' }));
+      window.mappingPeerFixture = { starts: 0, stops: 0, ready() {} };
+    });
+    await page.goto('/e2e/port-forwarding-harness.html?hub&own' + (remote ? '&mode=remote&dark&font=18' : ''));
+    await openHub(page);
+    await page.evaluate(() => window.portMappingSyncFixture.release());
+    const first = hub(page).getByRole('region').first();
+    await expect(first).toHaveAccessibleName('Design PC');
+    await expect(first.getByText('当前电脑')).toBeVisible();
+    await expect(first.getByRole('button', { name: /^(启动|停止)映射/ })).toHaveCount(0);
+    await expect(hub(page).getByRole('region', { name: 'Office PC' }).getByText(/被映射数/)).toHaveCount(0);
+    const row = first.getByRole('article', { name: /^design\.localhost/ });
+    await row.getByRole('button', { name: '被映射数 0' }).focus();
+    await expect(page.getByRole('tooltip')).toHaveText('暂无设备正在使用这条映射');
+    await page.evaluate(async () => {
+      for (const [owner, deviceId, name] of [['office-1', 'office', 'Office PC'], ['office-2', 'office', 'Office PC'],
+        ['studio-1', 'studio', 'Mac Studio']]) {
+        const id = await window.mappingHostFixture.request({ operation: 'guiResourceOpen', url: 'http://127.0.0.1:3000' }, owner);
+        await window.mappingHostFixture.request({ operation: 'guiResourceMappingActive', id, mappingId: 'design',
+          consumer: { deviceId, name } }, owner);
+      }
+    });
+    const badge = row.getByRole('button', { name: '被映射数 2' });
+    await badge.hover();
+    await expect(page.getByRole('tooltip').getByText('Mac Studio')).toBeVisible();
+    await expect(page.getByRole('tooltip').getByText('Office PC')).toBeVisible();
+    await expect(first.getByRole('article').nth(1)).toContainText('被映射数 0');
+    await expect(page.locator('.ant-tooltip:visible')).not.toHaveClass(/-appear|-enter/);
+    const prefix = remote ? 'pc-remote-dark-narrow' : 'pc-local-light-wide';
+    await page.screenshot({ path: info.outputPath(prefix + '-local-consumers.png'), animations: 'disabled' });
+    await page.evaluate(() => window.mappingHostFixture.release('office-1'));
+    await expect(badge).toBeVisible();
+    await page.evaluate(() => window.mappingHostFixture.release('office-2'));
+    await expect(row).toContainText('被映射数 1');
+    await page.evaluate(() => window.mappingHostFixture.release());
+    await expect(row).toContainText('被映射数 0');
+    await expect.poll(() => page.evaluate(() => window.portForwardingFixture.browserRoutes)).toEqual([
+      { domain: 'design.localhost', port: 8080, target: '127.0.0.1:3000' }]);
+    await row.getByRole('button', { name: 'design.localhost:8080', exact: true }).click();
+    await expect(page.getByLabel('页面地址', { exact: true })).toHaveValue(/^https:\/\/design\.localhost:8080/);
+    expect(await page.evaluate(() => [window.mappingPeerFixture.starts, window.portForwardingFixture.openedPorts.size,
+      window.portForwardingFixture.browserUrls.length])).toEqual([0, 0, 0]);
+  });
+
   test(`desktop ${remote ? 'remote dark narrow' : 'local light wide'} sidebar manages mappings`, async ({ page }, info) => {
     await page.setViewportSize(remote ? { width: 930, height: 860 } : { width: 1400, height: 900 });
     await page.goto('/e2e/port-forwarding-harness.html?hub' + (remote ? '&mode=remote&dark&font=18' : ''), {
@@ -103,10 +157,14 @@ for (const remote of [false, true]) {
     const dialog = page.getByRole('dialog');
     const tcp = dialog.getByRole('radio', { name: 'TCP', exact: true });
     await expect(tcp).toBeChecked();
+    await expect(dialog.getByText('链接协议', { exact: true })).toBeVisible();
+    await expect(dialog.getByRole('radio', { name: 'HTTP', exact: true })).toBeChecked();
     expect(await tcp.evaluate(input => parseFloat(getComputedStyle(input.closest('label')!).fontSize)))
       .toBeGreaterThanOrEqual(12);
     await dialog.locator('.ant-select-selector').click();
     await chooseStudio(page);
+    await dialog.getByText('HTTPS', { exact: true }).click();
+    await expect(dialog.getByRole('radio', { name: 'HTTPS', exact: true })).toBeChecked();
     const alias = dialog.getByRole('textbox', { name: '别名', exact: true });
     await alias.fill('Studio API');
     await dialog.getByRole('spinbutton', { name: '远程端口' }).fill('5000');
@@ -129,6 +187,7 @@ for (const remote of [false, true]) {
     await address.click();
     await saved.getByRole('button', { name: /^编辑映射/ }).click();
     await expect(alias).toHaveValue('Studio API');
+    await expect(dialog.getByRole('radio', { name: 'HTTPS', exact: true })).toBeChecked();
     await alias.fill('Studio Web');
     const domain = dialog.getByRole('textbox', { name: '自定义域名' });
     await expect(domain).toHaveValue('studio.localhost');

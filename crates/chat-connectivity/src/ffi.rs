@@ -188,6 +188,12 @@ fn dispatch(request: Request) -> Result<Value> {
         Operation::Poll { id, wait_ms } => poll(hub, &id, wait_ms),
         Operation::Addresses => Ok(json!(crate::local_addresses()?)),
         Operation::BrowserMappings { routes } => {
+            // Mobile browser routes refer exclusively to listeners owned by the mobile mapping service.
+            if routes.iter().any(|r| {
+                r.target.is_some() || r.domain == "localhost" || r.domain.ends_with(".localhost")
+            }) {
+                return Err(Error::Invalid);
+            }
             let mut proxies = hub.browser_proxies.lock().map_err(|_| Error::Closed)?;
             if routes.is_empty() {
                 proxies.remove(&request.owner);

@@ -52,6 +52,7 @@ Object.assign(window, { isTauri: true, __TAURI_INTERNALS__: {
   invoke: async (command: string, args: { request: { type: string; port: number; scope: string; url: string };
     url?: string; deviceId: string; document?: MappingDocument; routes: typeof fixture.browserRoutes }) => {
     if (command === 'configure_browser_mappings') { fixture.browserRoutes = args.routes; return; }
+    if (command === 'codex_gui_resource_open') return crypto.randomUUID();
     if (command === 'sync_port_mappings') return exchangeMappingFixture(args);
     if (command === 'provider_browser_sync') { previewUrls.push(args.request.url); return; }
     if (command === 'browser_inspector') return { open: false, mobile: false };

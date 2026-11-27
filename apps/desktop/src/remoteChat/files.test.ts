@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { RemoteFiles } from './files';
+import { mappingConsumers } from './mappingConsumers';
 import { invoke } from '../api/backend';
 import { DEFAULT_CHAT_POLICY, MIB, setChatPolicy } from '../../../../shared/remote-chat/policy';
 
@@ -7,6 +8,31 @@ vi.mock('../api/backend', () => ({ invoke: vi.fn() }));
 vi.mock('../../../../shared/platform/localBackend', async () => await import('../api/backend'));
 beforeEach(() => vi.resetAllMocks());
 afterEach(() => setChatPolicy(DEFAULT_CHAT_POLICY));
+
+it('counts only activated mapping resources until their owner closes or disconnects', async () => {
+  const files = new RemoteFiles();
+  const origin = 'http://127.0.0.1:8080';
+  const devices = () => [...mappingConsumers.devices('first', origin).values()];
+  const open = (owner: string, id: string) => {
+    vi.mocked(invoke).mockResolvedValueOnce(id);
+    return files.request({ operation: 'guiResourceOpen', url: origin }, owner);
+  };
+  const active = (owner: string, id: string, mappingId = 'first') => files.request({
+    operation: 'guiResourceMappingActive', id, mappingId, consumer: { deviceId: 'office', name: 'Office PC' },
+  }, owner);
+  await open('a', 'preview'); await open('a', 'one'); await open('b', 'two'); await open('b', 'three');
+  expect(devices()).toEqual([]);
+  await expect(active('b', 'one')).rejects.toThrow();
+  await active('a', 'one'); await active('b', 'two'); await active('b', 'three', 'second');
+  expect(devices()).toEqual(['Office PC']);
+  await files.request({ operation: 'guiResourceClose', id: 'two' }, 'b');
+  expect(devices()).toEqual(['Office PC']);
+  files.release('a');
+  expect(devices()).toEqual([]);
+  expect(mappingConsumers.devices('second', origin).size).toBe(1);
+  files.release();
+  expect(mappingConsumers.devices('second', origin).size).toBe(0);
+});
 
 it('checks the Admin PDF limit on streaming previews and releases a rejected session', async () => {
   setChatPolicy({ ...DEFAULT_CHAT_POLICY, filePreviewMaxMb: 1, fileDownloadMaxMb: 100 });

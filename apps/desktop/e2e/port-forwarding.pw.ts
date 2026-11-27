@@ -70,6 +70,8 @@ test('copies and opens a custom domain and restores the IP address after clearin
   await start.click();
   await expect(panel(page).getByRole('alert')).toContainText('请输入域名');
   await domain.fill('Test.Local');
+  await expect(panel(page).getByRole('radio', { name: 'HTTP', exact: true })).toBeChecked();
+  await panel(page).getByText('HTTPS', { exact: true }).click();
   const alias = panel(page).getByRole('textbox', { name: '别名', exact: true });
   await alias.fill('Office API');
   await start.click();
@@ -89,11 +91,12 @@ test('copies and opens a custom domain and restores the IP address after clearin
   await page.screenshot({ path: info.outputPath('pc-remote-domain-open.png'), animations: 'disabled' });
   await page.getByRole('menuitem', { name: '在 Remote AI 中预览' }).click();
   await expect.poll(() => page.evaluate(() => window.portForwardingFixture.previewUrls))
-    .toContain('http://test.local:13000');
+    .toContain('https://test.local:13000');
   await page.reload();
   await page.getByRole('button', { name: '端口映射', exact: true }).click();
   await mapping.getByRole('button', { name: /^编辑映射/ }).click();
   await expect(domain).toHaveValue('test.local');
+  await expect(panel(page).getByRole('radio', { name: 'HTTPS', exact: true })).toBeChecked();
   await expect(alias).toHaveValue('Office API');
   await alias.fill('');
   await domain.fill('');
@@ -107,7 +110,7 @@ test('copies and opens a custom domain and restores the IP address after clearin
   await page.screenshot({ path: info.outputPath('pc-remote-domain-cleared.png'), animations: 'disabled' });
   await openInBrowser.click();
   await expect.poll(() => page.evaluate(() => window.portForwardingFixture.browserUrls))
-    .toEqual(['http://127.0.0.1:13000']);
+    .toEqual(['https://127.0.0.1:13000']);
 });
 
 test('keeps eight cards and the form usable in a small window', async ({ page }) => {

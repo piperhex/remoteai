@@ -14,29 +14,34 @@ function DeviceWorker({ session, online }: { session: DesktopMappingSession; onl
 }
 
 /** Keep listeners alive across dashboard navigation and release removed devices and signed-out accounts. */
-export function MappingSessions({ identity, devices, children }: {
-  identity: GuiCloudIdentity | null; devices: GuiComputer[]; children: ReactNode;
+export function MappingSessions({ identity, devices, localDevice, children }: {
+  identity: GuiCloudIdentity | null; devices: GuiComputer[]; localDevice?: GuiComputer; children: ReactNode;
 }) {
   const account = identity?.userId;
   const baseUrl = identity?.baseUrl;
   const current = useRef<Sessions>(new Map());
+  const consumer = useRef(localDevice);
+  useLayoutEffect(() => { consumer.current = localDevice; }, [localDevice]);
   const sessions = useMemo(() => {
     const next = new Map<string, DesktopMappingSession>();
     if (!account || !baseUrl) return next;
     for (const { deviceId: id } of devices) {
       const existing = current.current.get(id);
+      const local = localDevice?.deviceId === id;
       const validate = (target: Omit<PortMapping, 'id'>) => {
+        if (local) return;
         for (const [other, session] of current.current) {
-          if (other !== id && session.service.snapshot().some(entry => mappingConflicts(entry, target))) {
+          if (!session.local && other !== id && session.service.snapshot().some(entry => mappingConflicts(entry, target))) {
             throw new Error('client.mappingHub.portConflict');
           }
         }
       };
-      next.set(id, existing?.scope === JSON.stringify([baseUrl, account, id]) ? existing
-        : new DesktopMappingSession({ identity: { baseUrl, userId: account }, deviceId: id, validate }));
+      next.set(id, existing?.local === local && existing.scope === JSON.stringify([baseUrl, account, id]) ? existing
+        : new DesktopMappingSession({ identity: { baseUrl, userId: account }, deviceId: id, local, validate,
+          consumer: () => consumer.current }));
     }
     return next;
-  }, [devices, baseUrl, account]);
+  }, [devices, localDevice, baseUrl, account]);
   useLayoutEffect(() => { current.current = sessions; }, [sessions]);
   return <MappingSessionsContext.Provider value={sessions}>
     {devices.map(device => {

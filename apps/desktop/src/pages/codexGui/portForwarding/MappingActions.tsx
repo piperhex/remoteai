@@ -13,8 +13,8 @@ async function copyAddress(address: string) {
   } catch { void message.error({ content: t("client.chat.couldNotCopyTryAgain"), style: { maxWidth: 400, marginInline: 'auto' } }); }
 }
 
-export function MappingActions({ entry, service, connected }: {
-  entry: ForwardingEntry; service: PortForwardingService; connected: boolean;
+export function MappingActions({ entry, service, connected, local }: {
+  entry: ForwardingEntry; service: PortForwardingService; connected: boolean; local?: boolean;
 }) {
   const busy = entry.status === 'starting' || entry.status === 'stopping';
   const stopAction = entry.status === 'running' || busy;
@@ -34,12 +34,12 @@ export function MappingActions({ entry, service, connected }: {
       <Button type="text" title={remove} aria-label={`${remove} ${label}`} icon={<Trash2 size={18} />}
         disabled={entry.status === 'stopping'} />
     </Popconfirm>
-    <span className={styles.actionDivider} aria-hidden="true" />
+    {!local && <><span className={styles.actionDivider} aria-hidden="true" />
     <Button className={styles.toggle} variant="solid" color={stopAction ? 'red' : 'green'}
       loading={entry.status === 'stopping'} disabled={entry.status === 'stopping' || (!connected && !stopAction)}
       aria-label={`${t(stopAction ? "client.portForwarding.stopMapping" : "client.portForwarding.startMapping")} ${label}`}
       icon={stopAction ? <Square size={16} /> : <Play size={18} />}
       onClick={() => { void (stopAction ? service.stop(entry.id) : service.start(entry.id)); }}>
-      {t(stopAction ? "client.shared.stop" : "client.portForwarding.start")}</Button>
+      {t(stopAction ? "client.shared.stop" : "client.portForwarding.start")}</Button></>}
   </div>;
 }

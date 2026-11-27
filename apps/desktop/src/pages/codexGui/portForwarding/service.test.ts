@@ -26,6 +26,21 @@ beforeEach(() => {
 });
 afterEach(async () => { service.dispose(); await flush(); });
 
+it('publishes the consumer only after a listener starts and tolerates hosts without reporting support', async () => {
+  const device = { deviceId: 'office', name: 'Office PC' };
+  const mappingActive = vi.fn(async () => { throw new Error('Unknown operation'); });
+  service = new PortForwardingService({ ...client, mappingActive }, [], undefined, () => device);
+  service.setConnected(true);
+  const id = service.save({ remotePort: 3000, localPort: 13000 });
+  expect(mappingActive).not.toHaveBeenCalled();
+  vi.mocked(client.openResource).mockRejectedValueOnce(new Error('Disconnected'));
+  await service.start(id);
+  expect(mappingActive).not.toHaveBeenCalled();
+  await service.start(id);
+  expect(service.snapshot()[0].status).toBe('running');
+  expect(mappingActive).toHaveBeenCalledWith('resource-1', id, device);
+});
+
 it('maps multiple remote ports through authenticated resources and stops them independently', async () => {
   service.add(3000, 13000); service.add(5432, 15432); await flush();
   expect(service.snapshot().map(entry => entry.status)).toEqual(['running', 'running']);

@@ -14,7 +14,7 @@ const fixture = vi.hoisted(() => ({ current: null as GuiComputer | null, mounts:
 vi.mock('../../api/backend', () => ({ isDesktopApp: true }));
 vi.mock('../../../../../shared/platform/localBackend', async () => await import('../../api/backend'));
 const computers = () => ({
-  current: fixture.current, identity: fixture.identity, devices: [],
+  current: fixture.current, identity: fixture.identity, devices: [], mappingDevices: [],
   choose: fixture.choose, authenticated: !!fixture.identity, loading: false, error: '', refresh() {}, login() {},
 });
 vi.mock('./useGuiLayout', () => ({ useGuiLayout: () => ({ focused: false, onToggleFocus() {} }) }));

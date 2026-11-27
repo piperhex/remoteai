@@ -24,6 +24,19 @@ describe('browser mapping index', () => {
     } finally { unregister(); }
     expect(browserInput('dev.test:18080')?.protocol).toBe('https:');
   });
+  it('uses the saved HTTPS protocol and retains explicit ports including 80 and 443', () => {
+    const unregister = browserMappings.register('secure', source([80, 443, 8443].map(port =>
+      mapping(String(port), { localDomain: 'secure.test', localPort: port, linkProtocol: 'https' }))));
+    try {
+      for (const port of [80, 443, 8443]) {
+        const expected = new URL(`https://secure.test:${port}/path?q=1`);
+        expect(browserInput(`secure.test:${port}/path?q=1`)?.href).toBe(expected.href);
+        expect(browserMappings.matches(expected)).toBe(true);
+      }
+      expect(browserInput('http://secure.test:8443')?.protocol).toBe('http:');
+    } finally { unregister(); }
+  });
+
   it('exposes only active TCP addresses and follows stop, disconnect and disposal', () => {
     const store = new BrowserMappingStore();
     const service = source([mapping('tcp'), mapping('udp', { protocol: 'udp' }),

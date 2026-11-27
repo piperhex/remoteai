@@ -1,5 +1,5 @@
 import { uiText } from "../../../../../../shared/localization/uiText";
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { invoke, isDesktopApp } from '../../../api/backend';
 import type { GuiCloudIdentity, GuiComputer, GuiComputerNavigation, GuiDeviceDirectory } from '../../../../../../shared/conversation/remote/types';
 
@@ -9,6 +9,8 @@ const scopeOf = (identity: GuiCloudIdentity | null) => identity ? `${identity.ba
 interface ComputerDirectory extends GuiComputerNavigation {
   identity: GuiCloudIdentity | null;
   localName?: string;
+  localDevice?: GuiComputer;
+  mappingDevices: GuiComputer[];
 }
 
 export function useGuiComputers(options: {
@@ -20,6 +22,15 @@ export function useGuiComputers(options: {
   const [error, setError] = useState('');
   const refresh = useRef(() => {});
   const scope = scopeOf(options.identity);
+  const localDevice = useMemo((): GuiComputer | undefined => {
+    if (!scope || !directory?.currentDeviceId || scopeOf(directory.identity) !== scope) return;
+    return { deviceId: directory.currentDeviceId, name: directory.currentDeviceName || uiText('client.app.currentComputer'),
+      online: true, platform: directory.currentDevicePlatform ?? '', ipAddress: directory.currentDeviceIpAddress };
+  }, [directory, scope]);
+  const mappingDevices = useMemo(() => {
+    if (!scope || !directory || scopeOf(directory.identity) !== scope) return [];
+    return localDevice ? [localDevice, ...directory.devices] : directory.devices;
+  }, [localDevice, directory, scope]);
 
   useEffect(() => { setDirectory(null); setError(''); setLoading(false); }, [scope]);
   useEffect(() => {
@@ -49,6 +60,7 @@ export function useGuiComputers(options: {
     setSelected({ scope, device });
   }, [scope, directory]);
   return {
+    localDevice, mappingDevices,
     localSystem: directory?.currentDevicePlatform ? {
       platform: directory.currentDevicePlatform, ipAddress: directory.currentDeviceIpAddress,
     } : undefined,

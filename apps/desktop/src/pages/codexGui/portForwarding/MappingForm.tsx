@@ -4,7 +4,7 @@ import { Button, Input, InputNumber, Radio } from 'antd';
 import { ArrowRight } from 'lucide-react';
 import { guiLocale, uiText as t } from "../../../../../../shared/localization/uiText";
 import { MAX_PORT } from './settings';
-import type { MappingProtocol } from '../../../../../../shared/port-mapping/settings';
+import type { LinkProtocol, MappingProtocol } from '../../../../../../shared/port-mapping/settings';
 import { DEFAULT_MAPPING_HOST, EXAMPLE_MAPPING_DOMAIN, localMappingAddress, mappingAddress,
   normalizeMappingDomain } from '../../../../../../shared/port-mapping/target';
 import type { ForwardingEntry, PortForwardingService } from './service';
@@ -29,6 +29,7 @@ function useMappingForm({ service, aliases, entry, done, saving, setSaving, save
   const [remoteHost, setRemoteHost] = useState(entry?.remoteHost ?? '');
   const [localDomain, setLocalDomain] = useState(entry?.localDomain ?? '');
   const [protocol, setProtocol] = useState<MappingProtocol>(entry?.protocol ?? 'tcp');
+  const [linkProtocol, setLinkProtocol] = useState<LinkProtocol>(entry?.linkProtocol ?? 'http');
   const [remotePort, setRemotePort] = useState<number | null>(entry?.remotePort ?? null);
   const [localPort, setLocalPort] = useState<number | null>(entry?.localPort ?? null);
   const [error, setError] = useState('');
@@ -38,7 +39,7 @@ function useMappingForm({ service, aliases, entry, done, saving, setSaving, save
     setSaving(true);
     try {
       const target = { remoteHost, remotePort: remotePort ?? 0, localPort: localPort ?? remotePort ?? 0,
-        protocol, localDomain };
+        protocol, localDomain, linkProtocol };
       const id = await saveMappingDraft({ service, aliases, entry }, target, alias);
       if (!entry && !saveOnly && connected) void service.start(id);
       done();
@@ -48,7 +49,7 @@ function useMappingForm({ service, aliases, entry, done, saving, setSaving, save
     finally { setSaving(false); }
   };
   return { alias, setAlias, remoteHost, setRemoteHost, protocol, setProtocol, remotePort, setRemotePort,
-    localPort, setLocalPort, localDomain, setLocalDomain, error, submit };
+    localPort, setLocalPort, localDomain, setLocalDomain, linkProtocol, setLinkProtocol, error, submit };
 }
 
 export function MappingForm(props: MappingFormProps) {
@@ -62,13 +63,23 @@ export function MappingForm(props: MappingFormProps) {
         onChange={event => form.setAlias(event.target.value)} maxLength={MAX_MAPPING_ALIAS_LENGTH}
         disabled={saving} autoComplete="off" />
     </div>
-    <div className={styles.field}>
-      {props.saveOnly && <span className={styles.label}>{t('client.mappingEditor.protocolType')}</span>}
-      <Radio.Group className={styles.protocols} aria-label={t("client.portMappingEditing.transportProtocol")} value={form.protocol}
-        disabled={saving} onChange={event => form.setProtocol(event.target.value as MappingProtocol)}>
-        <Radio.Button value="tcp">TCP</Radio.Button><Radio.Button value="udp">UDP</Radio.Button>
-        <Radio.Button value="both">TCP + UDP</Radio.Button>
-      </Radio.Group>
+    <div className={styles.protocolFields}>
+      <div className={styles.field}>
+        <span className={styles.label} id={`${formId}-transport`}>{t('client.portMappingEditing.transportProtocol')}</span>
+        <Radio.Group className={styles.protocols} aria-labelledby={`${formId}-transport`} value={form.protocol}
+          disabled={saving} onChange={event => form.setProtocol(event.target.value as MappingProtocol)}>
+          <Radio.Button value="tcp">TCP</Radio.Button><Radio.Button value="udp">UDP</Radio.Button>
+          <Radio.Button value="both">TCP + UDP</Radio.Button>
+        </Radio.Group>
+      </div>
+      <div className={styles.field}>
+        <span className={styles.label} id={`${formId}-link-protocol`}>{t('client.mappingEditor.linkProtocol')}</span>
+        <Radio.Group className={styles.protocols} aria-labelledby={`${formId}-link-protocol`}
+          value={form.linkProtocol} disabled={saving || form.protocol === 'udp'}
+          onChange={event => form.setLinkProtocol(event.target.value as LinkProtocol)}>
+          <Radio.Button value="http">HTTP</Radio.Button><Radio.Button value="https">HTTPS</Radio.Button>
+        </Radio.Group>
+      </div>
     </div>
     <div className={styles.field}>
       <label className={styles.label} htmlFor="mapping-host">{t("client.portForwarding.targetIp")}<span>{t("client.portMappingEditing.optional")}</span></label>

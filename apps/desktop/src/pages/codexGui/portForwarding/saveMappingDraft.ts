@@ -24,7 +24,8 @@ export async function saveMappingDraft({ service, aliases, entry }: MappingEdito
   // A local rename should not update the synchronized configuration or disturb an active tunnel.
   if (target.remoteHost === (entry.remoteHost ?? '') && target.remotePort === entry.remotePort
     && target.localPort === entry.localPort && target.protocol === (entry.protocol ?? 'tcp')
-    && target.localDomain === (entry.localDomain ?? '')) return entry.id;
+    && target.localDomain === (entry.localDomain ?? '')
+    && (target.linkProtocol ?? 'http') === (entry.linkProtocol ?? 'http')) return entry.id;
 
   try { await service.edit(entry.id, target); }
   catch (error) {

@@ -611,7 +611,7 @@ export function DashboardApp() {
     setShowCloudLogin(true);
   }, []);
   const openCloudAccount = useCallback(() => setShowCloudAccount(true), []);
-  const computers = useGuiComputers({ active: ["codexGui", "portMappings", "remoteDesktop", "ssh"].includes(page),
+  const computers = useGuiComputers({ active: ["codexGui", "portMappings", "remoteDesktop", "ssh", "browser"].includes(page),
     login: openCloudLogin,
     identity: cloud.state.authenticated && cloud.state.baseUrl && cloud.state.userId
       ? { baseUrl: cloud.state.baseUrl, userId: cloud.state.userId } : null });
@@ -1344,7 +1344,7 @@ export function DashboardApp() {
       },
     }}>
       <BrowserNavigationProvider onOpen={() => setPage("browser")}>
-      <MappingSessions identity={computers.identity} devices={computers.devices}>
+      <MappingSessions identity={computers.identity} devices={computers.mappingDevices} localDevice={computers.localDevice}>
       {browserDownloadMessages}
       <div className={`app-shell${NATIVE_WINDOW_CONTROLS_ENABLED ? " custom-titlebar-shell" : ""}${
         sidebarNavigationEnabled ? " sidebar-navigation-shell" : ""

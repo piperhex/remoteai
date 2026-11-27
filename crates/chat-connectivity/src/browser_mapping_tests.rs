@@ -25,6 +25,7 @@ async fn exact_domain_and_port_retain_http_host_until_revoked() {
     let route = BrowserRoute {
         domain: "mes-dev.test".into(),
         port: listener.local_addr().unwrap().port(),
+        target: None,
     };
     let proxy = BrowserMappingProxy::start([route.clone()].into())
         .await
@@ -62,4 +63,33 @@ async fn exact_domain_and_port_retain_http_host_until_revoked() {
         std::io::ErrorKind::UnexpectedEof
     );
     assert_ne!(request(proxy.port(), &route).await.1, 0);
+}
+
+#[tokio::test]
+async fn changing_a_local_target_revokes_open_streams_and_preserves_the_browser_address() {
+    let first = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).await.unwrap();
+    let second = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).await.unwrap();
+    let mut route = BrowserRoute {
+        domain: "design.localhost".into(),
+        port: 18080,
+        target: Some(first.local_addr().unwrap()),
+    };
+    let proxy = BrowserMappingProxy::start([route.clone()].into())
+        .await
+        .unwrap();
+    let (mut old, status) = request(proxy.port(), &route).await;
+    assert_eq!(status, 0);
+    let _first_connection = first.accept().await.unwrap();
+    route.target = Some(second.local_addr().unwrap());
+    proxy.configure([route.clone()].into()).unwrap();
+    assert_eq!(
+        timeout(Duration::from_secs(2), old.read_u8())
+            .await
+            .unwrap()
+            .unwrap_err()
+            .kind(),
+        std::io::ErrorKind::UnexpectedEof
+    );
+    assert_eq!(request(proxy.port(), &route).await.1, 0);
+    let _second_connection = second.accept().await.unwrap();
 }

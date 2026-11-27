@@ -57,15 +57,16 @@ async fn isolated_sync_probe() {
         None,
     ));
     respond(
-        fixture.recv("/devices/fixture-device/port-mappings?localDomain=1"),
+        fixture.recv("/devices/fixture-device/port-mappings?localDomain=1&linkProtocol=1"),
         200,
-        json!({"revision": 1, "accepted": false, "supportsLocalDomain": true, "mappings": [{
+        json!({"revision": 1, "accepted": false, "supportsLocalDomain": true, "supportsLinkProtocol": true, "mappings": [{
             "id": "mapping", "remoteHost": "127.0.0.1", "remotePort": 3000, "localPort": 13000,
-            "localDomain": "app.localhost"
+            "localDomain": "app.localhost", "linkProtocol": "https"
         }]}),
     );
     let document = serde_json::to_value(mapping.await.unwrap().unwrap()).unwrap();
     assert_eq!(document["mappings"][0]["localDomain"], "app.localhost");
+    assert_eq!(document["mappings"][0]["linkProtocol"], "https");
     // Releasing sync with an HTTP error proves independent work finished before it.
     respond(pending, 503, json!({}));
     assert!(sync.await.unwrap().is_err());

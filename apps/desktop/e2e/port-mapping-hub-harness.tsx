@@ -9,6 +9,8 @@ import { MappingSessions } from '../src/pages/portMappings/MappingSessions';
 import { PortForwarding } from '../src/pages/codexGui/portForwarding/PortForwarding';
 import type { ForwardingClient } from '../src/pages/codexGui/portForwarding/service';
 import { BrowserNavigationProvider } from '../../../shared/browser/BrowserNavigationProvider';
+import { BrowserPage } from '../../../shared/browser/BrowserPage';
+import { RemoteFiles } from '../src/remoteChat/files';
 import { translate } from '../src/i18n';
 import '../src/styles.css';
 
@@ -24,15 +26,19 @@ const devices = [
   { deviceId: 'home', name: 'Home PC', platform: 'linux', online: false },
 ];
 const scope = JSON.stringify([identity.baseUrl, identity.userId, devices[0].deviceId]);
-const computers = { devices, authenticated: true, current: null, error: '', loading: false,
+const localDevice = query.has('own') ? { deviceId: 'local', name: 'Design PC', platform: 'windows',
+  ipAddress: '192.168.1.10', online: true } : undefined;
+const mappingDevices = localDevice ? [localDevice, ...devices] : devices;
+const computers = { devices, mappingDevices, authenticated: true, current: null, error: '', loading: false,
   choose() {}, login() {}, refresh() {} };
+if (localDevice) Object.assign(window, { mappingHostFixture: new RemoteFiles() });
 
 export function MappingHubHarness({ client }: { client: ForwardingClient }) {
   const [page, setPage] = useState<DashboardPage>('codexGui');
   return <ApplicationTypography><ConfigProvider theme={{ algorithm: [
     dark ? theme.darkAlgorithm : theme.defaultAlgorithm, theme.compactAlgorithm] }}>
     <BrowserNavigationProvider onOpen={() => setPage('browser')}>
-    <MappingSessions identity={identity} devices={devices}>
+    <MappingSessions identity={identity} devices={mappingDevices} localDevice={localDevice}>
       <div className="app-shell sidebar-navigation-shell">
         <aside className="app-sidebar">
           <div className="brand sidebar-brand"><span className="brand-name">Remote AI</span></div>
@@ -41,6 +47,7 @@ export function MappingHubHarness({ client }: { client: ForwardingClient }) {
         </aside>
         <main>
           {page === 'portMappings' && <PortMappingsPage computers={computers} />}
+          {page === 'browser' && <BrowserPage language="zh" active onClose={() => setPage('portMappings')} />}
           {query.get('mode') === 'remote' && <div hidden={page !== 'codexGui'}>
             <PortForwarding scope={scope} client={client} connected active={page === 'codexGui'} /></div>}
         </main>

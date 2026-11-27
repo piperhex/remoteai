@@ -10,6 +10,7 @@ import { MappingName } from '../codexGui/portForwarding/MappingName';
 import { MappingStatus } from '../codexGui/portForwarding/MappingRow';
 import type { ForwardingEntry } from '../codexGui/portForwarding/service';
 import type { MappingGroup } from './useMappingGroups';
+import { MappingConsumers } from './MappingConsumers';
 import styles from './page.module.less';
 
 export interface MappingSelection { deviceId: string; entryId: string; mode: 'edit' }
@@ -26,11 +27,13 @@ export function MappingDeviceGroup({ group, select }: { group: MappingGroup; sel
       aria-label={device.name} aria-expanded={expanded} aria-controls={cardsId} onClick={() => setExpanded(!expanded)}>
       <span className={styles.deviceIcon}><Monitor size={19} /></span>
       <span className={styles.groupIdentity}><strong>{device.name}</strong><small>{computerDetails(device)}</small></span>
-      <span className={styles.presence} data-online={device.online}>{t(device.online ? 'client.chat.online' : 'client.chat.offline')}</span>
+      <span className={styles.presence} data-online={device.online}>{session.local ? t('client.app.currentComputer')
+        : t(device.online ? 'client.chat.online' : 'client.chat.offline')}</span>
       {sync && <span className={styles.sync} role="status"><SyncIcon size={15} />{displayError(sync)}</span>}
       <ChevronDown className={styles.chevron} size={17} aria-hidden="true" />
     </button></h3>
     <div id={cardsId} className={styles.cards} hidden={!expanded}>
+      {!entries.length && <small className={styles.emptyDevice}>{t('client.portForwarding.noPortMappingsYet')}</small>}
       {[...entries].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0)).map(entry =>
         <MappingCard key={entry.id} entry={entry} group={group} select={select} />)}
     </div>
@@ -46,17 +49,17 @@ function MappingCard({ entry, group, select }: { entry: ForwardingEntry; group: 
     <header className={styles.cardHeader}>
       <MappingName entry={entry} aliases={session.aliases} edit={edit} />
       <div className={styles.meta}><span className={styles.protocol}>{protocolLabel(entry.protocol)}</span>
-        <MappingStatus entry={entry} /></div>
+        {session.local ? <MappingConsumers entry={entry} /> : <MappingStatus entry={entry} />}</div>
     </header>
     <dl className={styles.endpoints}>
       <dt>{t('client.portMappingEditing.localAccess')}</dt>
-      <dd>{entry.protocol === 'udp' ? <code>{local}</code> : <ForwardedAddress entry={entry} />}</dd>
+      <dd>{entry.protocol === 'udp' ? <code>{local}</code> : <ForwardedAddress entry={entry} local={session.local} />}</dd>
       <dt>{t('client.portMappingEditing.remoteTarget')}</dt><dd><code>{target}</code></dd>
     </dl>
     <footer className={styles.cardFooter}>
       {entry.updatedAt && <small>{t('client.portMappingEditing.lastEdited.4f04ab')} · {new Date(entry.updatedAt)
         .toLocaleDateString(guiLocale(), { month: 'short', day: 'numeric' })}</small>}
-      <MappingActions entry={entry} service={session.service} connected={device.online} />
+      <MappingActions entry={entry} service={session.service} connected={device.online} local={session.local} />
     </footer>
     {entry.error && <p className={styles.error} role="alert">{displayError(entry.error)}</p>}
   </article>;

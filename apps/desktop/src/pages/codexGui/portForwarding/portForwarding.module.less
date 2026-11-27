@@ -165,6 +165,9 @@ code.address { cursor: text; }
   }
 }
 .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.protocolFields {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px;
+}
 .hint { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
 .previewSection { display: flex; flex-direction: column; gap: 18px; }
 .preview {

@@ -12,7 +12,7 @@ const storage = (): MappingStorage => {
   return { getItem: key => values.get(key) ?? null, setItem: (key, value) => { values.set(key, value); } };
 };
 function server(mappings: PortMapping[] = []) {
-  let doc: MappingDocument = { revision: 0, mappings, supportsLocalDomain: true };
+  let doc: MappingDocument = { revision: 0, mappings, supportsLocalDomain: true, supportsLinkProtocol: true };
   const exchange = vi.fn(async (input?: MappingDocument) => {
     if (!input) return structuredClone(doc);
     if (input.mappings.length > MAX_PORT_MAPPINGS) throw new Error('Invalid port mapping configuration');
@@ -85,6 +85,32 @@ it('synchronizes domain changes and clears, keeping domain changes queued during
   await flush(); await phone.sync.refresh();
   expect(phone.service.snapshot()[0].localDomain || '').toBe('');
   expect(desktop.sync.isSynced()).toBe(true);
+});
+
+it('queues HTTPS on older servers and syncs both HTTPS and a switch back to HTTP between devices', async () => {
+  const cloud = server();
+  let supportsLinkProtocol = false;
+  const exchange = vi.fn(async (input?: MappingDocument) => ({ ...await cloud.exchange(input), supportsLinkProtocol }));
+  const first = device({ exchange });
+  await flush();
+  const target = { remotePort: 443, localPort: 8443 };
+  const id = first.service.save({ ...target, linkProtocol: 'https' });
+  await flush();
+  expect(first.service.snapshot()[0].linkProtocol).toBe('https');
+  expect(first.sync.isSynced()).toBe(false);
+  expect(cloud.document().mappings[0].linkProtocol).toBeUndefined();
+  const revision = cloud.document().revision;
+  await first.sync.refresh();
+  expect(cloud.document().revision).toBe(revision);
+  supportsLinkProtocol = true;
+  await first.sync.refresh();
+  expect(cloud.document().mappings[0].linkProtocol).toBe('https');
+  const second = device({ exchange }); await flush();
+  expect(second.service.snapshot()[0].linkProtocol).toBe('https');
+  await second.service.edit(id, { ...target, linkProtocol: 'http' }); await flush();
+  await first.sync.refresh();
+  expect(first.service.snapshot()[0].linkProtocol).toBe('http');
+  expect(first.sync.isSynced()).toBe(true);
 });
 
 it('retains UDP locally and retries when an older server silently drops the protocol field', async () => {

@@ -1,7 +1,7 @@
 //! A browser-only SOCKS5 endpoint for active TCP port mappings. Never resolve a peer-supplied name.
 use std::{
     collections::{BTreeMap, BTreeSet},
-    net::Ipv4Addr,
+    net::{Ipv4Addr, SocketAddr},
     sync::{Arc, RwLock},
     time::Duration,
 };
@@ -22,17 +22,30 @@ use crate::{Error, Result};
 pub struct BrowserRoute {
     pub domain: String,
     pub port: u16,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<SocketAddr>,
 }
 
 impl BrowserRoute {
+    pub fn valid_set(routes: &BTreeSet<Self>) -> bool {
+        let mut addresses = BTreeSet::new();
+        routes.len() <= 256
+            && routes
+                .iter()
+                .all(|r| r.valid() && addresses.insert((&r.domain, r.port)))
+    }
+
     pub fn valid(&self) -> bool {
         let domain = &self.domain;
         self.port != 0
             && domain.len() <= 253
-            && domain
-                .rsplit_once('.')
-                .is_some_and(|(_, tld)| tld.starts_with(|c: char| c.is_ascii_lowercase()))
-            && !domain.ends_with(".localhost")
+            && (domain == "localhost"
+                || domain
+                    .rsplit_once('.')
+                    .is_some_and(|(_, tld)| tld.starts_with(|c: char| c.is_ascii_lowercase())))
+            && self
+                .target
+                .is_none_or(|target| !target.ip().is_unspecified() && target.port() != 0)
             && domain.split('.').all(|label| {
                 !label.is_empty()
                     && label.len() <= 63
@@ -68,7 +81,7 @@ impl BrowserMappingProxy {
         Ok(proxy)
     }
     pub fn configure(&self, routes: BTreeSet<BrowserRoute>) -> Result<()> {
-        if routes.len() > 256 || !routes.iter().all(BrowserRoute::valid) {
+        if !BrowserRoute::valid_set(&routes) {
             return Err(Error::Invalid);
         }
         let mut active = self.routes.write().map_err(|_| Error::Closed)?;
@@ -139,15 +152,23 @@ async fn connect(
     let domain = String::from_utf8(name)
         .map_err(|_| Error::Invalid)?
         .to_ascii_lowercase();
-    let revoked = routes
+    let destination = routes
         .read()
         .map_err(|_| Error::Closed)?
-        .get(&BrowserRoute { domain, port })
-        .map(watch::Sender::subscribe);
-    let Some(revoked) = revoked else {
+        .iter()
+        .find(|(route, _)| route.domain == domain && route.port == port)
+        .map(|(route, active)| {
+            (
+                route
+                    .target
+                    .unwrap_or_else(|| (Ipv4Addr::LOCALHOST, port).into()),
+                active.subscribe(),
+            )
+        });
+    let Some((target, revoked)) = destination else {
         return reject(browser).await;
     };
-    let target = TcpStream::connect((Ipv4Addr::LOCALHOST, port)).await?;
+    let target = TcpStream::connect(target).await?;
     browser.write_all(&[5, 0, 0, 1, 0, 0, 0, 0, 0, 0]).await?;
     Ok((target, revoked))
 }

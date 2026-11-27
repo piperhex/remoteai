@@ -15,9 +15,10 @@ export async function exchangeMappingFixture(args: { deviceId: string; document?
   mappingSyncFixture.maxActive = Math.max(mappingSyncFixture.maxActive, count);
   try {
     if (mappingSyncFixture.held) await gate;
-    const current = documents.get(args.deviceId) ?? { revision: 0, mappings: [], supportsLocalDomain: true };
+    const capabilities = { supportsLocalDomain: true, supportsLinkProtocol: true };
+    const current = documents.get(args.deviceId) ?? { revision: 0, mappings: [], ...capabilities };
     if (!args.document || args.document.revision !== current.revision) return current;
-    const saved = { revision: current.revision + 1, mappings: args.document.mappings, supportsLocalDomain: true };
+    const saved = { revision: current.revision + 1, mappings: args.document.mappings, ...capabilities };
     documents.set(args.deviceId, saved);
     return { ...saved, accepted: true };
   } finally { active.set(args.deviceId, count - 1); }

@@ -13,6 +13,8 @@ pub(crate) struct PortMapping {
     local_domain: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     protocol: Option<MappingProtocol>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    link_protocol: Option<LinkProtocol>,
     updated_at: Option<u64>,
 }
 
@@ -25,6 +27,13 @@ enum MappingProtocol {
 }
 
 #[derive(Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+enum LinkProtocol {
+    Http,
+    Https,
+}
+
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct MappingDocument {
     revision: u64,
@@ -33,6 +42,8 @@ pub(crate) struct MappingDocument {
     accepted: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     supports_local_domain: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    supports_link_protocol: Option<bool>,
 }
 
 fn valid_document(document: &MappingDocument) -> bool {
@@ -117,7 +128,7 @@ fn exchange<R: Runtime>(
         &mut settings,
         &mut credentials,
         method,
-        &format!("/devices/{device_id}/port-mappings?localDomain=1"),
+        &format!("/devices/{device_id}/port-mappings?localDomain=1&linkProtocol=1"),
         body,
     )?;
     let result: MappingDocument = response
@@ -174,6 +185,7 @@ mod tests {
             revision: 0,
             accepted: false,
             supports_local_domain: None,
+            supports_link_protocol: None,
             mappings: vec![PortMapping {
                 id: "mapping-1".into(),
                 remote_host: "::1".into(),
@@ -181,6 +193,7 @@ mod tests {
                 local_port: 13000,
                 local_domain: None,
                 protocol: None,
+                link_protocol: None,
                 updated_at: None,
             }],
         };

@@ -6,12 +6,16 @@ use std::{
     sync::Mutex,
 };
 use tauri::{Manager, Webview};
+#[cfg(windows)]
+mod loopback;
 
 #[derive(Default)]
 pub(crate) struct State {
     proxy: tokio::sync::OnceCell<BrowserMappingProxy>,
     active: Mutex<BTreeSet<BrowserRoute>>,
-    tabs: Mutex<BTreeMap<String, BTreeSet<BrowserRoute>>>,
+    tabs: Mutex<BTreeMap<String, BrowserMapping>>,
+    #[cfg(windows)]
+    aliases: Mutex<BTreeMap<BrowserRoute, loopback::Alias>>,
 }
 
 impl State {
@@ -23,6 +27,11 @@ impl State {
                 .map_err(|_| BrowserError::Unavailable)?;
         }
         active.clear();
+        #[cfg(windows)]
+        self.aliases
+            .lock()
+            .map_err(|_| BrowserError::Unavailable)?
+            .clear();
         Ok(())
     }
     async fn configure(&self, routes: BTreeSet<BrowserRoute>) -> Result<()> {
@@ -35,9 +44,39 @@ impl State {
             .await
             .map_err(|_| BrowserError::Unavailable)?;
         let mut active = self.active.lock().map_err(|_| BrowserError::Unavailable)?;
+        if !BrowserRoute::valid_set(&routes)
+            || routes
+                .iter()
+                .any(|r| matches!(r.domain.as_str(), "tauri.localhost" | "ipc.localhost"))
+        {
+            return Err(BrowserError::Invalid);
+        }
+        #[cfg(windows)]
+        let additions = {
+            let aliases = self.aliases.lock().map_err(|_| BrowserError::Unavailable)?;
+            let mut additions = BTreeMap::new();
+            for route in &routes {
+                if route.domain != "localhost" && !route.domain.ends_with(".localhost") {
+                    continue;
+                }
+                if let Some(target) = route.target.filter(|_| !aliases.contains_key(route)) {
+                    additions.insert(
+                        route.clone(),
+                        loopback::Alias::bind(target).map_err(|_| BrowserError::Unavailable)?,
+                    );
+                }
+            }
+            additions
+        };
         proxy
             .configure(routes.clone())
             .map_err(|_| BrowserError::Invalid)?;
+        #[cfg(windows)]
+        {
+            let mut aliases = self.aliases.lock().map_err(|_| BrowserError::Unavailable)?;
+            aliases.retain(|route, _| routes.contains(route));
+            aliases.extend(additions);
+        }
         *active = routes;
         Ok(())
     }
@@ -58,10 +97,12 @@ pub(crate) async fn configure_browser_mappings(
         .map_err(|e| e.to_string())
 }
 
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq, serde::Serialize)]
 pub(super) struct BrowserMapping {
     routes: BTreeSet<BrowserRoute>,
     proxy: u16,
+    #[cfg(windows)]
+    resolver_rules: String,
 }
 
 pub(super) fn lookup(owner: &Webview, url: &url::Url) -> Result<Option<BrowserMapping>> {
@@ -75,15 +116,26 @@ pub(super) fn lookup(owner: &Webview, url: &url::Url) -> Result<Option<BrowserMa
     let Some(proxy) = state.proxy.get() else {
         return Ok(None);
     };
-    let route = BrowserRoute {
-        domain: url.host_str().unwrap_or_default().to_owned(),
-        port: url.port_or_known_default().unwrap_or_default(),
-    };
     let active = state.active.lock().map_err(|_| BrowserError::Unavailable)?;
-    Ok(active.contains(&route).then(|| BrowserMapping {
+    if !active.iter().any(|r| {
+        Some(r.domain.as_str()) == url.host_str() && Some(r.port) == url.port_or_known_default()
+    }) {
+        return Ok(None);
+    }
+    let mapping = BrowserMapping {
         routes: active.clone(),
         proxy: proxy.port(),
-    }))
+        #[cfg(windows)]
+        resolver_rules: state
+            .aliases
+            .lock()
+            .map_err(|_| BrowserError::Unavailable)?
+            .iter()
+            .map(|(r, a)| format!("MAP {}:{} 127.0.0.1:{}", r.domain, r.port, a.port))
+            .collect::<Vec<_>>()
+            .join(", "),
+    };
+    Ok(Some(mapping))
 }
 
 pub(super) fn remember(
@@ -95,7 +147,7 @@ pub(super) fn remember(
         let mut tabs = state.tabs.lock().map_err(|_| BrowserError::Unavailable)?;
         match mapping {
             Some(mapping) => {
-                tabs.insert(label.to_owned(), mapping.routes.clone());
+                tabs.insert(label.to_owned(), mapping.clone());
             }
             None => {
                 tabs.remove(label);
@@ -114,7 +166,7 @@ pub(super) fn matches(
         return Ok(true);
     };
     let tabs = state.tabs.lock().map_err(|_| BrowserError::Unavailable)?;
-    Ok(tabs.get(label) == mapping.map(|m| &m.routes))
+    Ok(tabs.get(label) == mapping)
 }
 
 impl BrowserMapping {
@@ -124,8 +176,7 @@ impl BrowserMapping {
         builder: tauri::webview::WebviewBuilder<tauri::Wry>,
     ) -> Result<tauri::webview::WebviewBuilder<tauri::Wry>> {
         use sha2::{Digest, Sha256};
-        let key =
-            Sha256::digest(serde_json::to_vec(&self.routes).map_err(|_| BrowserError::Invalid)?);
+        let key = Sha256::digest(serde_json::to_vec(self).map_err(|_| BrowserError::Invalid)?);
         let dir = owner
             .path()
             .app_data_dir()
@@ -142,8 +193,8 @@ impl BrowserMapping {
                 crate::webview_windows::browser_arguments(owner.config()).unwrap_or_default();
             let script = self.pac_script();
             Ok(builder.additional_browser_args(&format!(
-                "{args} --proxy-pac-url=data:application/x-ns-proxy-autoconfig;base64,{}",
-                STANDARD.encode(script)
+                "{args} --proxy-pac-url=data:application/x-ns-proxy-autoconfig;base64,{} --host-resolver-rules=\"{}\"",
+                STANDARD.encode(script), self.resolver_rules
             )))
         }
         #[cfg(target_os = "macos")]

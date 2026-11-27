@@ -1,7 +1,7 @@
 import { useId, useState } from 'react';
 import { Alert, Button, ConfigProvider, Select, Spin, Tooltip } from 'antd';
 import { Cable, LockKeyhole, Monitor, Plus, RefreshCw } from 'lucide-react';
-import type { GuiComputerNavigation } from '../../../../../shared/conversation/remote/types';
+import type { GuiComputer, GuiComputerNavigation } from '../../../../../shared/conversation/remote/types';
 import { uiText as t } from '../../../../../shared/localization/uiText';
 import { MAX_PORT_MAPPINGS } from '../../../../../shared/port-mapping/settings';
 import { MAPPING_COLORS } from '../codexGui/portForwarding/PortForwarding';
@@ -11,15 +11,16 @@ import { MappingEditorDialog, type EditorSelection } from './MappingEditorDialog
 import { useMappingGroups } from './useMappingGroups';
 import styles from './page.module.less';
 
-export function PortMappingsPage({ computers }: { computers: GuiComputerNavigation }) {
+export function PortMappingsPage({ computers }: { computers: GuiComputerNavigation & { mappingDevices: GuiComputer[] } }) {
   const heading = useId();
-  const groups = useMappingGroups(computers.devices);
+  const groups = useMappingGroups(computers.mappingDevices);
   const [filter, setFilter] = useState('');
   const [editor, setEditor] = useState<EditorSelection>();
   const selected = groups.find(group => group.device.deviceId === filter);
   const visible = selected ? [selected] : groups;
-  const populated = visible.filter(group => group.entries.length > 0);
-  const available = visible.find(group => group.entries.length < MAX_PORT_MAPPINGS);
+  const populated = visible.filter(group => group.session.local || group.entries.length > 0);
+  const writable = visible.filter(group => group.entries.length < MAX_PORT_MAPPINGS);
+  const available = writable.find(group => !group.session.local) ?? writable[0];
   const count = visible.reduce((total, group) => total + group.entries.length, 0);
   const add = () => { if (available) setEditor({ mode: 'new', deviceId: available.device.deviceId }); };
   const refresh = () => { computers.refresh(); visible.forEach(group => group.session.sync.requestRefresh()); };

@@ -6,8 +6,11 @@ import { RemoteMappingStreams } from '../../../../shared/port-mapping/remoteStre
 import { STREAM_OPERATION, type MappingStreamLink } from '../../../../shared/port-mapping/streamMux';
 import { checkFilePreviewSize } from '../../../../shared/remote-chat/policy';
 import type { ConnectionMode } from '../../../../shared/remote-chat/protocol';
+import { mappingConsumers } from './mappingConsumers';
+import { connectionDetails } from './connectionDetails';
+import { uiText } from '../../../../shared/localization/uiText';
 
-interface Resource { kind: 'preview' | 'resource'; id?: string; text?: string }
+interface Resource { kind: 'preview' | 'resource'; id?: string; text?: string; url?: string; untrack?: () => void }
 const MAX_RESOURCES = 16;
 const unavailable = () => new Error('连接已断开，请重新打开预览。');
 
@@ -35,6 +38,7 @@ export class RemoteFiles {
     if (!resource) { if (closing) return; throw unavailable(); }
     const preview = String(body.operation).startsWith('guiFilePreview');
     if (preview !== (resource.kind === 'preview')) throw unavailable();
+    if (body.operation === 'guiResourceMappingActive') return trackMapping(resource, body, owner);
     if (body.operation === 'guiFilePreviewText') return previewText(resource, body);
     if (closing) {
       this.owners.get(owner)?.delete(resource);
@@ -61,6 +65,7 @@ export class RemoteFiles {
     if (resources.size >= MAX_RESOURCES) throw new Error('预览较多，请先关闭一个再试。');
     this.owners.set(owner, resources);
     const resource: Resource = { kind: body.operation === 'guiFilePreviewOpen' ? 'preview' : 'resource' };
+    if (resource.kind === 'resource' && typeof body.url === 'string') resource.url = body.url;
     resources.add(resource);
     try {
       const result = resource.kind === 'preview'
@@ -106,7 +111,20 @@ function previewText(resource: Resource, body: Record<string, unknown>) {
 }
 
 async function close(resource: Resource) {
+  resource.untrack?.();
   if (!resource.id) return;
   if (resource.kind === 'preview') await invoke('codex_gui_close_file_preview', { sessionId: resource.id });
   else await invoke('codex_gui_resource_link', { request: { type: 'stop', scope: resource.id } });
+}
+
+function trackMapping(resource: Resource, body: Record<string, unknown>, owner: string) {
+  const { deviceId, name } = object(body.consumer);
+  const { mappingId } = body;
+  if (!resource.url || typeof mappingId !== 'string' || !/^[\w-]{1,64}$/.test(mappingId)
+    || typeof deviceId !== 'string' || !/^[\w-]{1,128}$/.test(deviceId)) throw unavailable();
+  if (resource.untrack) return;
+  const device = connectionDetails.getSnapshot().devices.find(value => value.id === owner);
+  const label = typeof name === 'string' ? name.trim().slice(0, 80) : '';
+  resource.untrack = mappingConsumers.track({ mappingId, origin: new URL(resource.url).origin,
+    deviceId, name: label || device?.name || uiText('client.remoteHostData.otherDevice') });
 }
