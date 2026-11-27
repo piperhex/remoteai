@@ -2,14 +2,29 @@
 #[test]
 #[ignore = "interactive browser data test; requires Vite on port 1572"]
 fn opens_browser_data() {
+    run("dev.codex.switch.browser-data-smoke", true);
+}
+
+#[test]
+#[ignore = "interactive certificate test; requires Vite on port 1572"]
+fn opens_browser_certificates() {
+    run("dev.codex.switch.browser-certificate-smoke", false);
+}
+
+fn run(identifier: &str, ignore_certificate_errors: bool) {
     let mut context = tauri::generate_context!();
-    context.config_mut().identifier = "dev.codex.switch.browser-data-smoke".into();
+    context.config_mut().identifier = identifier.into();
     for window in &mut context.config_mut().app.windows {
         window.create = false;
-        window
-            .additional_browser_args
-            .get_or_insert_default()
-            .push_str(" --remote-debugging-port=9355 --ignore-certificate-errors");
+        let args = window.additional_browser_args.get_or_insert_default();
+        args.push_str(" --remote-debugging-port=9355");
+        if ignore_certificate_errors {
+            args.push_str(" --ignore-certificate-errors");
+        } else {
+            // A preloaded HSTS hostname exercises a fatal TLS error against the loopback fixture.
+            args.push_str(" --host-resolver-rules=\"MAP remoteai-certificate.test.dev 127.0.0.1\"");
+            args.push_str(" --proxy-bypass-list=remoteai-certificate.test.dev");
+        }
     }
     context.config_mut().build.dev_url = Some("http://127.0.0.1:1572".parse().unwrap());
     tauri::Builder::default()

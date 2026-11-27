@@ -22,16 +22,10 @@ pub(super) fn configure(
     if let Some(mapping) = _mapping {
         mapping.configure_view(view)?;
     }
+    #[cfg(windows)]
+    return windows::configure_headers(view, origin, headers, _mapping.is_some());
+    #[cfg(not(windows))]
     configure_headers(view, origin, headers)
-}
-
-#[cfg(windows)]
-fn configure_headers(
-    view: &tauri::Webview,
-    origin: &str,
-    headers: &BTreeMap<String, String>,
-) -> Result<()> {
-    windows::configure_headers(view, origin, headers)
 }
 
 #[cfg(not(windows))]

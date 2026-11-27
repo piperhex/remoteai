@@ -11,6 +11,21 @@ pub(in crate::provider_browser) async fn call(
     method: &'static str,
     parameters: Value,
 ) -> Result<Value> {
+    tokio::time::timeout(
+        Duration::from_secs(10),
+        call_until_closed(view, method, parameters),
+    )
+    .await
+    .map_err(|_| Error::Unavailable)?
+}
+
+/// A user may leave a certificate warning open. Navigation destroys the document's execution
+/// context and completes its pending promise without imposing a deadline on the user's decision.
+pub(in crate::provider_browser) async fn call_until_closed(
+    view: &tauri::Webview,
+    method: &'static str,
+    parameters: Value,
+) -> Result<Value> {
     use webview2_com::CallDevToolsProtocolMethodCompletedHandler;
     use windows::core::HSTRING;
     let (sender, receiver) = tokio::sync::oneshot::channel();
@@ -48,9 +63,8 @@ pub(in crate::provider_browser) async fn call(
         }
     })
     .map_err(|_| Error::Unavailable)?;
-    let raw = tokio::time::timeout(Duration::from_secs(10), receiver)
+    let raw = receiver
         .await
-        .map_err(|_| Error::Unavailable)?
         .map_err(|_| Error::Unavailable)?
         .map_err(|_| Error::Unavailable)?;
     serde_json::from_str(&raw).map_err(|_| Error::Unavailable)

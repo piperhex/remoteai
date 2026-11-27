@@ -1,6 +1,8 @@
 //! Unprivileged browser tabs hosted inside the Provider list window.
 pub(crate) mod assistant;
 pub(crate) mod automation;
+#[cfg(windows)]
+mod certificates;
 pub(crate) mod data;
 #[cfg(windows)]
 mod data_windows;
@@ -196,7 +198,10 @@ fn browser_builder(
     #[cfg(not(windows))]
     let builder = builder.on_download(|_, _| false);
     #[cfg(all(test, windows))]
-    let builder = if owner.config().identifier == "dev.codex.switch.browser-data-smoke" {
+    let builder = if matches!(
+        owner.config().identifier.as_str(),
+        "dev.codex.switch.browser-data-smoke" | "dev.codex.switch.browser-certificate-smoke"
+    ) {
         let args = owner
             .config()
             .app
