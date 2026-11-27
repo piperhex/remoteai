@@ -1,7 +1,15 @@
 import { expect, test } from '@playwright/test';
 import { verifyBrowserTabHover } from './browser-tab-hover';
+import { verifyBrowserTabLoading } from '../../../shared/testing/browserTabLoading.mts';
 
 for (const mode of ['local', 'remote']) {
+  test(`${mode} browser tab loading ring`, async ({ page }, info) => {
+    const narrow = mode === 'remote';
+    await page.setViewportSize({ width: narrow ? 900 : 1440, height: 800 });
+    const entry = `/e2e/browser-bookmarks-harness.html?mode=${mode}${narrow ? '&dark=1&font=20' : ''}`;
+    await verifyBrowserTabLoading(page, info, entry);
+  });
+
   test(`${mode} background browser tab hover card`, async ({ page }, info) => {
     const narrow = mode === 'remote';
     await page.setViewportSize({ width: narrow ? 900 : 1440, height: 800 });
