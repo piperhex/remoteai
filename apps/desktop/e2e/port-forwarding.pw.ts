@@ -70,32 +70,44 @@ test('copies and opens a custom domain and restores the IP address after clearin
   await start.click();
   await expect(panel(page).getByRole('alert')).toContainText('请输入域名');
   await domain.fill('Test.Local');
+  const alias = panel(page).getByRole('textbox', { name: '别名', exact: true });
+  await alias.fill('Office API');
   await start.click();
   const mapping = entry(page, 'test.local:13000 → 127.0.0.1:3000');
   await expect(mapping.getByRole('status')).toHaveText('映射中');
+  await expect(mapping.getByText('Office API', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => window.portForwardingFixture.browserRoutes))
     .toEqual([{ domain: 'test.local', port: 13000 }]);
   await mapping.getByRole('button', { name: /^复制本地地址/ }).click();
   expect(await page.evaluate(() => window.portForwardingFixture.clipboard)).toEqual(['test.local:13000']);
   await mapping.getByRole('button', { name: 'test.local:13000', exact: true }).click();
   await expect(page.getByRole('menuitem', { name: '在 Remote AI 中预览' })).toBeVisible();
+  const openInBrowser = page.getByRole('menuitem', { name: '在浏览器中打开', exact: true });
+  await expect(openInBrowser).toHaveCount(0);
+  await expect(page.locator('.ant-dropdown:visible')).not.toHaveClass(/-appear|-enter/);
+  await expect(page.getByText('本地地址已复制', { exact: true })).toBeHidden();
   await page.screenshot({ path: info.outputPath('pc-remote-domain-open.png'), animations: 'disabled' });
   await page.getByRole('menuitem', { name: '在 Remote AI 中预览' }).click();
   await expect.poll(() => page.evaluate(() => window.portForwardingFixture.previewUrls))
     .toContain('http://test.local:13000');
-  await page.getByRole('button', { name: '关闭详情抽屉' }).click();
-  await page.getByRole('button', { name: '端口映射', exact: true }).click();
-  await mapping.getByRole('button', { name: 'test.local:13000', exact: true }).click();
-  await page.getByRole('menuitem', { name: '在浏览器中打开' }).click();
-  await expect.poll(() => page.evaluate(() => window.portForwardingFixture.browserUrls))
-    .toEqual(['http://test.local:13000']);
   await page.reload();
   await page.getByRole('button', { name: '端口映射', exact: true }).click();
   await mapping.getByRole('button', { name: /^编辑映射/ }).click();
   await expect(domain).toHaveValue('test.local');
+  await expect(alias).toHaveValue('Office API');
+  await alias.fill('');
   await domain.fill('');
   await page.getByRole('button', { name: '保存修改' }).click();
-  await expect(entry(page, '127.0.0.1:13000 → 127.0.0.1:3000')).toBeVisible();
+  const restored = entry(page, '127.0.0.1:13000 → 127.0.0.1:3000');
+  await expect(restored.getByText('未命名', { exact: true })).toBeVisible();
+  await restored.getByRole('button', { name: /^启动映射/ }).click();
+  await restored.getByRole('button', { name: '127.0.0.1:13000', exact: true }).click();
+  await expect(openInBrowser).toBeVisible();
+  await expect(page.locator('.ant-dropdown:visible')).not.toHaveClass(/-appear|-enter/);
+  await page.screenshot({ path: info.outputPath('pc-remote-domain-cleared.png'), animations: 'disabled' });
+  await openInBrowser.click();
+  await expect.poll(() => page.evaluate(() => window.portForwardingFixture.browserUrls))
+    .toEqual(['http://127.0.0.1:13000']);
 });
 
 test('keeps eight cards and the form usable in a small window', async ({ page }) => {
@@ -109,10 +121,11 @@ test('keeps eight cards and the form usable in a small window', async ({ page })
   await expect(page.getByRole('dialog').getByRole('button', { name: '新建映射', exact: true })).toBeDisabled();
   await page.setViewportSize({ width: 360, height: 640 });
   const last = panel(page).getByRole('article').last();
-  await last.getByRole('button', { name: /^更多操作/ }).click();
-  await expect(page.getByRole('menuitem', { name: '删除映射' })).toBeVisible();
-  expect((await page.getByRole('menu').boundingBox())!.width).toBeLessThanOrEqual(400);
-  await page.getByRole('menuitem', { name: '删除映射' }).click();
+  await last.getByRole('button', { name: /^删除映射/ }).click();
+  const confirmation = page.locator('.ant-popconfirm:visible');
+  await expect(confirmation).toContainText('确认删除');
+  expect((await confirmation.boundingBox())!.width).toBeLessThanOrEqual(360);
+  await confirmation.getByRole('button', { name: '删除映射', exact: true }).click();
   await expect(page.getByRole('dialog').getByRole('button', { name: '新建映射', exact: true })).toBeEnabled();
   await panel(page).getByRole('article').last().getByRole('button', { name: /^编辑映射/ }).click();
   await expect(page.getByRole('heading', { name: '编辑映射', exact: true })).toBeVisible();
@@ -209,8 +222,8 @@ test('multiple mappings, port conflicts, stop, copy and reconnect stay independe
   await expect(entry(page, '127.0.0.1:15432 → 127.0.0.1:5432').getByRole('status')).toHaveText('映射中');
   await add(page, 8080, 9999);
   await expect(entry(page, '127.0.0.1:9999 → 127.0.0.1:8080').getByRole('alert')).toHaveText('本地端口已被占用，请换一个端口。');
-  await entry(page, '127.0.0.1:9999 → 127.0.0.1:8080').getByRole('button', { name: /^更多操作/ }).click();
-  await page.getByRole('menuitem', { name: '删除映射' }).click();
+  await entry(page, '127.0.0.1:9999 → 127.0.0.1:8080').getByRole('button', { name: /^删除映射/ }).click();
+  await page.getByRole('button', { name: '删除映射', exact: true }).click();
   await add(page, 8080, 15432);
   await expect(panel(page).getByRole('alert')).toHaveText('这个本地端口已有映射。');
   await closePanel(page);

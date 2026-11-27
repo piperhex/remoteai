@@ -8,11 +8,14 @@ import type { MappingProtocol } from '../../../../../../shared/port-mapping/sett
 import { DEFAULT_MAPPING_HOST, EXAMPLE_MAPPING_DOMAIN, localMappingAddress, mappingAddress,
   normalizeMappingDomain } from '../../../../../../shared/port-mapping/target';
 import type { ForwardingEntry, PortForwardingService } from './service';
+import { MAX_MAPPING_ALIAS_LENGTH, type LocalMappingAliases } from '../../../../../../shared/port-mapping/localAliases';
+import { saveMappingDraft } from './saveMappingDraft';
 import styles from './portForwarding.module.less';
 
 interface MappingFormProps {
   formId: string;
   service: PortForwardingService;
+  aliases: LocalMappingAliases;
   entry?: ForwardingEntry;
   connected: boolean;
   saveOnly?: boolean;
@@ -21,7 +24,8 @@ interface MappingFormProps {
   setSaving: (saving: boolean) => void;
 }
 
-function useMappingForm({ service, entry, done, saving, setSaving, saveOnly, connected }: MappingFormProps) {
+function useMappingForm({ service, aliases, entry, done, saving, setSaving, saveOnly, connected }: MappingFormProps) {
+  const [alias, setAlias] = useState(() => entry ? aliases.get(entry.id) : '');
   const [remoteHost, setRemoteHost] = useState(entry?.remoteHost ?? '');
   const [localDomain, setLocalDomain] = useState(entry?.localDomain ?? '');
   const [protocol, setProtocol] = useState<MappingProtocol>(entry?.protocol ?? 'tcp');
@@ -35,18 +39,15 @@ function useMappingForm({ service, entry, done, saving, setSaving, saveOnly, con
     try {
       const target = { remoteHost, remotePort: remotePort ?? 0, localPort: localPort ?? remotePort ?? 0,
         protocol, localDomain };
-      if (entry) await service.edit(entry.id, target);
-      else {
-        const id = service.save(target);
-        if (!saveOnly && connected) void service.start(id);
-      }
+      const id = await saveMappingDraft({ service, aliases, entry }, target, alias);
+      if (!entry && !saveOnly && connected) void service.start(id);
       done();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'client.portMappingEditing.couldNotSaveTheMappingPleaseTryAgain');
     }
     finally { setSaving(false); }
   };
-  return { remoteHost, setRemoteHost, protocol, setProtocol, remotePort, setRemotePort,
+  return { alias, setAlias, remoteHost, setRemoteHost, protocol, setProtocol, remotePort, setRemotePort,
     localPort, setLocalPort, localDomain, setLocalDomain, error, submit };
 }
 
@@ -54,6 +55,13 @@ export function MappingForm(props: MappingFormProps) {
   const { entry, saving, formId } = props;
   const form = useMappingForm(props);
   return <form id={formId} className={props.saveOnly ? styles.compactForm : styles.form} onSubmit={form.submit}>
+    <div className={styles.field}>
+      <label className={styles.label} htmlFor={`${formId}-alias`}>{t('client.mappingEditor.alias')}
+        <span>{t('client.portMappingEditing.optional')}</span></label>
+      <Input id={`${formId}-alias`} aria-label={t('client.mappingEditor.alias')} value={form.alias}
+        onChange={event => form.setAlias(event.target.value)} maxLength={MAX_MAPPING_ALIAS_LENGTH}
+        disabled={saving} autoComplete="off" />
+    </div>
     <div className={styles.field}>
       {props.saveOnly && <span className={styles.label}>{t('client.mappingEditor.protocolType')}</span>}
       <Radio.Group className={styles.protocols} aria-label={t("client.portMappingEditing.transportProtocol")} value={form.protocol}

@@ -83,6 +83,12 @@ button.headerIcon {
   > * { flex-shrink: 0; }
 }
 .mapping { padding: 18px; background: var(--mapping-surface); border: 1px solid var(--line); border-radius: 15px; }
+.mappingName {
+  display: flex; align-items: center; gap: 4px; max-width: 100%; color: var(--ink);
+  strong { min-width: 0; overflow-wrap: anywhere; }
+  button { flex: none; color: var(--muted); }
+}
+.mapping > .mappingName { margin-bottom: 5px; }
 .endpoints { align-items: center; }
 .endpoints code, .address code, code.address, .preview code {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 14px; font-weight: 600;

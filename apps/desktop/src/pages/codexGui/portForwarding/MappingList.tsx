@@ -2,10 +2,12 @@ import { Button } from 'antd';
 import { Cable, Plus } from 'lucide-react';
 import { uiText as t } from "../../../../../../shared/localization/uiText";
 import { MappingRow } from './MappingRow';
+import type { LocalMappingAliases } from '../../../../../../shared/port-mapping/localAliases';
 import type { ForwardingEntry, PortForwardingService } from './service';
 import styles from './portForwarding.module.less';
 
-export function MappingList({ entries, service, connected, create, edit, onOpen }: {
+export function MappingList({ entries, service, aliases, connected, create, edit, onOpen }: {
+  aliases: LocalMappingAliases;
   entries: ForwardingEntry[]; service: PortForwardingService; connected: boolean;
   create: () => void; edit: (entry: ForwardingEntry) => void; onOpen: () => void;
 }) {
@@ -20,7 +22,7 @@ export function MappingList({ entries, service, connected, create, edit, onOpen 
       <span>{t("client.portMappingEditing.localAccess")}</span><span /><span>{t("client.portMappingEditing.remoteTarget")}</span>
     </div>
     <div className={styles.list}>
-      {entries.map(entry => <MappingRow key={entry.id} entry={entry} service={service}
+      {entries.map(entry => <MappingRow key={entry.id} entry={entry} service={service} aliases={aliases}
         connected={connected} edit={() => edit(entry)} onOpen={onOpen} />)}
     </div>
   </>;

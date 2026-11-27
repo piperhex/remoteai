@@ -37,7 +37,8 @@ function ConversationMappings(props: LauncherProps) {
 function SessionMappings({ session, ...props }: LauncherProps & { session: DesktopMappingSession }) {
   const entries = useSyncExternalStore(session.service.subscribe, session.service.snapshot);
   const syncStatus = useSyncExternalStore(session.sync.subscribe, session.sync.snapshot);
-  return <MappingDialog {...props} entries={entries} service={session.service} syncStatus={syncStatus} />;
+  return <MappingDialog {...props} entries={entries} service={session.service} aliases={session.aliases}
+    syncStatus={syncStatus} />;
 }
 
 function MappingDialog(props: ReturnType<typeof usePortForwarding> & {
@@ -91,12 +92,13 @@ function MappingDialog(props: ReturnType<typeof usePortForwarding> & {
         </div>}>
         <section className={styles.panel} data-view={view.type} aria-label={t("client.portForwarding.portMappingSettings")}>
           {!props.connected && <Alert type="info" message={t("client.portForwarding.disconnectedReconnectToStartMappingAgain")} />}
-          {view.type === 'list' && <MappingList entries={entries} service={service} connected={props.connected}
+          {view.type === 'list' && <MappingList entries={entries} service={service} aliases={props.aliases}
+            connected={props.connected}
             create={() => setView({ type: 'create' })} edit={entry => setView({ type: 'edit', entry })} onOpen={close} />}
           {removed && <Alert type="info" message={t("client.portMappingEditing.thisMappingWasRemovedAddItAgainToContinue")}
             action={<Button onClick={back}>{t("client.portMappingEditing.backToMappings")}</Button>} />}
           {showForm && <MappingForm key={editing?.id ?? 'create'} formId={formId}
-            service={service} entry={editing} done={back}
+            service={service} aliases={props.aliases} entry={editing} done={back}
             connected={props.connected} saving={saving} setSaving={setSaving} />}
         </section>
       </Modal>

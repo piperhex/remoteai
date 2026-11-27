@@ -5,9 +5,11 @@ import { invoke } from '@tauri-apps/api/core';
 import { mappingSyncScope, type MappingDocument } from '../../../../../../shared/port-mapping/sync';
 import { useMappingSync } from '../../../../../../shared/port-mapping/useMappingSync';
 import { browserMappings } from '../../../../../../shared/port-mapping/browserMappings';
+import { LocalMappingAliases } from '../../../../../../shared/port-mapping/localAliases';
 
 export function usePortForwarding(options: { client: ForwardingClient; scope: string; connected: boolean }) {
   const { client, scope, connected } = options;
+  const aliases = useMemo(() => new LocalMappingAliases(localStorage, scope), [scope]);
   const service = useMemo(() => new PortForwardingService(client, readPortMappings(scope)), [client, scope]);
   const entries = useSyncExternalStore(service.subscribe, service.snapshot);
   const exchange = useMemo(() => {
@@ -22,5 +24,5 @@ export function usePortForwarding(options: { client: ForwardingClient; scope: st
   useEffect(() => { service.activate(); return service.dispose; }, [service]);
   useEffect(() => browserMappings.register(scope, service), [scope, service]);
   useEffect(() => { savePortMappings(scope, entries); }, [scope, entries]);
-  return { entries, service, syncStatus };
+  return { entries, service, syncStatus, aliases };
 }
