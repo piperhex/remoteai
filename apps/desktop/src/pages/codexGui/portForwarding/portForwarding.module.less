@@ -98,11 +98,11 @@ button.headerIcon {
   display: flex; align-items: center; gap: 4px; min-width: 0; padding: 0; border: 0;
   background: transparent; color: var(--ink); cursor: pointer; text-align: left;
   svg { flex-shrink: 0; }
-  &:hover code { color: var(--mapping-accent); text-decoration: underline; }
+  &:enabled code { color: var(--mapping-accent); text-decoration: underline; }
   &:focus-visible { outline: 2px solid var(--mapping-accent); outline-offset: 3px; border-radius: 3px; }
   &:disabled { color: var(--ink); cursor: default; }
-  &:disabled code { color: inherit; text-decoration: none; }
 }
+:global([data-theme='dark']) .address:enabled code { color: #55c4c9; }
 code.address { cursor: text; }
 .mappingBottom { margin-top: 16px; }
 .metadata { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }

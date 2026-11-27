@@ -72,7 +72,8 @@ for (const remote of [false, true]) {
       localStorage.setItem('codex-port-forwarding:' + scope, JSON.stringify([
         { id: 'design', remotePort: 3000, localPort: 8080, localDomain: 'design.localhost',
           linkProtocol: 'https', updatedAt: 1792116626000 },
-        { id: 'other', remotePort: 3000, localPort: 15000, updatedAt: 1792116625000 },
+        { id: 'other', remoteHost: '::1', remotePort: 3000, localPort: 15000,
+          linkProtocol: 'https', updatedAt: 1792116625000 },
       ]));
       localStorage.setItem('codex-port-mapping-aliases:' + scope, JSON.stringify({ design: '设计预览' }));
       window.mappingPeerFixture = { starts: 0, stops: 0, ready() {} };
@@ -119,10 +120,33 @@ for (const remote of [false, true]) {
     await expect(row).toContainText('被映射数 0');
     await expect.poll(() => page.evaluate(() => window.portForwardingFixture.browserRoutes)).toEqual([
       { domain: 'design.localhost', port: 8080, target: '127.0.0.1:3000' }]);
-    await row.getByRole('button', { name: 'design.localhost:8080', exact: true }).click();
+    const domain = row.getByRole('button', { name: 'design.localhost:8080', exact: true });
+    const address = first.getByRole('button', { name: '127.0.0.1:15000', exact: true });
+    const menu = page.getByRole('menu');
+    const preview = menu.getByRole('menuitem', { name: '在 Remote AI 中预览' });
+    const browser = menu.getByRole('menuitem', { name: '在浏览器中打开' });
+    await expect(domain.locator('code')).toHaveCSS('text-decoration-line', 'underline');
+    await expect(address.locator('code')).toHaveCSS('text-decoration-line', 'underline');
+    await address.click();
+    await expect(preview).toBeEnabled();
+    await expect(browser).toBeEnabled();
+    await expect(page.locator('.ant-dropdown:visible')).not.toHaveClass(/-appear|-enter/);
+    await page.screenshot({ path: info.outputPath(prefix + '-local-address-menu.png'), animations: 'disabled' });
+    await browser.click();
+    await expect.poll(() => page.evaluate(() => window.portForwardingFixture.browserUrls))
+      .toEqual(['https://[::1]:3000']);
+    await address.click();
+    await preview.click();
+    await expect(page.getByLabel('页面地址', { exact: true })).toHaveValue(/^https:\/\/\[::1\]:3000/);
+    await openHub(page);
+    await domain.click();
+    await expect(browser).toHaveCount(0);
+    await expect(page.locator('.ant-dropdown:visible')).not.toHaveClass(/-appear|-enter/);
+    await page.screenshot({ path: info.outputPath(prefix + '-local-domain-menu.png'), animations: 'disabled' });
+    await preview.click();
     await expect(page.getByLabel('页面地址', { exact: true })).toHaveValue(/^https:\/\/design\.localhost:8080/);
-    expect(await page.evaluate(() => [window.mappingPeerFixture.starts, window.portForwardingFixture.openedPorts.size,
-      window.portForwardingFixture.browserUrls.length])).toEqual([0, 0, 0]);
+    expect(await page.evaluate(() => [window.mappingPeerFixture.starts, window.portForwardingFixture.openedPorts.size]))
+      .toEqual([0, 0]);
   });
 
   test(`desktop ${remote ? 'remote dark narrow' : 'local light wide'} sidebar manages mappings`, async ({ page }, info) => {
@@ -135,6 +159,9 @@ for (const remote of [false, true]) {
     const screen = hub(page);
     const row = screen.getByRole('article', { name: /127\.0\.0\.1:5000 →/ });
     await expect(row.getByText('未命名', { exact: true })).toBeVisible();
+    const forwarded = row.getByRole('button', { name: '127.0.0.1:5000', exact: true });
+    await expect(forwarded).toBeDisabled();
+    await expect(forwarded.locator('code')).toHaveCSS('text-decoration-line', 'none');
     const start = row.getByRole('button', { name: /^启动映射/ });
     await expect(row.locator('footer').getByRole('button').last()).toHaveAccessibleName(/^启动映射/);
     const playIcon = start.locator('svg.lucide-play');
@@ -142,6 +169,7 @@ for (const remote of [false, true]) {
     if (remote) await expect(playIcon).toHaveCSS('color', 'rgb(110, 200, 154)');
     await start.click();
     await expect(row.getByRole('status')).toHaveText('映射中');
+    await expect(forwarded.locator('code')).toHaveCSS('text-decoration-line', 'underline');
     const stopIcon = row.getByRole('button', { name: /^停止映射/ }).locator('svg.lucide-square');
     await expect(stopIcon).toBeVisible();
     if (remote) await expect(stopIcon).toHaveCSS('color', 'rgb(238, 119, 126)');
