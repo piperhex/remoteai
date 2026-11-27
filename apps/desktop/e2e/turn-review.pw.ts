@@ -119,19 +119,24 @@ for (const mode of ['local', 'remote', 'web']) {
     await page.setViewportSize({ width: mode === 'remote' ? 1140 : 1440, height: 900 });
     if (mode === 'local') await nativeShell(page);
     await localBackend(page, true, { threads: [thread] });
+    let releaseFiles = () => {};
+    const pendingFiles = new Promise<void>(resolve => { releaseFiles = resolve; });
     const bodyReads: number[] = [];
-    function read(operation: string, input: Parameters<typeof reply>[1]) {
-      if (operation === 'savedTurnReview' && input.file !== undefined) bodyReads.push(input.file);
+    async function read(operation: string, input: Parameters<typeof reply>[1]) {
+      if (operation === 'savedTurnReview') {
+        if (input.file === undefined) await pendingFiles;
+        else bodyReads.push(input.file);
+      }
       return reply(operation, input);
     }
-    await page.route('**/__review_fixture__', route => {
+    await page.route('**/__review_fixture__', async route => {
       const body = JSON.parse(route.request().postData()!);
-      return route.fulfill({ json: read(body.operation, body) });
+      return route.fulfill({ json: await read(body.operation, body) });
     });
-    await page.route('**/__codex_switch__/api/invoke', route => {
+    await page.route('**/__codex_switch__/api/invoke', async route => {
       const { command, args } = route.request().postDataJSON();
       if (command === 'codex_gui_request' && args.request.operation === 'savedTurnReview') {
-        return route.fulfill({ json: { ok: true, result: { data: read('savedTurnReview', args.request) } } });
+        return route.fulfill({ json: { ok: true, result: { data: await read('savedTurnReview', args.request) } } });
       }
       if (command === 'codex_gui_undo') return route.fulfill({ json: { ok: true, result: {
         undone: false, preview: args.request.preview ? { files: [base], conflict: false, version: 'fixture' } : undefined,
@@ -142,9 +147,19 @@ for (const mode of ['local', 'remote', 'web']) {
     await page.goto(`/e2e/cli-gui-harness.html?mode=${mode}&native&hub&changeReview${mode === 'remote' ? '&dark&large' : ''}`,
       { waitUntil: 'domcontentloaded' });
     await page.getByText('更新项目说明', { exact: true }).first().click();
-    const card = page.getByRole('region', { name: '本轮修改', exact: true }).filter({ hasText: '历史说明.md' });
     const archivedPrompt = page.getByText('整理较长的项目说明', { exact: true }).first();
     await archivedPrompt.scrollIntoViewIfNeeded();
+    const cards = page.getByRole('region', { name: '本轮修改', exact: true });
+    const loadingCard = cards.filter({ has: page.locator('.ant-spin-spinning') });
+    const spinner = loadingCard.locator('.ant-spin-spinning');
+    try {
+      await expect(spinner).toBeVisible();
+      const cardBox = (await loadingCard.boundingBox())!;
+      const spinnerBox = (await spinner.boundingBox())!;
+      expect(spinnerBox.x + spinnerBox.width / 2).toBeCloseTo(cardBox.x + cardBox.width / 2, 0);
+      await loadingCard.screenshot({ path: join(evidence, mode + '-files-loading.png') });
+    } finally { releaseFiles(); }
+    const card = cards.filter({ hasText: '历史说明.md' });
     await expect(card).toContainText('已编辑 10 个文件');
     await expect(card.getByRole('button', { name: /新增 11 行，删除 9 行/ })).toBeVisible();
     await expect(card.locator('li')).toHaveCount(3);
