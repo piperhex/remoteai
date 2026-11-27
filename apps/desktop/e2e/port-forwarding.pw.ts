@@ -210,7 +210,7 @@ test('edits an active mapping, cancels drafts and retains the edited settings af
   await expect(entry(page, '127.0.0.1:8306 → 172.16.200.85:8306').getByRole('status')).toHaveText('已停止');
 });
 
-test('multiple mappings, port conflicts, stop, copy and reconnect stay independent', async ({ page }) => {
+test('multiple mappings, port conflicts, stop, copy and reconnect stay independent', async ({ page }, info) => {
   await add(page, 3000, 13000); await add(page, 5432, 15432);
   await expect(entry(page, '127.0.0.1:13000 → 127.0.0.1:3000').getByRole('status')).toHaveText('映射中');
   await expect(entry(page, '127.0.0.1:15432 → 127.0.0.1:5432').getByRole('status')).toHaveText('映射中');
@@ -219,8 +219,13 @@ test('multiple mappings, port conflicts, stop, copy and reconnect stay independe
   await entry(page, '127.0.0.1:13000 → 127.0.0.1:3000').getByRole('button', { name: '停止映射 127.0.0.1:13000 → 127.0.0.1:3000' }).click();
   await expect(entry(page, '127.0.0.1:13000 → 127.0.0.1:3000').getByRole('status')).toHaveText('已停止');
   await page.getByRole('heading', { name: '端口映射', exact: true }).hover();
-  await expect(panel(page).getByRole('button', { name: /^启动映射/ })).toHaveCSS('background-color', 'rgb(25, 107, 62)');
-  await expect(panel(page).getByRole('button', { name: /^停止映射/ })).toHaveCSS('background-color', 'rgb(170, 49, 56)');
+  const start = panel(page).getByRole('button', { name: /^启动映射/ });
+  const stop = panel(page).getByRole('button', { name: /^停止映射/ });
+  await expect(start).toHaveCSS('color', 'rgb(25, 107, 62)');
+  await expect(stop).toHaveCSS('color', 'rgb(170, 49, 56)');
+  await expect(start).toHaveText('');
+  await expect(stop).toHaveText('');
+  await page.screenshot({ path: info.outputPath('pc-remote-dialog-action-icons.png'), animations: 'disabled' });
   await expect(entry(page, '127.0.0.1:13000 → 127.0.0.1:3000').getByRole('button', { name: '127.0.0.1:13000', exact: true })).toBeDisabled();
   await expect(entry(page, '127.0.0.1:15432 → 127.0.0.1:5432').getByRole('status')).toHaveText('映射中');
   await add(page, 8080, 9999);

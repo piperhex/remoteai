@@ -1,7 +1,7 @@
 import { useId, useState, useSyncExternalStore } from 'react';
 import { computerDetails } from '../../../../../shared/remote-chat/devices';
 import { ChevronDown, Cloud, CloudUpload, Monitor } from 'lucide-react';
-import { displayError, guiLocale, uiText as t } from '../../../../../shared/localization/uiText';
+import { displayError, uiText as t } from '../../../../../shared/localization/uiText';
 import { localMappingAddress, mappingAddress } from '../../../../../shared/port-mapping/target';
 import { protocolLabel } from '../../../../../shared/port-mapping/settings';
 import { ForwardedAddress } from '../codexGui/portForwarding/ForwardedAddress';
@@ -47,7 +47,7 @@ function MappingCard({ entry, group, select }: { entry: ForwardingEntry; group: 
   const edit = () => select({ mode: 'edit', deviceId: device.deviceId, entryId: entry.id });
   return <article className={styles.card} aria-label={`${local} → ${target}`}>
     <header className={styles.cardHeader}>
-      <MappingName entry={entry} aliases={session.aliases} edit={edit} />
+      <MappingName entry={entry} aliases={session.aliases} />
       <div className={styles.meta}><span className={styles.protocol}>{protocolLabel(entry.protocol)}</span>
         {session.local ? <MappingConsumers entry={entry} /> : <MappingStatus entry={entry} />}</div>
     </header>
@@ -57,9 +57,8 @@ function MappingCard({ entry, group, select }: { entry: ForwardingEntry; group: 
       <dt>{t('client.portMappingEditing.remoteTarget')}</dt><dd><code>{target}</code></dd>
     </dl>
     <footer className={styles.cardFooter}>
-      {entry.updatedAt && <small>{t('client.portMappingEditing.lastEdited.4f04ab')} · {new Date(entry.updatedAt)
-        .toLocaleDateString(guiLocale(), { month: 'short', day: 'numeric' })}</small>}
-      <MappingActions entry={entry} service={session.service} connected={device.online} local={session.local} />
+      <MappingActions entry={entry} service={session.service} connected={device.online} local={session.local}
+        edit={edit} />
     </footer>
     {entry.error && <p className={styles.error} role="alert">{displayError(entry.error)}</p>}
   </article>;

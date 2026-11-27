@@ -63,17 +63,14 @@
   background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
   code { color: var(--ink); font: 600 1em/1.5 ui-monospace, Consolas, monospace; overflow-wrap: anywhere; }
 }
-.cardHeader, .cardFooter { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+.cardHeader { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
 .endpoints {
   display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: 6px 12px; margin: 0;
   dt { color: var(--muted); }
   dd { margin: 0; min-width: 0; }
   button { max-width: 100%; }
 }
-.cardFooter {
-  margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line);
-  small { color: var(--muted); }
-}
+.cardFooter { margin-top: auto; padding-top: 8px; border-top: 1px solid var(--line); }
 .protocol { border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; line-height: 1.5; white-space: nowrap; }
 .meta { gap: 7px; > span { font-size: inherit; } }
 .consumers {

@@ -83,12 +83,11 @@ button.headerIcon {
   > * { flex-shrink: 0; }
 }
 .mapping { padding: 18px; background: var(--mapping-surface); border: 1px solid var(--line); border-radius: 15px; }
-.mappingName {
-  display: flex; align-items: center; gap: 4px; max-width: 100%; color: var(--ink);
-  strong { min-width: 0; overflow-wrap: anywhere; }
-  button { flex: none; color: var(--muted); }
+.mappingName { min-width: 0; overflow-wrap: anywhere; color: var(--ink); }
+.mappingHeader {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 6px 12px; margin-bottom: 5px;
 }
-.mapping > .mappingName { margin-bottom: 5px; }
 .endpoints { align-items: center; }
 .endpoints code, .address code, code.address, .preview code {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 14px; font-weight: 600;
@@ -105,10 +104,7 @@ button.headerIcon {
   &:disabled code { color: inherit; text-decoration: none; }
 }
 code.address { cursor: text; }
-.mappingBottom {
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
-  gap: 12px; margin-top: 16px;
-}
+.mappingBottom { margin-top: 16px; }
 .metadata { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .protocol {
   padding: 2px 7px; border: 1px solid var(--line); border-radius: 6px;
@@ -122,10 +118,13 @@ code.address { cursor: text; }
   &[data-state='running'] { color: var(--green); }
   &[data-state='error'] { color: var(--error, #d14343); }
 }
-.rowActions { display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-left: auto; }
-.rowActions :global(.ant-btn-text) { color: var(--muted); }
-.actionDivider { height: 18px; width: 1px; margin-inline: 6px; background: var(--line); }
-.toggle { height: 36px; padding-inline: 13px; border-radius: 9px; }
+.rowActions { display: flex; align-items: center; gap: 5px; }
+.rowActions :global(.ant-btn-color-default:not(:disabled)) { color: var(--muted); }
+:global([data-theme='dark']) .rowActions {
+  :global(.ant-btn-color-green:enabled) svg { color: #6ec89a; }
+  :global(.ant-btn-color-red:enabled) svg { color: #ee777e; }
+}
+.removeAction { margin-inline-end: auto; }
 .primary { height: 50px; border-radius: 11px; font-size: 16px; font-weight: 600; }
 .empty {
   display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center;

@@ -26,19 +26,21 @@ export function MappingRow({ entry, service, aliases, connected, onOpen, edit }:
   const address = localMappingAddress(entry);
   const label = `${address} → ${target}`;
   return <article className={styles.mapping} aria-label={label}>
-    <MappingName entry={entry} aliases={aliases} edit={edit} />
+    <header className={styles.mappingHeader}>
+      <MappingName entry={entry} aliases={aliases} />
+      <div className={styles.metadata}>
+        <span className={styles.protocol}>{protocolLabel(entry.protocol)}</span>
+        <MappingStatus entry={entry} />
+      </div>
+    </header>
     <div className={styles.endpoints}>
       {entry.protocol === 'udp' ? <code className={styles.address}>{address}</code>
         : <ForwardedAddress entry={entry} onOpen={onOpen} />}
       <ArrowRight size={20} className={styles.direction} aria-hidden="true" /><code>{target}</code>
     </div>
-    <div className={styles.mappingBottom}>
-      <div className={styles.metadata}>
-        <span className={styles.protocol}>{protocolLabel(entry.protocol)}</span>
-        <MappingStatus entry={entry} />
-      </div>
-      <MappingActions entry={entry} service={service} connected={connected} />
-    </div>
+    <footer className={styles.mappingBottom}>
+      <MappingActions entry={entry} service={service} connected={connected} edit={edit} />
+    </footer>
     {entry.error && <div className={styles.error} role="alert">{displayError(entry.error)}</div>}
   </article>;
 }

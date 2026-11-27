@@ -86,6 +86,13 @@ for (const remote of [false, true]) {
     await expect(first.getByRole('button', { name: /^(启动|停止)映射/ })).toHaveCount(0);
     await expect(hub(page).getByRole('region', { name: 'Office PC' }).getByText(/被映射数/)).toHaveCount(0);
     const row = first.getByRole('article', { name: /^design\.localhost/ });
+    const actions = row.locator('footer').getByRole('button');
+    await expect(actions).toHaveCount(3);
+    await expect(actions.nth(0)).toHaveAccessibleName(/^删除映射/);
+    await expect(actions.nth(1)).toHaveAccessibleName(/^编辑映射/);
+    await expect(actions.nth(1).locator('svg.lucide-square-pen')).toBeVisible();
+    await expect(actions.nth(2)).toHaveAccessibleName(/^复制本地地址/);
+    await expect(row.getByText(/编辑时间/)).toHaveCount(0);
     await row.getByRole('button', { name: '被映射数 0' }).focus();
     await expect(page.getByRole('tooltip')).toHaveText('暂无设备正在使用这条映射');
     await page.evaluate(async () => {
@@ -128,8 +135,16 @@ for (const remote of [false, true]) {
     const screen = hub(page);
     const row = screen.getByRole('article', { name: /127\.0\.0\.1:5000 →/ });
     await expect(row.getByText('未命名', { exact: true })).toBeVisible();
-    await row.getByRole('button', { name: /^启动映射/ }).click();
+    const start = row.getByRole('button', { name: /^启动映射/ });
+    await expect(row.locator('footer').getByRole('button').last()).toHaveAccessibleName(/^启动映射/);
+    const playIcon = start.locator('svg.lucide-play');
+    await expect(playIcon).toBeVisible();
+    if (remote) await expect(playIcon).toHaveCSS('color', 'rgb(110, 200, 154)');
+    await start.click();
     await expect(row.getByRole('status')).toHaveText('映射中');
+    const stopIcon = row.getByRole('button', { name: /^停止映射/ }).locator('svg.lucide-square');
+    await expect(stopIcon).toBeVisible();
+    if (remote) await expect(stopIcon).toHaveCSS('color', 'rgb(238, 119, 126)');
     await expect(screen.getByRole('article')).toHaveCount(4);
     await screen.getByRole('heading', { name: '端口映射' }).hover();
     const prefix = remote ? 'pc-remote-dark-narrow' : 'pc-local-light-wide';
