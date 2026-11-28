@@ -1,32 +1,71 @@
-use std::io::Cursor;
+use std::{
+    io::{self, Cursor},
+    ptr,
+};
 
 use base64::{engine::general_purpose::STANDARD, Engine};
 use image::{imageops::FilterType, ImageFormat, ImageReader, Limits};
-use tauri::image::Image;
+use tauri::{image::Image, tray::TrayIcon, Runtime};
+use tray_icon::Icon;
+use windows_sys::Win32::UI::WindowsAndMessaging::{CreateIcon, HICON};
 
 const ICON_SIZE: u32 = 32;
 const MAX_AVATAR_PIXELS: u32 = 128;
 const MAX_ENCODED_AVATAR: usize = 112_000;
-const DIMMED_ALPHA_PERCENT: u16 = 20;
+const MASK_BYTES: usize = (ICON_SIZE as usize / u8::BITS as usize) * ICON_SIZE as usize;
 
 pub(super) struct FlashFrames {
-    bright: Image<'static>,
-    dimmed: Image<'static>,
+    avatar: Image<'static>,
+    transparent: Icon,
 }
 
 impl FlashFrames {
-    pub(super) fn for_avatar(data: Option<&str>) -> Self {
-        let bright = avatar(data);
-        let dimmed = dimmed(&bright);
-        Self { bright, dimmed }
+    pub(super) fn for_avatar(data: Option<&str>) -> io::Result<Self> {
+        let handle = create_transparent_icon()?;
+        let avatar = avatar(data);
+        let transparent = Icon::from_handle(handle as isize);
+        Ok(Self {
+            avatar,
+            transparent,
+        })
     }
 
-    pub(super) fn image(&self, bright: bool) -> Image<'static> {
-        if bright {
-            self.bright.clone()
+    pub(super) fn apply<R: Runtime>(
+        &self,
+        tray: &TrayIcon<R>,
+        show_avatar: bool,
+    ) -> tauri::Result<()> {
+        if show_avatar {
+            tray.set_icon(Some(self.avatar.clone()))
         } else {
-            self.dimmed.clone()
+            let icon = self.transparent.clone();
+            tray.with_inner_tray_icon(move |inner| inner.set_icon(Some(icon)))?
+                .map_err(Into::into)
         }
+    }
+}
+
+fn create_transparent_icon() -> io::Result<HICON> {
+    // An all-zero RGBA frame can fall back to a Windows color mask. The monochrome
+    // AND/XOR operation instead preserves every background pixel in the same tray slot.
+    let and_mask = [u8::MAX; MASK_BYTES];
+    let xor_mask = [0; MASK_BYTES];
+    // SAFETY: The width is word-aligned at one bit per pixel and both masks are fully sized.
+    let handle = unsafe {
+        CreateIcon(
+            ptr::null_mut(),
+            ICON_SIZE as i32,
+            ICON_SIZE as i32,
+            1,
+            1,
+            and_mask.as_ptr(),
+            xor_mask.as_ptr(),
+        )
+    };
+    if handle.is_null() {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(handle)
     }
 }
 
@@ -68,39 +107,31 @@ fn decode_avatar(data: &str) -> Option<image::RgbaImage> {
     )
 }
 
-fn dimmed(icon: &Image<'_>) -> Image<'static> {
-    let mut rgba = icon.rgba().to_vec();
-    for pixel in rgba.chunks_exact_mut(4) {
-        pixel[3] = (u16::from(pixel[3]) * DIMMED_ALPHA_PERCENT / 100) as u8;
-    }
-    Image::new_owned(rgba, icon.width(), icon.height())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn the_same_sender_is_clearly_dimmed_even_if_the_avatar_matches_the_app_icon() {
-        let avatar = format!(
-            "data:image/png;base64,{}",
-            STANDARD.encode(include_bytes!("../../../icons/32x32.png"))
-        );
-        let frames = FlashFrames::for_avatar(Some(&avatar));
-        let bright = frames.image(true);
-        let dimmed = frames.image(false);
-        assert_eq!(
-            (bright.width(), bright.height()),
-            (dimmed.width(), dimmed.height())
-        );
-        assert!(bright.rgba().chunks_exact(4).any(|pixel| pixel[3] == 255));
-        for (bright, dimmed) in bright
-            .rgba()
-            .chunks_exact(4)
-            .zip(dimmed.rgba().chunks_exact(4))
-        {
-            assert_eq!(bright[..3], dimmed[..3]);
-            assert!(u16::from(dimmed[3]) * 5 <= u16::from(bright[3]));
+    fn transparent_frame_has_a_mask_and_no_color_bitmap() {
+        use windows_sys::Win32::{
+            Graphics::Gdi::{DeleteObject, GetBitmapBits},
+            UI::WindowsAndMessaging::{DestroyIcon, GetIconInfo, ICONINFO},
+        };
+        let handle = create_transparent_icon().unwrap();
+        let mut info = ICONINFO::default();
+        let mut mask = [0_u8; MASK_BYTES * 2];
+        // SAFETY: The icon is live, and GetIconInfo returns owned bitmaps.
+        unsafe {
+            assert_ne!(GetIconInfo(handle, &mut info), 0);
+            assert!(info.hbmColor.is_null());
+            assert_eq!(
+                GetBitmapBits(info.hbmMask, mask.len() as i32, mask.as_mut_ptr().cast()),
+                mask.len() as i32
+            );
+            assert_ne!(DeleteObject(info.hbmMask), 0);
+            assert_ne!(DestroyIcon(handle), 0);
         }
+        assert_eq!(&mask[..MASK_BYTES], &[u8::MAX; MASK_BYTES]);
+        assert_eq!(&mask[MASK_BYTES..], &[0; MASK_BYTES]);
     }
 }

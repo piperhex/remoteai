@@ -1,7 +1,12 @@
+import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { ConfigProvider, theme } from 'antd';
+import { LoungePage } from '../../../shared/lounge/LoungePage';
+import type { LoungeReply } from '../../../shared/lounge/reply';
 import { useDesktopLounge } from '../src/lounge/useDesktopLounge';
 import { useLoungeTray } from '../src/lounge/useLoungeTray';
 import type { CloudAuthState } from '../src/types';
+import '../src/styles.css';
 
 const receiver = { id: 'receiver', account: 'receiver' };
 const muted = { id: 'muted', account: 'muted' };
@@ -24,6 +29,7 @@ function avatar() {
 class FixtureSocket {
   static readonly OPEN = 1;
   readonly readyState = FixtureSocket.OPEN;
+  private timestamp = Date.now();
   onopen?: () => void;
   onmessage?: (event: { data: string }) => void;
 
@@ -49,19 +55,23 @@ class FixtureSocket {
   private frame(frame: object) { this.onmessage?.({ data: JSON.stringify(frame) }); }
 
   private message(sender: typeof muted, text: string, direct: boolean) {
-    this.frame({ type: 'message', id: crypto.randomUUID(), sentAt: new Date().toISOString(),
+    this.frame({ type: 'message', id: crypto.randomUUID(), sentAt: new Date(this.timestamp++).toISOString(),
       sender, text, images: [], ...(direct && { recipient: receiver, receipts: true }) });
   }
 }
 
 Object.defineProperty(window, 'WebSocket', { value: FixtureSocket });
 localStorage.setItem('codex-switch:language', 'zh');
-const openLounge = () => undefined;
-
 function TrayFixture() {
   const lounge = useDesktopLounge(auth);
-  useLoungeTray(lounge.controller, openLounge);
-  return null;
+  const [target, setTarget] = useState<LoungeReply>();
+  useLoungeTray(lounge.controller, setTarget);
+  if (!target) return null;
+  return <ConfigProvider theme={{ algorithm: theme.compactAlgorithm }}>
+    <main className="lounge-desktop-main" style={{ height: '100vh' }}>
+      <LoungePage controller={lounge.controller} messageTarget={target} />
+    </main>
+  </ConfigProvider>;
 }
 
 createRoot(document.getElementById('root')!).render(<TrayFixture />);

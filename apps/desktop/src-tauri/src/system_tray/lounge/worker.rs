@@ -29,7 +29,7 @@ struct Worker<R: Runtime> {
     presented: Option<(u64, f64)>,
     avatar: Option<String>,
     frames: Option<icon::FlashFrames>,
-    bright_phase: bool,
+    showing_avatar: bool,
 }
 
 pub(super) async fn run<R: Runtime>(
@@ -49,7 +49,7 @@ pub(super) async fn run<R: Runtime>(
         presented: None,
         avatar: None,
         frames: None,
-        bright_phase: false,
+        showing_avatar: false,
     };
     let mut flash = interval(FLASH_INTERVAL);
     let mut pointer = interval(POINTER_INTERVAL);
@@ -149,19 +149,25 @@ impl<R: Runtime> Worker<R> {
             return;
         }
         if self.frames.is_none() {
-            self.bright_phase = true;
+            self.showing_avatar = true;
             report(self.tray.set_tooltip(None::<&str>));
         }
-        let frames = icon::FlashFrames::for_avatar(avatar.as_deref());
-        report(self.tray.set_icon(Some(frames.image(self.bright_phase))));
+        let frames = match icon::FlashFrames::for_avatar(avatar.as_deref()) {
+            Ok(frames) => frames,
+            Err(error) => {
+                eprintln!("failed to create lounge tray icon: {error}");
+                return;
+            }
+        };
+        report(frames.apply(&self.tray, self.showing_avatar));
         self.avatar = avatar;
         self.frames = Some(frames);
     }
 
     fn flash(&mut self) {
         if let Some(frames) = &self.frames {
-            self.bright_phase = !self.bright_phase;
-            report(self.tray.set_icon(Some(frames.image(self.bright_phase))));
+            self.showing_avatar = !self.showing_avatar;
+            report(frames.apply(&self.tray, self.showing_avatar));
         }
         // Explorer can skip movement callbacks for an icon in the overflow area.
         if self.hover.is_none() {
@@ -266,16 +272,22 @@ impl<R: Runtime> Worker<R> {
                     .iter()
                     .any(|message| message.key == key) =>
             {
+                self.ignored.insert(key.clone());
+                self.dismiss();
+                let start_flash = self.publish();
                 self.navigate(Some(key));
+                return start_flash;
             }
-            Action::ViewAll if !snapshot.messages.messages.is_empty() => self.navigate(None),
+            Action::ViewAll if !snapshot.messages.messages.is_empty() => {
+                self.dismiss();
+                self.navigate(None);
+            }
             _ => {}
         }
         false
     }
 
     fn navigate(&mut self, key: Option<String>) {
-        self.dismiss();
         let app = self.tray.app_handle();
         if let Some(window) = app.get_webview("main") {
             report(window.emit(NAVIGATE_EVENT, key));

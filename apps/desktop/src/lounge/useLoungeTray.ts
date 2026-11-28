@@ -89,7 +89,7 @@ export function useLoungeTray(controller: LoungeController, openLounge: (target?
       if (entry) {
         const { reference } = entry;
         const peer = controller.snapshot().contacts.find(({ user }) => user.id === reference.senderId)?.user;
-        controller.selectConversation(peer ?? { id: reference.senderId, account: reference.account });
+        controller.selectConversation(peer ?? { id: reference.senderId, account: reference.account }, { deferRead: true });
         openLounge({ ...reference });
       } else openLounge();
     });

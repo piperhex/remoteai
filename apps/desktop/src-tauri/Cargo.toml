@@ -132,6 +132,8 @@ core-foundation = "0.10"
 secret-service = { version = "5.1.0", features = ["rt-async-io-crypto-rust"] }
 
 [target.'cfg(windows)'.dependencies]
+# Match Tauri's tray-icon type for the transparent Windows icon handle.
+tray-icon = { version = "=0.24.1", default-features = false }
 webview2-com = "0.38.2"
 windows-core = "0.61"
 windows-service = "0.8"

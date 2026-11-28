@@ -10,7 +10,7 @@ fn cloud_lounge_ticket() -> serde_json::Value {
 
 #[test]
 #[ignore = "requires an interactive Windows desktop and Vite on port 1489"]
-fn hover_and_ignore_real_tray_messages() {
+fn opening_tray_messages_consumes_only_the_selected_entry() {
     let mut context = tauri::generate_context!();
     context.config_mut().identifier = "dev.codex.switch.lounge-tray-smoke".into();
     context.config_mut().build.dev_url = Some("http://127.0.0.1:1489".parse().unwrap());
@@ -31,9 +31,9 @@ fn hover_and_ignore_real_tray_messages() {
             super::super::setup(app)?;
             let app = app.handle().clone();
             tauri::async_runtime::spawn(async move {
-                let result = tokio::time::timeout(Duration::from_secs(120), exercise(&app))
+                let result = tokio::time::timeout(Duration::from_secs(180), exercise(&app))
                     .await
-                    .map_err(|_| "hover the fixture tray icon and click Dismiss all".into())
+                    .map_err(|_| "open the older tray message first, then open the newest".into())
                     .and_then(|result| result);
                 sender.send(result).unwrap();
                 app.exit(0);
@@ -58,8 +58,9 @@ async fn exercise(app: &AppHandle) -> Result<(), String> {
     .map_err(|error| error.to_string())?;
     let state = app.state::<TrayState>();
     wait_for_private_messages(&state).await?;
-    eprintln!("both eligible tray messages arrived; hover the tray icon and click Dismiss all");
+    eprintln!("both eligible tray messages arrived; click the older message first");
     let mut opened = false;
+    let mut consumed_one = false;
     loop {
         tokio::time::sleep(Duration::from_millis(50)).await;
         let visible = app
@@ -70,8 +71,20 @@ async fn exercise(app: &AppHandle) -> Result<(), String> {
             .unwrap_or(false);
         opened |= visible;
         let snapshot = state.snapshot.borrow();
-        if opened && !visible && snapshot.messages.messages.is_empty() {
-            return Ok(());
+        let messages = &snapshot.messages.messages;
+        match messages.as_slice() {
+            [remaining] if !consumed_one => {
+                if !opened || !remaining.text.contains("第二条") {
+                    return Err("opening the older message did not leave the newer reminder".into());
+                }
+                consumed_one = true;
+                eprintln!(
+                    "the older reminder was consumed; hover again and click the newest message"
+                );
+            }
+            [] if opened && consumed_one && !visible => return Ok(()),
+            [] => return Err("opening the first tray message cleared all the reminders".into()),
+            _ => {}
         }
     }
 }

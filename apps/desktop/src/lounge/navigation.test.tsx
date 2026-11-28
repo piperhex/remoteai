@@ -34,6 +34,22 @@ it('pins located context as new messages arrive, then restores live history on l
   act(() => model.clear()); expect(model.messages).toEqual(state.messages);
 });
 
+it('highlights the newest tray message while keeping the conversation live', async () => {
+  vi.spyOn(controller, 'lookupMessage').mockResolvedValue(original); render();
+  await act(async () => { expect(await model.locateTrayMessage(quoteMessage(original))).toBe('latest'); });
+  expect(model.focus).toBeUndefined();
+  expect(model.highlight).toBe(historyKey(original));
+  state = { ...state, messages: [original, { ...original, id: 'incoming' }] }; render();
+  expect(model.messages).toEqual(state.messages);
+});
+
+it('opens an older tray message in its historical context', async () => {
+  vi.spyOn(controller, 'lookupMessage').mockResolvedValue(original);
+  state = { ...state, messages: [original, { ...original, id: 'newer' }] }; render();
+  await act(async () => { expect(await model.locateTrayMessage(quoteMessage(original))).toBe('history'); });
+  expect(model.focus?.key).toBe(historyKey(original));
+});
+
 it('cancels late navigation after leaving a conversation or pressing latest', async () => {
   let finish: (message: LoungeMessage) => void = () => {};
   vi.spyOn(controller, 'lookupMessage').mockImplementation(() => new Promise(resolve => { finish = resolve; }));
