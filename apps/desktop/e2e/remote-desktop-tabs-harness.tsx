@@ -15,6 +15,7 @@ import '../src/styles.css';
 
 declare global { interface Window { desktopComputers: GuiComputer[] } }
 const remote = new URLSearchParams(location.search).has('remote');
+const logo = new URL('../src-tauri/icons/128x128.png', import.meta.url).href;
 const devices = window.desktopComputers;
 const computers = { devices, current: remote ? devices[0] : null, authenticated: true, loading: false,
   error: '', identity: { baseUrl: location.origin, userId: 'viewer' }, refresh() {}, login() {}, choose() {} };
@@ -26,9 +27,11 @@ function DesktopHarness() {
   const [page, setPage] = useState<DashboardPage>('codexGui');
   return <ApplicationTypography><ConfigProvider theme={{ token: { colorPrimary: DEFAULT_THEME_COLOR },
     algorithm: remote ? [theme.darkAlgorithm, theme.compactAlgorithm] : theme.compactAlgorithm }}>
-    <div className="app-shell sidebar-navigation-shell">
-      <aside className="app-sidebar"><div className="brand sidebar-brand"><span className="brand-name">Remote AI</span></div>
-        <DashboardNavigation page={page} onPageChange={setPage} variant="sidebar"
+    <div className={`app-shell sidebar-navigation-shell${remote ? '' : ' sidebar-collapsed'}`}>
+      <aside className="app-sidebar"><button type="button" className="brand sidebar-brand" aria-label="Remote AI">
+        <img className="brand-logo" src={logo} alt="" /><span className="brand-name">Remote AI</span>
+      </button>
+        <DashboardNavigation collapsed={!remote} page={page} onPageChange={setPage} variant="sidebar"
           t={(key, values) => translate('zh', key, values)} />
       </aside>
       <main style={{ display: 'flex', flexDirection: 'column', padding: 0 }}>
