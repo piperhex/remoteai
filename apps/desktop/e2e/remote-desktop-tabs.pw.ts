@@ -1,6 +1,9 @@
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 import { checkDesktopTabs, computers, connectCaptureHosts } from '../../web/e2e/remote-desktop-tab-checks';
+import { testBrowserLaunchOptions } from '../../../scripts/test-browser.mjs';
+
+test.use({ launchOptions: testBrowserLaunchOptions({ args: ['--enable-caret-browsing'] }) });
 
 for (const remote of [false, true]) {
   test(`standalone remote desktop tabs in ${remote ? 'remote' : 'local'} desktop mode`, async ({ page }, info) => {
