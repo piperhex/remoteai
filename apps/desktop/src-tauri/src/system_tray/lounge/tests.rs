@@ -1,8 +1,12 @@
 use std::time::Duration;
 
 use super::*;
-use base64::{engine::general_purpose::STANDARD, Engine};
 use tauri::AppHandle;
+
+#[tauri::command]
+fn cloud_lounge_ticket() -> serde_json::Value {
+    serde_json::json!({ "ticket": "tray-fixture" })
+}
 
 #[test]
 #[ignore = "requires an interactive Windows desktop and Vite on port 1489"]
@@ -17,6 +21,8 @@ fn hover_and_ignore_real_tray_messages() {
     tauri::Builder::default()
         .any_thread()
         .invoke_handler(tauri::generate_handler![
+            cloud_lounge_ticket,
+            lounge_tray_update,
             lounge_tray_snapshot,
             lounge_tray_present,
             lounge_tray_activate,
@@ -41,8 +47,18 @@ fn hover_and_ignore_real_tray_messages() {
 }
 
 async fn exercise(app: &AppHandle) -> Result<(), String> {
+    // Exercise the normal controller, including the receipt path and WebView IPC, while hidden.
+    crate::webview_windows::builder(
+        app,
+        "main",
+        tauri::WebviewUrl::App("e2e/lounge-tray-harness.html".into()),
+    )
+    .visible(false)
+    .build()
+    .map_err(|error| error.to_string())?;
     let state = app.state::<TrayState>();
-    send(&state, Event::Update(fixture()))?;
+    wait_for_private_messages(&state).await?;
+    eprintln!("both eligible tray messages arrived; hover the tray icon and click Dismiss all");
     let mut opened = false;
     loop {
         tokio::time::sleep(Duration::from_millis(50)).await;
@@ -60,44 +76,29 @@ async fn exercise(app: &AppHandle) -> Result<(), String> {
     }
 }
 
-fn fixture() -> Messages {
-    let avatar = format!(
-        "data:image/png;base64,{}",
-        STANDARD.encode(include_bytes!("../../../icons/16x16.png"))
-    );
-    let senders = HashMap::from([
-        (
-            "mira".into(),
-            Sender {
-                name: "米拉".into(),
-                avatar: Some(avatar),
-            },
-        ),
-        (
-            "yuki".into(),
-            Sender {
-                name: "团子".into(),
-                avatar: None,
-            },
-        ),
-    ]);
-    let messages = [
-        ("mira", "测试消息收到了。", "2026-11-28T05:08:00Z"),
-        (
-            "mira",
-            "同一位联系人发来的另一条消息。",
-            "2026-11-28T05:07:00Z",
-        ),
-        ("yuki", "等你有空一起看一下。", "2026-11-28T05:06:00Z"),
-    ]
-    .into_iter()
-    .map(|(sender, text, sent_at)| Message {
-        key: sent_at.into(),
-        sender_id: sender.into(),
-        sent_at: sent_at.into(),
-        text: text.into(),
-        image_count: 0,
+async fn wait_for_private_messages(state: &TrayState) -> Result<(), String> {
+    tokio::time::timeout(Duration::from_secs(45), async {
+        loop {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+            let snapshot = state.snapshot.borrow();
+            let entries = &snapshot.messages;
+            if entries.messages.len() < 2 {
+                continue;
+            }
+            let valid_messages = entries.messages.len() == 2
+                && entries
+                    .messages
+                    .iter()
+                    .all(|message| message.sender_id == "sender");
+            let valid_avatar = entries
+                .senders
+                .get("sender")
+                .is_some_and(|sender| sender.avatar.is_some());
+            return (valid_messages && valid_avatar)
+                .then_some(())
+                .ok_or_else(|| "the tray received unexpected messages or avatar data".into());
+        }
     })
-    .collect();
-    Messages { messages, senders }
+    .await
+    .map_err(|_| "private messages never reached Windows tray IPC".to_owned())?
 }

@@ -7,7 +7,7 @@ use std::{
     time::Duration,
 };
 
-use tauri::{image::Image, tray::TrayIcon, Emitter, Manager, Rect, Runtime};
+use tauri::{tray::TrayIcon, Emitter, Manager, Rect, Runtime};
 use tokio::{
     sync::{mpsc, watch},
     time::{interval, MissedTickBehavior},
@@ -28,8 +28,8 @@ struct Worker<R: Runtime> {
     ready: Option<(u64, f64)>,
     presented: Option<(u64, f64)>,
     avatar: Option<String>,
-    frame: Option<Image<'static>>,
-    showing_avatar: bool,
+    frames: Option<icon::FlashFrames>,
+    bright_phase: bool,
 }
 
 pub(super) async fn run<R: Runtime>(
@@ -48,8 +48,8 @@ pub(super) async fn run<R: Runtime>(
         ready: None,
         presented: None,
         avatar: None,
-        frame: None,
-        showing_avatar: false,
+        frames: None,
+        bright_phase: false,
     };
     let mut flash = interval(FLASH_INTERVAL);
     let mut pointer = interval(POINTER_INTERVAL);
@@ -61,7 +61,7 @@ pub(super) async fn run<R: Runtime>(
                 let Some(event) = event else { break };
                 if worker.handle(event) { flash.reset(); }
             }
-            _ = flash.tick(), if worker.frame.is_some() => worker.flash(),
+            _ = flash.tick(), if worker.frames.is_some() => worker.flash(),
             _ = pointer.tick(), if worker.hover.is_some() => worker.check_pointer(),
         }
     }
@@ -129,45 +129,44 @@ impl<R: Runtime> Worker<R> {
         if let Some(window) = self.tray.app_handle().get_webview_window(LABEL) {
             report(window.emit(REFRESH_EVENT, ()));
         }
+        self.update_icon(unread, avatar);
         if unread && !had_unread {
             self.hover_if_under_cursor();
         }
-        self.update_icon(unread, avatar)
+        // Changes to the latest sender must not restart the flash during a burst of arrivals.
+        unread && !had_unread
     }
 
-    fn update_icon(&mut self, unread: bool, avatar: Option<String>) -> bool {
-        if unread {
-            if self.frame.is_some() && self.avatar == avatar {
-                return false;
-            }
-            let frame = icon::avatar(avatar.as_deref());
-            self.avatar = avatar;
-            self.frame = Some(frame.clone());
-            self.showing_avatar = true;
-            report(self.tray.set_tooltip(None::<&str>));
-            report(self.tray.set_icon(Some(frame)));
-        } else {
+    fn update_icon(&mut self, unread: bool, avatar: Option<String>) {
+        if !unread {
             self.avatar = None;
-            self.frame = None;
-            self.showing_avatar = false;
+            self.frames = None;
             report(self.tray.set_icon(Some(icon::normal())));
             report(self.tray.set_tooltip(Some("Remote AI")));
+            return;
         }
-        true
+        if self.frames.is_some() && self.avatar == avatar {
+            return;
+        }
+        if self.frames.is_none() {
+            self.bright_phase = true;
+            report(self.tray.set_tooltip(None::<&str>));
+        }
+        let frames = icon::FlashFrames::for_avatar(avatar.as_deref());
+        report(self.tray.set_icon(Some(frames.image(self.bright_phase))));
+        self.avatar = avatar;
+        self.frames = Some(frames);
     }
 
     fn flash(&mut self) {
+        if let Some(frames) = &self.frames {
+            self.bright_phase = !self.bright_phase;
+            report(self.tray.set_icon(Some(frames.image(self.bright_phase))));
+        }
         // Explorer can skip movement callbacks for an icon in the overflow area.
         if self.hover.is_none() {
             self.hover_if_under_cursor();
         }
-        self.showing_avatar = !self.showing_avatar;
-        let frame = if self.showing_avatar {
-            self.frame.clone()
-        } else {
-            Some(icon::normal())
-        };
-        report(self.tray.set_icon(frame));
     }
 
     fn hover_if_under_cursor(&mut self) {
