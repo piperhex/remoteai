@@ -133,3 +133,65 @@ test('username-first login offers credentials after a JavaScript password step a
     } finally { await page.close(); }
   });
 });
+
+test('staged filling binds the password to the submitted identity and the current field', async t => {
+  const browser = await chromium.launch(testBrowserLaunchOptions());
+  t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.addInitScript({ content: `
+    window.focusEntries = [];
+    window.ReactNativeWebView = { postMessage(message) {
+      const record = JSON.parse(message);
+      if (record.type === 'browser-login-focus') window.focusEntries.push(record.focus);
+    } };
+    ${script}; window.passwordPage = RemoteAIBrowserPassword.passwordPage;
+    window.passwordPage({action:'install',native:true});` });
+  const fill = options => page.evaluate(options => window.passwordPage(options), options);
+  const focus = () => page.evaluate(() => window.focusEntries.at(-1));
+  await page.route(origin + '/', route => route.fulfill({ contentType: 'text/html', body: `
+    <main><form><input type="email" autocomplete="email" required><button id="next_button">Next</button></form></main>
+    <script>
+    const main = document.querySelector('main');
+    main.querySelector('button').onclick = event => {
+      event.preventDefault();
+      main.innerHTML = '<section><input type="password"><button type="button" id="signin_button">Sign in</button></section>';
+      main.querySelector('input').focus();
+    };
+    </script>` }));
+  await page.goto(origin + '/');
+  await page.locator('input').click();
+  const email = await focus();
+  assert.equal(email.stage, 'username');
+  const { username } = login;
+  assert.equal(await fill({ action: 'fillUsername', identity: { origin, username }, focusId: email.id }), true);
+  assert.equal(await page.locator('input[type=email]').inputValue(), username);
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.waitForFunction(() => window.focusEntries.at(-1)?.stage === 'password');
+  const password = await focus();
+  assert.deepEqual([password.username, password.continuationId], [username, email.id]);
+  assert.equal(await fill({ action: 'fill', login, focusId: email.id }), false);
+  assert.equal(await fill({ action: 'fill', login: { ...login, username: 'other@example.test' },
+    focusId: password.id }), false);
+  assert.equal(await fill({ action: 'fill', login, focusId: password.id }), true);
+  assert.equal(await page.locator('input[type=password]').inputValue(), login.password);
+});
+
+test('an AWS password step can suggest the account displayed by the page after a reload', async t => {
+  const browser = await chromium.launch(testBrowserLaunchOptions());
+  t.after(() => browser.close());
+  const page = await browser.newPage();
+  const awsOrigin = 'https://signin.aws.amazon.com';
+  const account = { ...login, origin: awsOrigin };
+  await page.addInitScript({ content: `${script}; window.passwordPage = RemoteAIBrowserPassword.passwordPage;
+    window.passwordPage({action:'install'});` });
+  await page.route(awsOrigin + '/signin', route => route.fulfill({ contentType: 'text/html', body: `
+    <main data-testid="root-password-form"><strong>${account.username}</strong>
+    <input type="password"><button id="signin_button" type="button">Sign in</button></main>` }));
+  await page.goto(awsOrigin + '/signin');
+  await page.locator('input').click();
+  const focus = await page.evaluate(() => window.passwordPage({ action: 'takeFocus' }));
+  assert.deepEqual([focus.stage, focus.username, focus.continuationId], ['password', account.username, undefined]);
+  assert.equal(await page.evaluate(({ login, focusId }) => window.passwordPage({ action: 'fill', login, focusId }),
+    { login: account, focusId: focus.id }), true);
+  assert.equal(await page.locator('input[type=password]').inputValue(), account.password);
+});

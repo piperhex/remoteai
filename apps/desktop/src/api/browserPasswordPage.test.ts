@@ -60,3 +60,23 @@ it('never fills a new-password field', () => {
   expect(dom.window.eval(passwordScript({ action: 'fill', login }))).toBe(false);
   dom.window.close();
 });
+
+it('keeps a standard login form preferred when filling from the password manager', () => {
+  const dom = page();
+  dom.window.document.body.insertAdjacentHTML('afterbegin',
+    '<form><input type="email" autocomplete="email"><button id="next_button">Next</button></form>');
+  const { origin, username } = login;
+  expect(dom.window.eval(passwordScript({ action: 'fillUsername', identity: { origin, username } }))).toBe(false);
+  expect(dom.window.eval(passwordScript({ action: 'fill', login }))).toBe(true);
+  dom.window.close();
+});
+
+it('leaves the AWS IAM account ID field available for manual entry', () => {
+  const origin = 'https://signin.aws.amazon.com', dom = page(origin);
+  dom.window.document.body.innerHTML = '<form><input id="resolving_input" autocomplete="username">'
+    + '<button id="next_button">Next</button></form>';
+  const username = 'fixture@example.test';
+  expect(dom.window.eval(passwordScript({ action: 'fillUsername', identity: { origin, username } }))).toBe(false);
+  expect(dom.window.document.querySelector('input')?.value).toBe('');
+  dom.window.close();
+});

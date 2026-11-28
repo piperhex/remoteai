@@ -1,4 +1,4 @@
-use super::{BrowserError, Result};
+use super::{password_focus::valid_focus_id, BrowserError, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::time::Duration;
@@ -16,18 +16,28 @@ pub(crate) struct Login {
 
 impl Login {
     pub(super) fn valid_for(&self, source: &str) -> bool {
-        let Ok(url) = url::Url::parse(source) else {
-            return false;
-        };
-        matches!(url.scheme(), "http" | "https")
-            && url.username().is_empty()
-            && url.password().is_none()
-            && self.origin == url.origin().ascii_serialization()
-            && self.origin.len() <= 2048
-            && self.username.chars().count() <= 512
+        valid_identity(&self.origin, &self.username, source)
             && !self.password.is_empty()
             && self.password.chars().count() <= 4096
     }
+}
+
+fn valid_identity(origin: &str, username: &str, source: &str) -> bool {
+    url::Url::parse(source).is_ok_and(|url| {
+        matches!(url.scheme(), "http" | "https")
+            && url.username().is_empty()
+            && url.password().is_none()
+            && origin == url.origin().ascii_serialization()
+            && origin.len() <= 2048
+            && username.chars().count() <= 512
+    })
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct LoginIdentity {
+    origin: String,
+    username: String,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -40,6 +50,11 @@ pub(crate) enum PasswordRequest {
         #[serde(rename = "focusId", default, skip_serializing_if = "Option::is_none")]
         focus_id: Option<String>,
     },
+    FillUsername {
+        identity: LoginIdentity,
+        #[serde(rename = "focusId", default, skip_serializing_if = "Option::is_none")]
+        focus_id: Option<String>,
+    },
 }
 
 pub(super) fn initialization() -> String {
@@ -49,13 +64,12 @@ pub(super) fn initialization() -> String {
 }
 
 async fn evaluate(view: Webview, request: PasswordRequest) -> Result<Value> {
-    if let PasswordRequest::Fill { login, focus_id } = &request {
+    if matches!(
+        request,
+        PasswordRequest::Fill { .. } | PasswordRequest::FillUsername { .. }
+    ) {
         let current = current_url(&view).await?;
-        if !login.valid_for(current.as_str())
-            || focus_id
-                .as_ref()
-                .is_some_and(|id| id.is_empty() || id.len() > 80)
-        {
+        if !valid_fill(&request, current.as_str()) {
             return Err(BrowserError::Invalid);
         }
     }
@@ -97,6 +111,20 @@ async fn evaluate(view: Webview, request: PasswordRequest) -> Result<Value> {
         }
     }
     Ok(value)
+}
+
+fn valid_fill(request: &PasswordRequest, source: &str) -> bool {
+    match request {
+        PasswordRequest::Fill { login, focus_id } => {
+            login.valid_for(source) && focus_id.as_deref().is_none_or(valid_focus_id)
+        }
+        PasswordRequest::FillUsername { identity, focus_id } => {
+            !identity.username.is_empty()
+                && valid_identity(&identity.origin, &identity.username, source)
+                && focus_id.as_deref().is_none_or(valid_focus_id)
+        }
+        _ => false,
+    }
 }
 
 async fn current_url(view: &Webview) -> Result<url::Url> {
@@ -155,5 +183,22 @@ mod tests {
             serde_json::from_value::<PasswordRequest>(json!({"action":"eval","script":"x"}))
                 .is_err()
         );
+    }
+
+    #[test]
+    fn username_only_fill_accepts_only_an_identity_and_current_origin() {
+        let request: PasswordRequest = serde_json::from_value(json!({
+            "action": "fillUsername",
+            "identity": { "origin": "https://example.test", "username": "fixture@example.test" },
+            "focusId": "focus-1"
+        }))
+        .unwrap();
+        assert!(valid_fill(&request, "https://example.test/signin"));
+        assert!(!valid_fill(&request, "https://example.test:8443/signin"));
+        assert!(serde_json::from_value::<PasswordRequest>(json!({
+            "action": "fillUsername",
+            "identity": { "origin": "https://example.test", "username": "fixture", "password": "unexpected" }
+        }))
+        .is_err());
     }
 }

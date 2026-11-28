@@ -6,8 +6,22 @@ pub(super) struct PasswordFocus {
     origin: String,
     id: String,
     username: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    stage: Option<PasswordStage>,
+    #[serde(
+        rename = "continuationId",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    continuation_id: Option<String>,
     bounds: Bounds,
     viewport: Viewport,
+}
+#[derive(Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+enum PasswordStage {
+    Username,
+    Password,
 }
 #[derive(Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -24,6 +38,14 @@ struct Viewport {
     height: f64,
 }
 
+pub(super) fn valid_focus_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 80
+        && id
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+}
+
 impl PasswordFocus {
     pub(super) fn valid_for(&self, source: &str) -> bool {
         let Ok(url) = url::Url::parse(source) else {
@@ -35,13 +57,13 @@ impl PasswordFocus {
             && url.password().is_none()
             && self.origin == url.origin().ascii_serialization()
             && self.origin.len() <= 2048
-            && !self.id.is_empty()
-            && self.id.len() <= 80
-            && self
-                .id
-                .bytes()
-                .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+            && valid_focus_id(&self.id)
             && self.username.chars().count() <= 512
+            && (self.stage != Some(PasswordStage::Password) || !self.username.is_empty())
+            && self
+                .continuation_id
+                .as_deref()
+                .is_none_or(|id| self.stage == Some(PasswordStage::Password) && valid_focus_id(id))
             && [
                 bounds.x,
                 bounds.y,

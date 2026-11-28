@@ -56,14 +56,19 @@ var RemoteAIBrowserPassword = (() => {
     return false;
   }
 
-  // browser/data/passwordUsernameFirst.ts
+  // browser/data/model.ts
+  var MAX_DATA_BYTES = 4 * 1024 * 1024;
+
+  // browser/data/passwordFocus.ts
   var USERNAME_STEP_LIFETIME_MS = 10 * 60 * 1e3;
-  var PASSWORD_STEP_LIFETIME_MS = 30 * 1e3;
-  var loginButtonName = /^(?:(?:button|btn)[-_]?)?(?:sign[-_]?in|log[-_]?in)(?:[-_]?(?:button|btn))?$/i;
+
+  // browser/data/passwordUsernameFirstFields.ts
+  var signInName = /^(?:(?:button|btn)[-_]?)?(?:sign[-_]?in|log[-_]?in)(?:[-_]?(?:button|btn))?$/i;
+  var nextStepName = /^(?:(?:button|btn)[-_]?)?(?:next|continue)(?:[-_]?(?:button|btn))?$/i;
   var passwordSelector = "input[type=password]";
-  function isLoginButton(button) {
-    return button.type === "button" && !button.form && !button.matches(":disabled") && button.getClientRects().length > 0 && [button.id, button.name, button.dataset.testid ?? ""].some((value) => loginButtonName.test(value));
-  }
+  var commandMatches = (control, pattern) => [control.id, control.name, control.dataset.testid ?? ""].some((value) => pattern.test(value));
+  var isVisible = (element) => element.getClientRects().length > 0;
+  var isAwsSignIn = () => location.protocol === "https:" && (location.hostname === "signin.aws.amazon.com" || location.hostname.endsWith(".signin.aws.amazon.com"));
   function nearbyFields(element, selector, eligible) {
     for (let scope = element.parentElement; scope && scope !== document.body; scope = scope.parentElement) {
       const matches = Array.from(scope.querySelectorAll(selector)).filter(eligible);
@@ -71,16 +76,56 @@ var RemoteAIBrowserPassword = (() => {
     }
     return [];
   }
+  function isLoginButton(button) {
+    return button.type === "button" && !button.form && !button.matches(":disabled") && isVisible(button) && commandMatches(button, signInName);
+  }
   function commandPassword(button) {
     if (!isLoginButton(button)) return;
-    const fields = nearbyFields(
-      button,
-      passwordSelector,
-      (field) => field.getClientRects().length > 0
-    );
+    const fields = nearbyFields(button, passwordSelector, isVisible);
     if (fields.length !== 1 || fields[0].form || fields[0].matches(":disabled, [readonly]")) return;
     return passwordInput(fields);
   }
+  function isCommandPassword(input) {
+    if (input.type !== "password" || input.form) return false;
+    const buttons = nearbyFields(input, "button", isLoginButton);
+    return buttons.length === 1 && commandPassword(buttons[0]) === input;
+  }
+  function usernameFirstIdentity(form) {
+    const fields = formInputs(form);
+    if (fields.some((input) => input.type === "password")) return;
+    const identities = fields.filter((input) => {
+      const hint = autocompleteField(input);
+      return ["text", "email", "tel"].includes(input.type) && (hint === "username" || hint === "email");
+    });
+    if (identities.length === 1) return identities[0];
+  }
+  function fillableUsernameStep(form) {
+    if (!safeLoginForm(form)) return;
+    const input = usernameFirstIdentity(form);
+    if (!input || input.matches(":disabled, [readonly]")) return;
+    if (isAwsSignIn() && input.id === "resolving_input" && input.type !== "email") return;
+    const next = Array.from(form.elements).some((control) => (control instanceof HTMLButtonElement || control instanceof HTMLInputElement) && control.type === "submit" && isVisible(control) && safeLoginForm(form, control) && (commandMatches(control, nextStepName) || autocompleteField(input) === "username"));
+    if (next) return input;
+  }
+  function displayedAwsUsername(input) {
+    if (!isAwsSignIn()) return;
+    const panel = input.closest('[data-testid="root-password-form"]');
+    if (!panel) return;
+    const identities = Array.from(panel.querySelectorAll("strong")).filter(isVisible).map((label) => label.textContent?.trim() ?? "").filter((value) => value.length <= 512 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
+    if (identities.length === 1) return identities[0];
+  }
+  function commandPasswordIdentity(input) {
+    if (!isCommandPassword(input)) return;
+    const step = loginPage().__remoteaiLogin?.usernameStep;
+    const displayed = displayedAwsUsername(input);
+    if (step && performance.now() - step.at <= USERNAME_STEP_LIFETIME_MS && !isVisible(step.form) && (!displayed || displayed === step.username)) {
+      return { username: step.username, continuationId: step.continuationId };
+    }
+    if (displayed) return { username: displayed };
+  }
+
+  // browser/data/passwordUsernameFirst.ts
+  var PASSWORD_STEP_LIFETIME_MS = 30 * 1e3;
   function activatedPassword(event) {
     if (!event.isTrusted || !(event.target instanceof Element)) return;
     if (event instanceof MouseEvent) {
@@ -88,19 +133,7 @@ var RemoteAIBrowserPassword = (() => {
       return button ? commandPassword(button) : void 0;
     }
     if (event.key !== "Enter" || event.isComposing || event.altKey || event.ctrlKey || event.metaKey || !(event.target instanceof HTMLInputElement)) return;
-    const buttons = nearbyFields(event.target, "button", isLoginButton);
-    if (buttons.length === 1 && commandPassword(buttons[0]) === event.target) return event.target;
-  }
-  function submittedUsername(form, submitter) {
-    if (!form || !safeLoginForm(form, submitter) || form.matches(":invalid")) return;
-    const fields = formInputs(form);
-    if (fields.some((input) => input.type === "password")) return;
-    const identities = fields.filter((input) => {
-      const hint = autocompleteField(input);
-      return ["text", "email", "tel"].includes(input.type) && (hint === "username" || hint === "email");
-    });
-    const username = identities.length === 1 ? identities[0].value.trim() : "";
-    if (username && username.length <= 512) return { form, username, at: performance.now() };
+    if (isCommandPassword(event.target)) return event.target;
   }
   function watchPasswordStep(input, accepted, stop) {
     const navigation = window.navigation;
@@ -127,15 +160,19 @@ var RemoteAIBrowserPassword = (() => {
     };
   }
   function observeUsernameFirstLogin(offer) {
-    let previous;
+    const page = loginPage().__remoteaiLogin;
+    if (!page) return;
     let stopWatching;
     const stop = () => {
       stopWatching?.();
       stopWatching = void 0;
     };
     const remember = (form, submitter) => {
-      const username = submittedUsername(form, submitter);
-      if (username) previous = username;
+      if (!form || !safeLoginForm(form, submitter) || form.matches(":invalid")) return;
+      const input = usernameFirstIdentity(form), username = input?.value.trim(), choice = page.usernameChoice;
+      if (!username || username.length > 512) return;
+      const continuationId = choice?.input === input && choice?.username === username ? choice.id : void 0;
+      page.usernameStep = { form, username, at: performance.now(), continuationId };
     };
     document.addEventListener("submit", (event) => {
       if (event.isTrusted && event.target instanceof HTMLFormElement) remember(event.target, event.submitter);
@@ -143,13 +180,15 @@ var RemoteAIBrowserPassword = (() => {
     const onActivation = (event) => {
       if (!event.isTrusted || event instanceof KeyboardEvent && event.key !== "Enter") return;
       stop();
-      if (!previous || performance.now() - previous.at > USERNAME_STEP_LIFETIME_MS || previous.form.isConnected && previous.form.getClientRects().length > 0) return;
       const input = activatedPassword(event);
       if (!input?.value || input.value.length > 4096) return;
-      const login = { origin: location.origin, username: previous.username, password: input.value };
+      const identity = commandPasswordIdentity(input);
+      if (!identity) return;
+      const login = { origin: location.origin, username: identity.username, password: input.value };
       stopWatching = watchPasswordStep(input, () => {
         stop();
-        previous = void 0;
+        page.usernameStep = void 0;
+        page.usernameChoice = void 0;
         offer(login);
       }, stop);
     };
@@ -210,18 +249,30 @@ var RemoteAIBrowserPassword = (() => {
   }
 
   // browser/data/passwordPageCapture.ts
+  function describeInput(input) {
+    const form = input.form;
+    if (!form) {
+      const identity = commandPasswordIdentity(input);
+      return identity && { ...identity, stage: "password" };
+    }
+    if (!safeLoginForm(form)) return;
+    const fields = formInputs(form), password = passwordInput(fields), username = usernameInput(fields);
+    if (password && (input === password || input === username)) return { username: username?.value ?? "" };
+    if (!password && fillableUsernameStep(form) === input) return { username: input.value, stage: "username" };
+  }
   function captureFocus(event, options) {
     const input = event.target, page = loginPage();
-    if (!event.isTrusted || !(input instanceof HTMLInputElement) || !input.form || !page.__remoteaiLogin) return;
-    const fields = formInputs(input.form), password = passwordInput(fields);
-    if (!safeLoginForm(input.form) || !password || !fields.includes(input) || input !== password && input !== usernameInput(fields)) return;
+    if (!event.isTrusted || !(input instanceof HTMLInputElement) || !page.__remoteaiLogin) return;
+    const description = describeInput(input);
+    if (!description) return;
     const id = Array.from(crypto.getRandomValues(new Uint32Array(4))).join("-");
     page.__remoteaiLogin.focus = { id, input };
     const { x, y, width, height } = input.getBoundingClientRect();
     const focus = {
+      ...description,
       origin: location.origin,
       id,
-      username: usernameInput(fields)?.value.slice(0, 512) ?? "",
+      username: description.username.slice(0, 512),
       bounds: { x, y, width, height },
       viewport: { width: innerWidth, height: innerHeight }
     };
@@ -238,13 +289,42 @@ var RemoteAIBrowserPassword = (() => {
       tabFocus = event.isTrusted && event.key === "Tab";
     }, true);
     document.addEventListener("focusin", (event) => {
+      const input = event.target;
       if (tabFocus) captureFocus(event, options);
+      else if (event.isTrusted && input instanceof HTMLInputElement && input.type === "password" && !input.form) {
+        window.setTimeout(() => {
+          if (document.activeElement === input && page.__remoteaiLogin?.focus?.input !== input) {
+            captureFocus(event, options);
+          }
+        }, 0);
+      }
       tabFocus = false;
     }, true);
     return true;
   }
 
   // browser/data/passwordPage.ts
+  function standardLoginForm() {
+    return Array.from(document.forms).find((form) => safeLoginForm(form) && passwordInput(formInputs(form)));
+  }
+  function fillInput(input, value) {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    return input.value === value;
+  }
+  function fillUsername(options, focused) {
+    const identity = options.identity;
+    if (!identity?.username || identity.origin !== location.origin) return false;
+    if (!focused && standardLoginForm()) return false;
+    const inputs = focused ? focused.form && fillableUsernameStep(focused.form) === focused ? [focused] : [] : Array.from(document.forms).map(fillableUsernameStep).filter((input) => input !== void 0);
+    if (inputs.length !== 1 || !fillInput(inputs[0], identity.username)) return false;
+    const page = loginPage().__remoteaiLogin;
+    if (page && options.focusId) {
+      page.usernameChoice = { id: options.focusId, input: inputs[0], username: identity.username.trim() };
+    }
+    return true;
+  }
   function passwordPage(options) {
     if (window.top !== window || !["http:", "https:"].includes(location.protocol)) return null;
     const page = loginPage();
@@ -259,23 +339,23 @@ var RemoteAIBrowserPassword = (() => {
       if (page.__remoteaiLogin) page.__remoteaiLogin.pendingFocus = null;
       return focus2 ?? null;
     }
-    const login = options.login;
-    if (!login || login.origin !== location.origin) return false;
     const focus = options.focusId ? page.__remoteaiLogin?.focus : void 0;
     if (options.focusId && (focus?.id !== options.focusId || !focus.input.isConnected)) return false;
-    const form = focus ? focus.input.form : Array.from(document.forms).find((form2) => safeLoginForm(form2) && passwordInput(formInputs(form2)));
-    if (!form || !safeLoginForm(form)) return false;
+    if (options.action === "fillUsername") return fillUsername(options, focus?.input);
+    const login = options.login;
+    if (!login || login.origin !== location.origin) return false;
+    const form = focus ? focus.input.form : standardLoginForm();
+    if (!form) {
+      const inputs = focus ? [focus.input] : Array.from(document.querySelectorAll(passwordSelector));
+      const matching = inputs.filter((input) => commandPasswordIdentity(input)?.username === login.username);
+      return matching.length === 1 && fillInput(matching[0], login.password);
+    }
+    if (!safeLoginForm(form)) return false;
     const fields = formInputs(form), password = passwordInput(fields);
     if (!password) return false;
-    const set = (input, value) => {
-      if (!input) return;
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set?.call(input, value);
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-    };
-    set(usernameInput(fields), login.username);
-    set(password, login.password);
-    return password.value === login.password;
+    const username = usernameInput(fields);
+    if (username) fillInput(username, login.username);
+    return fillInput(password, login.password);
   }
   return __toCommonJS(passwordPage_exports);
 })();
