@@ -111,8 +111,8 @@ unsafe fn install_source_changed(
     unsafe {
         let mut token = 0;
         view.add_SourceChanged(
-            &SourceChangedEventHandler::create(Box::new(move |sender, _| {
-                let Some(sender) = sender else {
+            &SourceChangedEventHandler::create(Box::new(move |sender, args| {
+                let (Some(sender), Some(args)) = (sender, args) else {
                     return Ok(());
                 };
                 let mut source = PWSTR::null();
@@ -121,14 +121,19 @@ unsafe fn install_source_changed(
                 let Ok(url) = url::Url::parse(&source) else {
                     return Ok(());
                 };
-                if super::super::allowed_url(&url, origin.as_ref()) {
-                    // History API and fragment changes do not start a document load. Report only
-                    // the committed top-level URL so an existing load keeps its actual state.
-                    if let Err(error) =
-                        app.emit_to("main", &event, serde_json::json!({"url":source}))
-                    {
-                        eprintln!("Provider browser address notification failed: {error}");
+                if !super::super::allowed_url(&url, origin.as_ref()) {
+                    return Ok(());
+                }
+                let mut new_document = windows::core::BOOL::default();
+                args.IsNewDocument(&mut new_document)?;
+                if !new_document.as_bool() {
+                    if let Some(view) = app.get_webview(&event) {
+                        super::super::lifecycle::same_document_navigation(&view, url);
+                        return Ok(());
                     }
+                }
+                if let Err(error) = app.emit_to("main", &event, serde_json::json!({"url":source})) {
+                    eprintln!("Provider browser address notification failed: {error}");
                 }
                 Ok(())
             })),

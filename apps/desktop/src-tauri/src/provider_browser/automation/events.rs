@@ -21,14 +21,12 @@ pub(super) fn listen(app: &AppHandle, thread: &str, id: &str) -> tauri::EventId 
 }
 
 fn handle_event(app: &AppHandle, thread: &str, id: &str, payload: Value) {
-    if let Some(page) = payload.get("pageTitle") {
-        publish_title(app, thread, id, page);
-        return;
-    }
+    let page = payload.get("pageTitle").unwrap_or(&payload);
     if let Some(loading) = payload["loading"].as_bool() {
         loading_changed(app, thread, id, loading);
     }
     let Some(address) = payload["url"].as_str() else {
+        publish_title(app, thread, id, page);
         return;
     };
     if payload["popup"] == true {
@@ -66,7 +64,7 @@ fn handle_event(app: &AppHandle, thread: &str, id: &str, payload: Value) {
             eprintln!("Browser navigation update failed: {error}");
         }
     }
-    publish_title(app, thread, id, &payload);
+    publish_title(app, thread, id, page);
     if let Ok(icons) = serde_json::from_value::<Vec<String>>(payload["icons"].clone()) {
         if let Err(error) = state.icons(id, address, icons) {
             eprintln!("Browser icon update failed: {error}");
