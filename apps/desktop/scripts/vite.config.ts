@@ -17,7 +17,7 @@ export default defineConfig({
   },
   envPrefix: ["VITE_", "TAURI_ENV_*"],
   build: {
-    rollupOptions: { input: { main: "index.html", quickMenu: "quick-menu.html" } },
+    rollupOptions: { input: { main: "index.html", quickMenu: "quick-menu.html", loungeTray: "lounge-tray.html" } },
     target: process.env.TAURI_ENV_PLATFORM === "windows" ? "chrome105" : "safari13",
     minify: process.env.TAURI_ENV_DEBUG ? false : "esbuild",
     sourcemap: Boolean(process.env.TAURI_ENV_DEBUG),

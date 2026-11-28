@@ -14,6 +14,8 @@ mod account_label;
 mod account_menu;
 mod localization;
 #[cfg(windows)]
+pub(crate) mod lounge;
+#[cfg(windows)]
 pub(crate) mod quick_menu;
 #[cfg(not(windows))]
 mod refresh;
@@ -50,6 +52,16 @@ pub(crate) fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         .show_menu_on_left_click(false)
         .on_menu_event(handle_menu_event)
         .on_tray_icon_event(|tray, event| {
+            #[cfg(windows)]
+            match &event {
+                TrayIconEvent::Enter { rect, .. } | TrayIconEvent::Move { rect, .. } => {
+                    lounge::hover(tray, *rect)
+                }
+                TrayIconEvent::Click { .. } | TrayIconEvent::DoubleClick { .. } => {
+                    lounge::dismiss(tray)
+                }
+                _ => {}
+            }
             #[cfg(windows)]
             if let TrayIconEvent::Click {
                 button: MouseButton::Right,
@@ -95,6 +107,8 @@ pub(crate) fn setup(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let tray = builder.build(app)?;
     #[cfg(windows)]
     windows_menu::install_for_tray(&tray).map_err(std::io::Error::other)?;
+    #[cfg(windows)]
+    lounge::start(&tray);
     #[cfg(not(windows))]
     let _ = tray;
     refresh_menu(app.handle());

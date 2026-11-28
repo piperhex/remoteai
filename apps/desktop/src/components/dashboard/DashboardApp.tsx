@@ -58,7 +58,9 @@ import { MappingSessions } from "../../pages/portMappings/MappingSessions";
 import { useGuiComputers } from "../../pages/codexGui/remote/useGuiComputers";
 import { useBrowserDownloads } from '../../downloads/useBrowserDownloads';
 import { LoungePage } from "../../../../../shared/lounge/LoungePage";
+import type { LoungeReply } from "../../../../../shared/lounge/reply";
 import { useDesktopLounge } from "../../lounge/useDesktopLounge";
+import { useLoungeTray } from "../../lounge/useLoungeTray";
 import { ExtensionMarketContext } from "../../../../../shared/browser/extensions/market";
 import { BookmarkProvider } from "../../../../../shared/browser/bookmarks/context";
 import { desktopBrowserVaultKeyStorage } from "../../api/browserVaultKey";
@@ -333,6 +335,15 @@ export function DashboardApp() {
   const thirdPartyAppIntegration = useThirdPartyAppIntegration(notify, t);
   const cloud = useCloudAuth(notify, t);
   const lounge = useDesktopLounge(cloud.state);
+  const [loungeMessageTarget, setLoungeMessageTarget] = useState<LoungeReply>();
+  const openLoungeFromTray = useCallback((target?: LoungeReply) => {
+    setLoungeMessageTarget(target);
+    setPage("lounge");
+  }, []);
+  useLoungeTray(lounge.controller, openLoungeFromTray);
+  useEffect(() => {
+    if (page !== "lounge") setLoungeMessageTarget(undefined);
+  }, [page]);
   useEffect(() => {
     if (!cloud.state.authenticated && !cloud.loading && page === "lounge") setPage("codexGui");
   }, [cloud.state.authenticated, cloud.loading, page]);
@@ -1503,6 +1514,7 @@ export function DashboardApp() {
               homeTransport={nativeBrowserHomeTransport} />
           </RetainedView>
           {page === "lounge" && <LoungePage controller={lounge.controller} onLogin={openCloudLogin}
+            messageTarget={loungeMessageTarget}
             onAssistance={isDesktopApp ? assistanceStore.request : undefined} />}
           {page === "logDiagnostics" && <LogDiagnosticsPage activeTab={diagnosticsTab}
             onTabChange={setDiagnosticsTab} language={language} t={t}

@@ -389,6 +389,14 @@ pub fn run() {
             system_tray::quick_menu::quick_menu_dismiss,
             #[cfg(windows)]
             system_tray::quick_menu::quick_menu_activate,
+            #[cfg(windows)]
+            system_tray::lounge::lounge_tray_update,
+            #[cfg(windows)]
+            system_tray::lounge::lounge_tray_snapshot,
+            #[cfg(windows)]
+            system_tray::lounge::lounge_tray_present,
+            #[cfg(windows)]
+            system_tray::lounge::lounge_tray_activate,
             codex_gui::codex_gui_connect,
             cli_gui::cli_gui_request,
             claude_accounts::claude_account_request,

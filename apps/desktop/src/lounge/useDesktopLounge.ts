@@ -12,6 +12,7 @@ import type { CloudAuthState } from '../types';
 import { useBrowserLoungeDownloads } from '../../../../shared/lounge/useBrowserLoungeDownloads';
 import { authenticatedDownloadOwner } from '../downloads/useDesktopDownloads';
 import { version } from '../../package.json';
+import { hasLoungeTray } from './useLoungeTray';
 
 export function useDesktopLounge(auth: CloudAuthState) {
   const { authenticated, baseUrl, userId, userEmail } = auth;
@@ -20,6 +21,7 @@ export function useDesktopLounge(auth: CloudAuthState) {
       randomBytes: size => crypto.getRandomValues(new Uint8Array(size)) },
     clientVersion: version,
     clientPlatform: 'desktop',
+    trackUnreadDirectMessages: hasLoungeTray,
     attachmentImages: browserAttachmentImages(JSON.stringify([baseUrl, userId]), browserAttachmentSink),
     baseUrl, userId, account: userEmail || undefined, avatars: browserAvatarStore(baseUrl),
     history: browserLoungeHistory(baseUrl, userEmail || userId),
