@@ -3,7 +3,8 @@ import { isTauri } from '@tauri-apps/api/core';
 import type { Provider } from '../../types';
 import { hasMarketPage, validPageLink } from '../../../../../shared/provider-market/pageLink';
 import type { MarketItem } from '../../../../../shared/provider-market/types';
-import { createBrowserTab, moveTab, navigateTab, type BrowserAction, type BrowserTab }
+import { createBrowserTab, moveTab, navigateTab, openBrowserDataTab, type BrowserAction, type BrowserDataPageKind,
+  type BrowserTab }
   from '../../../../../shared/provider-market/browserState';
 import type { BrowserSurfaceProps } from '../../../../../shared/provider-market/ProviderBrowser';
 import { remainingBrowserTabs } from '../../../../../shared/provider-market/browserTabCommands';
@@ -16,6 +17,10 @@ export function useProviderBrowser() {
   const sequence = useRef(0);
   const addTab = (tab: BrowserTab) => {
     setTabs((current) => [...current, tab]); setActiveId(tab.id); setOpen(true);
+  };
+  const openDataPage = (kind: BrowserDataPageKind, opener: string) => {
+    const next = openBrowserDataTab(tabs, kind, opener);
+    setTabs(next.tabs); setActiveId(next.activeId);
   };
   const openProvider = (provider: Provider) => {
     if (!hasMarketPage(provider) || !provider.marketSource) return;
@@ -49,6 +54,6 @@ export function useProviderBrowser() {
   };
   return { openProvider, openMarketItem, window: { open, tabs, activeId, commands, onSelect: setActiveId,
     onCloseTab: (id: string) => closeTabs([id]), onCloseTabs: closeTabs,
-    onNewTab: () => addTab(createBrowserTab()), onClose: () => setOpen(false),
+    onNewTab: () => addTab(createBrowserTab()), onOpenDataPage: openDataPage, onClose: () => setOpen(false),
     onNavigate: navigate, onAction: action, onPopup: popup } };
 }

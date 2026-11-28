@@ -22,6 +22,7 @@ beforeEach(() => {
     ? { open: false, mobile: false } : undefined);
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+  vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(rect);
   vi.spyOn(HTMLElement.prototype, 'getClientRects').mockImplementation(function (this: HTMLElement) {
     const hidden = this.hidden || this.style.display === 'none'

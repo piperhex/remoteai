@@ -66,7 +66,8 @@ function Harness() {
         <BrowserContents open tabs={[tab]} activeId={tab.id} language="zh" commands={{}}
           Surface={WebsiteBrowserSurface} embedded fullscreen={expanded} toggleFullscreen={() => setExpanded(!expanded)}
           onNavigate={(_, url) => setTab(current => ({ ...current, url }))} onSelect={() => {}}
-          onCloseTab={() => {}} onNewTab={() => {}} onClose={() => {}} onAction={() => {}} onPopup={() => {}} />
+          onCloseTab={() => {}} onNewTab={() => {}} onOpenDataPage={() => {}} onClose={() => {}}
+          onAction={() => {}} onPopup={() => {}} />
       </aside>
     </main>
   </ConfigProvider>;

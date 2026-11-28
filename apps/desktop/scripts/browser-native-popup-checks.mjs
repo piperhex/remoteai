@@ -21,13 +21,14 @@ export async function verifySettings({ main, popup, child, capture, nativePid })
   await expect(popup.locator('.browser-bookmark-settings-popup')).toHaveCount(0);
   await settings.click();
   await popup.getByRole('button', { name: '历史记录', exact: true }).click();
-  const history = popup.getByRole('dialog', { name: '历史记录', exact: true });
+  const history = main.getByRole('tabpanel', { name: '历史记录', exact: true });
   await expect(history).toBeVisible();
+  await expect(popup.getByRole('dialog', { name: '历史记录', exact: true })).toHaveCount(0);
   await history.getByRole('textbox').fill('实时');
   await expect(history.getByRole('textbox')).toHaveValue('实时');
-  await assertLive({ main, child }); await capture('history');
-  await history.getByRole('button', { name: 'Close', exact: true }).click();
+  await main.getByRole('button', { name: '关闭 历史记录', exact: true }).click();
   await expect(history).toHaveCount(0);
+  await assertLive({ main, child });
 }
 
 export async function verifyBookmarks({ main, popup, child, capture }) {

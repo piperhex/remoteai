@@ -49,10 +49,10 @@ export async function verifyAddressSuggestions(options: { page: Page; info: Test
   await address.press('Tab'); await expect(list).toHaveCount(0);
   await address.fill(''); await expect(list.getByRole('option')).toHaveCount(4);
   await address.press('Escape');
-  await verifyHistoryUpdates(page);
+  await verifyHistoryUpdates(options);
 }
 
-async function verifyHistoryUpdates(page: Page) {
+async function verifyHistoryUpdates({ page, info, label }: { page: Page; info: TestInfo; label: string }) {
   const address = page.getByRole('combobox', { name: '页面地址', exact: true });
   const list = page.getByRole('listbox', { name: '历史记录', exact: true });
   // Enter without selecting a row must keep the user's intended address.
@@ -60,9 +60,27 @@ async function verifyHistoryUpdates(page: Page) {
   await address.press('Enter'); await expect(address).toHaveValue('https://cloud.example.test/');
   await page.getByRole('button', { name: '浏览器设置', exact: true }).click();
   await page.getByRole('button', { name: '历史记录', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: '历史记录', exact: true });
-  await dialog.locator('.browser-data-row').filter({ hasText: '账户中心' })
+  const historyTab = page.getByRole('tab', { name: '历史记录', exact: true });
+  await expect(historyTab).toHaveAttribute('aria-selected', 'true');
+  const history = page.getByRole('tabpanel', { name: '历史记录', exact: true });
+  await expect(page.locator('.browser-bookmark-settings-popup')).toBeHidden();
+  await page.screenshot({ path: info.outputPath(`${label}-history-tab.png`), animations: 'disabled' });
+  await history.locator('.browser-data-row').filter({ hasText: '账户中心' })
     .getByRole('button', { name: '删除此条记录' }).click();
-  await dialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await history.getByRole('button', { name: /Cloud guide/ }).click();
+  await expect(address).toHaveValue('https://example.test/guide');
+  await expect(historyTab).toHaveAttribute('aria-selected', 'false');
+  await page.getByRole('button', { name: '浏览器设置', exact: true }).click();
+  await page.getByRole('button', { name: '历史记录', exact: true }).click();
+  await expect(historyTab).toHaveCount(1);
+  await expect(historyTab).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('button', { name: '浏览器设置', exact: true }).click();
+  await page.getByRole('button', { name: '密码管理', exact: true }).click();
+  const passwords = page.getByRole('tabpanel', { name: '密码管理', exact: true });
+  await expect(passwords.getByLabel('密码库口令', { exact: true })).toBeVisible();
+  await expect(page.locator('.browser-bookmark-settings-popup')).toBeHidden();
+  await page.screenshot({ path: info.outputPath(`${label}-passwords-tab.png`), animations: 'disabled' });
+  await page.getByRole('button', { name: '关闭 密码管理', exact: true }).click();
+  await page.getByRole('button', { name: '关闭 历史记录', exact: true }).click();
   await address.fill('账户'); await expect(list).toHaveCount(0);
 }

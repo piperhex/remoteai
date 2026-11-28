@@ -3,11 +3,13 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { chromium, expect } from '@playwright/test';
 import { testBrowserLaunchOptions } from '../../../scripts/test-browser.mjs';
+import { openBrowserDataMenuItem } from './browser-data-test-menu.mjs';
 
 const native = process.argv.includes('--native');
+const nativeEndpoint = 'http://127.0.0.1:9355';
 const output = fileURLToPath(new URL('../../../.codex-tmp/browser-data/', import.meta.url));
 await mkdir(output, { recursive: true });
-const browser = native ? await chromium.connectOverCDP('http://127.0.0.1:9355')
+const browser = native ? await chromium.connectOverCDP(nativeEndpoint)
   : await chromium.launch({ ...testBrowserLaunchOptions(), headless: true });
 const runs = native ? [['local', 1280, 860, 14, false], ['remote', 900, 760, 20, true]]
   : [['web', 390, 844, 14, false], ['web', 320, 568, 20, true],
@@ -25,8 +27,14 @@ for (const [mode, width, height, font, dark] of runs) {
     await page.waitForTimeout(350);
     await page.screenshot({ path: `${output}/${prefix}-${name}.png`, fullPage: true });
   };
-  const settings = async () => page.getByRole('button', { name: '浏览器设置', exact: true }).click();
-  const open = async label => { await settings(); await page.getByRole('button', { name: label, exact: true }).click(); };
+  const tabPresentation = native || width > 600;
+  const open = async label => {
+    await openBrowserDataMenuItem(page, label, native ? nativeEndpoint : undefined);
+    if (!tabPresentation) return;
+    await expect(page.getByRole('dialog', { name: label, exact: true })).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: label, exact: true })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tabpanel', { name: label, exact: true })).toBeVisible();
+  };
   const close = async () => {
     await page.waitForTimeout(350);
     const count = await page.locator('.ant-modal-wrap:visible').count();
@@ -34,6 +42,8 @@ for (const [mode, width, height, font, dark] of runs) {
     await dialog.locator('.ant-modal-close').click();
     await expect(page.locator('.ant-modal-wrap:visible')).toHaveCount(count - 1);
   };
+  const closePanel = label => tabPresentation
+    ? page.getByRole('button', { name: `关闭 ${label}`, exact: true }).click() : close();
   try {
     if (native) {
       await page.evaluate(mode => localStorage.removeItem(`remoteai:browser-data:browser-data-${mode}`), mode);
@@ -42,8 +52,7 @@ for (const [mode, width, height, font, dark] of runs) {
       { waitUntil: 'domcontentloaded', timeout: 60000 });
     await expect(page.locator('body')).toHaveAttribute('data-ready', 'true');
     if (native) await page.setViewportSize({ width, height });
-    await settings(); await shot('settings');
-    await page.getByRole('button', { name: '历史记录', exact: true }).click();
+    await open('历史记录');
     await expect(page.locator('.browser-data-row')).toHaveCount(4); await shot('history');
     const search = page.getByRole('textbox', { name: '搜索历史记录' });
     await search.fill('开发'); await expect(page.locator('.browser-data-row')).toHaveCount(1); await shot('history-search');
@@ -55,7 +64,8 @@ for (const [mode, width, height, font, dark] of runs) {
     const overflow = await page.locator('.ant-modal-wrap:visible .ant-modal-content').last().evaluate(element =>
       element.scrollWidth > element.clientWidth + 1);
     assert.equal(overflow, false, 'Dialog must not overflow horizontally');
-    await close(); await close();
+    await close();
+    if (!tabPresentation) await close();
     await open('密码管理');
     await shot('passwords-locked');
     await page.getByLabel('密码库口令', { exact: true }).fill('browser-test-passphrase');
@@ -69,7 +79,12 @@ for (const [mode, width, height, font, dark] of runs) {
     await page.getByRole('button', { name: /保\s*存/ }).click();
     await expect(page.locator('.browser-password-row')).toContainText('updated@example.com');
     await expect(page.locator('.browser-password-row')).toContainText('http://example.com:8080');
-    await close();
+    if (tabPresentation) {
+      await page.getByRole('tab', { name: '历史记录', exact: true }).click();
+      await expect(page.getByRole('tab', { name: '密码管理', exact: true })).toHaveAttribute('aria-selected', 'false');
+      await page.getByRole('tab', { name: '密码管理', exact: true }).click();
+      await expect(page.locator('.browser-password-row')).toContainText('updated@example.com');
+    } else await close();
     await open('历史记录');
     await page.getByRole('button', { name: '删除此条记录', exact: true }).first().click();
     await expect(page.locator('.browser-data-row')).toHaveCount(3);
@@ -82,7 +97,7 @@ for (const [mode, width, height, font, dark] of runs) {
     await page.getByRole('button', { name: '删除数据', exact: true }).last().click();
     await expect(page.getByText('所选数据已删除。', { exact: true })).toBeVisible();
     await close(); await expect(page.locator('.browser-data-row')).toHaveCount(1); await shot('history-after-delete');
-    await close(); await open('密码管理');
+    await closePanel('历史记录'); await open('密码管理');
     await expect(page.locator('.browser-password-row')).toHaveCount(1);
     await page.reload(); await expect(page.locator('body')).toHaveAttribute('data-ready', 'true');
     await open('密码管理');
@@ -92,7 +107,7 @@ for (const [mode, width, height, font, dark] of runs) {
     await shot('remembered-unlock');
     assert.deepEqual(errors, []);
     results.push({ prefix, historySearch: true, deleteRange: true, passwordEdit: true, noOverflow: true,
-      rememberedUnlock: true });
+      rememberedUnlock: true, tabPresentation });
     // This profile belongs exclusively to the fixture; leave subsequent matrix runs with the same seed.
     await page.evaluate(mode => localStorage.removeItem(`remoteai:browser-data:browser-data-${mode}`), mode);
   } catch (error) {

@@ -5,6 +5,7 @@ import { createServer } from 'node:https';
 import { createServer as createHttpServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { chromium, expect } from '@playwright/test';
+import { connectBrowserOverlay, openBrowserDataMenuItem } from './browser-data-test-menu.mjs';
 
 const output = fileURLToPath(new URL('../../../.codex-tmp/browser-data/', import.meta.url));
 await mkdir(output, { recursive: true });
@@ -25,11 +26,12 @@ const server = createServer({ key: await readFile(`${output}/fixture-key.pem`),
 const httpServer = createHttpServer(serveLogin);
 await new Promise(resolve => server.listen(18443, '127.0.0.1', resolve));
 await new Promise(resolve => httpServer.listen(18444, '127.0.0.1', resolve));
-const browser = await chromium.connectOverCDP('http://127.0.0.1:9355');
+const nativeEndpoint = 'http://127.0.0.1:9355';
+const browser = await chromium.connectOverCDP(nativeEndpoint);
 const page = browser.contexts()[0].pages().find(page => page.url().includes('browser-data-harness'));
 const invoke = (command, args) => page.evaluate(([command, args]) => window.__TAURI_INTERNALS__.invoke(command, args),
   [command, args]);
-let engine;
+let engine, overlay;
 async function verify(mode, font = 14, protocol = 'https') {
   const addressUrl = protocol === 'http' ? 'http://127.0.0.1:18444' : 'https://127.0.0.1:18443';
   const prefix = `pc-${mode}-${protocol}`;
@@ -58,10 +60,10 @@ async function verify(mode, font = 14, protocol = 'https') {
   await page.getByRole('button', { name: /保\s*存/ }).click();
   await site.getByLabel('Username').fill(''); await site.getByLabel('Password', { exact: true }).fill('');
   await site.getByLabel('Username').click();
-  const choices = page.getByRole('dialog', { name: '选择要填入的账号', exact: true });
+  overlay = await connectBrowserOverlay(nativeEndpoint);
+  let choices = overlay.popup.getByRole('dialog', { name: '选择要填入的账号', exact: true });
   await expect(choices).toBeVisible();
-  await expect(page.locator('.native-browser-overlay-preview')).toBeVisible();
-  await page.screenshot({ path: `${output}/${prefix}-${font}px-account-suggestions.png` });
+  await overlay.popup.screenshot({ path: `${output}/${prefix}-${font}px-account-suggestions.png` });
   await choices.getByRole('button', { name: /engine-fixture-user/ }).click();
   await expect(site.getByLabel('Password', { exact: true })).toHaveValue('engine-fixture-secret');
   await expect(site.getByLabel('Username')).toHaveValue('engine-fixture-user');
@@ -72,6 +74,7 @@ async function verify(mode, font = 14, protocol = 'https') {
   assert.equal(await site.evaluate(() => document.cookie), '');
   assert.equal(await site.evaluate(() => localStorage.getItem('browser-test')), null);
   await engine.close(); engine = undefined;
+  await overlay.connection.close(); overlay = undefined;
   await page.reload();
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true');
   await address.fill(addressUrl); await address.press('Enter');
@@ -81,35 +84,44 @@ async function verify(mode, font = 14, protocol = 'https') {
   await expect.poll(() => engine.contexts()[0].pages().some(page => page.url().startsWith(addressUrl))).toBe(true);
   const restored = engine.contexts()[0].pages().find(page => page.url().startsWith(addressUrl));
   await restored.getByLabel('Password', { exact: true }).click();
+  overlay = await connectBrowserOverlay(nativeEndpoint);
+  choices = overlay.popup.getByRole('dialog', { name: '选择要填入的账号', exact: true });
   await expect(choices).toBeVisible();
   await expect(choices.getByLabel('密码库口令', { exact: true })).toHaveCount(0);
-  await expect(page.locator('.native-browser-overlay-preview')).toBeVisible();
-  await page.screenshot({ path: `${output}/${prefix}-remembered-unlock.png` });
+  await overlay.popup.screenshot({ path: `${output}/${prefix}-remembered-unlock.png` });
   await choices.getByRole('button', { name: /engine-fixture-user/ }).click();
   await expect(restored.getByLabel('Password', { exact: true })).toHaveValue('engine-fixture-secret');
+  await restored.getByLabel('Username').fill('');
+  await restored.getByLabel('Password', { exact: true }).fill('');
+  await openBrowserDataMenuItem(page, '密码管理', nativeEndpoint);
+  const manager = page.getByRole('tabpanel', { name: '密码管理', exact: true });
+  await manager.getByRole('button', { name: '填入当前页面', exact: true }).click();
+  await expect(manager).toBeHidden();
+  await expect(restored.getByLabel('Username')).toHaveValue('engine-fixture-user');
+  await expect(restored.getByLabel('Password', { exact: true })).toHaveValue('engine-fixture-secret');
   if (mode === 'local') {
-    await page.getByRole('button', { name: '浏览器设置', exact: true }).click();
-    await page.getByRole('button', { name: '密码管理', exact: true }).click();
+    await openBrowserDataMenuItem(page, '密码管理', nativeEndpoint);
     await page.getByRole('button', { name: '锁定密码库', exact: true }).click();
-    await page.locator('.ant-modal-wrap:visible .ant-modal-close').click();
+    await page.getByRole('button', { name: '关闭 密码管理', exact: true }).click();
     await restored.getByLabel('Username').click();
     await expect(choices.getByLabel('密码库口令', { exact: true })).toBeVisible();
-    await page.screenshot({ path: `${output}/${prefix}-first-input-unlock.png` });
+    await overlay.popup.screenshot({ path: `${output}/${prefix}-first-input-unlock.png` });
     await choices.getByLabel('密码库口令', { exact: true }).fill('browser-test-passphrase');
     await choices.getByRole('button', { name: '解锁密码库', exact: true }).click();
     await choices.getByRole('button', { name: /engine-fixture-user/ }).click();
   }
   await engine.close(); engine = undefined;
+  await overlay.connection.close(); overlay = undefined;
 }
 try {
   for (const protocol of ['http', 'https']) {
     await verify('local', 14, protocol); await verify('remote', 20, protocol);
   }
   await writeFile(`${output}/pc-engine-results.json`, JSON.stringify({ capture: true, save: true, inputSuggestions: true,
-    rememberedUnlock: true, modes: ['local', 'remote'], protocols: ['http', 'https'],
+    rememberedUnlock: true, managerFill: true, modes: ['local', 'remote'], protocols: ['http', 'https'],
     cookies: true, localStorage: true, selectiveCache: true }));
   console.log('Real WebView2 input suggestions, filling, remembered unlock and site data clearing passed');
 } finally {
-  await engine?.close(); await browser.close();
+  await engine?.close(); await overlay?.connection.close(); await browser.close();
   server.closeAllConnections(); server.close(); httpServer.closeAllConnections(); httpServer.close();
 }
